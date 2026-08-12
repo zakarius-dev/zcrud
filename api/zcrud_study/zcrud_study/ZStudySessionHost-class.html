@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZStudySessionHost class from the zcrud_study library, for the Dart programming language.">
+  <title>ZStudySessionHost class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study.dart</a></li>
+    <li class="self-crumb">ZStudySessionHost class</li>
+  </ol>
+  <div class="self-name">ZStudySessionHost</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;zcrud_study-library-sidebar.html"
+    data-below-sidebar="zcrud_study&#47;ZStudySessionHost-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZStudySessionHost</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Écran de session <strong>assemblé</strong> : détient le runtime, nourrit la vue.</p>
+<p>Voir la dartdoc de bibliothèque pour la table de runtime, la discipline
+SM-1 et les quatre pièges d'intégration.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree-class.html">DiagnosticableTree</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/StatefulWidget-class.html">StatefulWidget</a></li>
+      <li>ZStudySessionHost</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZStudySessionHost.new" class="callable">
+          <span class="name"><a href="../zcrud_study/ZStudySessionHost/ZStudySessionHost.html">ZStudySessionHost</a></span><span class="signature">({<span class="parameter" id="param-mode"><span>required</span> <span class="type-annotation">ZReviewMode</span> <span class="parameter-name">mode</span>, </span><span class="parameter" id="param-queue"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span></span> <span class="parameter-name">queue</span>, </span><span class="parameter" id="param-reviewer"><span class="type-annotation">ZSessionReviewer?</span> <span class="parameter-name">reviewer</span>, </span><span class="parameter" id="param-config"><span class="type-annotation">ZSrsConfig</span> <span class="parameter-name">config</span> = <span class="default-value">const ZSrsConfig()</span>, </span><span class="parameter" id="param-cardBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">cardBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-card"><span class="type-annotation">ZFlashcard</span> <span class="parameter-name">card</span></span>)?, </span><span class="parameter" id="param-contentBuilder"><span class="type-annotation">ZFlashcardContentBuilder?</span> <span class="parameter-name">contentBuilder</span>, </span><span class="parameter" id="param-evaluationPort"><span class="type-annotation">ZFlashcardAnswerEvaluationPort?</span> <span class="parameter-name">evaluationPort</span>, </span><span class="parameter" id="param-hintPort"><span class="type-annotation">ZFlashcardHintPort?</span> <span class="parameter-name">hintPort</span>, </span><span class="parameter" id="param-headerBuilder"><span class="type-annotation"><a href="../zcrud_study/ZStudySessionHeaderBuilder.html">ZStudySessionHeaderBuilder</a>?</span> <span class="parameter-name">headerBuilder</span>, </span><span class="parameter" id="param-counterBuilder"><span class="type-annotation"><a href="../zcrud_study/ZStudySessionCounterBuilder.html">ZStudySessionCounterBuilder</a>?</span> <span class="parameter-name">counterBuilder</span>, </span><span class="parameter" id="param-gradingBuilder"><span class="type-annotation"><a href="../zcrud_study/ZStudySessionGradingSlotBuilder.html">ZStudySessionGradingSlotBuilder</a>?</span> <span class="parameter-name">gradingBuilder</span>, </span><span class="parameter" id="param-summaryBuilder"><span class="type-annotation"><a href="../zcrud_study/ZStudySessionResultBuilder.html">ZStudySessionResultBuilder</a>?</span> <span class="parameter-name">summaryBuilder</span>, </span><span class="parameter" id="param-emptyBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a>?</span> <span class="parameter-name">emptyBuilder</span>, </span><span class="parameter" id="param-celebrationBuilder"><span class="type-annotation"><a href="../zcrud_study/ZStudySessionCelebrationBuilder.html">ZStudySessionCelebrationBuilder</a>?</span> <span class="parameter-name">celebrationBuilder</span>, </span><span class="parameter" id="param-labels"><span class="type-annotation"><a href="../zcrud_study/ZStudySessionLabels-class.html">ZStudySessionLabels</a>?</span> <span class="parameter-name">labels</span>, </span><span class="parameter" id="param-onSessionEnd"><span class="type-annotation">void</span> <span class="parameter-name">onSessionEnd</span>(<span class="parameter" id="param-result"><span class="type-annotation">ZStudySessionResult</span> <span class="parameter-name">result</span>, </span><span class="parameter" id="param-duration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">duration</span></span>)?, </span><span class="parameter" id="param-onExit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onExit</span>, </span><span class="parameter" id="param-indexController"><span class="type-annotation">ZIndexController?</span> <span class="parameter-name">indexController</span>, </span><span class="parameter" id="param-progressStyle"><span class="type-annotation">ZSessionProgressStyle</span> <span class="parameter-name">progressStyle</span> = <span class="default-value">ZSessionProgressStyle.dots</span>, </span><span class="parameter" id="param-fallbackFolderId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">fallbackFolderId</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="param-stackFlex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">stackFlex</span>, </span><span class="parameter" id="param-inputFlex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">inputFlex</span>, </span><span class="parameter" id="param-contentPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">contentPadding</span>, </span><span class="parameter" id="param-dividerThickness"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">dividerThickness</span>, </span><span class="parameter" id="param-sectionGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">sectionGap</span>, </span><span class="parameter" id="param-minTarget"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">minTarget</span>, </span><span class="parameter" id="param-counterStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">counterStyle</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+        </dt>
+        <dd>
+          Assemble une session sur <code>queue</code> dans le <code>mode</code> donné.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="cardBuilder" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/cardBuilder.html">cardBuilder</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-card"><span class="type-annotation">ZFlashcard</span> <span class="parameter-name">card</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  Slot de carte d'AFFICHAGE. <code>null</code> ⇒ <code>ZFlashcardReviewCard</code> par défaut.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="celebrationBuilder" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/celebrationBuilder.html">celebrationBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_study/ZStudySessionCelebrationBuilder.html">ZStudySessionCelebrationBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Slot de célébration, au-dessus du résumé. <code>null</code> ⇒ absent de l'arbre.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="config" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/config.html">config</a></span>
+  <span class="signature">&#8594; ZSrsConfig</span>
+  
+
+</dt>
+<dd>
+  Configuration SRS — propriétaire de l'échelle et du seuil (AD-46).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="contentBuilder" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/contentBuilder.html">contentBuilder</a></span>
+  <span class="signature">&#8594; ZFlashcardContentBuilder?</span>
+  
+
+</dt>
+<dd>
+  Slot AD-40 de rendu du contenu (markdown, LaTeX…) — passé tel quel à la
+carte <strong>et</strong> à la surface de saisie.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="contentPadding" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/contentPadding.html">contentPadding</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span>
+  
+
+</dt>
+<dd>
+  Surcharge du padding interne.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="counterBuilder" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/counterBuilder.html">counterBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_study/ZStudySessionCounterBuilder.html">ZStudySessionCounterBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Slot de compteurs. <code>null</code> ⇒ absent de l'arbre (AD-4).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="counterStyle" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/counterStyle.html">counterStyle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Surcharge du style du compteur.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="dividerThickness" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/dividerThickness.html">dividerThickness</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Surcharge de l'épaisseur du séparateur.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="emptyBuilder" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/emptyBuilder.html">emptyBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_study/ZStudySessionCelebrationBuilder.html">ZStudySessionCelebrationBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Slot de repli « session vide ». <code>null</code> ⇒ repli du socle.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="evaluationPort" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/evaluationPort.html">evaluationPort</a></span>
+  <span class="signature">&#8594; ZFlashcardAnswerEvaluationPort?</span>
+  
+
+</dt>
+<dd>
+  Port d'évaluation ADVISORY (<code>null</code> ⇒ repli qualité neutre côté saisie).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="fallbackFolderId" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/fallbackFolderId.html">fallbackFolderId</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Dossier de repli pour une carte dont <code>folderId</code> est nul.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="gradingBuilder" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/gradingBuilder.html">gradingBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_study/ZStudySessionGradingSlotBuilder.html">ZStudySessionGradingSlotBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Slot de saisie/notation, <strong>branché sur le runtime</strong> (cf.
+<a href="../zcrud_study/ZStudySessionGradingSlotBuilder.html">ZStudySessionGradingSlotBuilder</a>). <code>null</code> ⇒ <code>ZFlashcardAnswerInput</code> par
+défaut.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="headerBuilder" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/headerBuilder.html">headerBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_study/ZStudySessionCounterBuilder.html">ZStudySessionCounterBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Slot d'en-tête. <code>null</code> ⇒ absent de l'arbre (AD-4).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hintPort" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/hintPort.html">hintPort</a></span>
+  <span class="signature">&#8594; ZFlashcardHintPort?</span>
+  
+
+</dt>
+<dd>
+  Port d'indices (<code>null</code> ⇒ bouton « Indice » absent, jamais grisé).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="indexController" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/indexController.html">indexController</a></span>
+  <span class="signature">&#8594; ZIndexController?</span>
+  
+
+</dt>
+<dd>
+  Pilote optionnel de l'index de la pile, passé tel quel.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="inputFlex" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/inputFlex.html">inputFlex</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Surcharge de la part verticale de la zone de saisie.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="key" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/key.html">key</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span>
+  
+
+</dt>
+<dd class="inherited">
+  Controls how one widget replaces another widget in the tree.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="labels" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/labels.html">labels</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_study/ZStudySessionLabels-class.html">ZStudySessionLabels</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellés injectés (FR-26).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="minTarget" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/minTarget.html">minTarget</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Surcharge de la cible tap minimale.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="mode" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/mode.html">mode</a></span>
+  <span class="signature">&#8594; ZReviewMode</span>
+  
+
+</dt>
+<dd>
+  Mode de session — <strong>entrée</strong> de <code>zSessionRuntimeForMode</code> (AD-34).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onExit" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/onExit.html">onExit</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span>
+  
+
+</dt>
+<dd>
+  Issue de sortie des replis. <code>null</code> ⇒ bouton absent : jamais d'action
+fabriquée que le widget ne saurait pas exécuter.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onSessionEnd" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/onSessionEnd.html">onSessionEnd</a></span>
+  <span class="signature">&#8594; void Function<span class="signature">(<span class="parameter" id="param-result"><span class="type-annotation">ZStudySessionResult</span> <span class="parameter-name">result</span>, </span><span class="parameter" id="param-duration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">duration</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  Notifié <strong>une seule fois</strong> par session, à l'épuisement de la file (latch).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="progressStyle" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/progressStyle.html">progressStyle</a></span>
+  <span class="signature">&#8594; ZSessionProgressStyle</span>
+  
+
+</dt>
+<dd>
+  Style de l'indicateur de progression de la pile.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="queue" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/queue.html">queue</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  File <strong>déjà sélectionnée</strong> (la sélection est amont : <code>ZSessionModeSelector</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="reviewer" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/reviewer.html">reviewer</a></span>
+  <span class="signature">&#8594; ZSessionReviewer?</span>
+  
+
+</dt>
+<dd>
+  Voie d'écriture SRS <strong>injectée</strong> (AD-33). <code>null</code> en mode SRS ⇒ phase
+<a href="../zcrud_study/ZStudySessionPhase.html">ZStudySessionPhase.unavailable</a> : aucun runtime, repli explicite, aucun
+no-op fabriqué (AD-34), aucun throw (AD-10).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="sectionGap" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/sectionGap.html">sectionGap</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Surcharge de l'écart vertical entre blocs.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="stackFlex" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/stackFlex.html">stackFlex</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Surcharge de la part verticale de la pile.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="summaryBuilder" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/summaryBuilder.html">summaryBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_study/ZStudySessionResultBuilder.html">ZStudySessionResultBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Slot de résumé. <code>null</code> ⇒ absent de l'arbre (la vue rend alors son issue
+de sortie AD-10 — jamais un écran dont on ne sort pas).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="createElement" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/StatefulWidget/createElement.html">createElement</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/StatefulElement-class.html">StatefulElement</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Creates a <a href="https://api.flutter.dev/flutter/widgets/StatefulElement-class.html">StatefulElement</a> to manage this widget's location in the tree.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="createState" class="callable">
+  <span class="name"><a href="../zcrud_study/ZStudySessionHost/createState.html">createState</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study/ZStudySessionHost-class.html">ZStudySessionHost</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Creates the mutable state for this widget at a given location in the tree.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="debugDescribeChildren" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/debugDescribeChildren.html">debugDescribeChildren</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a list of <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a> objects describing this node's
+children.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="debugFillProperties" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/debugFillProperties.html">debugFillProperties</a></span><span class="signature">(<wbr><span class="parameter" id="debugFillProperties-param-properties"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticPropertiesBuilder-class.html">DiagnosticPropertiesBuilder</a></span> <span class="parameter-name">properties</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Add additional properties associated with the node.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toDiagnosticsNode" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toDiagnosticsNode.html">toDiagnosticsNode</a></span><span class="signature">(<wbr>{<span class="parameter" id="toDiagnosticsNode-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span><span class="parameter" id="toDiagnosticsNode-param-style"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsTreeStyle.html">DiagnosticsTreeStyle</a>?</span> <span class="parameter-name">style</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a debug representation of the object that is used by debugging
+tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode/toStringDeep.html">DiagnosticsNode.toStringDeep</a>.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/Diagnosticable/toString.html">toString</a></span><span class="signature">(<wbr>{<span class="parameter" id="toString-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.info</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringDeep" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringDeep.html">toStringDeep</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringDeep-param-prefixLineOne"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">prefixLineOne</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="toStringDeep-param-prefixOtherLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">prefixOtherLines</span>, </span><span class="parameter" id="toStringDeep-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span>, </span><span class="parameter" id="toStringDeep-param-wrapWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">wrapWidth</span> = <span class="default-value">65</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a string representation of this node and its descendants.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShallow" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringShallow.html">toStringShallow</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringShallow-param-joiner"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">joiner</span> = <span class="default-value">&#39;, &#39;</span>, </span><span class="parameter" id="toStringShallow-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a one-line detailed description of the object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShort" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/toStringShort.html">toStringShort</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A short, textual description of this widget.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study</a></li>
+    <li class="self-crumb">ZStudySessionHost class</li>
+</ol>
+
+    <h5>zcrud_study library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

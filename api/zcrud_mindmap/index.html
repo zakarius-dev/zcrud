@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_mindmap API docs, for the Dart programming language.">
+  <title>zcrud_mindmap - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_mindmap package</a></li>
+  </ol>
+  <div class="self-name">zcrud_mindmap</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_mindmap">zcrud_mindmap</h1>
+<p>Cartes mentales pour zcrud : un arbre immuable <code>ZMindmap</code>/<code>ZMindmapNode</code>, un
+moteur de mutation pur <code>ZMindmapTreeOps</code>, et une vue graphite avec un éditeur
+outline — invariant AD-2 (réactivité Flutter-native) de bout en bout.</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_mindmap</code> est le paquet satellite qui porte les cartes mentales de
+zcrud, au-dessus du cœur (<code>zcrud_core</code>, invariant AD-1) et de la couche
+rich-text (<code>zcrud_markdown</code>, opt-in). Le domaine — <code>ZMindmap</code> (forêt titrée),
+<code>ZMindmapNode</code> (nœud récursif par nesting) et <code>ZMindmapTreeOps</code> (moteur de
+mutation pur) — est indépendant de tout rendu ; la présentation ajoute une
+vue graphe auto-agencée (<code>graphite</code>), une vue liste sémantique accessible et
+un éditeur outline dont la sauvegarde applique réellement les modifications.</p>
+<p>Ce paquet fournit :</p>
+<ul>
+<li>le <strong>modèle</strong> — <code>ZMindmap</code>/<code>ZMindmapNode</code>, une forêt multi-racine titrée
+dans un dossier, sérialisable et défensive (invariant AD-10) ;</li>
+<li>le <strong>moteur d'arbre</strong> — <code>ZMindmapTreeOps</code>, des opérations pures
+(ajout/mise à jour/suppression/recherche, déplacement/indentation/
+réordonnancement) avec partage structurel par <code>identical()</code> ;</li>
+<li>la <strong>vue</strong> — <code>ZMindmapView</code>, deux surfaces équivalentes (graphe <code>graphite</code>
+et liste indentée accessible) partageant le même constructeur de contenu
+de nœud, avec zoom piloté, mode compact, plein écran et super-racine
+opt-in ;</li>
+<li>l'<strong>éditeur outline</strong> — <code>ZMindmapOutlineEditor</code>, une liste indentée
+éditable dont le <code>ZMindmapOutlineController</code> est la source de vérité
+unique, avec rebuild granulaire (invariant AD-2) ;</li>
+<li>des <strong>seams rich-text opt-in</strong> — <code>ZMindmapMarkdownContent</code> et
+<code>ZMindmapMarkdownEditField</code>, de fins adaptateurs vers <code>zcrud_markdown</code> qui
+n'imposent rien par défaut (le contenu de nœud reste texte brut tant que
+l'hôte n'injecte pas ces seams).</li>
+</ul>
+<p><strong>Utilisez ce paquet</strong> pour construire une carte mentale éditable dans une
+application Flutter — vue graphe ou liste, édition outline, contenu riche
+opt-in. <strong>N'utilisez pas ce paquet</strong> pour un simple arbre de données sans
+rendu (le modèle <code>ZMindmap</code>/<code>ZMindmapTreeOps</code> suffit alors, sans tirer
+<code>graphite</code> ni les widgets de présentation) ni pour du rendu Markdown/LaTeX
+autonome, hors du contexte d'un nœud de carte (utilisez <code>zcrud_markdown</code>
+directement).</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:flutter/widgets.dart';
+import 'package:zcrud_mindmap/zcrud_mindmap.dart';
+
+/// Une forêt d'une seule racine, et sa vue par défaut.
+///
+/// Toute mutation passe exclusivement par [ZMindmapTreeOps] — jamais de
+/// `copyWith` direct sur un [ZMindmapNode].
+List&lt;ZMindmapNode&gt; buildInitialForest() {
+  var forest = &lt;ZMindmapNode&gt;[ZMindmapTreeOps.newRootNode()];
+  forest = ZMindmapTreeOps.updateNode(
+    forest,
+    forest.first.id,
+    label: 'Racine',
+  );
+  return forest;
+}
+
+/// Le rendu par défaut : graphe auto-agencé + vue liste accessible
+/// équivalente, sans aucune dépendance à `zcrud_markdown`.
+Widget buildMindmap(List&lt;ZMindmapNode&gt; forest) {
+  return ZMindmapView(roots: forest);
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Arbre par nesting, mutation par moteur pur</strong> — <code>ZMindmapNode</code> est un
+arbre récursif (<code>children</code>), jamais une liste à adjacence ; il ne porte
+aucun <code>copyWith</code> public. Toute mutation passe par <code>ZMindmapTreeOps</code>, qui
+renvoie une nouvelle forêt (ou l'entrée <code>identical</code> si l'opération est un
+no-op) et recalcule systématiquement le cache <code>level</code> du sous-arbre
+reparenté.</li>
+<li><strong>Deux surfaces équivalentes</strong> — le graphe <code>graphite</code> (visuel,
+<code>ExcludeSemantics</code>, zoom/pan bornés) et la vue liste indentée sont deux
+projections en lecture seule de la <strong>même</strong> forêt ; la vue liste est la
+surface d'accessibilité de référence, parcourue en profondeur-d'abord.</li>
+<li><strong>Rich-text opt-in, jamais par défaut (invariant <a href="../../docs/site/concepts/invariants.md#ad-4">AD-4</a>)</strong> —
+<code>ZMindmapMarkdownContent</code>/<code>ZMindmapMarkdownEditField</code> sont de fins
+adaptateurs vers <code>zcrud_markdown</code>, montés seulement par injection
+explicite (<code>nodeContentBuilder</code>, <code>editFieldBuilder</code>) ; sans eux, le
+contenu d'un nœud reste du texte brut, et ce paquet ne tire jamais Quill.</li>
+<li><strong>Réactivité granulaire (invariant <a href="../../docs/site/concepts/invariants.md#ad-2">AD-2</a>)</strong> —
+<code>ZMindmapOutlineController</code> et <code>ZMindmapViewController</code> sont des
+<code>ChangeNotifier</code>/agrégats de <code>ValueNotifier</code> purs Flutter ; une frappe de
+texte ne notifie pas les mutations structurelles, un zoom ne reconstruit
+pas les nœuds.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Domaine</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZMindmap</code></td>
+<td>Carte mentale immuable : forêt de nœuds racines titrée dans un dossier.</td>
+</tr>
+<tr>
+<td><code>ZMindmapNode</code></td>
+<td>Nœud récursif par nesting, avec cache de profondeur <code>level</code> dénormalisé.</td>
+</tr>
+<tr>
+<td><code>ZMindmapTreeOps</code></td>
+<td>Moteur d'opérations d'arbre pur : ajout/mise à jour/suppression/recherche/déplacement/indentation/réordonnancement.</td>
+</tr>
+<tr>
+<td><code>ZExtensionDecoder</code></td>
+<td>Décodeur d'extension typée injecté à la désérialisation d'un nœud.</td>
+</tr>
+<tr>
+<td><strong>Vue</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZMindmapView</code></td>
+<td>Vue d'une forêt : graphe auto-agencé ou liste accessible, zoom, compact, plein écran, super-racine.</td>
+</tr>
+<tr>
+<td><code>ZMindmapViewConfig</code> / <code>ZMindmapViewMode</code></td>
+<td>Réglages géométriques partagés et mode de rendu (graphe / liste).</td>
+</tr>
+<tr>
+<td><code>ZMindmapViewController</code> / <code>ZMindmapViewLabels</code></td>
+<td>État de vue local (zoom/compact/plein écran) et libellés a11y externalisés des contrôles.</td>
+</tr>
+<tr>
+<td><code>ZMindmapListView</code></td>
+<td>Vue liste sémantique indentée seule, surface d'accessibilité de référence.</td>
+</tr>
+<tr>
+<td><code>ZMindmapCellClip</code></td>
+<td>Borne un contenu de nœud à sa cellule graphe, sans débordement visuel.</td>
+</tr>
+<tr>
+<td><code>ZMindmapNodeCard</code></td>
+<td>Carte de nœud thématisée, partagée par le graphe et la vue liste.</td>
+</tr>
+<tr>
+<td><code>ZMindmapDefaultNodeContent</code></td>
+<td>Rendu de contenu de nœud par défaut (texte brut).</td>
+</tr>
+<tr>
+<td><code>ZMindmapNodeContentBuilder</code> / <code>ZMindmapNodeCallback</code></td>
+<td>Point d'injection du rendu de contenu d'un nœud et callback d'interaction.</td>
+</tr>
+<tr>
+<td><strong>Éditeur outline</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZMindmapOutlineEditor</code></td>
+<td>Liste indentée éditable dont la sauvegarde applique réellement les modifications.</td>
+</tr>
+<tr>
+<td><code>ZMindmapOutlineController</code></td>
+<td>Source de vérité unique de l'éditeur, <code>ChangeNotifier</code> pur mutant via <code>ZMindmapTreeOps</code>.</td>
+</tr>
+<tr>
+<td><code>ZMindmapOutlineLabels</code></td>
+<td>Libellés a11y externalisés de l'éditeur outline.</td>
+</tr>
+<tr>
+<td><code>ZMindmapForestCallback</code> / <code>ZMindmapOutlineEmptyBuilder</code></td>
+<td>Callback de sauvegarde de la forêt et builder de l'état vide, tous deux opt-in.</td>
+</tr>
+<tr>
+<td><code>ZMindmapEditFieldKind</code> / <code>ZMindmapEditFieldContext</code> / <code>ZMindmapEditFieldBuilder</code></td>
+<td>Nature de champ édité, son contexte, et le point d'injection d'un champ d'édition riche.</td>
+</tr>
+<tr>
+<td><strong>Rich-text opt-in</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZMindmapMarkdownContent</code></td>
+<td>Adaptateur mince de rendu Markdown/LaTeX pour le contenu d'un nœud.</td>
+</tr>
+<tr>
+<td><code>ZMindmapMarkdownEditField</code></td>
+<td>Adaptateur mince d'édition Markdown/LaTeX pour un champ de nœud.</td>
+</tr>
+<tr>
+<td><strong>Interne graphe</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZMindmapGraphMapper</code> / <code>ZMindmapGraphData</code></td>
+<td>Projection en lecture seule de la forêt vers la structure <code>graphite</code>.</td>
+</tr>
+<tr>
+<td><code>ZMindmapApi</code></td>
+<td>Marqueur de version d'API publique, rattache les arêtes de dépendance invariant AD-1.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Sync hors-entité (invariant <a href="../../docs/site/concepts/invariants.md#ad-9">AD-9</a>)</strong> —
+ni <code>ZMindmap</code> ni <code>ZMindmapNode</code> ne portent <code>updatedAt</code> ou <code>is_deleted</code> :
+ces métadonnées vivent dans <code>ZSyncMeta</code>, gérées par le store/dépôt.</li>
+<li><strong>Désérialisation défensive (invariant <a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>)</strong> —
+un <code>extra</code> corrompu ou un <code>ZExtensionDecoder</code> qui échoue ne fait jamais
+échouer le parsing d'un nœud ou d'une carte.</li>
+<li><strong>Forêt vide guidée, jamais une page blanche</strong> — <code>ZMindmapOutlineEditor</code>
+rend toujours une structure d'ajout centrée quand la forêt est vide ; les
+libellés associés (<code>emptyTitle</code>, <code>emptyMessage</code>, <code>emptyActionLabel</code>) ne
+sont montés que si l'hôte les fournit.</li>
+<li><strong>Contrôleur remplacé en cours de vie</strong> — si <code>ZMindmapOutlineEditor</code> reçoit
+un nouveau <code>controller</code> en <code>didUpdateWidget</code>, l'ancien contrôleur possédé
+(le cas échéant) est disposé et le nouveau adopté ; un contrôleur injecté
+par l'appelant n'est jamais disposé par ce widget.</li>
+<li><strong>Super-racine opt-in</strong> — la racine virtuelle multi-forêt (<code>graphite</code>)
+n'est jamais affichée par défaut ; <code>showSuperRoot</code> la rend visible et
+étiquetée sans introduire de second mécanisme, et n'a aucun effet à une
+seule racine.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_mindmap.md"><code>docs/site/paquets/zcrud_mindmap.md</code></a>.</li>
+<li><a href="../../docs/site/concepts/reactivite-granulaire.md">Réactivité granulaire</a> — AD-2 en pratique.</li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_markdown</code> — le codec et les widgets rich-text branchés en opt-in.</li>
+<li><code>zcrud_core</code> — le cœur dont ce paquet réutilise <code>ZEntity</code>/<code>ZExtensible</code>/<code>ZSyncMeta</code>.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_mindmap">
+  <span class="name"><a href="zcrud_mindmap/">zcrud_mindmap</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_mindmap</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_mindmap package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_mindmap</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_mindmap/">zcrud_mindmap</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_mindmap
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

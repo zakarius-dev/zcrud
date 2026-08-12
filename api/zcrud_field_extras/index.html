@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_field_extras API docs, for the Dart programming language.">
+  <title>zcrud_field_extras - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_field_extras package</a></li>
+  </ol>
+  <div class="self-name">zcrud_field_extras</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_field_extras">zcrud_field_extras</h1>
+<p>Satellite <strong>champs spécialisés</strong> de zcrud : PIN/OTP, autocomplétion et table
+éditable, servis par le <code>ZWidgetRegistry</code> du cœur.</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_field_extras</code> enregistre trois widgets d'édition riches dans le
+<code>ZWidgetRegistry</code> de <code>zcrud_core</code>, sous des <code>kind</code> alignés sur les noms
+d'<code>EditionFieldType</code> que le dispatcher du cœur résout automatiquement :</p>
+<ul>
+<li><strong>PIN / OTP</strong> (<code>ZPinFieldWidget</code>, <code>kind</code> <code>'pin'</code>) — segments via <code>pinput</code>,
+seule dépendance lourde du paquet, confinée à l'implémentation ;</li>
+<li><strong>Autocomplétion</strong> (<code>ZAutocompleteFieldWidget</code>, <code>kind</code> <code>'autocomplete'</code>) —
+widget natif Flutter <code>Autocomplete</code>, sans dépendance tierce ;</li>
+<li><strong>Table éditable</strong> (<code>ZEditableTableFieldWidget</code>, <code>kind</code> <code>'editableTable'</code>) —
+virtualisée (<code>ListView.builder</code>), édition <strong>en mémoire uniquement</strong> (voir
+cas limites).</li>
+</ul>
+<p>Ce paquet ne modifie jamais <code>zcrud_core</code> : l'enrôlement est <strong>explicite</strong>, au
+bootstrap du binding ou de l'application — jamais un effet de bord d'import.
+Sans enrôlement, ces trois types de champ dégradent proprement en
+<code>ZUnsupportedFieldWidget</code>, jamais en crash.</p>
+<p><strong>Utilisez ce paquet</strong> pour un champ PIN/OTP, une autocomplétion texte simple
+ou une petite table éditée en mémoire. <strong>N'utilisez pas ce paquet</strong> si vous
+avez besoin de persister une table éditable via <code>@ZcrudModel</code> : le
+générateur ne supporte pas aujourd'hui un champ <code>List&lt;Map&lt;String, dynamic&gt;&gt;</code>
+(voir cas limites).</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:flutter/widgets.dart';
+import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_field_extras/zcrud_field_extras.dart';
+
+Widget buildApp(Widget child) {
+  final registry = ZWidgetRegistry();
+  registerZFieldExtrasFields(registry);
+  return ZcrudScope(widgetRegistry: registry, child: child);
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Value-in-slice (invariant <a href="../../docs/site/concepts/invariants.md#ad-2">AD-2</a>)</strong> —
+chaque widget lit <code>ctx.value</code> et écrit via <code>ctx.onChanged</code> dans la
+frontière de rebuild du dispatcher, sans jamais capturer le
+<code>ZFormController</code> ni s'abonner plus largement. Les contrôleurs internes
+(<code>TextEditingController</code>, contrôleurs de cellule) sont alloués une seule
+fois et jamais recréés au rebuild — aucune perte de focus, aucune
+reconstruction inutile.</li>
+<li><strong>Repli défensif systématique (invariant <a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>)</strong> —
+une valeur externe corrompue ou d'un type inattendu ne provoque jamais de
+crash : champ vide pour PIN/autocomplétion, table vide pour
+<code>editableTable</code>.</li>
+<li><strong>Cibles tactiles et thème injecté (invariant <a href="../../docs/site/concepts/invariants.md#ad-13">AD-13</a>)</strong> —
+chaque cellule ou action mesure au moins 48 dp, les couleurs sont dérivées
+du thème (<code>ZcrudTheme</code>/<code>ColorScheme</code>) et non codées en dur, Reduce Motion
+est honoré pour le champ PIN.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>registerZFieldExtrasFields</code></td>
+<td>Enrôle les trois builders dans un <code>ZWidgetRegistry</code>, à appeler au bootstrap.</td>
+</tr>
+<tr>
+<td><code>ZPinFieldWidget</code> / <code>pinFieldKind</code></td>
+<td>Champ PIN/OTP segmenté.</td>
+</tr>
+<tr>
+<td><code>ZAutocompleteFieldWidget</code> / <code>autocompleteFieldKind</code></td>
+<td>Champ texte auto-complété, natif Flutter.</td>
+</tr>
+<tr>
+<td><code>ZEditableTableFieldWidget</code> / <code>editableTableFieldKind</code></td>
+<td>Table éditable virtualisée, édition en mémoire.</td>
+</tr>
+<tr>
+<td><code>zParseTableRows</code> / <code>zTableColumns</code></td>
+<td>Fonctions pures de parsing défensif et de dérivation des colonnes d'une table.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Persistance non supportée pour <code>editableTable</code></strong> : la valeur est
+<code>List&lt;Map&lt;String, dynamic&gt;&gt;</code>, éditée pleinement en mémoire, mais le
+générateur zcrud ne sait pas aujourd'hui sérialiser un champ <code>Map</code> via
+<code>@ZcrudModel</code>. Un type de valeur dédié avec son propre codec serait requis
+pour lever cette limite — ne tentez pas de la contourner localement.
+Ce paquet gère ce cas.</li>
+<li><strong>« Tags riches » non couvert</strong> : <code>EditionFieldType.tags</code> route vers la
+famille native <code>tags</code> du cœur, jamais vers <code>registryOrFallback</code> ; un <code>kind == 'tags'</code> enregistré ici serait du code mort. Le besoin est déjà couvert
+sans dépendance par <code>ZSubListDisplayMode.tags</code>.</li>
+<li><strong>Enrôlement unique</strong> : enregistrer deux fois le même <code>kind</code> sur un
+registre lève <code>ZDuplicateRegistrationError</code> — jamais un dernier-écrit
+silencieux.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li><a href="../../docs/site/concepts/reactivite-granulaire.md">Réactivité granulaire</a> —
+AD-2 en pratique.</li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> —
+définitions canoniques AD-1 à AD-16.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_field_extras">
+  <span class="name"><a href="zcrud_field_extras/">zcrud_field_extras</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_field_extras</code> — satellite CHAMPS SPÉCIALISÉS.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_field_extras package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_field_extras</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_field_extras/">zcrud_field_extras</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_field_extras
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

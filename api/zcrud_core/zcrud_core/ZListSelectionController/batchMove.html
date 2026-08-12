@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the batchMove method from the ZListSelectionController class, for the Dart programming language.">
+  <title>batchMove method - ZListSelectionController class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core.dart</a></li>
+    <li><a href="../../zcrud_core/ZListSelectionController-class.html">ZListSelectionController</a></li>
+    <li class="self-crumb">batchMove method</li>
+  </ol>
+  <div class="self-name">batchMove</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;ZListSelectionController-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">batchMove</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZBatchReport-class.html">ZBatchReport</a></span>&gt;</span></span>
+<span class="name ">batchMove</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="batchMove-param-attachmentField"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">attachmentField</span>, </span></li>
+<li><span class="parameter" id="batchMove-param-destination"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">destination</span>, </span></li>
+<li><span class="parameter" id="batchMove-param-moveRoot"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZResult.html">ZResult</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/dartz/0.10.1/dartz/Unit-class.html">Unit</a></span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">moveRoot</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-rootId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">rootId</span>, </span></li>
+<li><span class="parameter" id="param-attachmentField"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">attachmentField</span>, </span></li>
+<li><span class="parameter" id="param-destination"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">destination</span></span></li>
+</ol>), </span></li>
+</ol>})
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p><strong>Déplace</strong> en lot les éléments sélectionnés en réaffectant le <strong>champ de
+rattachement DÉCLARÉ par le modèle</strong> <code>attachmentField</code> (nom PARAMÉTRIQUE —
+ex. <code>folder_id</code>/<code>parent_id</code> ; JAMAIS codé en dur) à la <code>destination</code>
+fournie par un <strong>sélecteur INJECTÉ</strong> de l'app. L'écriture par racine passe
+par le seam INJECTÉ <code>moveRoot</code> ; application <strong>par élément</strong> + rapport
+(même contrat que <a href="../../zcrud_core/ZListSelectionController/batchDelete.html">batchDelete</a>).</p>
+<p><strong>Modèle sans champ de rattachement</strong> (<code>attachmentField</code> <code>null</code>/vide) ⇒
+résultat DÉFINI (AD-10) : chaque racine est rapportée en échec
+(<a href="../../zcrud_core/ZDomainFailure-class.html">ZDomainFailure</a>) et <strong>aucune écriture</strong> n'est tentée — jamais de <code>throw</code>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;ZBatchReport&gt; batchMove({
+  required String? attachmentField,
+  required Object? destination,
+  required Future&lt;ZResult&lt;Unit&gt;&gt; Function(
+    String rootId,
+    String attachmentField,
+    Object? destination,
+  ) moveRoot,
+}) {
+  if (attachmentField == null || attachmentField.isEmpty) {
+    &#47;&#47; Aucune écriture : chaque racine échoue avec une cause définie (AD-10).
+    return batchApply(
+      applyToRoot: (_) async =&gt; Left&lt;ZFailure, Unit&gt;(
+        const ZDomainFailure(
+          &#39;move rejected: model declares no attachment field&#39;,
+        ),
+      ),
+      clearSucceededFromSelection: false,
+    );
+  }
+  return batchApply(
+    applyToRoot: (id) =&gt; moveRoot(id, attachmentField, destination),
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/ZListSelectionController-class.html">ZListSelectionController</a></li>
+    <li class="self-crumb">batchMove method</li>
+</ol>
+
+    <h5>ZListSelectionController class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zBuildStudyPool function from the zcrud_chat_study library, for the Dart programming language.">
+  <title>zBuildStudyPool function - zcrud_chat_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat_study</a></li>
+    <li><a href="../zcrud_chat_study/">zcrud_chat_study.dart</a></li>
+    <li class="self-crumb">zBuildStudyPool function</li>
+  </ol>
+  <div class="self-name">zBuildStudyPool</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_chat_study&#47;zcrud_chat_study-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zBuildStudyPool</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="../zcrud_chat_study/ZStudyPool-class.html">ZStudyPool</a></span>
+<span class="name ">zBuildStudyPool</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="zBuildStudyPool-param-request"><span class="type-annotation"><a href="../zcrud_chat_study/ZStudyPoolRequest-class.html">ZStudyPoolRequest</a></span> <span class="parameter-name">request</span></span></li>
+</ol>)
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Constitue le pool de session (fonction pure, sans E/S ni horloge).</p>
+<p>Ne lève jamais (invariant AD-10) : entrées vides, <code>config</code> nulle,
+<code>count &lt;= 0</code> dégradent en pool vide.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZStudyPool zBuildStudyPool(ZStudyPoolRequest request) {
+  final ZStudySessionConfig? config = request.config;
+  final ZStudySessionSelector? folderSelector =
+      config == null ? null : ZStudySessionSelector(config);
+  &#47;&#47; Le filtre dossier est neutralisé pour l&#39;origine « conversation » : une
+  &#47;&#47; carte tout juste produite n&#39;a pas de `folderId` (voir la dartdoc de tête,
+  &#47;&#47; section sur l&#39;absence de détour par le dossier).
+  final ZStudySessionSelector? chatSelector = config == null
+      ? null
+      : ZStudySessionSelector(_withoutFolderFilter(config));
+
+  final Set&lt;String&gt; seen = &lt;String&gt;{};
+  final List&lt;ZFlashcard&gt; kept = &lt;ZFlashcard&gt;[];
+  var fromFolder = 0;
+  var fromConversation = 0;
+  var duplicates = 0;
+  var softDeleted = 0;
+
+  void absorb(
+    List&lt;ZFlashcard&gt; source,
+    ZStudySessionSelector? selector, {
+    required bool isFolder,
+  }) {
+    for (final ZFlashcard card in source) {
+      final String? id = card.id;
+      if (id != null &amp;&amp; request.softDeletedIds.contains(id)) {
+        softDeleted++;
+        continue;
+      }
+      if (selector != null &amp;&amp; !selector.matches(card)) continue;
+      final Set&lt;String&gt; keys = zStudyPoolKeys(card);
+      &#47;&#47; Doublon dès qu&#39;UNE clé quelconque a déjà été vue (cf. `zStudyPoolKeys`).
+      if (keys.any(seen.contains)) {
+        duplicates++;
+        continue;
+      }
+      seen.addAll(keys);
+      kept.add(card);
+      if (isFolder) {
+        fromFolder++;
+      } else {
+        fromConversation++;
+      }
+    }
+  }
+
+  absorb(request.folderCards, folderSelector, isFolder: true);
+  absorb(request.conversationCards, chatSelector, isFolder: false);
+
+  &#47;&#47; Le plafond `count` s&#39;applique à l&#39;UNION dédoublonnée — jamais avant, sinon
+  &#47;&#47; des doublons consommeraient des places du plafond.
+  final int? count = config?.count;
+  if (count == null) {
+    return ZStudyPool(
+      cards: List&lt;ZFlashcard&gt;.unmodifiable(kept),
+      fromFolder: fromFolder,
+      fromConversation: fromConversation,
+      duplicatesDropped: duplicates,
+      softDeletedDropped: softDeleted,
+    );
+  }
+  if (count &lt;= 0) {
+    return ZStudyPool(
+      cards: const &lt;ZFlashcard&gt;[],
+      fromFolder: 0,
+      fromConversation: 0,
+      duplicatesDropped: duplicates,
+      softDeletedDropped: softDeleted,
+    );
+  }
+  if (kept.length &lt;= count) {
+    return ZStudyPool(
+      cards: List&lt;ZFlashcard&gt;.unmodifiable(kept),
+      fromFolder: fromFolder,
+      fromConversation: fromConversation,
+      duplicatesDropped: duplicates,
+      softDeletedDropped: softDeleted,
+    );
+  }
+  &#47;&#47; Les cartes du dossier sont absorbées EN PREMIER, donc elles occupent
+  &#47;&#47; exactement les `fromFolder` premières places de `kept` : la troncature ne
+  &#47;&#47; peut retirer que des cartes de conversation tant qu&#39;il reste des cartes de
+  &#47;&#47; dossier. Le recomptage est donc EXACT, sans re-parcours.
+  final int keptFolder = count &lt; fromFolder ? count : fromFolder;
+  return ZStudyPool(
+    cards: List&lt;ZFlashcard&gt;.unmodifiable(kept.sublist(0, count)),
+    fromFolder: keptFolder,
+    fromConversation: count - keptFolder,
+    duplicatesDropped: duplicates,
+    softDeletedDropped: softDeleted,
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat_study</a></li>
+    <li><a href="../zcrud_chat_study/">zcrud_chat_study</a></li>
+    <li class="self-crumb">zBuildStudyPool function</li>
+</ol>
+
+    <h5>zcrud_chat_study library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the fromMapSafe method from the ZGeoShapeStyle class, for the Dart programming language.">
+  <title>fromMapSafe method - ZGeoShapeStyle class - zcrud_geo library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_geo</a></li>
+    <li><a href="../../zcrud_geo/">zcrud_geo.dart</a></li>
+    <li><a href="../../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a></li>
+    <li class="self-crumb">fromMapSafe static method</li>
+  </ol>
+  <div class="self-name">fromMapSafe</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_geo&#47;ZGeoShapeStyle-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">fromMapSafe</span> static method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="../../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a>?</span>
+<span class="name ">fromMapSafe</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="fromMapSafe-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span></li>
+</ol>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Parse <strong>défensif</strong> : <code>null</code> si <code>raw</code> n'est pas une <code>Map</code>. Chaque clé
+absente/corrompue retombe sur son défaut neutre ; l'opacité est bornée
+à <code>[0,1]</code> (non finie → défaut). Ne throw <strong>jamais</strong>.</p>
+<p>Alias de lecture compatibilité : <code>fillColor</code>/<code>strokeColor</code>/<code>iconColor</code>
+(int ARGB) sont lues quand la clé zcrud <code>*Argb</code> est absente — la lecture
+stricte prime toujours. <code>iconSize</code>/<code>iconAnchor</code>/<code>iconRotation</code> sont
+lues au même titre ; un <code>iconAnchor</code> corrompu retombe à <code>null</code>, une
+rotation non numérique au défaut <code>0.0</code>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">static ZGeoShapeStyle? fromMapSafe(Object? raw) {
+  if (raw is! Map) return null;
+  return ZGeoShapeStyle(
+    fillColorArgb: _asArgb(raw[&#39;fillColorArgb&#39;] ?? raw[&#39;fillColor&#39;]),
+    strokeColorArgb: _asArgb(raw[&#39;strokeColorArgb&#39;] ?? raw[&#39;strokeColor&#39;]),
+    strokeWidth: _asInt(raw[&#39;strokeWidth&#39;], 3),
+    visible: _asBool(raw[&#39;visible&#39;], true),
+    zIndex: _asInt(raw[&#39;zIndex&#39;], 0),
+    geodesic: _asBool(raw[&#39;geodesic&#39;], false),
+    opacity: _asOpacity(raw[&#39;opacity&#39;]),
+    draggable: _asBool(raw[&#39;draggable&#39;], false),
+    consumeTapEvents: _asBool(raw[&#39;consumeTapEvents&#39;], true),
+    iconAsset: raw[&#39;iconAsset&#39;] is String ? raw[&#39;iconAsset&#39;] as String : null,
+    iconColorArgb: _asArgb(raw[&#39;iconColorArgb&#39;] ?? raw[&#39;iconColor&#39;]),
+    iconSize: _asFiniteDouble(raw[&#39;iconSize&#39;]),
+    iconAnchor: ZGeoPoint.fromMapSafe(raw[&#39;iconAnchor&#39;]),
+    iconRotation: _asFiniteDouble(raw[&#39;iconRotation&#39;]) ?? 0.0,
+    showInfoWindow: _asBool(raw[&#39;showInfoWindow&#39;], false),
+    infoWindowTitle: raw[&#39;infoWindowTitle&#39;] is String
+        ? raw[&#39;infoWindowTitle&#39;] as String
+        : null,
+    infoWindowSnippet: raw[&#39;infoWindowSnippet&#39;] is String
+        ? raw[&#39;infoWindowSnippet&#39;] as String
+        : null,
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_geo</a></li>
+    <li><a href="../../zcrud_geo/">zcrud_geo</a></li>
+    <li><a href="../../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a></li>
+    <li class="self-crumb">fromMapSafe static method</li>
+</ol>
+
+    <h5>ZGeoShapeStyle class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_geo
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

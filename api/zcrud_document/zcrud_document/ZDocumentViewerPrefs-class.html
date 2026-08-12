@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZDocumentViewerPrefs class from the zcrud_document library, for the Dart programming language.">
+  <title>ZDocumentViewerPrefs class - zcrud_document library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_document</a></li>
+    <li><a href="../zcrud_document/">zcrud_document.dart</a></li>
+    <li class="self-crumb">ZDocumentViewerPrefs class</li>
+  </ol>
+  <div class="self-name">ZDocumentViewerPrefs</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_document&#47;zcrud_document-library-sidebar.html"
+    data-below-sidebar="zcrud_document&#47;ZDocumentViewerPrefs-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZDocumentViewerPrefs</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Préférences de lecture persistées d'un document (zoom, sens,
+disposition).</p>
+<p>Value object non-<code>ZExtensible</code> : aucun slot <code>extra</code> / <code>extension</code>. Il
+est décodé défensivement comme sous-modèle de <a href="../zcrud_document/ZDocumentReadingState-class.html">ZDocumentReadingState</a>
+(chemin sous-modèle : une valeur corrompue — non-map, scalaire… —
+retombe sur les défauts, jamais de <code>throw</code> du parent, invariant AD-10).</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@ZcrudModel.new(kind: &#39;document_viewer_prefs&#39;)</li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZDocumentViewerPrefs.new" class="callable">
+          <span class="name"><a href="../zcrud_document/ZDocumentViewerPrefs/ZDocumentViewerPrefs.html">ZDocumentViewerPrefs</a></span><span class="signature">({<span class="parameter" id="param-zoomLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">zoomLevel</span> = <span class="default-value">kDefaultZoomLevel</span>, </span><span class="parameter" id="param-scrollDirection"><span class="type-annotation"><a href="../zcrud_document/ZDocumentScrollDirection.html">ZDocumentScrollDirection</a></span> <span class="parameter-name">scrollDirection</span> = <span class="default-value">ZDocumentScrollDirection.vertical</span>, </span><span class="parameter" id="param-pageLayout"><span class="type-annotation"><a href="../zcrud_document/ZDocumentPageLayout.html">ZDocumentPageLayout</a></span> <span class="parameter-name">pageLayout</span> = <span class="default-value">ZDocumentPageLayout.continuous</span></span>})</span>
+        </dt>
+        <dd>
+          Constructeur bas niveau (<code>const</code>, source du <code>copyWith</code> généré).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZDocumentViewerPrefs.fromMap" class="callable">
+          <span class="name"><a href="../zcrud_document/ZDocumentViewerPrefs/ZDocumentViewerPrefs.fromMap.html">ZDocumentViewerPrefs.fromMap</a></span><span class="signature">(<span class="parameter" id="fromMap-param-map"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">map</span></span>)</span>
+        </dt>
+        <dd>
+          Reconstruit défensivement depuis une map persistée (invariant AD-10).
+            <div class="constructor-modifier features">factory</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_document/ZDocumentViewerPrefs/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="pageLayout" class="property">
+  <span class="name"><a href="../zcrud_document/ZDocumentViewerPrefs/pageLayout.html">pageLayout</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_document/ZDocumentPageLayout.html">ZDocumentPageLayout</a></span>
+  
+
+</dt>
+<dd>
+  Disposition des pages (persisté <code>page_layout</code> ; défaut <code>continuous</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="scrollDirection" class="property">
+  <span class="name"><a href="../zcrud_document/ZDocumentViewerPrefs/scrollDirection.html">scrollDirection</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_document/ZDocumentScrollDirection.html">ZDocumentScrollDirection</a></span>
+  
+
+</dt>
+<dd>
+  Sens de défilement (persisté <code>scroll_direction</code> ; défaut <code>vertical</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="zoomLevel" class="property">
+  <span class="name"><a href="../zcrud_document/ZDocumentViewerPrefs/zoomLevel.html">zoomLevel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Niveau de zoom (défaut <a href="../zcrud_document/kDefaultZoomLevel-constant.html">kDefaultZoomLevel</a> ; fini, &gt; 0, clampé dans
+<code>[kMinZoomLevel, kMaxZoomLevel]</code> à toute frontière — voir
+<a href="../zcrud_document/ZDocumentViewerPrefs/sanitizeZoomLevel.html">sanitizeZoomLevel</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="copyWith" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentViewerPrefs/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-zoomLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">zoomLevel</span>, </span><span class="parameter" id="copyWith-param-scrollDirection"><span class="type-annotation"><a href="../zcrud_document/ZDocumentScrollDirection.html">ZDocumentScrollDirection</a>?</span> <span class="parameter-name">scrollDirection</span>, </span><span class="parameter" id="copyWith-param-pageLayout"><span class="type-annotation"><a href="../zcrud_document/ZDocumentPageLayout.html">ZDocumentPageLayout</a>?</span> <span class="parameter-name">pageLayout</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_document/ZDocumentViewerPrefs-class.html">ZDocumentViewerPrefs</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Copie sanitisée — méthode d'instance, qui masque le <code>copyWith</code> de
+l'extension générée <code>ZDocumentViewerPrefsZcrud</code> (un membre d'instance
+gagne toujours sur un membre d'extension) — et l'extension elle-même
+est masquée du barrel, donc inatteignable depuis l'API publique.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toMap" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentViewerPrefs/toMap.html">toMap</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Sérialise vers la map persistée (snake_case) — méthode d'instance.
+  
+
+</dd>
+
+        <dt id="toString" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentViewerPrefs/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A string representation of this object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentViewerPrefs/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="sanitizeZoomLevel" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentViewerPrefs/sanitizeZoomLevel.html">sanitizeZoomLevel</a></span><span class="signature">(<wbr><span class="parameter" id="sanitizeZoomLevel-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Ramène <code>raw</code> dans le domaine de définition du zoom — ne lève jamais.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_document</a></li>
+    <li><a href="../zcrud_document/">zcrud_document</a></li>
+    <li class="self-crumb">ZDocumentViewerPrefs class</li>
+</ol>
+
+    <h5>zcrud_document library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_document
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

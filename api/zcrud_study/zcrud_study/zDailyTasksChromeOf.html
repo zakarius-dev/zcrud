@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zDailyTasksChromeOf function from the zcrud_study library, for the Dart programming language.">
+  <title>zDailyTasksChromeOf function - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study.dart</a></li>
+    <li class="self-crumb">zDailyTasksChromeOf function</li>
+  </ol>
+  <div class="self-name">zDailyTasksChromeOf</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_study&#47;zcrud_study-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zDailyTasksChromeOf</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="../zcrud_study/ZDailyTasksChrome-class.html">ZDailyTasksChrome</a></span>
+<span class="name ">zDailyTasksChromeOf</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="zDailyTasksChromeOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span></li>
+<li><span class="parameter" id="zDailyTasksChromeOf-param-bandPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">bandPadding</span>, </span></li>
+<li><span class="parameter" id="zDailyTasksChromeOf-param-dayCellMargin"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">dayCellMargin</span>, </span></li>
+<li><span class="parameter" id="zDailyTasksChromeOf-param-dayCellPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">dayCellPadding</span>, </span></li>
+<li><span class="parameter" id="zDailyTasksChromeOf-param-dayCellRadius"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span> <span class="parameter-name">dayCellRadius</span>, </span></li>
+<li><span class="parameter" id="zDailyTasksChromeOf-param-minTapTarget"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">minTapTarget</span>, </span></li>
+<li><span class="parameter" id="zDailyTasksChromeOf-param-monthBreakpoint"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">monthBreakpoint</span>, </span></li>
+<li><span class="parameter" id="zDailyTasksChromeOf-param-itemPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">itemPadding</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Résout le chrome de la vue des tâches du jour depuis le contexte (rôles du
+<code>ColorScheme</code>), avec surcharge ponctuelle par les paramètres de la vue.</p>
+<p>Chaîne complète, champ par champ : <code>paramètre ?? jeton ?? référence</code>.
+Le maillon du milieu (<code>ZcrudTheme.dailyTasks*</code>) est branché ici et nulle
+part ailleurs : un hôte règle donc la vue depuis son thème, sans repasser
+un paramètre à chaque montage.</p>
+<p>Aucun jeton générique n'est monté en maillon — pas de <code>gapM</code> pour un
+écart, pas de <code>radiusM</code> pour le rayon de cellule. C'est le défaut qu'un
+correctif a corrigé sur les cartes d'étude : un jeton générique ridé par
+deux propriétés distinctes ne peut satisfaire ni l'une ni l'autre. Chaque
+jeton lu ici est dédié à sa propriété ; les champs sans jeton dédié
+(<a href="../zcrud_study/ZDailyTasksReference/borderWidth-constant.html">ZDailyTasksReference.borderWidth</a>, les écarts, les graisses) gardent
+franchement deux maillons plutôt que d'en simuler trois.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZDailyTasksChrome zDailyTasksChromeOf(
+  BuildContext context, {
+  EdgeInsetsGeometry? bandPadding,
+  EdgeInsetsGeometry? dayCellMargin,
+  EdgeInsetsGeometry? dayCellPadding,
+  Radius? dayCellRadius,
+  double? minTapTarget,
+  double? monthBreakpoint,
+  EdgeInsetsGeometry? itemPadding,
+}) {
+  final ThemeData material = Theme.of(context);
+  final ColorScheme scheme = material.colorScheme;
+  final TextTheme text = material.textTheme;
+  final ZcrudTheme theme = ZcrudTheme.of(context);
+  &#47;&#47; ② — Parité avec le rendu historique : `primary` sur `primaryContainer`.
+  &#47;&#47; Ce n&#39;est pas l&#39;appariement nominal M3, et c&#39;est assumé : la mesure a
+  &#47;&#47; établi qu&#39;il tient le plancher AA partout (pire cas 4.97 sur 12 graines
+  &#47;&#47; × 2 luminosités). Une garde le vérifie ; aucune divergence n&#39;est
+  &#47;&#47; introduite pour une simple préférence.
+  final Color onSelected = scheme.primary;
+  final Color neutral = scheme.onSurfaceVariant;
+  return ZDailyTasksChrome(
+    bandPadding:
+        bandPadding ??
+        theme.dailyTasksBandPadding ??
+        ZDailyTasksReference.bandPadding,
+    dayCellMargin:
+        dayCellMargin ??
+        theme.dailyTasksDayCellMargin ??
+        ZDailyTasksReference.dayCellMargin,
+    dayCellPadding:
+        dayCellPadding ??
+        theme.dailyTasksDayCellPadding ??
+        ZDailyTasksReference.dayCellPadding,
+    dayCellRadius:
+        dayCellRadius ??
+        theme.dailyTasksDayCellRadius ??
+        ZDailyTasksReference.dayCellRadius,
+    borderWidth: ZDailyTasksReference.borderWidth,
+    selectedBorderWidth: ZDailyTasksReference.selectedBorderWidth,
+    minTapTarget:
+        minTapTarget ??
+        theme.dailyTasksMinTapTarget ??
+        ZDailyTasksReference.minTapTarget,
+    monthBreakpoint:
+        monthBreakpoint ??
+        theme.dailyTasksMonthBreakpoint ??
+        ZDailyTasksReference.monthBreakpoint,
+    weekdayGap: ZDailyTasksReference.weekdayGap,
+    monthGap: ZDailyTasksReference.monthGap,
+    itemPadding:
+        itemPadding ??
+        theme.dailyTasksItemPadding ??
+        ZDailyTasksReference.itemPadding,
+    &#47;&#47; Le rendu historique lit `theme.cardColor` : le pendant M3 est la
+    &#47;&#47; couleur du `CardTheme` ambiant, avec le rôle `surface` en repli
+    &#47;&#47; (jamais un littéral).
+    cellColor: CardTheme.of(context).color ?? scheme.surface,
+    selectedCellColor: scheme.primaryContainer,
+    borderColor: scheme.outlineVariant,
+    selectedBorderColor: scheme.primary,
+    weekdayStyle: text.bodySmall?.copyWith(
+      fontWeight: ZDailyTasksReference.weekdayFontWeight,
+      color: neutral,
+    ),
+    selectedWeekdayStyle: text.bodySmall?.copyWith(
+      fontWeight: ZDailyTasksReference.weekdayFontWeight,
+      color: onSelected,
+    ),
+    dayStyle: text.titleMedium?.copyWith(
+      fontWeight: ZDailyTasksReference.dayFontWeight,
+      color: neutral,
+    ),
+    selectedDayStyle: text.titleMedium?.copyWith(
+      fontWeight: ZDailyTasksReference.selectedDayFontWeight,
+      color: onSelected,
+    ),
+    monthStyle: text.labelSmall,
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study</a></li>
+    <li class="self-crumb">zDailyTasksChromeOf function</li>
+</ol>
+
+    <h5>zcrud_study library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

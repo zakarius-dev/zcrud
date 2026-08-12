@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZDailyTasksChrome class from the zcrud_study library, for the Dart programming language.">
+  <title>ZDailyTasksChrome class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study.dart</a></li>
+    <li class="self-crumb">ZDailyTasksChrome class</li>
+  </ol>
+  <div class="self-name">ZDailyTasksChrome</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;zcrud_study-library-sidebar.html"
+    data-below-sidebar="zcrud_study&#47;ZDailyTasksChrome-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZDailyTasksChrome</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Chrome de référence résolu de la vue des tâches du jour : chaque champ
+applique la priorité paramètre &gt; jeton &gt; référence, et toute couleur est
+un rôle du <code>ColorScheme</code> courant (invariant FR-26). Produit par
+<a href="../zcrud_study/zDailyTasksChromeOf.html">zDailyTasksChromeOf</a>.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://pub.dev/documentation/meta/1.18.0/meta/immutable-constant.html">immutable</a></li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZDailyTasksChrome.new" class="callable">
+          <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/ZDailyTasksChrome.html">ZDailyTasksChrome</a></span><span class="signature">({<span class="parameter" id="param-bandPadding"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a></span> <span class="parameter-name">bandPadding</span>, </span><span class="parameter" id="param-dayCellMargin"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a></span> <span class="parameter-name">dayCellMargin</span>, </span><span class="parameter" id="param-dayCellPadding"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a></span> <span class="parameter-name">dayCellPadding</span>, </span><span class="parameter" id="param-dayCellRadius"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a></span> <span class="parameter-name">dayCellRadius</span>, </span><span class="parameter" id="param-borderWidth"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">borderWidth</span>, </span><span class="parameter" id="param-selectedBorderWidth"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">selectedBorderWidth</span>, </span><span class="parameter" id="param-minTapTarget"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">minTapTarget</span>, </span><span class="parameter" id="param-monthBreakpoint"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">monthBreakpoint</span>, </span><span class="parameter" id="param-weekdayGap"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">weekdayGap</span>, </span><span class="parameter" id="param-monthGap"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">monthGap</span>, </span><span class="parameter" id="param-itemPadding"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a></span> <span class="parameter-name">itemPadding</span>, </span><span class="parameter" id="param-cellColor"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">cellColor</span>, </span><span class="parameter" id="param-selectedCellColor"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">selectedCellColor</span>, </span><span class="parameter" id="param-borderColor"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">borderColor</span>, </span><span class="parameter" id="param-selectedBorderColor"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">selectedBorderColor</span>, </span><span class="parameter" id="param-weekdayStyle"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">weekdayStyle</span>, </span><span class="parameter" id="param-selectedWeekdayStyle"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">selectedWeekdayStyle</span>, </span><span class="parameter" id="param-dayStyle"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">dayStyle</span>, </span><span class="parameter" id="param-selectedDayStyle"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">selectedDayStyle</span>, </span><span class="parameter" id="param-monthStyle"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">monthStyle</span></span>})</span>
+        </dt>
+        <dd>
+          Construit un chrome résolu (usage interne à la vue).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="bandPadding" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/bandPadding.html">bandPadding</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a></span>
+  
+
+</dt>
+<dd>
+  Padding effectif du bandeau.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="borderColor" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/borderColor.html">borderColor</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span>
+  
+
+</dt>
+<dd>
+  Liseré d'une cellule non sélectionnée (rôle <code>outlineVariant</code> —
+divergence ① : le rendu historique y posait une couleur grise
+constante).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="borderWidth" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/borderWidth.html">borderWidth</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Épaisseur effective du liseré non sélectionné.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="cellColor" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/cellColor.html">cellColor</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span>
+  
+
+</dt>
+<dd>
+  Fond d'une cellule non sélectionnée (<code>CardTheme</code>, repli rôle <code>surface</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="dayCellMargin" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/dayCellMargin.html">dayCellMargin</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a></span>
+  
+
+</dt>
+<dd>
+  Marge externe effective d'une cellule de jour.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="dayCellPadding" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/dayCellPadding.html">dayCellPadding</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a></span>
+  
+
+</dt>
+<dd>
+  Padding interne effectif d'une cellule de jour.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="dayCellRadius" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/dayCellRadius.html">dayCellRadius</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a></span>
+  
+
+</dt>
+<dd>
+  Rayon effectif d'une cellule de jour.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="dayStyle" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/dayStyle.html">dayStyle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Style du numéro de jour non sélectionné.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="itemPadding" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/itemPadding.html">itemPadding</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a></span>
+  
+
+</dt>
+<dd>
+  Padding effectif d'une ligne de tâche.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="minTapTarget" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/minTapTarget.html">minTapTarget</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Cible tactile minimale effective (invariant AD-13).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="monthBreakpoint" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/monthBreakpoint.html">monthBreakpoint</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Largeur de bascule d'affichage du mois.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="monthGap" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/monthGap.html">monthGap</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Écart effectif numéro → mois.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="monthStyle" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/monthStyle.html">monthStyle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Style du libellé de mois (rendu au-delà de <a href="../zcrud_study/ZDailyTasksChrome/monthBreakpoint.html">monthBreakpoint</a> seulement).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="selectedBorderColor" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/selectedBorderColor.html">selectedBorderColor</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span>
+  
+
+</dt>
+<dd>
+  Liseré d'une cellule sélectionnée (rôle <code>primary</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="selectedBorderWidth" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/selectedBorderWidth.html">selectedBorderWidth</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Épaisseur effective du liseré sélectionné.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="selectedCellColor" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/selectedCellColor.html">selectedCellColor</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span>
+  
+
+</dt>
+<dd>
+  Fond d'une cellule sélectionnée (rôle <code>primaryContainer</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="selectedDayStyle" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/selectedDayStyle.html">selectedDayStyle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Style du numéro de jour sélectionné.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="selectedWeekdayStyle" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/selectedWeekdayStyle.html">selectedWeekdayStyle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Style de l'intitulé de jour sélectionné.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="weekdayGap" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/weekdayGap.html">weekdayGap</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Écart effectif intitulé → numéro.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="weekdayStyle" class="property">
+  <span class="name"><a href="../zcrud_study/ZDailyTasksChrome/weekdayStyle.html">weekdayStyle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Style de l'intitulé de jour non sélectionné.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study</a></li>
+    <li class="self-crumb">ZDailyTasksChrome class</li>
+</ol>
+
+    <h5>zcrud_study library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

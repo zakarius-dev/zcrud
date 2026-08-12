@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zShuffleChoices function from the zcrud_flashcard library, for the Dart programming language.">
+  <title>zShuffleChoices function - zcrud_flashcard library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_flashcard</a></li>
+    <li><a href="../zcrud_flashcard/">zcrud_flashcard.dart</a></li>
+    <li class="self-crumb">zShuffleChoices function</li>
+  </ol>
+  <div class="self-name">zShuffleChoices</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_flashcard&#47;zcrud_flashcard-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zShuffleChoices</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_flashcard/ZChoice-class.html">ZChoice</a></span>&gt;</span></span>
+<span class="name ">zShuffleChoices</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="zShuffleChoices-param-choices"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_flashcard/ZChoice-class.html">ZChoice</a></span>&gt;</span>?</span> <span class="parameter-name">choices</span>, {</span></li>
+<li><span class="parameter" id="zShuffleChoices-param-random"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-math/Random-class.html">Random</a></span> <span class="parameter-name">random</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Mélange les choix d'un QCM — aléa injecté.</p>
+<h2 id="ce-sont-les-objets-qui-permutent-jamais-les-libells-seuls">Ce sont les objets qui permutent, jamais les libellés seuls</h2>
+<p><code>ZChoice</code> porte <code>isCorrect</code> sur l'objet lui-même (<code>{content, isCorrect}</code>).
+Le mélange permute donc les <code>ZChoice</code> entiers : le multiset des paires
+<code>(content, isCorrect)</code> est strictement préservé. Mélanger les <code>content</code>
+en laissant <code>isCorrect</code> à sa position produirait le même ensemble de
+libellés — un test qui n'assert que les <code>content</code> resterait vert en
+désignant la mauvaise bonne réponse.</p>
+<p>Robustesse (invariant AD-10) : <code>null</code>, liste vide ou un seul choix ⇒
+jamais d'exception (rendus tels quels, en liste neuve).</p>
+<p>L'original n'est jamais muté : une nouvelle liste est rendue.</p>
+<h2 id="le-contrat-de-couture-que-lhte-doit-respecter">Le contrat de couture que l'hôte doit respecter</h2>
+<pre class="language-dart"><code class="language-dart">// La carte ENTIÈRE est reconstruite avec les choix mélangés…
+final shuffled = card.copyWith(choices: zShuffleChoices(card.choices, random: r));
+// …et c'est CETTE carte qui part à l'affichage ET à la correction.
+</code></pre>
+<p>Mélanger pour l'affichage tout en notant la carte d'origine
+désynchroniserait les deux côtés : c'est le défaut que ce contrat
+prévient. Le typage ferme aujourd'hui cette voie (le widget n'accepte
+qu'un <code>ZFlashcard</code>, jamais une <code>List&lt;ZChoice&gt;</code> séparée : affichage et
+correction lisent donc la même liste).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">List&lt;ZChoice&gt; zShuffleChoices(
+  List&lt;ZChoice&gt;? choices, {
+  required Random random,
+}) {
+  if (choices == null || choices.length &lt;= 1) {
+    return List&lt;ZChoice&gt;.of(choices ?? const &lt;ZChoice&gt;[]);
+  }
+  final shuffled = List&lt;ZChoice&gt;.of(choices);
+  &#47;&#47; Fisher-Yates complet — permute les objets (la paire reste soudée).
+  for (var i = shuffled.length - 1; i &gt; 0; i--) {
+    final j = random.nextInt(i + 1);
+    final tmp = shuffled[i];
+    shuffled[i] = shuffled[j];
+    shuffled[j] = tmp;
+  }
+  return shuffled;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_flashcard</a></li>
+    <li><a href="../zcrud_flashcard/">zcrud_flashcard</a></li>
+    <li class="self-crumb">zShuffleChoices function</li>
+</ol>
+
+    <h5>zcrud_flashcard library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_flashcard
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

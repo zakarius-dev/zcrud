@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZGeoShape class from the zcrud_geo library, for the Dart programming language.">
+  <title>ZGeoShape class - zcrud_geo library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_geo</a></li>
+    <li><a href="../zcrud_geo/">zcrud_geo.dart</a></li>
+    <li class="self-crumb">ZGeoShape class</li>
+  </ol>
+  <div class="self-name">ZGeoShape</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_geo&#47;zcrud_geo-library-sidebar.html"
+    data-below-sidebar="zcrud_geo&#47;ZGeoShape-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZGeoShape</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Forme géographique neutre : liste ordonnée de sommets + attributs optionnels
+(id/label/style/holes/metadata).</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+  <dt>Available extensions</dt>
+  <dd><ul class="comma-separated clazz-relationships">
+      <li><a href="../zcrud_geo/ZGeoShapeGeoJson.html">ZGeoShapeGeoJson</a></li>
+      <li><a href="../zcrud_geo/ZGeoShapeMetrics.html">ZGeoShapeMetrics</a></li>
+  </ul></dd>
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZGeoShape.new" class="callable">
+          <span class="name"><a href="../zcrud_geo/ZGeoShape/ZGeoShape.html">ZGeoShape</a></span><span class="signature">({<span class="parameter" id="param-vertices"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a></span>&gt;</span></span> <span class="parameter-name">vertices</span> = <span class="default-value">const &lt;ZGeoPoint&gt;[]</span>, </span><span class="parameter" id="param-label"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">label</span>, </span><span class="parameter" id="param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">id</span>, </span><span class="parameter" id="param-style"><span class="type-annotation"><a href="../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a>?</span> <span class="parameter-name">style</span>, </span><span class="parameter" id="param-holes"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">holes</span>, </span><span class="parameter" id="param-metadata"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span>?</span> <span class="parameter-name">metadata</span></span>})</span>
+        </dt>
+        <dd>
+          Construit une forme à partir de <code>vertices</code> (copie <strong>non modifiable</strong>) et
+d'attributs optionnels. <code>holes</code> est <strong>profondément</strong> copié en listes non
+modifiables (chaque trou est une liste ordonnée de sommets). <code>metadata</code>
+est copié en <code>Map</code> non modifiable.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="areaSquareMeters" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeMetrics/areaSquareMeters.html">areaSquareMeters</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+      <p class="from-extension">
+        <span>Available on <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a>,
+        provided by the <a href="../zcrud_geo/ZGeoShapeMetrics.html">ZGeoShapeMetrics</a> extension</span>
+      </p>
+  Aire <strong>sphérique approchée</strong> en m² (excès sphérique simplifié — voir la
+doc de bibliothèque : les trous ne sont pas déduits). <code>&lt; 3</code> sommets →
+<code>null</code> (pas d'aire).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="bounds" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeMetrics/bounds.html">bounds</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_geo/ZGeoBounds-class.html">ZGeoBounds</a>?</span>
+  
+
+</dt>
+<dd>
+      <p class="from-extension">
+        <span>Available on <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a>,
+        provided by the <a href="../zcrud_geo/ZGeoShapeMetrics.html">ZGeoShapeMetrics</a> extension</span>
+      </p>
+  Boîte englobante des sommets. Forme vide → <code>null</code>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="centroid" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeMetrics/centroid.html">centroid</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a>?</span>
+  
+
+</dt>
+<dd>
+      <p class="from-extension">
+        <span>Available on <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a>,
+        provided by the <a href="../zcrud_geo/ZGeoShapeMetrics.html">ZGeoShapeMetrics</a> extension</span>
+      </p>
+  Centroïde (moyenne arithmétique des sommets). Forme vide → <code>null</code>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="holes" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/holes.html">holes</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a></span>&gt;</span></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Trous intérieurs optionnels d'un polygone : liste <strong>non modifiable</strong> de
+trous, chaque trou étant une liste ordonnée de sommets. <code>null</code> → aucun
+trou.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="id" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/id.html">id</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Identité stable optionnelle de la forme (opaque, <code>String</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="isEmpty" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/isEmpty.html">isEmpty</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si la forme n'a aucun sommet (état neutre).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="isNotEmpty" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/isNotEmpty.html">isNotEmpty</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si la forme a au moins un sommet.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="label" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/label.html">label</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé lisible optionnel de la forme.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="lengthMeters" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeMetrics/lengthMeters.html">lengthMeters</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+      <p class="from-extension">
+        <span>Available on <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a>,
+        provided by the <a href="../zcrud_geo/ZGeoShapeMetrics.html">ZGeoShapeMetrics</a> extension</span>
+      </p>
+  Longueur <strong>ouverte</strong> en mètres (polyligne : haversine sans segment de
+fermeture). <code>&lt; 2</code> sommets → <code>null</code>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="metadata" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/metadata.html">metadata</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Métadonnées libres optionnelles : <code>Map</code> <strong>non modifiable</strong>. <code>null</code> →
+aucune métadonnée.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="perimeterMeters" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeMetrics/perimeterMeters.html">perimeterMeters</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+      <p class="from-extension">
+        <span>Available on <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a>,
+        provided by the <a href="../zcrud_geo/ZGeoShapeMetrics.html">ZGeoShapeMetrics</a> extension</span>
+      </p>
+  Périmètre <strong>fermé</strong> en mètres (haversine, segment de fermeture inclus).
+<code>&lt; 2</code> sommets → <code>null</code>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="style" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/style.html">style</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Style de rendu neutre optionnel (couleurs ARGB, aucun <code>Color</code> SDK).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="vertices" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/vertices.html">vertices</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Sommets ordonnés de la forme (liste non modifiable ; peut être vide).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="addVertex" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/addVertex.html">addVertex</a></span><span class="signature">(<wbr><span class="parameter" id="addVertex-param-point"><span class="type-annotation"><a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a></span> <span class="parameter-name">point</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Retourne une copie avec <code>point</code> ajouté en fin de liste (attributs
+optionnels préservés : id/style/holes/metadata).
+  
+
+</dd>
+
+        <dt id="containsPoint" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeMetrics/containsPoint.html">containsPoint</a></span><span class="signature">(<wbr><span class="parameter" id="containsPoint-param-point"><span class="type-annotation"><a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a></span> <span class="parameter-name">point</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+      <p class="from-extension">
+        <span>Available on <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a>,
+        provided by the <a href="../zcrud_geo/ZGeoShapeMetrics.html">ZGeoShapeMetrics</a> extension</span>
+      </p>
+  <strong>Appartenance à la zone</strong> (ray casting pair-impair, frontière
+inclusive — voir la doc de bibliothèque). Gère les <strong>trous</strong> : un point
+dans un trou (≥3 sommets) n'appartient pas à la zone, sauf s'il est
+exactement sur le bord du trou (frontière inclusive partout). <code>&lt; 3</code>
+sommets → <code>false</code> (défensif, invariant AD-10).
+  
+
+</dd>
+
+        <dt id="copyWith" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-vertices"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a></span>&gt;</span>?</span> <span class="parameter-name">vertices</span>, </span><span class="parameter" id="copyWith-param-label"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">label</span>, </span><span class="parameter" id="copyWith-param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">id</span>, </span><span class="parameter" id="copyWith-param-style"><span class="type-annotation"><a href="../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a>?</span> <span class="parameter-name">style</span>, </span><span class="parameter" id="copyWith-param-holes"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">holes</span>, </span><span class="parameter" id="copyWith-param-metadata"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span>?</span> <span class="parameter-name">metadata</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Copie avec substitutions. Les attributs optionnels absents des arguments
+sont <strong>préservés</strong> (sémantique de copie partielle : ils ne peuvent pas être
+remis à <code>null</code> via cette API).
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="sortedByAngleAroundCentroid" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeMetrics/sortedByAngleAroundCentroid.html">sortedByAngleAroundCentroid</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+      <p class="from-extension">
+        <span>Available on <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a>,
+        provided by the <a href="../zcrud_geo/ZGeoShapeMetrics.html">ZGeoShapeMetrics</a> extension</span>
+      </p>
+  Réordonne les sommets <strong>par angle autour du centroïde</strong>
+(<code>atan2(lat - centreLat, lng - centreLng)</code>) pour prévenir
+l'auto-intersection d'un polygone dessiné dans le désordre. <code>&lt; 3</code>
+sommets → forme inchangée. Attributs (id/label/style/holes/metadata)
+préservés.
+  
+
+</dd>
+
+        <dt id="toGeoJson" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeGeoJson/toGeoJson.html">toGeoJson</a></span><span class="signature">(<wbr>{<span class="parameter" id="toGeoJson-param-asLineString"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asLineString</span> = <span class="default-value">false</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+      <p class="from-extension">
+        <span>Available on <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a>,
+        provided by the <a href="../zcrud_geo/ZGeoShapeGeoJson.html">ZGeoShapeGeoJson</a> extension</span>
+      </p>
+  Géométrie GeoJSON. Par défaut <code>Polygon</code> : anneau extérieur <strong>fermé</strong>
+(1er = dernier) + trous de ≥3 sommets (chacun fermé). <code>asLineString</code> :
+<code>true</code> → <code>LineString</code> (tracé ouvert — la forme zcrud ne porte pas
+l'ouverture, c'est la géométrie du champ qui la connaît).
+  
+
+</dd>
+
+        <dt id="toMap" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/toMap.html">toMap</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Sérialise en <code>Map</code> neutre. <code>vertices</code> via <a href="../zcrud_geo/ZGeoPoint/toMap.html">ZGeoPoint.toMap</a> ; les
+attributs optionnels <code>null</code> sont <strong>omis</strong> (schéma additif : une forme
+sans id/style/holes/metadata produit exactement le <code>Map</code> minimal).
+  
+
+</dd>
+
+        <dt id="toString" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A string representation of this object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="fromMap" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/fromMap.html">fromMap</a></span><span class="signature">(<wbr><span class="parameter" id="fromMap-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Alias défensif de <a href="../zcrud_geo/ZGeoShape/fromMapSafe.html">fromMapSafe</a> (nullable) — cohérence <code>toMap</code>/<code>fromMap</code>.
+  
+
+</dd>
+
+        <dt id="fromMapSafe" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShape/fromMapSafe.html">fromMapSafe</a></span><span class="signature">(<wbr><span class="parameter" id="fromMapSafe-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Parse <strong>défensif</strong> (AD-10) : <code>null</code> si <code>raw</code> n'est pas une <code>Map</code>. Sinon,
+chaque entrée de <code>vertices</code> est parsée par <a href="../zcrud_geo/ZGeoPoint/fromMapSafe.html">ZGeoPoint.fromMapSafe</a> ; les
+sommets invalides sont <strong>ignorés</strong> (jamais throw). Les trous voient leurs
+sommets invalides filtrés (un trou qui devient vide est conservé — état
+neutre — jamais throw) ; <code>holes</code> absent/non-<code>List</code> → <code>null</code>. <code>style</code>
+corrompu → <code>null</code> ; <code>metadata</code> non-<code>Map</code> → <code>null</code> ; <code>label</code>/<code>id</code>
+non-<code>String</code> → <code>null</code>.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_geo</a></li>
+    <li><a href="../zcrud_geo/">zcrud_geo</a></li>
+    <li class="self-crumb">ZGeoShape class</li>
+</ol>
+
+    <h5>zcrud_geo library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_geo
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

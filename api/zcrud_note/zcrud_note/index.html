@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_note library API docs, for the Dart programming language.">
+  <title>zcrud_note library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_note</a></li>
+    <li class="self-crumb">zcrud_note.dart</li>
+  </ol>
+  <div class="self-name">zcrud_note</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_note&#47;zcrud_note-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_note</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_note</code>.</p>
+<p>Note intelligente à <strong>contenu TYPÉ</strong> :</p>
+<ul>
+<li><code>ZSmartNote</code> : le <strong>contenu PARTAGEABLE</strong> (titre, dossier, corps) dont le
+corps est une <strong><code>List&lt;Map&lt;String, dynamic&gt;&gt;</code></strong> d'ops Delta neutres — <strong>jamais
+une <code>String</code> ambiguë</strong>. Invariant AD-28 ;</li>
+<li><code>normalizeNoteContentOps</code> : la coercition <strong>défensive et TOTALE</strong> d'un
+corpus historique — une <code>String</code> markdown <strong>survit VERBATIM</strong>, <strong>jamais <code>[]</code></strong> ;</li>
+<li><code>ZNoteAudio</code> : le slot audio <strong>typé, versionné, OPT-IN</strong> (<code>ZExtension</code>,
+invariant AD-4) — l'audio est <strong>hors-schéma</strong> ;</li>
+<li><code>ZOpaqueNoteExtension</code> : le <strong>canal de SURVIE</strong> d'un payload <code>extension</code> que
+<strong>rien n'a su typer</strong> — il est <strong>réémis VERBATIM</strong> au lieu d'être <strong>détruit</strong>
+(AD-4, « évolution additive »).</li>
+</ul>
+<h2 id="-lire-avant-de-cbler-un-store-sur-zsmartnote">À lire avant de câbler un store sur <code>ZSmartNote</code></h2>
+<p><code>ZNoteAudio</code> est la <strong>première <code>ZExtension</code> concrète</strong> de ce paquet : la voie
+registre reste utilisable seulement si l'entité n'utilise pas le slot
+<code>extension</code> — or elle l'utilise. <code>ZcrudRegistry</code> /
+<code>FirebaseZRepositoryImpl.fromRegistry</code> appellent <code>ZSmartNote.fromMap(map)</code>
+<strong>sans <code>extensionParser</code></strong> ⇒ le slot n'est <strong>jamais typé</strong> sur cette voie (le
+payload, lui, <strong>survit</strong> — cf. <code>ZOpaqueNoteExtension</code>). <strong>Pour utiliser
+l'audio, câbler l'entité par le constructeur nominal avec
+<code>extensionParser: ZNoteAudio.fromJsonSafe</code>.</strong></p>
+<p><strong>Invariant AD-19</strong> : <code>ZSmartNote</code> ne déclare <strong>NI <code>updated_at</code> NI
+<code>is_deleted</code></strong> — l'autorité Last-Write-Wins et le soft-delete vivent
+<strong>hors-entité</strong> (<code>ZSyncMeta</code>), qui écrit sa méta <strong>APRÈS</strong> le corps à
+chaque <code>put</code>. Un champ métier qui reprendrait l'une de ces clés serait donc
+écrasé silencieusement.</p>
+<p>Dépend <strong>UNIQUEMENT</strong> de <code>zcrud_core</code> (surface <strong>pur-Dart</strong> <code>domain.dart</code>) et
+<code>zcrud_annotations</code> — <strong>zéro</strong> dép lourde, <strong>zéro</strong> gestionnaire
+d'état, <strong>zéro</strong> <code>cloud_firestore</code>, <strong>zéro</strong> SDK Flutter, <strong>zéro</strong> Quill
+dans le domaine. Tests sous <strong><code>dart test</code></strong>.</p>
+<p><strong>Pas d'arête vers <code>zcrud_markdown</code></strong> dans le domaine : c'est un paquet
+<strong>Flutter</strong> (<code>flutter_quill</code>, <code>flutter_math_fork</code>) ; l'arête n'existe que
+côté <strong>présentation</strong> (<code>ZSmartNoteEditor</code>/<code>ZSmartNoteReader</code>), qui compose
+les widgets <code>zcrud_markdown</code> <strong>tels quels</strong>.</p>
+<h2 id="extensions-gnres-masques-hide-tenue-par-machine">Extensions générées masquées (<code>hide</code>), tenue par machine</h2>
+<p><code>ZSmartNoteZcrud</code> porte un <code>copyWith</code> <strong>GÉNÉRÉ</strong> qui ne connaît que les champs
+<code>@ZcrudField</code> : il <strong>IGNORE</strong> <code>extra</code>, <code>extension</code> <strong>et le canal hors-codegen
+<code>content</code></strong>, et les remet à leurs <strong>DÉFAUTS</strong> ⇒ <strong>destruction silencieuse du
+corps de la note</strong>. Le <code>copyWith</code> d'<strong>instance</strong> ne masque que l'appel
+<strong>implicite</strong> ; l'appel <strong>explicite d'extension</strong> reste ouvert <strong>dès que le
+barrel exporte l'extension</strong> :</p>
+<pre class="language-dart"><code class="language-dart">ZSmartNoteZcrud(note).copyWith(title: 'x')  // ⇒ content, extra, extension
+                                            //   REMIS AUX DÉFAUTS. DÉTRUITS.
+</code></pre>
+<p>Une classe d'extension générée exportée par erreur reste verte sous des
+centaines de tests tant que personne n'appelle son <code>copyWith</code> explicitement
+— c'est ce qui rend le défaut facile à manquer. ⇒ <strong>Politique UNIFORME :
+aucune extension générée n'est exportée.</strong> La (dé)sérialisation et la copie
+passent par l'<strong>API d'instance</strong> (<code>fromMap</code> / <code>toMap</code> / <code>copyWith</code> à
+sentinelle). La règle est tenue par <code>scripts/ci/gate_reserved_keys.dart</code>,
+pas par un simple commentaire.</p>
+<h2 id="prsentation--ditionlecture-du-corps-riche">Présentation : édition/lecture du corps riche</h2>
+<p><code>ZSmartNoteEditor</code> / <code>ZSmartNoteReader</code> sont de <strong>minces adaptateurs</strong>
+composant <code>ZMarkdownField</code>/<code>ZMarkdownReader</code> + <code>ZDeltaCodec</code> de <code>zcrud_markdown</code>
+<strong>TELS QUELS</strong> (aucun nouveau codec, aucune duplication). Ils exposent
+<strong>UNIQUEMENT</strong> des symboles neutres — <code>ZSmartNote</code>, <code>ValueChanged&lt;ZSmartNote&gt;</code>,
+valeurs neutres — <strong>jamais</strong> un type Quill (<code>QuillController</code>/<code>Document</code>/
+<code>Delta</code>), invariants AD-1/AD-7. Cette moitié <code>presentation/</code> fait de <code>zcrud_note</code> un
+package <strong>Flutter</strong> (tests sous <code>flutter test</code>) ; le DOMAINE reste PUR-DART.</p>
+<h2 id="znotecontentfaithchannel---lire-si-vos-donnes"><code>ZNoteContentFaithChannel</code> : À LIRE SI VOS DONNÉES</h2>
+<p>PRÉCÈDENT LA MIGRATION</p>
+<p>Un hôte migré par <em>strangler fig</em> <strong>double</strong> son corps de note : le champ TYPÉ
+<code>ZSmartNote.content</code> (ops, lisible par un consommateur zcrud pur) <strong>et</strong> une
+clé d'<code>extra</code> portant son format d'origine, laquelle <strong>FAIT FOI</strong> à la
+relecture. <code>ZSmartNoteEditor</code> ne remontait que <code>copyWith(content: ops)</code> :
+<strong>MESURÉ</strong>, la clé de foi restait figée et la note se rouvrait <strong>sans la
+modification</strong>, silencieusement.</p>
+<p>⇒ Déclarer <code>ZSmartNoteEditor.faithChannel</code> (<strong>facultatif</strong>) fait écrire les
+<strong>DEUX</strong> canaux dans la <strong>même</strong> remontée, depuis les <strong>mêmes</strong> ops. Un
+producteur zcrud pur (aucun doublage) est <strong>strictement inchangé</strong> — le
+paramètre est <code>null</code> par défaut, aucune rupture d'API.</p>
+<p>Le round-trip <code>String → ops → String</code> n'est <strong>pas</strong> fidèle à l'octet
+(mesuré sur 46 constructions markdown : <strong>2 %</strong> en octet, <strong>67 %</strong> en tolérant
+le <code>\n</code> terminal ; cassent notamment le <strong>LaTeX bloc</strong>, la fusion du <strong>saut de
+ligne simple</strong>, les lignes vides multiples, les entités HTML). C'est pourquoi
+le canal de foi reste nécessaire — et pourquoi il doit être <strong>écrit à chaque
+édition</strong>. Détail dans la dartdoc de <code>ZNoteContentFaithChannel</code>.</p>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/</code>.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZNoteAudio">
+  <span class="name "><a href="../zcrud_note/ZNoteAudio-class.html">ZNoteAudio</a></span> 
+
+</dt>
+<dd>
+  Piste audio d'une note — <strong>extension typée additive versionnée</strong> (AD-4 pt.1).
+</dd>
+
+          <dt id="ZNoteContentFaithChannel">
+  <span class="name "><a href="../zcrud_note/ZNoteContentFaithChannel-class.html">ZNoteContentFaithChannel</a></span> 
+
+</dt>
+<dd>
+  Déclare la clé d'<a href="../zcrud_note/ZSmartNote/extra.html">ZSmartNote.extra</a> qui <strong>fait FOI</strong> pour le corps de la note,
+et comment y projeter les ops éditées.
+</dd>
+
+          <dt id="ZOpaqueNoteExtension">
+  <span class="name "><a href="../zcrud_note/ZOpaqueNoteExtension-class.html">ZOpaqueNoteExtension</a></span> 
+
+</dt>
+<dd>
+  Extension <strong>opaque</strong> : un payload <code>extension</code> <strong>non décodé</strong>, porté <strong>verbatim</strong>
+pour qu'il <strong>SURVIVE</strong> au round-trip (AD-4 pt.1 « évolution additive »).
+</dd>
+
+          <dt id="ZSmartNote">
+  <span class="name "><a href="../zcrud_note/ZSmartNote-class.html">ZSmartNote</a></span> 
+
+</dt>
+<dd>
+  Note intelligente rattachée à un dossier — <strong>contenu partageable</strong> (AD-26).
+</dd>
+
+          <dt id="ZSmartNoteEditor">
+  <span class="name "><a href="../zcrud_note/ZSmartNoteEditor-class.html">ZSmartNoteEditor</a></span> 
+
+</dt>
+<dd>
+  Éditeur du corps riche d'une <a href="../zcrud_note/ZSmartNote-class.html">ZSmartNote</a> à controller ISOLÉ.
+</dd>
+
+          <dt id="ZSmartNoteReader">
+  <span class="name "><a href="../zcrud_note/ZSmartNoteReader-class.html">ZSmartNoteReader</a></span> 
+
+</dt>
+<dd>
+  Lecteur NON éditable du corps riche d'une <a href="../zcrud_note/ZSmartNote-class.html">ZSmartNote</a>.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+
+    <section class="summary offset-anchor" id="constants">
+      <h2>Constants</h2>
+      <dl class="properties">
+          <dt id="$ZSmartNoteFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_note/$ZSmartNoteFieldSpecs-constant.html">$ZSmartNoteFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZSmartNotePersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_note/$ZSmartNotePersistedKeys-constant.html">$ZSmartNotePersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZSmartNote.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZSmartNoteTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_note/$ZSmartNoteTimestampFields-constant.html">$ZSmartNoteTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="kContentKey" class="constant">
+    <span class="name "><a href="../zcrud_note/kContentKey-constant.html">kContentKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé persistée du canal <strong>HORS-CODEGEN</strong> <code>content</code>.
+  
+
+</dd>
+
+          <dt id="kEmptyNoteContent" class="constant">
+    <span class="name "><a href="../zcrud_note/kEmptyNoteContent-constant.html">kEmptyNoteContent</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Le contenu vide canonique (<code>const</code>, partagé, <strong>non modifiable</strong>).
+  
+
+</dd>
+
+          <dt id="kZNoteAudioFormatVersion" class="constant">
+    <span class="name "><a href="../zcrud_note/kZNoteAudioFormatVersion-constant.html">kZNoteAudioFormatVersion</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Version du <strong>sous-schéma</strong> de <a href="../zcrud_note/ZNoteAudio-class.html">ZNoteAudio</a> — indépendante de celle de la note
+(AD-4 pt.1). Une version <strong>non gérée</strong> fait rendre <code>null</code> à <a href="../zcrud_note/ZNoteAudio/fromJsonSafe.html">ZNoteAudio.fromJsonSafe</a>
+(jamais de throw) : la note <strong>survit</strong>, sans son slot audio <strong>TYPÉ</strong> — mais son
+<strong>payload BRUT est PRÉSERVÉ</strong> (<code>ZOpaqueNoteExtension</code>, réémis <strong>verbatim</strong>) au
+lieu d'être <strong>effacé du store</strong> à la réécriture .
+  
+
+</dd>
+
+          <dt id="kZNoteAudioFormatVersionKey" class="constant">
+    <span class="name "><a href="../zcrud_note/kZNoteAudioFormatVersionKey-constant.html">kZNoteAudioFormatVersionKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de la version dans la map <code>extension</code>.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="normalizeNoteContentOps" class="callable">
+  <span class="name"><a href="../zcrud_note/normalizeNoteContentOps.html">normalizeNoteContentOps</a></span><span class="signature">(<wbr><span class="parameter" id="normalizeNoteContentOps-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Coerce <code>raw</code> (valeur <strong>persistée</strong>, de type quelconque) en <strong>ops Delta
+neutres</strong> — <strong>totale</strong>, <strong>déterministe</strong>, <strong>ne throw JAMAIS</strong> (AD-10).
+  
+
+</dd>
+
+          <dt id="noteContentEquals" class="callable">
+  <span class="name"><a href="../zcrud_note/noteContentEquals.html">noteContentEquals</a></span><span class="signature">(<wbr><span class="parameter" id="noteContentEquals-param-a"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">a</span>, </span><span class="parameter" id="noteContentEquals-param-b"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">b</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Égalité <strong>profonde</strong> de deux contenus de note (les ops portent des valeurs
+imbriquées : attributs, embeds opaques <code>{'formula': …}</code>).
+  
+
+</dd>
+
+          <dt id="noteContentHash" class="callable">
+  <span class="name"><a href="../zcrud_note/noteContentHash.html">noteContentHash</a></span><span class="signature">(<wbr><span class="parameter" id="noteContentHash-param-ops"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">ops</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Hash <strong>profond</strong> cohérent avec <a href="../zcrud_note/noteContentEquals.html">noteContentEquals</a> (ordre des ops signifiant ;
+ordre des clés d'une op <strong>non</strong> signifiant).
+  
+
+</dd>
+
+          <dt id="noteJsonEquals" class="callable">
+  <span class="name"><a href="../zcrud_note/noteJsonEquals.html">noteJsonEquals</a></span><span class="signature">(<wbr><span class="parameter" id="noteJsonEquals-param-a"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">a</span>, </span><span class="parameter" id="noteJsonEquals-param-b"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">b</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Égalité <strong>PROFONDE</strong> de deux valeurs JSON quelconques (<code>Map</code>/<code>List</code>/scalaire).
+  
+
+</dd>
+
+          <dt id="noteJsonHash" class="callable">
+  <span class="name"><a href="../zcrud_note/noteJsonHash.html">noteJsonHash</a></span><span class="signature">(<wbr><span class="parameter" id="noteJsonHash-param-v"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">v</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Hash <strong>profond</strong> cohérent avec <a href="../zcrud_note/noteJsonEquals.html">noteJsonEquals</a>.
+  
+
+</dd>
+
+          <dt id="registerZSmartNote" class="callable">
+  <span class="name"><a href="../zcrud_note/registerZSmartNote.html">registerZSmartNote</a></span><span class="signature">(<wbr><span class="parameter" id="registerZSmartNote-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZSmartNote</code> (kind "smart_note") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+          <dt id="zMigrateNoteTables" class="callable">
+  <span class="name"><a href="../zcrud_note/zMigrateNoteTables.html">zMigrateNoteTables</a></span><span class="signature">(<wbr><span class="parameter" id="zMigrateNoteTables-param-ops"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">ops</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Upgrade STRUCTUREL des <strong>tables markdown GFM</strong> portées comme TEXTE dans <code>ops</code>.
+  
+
+</dd>
+
+          <dt id="zMigrateStickyNote" class="callable">
+  <span class="name"><a href="../zcrud_note/zMigrateStickyNote.html">zMigrateStickyNote</a></span><span class="signature">(<wbr><span class="parameter" id="zMigrateStickyNote-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Upgrade un <strong>sticky-note</strong> (texte plat legacy) vers des ops Delta neutres.
+  
+
+</dd>
+
+          <dt id="zUpgradeLegacyNoteContent" class="callable">
+  <span class="name"><a href="../zcrud_note/zUpgradeLegacyNoteContent.html">zUpgradeLegacyNoteContent</a></span><span class="signature">(<wbr><span class="parameter" id="zUpgradeLegacyNoteContent-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Point d'entrée « corpus legacy → contenu canonique upgradé » :
+<code>zMigrateNoteTables(normalizeNoteContentOps(raw))</code>.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZNoteContentEncoder" class="callable">
+    <span class="name"><a href="../zcrud_note/ZNoteContentEncoder.html">ZNoteContentEncoder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>? Function<span class="signature">(<span class="parameter" id="param-ops"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">ops</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Encodeur <code>ops Delta neutres → valeur persistée par l'hôte</code>.
+    
+
+  </dd>
+
+          
+  <dt id="ZSmartNoteExtensionParser" class="callable">
+    <span class="name"><a href="../zcrud_note/ZSmartNoteExtensionParser.html">ZSmartNoteExtensionParser</a></span><span class="signature">
+      <span class="returntype parameter">= ZExtension? Function<span class="signature">(<span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Reconstruit une <code>ZExtension</code> concrète depuis sa map JSON, ou <code>null</code> (AD-4).
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_note</a></li>
+    <li class="self-crumb">zcrud_note.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_note</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_note/">zcrud_note</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_note library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_note
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

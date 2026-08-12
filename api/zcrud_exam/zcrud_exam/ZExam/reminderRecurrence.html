@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the reminderRecurrence property from the ZExam class, for the Dart programming language.">
+  <title>reminderRecurrence property - ZExam class - zcrud_exam library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_exam</a></li>
+    <li><a href="../../zcrud_exam/">zcrud_exam.dart</a></li>
+    <li><a href="../../zcrud_exam/ZExam-class.html">ZExam</a></li>
+    <li class="self-crumb">reminderRecurrence property</li>
+  </ol>
+  <div class="self-name">reminderRecurrence</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_exam&#47;ZExam-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">reminderRecurrence</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="../../zcrud_exam/ZReminderRecurrence-class.html">ZReminderRecurrence</a>?
+        <span class="name ">reminderRecurrence</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p>Clés persistées réservées (champs générés, <code>extension</code>,
+<a href="../../zcrud_exam/kReminderTimeKey-constant.html">kReminderTimeKey</a>, <a href="../../zcrud_exam/kReminderRecurrenceKey-constant.html">kReminderRecurrenceKey</a> et les clés de
+synchronisation) — dérivées des spécifications de champs générées pour
+rester synchrones avec le codegen.</p>
+<p>Inclure les clés réservées de <code>ZSyncMeta</code> est essentiel (invariant
+AD-9) : le store écrit <code>updated_at</code>/<code>is_deleted</code> dans le corps avant de
+passer la map à <a href="../../zcrud_exam/ZExam/ZExam.fromMap.html">fromMap</a>. Sans cela, ces clés — propriété du store —
+atterriraient dans <a href="../../zcrud_exam/ZExam/extra.html">extra</a> et seraient réémises par <a href="../../zcrud_exam/ZExam/toMap.html">toMap</a>.</p>
+<p>Réserver <a href="../../zcrud_exam/kReminderTimeKey-constant.html">kReminderTimeKey</a> est également essentiel : le canal hors
+schéma étant réémis à la main par <a href="../../zcrud_exam/ZExam/toMap.html">toMap</a>, sa clé doit être réservée —
+sinon elle atterrirait aussi dans <a href="../../zcrud_exam/ZExam/extra.html">extra</a> et serait émise deux fois.
+Récurrence de rappel généralisée, canal hors schéma persisté sous la clé
+réservée <a href="../../zcrud_exam/kReminderRecurrenceKey-constant.html">kReminderRecurrenceKey</a>.</p>
+<p><code>null</code> ⇒ emplacement absent : <a href="../../zcrud_exam/ZExam/reminderDaysBefore.html">reminderDaysBefore</a> fait alors seul
+autorité, exactement comme avant l'introduction de ce champ. Une
+application qui n'utilise que les seuils relatifs n'a rien à changer.</p>
+<p>Non-<code>null</code> ⇒ fait autorité et remplace <a href="../../zcrud_exam/ZExam/reminderDaysBefore.html">reminderDaysBefore</a> dans le
+calcul de proximité (voir <a href="../../zcrud_exam/ZExam/effectiveReminderRecurrence.html">effectiveReminderRecurrence</a>). C'est
+délibéré : additionner les deux sources ferait déclencher des rappels
+que l'hôte n'a pas demandés dès qu'il migre — la récurrence peut
+d'ailleurs porter elle-même ses propres seuils.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">&#47;&#47;&#47; Récurrence de rappel généralisée, canal hors schéma persisté sous la clé
+&#47;&#47;&#47; réservée [kReminderRecurrenceKey].
+&#47;&#47;&#47;
+&#47;&#47;&#47; `null` ⇒ emplacement absent : [reminderDaysBefore] fait alors seul
+&#47;&#47;&#47; autorité, exactement comme avant l&#39;introduction de ce champ. Une
+&#47;&#47;&#47; application qui n&#39;utilise que les seuils relatifs n&#39;a rien à changer.
+&#47;&#47;&#47;
+&#47;&#47;&#47; Non-`null` ⇒ fait autorité et remplace [reminderDaysBefore] dans le
+&#47;&#47;&#47; calcul de proximité (voir [effectiveReminderRecurrence]). C&#39;est
+&#47;&#47;&#47; délibéré : additionner les deux sources ferait déclencher des rappels
+&#47;&#47;&#47; que l&#39;hôte n&#39;a pas demandés dès qu&#39;il migre — la récurrence peut
+&#47;&#47;&#47; d&#39;ailleurs porter elle-même ses propres seuils.
+final ZReminderRecurrence? reminderRecurrence;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_exam</a></li>
+    <li><a href="../../zcrud_exam/">zcrud_exam</a></li>
+    <li><a href="../../zcrud_exam/ZExam-class.html">ZExam</a></li>
+    <li class="self-crumb">reminderRecurrence property</li>
+</ol>
+
+  <h5>ZExam class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_exam
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZFirestoreAppFileResolver class from the zcrud_firestore library, for the Dart programming language.">
+  <title>ZFirestoreAppFileResolver class - zcrud_firestore library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_firestore</a></li>
+    <li><a href="../zcrud_firestore/">zcrud_firestore.dart</a></li>
+    <li class="self-crumb">ZFirestoreAppFileResolver class</li>
+  </ol>
+  <div class="self-name">ZFirestoreAppFileResolver</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_firestore&#47;zcrud_firestore-library-sidebar.html"
+    data-below-sidebar="zcrud_firestore&#47;ZFirestoreAppFileResolver-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZFirestoreAppFileResolver</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Résolveur Firestore de références opaques de fichiers.</p>
+<h2 id="rgles-de-sortie-contrat-gardes">Règles de sortie (contrat, gardées)</h2>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Résultat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>référence résolue</td>
+<td>un <code>AppFile</code> avec <code>id == ref</code></td>
+</tr>
+<tr>
+<td>référence <strong>sans document</strong></td>
+<td><strong>absente</strong> du retour (⇒ « introuvable » visible côté rendu) — jamais une exception, jamais un objet fabriqué</td>
+</tr>
+<tr>
+<td>référence <strong>vide</strong> (<code>''</code>)</td>
+<td>absente du retour, <strong>sans</strong> requête émise (<code>whereIn</code> refuse le vide)</td>
+</tr>
+<tr>
+<td>référence <strong>en double</strong></td>
+<td><strong>une seule</strong> requête, <strong>un seul</strong> <code>AppFile</code> dans le retour (dédoublonnage sur la première occurrence)</td>
+</tr>
+<tr>
+<td><strong>ordre</strong></td>
+<td>le retour suit l'ordre de <strong>première apparition</strong> dans <code>refs</code>. Le port déclare l'ordre indifférent ; on rend malgré tout un ordre <strong>déterministe</strong> — un hôte qui affiche la liste telle quelle retrouve son ordre</td>
+</tr>
+<tr>
+<td><code>refs</code> vide</td>
+<td><code>[]</code> immédiat, <strong>aucune</strong> requête</td>
+</tr>
+<tr>
+<td><strong>échec réseau</strong> (une seule requête qui échoue)</td>
+<td>échec <strong>global</strong> : <code>Left(ZServerFailure)</code> / <code>ZAppFileResolveException</code>. <strong>Jamais</strong> une liste partielle : un paquet perdu ferait passer ses références pour « introuvables », c'est-à-dire un <strong>mensonge</strong> silencieux là où l'utilisateur doit voir un état réessayable</td>
+</tr>
+<tr>
+<td><code>Future</code> qui ne se termine <strong>jamais</strong></td>
+<td>tranché par <a href="../zcrud_firestore/ZFirestoreAppFileResolver/timeout.html">timeout</a> ⇒ même échec global</td>
+</tr>
+<tr>
+<td>document au corps <strong>corrompu</strong></td>
+<td>l'<code>AppFile</code> est produit quand même (le document <strong>existe</strong>) avec des replis sûrs ; jamais un <code>throw</code>, jamais un échec du lot</td>
+</tr>
+<tr>
+<td>document <strong>soft-deleted</strong></td>
+<td>traité comme <strong>introuvable</strong> si <code>skipDeleted</code> (défaut)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="isolation">Isolation</h2>
+<p>Aucun type <code>cloud_firestore</code> ne franchit la frontière : <code>Timestamp</code> est
+normalisé en <code>String</code> ISO-8601 <strong>avant</strong> d'atteindre le mapper, et
+<code>FirebaseException</code> est convertie en <code>ZServerFailure</code>.</p>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZFirestoreAppFileResolver.new" class="callable">
+          <span class="name"><a href="../zcrud_firestore/ZFirestoreAppFileResolver/ZFirestoreAppFileResolver.html">ZFirestoreAppFileResolver</a></span><span class="signature">({<span class="parameter" id="param-firestore"><span>required</span> <span class="type-annotation"><a href="https://pub.dev/documentation/cloud_firestore/6.7.1/cloud_firestore/FirebaseFirestore-class.html">FirebaseFirestore</a></span> <span class="parameter-name">firestore</span>, </span><span class="parameter" id="param-collectionPath"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">collectionPath</span>, </span><span class="parameter" id="param-locations"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_firestore/ZAppFileRefLocation-class.html">ZAppFileRefLocation</a></span>&gt;</span></span> <span class="parameter-name">locations</span> = <span class="default-value">const &lt;ZAppFileRefLocation&gt;[ZAppFileRefLocation.documentId]</span>, </span><span class="parameter" id="param-aliases"><span class="type-annotation"><a href="../zcrud_firestore/ZAppFileFieldAliases-class.html">ZAppFileFieldAliases</a></span> <span class="parameter-name">aliases</span> = <span class="default-value">const ZAppFileFieldAliases()</span>, </span><span class="parameter" id="param-mapper"><span class="type-annotation"><a href="../zcrud_firestore/ZAppFileDocumentMapper.html">ZAppFileDocumentMapper</a>?</span> <span class="parameter-name">mapper</span>, </span><span class="parameter" id="param-uploadStateMapper"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">uploadStateMapper</span>(<span class="parameter" id="param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>)?, </span><span class="parameter" id="param-batchSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">batchSize</span> = <span class="default-value">kZFirestoreWhereInLimit</span>, </span><span class="parameter" id="param-skipDeleted"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">skipDeleted</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-resolveTimeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a>?</span> <span class="parameter-name">resolveTimeout</span>, </span><span class="parameter" id="param-logger"><span class="type-annotation"><a href="../zcrud_firestore/ZAppFileResolverLog.html">ZAppFileResolverLog</a>?</span> <span class="parameter-name">logger</span>, </span><span class="parameter" id="param-onBatch"><span class="type-annotation">void</span> <span class="parameter-name">onBatch</span>(<span class="parameter" id="param-batch"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">batch</span></span>)?</span>})</span>
+        </dt>
+        <dd>
+          Construit le résolveur.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="timeout" class="property">
+  <span class="name"><a href="../zcrud_firestore/ZFirestoreAppFileResolver/timeout.html">timeout</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span>
+  
+
+</dt>
+<dd>
+  <strong>Délai de garde</strong> appliqué par le consommateur à <a href="../zcrud_firestore/ZFirestoreAppFileResolver/resolve.html">resolve</a> (AD-10) : un
+<code>Future</code> qui ne se termine jamais ne doit pas laisser le champ bloqué.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="resolve" class="callable">
+  <span class="name"><a href="../zcrud_firestore/ZFirestoreAppFileResolver/resolve.html">resolve</a></span><span class="signature">(<wbr><span class="parameter" id="resolve-param-refs"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">refs</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">AppFile</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Voie du <strong>port</strong> : <code>Future&lt;List&lt;AppFile&gt;&gt;</code> nu. Replie <a href="../zcrud_firestore/ZFirestoreAppFileResolver/resolveResult.html">resolveResult</a>.
+  
+
+</dd>
+
+        <dt id="resolveResult" class="callable">
+  <span class="name"><a href="../zcrud_firestore/ZFirestoreAppFileResolver/resolveResult.html">resolveResult</a></span><span class="signature">(<wbr><span class="parameter" id="resolveResult-param-refs"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">refs</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">AppFile</span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Voie <strong>canonique du paquet</strong> (AD-5) : <code>Either&lt;ZFailure, List&lt;AppFile&gt;&gt;</code>.
+  
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="mapDodlpDocumentStatus" class="callable">
+  <span class="name"><a href="../zcrud_firestore/ZFirestoreAppFileResolver/mapDodlpDocumentStatus.html">mapDodlpDocumentStatus</a></span><span class="signature">(<wbr><span class="parameter" id="mapDodlpDocumentStatus-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Mapping de <strong>valeur</strong> <code>AppDocumentStatus</code> legacy (7 valeurs) →
+<code>ZAppFileUploadState</code> (4 valeurs).
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_firestore</a></li>
+    <li><a href="../zcrud_firestore/">zcrud_firestore</a></li>
+    <li class="self-crumb">ZFirestoreAppFileResolver class</li>
+</ol>
+
+    <h5>zcrud_firestore library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_firestore
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

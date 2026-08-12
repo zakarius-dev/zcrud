@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZBooleanConfig class from the zcrud_core library, for the Dart programming language.">
+  <title>ZBooleanConfig class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZBooleanConfig class</li>
+  </ol>
+  <div class="self-name">ZBooleanConfig</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZBooleanConfig-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZBooleanConfig</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Config triviale pur-cœur du champ <strong>booléen</strong> (<code>boolean</code>). Pur-données
+<code>const</code> : elle active le <strong>texte d'état</strong> rendu à côté du <code>Switch</code> et
+permet d'en surcharger les libellés.</p>
+<h2 id="activation-explicite-dfauts-localiss-ensuite">Activation EXPLICITE, défauts localisés ENSUITE</h2>
+<p>Poser des défauts Oui/Non localisés inconditionnellement ferait apparaître
+un texte chez <strong>tous</strong> les hôtes — un déplacement visible pour qui n'a rien
+demandé. L'affichage s'active donc explicitement (<a href="../zcrud_core/ZBooleanConfig/showStateLabel.html">showStateLabel</a> ou la
+fourniture d'un libellé) ; <strong>une fois activé</strong>, les libellés retombent sur
+les clés l10n <code>yes</code>/<code>no</code> (déjà traduites en/fr) si l'hôte n'en fournit pas.</p>
+<p>⇒ <strong>Hôte passif</strong> (pas de config, ou <code>ZBooleanConfig()</code>) : <a href="../zcrud_core/ZBooleanConfig/showsStateLabel.html">showsStateLabel</a>
+est <code>false</code> et <code>ZBooleanFieldWidget</code> emprunte le chemin de rendu par défaut
+(<code>title: Text(label)</code>) — rendu et arbre sémantique inchangés.</p>
+<h2 id="pourquoi-showstatelabel-et-les-libells-activent-tous-deux">Pourquoi <a href="../zcrud_core/ZBooleanConfig/showStateLabel.html">showStateLabel</a> ET les libellés activent tous deux</h2>
+<p>Sans cela, <code>ZBooleanConfig(trueLabel: 'Actif')</code> serait <strong>silencieusement
+ignoré</strong> faute d'avoir aussi posé le drapeau — un piège. <a href="../zcrud_core/ZBooleanConfig/showsStateLabel.html">showsStateLabel</a>
+est le prédicat unique consommé par la présentation.</p>
+<h2 id="le-rendu--pilule-">Le rendu « pilule »</h2>
+<p><a href="../zcrud_core/ZBooleanConfig/style.html">style</a> ajoute la <strong>forme d'affichage</strong> : <a href="../zcrud_core/ZBooleanStyle.html">ZBooleanStyle.switchTile</a>
+(défaut, rendu par défaut inchangé) ou <a href="../zcrud_core/ZBooleanStyle.html">ZBooleanStyle.pill</a> (piste
+arrondie, texte d'état <strong>à l'intérieur</strong>). L'activation passe donc par le
+<strong>même canal</strong> que le texte d'état : la config du champ. Un hôte qui ne
+pose pas <code>style</code> ne voit <strong>aucun</strong> déplacement.</p>
+<p><a href="../zcrud_core/ZBooleanConfig/boxed.html">boxed</a> ajoute l'<strong>encart de champ</strong> : le conteneur décoré du thème, celui
+des voisins <code>text</code>/<code>number</code>/<code>select</code>. Opt-in, valable pour les deux formes,
+défaut <code>false</code> ⇒ rendu inchangé.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="../zcrud_core/ZFieldConfig-class.html">ZFieldConfig</a></li>
+      <li>ZBooleanConfig</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZBooleanConfig.new" class="callable">
+          <span class="name"><a href="../zcrud_core/ZBooleanConfig/ZBooleanConfig.html">ZBooleanConfig</a></span><span class="signature">({<span class="parameter" id="param-showStateLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showStateLabel</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-trueLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">trueLabel</span>, </span><span class="parameter" id="param-falseLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">falseLabel</span>, </span><span class="parameter" id="param-style"><span class="type-annotation"><a href="../zcrud_core/ZBooleanStyle.html">ZBooleanStyle</a></span> <span class="parameter-name">style</span> = <span class="default-value">ZBooleanStyle.switchTile</span>, </span><span class="parameter" id="param-activeColorKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">activeColorKey</span>, </span><span class="parameter" id="param-inactiveColorKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">inactiveColorKey</span>, </span><span class="parameter" id="param-boxed"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">boxed</span> = <span class="default-value">false</span></span>})</span>
+        </dt>
+        <dd>
+          Construit une config booléenne <code>const</code>. Défauts ⇒ <strong>rétro-compat stricte</strong>
+(aucun texte d'état, aucune pilule, rendu par défaut inchangé).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="activeColorKey" class="property">
+  <span class="name"><a href="../zcrud_core/ZBooleanConfig/activeColorKey.html">activeColorKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé sémantique de couleur de la pilule à l'état <code>true</code> — résolue par le
+<strong>seam</strong> <code>ZcrudScope.colorKeyResolver</code> (<code>zResolveColorKey</code>), jamais par
+une couleur littérale (le cœur ne possède ni « vert succès » ni
+« ambre » : ce sont des rôles que l'application enregistre par son
+resolver). <code>null</code> (défaut) ⇒ jeton <code>ZcrudTheme.booleanPillActiveColor</code>,
+puis rôle <code>ColorScheme.primary</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="boxed" class="property">
+  <span class="name"><a href="../zcrud_core/ZBooleanConfig/boxed.html">boxed</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <strong>Encart de champ</strong> — enveloppe le champ booléen dans le <strong>conteneur
+décoré du thème</strong>, celui-là même que rendent <code>text</code>/<code>number</code>/<code>select</code> :
+<code>ZcrudTheme.inputDecoration</code> (fond <code>fieldFillColor</code>, bordure
+<code>fieldBorderColor</code>, rayon <code>inputRadius</code>, marge interne
+<code>inputContentPadding</code>). Aucun jeton nouveau, aucun cadre peint à la main :
+c'est <strong>la même fabrique</strong> que les familles décor-portantes.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="falseLabel" class="property">
+  <span class="name"><a href="../zcrud_core/ZBooleanConfig/falseLabel.html">falseLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé d'état affiché quand la valeur est <code>false</code>. <code>null</code> (défaut) ⇒ repli
+sur la clé l10n <code>no</code>. Fournir ce libellé <strong>active</strong> le texte d'état.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_core/ZBooleanConfig/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="inactiveColorKey" class="property">
+  <span class="name"><a href="../zcrud_core/ZBooleanConfig/inactiveColorKey.html">inactiveColorKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé sémantique de couleur de la pilule à l'état <code>false</code> (même seam).
+<code>null</code> (défaut) ⇒ jeton <code>ZcrudTheme.booleanPillInactiveColor</code>, puis rôle
+<code>ColorScheme.outline</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="showsStateLabel" class="property">
+  <span class="name"><a href="../zcrud_core/ZBooleanConfig/showsStateLabel.html">showsStateLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Prédicat unique d'affichage du texte d'état : <code>true</code> si l'hôte l'a demandé
+explicitement (<a href="../zcrud_core/ZBooleanConfig/showStateLabel.html">showStateLabel</a>) <strong>ou</strong> a fourni au moins un libellé.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="showStateLabel" class="property">
+  <span class="name"><a href="../zcrud_core/ZBooleanConfig/showStateLabel.html">showStateLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Active le <strong>texte d'état</strong> à côté du switch avec les libellés localisés par
+défaut (clés <code>yes</code>/<code>no</code>). <code>false</code> (défaut) ⇒ aucun texte, sauf si
+<a href="../zcrud_core/ZBooleanConfig/trueLabel.html">trueLabel</a>/<a href="../zcrud_core/ZBooleanConfig/falseLabel.html">falseLabel</a> est fourni (cf. <a href="../zcrud_core/ZBooleanConfig/showsStateLabel.html">showsStateLabel</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="style" class="property">
+  <span class="name"><a href="../zcrud_core/ZBooleanConfig/style.html">style</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZBooleanStyle.html">ZBooleanStyle</a></span>
+  
+
+</dt>
+<dd>
+  <strong>Forme d'affichage</strong> du booléen. Défaut <a href="../zcrud_core/ZBooleanStyle.html">ZBooleanStyle.switchTile</a> ⇒
+rendu <strong>strictement inchangé</strong>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="trueLabel" class="property">
+  <span class="name"><a href="../zcrud_core/ZBooleanConfig/trueLabel.html">trueLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé d'état affiché quand la valeur est <code>true</code>. <code>null</code> (défaut) ⇒ repli
+sur la clé l10n <code>yes</code>. Fournir ce libellé <strong>active</strong> le texte d'état.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_core/ZBooleanConfig/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZBooleanConfig class</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

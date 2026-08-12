@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZWidgetRegistry class from the zcrud_core library, for the Dart programming language.">
+  <title>ZWidgetRegistry class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZWidgetRegistry class</li>
+  </ol>
+  <div class="self-name">ZWidgetRegistry</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZWidgetRegistry-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZWidgetRegistry</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Registre <strong>instanciable</strong> de builders de widgets d'édition, discriminés par
+<code>kind</code> (<code>String</code>). Injecté via <code>ZcrudScope.widgetRegistry</code> (invariant
+AD-4 — jamais un singleton statique mutable).</p>
+<p>API alignée sur <code>ZTypeRegistry</code>/<code>ZOpenRegistry</code> (register/isRegistered/kinds</p>
+<ul>
+<li>lookup strict/défensif) : <code>builderFor</code> <strong>throw</strong> <a href="../zcrud_core/ZUnregisteredTypeError-class.html">ZUnregisteredTypeError</a>
+si absent (bug de configuration, invariant AD-3) ; <code>tryBuilderFor</code> retourne
+<code>null</code> (chemin défensif utilisé par le dispatcher pour retomber sur le
+repli).</li>
+</ul>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZWidgetRegistry.new" class="callable">
+          <span class="name"><a href="../zcrud_core/ZWidgetRegistry/ZWidgetRegistry.html">ZWidgetRegistry</a></span><span class="signature">()</span>
+        </dt>
+        <dd>
+          Construit un registre de widgets vide.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="kinds" class="property">
+  <span class="name"><a href="../zcrud_core/ZWidgetRegistry/kinds.html">kinds</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Les <code>kind</code> actuellement enregistrés.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="builderFor" class="callable">
+  <span class="name"><a href="../zcrud_core/ZWidgetRegistry/builderFor.html">builderFor</a></span><span class="signature">(<wbr><span class="parameter" id="builderFor-param-kind"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">kind</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZFieldWidgetBuilder.html">ZFieldWidgetBuilder</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Lookup <strong>strict</strong> : le builder de <code>kind</code>, ou <strong><code>throw</code></strong>
+<a href="../zcrud_core/ZUnregisteredTypeError-class.html">ZUnregisteredTypeError</a> si absent (invariant AD-3).
+  
+
+</dd>
+
+        <dt id="isRegistered" class="callable">
+  <span class="name"><a href="../zcrud_core/ZWidgetRegistry/isRegistered.html">isRegistered</a></span><span class="signature">(<wbr><span class="parameter" id="isRegistered-param-kind"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">kind</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si un builder est enregistré pour <code>kind</code>.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="register" class="callable">
+  <span class="name"><a href="../zcrud_core/ZWidgetRegistry/register.html">register</a></span><span class="signature">(<wbr><span class="parameter" id="register-param-kind"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">kind</span>, </span><span class="parameter" id="register-param-builder"><span class="type-annotation"><a href="../zcrud_core/ZFieldWidgetBuilder.html">ZFieldWidgetBuilder</a></span> <span class="parameter-name">builder</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre le <code>builder</code> de <code>kind</code>. Collision → <strong><code>throw</code></strong>
+<a href="../zcrud_core/ZDuplicateRegistrationError-class.html">ZDuplicateRegistrationError</a> (jamais un « last-wins » silencieux,
+invariant AD-3).
+  
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="tryBuilderFor" class="callable">
+  <span class="name"><a href="../zcrud_core/ZWidgetRegistry/tryBuilderFor.html">tryBuilderFor</a></span><span class="signature">(<wbr><span class="parameter" id="tryBuilderFor-param-kind"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">kind</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZFieldWidgetBuilder.html">ZFieldWidgetBuilder</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Lookup <strong>défensif</strong> : le builder de <code>kind</code>, ou <code>null</code> si absent
+(invariant AD-10) — utilisé par le dispatcher pour retomber sur
+<code>ZUnsupportedFieldWidget</code>.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZWidgetRegistry class</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

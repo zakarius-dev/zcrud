@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZDocumentLearningInfo class from the zcrud_document library, for the Dart programming language.">
+  <title>ZDocumentLearningInfo class - zcrud_document library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_document</a></li>
+    <li><a href="../zcrud_document/">zcrud_document.dart</a></li>
+    <li class="self-crumb">ZDocumentLearningInfo class</li>
+  </ol>
+  <div class="self-name">ZDocumentLearningInfo</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_document&#47;zcrud_document-library-sidebar.html"
+    data-below-sidebar="zcrud_document&#47;ZDocumentLearningInfo-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZDocumentLearningInfo</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Qualité d'apprentissage par page d'un document, colocalisée dans l'état
+personnel <a href="../zcrud_document/ZDocumentReadingState-class.html">ZDocumentReadingState</a> (jamais dans le sous-arbre partageable
+du document, invariant AD-9).</p>
+<p><a href="../zcrud_document/ZDocumentLearningInfo/qualityByPage.html">qualityByPage</a> associe chaque page 1-based à sa qualité entière
+(<a href="../zcrud_document/ZDocPageQuality/value.html">ZDocPageQuality.value</a>). Une page absente compte comme « à revoir » :
+le décompte de maîtrise part de zéro.</p>
+<p>Persistance : <code>{"quality_by_page": {"1": 2, "3": 0}}</code> — clés = numéro de
+page en <code>String</code> (seule forme valide en JSON/Firestore), valeurs = <code>int</code>.</p>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZDocumentLearningInfo.new" class="callable">
+          <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/ZDocumentLearningInfo.html">ZDocumentLearningInfo</a></span><span class="signature">({<span class="parameter" id="param-qualityByPage"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">qualityByPage</span> = <span class="default-value">const &lt;int, int&gt;{}</span></span>})</span>
+        </dt>
+        <dd>
+          Constructeur bas niveau (<code>const</code>).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZDocumentLearningInfo.fromJson" class="callable">
+          <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/ZDocumentLearningInfo.fromJson.html">ZDocumentLearningInfo.fromJson</a></span><span class="signature">(<span class="parameter" id="fromJson-param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span>
+        </dt>
+        <dd>
+          Reconstruit défensivement depuis la map persistée — ne lève jamais
+(invariant AD-10).
+            <div class="constructor-modifier features">factory</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Hash commutatif (somme), donc indépendant de l'ordre d'itération de la
+map — en cohérence avec <a href="../zcrud_document/ZDocumentLearningInfo/operator_equals.html">operator ==</a>, lui aussi ordre-indépendant.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="masteredCount" class="property">
+  <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/masteredCount.html">masteredCount</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre de pages maîtrisées (qualité <code>&gt;= mastered</code>).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="qualityByPage" class="property">
+  <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/qualityByPage.html">qualityByPage</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Qualité par page 1-based (page absente ⇒ <a href="../zcrud_document/ZDocPageQuality.html">ZDocPageQuality.toReview</a>).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="copyWith" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-qualityByPage"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">qualityByPage</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_document/ZDocumentLearningInfo-class.html">ZDocumentLearningInfo</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Copie gardée : la map fournie est filtrée (pages <code>&lt; 1</code> rejetées) et
+rendue non modifiable.
+  
+
+</dd>
+
+        <dt id="isMastered" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/isMastered.html">isMastered</a></span><span class="signature">(<wbr><span class="parameter" id="isMastered-param-page"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">page</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si la page <code>page</code> (1-based) est maîtrisée.
+  
+
+</dd>
+
+        <dt id="mark" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/mark.html">mark</a></span><span class="signature">(<wbr><span class="parameter" id="mark-param-page"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">page</span>, </span><span class="parameter" id="mark-param-quality"><span class="type-annotation"><a href="../zcrud_document/ZDocPageQuality.html">ZDocPageQuality</a></span> <span class="parameter-name">quality</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_document/ZDocumentLearningInfo-class.html">ZDocumentLearningInfo</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Copie où la page <code>page</code> (1-based) prend la qualité <code>quality</code>.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="qualityOf" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/qualityOf.html">qualityOf</a></span><span class="signature">(<wbr><span class="parameter" id="qualityOf-param-page"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">page</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_document/ZDocPageQuality.html">ZDocPageQuality</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Qualité de la page <code>page</code> (1-based) — <a href="../zcrud_document/ZDocPageQuality.html">ZDocPageQuality.toReview</a> si
+absente ou corrompue (décodage défensif de la valeur, voir
+<code>ZDocPageQuality.fromJson</code>).
+  
+
+</dd>
+
+        <dt id="toggle" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/toggle.html">toggle</a></span><span class="signature">(<wbr><span class="parameter" id="toggle-param-page"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">page</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_document/ZDocumentLearningInfo-class.html">ZDocumentLearningInfo</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Bascule idempotente d'une page entre « maîtrisée » et « à revoir ».
+  
+
+</dd>
+
+        <dt id="toJson" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/toJson.html">toJson</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Sérialise vers la map persistée : clés de page en <code>String</code>, valeurs
+<code>int</code>.
+  
+
+</dd>
+
+        <dt id="toString" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A string representation of this object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Égalité ordre-indépendante.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="fromJsonSafe" class="callable">
+  <span class="name"><a href="../zcrud_document/ZDocumentLearningInfo/fromJsonSafe.html">fromJsonSafe</a></span><span class="signature">(<wbr><span class="parameter" id="fromJsonSafe-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_document/ZDocumentLearningInfo-class.html">ZDocumentLearningInfo</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Décodage tolérant à tout d'une valeur brute de store (canal
+hors-codegen de <a href="../zcrud_document/ZDocumentReadingState-class.html">ZDocumentReadingState</a>).
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+
+  <section class="summary offset-anchor" id="constants">
+    <h2>Constants</h2>
+    <dl class="properties">
+        <dt id="empty" class="constant">
+    <span class="name "><a href="../zcrud_document/ZDocumentLearningInfo/empty-constant.html">empty</a></span>
+  <span class="signature">&#8594; const <a href="../zcrud_document/ZDocumentLearningInfo-class.html">ZDocumentLearningInfo</a></span>
+  
+
+</dt>
+<dd>
+  État vide (aucune page évaluée) — défaut sûr de toute dégénérescence.
+  
+
+</dd>
+
+    </dl>
+  </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_document</a></li>
+    <li><a href="../zcrud_document/">zcrud_document</a></li>
+    <li class="self-crumb">ZDocumentLearningInfo class</li>
+</ol>
+
+    <h5>zcrud_document library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_document
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

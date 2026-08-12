@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the itemMaxLines property from the ZSubfolderNavSpec class, for the Dart programming language.">
+  <title>itemMaxLines property - ZSubfolderNavSpec class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study.dart</a></li>
+    <li><a href="../../zcrud_study/ZSubfolderNavSpec-class.html">ZSubfolderNavSpec</a></li>
+    <li class="self-crumb">itemMaxLines property</li>
+  </ol>
+  <div class="self-name">itemMaxLines</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;ZSubfolderNavSpec-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">itemMaxLines</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?
+        <span class="name ">itemMaxLines</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p>Nombre MAXIMAL de lignes du libellé d'item (point 3).</p>
+<p><code>null</code> (<strong>défaut</strong>) ⇒ rendu strictement inchangé : <code>Text</code> sans <code>maxLines</code>,
+<strong>sans</strong> <code>Flexible</code> — donc exactement le rendu historique.
+Non-null ⇒ le libellé est autorisé à revenir à la ligne jusqu'à cette
+borne, puis s'abrège en <code>…</code> (<a href="https://api.flutter.dev/flutter/painting/TextOverflow.html">TextOverflow.ellipsis</a>).</p>
+<p><strong>Sans effet sur <a href="../../zcrud_study/ZSubfolderSurface.html">ZSubfolderSurface.chips</a>, et c'est MESURÉ, pas
+omis.</strong> Le retour à la ligne exige une largeur bornée ; la rangée de puces
+défile horizontalement, donc sa largeur est <strong>non bornée</strong>. Y poser le
+<code>Flexible</code> qu'exige le retour à la ligne lève <em>« RenderFlex children have
+non-zero flex but incoming width constraints are unbounded »</em> — la voie
+est structurellement fermée, comme l'est déjà le <code>LayoutBuilder</code> décrit
+sur <a href="../../zcrud_study/ZSubfolderItemBuilder.html">ZSubfolderItemBuilder</a>. Le socle <strong>n'y applique donc rien</strong> plutôt que
+d'y planter. C'est <a href="../../zcrud_study/ZSubfolderSurface/boundsWidth.html">ZSubfolderSurface.boundsWidth</a> qui tranche.</p>
+<p><strong>Ce réglage CORRIGE un défaut, il ne fait pas qu'offrir un choix.</strong>
+Mesuré sur le rendu ACTUEL (<code>null</code>), feuille ouverte à 320 dp avec un
+libellé de 73 caractères : le <code>Text</code> est laissé à sa largeur intrinsèque de
+<strong>1040,3 dp</strong> dans une boîte de 279 dp et le socle lève
+<em>« A RenderFlex overflowed by 777 pixels on the right »</em> — sans <code>…</code>, sans
+retour à la ligne. C'est le pire des états, et c'est celui d'aujourd'hui.
+Le défaut n'est pas modifié pour autant (neutralité littérale exigée par
+AD-4) ; il est désormais <strong>réparable en un champ</strong>.</p>
+<p><strong>ARBITRAGE TRANCHÉ — la bande hissée n'est PAS recalculée, et la
+mesure dit pourquoi.</strong> Le même libellé sert la ligne racine <strong>et</strong> le
+déclencheur : la borne peut donc rendre le déclencheur plus haut, or sous
+<a href="../../zcrud_study/ZSubfolderNavPlacement.html">ZSubfolderNavPlacement.aboveTabBar</a> la hauteur de bande est <strong>déclarée</strong>
+(<code>ZStudyFolderDetail.subfolderNavBandHeight</code>). Mesures rejouées (écran
+500 × 800, libellé long <strong>sélectionné</strong>, bande laissée au défaut de 48 dp) :</p>
+<table>
+<thead>
+<tr>
+<th><code>itemMaxLines</code></th>
+<th><code>Text</code> rendu</th>
+<th>déclencheur</th>
+<th>bande déclarée 48</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>null</code> <em>(défaut)</em></td>
+<td>1040,3 × 20</td>
+<td>48 dp</td>
+<td><strong>débordement horizontal de 584 dp</strong></td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>263 × 40</td>
+<td><strong>48 dp</strong></td>
+<td><strong>aucune exception</strong></td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td>263 × 60</td>
+<td>68 dp</td>
+<td><em>« overflowed by 20 pixels on the bottom »</em></td>
+</tr>
+<tr>
+<td><code>4</code></td>
+<td>263 × 60</td>
+<td>68 dp</td>
+<td>idem (le texte plafonne à 3 lignes rendues)</td>
+</tr>
+</tbody>
+</table>
+<p>Deux conclusions, aucune supposée :</p>
+<ol>
+<li><strong>À 2 lignes, la bande ne coûte RIEN</strong> : 40 dp de texte + 8 dp de
+gouttière = exactement les 48 dp du plancher de cible tactile. Le cas
+que l'hôte redoutait ne se produit pas — il ne l'avait pas mesuré.</li>
+<li><strong>À 3 lignes et plus, la bande sous-déclarée DÉBORDE bruyamment</strong>
+(20 dp, signalés par Flutter) et jamais en silence ; déclarer
+<code>subfolderNavBandHeight: 68</code> suffit (mesuré : aucune exception).</li>
+</ol>
+<p>Recalculer aurait supposé de connaître la largeur rendue et la longueur du
+libellé <strong>avant</strong> la mise en page, ce que le créneau <code>bottom:</code> de l'app-bar
+interdit (cf. <a href="../../zcrud_study/ZSubfolderNavPlacement.html">ZSubfolderNavPlacement.aboveTabBar</a>) : le socle rendrait
+alors une hauteur devinée, donc autre chose que ce que l'hôte a déclaré.
+<strong>Dénoncer plutôt que borner en silence.</strong></p>
+<p>✅ <strong>Aucune régression de cible tactile</strong> : mesuré, elles <strong>grandissent</strong>
+(48 → 68 dp à 3 lignes) — le <code>ConstrainedBox(minHeight: 48)</code> est un
+plancher, jamais un plafond.</p>
+<p>✅ <strong>Aucun effet sur la hauteur de la FEUILLE</strong> : mesuré à 12 sous-dossiers
+aux libellés longs, la colonne de contenu vaut 304 × 624 dp avec <code>null</code>
+<strong>comme</strong> avec <code>2</code> — le plafond de 80 % de hauteur d'écran est tenu par la
+feuille elle-même et les items restent dans la liste défilante.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final int? itemMaxLines;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/ZSubfolderNavSpec-class.html">ZSubfolderNavSpec</a></li>
+    <li class="self-crumb">itemMaxLines property</li>
+</ol>
+
+  <h5>ZSubfolderNavSpec class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

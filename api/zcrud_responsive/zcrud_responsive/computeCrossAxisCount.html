@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the computeCrossAxisCount function from the zcrud_responsive library, for the Dart programming language.">
+  <title>computeCrossAxisCount function - zcrud_responsive library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_responsive</a></li>
+    <li><a href="../zcrud_responsive/">zcrud_responsive.dart</a></li>
+    <li class="self-crumb">computeCrossAxisCount function</li>
+  </ol>
+  <div class="self-name">computeCrossAxisCount</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_responsive&#47;zcrud_responsive-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">computeCrossAxisCount</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+<span class="name ">computeCrossAxisCount</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="computeCrossAxisCount-param-availableWidth"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">availableWidth</span>, </span></li>
+<li><span class="parameter" id="computeCrossAxisCount-param-minItemWidth"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">minItemWidth</span>, </span></li>
+<li><span class="parameter" id="computeCrossAxisCount-param-minColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">minColumns</span> = <span class="default-value">1</span>, </span></li>
+<li><span class="parameter" id="computeCrossAxisCount-param-maxColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">maxColumns</span>, </span></li>
+<li><span class="parameter" id="computeCrossAxisCount-param-spacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">spacing</span> = <span class="default-value">0</span>, </span></li>
+<li><span class="parameter" id="computeCrossAxisCount-param-horizontalPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">horizontalPadding</span> = <span class="default-value">0</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Nombre de colonnes d'une grille d'items pour une <code>availableWidth</code> donnée,
+borné à <strong>au moins</strong> <code>minColumns</code> (<strong>≥ 1 garanti</strong>) et <strong>au plus</strong>
+<code>maxColumns</code> (illimité si <code>null</code>).</p>
+<p><strong>Fonction pure de domaine</strong> (top-level, aucun <code>BuildContext</code>, aucun
+import Flutter — au plus <code>dart:math</code>) : testable en <code>test/</code> <strong>sans
+surface widget</strong>, déterministe (invariant AD-14).</p>
+<p><strong>Formule</strong> : <code>n = ⌊(effectiveWidth + spacingEff) / (minItemWidth + spacingEff)⌋</code>, borné par <code>clamp(lo, hi)</code> où <code>lo = max(1, minColumns)</code>,
+<code>hi = maxColumns ?? +∞</code>, <code>effectiveWidth = availableWidth − horizontalPadding</code> et <code>spacingEff</code> = <code>spacing</code> retenu s'il est fini et
+<code>&gt; 0</code>, sinon <code>0</code>. Ainsi chaque item fait <strong>au moins</strong> <code>minItemWidth</code>
+<strong>une fois les <code>n − 1</code> gouttières de largeur <code>spacing</code> et le
+<code>horizontalPadding</code> déduits</strong> — jamais de surestimation qui écraserait
+les items sous <code>minItemWidth</code>.</p>
+<p><strong>Rétro-compatibilité</strong> : avec <code>spacing == 0</code> <strong>et</strong>
+<code>horizontalPadding == 0</code> (valeurs par défaut), la formule se réduit
+<strong>exactement</strong> à <code>(availableWidth / minItemWidth).floor()</code>.</p>
+<p><strong>Garantie <code>≥ 1</code></strong> : le plancher <code>lo ≥ 1</code> est <strong>toujours</strong> appliqué —
+pour <code>availableWidth &lt; minItemWidth</code>, le résultat est <code>1</code> (jamais <code>0</code>,
+donc jamais de division par zéro en aval au calcul de la largeur d'item
+ni de <code>GridView</code> vide).</p>
+<p><strong>Défauts sûrs (invariant AD-10) — jamais de <code>throw</code>, jamais de division
+par zéro</strong> :</p>
+<ul>
+<li><code>minItemWidth &lt;= 0</code> ou <code>NaN</code> → <code>lo</code> (aucune division n'est tentée) ;</li>
+<li><code>availableWidth &lt;= 0</code> ou <code>NaN</code> → <code>lo</code> ;</li>
+<li><code>availableWidth</code> <strong>infini</strong> → <code>maxColumns</code> (remonté à <code>lo</code> si <code>&lt; lo</code>)
+s'il est fourni, sinon <code>lo</code> (jamais de grille non bornée) ;</li>
+<li><code>spacing</code> négatif / <code>NaN</code> / infini → traité comme <code>0</code> ;</li>
+<li><code>horizontalPadding</code> négatif / <code>NaN</code> / infini → traité comme <code>0</code> ;</li>
+<li><code>effectiveWidth &lt;= 0</code> ou <code>NaN</code> (padding ≥ largeur) → <code>lo</code> ;</li>
+<li><code>minItemWidth + spacingEff &lt;= 0</code> → <code>lo</code> ;</li>
+<li><code>minColumns &lt; 1</code> → plancher <strong>remonté à 1</strong> ;</li>
+<li><code>maxColumns</code> fourni <code>&lt; lo</code> → <strong>remonté</strong> à <code>lo</code> (le <code>clamp</code> reste
+toujours valide, <code>lo &lt;= hi</code> — jamais de <code>RangeError</code>/<code>ArgumentError</code>).</li>
+</ul>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">int computeCrossAxisCount({
+  required double availableWidth,
+  required double minItemWidth,
+  int minColumns = 1,
+  int? maxColumns,
+  double spacing = 0,
+  double horizontalPadding = 0,
+}) {
+  &#47;&#47; Plancher garanti : jamais moins de 1 colonne.
+  final int lo = minColumns &lt; 1 ? 1 : minColumns;
+
+  &#47;&#47; Plafond effectif: si fourni, jamais sous le plancher (clamp toujours valide).
+  final int? hi = maxColumns == null ? null : math.max(lo, maxColumns);
+
+  &#47;&#47; Gouttière &amp; padding assainis: négatif &#47; NaN &#47; infini → 0.
+  final double spacingEff =
+      (spacing.isFinite &amp;&amp; spacing &gt; 0) ? spacing : 0;
+  final double paddingEff =
+      (horizontalPadding.isFinite &amp;&amp; horizontalPadding &gt; 0)
+          ? horizontalPadding
+          : 0;
+
+  &#47;&#47; Gardes numériques AVANT toute division: jamais x&#47;0, jamais NaN propagé.
+  if (minItemWidth.isNaN || minItemWidth &lt;= 0) {
+    return lo;
+  }
+  if (availableWidth.isNaN || availableWidth &lt;= 0) {
+    return lo;
+  }
+  if (availableWidth.isInfinite) {
+    &#47;&#47; Largeur non bornée: plafond si fourni, sinon plancher (jamais « infini »).
+    return hi ?? lo;
+  }
+
+  &#47;&#47; Largeur utile après retrait du padding horizontal.
+  final double effectiveWidth = availableWidth - paddingEff;
+  if (effectiveWidth.isNaN || effectiveWidth &lt;= 0) {
+    return lo;
+  }
+
+  &#47;&#47; Dénominateur = largeur d&#39;un item + sa gouttière. Garde AD-10.
+  final double denominator = minItemWidth + spacingEff;
+  if (denominator &lt;= 0) {
+    return lo;
+  }
+
+  &#47;&#47; Cas nominal: floor de `(effectiveWidth + spacingEff) &#47; denominator`,
+  &#47;&#47; borné par [lo, hi]. Se réduit à `floor(availableWidth &#47; minItemWidth)`
+  &#47;&#47; quand spacing == 0 et horizontalPadding == 0 (rétro-compat).
+  final int raw = ((effectiveWidth + spacingEff) &#47; denominator).floor();
+  if (raw &lt; lo) {
+    return lo;
+  }
+  if (hi != null &amp;&amp; raw &gt; hi) {
+    return hi;
+  }
+  return raw;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_responsive</a></li>
+    <li><a href="../zcrud_responsive/">zcrud_responsive</a></li>
+    <li class="self-crumb">computeCrossAxisCount function</li>
+</ol>
+
+    <h5>zcrud_responsive library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_responsive
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

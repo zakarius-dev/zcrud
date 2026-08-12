@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_study_kernel API docs, for the Dart programming language.">
+  <title>zcrud_study_kernel - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_study_kernel package</a></li>
+  </ol>
+  <div class="self-name">zcrud_study_kernel</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_study_kernel">zcrud_study_kernel</h1>
+<p>Noyau Dart pur d'étude de zcrud — dossiers, sessions et utilitaires
+d'assiduité partagés, bornés par l'invariant AD-1 (aucune dépendance lourde,
+seul <code>zcrud_core</code> en arête sortante).</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_study_kernel</code> est le paquet <strong>kernel</strong> de la capacité d'étude, au
+sens du patron <a href="../../docs/site/concepts/architecture-hexagonale.md#le-patron-kernel-satellite">kernel/satellite</a> :
+il porte les entités et les règles métier bas-niveau communes à tous les
+satellites d'étude (<code>zcrud_document</code>, un futur satellite de flashcards,
+de notes, de mindmaps…), sans aucune dépendance <code>flutter:</code>.</p>
+<p>Ce paquet fournit :</p>
+<ul>
+<li>le <strong>dossier d'organisation</strong> — <code>ZStudyFolder</code> (hiérarchie 2 niveaux,
+rattachement inverse : le dossier ne liste jamais ses items) et la
+primitive pure <code>validatePlacement</code> ;</li>
+<li>la <strong>sélection de session</strong> — <code>ZStudySessionConfig</code> (filtres persistables)
+et <code>ZStudySessionSelector</code>, qui opèrent sur le port neutre
+<code>ZSessionCandidate</code> implémenté par chaque satellite ;</li>
+<li>le <strong>dépôt CRUD offline-first générique</strong> — <code>ZStudyRepository&lt;T&gt;</code>, qui
+compose avec <code>ZSyncableRepository</code> du cœur pour ajouter un hook de
+validation métier garanti exécuté avant toute persistance ;</li>
+<li>les <strong>tags</strong>, la <strong>flamme d'assiduité</strong>, l'<strong>ordre de contenu personnel</strong>
+d'un dossier, le <strong>podcast content-addressed</strong> et l'<strong>agrégation « rythme
+du jour »</strong> — chacun avec sa désérialisation défensive ;</li>
+<li>des <strong>utilitaires domaine purs partagés</strong> — palette de couleurs
+déterministe, tri à ordre personnel, normalisation de titre de tag —
+réutilisables par tout satellite sans dupliquer la logique.</li>
+</ul>
+<p><strong>Utilisez ce paquet</strong> si vous écrivez un nouveau satellite d'étude qui a
+besoin du dossier, de la sélection de session ou des utilitaires partagés,
+ou si vous traitez des données d'étude hors Flutter (migration, script,
+test unitaire). <strong>N'utilisez pas ce paquet directement</strong> pour construire une
+interface — passez par un satellite qui assemble ce kernel avec un
+contrôleur réactif et un rendu.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
+
+void main() {
+  // Un dossier racine, puis validation d'un placement en sous-dossier.
+  const folder = ZStudyFolder(title: 'Droit douanier');
+  final placement = validatePlacement(parentId: null);
+  assert(placement.isRight());
+
+  // Sélection de session : filtre par dossier + type, plafonnée à 20 cartes.
+  const config = ZStudySessionConfig(
+    folderId: 'folder-1',
+    types: &lt;String&gt;['multipleChoice'],
+    count: 20,
+  );
+  final selector = ZStudySessionSelector(config);
+  final selection = selector.selectFrom(&lt;_Card&gt;[
+    _Card(folderId: 'folder-1', typeKey: 'multipleChoice'),
+    _Card(folderId: 'folder-2', typeKey: 'multipleChoice'),
+  ]);
+  assert(selection.length == 1);
+}
+
+/// Un satellite implémente ZSessionCandidate sur son entité concrète.
+class _Card implements ZSessionCandidate {
+  const _Card({required this.folderId, required this.typeKey});
+
+  @override
+  final String? folderId;
+  @override
+  String? get subFolderId =&gt; null;
+  @override
+  List&lt;String&gt; get tagIds =&gt; const &lt;String&gt;[];
+  @override
+  final String typeKey;
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Kernel Dart pur</strong> — ce paquet n'importe ni <code>flutter:</code>, ni <code>dart:ui</code>, ni
+aucun autre paquet <code>zcrud_*</code> que <code>zcrud_core</code> et <code>zcrud_annotations</code>
+(invariant <a href="../../docs/site/concepts/invariants.md#ad-1">AD-1</a>). Sa suite
+tourne sous <code>dart test</code>. Voir
+<a href="../../docs/site/concepts/architecture-hexagonale.md">Architecture hexagonale</a>.</li>
+<li><strong>Ports neutres plutôt que dépendances de satellite</strong> — <code>ZSessionCandidate</code>,
+<code>ZApproachingExam</code>, <code>ZStudyDocumentRef</code>, <code>ZStudyNoteRef</code> sont des
+<code>abstract interface class</code> définies ici et implémentées côté satellite :
+le kernel remonte la logique de sélection/agrégation sans jamais connaître
+un type concret de carte, d'examen, de document ou de note.</li>
+<li><strong>Extension par composition, jamais par héritage (invariant <a href="../../docs/site/concepts/invariants.md#ad-4">AD-4</a>)</strong> —
+les familles ouvertes (<code>ZDailyStudyTask</code>) utilisent un discriminant <code>String kind</code> plutôt qu'un <code>sealed</code>, pour qu'un satellite ajoute une variante sans
+modifier le kernel. <code>colorKey</code>, <code>formatKey</code> et les types filtrants sont des
+chaînes opaques, jamais des enums fermés.</li>
+<li><strong>Désérialisation totale, jamais levée (invariant <a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>)</strong> —
+chaque <code>fromMap</code>/<code>fromJson</code> de ce paquet rend un résultat même sur une
+entrée vide, corrompue ou de mauvais type : un enum inconnu retombe sur sa
+première constante déclarée, un compteur négatif est planché à zéro, une
+date illisible devient <code>null</code>.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Dossier et hiérarchie</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZStudyFolder</code></td>
+<td>Dossier d'organisation multi-type, rattachement inverse.</td>
+</tr>
+<tr>
+<td><code>validatePlacement</code></td>
+<td>Primitive pure validant la hiérarchie 2 niveaux max.</td>
+</tr>
+<tr>
+<td><strong>Session</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZStudySessionConfig</code> / <code>ZReviewMode</code></td>
+<td>Filtres de session persistables et modes de révision.</td>
+</tr>
+<tr>
+<td><code>ZSessionCandidate</code></td>
+<td>Port neutre implémenté par les entités d'étude des satellites.</td>
+</tr>
+<tr>
+<td><code>ZStudySessionSelector</code></td>
+<td>Sélection pure de candidats à partir d'une config.</td>
+</tr>
+<tr>
+<td><code>ZStudySessionResult</code></td>
+<td>Value-object du résultat d'une session (mode, total, correct, qualités).</td>
+</tr>
+<tr>
+<td><strong>Dépôt</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZStudyRepository&lt;T&gt;</code></td>
+<td>Port CRUD offline-first générique à hook de validation métier.</td>
+</tr>
+<tr>
+<td><strong>Tags</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZFlashcardTag</code> / <code>ZSuggestedTag</code></td>
+<td>Tag first-class à identité propre ; suggestion éphémère par un port IA.</td>
+</tr>
+<tr>
+<td><code>normalizeTagTitle</code> / <code>dedupeByNormalizedTitle</code></td>
+<td>Normalisation et dédoublonnage de titre de tag.</td>
+</tr>
+<tr>
+<td><code>orphanTagIds</code></td>
+<td>Détection des références de tag orphelines.</td>
+</tr>
+<tr>
+<td><strong>Couleur et ordre</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZColorPalette</code> / <code>remapColorKey</code> / <code>zFnv1a32</code></td>
+<td>Registre de <code>colorKey</code> borné et remap déterministe.</td>
+</tr>
+<tr>
+<td><code>applyOrder</code> / <code>ZUnorderedPlacement</code></td>
+<td>Tri stable à ordre personnel partiel.</td>
+</tr>
+<tr>
+<td><code>ZFolderContentsOrder</code> / <code>zSectionKey</code></td>
+<td>Ordre de contenu personnel d'un dossier, par section.</td>
+</tr>
+<tr>
+<td><strong>Assiduité</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZStudyStreak</code> / <code>zAdvanceStreak</code> / <code>ZStreakOutcome</code></td>
+<td>Flamme d'assiduité et son avancement pur, horloge paramétrée.</td>
+</tr>
+<tr>
+<td><strong>Podcast et rythme du jour</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZStudyPodcast</code> / <code>ZPodcastMode</code> / <code>ZPodcastStatus</code> / <code>ZPodcastFreshness</code></td>
+<td>Podcast généré content-addressed et son cycle de vie.</td>
+</tr>
+<tr>
+<td><code>aggregateDailyStudyTasks</code> / <code>ZDailyStudyTask</code> / <code>ZApproachingExam</code></td>
+<td>Vue « rythme du jour » (cartes dues + examens approchants).</td>
+</tr>
+<tr>
+<td><strong>Cascade et références neutres</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZCascadeRegistry</code> / <code>ZCascadeEdge</code></td>
+<td>Registre déclaratif de cascade de suppression parent→enfant.</td>
+</tr>
+<tr>
+<td><code>ZStudyDocumentRef</code> / <code>ZStudyNoteRef</code></td>
+<td>Références neutres d'un document/d'une note pour le socle de présentation.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Un enum inconnu retombe sur sa première constante déclarée</strong> — le
+générateur zcrud décode un enum par nom et, pour un champ non-nullable
+sans valeur par défaut, son repli est <code>T.values.first</code>. L'ordre de
+déclaration est donc normatif sur <code>ZReviewMode</code>, <code>ZPodcastStatus</code>,
+<code>ZPodcastMode</code>, <code>ZPodcastSourceKind</code> : le réordonner change silencieusement
+le comportement défensif.</li>
+<li><strong>Aucune couleur concrète dans le kernel</strong> — <code>ZColorPalette</code> et
+<code>remapColorKey</code> ne manipulent que des <code>String</code> symboliques ; la résolution
+<code>colorKey → Color</code> est un seam de présentation injecté côté <code>zcrud_core</code>
+(<code>ZcrudScope.colorKeyResolver</code>).</li>
+<li><strong>Le hash déterministe est FNV-1a, jamais un hash cryptographique</strong> —
+<code>zFnv1a32</code> préserve la fermeture transitive minimale du kernel (<code>{zcrud_core, zcrud_annotations}</code>) ; la multiplication interne est délibérément
+décomposée en deux moitiés de 16 bits pour rester identique sous
+compilation web.</li>
+<li><strong>La flamme d'assiduité compare des jours civils, jamais des durées</strong> —
+<code>zAdvanceStreak</code> ne fait aucune arithmétique de <code>Duration</code> ; l'écart entre
+deux jours est une soustraction d'entiers de calendrier, insensible aux
+changements d'heure.</li>
+<li><strong>Aucun horodatage de synchronisation dans les entités</strong> — <code>ZStudyFolder</code>,
+<code>ZFlashcardTag</code>, <code>ZFolderContentsOrder</code>, <code>ZStudyPodcast</code>, <code>ZStudyStreak</code>
+ne déclarent ni <code>updatedAt</code> ni <code>isDeleted</code> inline ; ces clés vivent
+hors-entité (<code>ZSyncMeta</code>).</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_study_kernel.md"><code>docs/site/paquets/zcrud_study_kernel.md</code></a></li>
+<li><a href="../../docs/site/concepts/architecture-hexagonale.md">Architecture hexagonale</a> — couches, ports et patron kernel/satellite.</li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_document</code> — satellite qui dépend de ce kernel pour le dossier et la palette.</li>
+<li><code>zcrud_core</code> — seule dépendance <code>zcrud_*</code> de ce paquet (surface pur-Dart).</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_study_kernel">
+  <span class="name"><a href="zcrud_study_kernel/">zcrud_study_kernel</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_study_kernel</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_study_kernel package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_study_kernel</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_study_kernel/">zcrud_study_kernel</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study_kernel
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

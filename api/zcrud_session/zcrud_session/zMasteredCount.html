@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zMasteredCount function from the zcrud_session library, for the Dart programming language.">
+  <title>zMasteredCount function - zcrud_session library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_session</a></li>
+    <li><a href="../zcrud_session/">zcrud_session.dart</a></li>
+    <li class="self-crumb">zMasteredCount function</li>
+  </ol>
+  <div class="self-name">zMasteredCount</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_session&#47;zcrud_session-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zMasteredCount</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+<span class="name ">zMasteredCount</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="zMasteredCount-param-byQuality"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">byQuality</span>, </span></li>
+<li><span class="parameter" id="zMasteredCount-param-scale"><span class="type-annotation"><a href="../zcrud_session/ZQualityScale-class.html">ZQualityScale</a></span> <span class="parameter-name">scale</span>, </span></li>
+<li><span class="parameter" id="zMasteredCount-param-masteredThreshold"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">masteredThreshold</span></span></li>
+</ol>)
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Compte des cartes maîtrisées — dérivé de <code>byQuality</code>.</p>
+<p>Ce n'est pas <code>result.correct</code> (<code>q &gt;= passThreshold</code>, donc q3 et plus).
+Ici : <code>q &gt;= [masteredThreshold]</code> (q4-5 en échelle canonique).</p>
+<ul>
+<li>somme les comptes des crans de l'échelle dont <code>q &gt;= masteredThreshold</code> ;</li>
+<li>une clé hors échelle (<code>'9'</code>, <code>'03'</code>, <code>''</code>) n'est jamais comptée : le
+breakdown la signale à part, et une note que l'échelle ne reconnaît
+pas ne peut pas être « maîtrisée » ;</li>
+<li>jamais de <code>throw</code> (invariant AD-10) : <code>byQuality</code> corrompu fait
+ignorer les paires inconnues, jamais une exception.</li>
+</ul>
+<p>Un cran négatif n'est jamais compté (invariant AD-10). Le décodage de
+<code>ZStudySessionResult</code> ne filtre que le type (<code>is int</code>) : un <code>-3</code> venu
+d'un document persisté corrompu traverse verbatim. Sans ce plancher,
+l'écran afficherait « Maîtrisées : -1 » et le lecteur d'écran annoncerait
+« moins un » — aucun throw, aucun test rouge. Le value-object lui-même
+clampe déjà <code>total</code>/<code>correct</code> à <code>&gt;= 0</code> : la norme du dépôt est explicite,
+un compteur n'est jamais négatif. On clampe le cran (et non la somme) :
+un <code>{'5': -3, '4': 2}</code> rend <code>2</code>, jamais <code>-1</code> — ignorer le cran aberrant,
+sans laisser un autre cran valide compenser une valeur absurde.</p>
+<p>Comparaison de chaîne exacte (<code>'$quality'</code>), comme
+<code>ZSessionQualityBreakdown._isInScale</code> : les deux faces partagent le même
+critère canonique — aucune clé ne peut tomber entre les deux.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">int zMasteredCount(
+  Map&lt;String, int&gt; byQuality,
+  ZQualityScale scale,
+  int masteredThreshold,
+) {
+  var count = 0;
+  for (final quality in scale.qualities) {
+    if (quality &lt; masteredThreshold) continue;
+    final raw = byQuality[&#39;$quality&#39;] ?? 0;
+    &#47;&#47; Plancher défensif (invariant AD-10) : un compteur n&#39;est jamais négatif.
+    count += raw &lt; 0 ? 0 : raw;
+  }
+  return count;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_session</a></li>
+    <li><a href="../zcrud_session/">zcrud_session</a></li>
+    <li class="self-crumb">zMasteredCount function</li>
+</ol>
+
+    <h5>zcrud_session library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_session
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

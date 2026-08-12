@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZChatController class from the zcrud_chat library, for the Dart programming language.">
+  <title>ZChatController class - zcrud_chat library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat.dart</a></li>
+    <li class="self-crumb">ZChatController class</li>
+  </ol>
+  <div class="self-name">ZChatController</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat&#47;zcrud_chat-library-sidebar.html"
+    data-below-sidebar="zcrud_chat&#47;ZChatController-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZChatController</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Le contrôleur de conversation : <strong>un</strong> point d'entrée par geste, des
+tranches réactives <strong>granulaires</strong>, un jeton <strong>par requête</strong>.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier-class.html">ChangeNotifier</a></li>
+      <li>ZChatController</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZChatController.new" class="callable">
+          <span class="name"><a href="../zcrud_chat/ZChatController/ZChatController.html">ZChatController</a></span><span class="signature">({<span class="parameter" id="param-streamPort"><span>required</span> <span class="type-annotation">ZChatStreamPort</span> <span class="parameter-name">streamPort</span>, </span><span class="parameter" id="param-actionExecutor"><span>required</span> <span class="type-annotation">ZChatActionExecutor</span> <span class="parameter-name">actionExecutor</span>, </span><span class="parameter" id="param-confirm"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatConfirm.html">ZChatConfirm</a></span> <span class="parameter-name">confirm</span>, </span><span class="parameter" id="param-newRequestId"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatRequestIdFactory.html">ZChatRequestIdFactory</a></span> <span class="parameter-name">newRequestId</span>, </span><span class="parameter" id="param-buildRequest"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatRequestBuilder.html">ZChatRequestBuilder</a></span> <span class="parameter-name">buildRequest</span>, </span><span class="parameter" id="param-maxResumeAttempts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">maxResumeAttempts</span> = <span class="default-value">2</span>, </span><span class="parameter" id="param-conversationId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">conversationId</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="param-initialMessages"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatMessage</span>&gt;</span></span> <span class="parameter-name">initialMessages</span> = <span class="default-value">const &lt;ZChatMessage&gt;[]</span></span>})</span>
+        </dt>
+        <dd>
+          Construit un contrôleur.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="activeRequests" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatController/activeRequests.html">activeRequests</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Identités des requêtes <strong>en vol</strong>, dans l'ordre de lancement.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="attachmentIds" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatController/attachmentIds.html">attachmentIds</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Pièces jointes attachées à la saisie en cours.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="canSend" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatController/canSend.html">canSend</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si la saisie est envoyable. Ne signale qu'aux <strong>transitions</strong>
+vide ↔ non vide : un <code>ValueNotifier&lt;bool&gt;</code> ignore une valeur égale, donc
+taper le 2ᵉ caractère ne reconstruit pas le bouton d'envoi.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="composer" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatController/composer.html">composer</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/TextEditingController-class.html">TextEditingController</a></span>
+  
+
+</dt>
+<dd>
+  Saisie en cours — <strong>instance STABLE</strong>, créée une fois, jamais recréée.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="conversationId" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatController/conversationId.html">conversationId</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Identité de conversation courante.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="currentDraft" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatController/currentDraft.html">currentDraft</a></span>
+  <span class="signature">&#8594; ZChatDraft</span>
+  
+
+</dt>
+<dd>
+  Saisie courante, telle qu'un verbe la transporte (<code>ZChatDraft</code>).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="draftSeeds" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatController/draftSeeds.html">draftSeeds</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Compteur <strong>monotone</strong> des brouillons acceptés par <a href="../zcrud_chat/ZChatController/seedDraft.html">seedDraft</a>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="editing" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatController/editing.html">editing</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatEditingSession-class.html">ZChatEditingSession</a>?</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Session d'ÉDITION en cours, ou <code>null</code>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="hasListeners" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier/hasListeners.html">hasListeners</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  Whether any listeners are currently registered.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="lastFailure" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatController/lastFailure.html">lastFailure</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFailure?</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Dernier échec <strong>typé</strong> rencontré, ou <code>null</code>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="liveAnnouncement" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatController/liveAnnouncement.html">liveAnnouncement</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Texte à annoncer dans une <strong>région live</strong> (invariant AD-13).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="maxResumeAttempts" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatController/maxResumeAttempts.html">maxResumeAttempts</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre maximal de <strong>reprises</strong> d'un flux interrompu subi.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="messages" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatController/messages.html">messages</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatMessage</span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Messages <strong>établis</strong> de la conversation (jamais le texte en cours de
+rédaction — il vit dans <a href="../zcrud_chat/ZChatController/streamText.html">streamText</a>).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="addListener" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier/addListener.html">addListener</a></span><span class="signature">(<wbr><span class="parameter" id="addListener-param-listener"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a></span> <span class="parameter-name">listener</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Register a closure to be called when the object changes.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="attach" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/attach.html">attach</a></span><span class="signature">(<wbr>{<span class="parameter" id="attach-param-conversationId"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">conversationId</span>, </span><span class="parameter" id="attach-param-messages"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatMessage</span>&gt;</span></span> <span class="parameter-name">messages</span> = <span class="default-value">const &lt;ZChatMessage&gt;[]</span></span>})
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Change de conversation — <strong>le seul</strong> déclencheur de <code>notifyListeners()</code>.
+  
+
+</dd>
+
+        <dt id="cancelEditing" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/cancelEditing.html">cancelEditing</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Sort du mode édition <strong>sans soumettre</strong>.
+  
+
+</dd>
+
+        <dt id="dispose" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/dispose.html">dispose</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Discards any resources used by the object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="notifyListeners" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier/notifyListeners.html">notifyListeners</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Call all the registered listeners.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="progress" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/progress.html">progress</a></span><span class="signature">(<wbr><span class="parameter" id="progress-param-requestId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">requestId</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatStreamProgress-class.html">ZChatStreamProgress</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Progression <strong>grossière</strong> de la requête <code>requestId</code> — jamais son texte.
+  
+
+</dd>
+
+        <dt id="removeListener" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier/removeListener.html">removeListener</a></span><span class="signature">(<wbr><span class="parameter" id="removeListener-param-listener"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a></span> <span class="parameter-name">listener</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Remove a previously registered closure from the list of closures that are
+notified when the object changes.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="runAction" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/runAction.html">runAction</a></span><span class="signature">(<wbr><span class="parameter" id="runAction-param-action"><span class="type-annotation">ZChatAction</span> <span class="parameter-name">action</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter">ZChatActionOutcome</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Exécute <strong>n'importe quel</strong> verbe de conversation.
+  
+
+</dd>
+
+        <dt id="seedDraft" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/seedDraft.html">seedDraft</a></span><span class="signature">(<wbr><span class="parameter" id="seedDraft-param-text"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">text</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Sème un BROUILLON dans la saisie, sans envoyer.
+  
+
+</dd>
+
+        <dt id="send" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/send.html">send</a></span><span class="signature">(<wbr>{<span class="parameter" id="send-param-settings"><span class="type-annotation">ZChatGenerationSettings?</span> <span class="parameter-name">settings</span>, </span><span class="parameter" id="send-param-corpusScope"><span class="type-annotation">ZChatCorpusScope?</span> <span class="parameter-name">corpusScope</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter">ZChatRequestToken</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Soumet la saisie courante et <strong>consomme le flux</strong> jusqu'à son terme.
+  
+
+</dd>
+
+        <dt id="setAttachments" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/setAttachments.html">setAttachments</a></span><span class="signature">(<wbr><span class="parameter" id="setAttachments-param-ids"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">ids</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Remplace les pièces jointes de la saisie.
+  
+
+</dd>
+
+        <dt id="startEditing" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/startEditing.html">startEditing</a></span><span class="signature">(<wbr>{<span class="parameter" id="startEditing-param-messageId"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">messageId</span>, </span><span class="parameter" id="startEditing-param-originalText"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">originalText</span></span>})
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Entre en mode ÉDITION du message <code>messageId</code>.
+  
+
+</dd>
+
+        <dt id="streamText" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/streamText.html">streamText</a></span><span class="signature">(<wbr><span class="parameter" id="streamText-param-requestId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">requestId</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Texte <strong>accumulé</strong> de la requête <code>requestId</code> — la tranche à <strong>haute
+fréquence</strong> (un signal par <code>ZChatTokenEvent</code>).
+  
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat</a></li>
+    <li class="self-crumb">ZChatController class</li>
+</ol>
+
+    <h5>zcrud_chat library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZChatMarkdownRenderer class from the zcrud_chat_markdown library, for the Dart programming language.">
+  <title>ZChatMarkdownRenderer class - zcrud_chat_markdown library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat_markdown</a></li>
+    <li><a href="../zcrud_chat_markdown/">zcrud_chat_markdown.dart</a></li>
+    <li class="self-crumb">ZChatMarkdownRenderer class</li>
+  </ol>
+  <div class="self-name">ZChatMarkdownRenderer</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat_markdown&#47;zcrud_chat_markdown-library-sidebar.html"
+    data-below-sidebar="zcrud_chat_markdown&#47;ZChatMarkdownRenderer-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZChatMarkdownRenderer</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Rend en Markdown riche les blocs de texte d'une conversation.</p>
+<p>Injecté par l'hôte via <code>ZChatRendererScope</code> :</p>
+<pre class="language-dart"><code class="language-dart">ZChatRendererScope(
+  renderer: const ZChatMarkdownRenderer(),
+  child: ZChatConversationView(controller: c),
+)
+</code></pre>
+<p>Ce renderer est comparé par identité par
+<code>ZChatRendererScope.updateShouldNotify</code> : le garder <code>const</code>, ou le
+mémoïser hors de <code>build</code>, évite de reconstruire la conversation à chaque
+trame.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://api.flutter.dev/flutter/meta/immutable-constant.html">immutable</a></li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZChatMarkdownRenderer.new" class="callable">
+          <span class="name"><a href="../zcrud_chat_markdown/ZChatMarkdownRenderer/ZChatMarkdownRenderer.html">ZChatMarkdownRenderer</a></span><span class="signature">({<span class="parameter" id="param-streamingMode"><span class="type-annotation"><a href="../zcrud_chat_markdown/ZChatMarkdownStreamingMode.html">ZChatMarkdownStreamingMode</a></span> <span class="parameter-name">streamingMode</span> = <span class="default-value">ZChatMarkdownStreamingMode.neutralWhileStreaming</span>, </span><span class="parameter" id="param-latex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">latex</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-roles"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatRole</span>&gt;</span></span> <span class="parameter-name">roles</span> = <span class="default-value">kZChatMarkdownDefaultRoles</span>, </span><span class="parameter" id="param-textStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">textStyle</span></span>})</span>
+        </dt>
+        <dd>
+          Construit le backend de rendu riche.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="latex" class="property">
+  <span class="name"><a href="../zcrud_chat_markdown/ZChatMarkdownRenderer/latex.html">latex</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Reconnaît <code>$…$</code> / <code>$$…$$</code> / <code>\(…\)</code> / <code>\[…\]</code> comme des formules (défaut).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="roles" class="property">
+  <span class="name"><a href="../zcrud_chat_markdown/ZChatMarkdownRenderer/roles.html">roles</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatRole</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Les rôles dont le texte est interprété comme du Markdown.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="streamingMode" class="property">
+  <span class="name"><a href="../zcrud_chat_markdown/ZChatMarkdownRenderer/streamingMode.html">streamingMode</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat_markdown/ZChatMarkdownStreamingMode.html">ZChatMarkdownStreamingMode</a></span>
+  
+
+</dt>
+<dd>
+  Politique de rendu pendant le flux (défaut : neutre pendant, riche après).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="textStyle" class="property">
+  <span class="name"><a href="../zcrud_chat_markdown/ZChatMarkdownRenderer/textStyle.html">textStyle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Style de base fourni par l'hôte, ou <code>null</code> pour hériter du thème.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="buildBlock" class="callable">
+  <span class="name"><a href="../zcrud_chat_markdown/ZChatMarkdownRenderer/buildBlock.html">buildBlock</a></span><span class="signature">(<wbr><span class="parameter" id="buildBlock-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="buildBlock-param-request"><span class="type-annotation">ZChatBlockRenderRequest</span> <span class="parameter-name">request</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Rend <code>request</code>, ou renvoie <code>null</code> pour <strong>déléguer au rendu neutre</strong>.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat_markdown</a></li>
+    <li><a href="../zcrud_chat_markdown/">zcrud_chat_markdown</a></li>
+    <li class="self-crumb">ZChatMarkdownRenderer class</li>
+</ol>
+
+    <h5>zcrud_chat_markdown library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_markdown
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the aggregateDailyStudyTasks function from the zcrud_study_kernel library, for the Dart programming language.">
+  <title>aggregateDailyStudyTasks function - zcrud_study_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study_kernel</a></li>
+    <li><a href="../zcrud_study_kernel/">zcrud_study_kernel.dart</a></li>
+    <li class="self-crumb">aggregateDailyStudyTasks function</li>
+  </ol>
+  <div class="self-name">aggregateDailyStudyTasks</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_study_kernel&#47;zcrud_study_kernel-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">aggregateDailyStudyTasks</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study_kernel/ZDailyStudyTask-class.html">ZDailyStudyTask</a></span>&gt;</span></span>
+<span class="name ">aggregateDailyStudyTasks</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="aggregateDailyStudyTasks-param-dueCount"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">dueCount</span>, </span></li>
+<li><span class="parameter" id="aggregateDailyStudyTasks-param-exams"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study_kernel/ZApproachingExam-class.html">ZApproachingExam</a></span>&gt;</span></span> <span class="parameter-name">exams</span>, </span></li>
+<li><span class="parameter" id="aggregateDailyStudyTasks-param-now"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">now</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Combine cartes dues + examens approchants en une liste ordonnée de
+tâches du jour. Pure, totale, déterministe — jamais de <code>throw</code> (invariant
+AD-10).</p>
+<p><code>dueCount</code> est la source unique (jamais recalculée ni re-bornée) du
+compte de cartes dues : <code>&lt;= 0</code> ⇒ aucun <a href="../zcrud_study_kernel/ZDueCardsTask-class.html">ZDueCardsTask</a>. <code>exams</code> sont
+consommés via le port neutre <a href="../zcrud_study_kernel/ZApproachingExam-class.html">ZApproachingExam</a> (aucune dépendance à un
+satellite d'examen, invariant AD-1). <code>now</code> est l'horloge injectée (aucun
+<code>DateTime.now()</code> interne).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">List&lt;ZDailyStudyTask&gt; aggregateDailyStudyTasks({
+  required int dueCount,
+  required Iterable&lt;ZApproachingExam&gt; exams,
+  required DateTime now,
+}) {
+  &#47;&#47; 1. Filtre : ne garder que les approchants (le port exclut passés &#47;
+  &#47;&#47;    hors-fenêtre &#47; rappels désactivés). On garde-`isApproaching`-PUIS-`daysUntil`
+  &#47;&#47;    ⇒ `date != null` sur les approchants (garanti par le port), mais on reste
+  &#47;&#47;    total si un `date == null` fuit (fallback déterministe, jamais de `null!`).
+  final approaching = &lt;_IndexedExam&gt;[];
+  for (final exam in exams) {
+    if (exam.isApproaching(now)) {
+      approaching.add(_IndexedExam(approaching.length, exam));
+    }
+  }
+
+  &#47;&#47; 2. Tri stable&#47;déterministe par (date croissante, index d&#39;entrée).
+  &#47;&#47;    Le tie-breaker d&#39;index donne un ordre total strict : la sortie ne dépend
+  &#47;&#47;    pas de la stabilité interne de `List.sort`.
+  approaching.sort((a, b) {
+    final cmp = _compareDates(a.exam.date, b.exam.date);
+    if (cmp != 0) return cmp;
+    &#47;&#47; Tie-breaker déterministe : ordre d&#39;entrée sur date égale.
+    return a.index.compareTo(b.index);
+  });
+
+  &#47;&#47; 3. Assemble : ligne dues (ssi dueCount &gt; 0) en tête, puis les ExamTask.
+  final tasks = &lt;ZDailyStudyTask&gt;[
+    if (dueCount &gt; 0) ZDueCardsTask(dueCount),
+    for (final indexed in approaching)
+      &#47;&#47; `daysUntil(now) ?? 0` : défensif (jamais de `!`) — sur un approchant,
+      &#47;&#47; le port garantit une valeur, le `?? 0` couvre un port hostile.
+      ZExamTask(indexed.exam, indexed.exam.daysUntil(now) ?? 0),
+  ];
+
+  &#47;&#47; `const []` exact pour le cas vide.
+  return tasks.isEmpty
+      ? const &lt;ZDailyStudyTask&gt;[]
+      : List&lt;ZDailyStudyTask&gt;.unmodifiable(tasks);
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study_kernel</a></li>
+    <li><a href="../zcrud_study_kernel/">zcrud_study_kernel</a></li>
+    <li class="self-crumb">aggregateDailyStudyTasks function</li>
+</ol>
+
+    <h5>zcrud_study_kernel library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study_kernel
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

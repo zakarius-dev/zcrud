@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_study API docs, for the Dart programming language.">
+  <title>zcrud_study - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_study package</a></li>
+  </ol>
+  <div class="self-name">zcrud_study</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_study">zcrud_study</h1>
+<p>Orchestration de présentation du domaine étude de zcrud — sections d'outils
+composables (invariant <a href="../../docs/site/concepts/invariants.md#ad-2">AD-2</a>)
+sur le domaine pur exposé par <code>zcrud_study_kernel</code>.</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_study</code> est le paquet <strong>satellite Flutter</strong> de la capacité étude, au
+sens du patron <a href="../../docs/site/concepts/architecture-hexagonale.md#le-patron-kernel-satellite">kernel/satellite</a> :
+<code>zcrud_study_kernel</code> porte le domaine pur (agrégation des tâches du jour,
+calcul de proximité des examens, registre de cascade), ce paquet porte la
+<strong>présentation</strong> — hub de contenu, page-détail de dossier, sections d'outils
+composables, génération de flashcards par IA, session de révision, partage
+et modération.</p>
+<p>Le patron structurant du paquet est celui des <strong>sections composables</strong> :
+<code>ZStudyToolsSectionSpec</code> décrit <em>quoi</em> rendre (titre, compteur, items paginés
+par <code>itemBuilder</code>, état vide, action d'ajout) sans jamais référencer un
+modèle d'application ni une couleur codée en dur ; <code>ZSectionedStudyLayout</code>
+rend une liste de ces descripteurs comme des sections <strong>indépendantes</strong>,
+chacune dans son propre sous-arbre isolé (une frontière de widget par
+section). Un dossier d'étude complet — rail de flashcards, grille de
+documents, grille de notes, grille de cartes mentales — se compose en
+assemblant des <code>ZStudyToolsSectionSpec</code>, jamais en réimplémentant un layout.</p>
+<p>Ce paquet fournit aussi :</p>
+<ul>
+<li>des <strong>cartes de rendu par défaut</strong>, une par type de contenu (document,
+examen, flashcard, dossier, carte mentale, note), toutes composées à
+partir des mêmes primitives à slots (<code>ZStudyToolsItemCard</code>, <code>ZFolderCard</code>) ;</li>
+<li>la <strong>génération de flashcards par IA</strong> — contrôleur, feuille de
+génération, aperçu et confirmation de tags — dont l'option est
+structurellement absente sans port fourni par l'hôte ;</li>
+<li>l'<strong>édition en lot de flashcards</strong> en régime de brouillon déclaré, avec un
+commit unique injecté comme seul franchissement de la frontière de
+persistance ;</li>
+<li>une <strong>page-détail de dossier</strong> assemblant un page-shell, l'onglet
+Matériel, l'onglet Progression et une navigation de sous-dossiers
+adaptative ;</li>
+<li>un <strong>écran de session de révision</strong> assemblé au-dessus du moteur porté par
+<code>zcrud_session</code> ;</li>
+<li>le <strong>partage communautaire optionnel</strong> — liens révocables, adhésions,
+galerie publique, modération — protégé par une garde d'autorisation pure ;</li>
+<li>des <strong>seams IA neutres</strong> (explication, résumé, génération de carte
+mentale, génération de podcast) : ports purs que l'application hôte
+implémente avec son propre routeur IA, sans qu'aucun prompt, endpoint ou
+clé ne fuie dans ce paquet.</li>
+</ul>
+<p><strong>Utilisez ce paquet</strong> pour construire l'interface d'une application
+d'étude — hub d'ajout, page de dossier, session de révision, génération de
+flashcards — en assemblant des sections plutôt qu'en réécrivant un layout
+monolithique. <strong>N'utilisez pas ce paquet</strong> si vous n'avez besoin que du
+domaine pur (agrégation de tâches, calcul de proximité, cascade
+kernel→satellite) sans aucune UI : passez directement par
+<code>zcrud_study_kernel</code>, qui n'a aucune dépendance Flutter.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:flutter/widgets.dart';
+import 'package:zcrud_study/zcrud_study.dart';
+
+/// Assemble une page « study tools » à partir de trois sections
+/// indépendantes — chacune dans son propre sous-arbre de rebuild.
+Widget buildStudyToolsPage({
+  required List&lt;ZStudyToolsSectionSpec&gt; sections,
+}) {
+  return ZSectionedStudyLayout(sections: sections);
+}
+
+/// Un descripteur de section minimal : titre, compteur, items paginés.
+ZStudyToolsSectionSpec buildEmptySection() {
+  return ZStudyToolsSectionSpec(
+    id: 'documents',
+    title: 'Documents',
+    itemCount: 0,
+    itemBuilder: (context, index) =&gt; const SizedBox.shrink(),
+    emptyState: const Text('Aucun document'),
+  );
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Sections composables et rebuilds granulaires (invariant <a href="../../docs/site/concepts/invariants.md#ad-2">AD-2</a>)</strong> —
+chaque <code>ZStudyToolsSectionSpec</code> obtient sa propre frontière de widget
+(<code>ValueKey('section:$id')</code>) dans <code>ZSectionedStudyLayout</code> : ajouter,
+réordonner ou faire évoluer une section ne reconstruit jamais les autres.
+La même discipline s'applique à <code>ZStudyToolsPage</code> et à
+<code>ZStudyFolderDetail</code> : taper dans un champ scopé, changer la sélection de
+sous-dossier ou plier la sidebar ne reconstruit que la tranche concernée.</li>
+<li><strong>Composition par slots, jamais par héritage (invariant <a href="../../docs/site/concepts/invariants.md#ad-4">AD-4</a>)</strong> —
+les cartes par défaut, la page-détail et les feuilles composables exposent
+des slots nullables : absent, l'emplacement est rendu par défaut ; fourni
+et rendant <code>null</code>, il est structurellement retiré de l'arbre — jamais un
+espace réservé vide ni une capacité grisée.</li>
+<li><strong>Rendu par défaut à props primitives, jamais l'entité domaine</strong> —
+<code>ZFolderCard</code>, <code>ZDefaultFlashcardCard</code> et les autres cartes ne reçoivent
+que des primitives (titre, clé de couleur) et des slots : elles ne
+connaissent aucun type métier ni règle de permissions, pour rester
+réutilisables par n'importe quel hôte.</li>
+<li><strong>Seams IA neutres (invariant <a href="../../docs/site/concepts/invariants.md#ad-12">AD-12</a>)</strong> —
+les ports de génération et d'explication ne portent que du contenu source
+neutre ; prompts, endpoints et clés restent entièrement côté application.
+Une capacité IA sans port fourni est absente de l'interface, jamais un
+bouton désactivé.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sections et layout</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZStudyToolsSectionSpec</code></td>
+<td>Descripteur immuable d'une section de la page « study tools ».</td>
+</tr>
+<tr>
+<td><code>ZSectionedStudyLayout</code> / <code>ZSectionedStudySliver</code></td>
+<td>Rend une liste de sections indépendantes, en boîte ou en sliver, depuis la même source de contenu.</td>
+</tr>
+<tr>
+<td><code>ZStudyToolsPage</code></td>
+<td>Page qui assemble des sections via <code>ZSectionedStudyLayout</code>.</td>
+</tr>
+<tr>
+<td><code>ZStudyToolsItemCard</code></td>
+<td>Carte d'item de base à slots, partagée par les cartes par défaut.</td>
+</tr>
+<tr>
+<td><strong>Page-détail et navigation</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZStudyFolderDetail</code></td>
+<td>Page-détail d'un dossier : onglets Matériel/Progression, navigation de sous-dossiers adaptative.</td>
+</tr>
+<tr>
+<td><code>ZSubfolderRef</code> / <code>ZSubfolderNavSpec</code></td>
+<td>Référence opaque et descripteur agrégé de la navigation de sous-dossiers.</td>
+</tr>
+<tr>
+<td><code>ZSubfolderSidebar</code> / <code>ZSubfolderCompactSelector</code></td>
+<td>Les deux briques de navigation adaptative (grand écran / petit écran).</td>
+</tr>
+<tr>
+<td><strong>Cartes par défaut</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZDefaultDocumentCard</code> / <code>ZDefaultNoteCard</code> / <code>ZDefaultFlashcardCard</code> / <code>ZDefaultExamCard</code> / <code>ZDefaultMindmapCard</code> / <code>ZDefaultFolderCard</code></td>
+<td>Rendu par défaut d'un item, un par type de contenu.</td>
+</tr>
+<tr>
+<td><strong>Flashcards</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZFlashcardListView</code></td>
+<td>Liste de flashcards : recherche, filtres, tri, ordre manuel, sélection multiple opt-in.</td>
+</tr>
+<tr>
+<td><code>zReorderFlashcards</code> / <code>zReorderIds</code></td>
+<td>Voie unique de réordonnancement manuel.</td>
+</tr>
+<tr>
+<td><code>ZFlashcardGenerationController</code> / <code>ZFlashcardGenerationSheet</code></td>
+<td>Flux de génération de flashcards par IA.</td>
+</tr>
+<tr>
+<td><code>ZMultiFlashcardEditor</code> / <code>ZMultiFlashcardEditorController</code></td>
+<td>Édition en lot en régime de brouillon déclaré.</td>
+</tr>
+<tr>
+<td><code>zFlashcardCascadeDeleteRoot</code></td>
+<td>Seam de suppression cascadée (carte puis purge de répétition espacée).</td>
+</tr>
+<tr>
+<td><strong>Hub de contenu</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZContentHubLauncher</code> / <code>ZContentHubScope</code></td>
+<td>Configuration et portée du hub d'ajout de contenu, partagées entre plusieurs <code>+</code>.</td>
+</tr>
+<tr>
+<td><code>ZContentHubSheet</code></td>
+<td>Rendu de la feuille du hub.</td>
+</tr>
+<tr>
+<td><strong>Session de révision</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZStudySessionView</code> / <code>ZStudySessionHost</code> / <code>ZStudySessionScaffold</code></td>
+<td>Corps composable, détenteur du runtime, enveloppe de page de la session de révision.</td>
+</tr>
+<tr>
+<td><strong>Examens et tâches du jour</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZExamEditor</code> / <code>ZExamRemindersSection</code></td>
+<td>Édition d'examen et rappels approchants dérivés, exposés à l'application pour la planification.</td>
+</tr>
+<tr>
+<td><code>ZDailyTasksView</code></td>
+<td>Vue agrégée des tâches du jour (cartes dues, examens).</td>
+</tr>
+<tr>
+<td><strong>Partage et modération</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZStudySharingPort</code> / <code>ZStudyModerationPort</code></td>
+<td>Ports neutres de partage et de modération.</td>
+</tr>
+<tr>
+<td><code>ZStudySharingAcl</code></td>
+<td>Garde d'autorisation pure des champs de contrôle d'un dossier partagé.</td>
+</tr>
+<tr>
+<td><code>ZShareLink</code> / <code>ZStudyMembership</code> / <code>ZPublicStudyFolder</code> / <code>ZStudyFolderReport</code></td>
+<td>Entités de partage contrôlées par le propriétaire.</td>
+</tr>
+<tr>
+<td><strong>Seams IA neutres</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZAiExplanationPort</code> / <code>ZNoteSummaryPort</code> / <code>ZMindmapGenerationPort</code> / <code>ZPodcastGenerationPort</code></td>
+<td>Ports d'explication, de résumé, de génération de carte mentale et de podcast.</td>
+</tr>
+<tr>
+<td><code>ZFlashcardGenerationPort</code></td>
+<td>Port de génération de flashcards ; <code>z_flashcard_generation_defaults</code> porte le bornage et la répartition par type.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Un champ absent reste absent, jamais un espace réservé</strong> — un slot,
+une action ou une capacité IA sans port fourni est retirée de l'arbre par
+composition, jamais rendue grisée ni remplacée par un espace vide
+(invariant <a href="../../docs/site/concepts/invariants.md#ad-4">AD-4</a>).</li>
+<li><strong>La révocation d'un lien de partage est monotone</strong> — un contributeur ne
+peut jamais dé-révoquer un lien ni muter un champ de contrôle
+(propriété, listing public, rôle) : seul le propriétaire le peut, via
+<code>ZStudySharingAcl.canMutateControl</code>. L'application hôte doit répliquer
+cette même règle dans ses propres règles de sécurité serveur — la garde
+locale ne protège pas seule un store distant.</li>
+<li><strong>Aucun état personnel dans les entités de partage</strong> — répétition
+espacée, ordre personnel et position de lecture ne voyagent jamais dans
+<code>ZShareLink</code>, <code>ZStudyMembership</code> ni <code>ZPublicStudyFolder</code>.</li>
+<li><strong>Désérialisation défensive (invariant <a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>)</strong> —
+toutes les entités de ce paquet sont écrites à la main et ne lèvent
+jamais à la lecture : un champ absent, corrompu ou d'un type inattendu
+retombe sur un défaut sûr, jamais une exception qui ferait échouer le
+dossier parent.</li>
+<li><strong>Accessibilité et RTL (invariant <a href="../../docs/site/concepts/invariants.md#ad-13">AD-13</a>)</strong> —
+toute cible tactile fait ≥ 48 dp en géométrie rendue, tout est
+directionnel (<code>EdgeInsetsDirectional</code>, <code>TextAlign.start</code>), et l'absence
+d'activation d'une carte est structurelle (aucun <code>InkWell</code> inerte, aucun
+rôle <code>button</code> annoncé) sans jamais rendre le contenu muet.</li>
+<li><strong>Zéro couleur codée en dur</strong> — les rendus de référence
+(<code>ZFlashcardCardReference</code>, <code>ZStudyCardReference</code>, <code>ZContentHubReference</code>,
+<code>ZDailyTasksReference</code>, <code>ZStudySessionReference</code>, <code>ZFolderCardReference</code>)
+centralisent les valeurs visuelles dérivées de <code>ZcrudTheme</code>/<code>ColorScheme</code>
+; aucun widget de ce paquet n'écrit de littéral de couleur.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_study.md"><code>docs/site/paquets/zcrud_study.md</code></a></li>
+<li><a href="../../docs/site/concepts/reactivite-granulaire.md">Réactivité granulaire</a> — AD-2 en pratique.</li>
+<li><a href="../../docs/site/concepts/architecture-hexagonale.md">Architecture hexagonale</a> — couches, ports et patron kernel/satellite.</li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_study_kernel</code> — le domaine pur d'étude dont ce paquet porte la présentation.</li>
+<li><code>zcrud_session</code> — le moteur de révision (runtimes, glisseur, notation) que ce paquet assemble en écran.</li>
+<li><code>zcrud_flashcard</code> / <code>zcrud_exam</code> / <code>zcrud_mindmap</code> — les modèles de contenu que les voies typées de ce paquet consomment.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_study">
+  <span class="name"><a href="zcrud_study/">zcrud_study</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_study</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_study package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_study</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_study/">zcrud_study</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

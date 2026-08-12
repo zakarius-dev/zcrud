@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZFieldWidgetContext class from the zcrud_core library, for the Dart programming language.">
+  <title>ZFieldWidgetContext class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZFieldWidgetContext class</li>
+  </ol>
+  <div class="self-name">ZFieldWidgetContext</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZFieldWidgetContext-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZFieldWidgetContext</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Contexte passé à un <a href="../zcrud_core/ZFieldWidgetBuilder.html">ZFieldWidgetBuilder</a> : la spec du champ, la valeur
+COURANTE de sa tranche et le callback d'écriture. Le builder <strong>lit</strong> <a href="../zcrud_core/ZFieldWidgetContext/value.html">value</a>
+et <strong>écrit</strong> via <a href="../zcrud_core/ZFieldWidgetContext/onChanged.html">onChanged</a> — l'appel reste <strong>dans</strong> la frontière de rebuild
+du dispatcher (invariant AD-2 : aucune souscription élargie).</p>
+<h2 id="champ-custom--valeur-structure">Champ custom à valeur <strong>STRUCTURÉE</strong></h2>
+<p>Un champ composite (ex. <code>ressource → opérations autorisées</code>) n'a <strong>rien de
+spécial</strong> à obtenir : le socle le porte déjà de bout en bout.</p>
+<ol>
+<li><strong>Écrire une <code>Map</code></strong> — <a href="../zcrud_core/ZFieldWidgetContext/onChanged.html">onChanged</a> est un <code>ValueChanged&lt;Object?&gt;</code>, pas un
+<code>ValueChanged&lt;String&gt;</code>. <code>ctx.onChanged({'agent': ['read','update']})</code>
+dépose la map <strong>telle quelle</strong> dans la tranche ; <code>controller.valueOf</code> la
+rend inchangée. Aucune sérialisation intermédiaire, aucun encodage.</li>
+<li><strong>Requis</strong> — un <code>ZValidatorSpec.required</code> <strong>mord sur une map vide</strong>. Le
+dispatcher projette la valeur par <code>zValidationText</code> (règle unique
+<code>zIsEmptyValue</code> : <code>null</code>, chaîne, <code>Iterable</code> et <strong><code>Map</code></strong> vides comptent
+comme vides), puis affiche l'erreur sous le widget custom via la surface
+accessible <code>Semantics(liveRegion:)</code> — la famille registre n'est pas une
+famille clavier, elle passe donc par cette surface et non par
+<code>TextFormField.errorText</code>. La soumission et le gate d'étape appliquent
+la MÊME règle, via la MÊME projection : trois voies, une seule source
+de vérité.</li>
+<li><strong>Rebuild granulaire (invariant AD-2)</strong> — le widget custom est monté DANS
+le <code>ZFieldListenableBuilder</code> de sa tranche : changer une entrée de la map
+ne reconstruit <strong>que ce champ</strong>. Corollaire à respecter côté hôte :
+écrire une <strong>nouvelle</strong> map (copie) plutôt que muter celle reçue — une
+mutation en place ne notifie rien.</li>
+<li><strong>Validation métier au-delà du requis</strong> — elle ne s'exprime pas dans
+<code>validators</code> (qui compile des <code>FormFieldValidator&lt;String&gt;</code> sur la
+projection texte). Deux voies : soit le widget custom refuse d'écrire un
+état invalide (la tranche ne contient alors que du valide), soit la règle
+se pose en <strong>inter-champs</strong> (<code>ZCrossFieldValidator</code>).</li>
+</ol>
+<p><strong>Lecture seule</strong> : la famille registre n'est PAS « fiche-able » — un champ
+custom rend lui-même son état <code>ctx.field.readOnly</code>. Le socle ne devinera pas
+la présentation lisible d'une structure qu'il ne connaît pas.</p>
+<p><strong>Sérialisation</strong> : la map vit dans la tranche puis dans le <code>Map</code> soumis ;
+sa (dé)sérialisation est celle du modèle (invariant AD-3), sa <strong>relecture
+défensive</strong> celle de l'invariant AD-10 (une entrée absente/corrompue ne
+fait jamais échouer le parent). Le cœur ne s'interpose pas.</p>
+<p>Ce qui reste <strong>hors du socle</strong> : l'éditeur lui-même. Un tableau de
+permissions est une décision <strong>métier</strong> de l'application — le socle fournit
+le moyen (tranche typée <code>Object?</code>, requis, granularité), jamais l'écran.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://api.flutter.dev/flutter/meta/immutable-constant.html">immutable</a></li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZFieldWidgetContext.new" class="callable">
+          <span class="name"><a href="../zcrud_core/ZFieldWidgetContext/ZFieldWidgetContext.html">ZFieldWidgetContext</a></span><span class="signature">({<span class="parameter" id="param-field"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="param-value"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span>, </span><span class="parameter" id="param-onChanged"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">onChanged</span></span>})</span>
+        </dt>
+        <dd>
+          Construit le contexte d'un champ servi par le registre.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="field" class="property">
+  <span class="name"><a href="../zcrud_core/ZFieldWidgetContext/field.html">field</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>
+  
+
+</dt>
+<dd>
+  Spécification <code>const</code> du champ rendu (<code>name</code>/<code>type</code>/<code>label</code>/<code>config</code>…).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="onChanged" class="property">
+  <span class="name"><a href="../zcrud_core/ZFieldWidgetContext/onChanged.html">onChanged</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Écrit une nouvelle valeur dans la tranche (branché sur <code>setValue</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="value" class="property">
+  <span class="name"><a href="../zcrud_core/ZFieldWidgetContext/value.html">value</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>
+  
+
+</dt>
+<dd>
+  Valeur COURANTE de la tranche <code>field.name</code> (lue par le builder hôte).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZFieldWidgetContext class</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

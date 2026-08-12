@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the presentWithDismissControl method from the ZGetFormPresenter class, for the Dart programming language.">
+  <title>presentWithDismissControl method - ZGetFormPresenter class - zcrud_get library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_get</a></li>
+    <li><a href="../../zcrud_get/">zcrud_get.dart</a></li>
+    <li><a href="../../zcrud_get/ZGetFormPresenter-class.html">ZGetFormPresenter</a></li>
+    <li class="self-crumb">presentWithDismissControl&lt;<wbr><span class="type-parameter">T</span>&gt; method</li>
+  </ol>
+  <div class="self-name">presentWithDismissControl</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_get&#47;ZGetFormPresenter-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">presentWithDismissControl&lt;<wbr><span class="type-parameter">T</span>&gt;</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">T?</span>&gt;</span></span>
+<span class="name ">presentWithDismissControl</span>&lt;<wbr><span class="type-parameter">T</span>&gt;(<wbr><ol class="parameter-list"> <li><span class="parameter" id="presentWithDismissControl-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-builder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a></span> <span class="parameter-name">builder</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-mode"><span>required</span> <span class="type-annotation">ZEditionPresentation</span> <span class="parameter-name">mode</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-maxWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">maxWidth</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-maxHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">maxHeight</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-useSafeArea"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">useSafeArea</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-barrierDismissible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">barrierDismissible</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-allowImplicitDismiss"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">allowImplicitDismiss</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-isDismissible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isDismissible</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-sheetFrame"><span class="type-annotation">ZSheetFrameSpec?</span> <span class="parameter-name">sheetFrame</span>, </span></li>
+</ol>})
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Comme <code>ZFormPresenter.present</code>, plus <code>allowImplicitDismiss</code>.</p>
+<ul>
+<li><code>allowImplicitDismiss: true</code> (défaut) ⇒ comportement <strong>strictement
+identique</strong> à <code>present</code> : c'est la voie que <code>present</code> lui-même emprunte.</li>
+<li><code>allowImplicitDismiss: false</code> ⇒ les voies de fermeture <strong>non gardées</strong>
+sont désactivées. Concrètement, en mode <code>sheet</code> : <code>enableDrag: false</code>.
+Le tap sur la barrière <strong>reste</strong> actif (il passe par <code>maybePop</code>, donc
+par <code>PopScope</code>) — le neutraliser aussi retirerait une voie de sortie
+parfaitement sûre, ce qui serait une régression d'ergonomie.</li>
+</ul>
+<p><code>sheetFrame</code> surcharge <strong>par paramètre</strong> la feuille contrainte et
+encadrée (cf. <code>z_sheet_frame.dart</code>). <code>null</code> ⇒ le maillon suivant décide
+(jetons <code>ZcrudTheme.editionSheet*</code>, puis <code>ZSheetFrameReference</code>) — <strong>ce
+n'est donc PAS « pas de cadre »</strong> : le défaut du socle encadre. Pour ne
+pas encadrer, il faut le <strong>dire</strong> :
+<code>sheetFrame: ZSheetFrameSpec(mode: ZSheetFrameMode.never)</code>.</p>
+<p>Paramètre <strong>nommé et optionnel</strong> : aucun appelant existant ne casse ; une
+implémentation externe qui adopte ce port ajoute simplement le
+paramètre.</p>
+<h2 id="isdismissible--interdire-le-renoncement"><code>isDismissible</code> — INTERDIRE le renoncement</h2>
+<p>Ne pas confondre avec <code>allowImplicitDismiss</code> : <strong>ce sont deux
+intentions opposées, et elles se composent sans se contredire.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Réglage</th>
+<th>Voie visée</th>
+<th>Intention</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>allowImplicitDismiss: false</code></td>
+<td><strong>glissement</strong> de la feuille</td>
+<td><em>garder</em> le renoncement — la voie qui court-circuite <code>PopScope</code> est retirée, celle qui l'honore reste</td>
+</tr>
+<tr>
+<td><code>isDismissible: false</code></td>
+<td><strong>barrière</strong> de la feuille</td>
+<td><em>interdire</em> le renoncement — la voie est retirée, <code>PopScope</code> n'est même plus consulté</td>
+</tr>
+</tbody>
+</table>
+<p>Conséquences <strong>mesurées</strong> de la combinaison (mode <code>sheet</code>) :</p>
+<ul>
+<li><code>allowImplicitDismiss: false</code> seul (ce que pose un <code>ZEditionChrome</code> qui
+garde l'abandon) ⇒ glissement mort, <strong>tap barrière vivant</strong> et passant
+par <code>Navigator.maybePop</code>, donc par le garde d'abandon : l'utilisateur
+peut renoncer, on lui demande confirmation. C'est le comportement par
+défaut, <strong>inchangé</strong>.</li>
+<li><code>isDismissible: false</code> seul ⇒ glissement vivant (et <strong>non gardé</strong> :
+<code>BottomSheet.onClosing</code> appelle <code>Navigator.pop</code>), barrière morte. Un
+hôte qui coupe la barrière <strong>sans</strong> couper le glissement se retire la
+voie sûre en laissant la voie non gardée : combinaison déconseillée.</li>
+<li>les deux à <code>false</code> ⇒ <strong>aucune</strong> sortie implicite : ni glissement, ni
+barrière. La seule sortie est celle que le contenu offre (bouton
+« Annuler », <code>Navigator.pop</code>). C'est la voie « interdire le
+renoncement » ; elle <strong>n'annule pas</strong> le garde d'abandon, elle le rend
+sans objet sur ces deux voies — mesuré : le seam de confirmation
+n'est appelé sur aucune des deux.</li>
+</ul>
+<p>Défaut <code>true</code> ⇒ <strong>comportement d'aujourd'hui strictement conservé</strong>
+(barrière fermante), pour tout hôte passif.</p>
+<p>Portée : mode <strong><code>sheet</code></strong> uniquement. En <code>dialog</code>, la barrière se règle
+par <code>barrierDismissible</code> (un second canal pour la même propriété serait le
+motif de divergence que ce dépôt s'interdit) ; en <code>page</code>, il n'y a pas de
+barrière. Ces deux inerties sont <strong>mesurées</strong> par la matrice de paramètres
+(<code>doc/parameter-matrix-z-adaptive-presenter.md</code>), pas déclarées à la main.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+Future&lt;T?&gt; presentWithDismissControl&lt;T&gt;(
+  BuildContext context, {
+  required WidgetBuilder builder,
+  required ZEditionPresentation mode,
+  double? maxWidth,
+  double? maxHeight,
+  bool useSafeArea = true,
+  bool barrierDismissible = true,
+  bool allowImplicitDismiss = true,
+  bool isDismissible = true,
+  ZSheetFrameSpec? sheetFrame,
+}) {
+  &#47;&#47; Switch EXHAUSTIF sur les 3 valeurs de l&#39;enum ⇒ jamais de `throw` (AD-10).
+  switch (mode) {
+    case ZEditionPresentation.page:
+      &#47;&#47; Route pleine page — tailles max IGNORÉES (la page occupe l&#39;écran),
+      &#47;&#47; `useSafeArea` IGNORÉ (aucune `SafeArea` n&#39;est insérée, ni avec `true`
+      &#47;&#47; ni avec `false`), `barrierDismissible` &#47;
+      &#47;&#47; `isDismissible` &#47; `allowImplicitDismiss` &#47; `sheetFrame` sans objet.
+      &#47;&#47; Mêmes inerties que `ZAdaptivePresenter`, et DÉCLARÉES au port. `Get.to` renvoie `Future&lt;T?&gt;?` (nullable
+      &#47;&#47; si la navigation est refusée) : on garantit le contrat `Future&lt;T?&gt;`
+      &#47;&#47; du port par un repli `Future&lt;T?&gt;.value()` (défaut sûr, jamais null).
+      return Get.to&lt;T&gt;(
+            () =&gt; Builder(builder: builder),
+            fullscreenDialog: true,
+          ) ??
+          Future&lt;T?&gt;.value();
+
+    case ZEditionPresentation.sheet:
+      final screen = MediaQuery.sizeOf(context); &#47;&#47; ⛔ jamais Get.height&#47;width
+      final effectiveMaxHeight = maxHeight ??
+          screen.height * ZAdaptivePresenterDefaults.sheetMaxHeightFraction;
+      &#47;&#47; ── Feuille CONTRAINTE et ENCADRÉE : chaîne PARTAGÉE, zéro recopie ──
+      &#47;&#47;
+      &#47;&#47; `hasChrome: false` — la collapse de `unlessChrome` est faite en amont
+      &#47;&#47; par `presentEdition` (seul endroit qui SAIT ; cf. l&#39;en-tête).
+      final ZSheetFrameMetrics frame =
+          zSheetFrameMetricsOf(context, spec: sheetFrame, hasChrome: false);
+      &#47;&#47; `maxWidth` explicite (paramètre de `present`) reste PRIORITAIRE : il
+      &#47;&#47; était déjà la surcharge la plus haute avant l&#39;alignement.
+      final double effectiveMaxWidth =
+          maxWidth ?? frame.effectiveMaxWidth(screen.width);
+      return Get.bottomSheet&lt;T&gt;(
+        _constrained(
+          builder,
+          maxWidth: effectiveMaxWidth,
+          maxHeight: effectiveMaxHeight,
+          useSafeArea: useSafeArea,
+        ),
+        isScrollControlled: true,
+        &#47;&#47; La fermeture par GLISSEMENT passe par `Navigator.pop` et
+        &#47;&#47; COURT-CIRCUITE `PopScope` (donc `ZDiscardGuard`). Quand un garde
+        &#47;&#47; d&#39;abandon est armé, la voie est désactivée ; sinon `true`, qui est
+        &#47;&#47; le défaut de `Get.bottomSheet` ⇒ voie historique inchangée. La
+        &#47;&#47; barrière, elle, RESTE fermante (`isDismissible` non touché) : elle
+        &#47;&#47; passe par `maybePop`, donc par le garde.
+        enableDrag: allowImplicitDismiss,
+        &#47;&#47; Voie ORTHOGONALE au glissement : GetX transmet
+        &#47;&#47; `isDismissible` à `GetModalBottomSheetRoute`, dont
+        &#47;&#47; `barrierDismissible` en dérive (get 4.7.x,
+        &#47;&#47; `extension_navigation.dart` l. 52 ; `bottomsheet.dart`). `false` ⇒
+        &#47;&#47; le tap sur la barrière ne déclenche même plus `maybePop`, donc le
+        &#47;&#47; garde d&#39;abandon n&#39;est PAS consulté : « interdire » le renoncement,
+        &#47;&#47; là où `allowImplicitDismiss: false` dit « garder ». `true` (défaut
+        &#47;&#47; GetX et défaut du port) ⇒ comportement d&#39;aujourd&#39;hui INCHANGÉ.
+        isDismissible: isDismissible,
+        &#47;&#47; ── SURFACE : « surface avec le cadre » (cf. l&#39;en-tête) ──
+        &#47;&#47;
+        &#47;&#47; `Get.bottomSheet` applique `?? Colors.transparent` à ce qu&#39;on lui
+        &#47;&#47; remet. Donc :
+        &#47;&#47; * fond explicite ⇒ il PRIME (et GetX le transmet tel quel) ;
+        &#47;&#47; * cadre peint ⇒ on REPRODUIT la résolution du SDK, sinon le cadre
+        &#47;&#47;   flotterait sur la barrière, sans surface ;
+        &#47;&#47; * cadre désactivé ⇒ `null` ⇒ `Colors.transparent`, exactement le
+        &#47;&#47;   comportement GetX d&#39;aujourd&#39;hui. C&#39;est l&#39;échappatoire.
+        backgroundColor: sheetBackgroundColor ??
+            (frame.framed ? _themeSheetSurface(context) : null),
+        &#47;&#47; `null` quand le cadre est désactivé ⇒ AUCUNE `shape` imposée : le
+        &#47;&#47; `BottomSheet` du SDK retrouve sa résolution native
+        &#47;&#47; (`thème &gt; défauts M3`), invariant AD-4 — `null` ⇒ absent de l&#39;arbre.
+        shape: frame.resolveShape(Theme.of(context).bottomSheetTheme.shape),
+      );
+
+    case ZEditionPresentation.dialog:
+      final screen = MediaQuery.sizeOf(context);
+      final effectiveMaxWidth = maxWidth ??
+          (screen.width &lt; ZAdaptivePresenterDefaults.dialogMaxWidth
+              ? screen.width
+              : ZAdaptivePresenterDefaults.dialogMaxWidth);
+      return Get.dialog&lt;T&gt;(
+        Dialog(
+          child: _constrained(
+            builder,
+            maxWidth: effectiveMaxWidth,
+            maxHeight: maxHeight ?? double.infinity,
+            useSafeArea: useSafeArea,
+          ),
+        ),
+        barrierDismissible: barrierDismissible,
+        &#47;&#47; Un paramètre peut être lu par le code (`_constrained` reçoit bien
+        &#47;&#47; `useSafeArea` et pose bien sa `SafeArea`) et rester pourtant
+        &#47;&#47; **inerte** en pratique : `Get.dialog` porte SON PROPRE
+        &#47;&#47; `useSafeArea`, à `true` par défaut, et enveloppe la page dans une
+        &#47;&#47; `SafeArea` **en amont**. L&#39;encart est donc déjà consommé quand la
+        &#47;&#47; `SafeArea` interne s&#39;applique : `useSafeArea: false` rendrait
+        &#47;&#47; exactement le même arbre que `true`, sans avertissement — une
+        &#47;&#47; divergence franche avec `ZAdaptivePresenter`, où `showDialog`
+        &#47;&#47; honore réellement ce paramètre.
+        &#47;&#47;
+        &#47;&#47; Défaut INCHANGÉ pour tout hôte passif : `true` ⇒ la `SafeArea` de
+        &#47;&#47; GetX est posée comme hier, et la `SafeArea` interne reste au même
+        &#47;&#47; endroit de l&#39;arbre. Seul l&#39;opt-out `false` change — il devient
+        &#47;&#47; effectif au lieu d&#39;être silencieusement ignoré.
+        useSafeArea: useSafeArea,
+      );
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_get</a></li>
+    <li><a href="../../zcrud_get/">zcrud_get</a></li>
+    <li><a href="../../zcrud_get/ZGetFormPresenter-class.html">ZGetFormPresenter</a></li>
+    <li class="self-crumb">presentWithDismissControl&lt;<wbr><span class="type-parameter">T</span>&gt; method</li>
+</ol>
+
+    <h5>ZGetFormPresenter class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_get
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

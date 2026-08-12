@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZFormController class from the zcrud_core library, for the Dart programming language.">
+  <title>ZFormController class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZFormController class</li>
+  </ol>
+  <div class="self-name">ZFormController</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZFormController-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZFormController</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Contrôleur d'un formulaire d'édition, réactif <strong>par tranche de champ</strong>.</p>
+<p>Invariants (AD-2 — NON-NÉGOCIABLES) :</p>
+<ul>
+<li><strong>Une tranche = un <a href="https://api.flutter.dev/flutter/foundation/ValueNotifier-class.html">ValueNotifier</a> mémoïsé</strong> : <a href="../zcrud_core/ZFormController/fieldListenable.html">fieldListenable</a> renvoie
+TOUJOURS la même instance pour un <code>name</code> donné (créée une fois, jamais
+recréée). C'est ce qui évite la recréation d'état au rebuild — cause racine
+du bug historique.</li>
+<li><strong><a href="../zcrud_core/ZFormController/setValue.html">setValue</a> ne provoque JAMAIS de rebuild global</strong> : écrire la valeur d'un
+champ ne notifie QUE les listeners de la tranche de ce champ. Le
+<a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier-class.html">ChangeNotifier</a> global (<code>notifyListeners()</code>) est réservé aux changements
+<strong>structurels</strong> (ensemble/visibilité de champs — canal <a href="../zcrud_core/ZFormController/visibleFields.html">visibleFields</a>).</li>
+<li><strong>Pas de ré-injection</strong> : le contrôleur DÉTIENT la valeur ; il n'écrit
+jamais dans un <code>TextEditingController</code> (<code>.text=</code>). La synchronisation
+valeur↔<code>TextField</code> et la stabilité du <code>TextEditingController</code> relèvent du
+widget de champ texte. Ici la saisie est à sens unique (<code>onChanged → setValue</code>).</li>
+</ul>
+<p>Aucun gestionnaire d'état n'est importé (AD-15) : seules les primitives
+<code>package:flutter/foundation.dart</code> (<code>ChangeNotifier</code>/<code>ValueListenable</code>) sont
+utilisées. Le branchement injection/cycle de vie passe par <code>ZcrudScope</code> / un
+binding, jamais par une référence directe à un manager.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier-class.html">ChangeNotifier</a></li>
+      <li>ZFormController</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZFormController.new" class="callable">
+          <span class="name"><a href="../zcrud_core/ZFormController/ZFormController.html">ZFormController</a></span><span class="signature">({<span class="parameter" id="param-initialValues"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span>?</span> <span class="parameter-name">initialValues</span>, </span><span class="parameter" id="param-visibleFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">visibleFields</span></span>})</span>
+        </dt>
+        <dd>
+          Construit un contrôleur.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="hasExplicitVisibleFields" class="property">
+  <span class="name"><a href="../zcrud_core/ZFormController/hasExplicitVisibleFields.html">hasExplicitVisibleFields</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> ssi l'hôte a fourni <code>visibleFields</code> <strong>à la construction</strong>.
+C'est la SEULE information qui distingue un ensemble structurel
+<strong>voulu par l'hôte</strong> d'un amorçage de repli dérivé des clés de
+<code>initialValues</code> — le constructeur la perdait, ce qui rendait l'ordre
+d'affichage tributaire de l'ordre de la Map de persistance,
+<strong>silencieusement</strong>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="hasListeners" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier/hasListeners.html">hasListeners</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  Whether any listeners are currently registered.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="isDirty" class="property">
+  <span class="name"><a href="../zcrud_core/ZFormController/isDirty.html">isDirty</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  <code>ValueListenable&lt;bool&gt;</code> <em>dirty</em> <strong>dédié</strong> : <code>true</code> dès qu'au moins un
+champ s'écarte de la baseline ; revient à <code>false</code> quand tous y reviennent
+(ou après <a href="../zcrud_core/ZFormController/reset.html">reset</a>/<a href="../zcrud_core/ZFormController/markPristine.html">markPristine</a>). Écoute CIBLÉE (jamais le canal global).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="reseedRevision" class="property">
+  <span class="name"><a href="../zcrud_core/ZFormController/reseedRevision.html">reseedRevision</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Canal de write-back externe (révision) observé par les widgets à buffer
+interne pour se re-amorcer <strong>hors focus</strong> sur <a href="../zcrud_core/ZFormController/reset.html">reset</a>/<a href="../zcrud_core/ZFormController/reseed.html">reseed</a>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="reveal" class="property">
+  <span class="name"><a href="../zcrud_core/ZFormController/reveal.html">reveal</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Canal de révélation d'erreurs (époque). Les champs l'observent pour révéler
+leur message à une soumission agrégée en échec, texte comme non-texte.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="values" class="property">
+  <span class="name"><a href="../zcrud_core/ZFormController/values.html">values</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Snapshot <strong>immuable</strong> des valeurs de toutes les tranches (<code>name → valeur</code>).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="visibleFields" class="property">
+  <span class="name"><a href="../zcrud_core/ZFormController/visibleFields.html">visibleFields</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Canal <strong>structurel</strong> : liste ordonnée des champs visibles.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="addListener" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier/addListener.html">addListener</a></span><span class="signature">(<wbr><span class="parameter" id="addListener-param-listener"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a></span> <span class="parameter-name">listener</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Register a closure to be called when the object changes.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="baselineValueOf" class="callable">
+  <span class="name"><a href="../zcrud_core/ZFormController/baselineValueOf.html">baselineValueOf</a></span><span class="signature">(<wbr><span class="parameter" id="baselineValueOf-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Lit la valeur <strong>baseline</strong> (item d'origine persisté) de <code>name</code> — <code>null</code> si
+absente. Lecture seule <strong>pure</strong> de <code>_baseline</code> : aucune
+mutation, aucun canal réactif, aucun <code>notifyListeners()</code> (rebuild ciblé
+intact).
+  
+
+</dd>
+
+        <dt id="dispose" class="callable">
+  <span class="name"><a href="../zcrud_core/ZFormController/dispose.html">dispose</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Discards any resources used by the object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="fieldListenable" class="callable">
+  <span class="name"><a href="../zcrud_core/ZFormController/fieldListenable.html">fieldListenable</a></span><span class="signature">(<wbr><span class="parameter" id="fieldListenable-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Retourne la <strong>tranche réactive</strong> du champ <code>name</code>.
+  
+
+</dd>
+
+        <dt id="isTouched" class="callable">
+  <span class="name"><a href="../zcrud_core/ZFormController/isTouched.html">isTouched</a></span><span class="signature">(<wbr><span class="parameter" id="isTouched-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si l'utilisateur a écrit dans la tranche <code>name</code> depuis la dernière
+remise à zéro (<a href="../zcrud_core/ZFormController/reset.html">reset</a>/<a href="../zcrud_core/ZFormController/reseed.html">reseed</a>/<a href="../zcrud_core/ZFormController/markPristine.html">markPristine</a>).
+  
+
+</dd>
+
+        <dt id="markPristine" class="callable">
+  <span class="name"><a href="../zcrud_core/ZFormController/markPristine.html">markPristine</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Re-capture la <strong>baseline</strong> depuis les valeurs courantes ⇒ <a href="../zcrud_core/ZFormController/isDirty.html">isDirty</a> repasse
+à <code>false</code>. Appelé après une soumission réussie (<code>onSubmit</code> → <code>Right</code>).
+N'affecte NI la révélation NI la révision de re-seed.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="notifyListeners" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier/notifyListeners.html">notifyListeners</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Call all the registered listeners.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="removeListener" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier/removeListener.html">removeListener</a></span><span class="signature">(<wbr><span class="parameter" id="removeListener-param-listener"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a></span> <span class="parameter-name">listener</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Remove a previously registered closure from the list of closures that are
+notified when the object changes.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="reseed" class="callable">
+  <span class="name"><a href="../zcrud_core/ZFormController/reseed.html">reseed</a></span><span class="signature">(<wbr><span class="parameter" id="reseed-param-values"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">values</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Recharge</strong> des valeurs EXTERNES autoritaires : écrit
+<code>values</code> dans les tranches, <strong>re-définit la baseline</strong> sur ces valeurs
+(⇒ non-dirty), puis incrémente <a href="../zcrud_core/ZFormController/reseedRevision.html">reseedRevision</a> pour re-amorcer les widgets
+bufferisés hors focus. Sert le chargement asynchrone d'un enregistrement.
+  
+
+</dd>
+
+        <dt id="reset" class="callable">
+  <span class="name"><a href="../zcrud_core/ZFormController/reset.html">reset</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Réinitialise</strong> le formulaire à sa baseline courante : restaure la
+valeur baseline de chaque tranche, efface l'état <em>dirty</em> et la révélation,
+puis incrémente <a href="../zcrud_core/ZFormController/reseedRevision.html">reseedRevision</a> pour re-amorcer les widgets bufferisés
+<strong>hors focus</strong>. Une saisie en cours (champ focalisé) n'est pas écrasée : le
+re-amorçage est différé à la perte de focus par le widget.
+  
+
+</dd>
+
+        <dt id="revealErrors" class="callable">
+  <span class="name"><a href="../zcrud_core/ZFormController/revealErrors.html">revealErrors</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Demande la <strong>révélation</strong> des erreurs de validation (incrémente l'époque).
+Appelé par la soumission agrégée en échec de validation.
+  
+
+</dd>
+
+        <dt id="setValue" class="callable">
+  <span class="name"><a href="../zcrud_core/ZFormController/setValue.html">setValue</a></span><span class="signature">(<wbr><span class="parameter" id="setValue-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="setValue-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span>, {</span><span class="parameter" id="setValue-param-derived"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">derived</span> = <span class="default-value">false</span></span>})
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Met à jour <strong>exclusivement</strong> la tranche du champ <code>name</code>.
+  
+
+</dd>
+
+        <dt id="setVisibleFields" class="callable">
+  <span class="name"><a href="../zcrud_core/ZFormController/setVisibleFields.html">setVisibleFields</a></span><span class="signature">(<wbr><span class="parameter" id="setVisibleFields-param-names"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">names</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Remplace l'ensemble structurel des champs visibles.
+  
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="valueOf" class="callable">
+  <span class="name"><a href="../zcrud_core/ZFormController/valueOf.html">valueOf</a></span><span class="signature">(<wbr><span class="parameter" id="valueOf-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Lit la valeur courante de la tranche <code>name</code> (<code>null</code> si jamais écrite).
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZFormController class</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

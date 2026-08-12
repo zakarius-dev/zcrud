@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZStepperEdition class from the zcrud_core library, for the Dart programming language.">
+  <title>ZStepperEdition class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZStepperEdition class</li>
+  </ol>
+  <div class="self-name">ZStepperEdition</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZStepperEdition-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZStepperEdition</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Formulaire d'édition présenté en <strong>étapes séquencées</strong> sur un unique
+<a href="../zcrud_core/ZFormController-class.html">ZFormController</a>.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree-class.html">DiagnosticableTree</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/StatefulWidget-class.html">StatefulWidget</a></li>
+      <li>ZStepperEdition</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZStepperEdition.new" class="callable">
+          <span class="name"><a href="../zcrud_core/ZStepperEdition/ZStepperEdition.html">ZStepperEdition</a></span><span class="signature">({<span class="parameter" id="param-controller"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFormController-class.html">ZFormController</a></span> <span class="parameter-name">controller</span>, </span><span class="parameter" id="param-fields"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">fields</span>, </span><span class="parameter" id="param-steps"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZEditionStep-class.html">ZEditionStep</a></span>&gt;</span></span> <span class="parameter-name">steps</span>, </span><span class="parameter" id="param-config"><span class="type-annotation"><a href="../zcrud_core/ZStepperConfig-class.html">ZStepperConfig</a></span> <span class="parameter-name">config</span> = <span class="default-value">const ZStepperConfig()</span>, </span><span class="parameter" id="param-initialStep"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">initialStep</span> = <span class="default-value">0</span>, </span><span class="parameter" id="param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">padding</span>, </span><span class="parameter" id="param-physics"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/ScrollPhysics-class.html">ScrollPhysics</a>?</span> <span class="parameter-name">physics</span>, </span><span class="parameter" id="param-readOnly"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readOnly</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-layout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../zcrud_core/ZResponsiveSpan-class.html">ZResponsiveSpan</a></span>&gt;</span></span> <span class="parameter-name">layout</span> = <span class="default-value">const &lt;String, ZResponsiveSpan&gt;{}</span>, </span><span class="parameter" id="param-gridGutter"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">gridGutter</span> = <span class="default-value">8</span>, </span><span class="parameter" id="param-fieldBuilder"><span class="type-annotation"><a href="../zcrud_core/ZStepFieldBuilder.html">ZStepFieldBuilder</a>?</span> <span class="parameter-name">fieldBuilder</span>, </span><span class="parameter" id="param-previousLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">previousLabel</span>, </span><span class="parameter" id="param-nextLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">nextLabel</span>, </span><span class="parameter" id="param-finishLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">finishLabel</span>, </span><span class="parameter" id="param-onComplete"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onComplete</span>, </span><span class="parameter" id="param-onStepChanged"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">onStepChanged</span>, </span><span class="parameter" id="param-onStructuralBuild"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onStructuralBuild</span>, </span><span class="parameter" id="param-nested"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">nested</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-onNestedWindowChanged"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">onNestedWindowChanged</span>, </span><span class="parameter" id="param-revealTrigger"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">revealTrigger</span>, </span><span class="parameter" id="param-depth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">depth</span> = <span class="default-value">0</span>, </span><span class="parameter" id="param-unbounded"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">unbounded</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-stepStore"><span class="type-annotation"><a href="../zcrud_core/ZStepIndexStore-class.html">ZStepIndexStore</a>?</span> <span class="parameter-name">stepStore</span>, </span><span class="parameter" id="param-formId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">formId</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+        </dt>
+        <dd>
+          Construit le stepper sur le <code>controller</code> unique, le catalogue <code>fields</code> et
+la liste ordonnée d'<code>steps</code>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="config" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/config.html">config</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZStepperConfig-class.html">ZStepperConfig</a></span>
+  
+
+</dt>
+<dd>
+  Configuration visuelle &amp; comportementale. Défaut <code>const ZStepperConfig()</code>
+= top/horizontal/numbered « k/N » + titre, gate strict.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="controller" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/controller.html">controller</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZFormController-class.html">ZFormController</a></span>
+  
+
+</dt>
+<dd>
+  Contrôleur <strong>unique</strong> détenant l'état (créé/possédé par l'hôte ; jamais
+recréé ici, jamais un par étape/niveau).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="depth" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/depth.html">depth</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  <strong>Interne</strong> : profondeur d'imbrication de CE stepper (0 = racine). Plafonné
+par <a href="../zcrud_core/kZStepperMaxNestingDepth-constant.html">kZStepperMaxNestingDepth</a> (invariant AD-10 — <code>nestedSteps</code> circulaires).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="fieldBuilder" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/fieldBuilder.html">fieldBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZStepFieldBuilder.html">ZStepFieldBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Seam de rendu de champ (reçoit le mode d'autovalidation piloté). À défaut :
+le dispatcher <a href="../zcrud_core/ZFieldWidget-class.html">ZFieldWidget</a>, place stable garantie par <a href="../zcrud_core/DynamicEdition-class.html">DynamicEdition</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="fields" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/fields.html">fields</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Catalogue complet des champs connus (source des <a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a> par nom). Le
+MÊME catalogue est transmis à un sous-stepper imbriqué.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="finishLabel" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/finishLabel.html">finishLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé du bouton final de la <strong>dernière</strong> étape (défaut <code>z.stepper.finish</code>).
+Son action délègue à <a href="../zcrud_core/ZStepperEdition/onComplete.html">onComplete</a> (soumission déléguée à l'hôte).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="formId" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/formId.html">formId</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé de portée opaque du formulaire pour <a href="../zcrud_core/ZStepperEdition/stepStore.html">stepStore</a> (<code>null</code> ⇒ portée
+« globale »). Ignoré si <a href="../zcrud_core/ZStepperEdition/stepStore.html">stepStore</a> est <code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="gridGutter" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/gridGutter.html">gridGutter</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Gouttière (dp) de la grille responsive.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="initialStep" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/initialStep.html">initialStep</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Index d'étape initial (borné à <code>[0, steps.length-1]</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="key" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/key.html">key</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span>
+  
+
+</dt>
+<dd class="inherited">
+  Controls how one widget replaces another widget in the tree.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="layout" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/layout.html">layout</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../zcrud_core/ZResponsiveSpan-class.html">ZResponsiveSpan</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Grille 12 colonnes (span par nom de champ) propagée à chaque étape.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="nested" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/nested.html">nested</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <strong>Interne</strong> : <code>true</code> quand ce stepper est <strong>imbriqué</strong> dans une étape
+parente. Un stepper imbriqué tourne en mode « sans fenêtre » (n'écrit JAMAIS
+<code>visibleFields</code> ; remonte sa contribution via <a href="../zcrud_core/ZStepperEdition/onNestedWindowChanged.html">onNestedWindowChanged</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="nextLabel" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/nextLabel.html">nextLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé du bouton « suivant » (défaut l10n <code>z.stepper.next</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onComplete" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/onComplete.html">onComplete</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span>
+  
+
+</dt>
+<dd>
+  Slot de <strong>fin d'assistant</strong> (dernière étape) : ce widget ne soumet PAS ;
+il délègue à l'hôte. <code>null</code> ⇒ le bouton final est présent mais désactivé.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onNestedWindowChanged" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/onNestedWindowChanged.html">onNestedWindowChanged</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Interne</strong> : callback par lequel un stepper imbriqué <strong>remonte</strong> sa
+contribution de fenêtre (union de son chemin actif) au parent, qui agrège
+jusqu'au racine (seul écrivain de <code>visibleFields</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onStepChanged" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/onStepChanged.html">onStepChanged</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Notifié après un changement d'étape effectif (index cible).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onStructuralBuild" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/onStructuralBuild.html">onStructuralBuild</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span>
+  
+
+</dt>
+<dd>
+  Hook d'instrumentation : appelé à chaque (re)build <strong>structurel</strong> du chrome
+(compteur de test — reste inchangé pendant la saisie, invariant AD-2).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="padding" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/padding.html">padding</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span>
+  
+
+</dt>
+<dd>
+  Marge du <code>ListView</code> de chaque étape (héritée par <a href="../zcrud_core/DynamicEdition-class.html">DynamicEdition</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="physics" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/physics.html">physics</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/ScrollPhysics-class.html">ScrollPhysics</a>?</span>
+  
+
+</dt>
+<dd>
+  <code>ScrollPhysics</code> de la zone d'étape.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="previousLabel" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/previousLabel.html">previousLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé du bouton « précédent » (défaut l10n <code>z.stepper.previous</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="readOnly" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/readOnly.html">readOnly</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Mode lecture global propagé à chaque étape (<a href="../zcrud_core/DynamicEdition/readOnly.html">DynamicEdition.readOnly</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="revealTrigger" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/revealTrigger.html">revealTrigger</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Interne</strong> : signal de <strong>révélation</strong> poussé par le parent (gate bloqué)
+pour forcer ce stepper imbriqué à révéler les erreurs de sa sous-étape
+active. Chaque incrément déclenche <code>AutovalidateMode.always</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="steps" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/steps.html">steps</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZEditionStep-class.html">ZEditionStep</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Étapes ordonnées partitionnant le catalogue.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="stepStore" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/stepStore.html">stepStore</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZStepIndexStore-class.html">ZStepIndexStore</a>?</span>
+  
+
+</dt>
+<dd>
+  Seam de <strong>reprise</strong> : persiste/restaure l'étape courante.
+<code>null</code> (défaut) ⇒ aucune persistance, comportement inchangé.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="unbounded" class="property">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/unbounded.html">unbounded</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <strong>Interne</strong> : ce stepper est monté dans un contexte de hauteur <strong>NON
+BORNÉE</strong> (item de <code>ListView.builder</code> du mode « tout affiché »). Il se
+dimensionne alors <strong>au contenu</strong> (<code>MainAxisSize.min</code>, aucun <code>Expanded</code>
+vertical) au lieu de remplir l'espace disponible.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="createElement" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/StatefulWidget/createElement.html">createElement</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/StatefulElement-class.html">StatefulElement</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Creates a <a href="https://api.flutter.dev/flutter/widgets/StatefulElement-class.html">StatefulElement</a> to manage this widget's location in the tree.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="createState" class="callable">
+  <span class="name"><a href="../zcrud_core/ZStepperEdition/createState.html">createState</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZStepperEdition-class.html">ZStepperEdition</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Creates the mutable state for this widget at a given location in the tree.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="debugDescribeChildren" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/debugDescribeChildren.html">debugDescribeChildren</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a list of <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a> objects describing this node's
+children.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="debugFillProperties" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/debugFillProperties.html">debugFillProperties</a></span><span class="signature">(<wbr><span class="parameter" id="debugFillProperties-param-properties"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticPropertiesBuilder-class.html">DiagnosticPropertiesBuilder</a></span> <span class="parameter-name">properties</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Add additional properties associated with the node.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toDiagnosticsNode" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toDiagnosticsNode.html">toDiagnosticsNode</a></span><span class="signature">(<wbr>{<span class="parameter" id="toDiagnosticsNode-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span><span class="parameter" id="toDiagnosticsNode-param-style"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsTreeStyle.html">DiagnosticsTreeStyle</a>?</span> <span class="parameter-name">style</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a debug representation of the object that is used by debugging
+tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode/toStringDeep.html">DiagnosticsNode.toStringDeep</a>.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/Diagnosticable/toString.html">toString</a></span><span class="signature">(<wbr>{<span class="parameter" id="toString-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.info</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringDeep" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringDeep.html">toStringDeep</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringDeep-param-prefixLineOne"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">prefixLineOne</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="toStringDeep-param-prefixOtherLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">prefixOtherLines</span>, </span><span class="parameter" id="toStringDeep-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span>, </span><span class="parameter" id="toStringDeep-param-wrapWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">wrapWidth</span> = <span class="default-value">65</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a string representation of this node and its descendants.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShallow" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringShallow.html">toStringShallow</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringShallow-param-joiner"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">joiner</span> = <span class="default-value">&#39;, &#39;</span>, </span><span class="parameter" id="toStringShallow-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a one-line detailed description of the object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShort" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/toStringShort.html">toStringShort</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A short, textual description of this widget.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZStepperEdition class</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

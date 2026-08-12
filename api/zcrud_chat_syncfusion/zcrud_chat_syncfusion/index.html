@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_chat_syncfusion library API docs, for the Dart programming language.">
+  <title>zcrud_chat_syncfusion library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat_syncfusion</a></li>
+    <li class="self-crumb">zcrud_chat_syncfusion.dart</li>
+  </ol>
+  <div class="self-name">zcrud_chat_syncfusion</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_chat_syncfusion&#47;zcrud_chat_syncfusion-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_chat_syncfusion</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_chat_syncfusion</code>.</p>
+<p>Ce paquet est la frontière du chat avec Syncfusion : tout ce qu'une
+intégration à ce backend d'affichage impose s'arrête ici, et le socle
+(<code>zcrud_chat</code>, <code>zcrud_chat_kernel</code>, <code>zcrud_core</code>) n'en porte rien.</p>
+<h2 id="deux-volets-une-seule-raison-dtre">Deux volets, une seule raison d'être</h2>
+<p><strong>1. La coquille Syncfusion — un backend du port, jamais une vue
+parallèle.</strong> <code>ZSfAssistShellRenderer</code> implémente <code>ZChatShellRenderer</code> :
+il rend le cadre (<code>SfAIAssistView</code>) et rappelle la fabrique de tuiles du
+socle, plutôt que de réimplémenter une vue de conversation concurrente
+qui perdrait la région live, le dépli inline et <code>ZChatMessageTile</code>.
+<code>syncfusion_flutter_chat</code> est une arête de ce seul paquet du monorepo —
+aucun autre satellite ne la déclare.</p>
+<p><strong>2. La normalisation d'un fil textuel encodé selon la convention
+IFFD.</strong> <code>ZIffdLexer</code> découpe le flux brut en segments (texte décodé,
+balises), <code>ZIffdStreamNormalizer</code> classe ces segments en canaux et
+produit les événements typés du kernel, <code>ZIffdTextStreamPort</code> expose le
+tout comme un <code>ZChatStreamPort</code>. Une erreur écrite en clair par le
+serveur, dans le même canal que la réponse, devient un
+<code>Left(ZChatProviderFailure)</code> — jamais un message de conversation
+(invariant AD-5).</p>
+<p>Aucun client HTTP, aucun SDK IA (invariants AD-11, AD-12), aucun
+gestionnaire d'état (invariants AD-2, AD-15). Arêtes sortantes seules,
+graphe acyclique (invariant AD-1).</p>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/</code>.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZIffdFailureCodes">
+  <span class="name "><a href="../zcrud_chat_syncfusion/ZIffdFailureCodes-class.html">ZIffdFailureCodes</a></span> 
+
+</dt>
+<dd>
+  Codes d'échec verbatim du fil, conservés dans
+<code>ZChatProviderFailure.code</code> (aucun catalogue fermé, aucun <code>switch</code> d'hôte).
+</dd>
+
+          <dt id="ZIffdLexer">
+  <span class="name "><a href="../zcrud_chat_syncfusion/ZIffdLexer-class.html">ZIffdLexer</a></span> 
+
+</dt>
+<dd>
+  Découpe incrémentale du fil.
+</dd>
+
+          <dt id="ZIffdSegment">
+  <span class="name "><a href="../zcrud_chat_syncfusion/ZIffdSegment-class.html">ZIffdSegment</a></span> 
+
+</dt>
+<dd>
+  Un morceau reconnu du fil.
+</dd>
+
+          <dt id="ZIffdStreamNormalizer">
+  <span class="name "><a href="../zcrud_chat_syncfusion/ZIffdStreamNormalizer-class.html">ZIffdStreamNormalizer</a></span> 
+
+</dt>
+<dd>
+  Décodeur incrémental et sans état partagé : une instance par requête.
+</dd>
+
+          <dt id="ZIffdTagSegment">
+  <span class="name "><a href="../zcrud_chat_syncfusion/ZIffdTagSegment-class.html">ZIffdTagSegment</a></span> 
+
+</dt>
+<dd>
+  Une balise <code>&lt;NOM&gt;</code> / <code>&lt;/NOM&gt;</code> / <code>&lt;NOM 3&gt;</code> / <code>&lt;/NOM 3&gt;</code>.
+</dd>
+
+          <dt id="ZIffdTextSegment">
+  <span class="name "><a href="../zcrud_chat_syncfusion/ZIffdTextSegment-class.html">ZIffdTextSegment</a></span> 
+
+</dt>
+<dd>
+  Du texte, <code>###LINE###</code> déjà décodé en <code>\n</code>.
+</dd>
+
+          <dt id="ZIffdTextStreamPort">
+  <span class="name "><a href="../zcrud_chat_syncfusion/ZIffdTextStreamPort-class.html">ZIffdTextStreamPort</a></span> 
+
+</dt>
+<dd>
+  <code>ZChatStreamPort</code> adossé au fil textuel encodé selon la convention IFFD.
+</dd>
+
+          <dt id="ZSfAssistShellRenderer">
+  <span class="name "><a href="../zcrud_chat_syncfusion/ZSfAssistShellRenderer-class.html">ZSfAssistShellRenderer</a></span> 
+
+</dt>
+<dd>
+  Rend le <strong>cadre</strong> d'une conversation avec <code>SfAIAssistView</code>.
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="ZIffdChannel">
+  <span class="name "><a href="../zcrud_chat_syncfusion/ZIffdChannel.html">ZIffdChannel</a></span> 
+
+</dt>
+<dd>
+  Canal logique auquel appartient le texte courant.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+    <section class="summary offset-anchor" id="constants">
+      <h2>Constants</h2>
+      <dl class="properties">
+          <dt id="kZIffdFinalAnswerPayloadKind" class="constant">
+    <span class="name "><a href="../zcrud_chat_syncfusion/kZIffdFinalAnswerPayloadKind-constant.html">kZIffdFinalAnswerPayloadKind</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Discriminant du variant ouvert portant <code>&lt;FINAL_ANSWER_PAYLOAD&gt;</code> (invariant
+AD-4).
+  
+
+</dd>
+
+          <dt id="kZIffdLineMarker" class="constant">
+    <span class="name "><a href="../zcrud_chat_syncfusion/kZIffdLineMarker-constant.html">kZIffdLineMarker</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Encodage du saut de ligne dans le fil.
+  
+
+</dd>
+
+          <dt id="kZIffdPlainErrorPrefix" class="constant">
+    <span class="name "><a href="../zcrud_chat_syncfusion/kZIffdPlainErrorPrefix-constant.html">kZIffdPlainErrorPrefix</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Préfixe d'erreur écrit en clair dans le canal de réponse par les
+exécuteurs d'agents de ce backend, au lieu d'un canal d'échec séparé.
+  
+
+</dd>
+
+          <dt id="kZSfAssistLabelAssistantAuthor" class="constant">
+    <span class="name "><a href="../zcrud_chat_syncfusion/kZSfAssistLabelAssistantAuthor-constant.html">kZSfAssistLabelAssistantAuthor</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nom d'auteur des messages de l'assistant.
+  
+
+</dd>
+
+          <dt id="kZSfAssistLabelFallbacks" class="constant">
+    <span class="name "><a href="../zcrud_chat_syncfusion/kZSfAssistLabelFallbacks-constant.html">kZSfAssistLabelFallbacks</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Repli lisible de chaque clé — jamais prioritaire sur les libellés de
+l'hôte, atteint seulement en leur absence.
+  
+
+</dd>
+
+          <dt id="kZSfAssistLabelKeys" class="constant">
+    <span class="name "><a href="../zcrud_chat_syncfusion/kZSfAssistLabelKeys-constant.html">kZSfAssistLabelKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Toutes les clés de la coquille — surface exhaustive pour l'hôte.
+  
+
+</dd>
+
+          <dt id="kZSfAssistLabelPrefix" class="constant">
+    <span class="name "><a href="../zcrud_chat_syncfusion/kZSfAssistLabelPrefix-constant.html">kZSfAssistLabelPrefix</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Préfixe commun — repère toutes les clés de la coquille Syncfusion.
+  
+
+</dd>
+
+          <dt id="kZSfAssistLabelUserAuthor" class="constant">
+    <span class="name "><a href="../zcrud_chat_syncfusion/kZSfAssistLabelUserAuthor-constant.html">kZSfAssistLabelUserAuthor</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nom d'auteur des messages de l'utilisateur.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="zIffdAgentOfTag" class="callable">
+  <span class="name"><a href="../zcrud_chat_syncfusion/zIffdAgentOfTag.html">zIffdAgentOfTag</a></span><span class="signature">(<wbr><span class="parameter" id="zIffdAgentOfTag-param-tagName"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">tagName</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Nom d'agent neutre dérivé d'une balise (<code>RAG_ITERATION_2</code> →
+<code>ragIteration2</code>), pour alimenter <code>ZChatThinkingStep.agent</code>.
+  
+
+</dd>
+
+          <dt id="zIffdChannelOfTag" class="callable">
+  <span class="name"><a href="../zcrud_chat_syncfusion/zIffdChannelOfTag.html">zIffdChannelOfTag</a></span><span class="signature">(<wbr><span class="parameter" id="zIffdChannelOfTag-param-tagName"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">tagName</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat_syncfusion/ZIffdChannel.html">ZIffdChannel</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Classement d'une balise en canal, total : aucune balise ne peut être
+« non classée ».
+  
+
+</dd>
+
+          <dt id="zIffdDecodeNonStreamBody" class="callable">
+  <span class="name"><a href="../zcrud_chat_syncfusion/zIffdDecodeNonStreamBody.html">zIffdDecodeNonStreamBody</a></span><span class="signature">(<wbr><span class="parameter" id="zIffdDecodeNonStreamBody-param-body"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">body</span></span>)
+    <span class="returntype parameter">&#8594; ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZContentBlock</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Décode une réponse non-streamée reçue sous forme de texte JSON.
+  
+
+</dd>
+
+          <dt id="zIffdDecodeNonStreamResponse" class="callable">
+  <span class="name"><a href="../zcrud_chat_syncfusion/zIffdDecodeNonStreamResponse.html">zIffdDecodeNonStreamResponse</a></span><span class="signature">(<wbr><span class="parameter" id="zIffdDecodeNonStreamResponse-param-map"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">map</span></span>)
+    <span class="returntype parameter">&#8594; ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZContentBlock</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Décode la réponse non-streamée du backend
+(<code>{"data": …, "error": …, "reasoning": …, "responseCode": …}</code>).
+  
+
+</dd>
+
+          <dt id="zSfAssistLabel" class="callable">
+  <span class="name"><a href="../zcrud_chat_syncfusion/zSfAssistLabel.html">zSfAssistLabel</a></span><span class="signature">(<wbr><span class="parameter" id="zSfAssistLabel-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zSfAssistLabel-param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">key</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Résout une clé de la coquille — l'unique site d'appel de résolution de
+libellé de ce paquet.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZIffdRawStreamOpener" class="callable">
+    <span class="name"><a href="../zcrud_chat_syncfusion/ZIffdRawStreamOpener.html">ZIffdRawStreamOpener</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-request"><span class="type-annotation">ZChatGenerationRequest</span> <span class="parameter-name">request</span>, </span><span class="parameter" id="param-token"><span class="type-annotation">ZChatRequestToken</span> <span class="parameter-name">token</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Ouvre le flux brut : des fragments de texte déjà extraits du transport
+par l'hôte.
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat_syncfusion</a></li>
+    <li class="self-crumb">zcrud_chat_syncfusion.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_chat_syncfusion</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_chat_syncfusion/">zcrud_chat_syncfusion</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_chat_syncfusion library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_syncfusion
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

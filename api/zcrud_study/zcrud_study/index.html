@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_study library API docs, for the Dart programming language.">
+  <title>zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li class="self-crumb">zcrud_study.dart</li>
+  </ol>
+  <div class="self-name">zcrud_study</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_study&#47;zcrud_study-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_study</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_study</code>.</p>
+<p>Paquet de présentation de l'orchestration « study tools » : hub de
+contenu, sections d'outils composables, génération de flashcards par IA,
+partage et modération, session de révision assemblée, examens et
+rappels, cartes par défaut pour chaque type de contenu. API publique :
+ce barrel ; implémentation sous <code>lib/src/</code>. <code>zcrud_study</code> dépend de
+<code>zcrud_core</code> et <code>zcrud_study_kernel</code>, jamais l'inverse (invariant AD-1).</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZActionMenu">
+  <span class="name "><a href="../zcrud_study/ZActionMenu-class.html">ZActionMenu</a></span> 
+
+</dt>
+<dd>
+  Menu contextuel à déclencheur et contenu DÉCOUPLÉS.
+</dd>
+
+          <dt id="ZAiExplanationPort">
+  <span class="name "><a href="../zcrud_study/ZAiExplanationPort-class.html">ZAiExplanationPort</a></span> 
+
+</dt>
+<dd>
+  Port neutre d'explication (invariant AD-5 : domaine backend-agnostique).
+</dd>
+
+          <dt id="ZAiExplanationRequest">
+  <span class="name "><a href="../zcrud_study/ZAiExplanationRequest-class.html">ZAiExplanationRequest</a></span> 
+
+</dt>
+<dd>
+  Requête immuable d'explication (value-object, <code>==</code>/<code>hashCode</code> par
+valeur).
+</dd>
+
+          <dt id="ZAllFeaturesAvailable">
+  <span class="name "><a href="../zcrud_study/ZAllFeaturesAvailable-class.html">ZAllFeaturesAvailable</a></span> 
+
+</dt>
+<dd>
+  Implémentation de référence FAIL-OPEN : toute fonctionnalité est disponible.
+</dd>
+
+          <dt id="ZApproachingReminder">
+  <span class="name "><a href="../zcrud_study/ZApproachingReminder-class.html">ZApproachingReminder</a></span> 
+
+</dt>
+<dd>
+  Un rappel approchant matérialisé : l'examen source et son décompte.
+</dd>
+
+          <dt id="ZContentHubEntry">
+  <span class="name "><a href="../zcrud_study/ZContentHubEntry-class.html">ZContentHubEntry</a></span> 
+
+</dt>
+<dd>
+  Une entrée du hub d'ajout — data-class de présentation immuable (<code>const</code>).
+</dd>
+
+          <dt id="ZContentHubLauncher">
+  <span class="name "><a href="../zcrud_study/ZContentHubLauncher-class.html">ZContentHubLauncher</a></span> 
+
+</dt>
+<dd>
+  Configuration <strong>VALEUR</strong> d'un hub d'ajout de contenu, prête à être ouverte
+depuis plusieurs <code>+</code>.
+</dd>
+
+          <dt id="ZContentHubReference">
+  <span class="name "><a href="../zcrud_study/ZContentHubReference-class.html">ZContentHubReference</a></span> 
+
+</dt>
+<dd>
+  Les valeurs de RÉFÉRENCE du hub d'ajout de contenu, le point d'audit
+unique. Modifier une valeur ici change le défaut du hub partout.
+</dd>
+
+          <dt id="ZContentHubScope">
+  <span class="name "><a href="../zcrud_study/ZContentHubScope-class.html">ZContentHubScope</a></span> 
+
+</dt>
+<dd>
+  Portée d'un hub d'ajout <strong>configuré une seule fois</strong> — pour que le <code>+</code> de
+l'app-bar et le <code>+</code> d'une section ouvrent LE MÊME hub.
+</dd>
+
+          <dt id="ZContentHubSection">
+  <span class="name "><a href="../zcrud_study/ZContentHubSection-class.html">ZContentHubSection</a></span> 
+
+</dt>
+<dd>
+  Un groupe titré d'entrées du hub.
+</dd>
+
+          <dt id="ZContentHubSheet">
+  <span class="name "><a href="../zcrud_study/ZContentHubSheet-class.html">ZContentHubSheet</a></span> 
+
+</dt>
+<dd>
+  Feuille d'ajout de contenu paramétrique, au rendu de référence.
+</dd>
+
+          <dt id="ZCountBadge">
+  <span class="name "><a href="../zcrud_study/ZCountBadge-class.html">ZCountBadge</a></span> 
+
+</dt>
+<dd>
+  Badge de compte accessible, construit uniquement pour un compte positif.
+</dd>
+
+          <dt id="ZCountBadgeRow">
+  <span class="name "><a href="../zcrud_study/ZCountBadgeRow-class.html">ZCountBadgeRow</a></span> 
+
+</dt>
+<dd>
+  Rangée de badges qui retire structurellement les comptes non positifs.
+</dd>
+
+          <dt id="ZCountBadgeSpec">
+  <span class="name "><a href="../zcrud_study/ZCountBadgeSpec-class.html">ZCountBadgeSpec</a></span> 
+
+</dt>
+<dd>
+  Données de présentation immuables d'un <a href="../zcrud_study/ZCountBadge-class.html">ZCountBadge</a>.
+</dd>
+
+          <dt id="ZDailyTasksChrome">
+  <span class="name "><a href="../zcrud_study/ZDailyTasksChrome-class.html">ZDailyTasksChrome</a></span> 
+
+</dt>
+<dd>
+  Chrome de référence résolu de la vue des tâches du jour : chaque champ
+applique la priorité paramètre &gt; jeton &gt; référence, et toute couleur est
+un rôle du <code>ColorScheme</code> courant (invariant FR-26). Produit par
+<a href="../zcrud_study/zDailyTasksChromeOf.html">zDailyTasksChromeOf</a>.
+</dd>
+
+          <dt id="ZDailyTasksReference">
+  <span class="name "><a href="../zcrud_study/ZDailyTasksReference-class.html">ZDailyTasksReference</a></span> 
+
+</dt>
+<dd>
+  Les valeurs de référence de la vue des tâches du jour (mesurées sur le
+rendu historique du socle), le point d'audit unique.
+</dd>
+
+          <dt id="ZDailyTasksView">
+  <span class="name "><a href="../zcrud_study/ZDailyTasksView-class.html">ZDailyTasksView</a></span> 
+
+</dt>
+<dd>
+  Corps composable de la vue des tâches du jour.
+</dd>
+
+          <dt id="ZDefaultDocumentCard">
+  <span class="name "><a href="../zcrud_study/ZDefaultDocumentCard-class.html">ZDefaultDocumentCard</a></span> 
+
+</dt>
+<dd>
+  Carte de document par défaut du socle — autonome, sur primitives,
+au rendu de référence.
+</dd>
+
+          <dt id="ZDefaultExamCard">
+  <span class="name "><a href="../zcrud_study/ZDefaultExamCard-class.html">ZDefaultExamCard</a></span> 
+
+</dt>
+<dd>
+  Carte d'examen <strong>par défaut</strong> du socle.
+</dd>
+
+          <dt id="ZDefaultFlashcardCard">
+  <span class="name "><a href="../zcrud_study/ZDefaultFlashcardCard-class.html">ZDefaultFlashcardCard</a></span> 
+
+</dt>
+<dd>
+  Carte de flashcard <strong>par défaut</strong> du socle — autonome, sur le modèle
+<code>ZFlashcard</code> (rendu de référence).
+</dd>
+
+          <dt id="ZDefaultFolderCard">
+  <span class="name "><a href="../zcrud_study/ZDefaultFolderCard-class.html">ZDefaultFolderCard</a></span> 
+
+</dt>
+<dd>
+  Carte de dossier d'étude par défaut du socle.
+</dd>
+
+          <dt id="ZDefaultMenuRenderer">
+  <span class="name "><a href="../zcrud_study/ZDefaultMenuRenderer-class.html">ZDefaultMenuRenderer</a></span> 
+
+</dt>
+<dd>
+  Repli zéro-dépendance : déclencheur <code>PopupMenuButton</code>, surface Material.
+</dd>
+
+          <dt id="ZDefaultMindmapCard">
+  <span class="name "><a href="../zcrud_study/ZDefaultMindmapCard-class.html">ZDefaultMindmapCard</a></span> 
+
+</dt>
+<dd>
+  Carte de carte mentale par défaut du socle, au rendu de référence.
+</dd>
+
+          <dt id="ZDefaultNoteCard">
+  <span class="name "><a href="../zcrud_study/ZDefaultNoteCard-class.html">ZDefaultNoteCard</a></span> 
+
+</dt>
+<dd>
+  Carte de note par défaut du socle — autonome, sur primitives, au rendu
+de référence.
+</dd>
+
+          <dt id="ZDraftEntry">
+  <span class="name "><a href="../zcrud_study/ZDraftEntry-class.html">ZDraftEntry</a></span> 
+
+</dt>
+<dd>
+  Une entrée de la liste de travail : une clé locale stable + la carte courante.
+</dd>
+
+          <dt id="ZEducationQuotaInfo">
+  <span class="name "><a href="../zcrud_study/ZEducationQuotaInfo-class.html">ZEducationQuotaInfo</a></span> 
+
+</dt>
+<dd>
+  Quota IA éducatif transport-agnostique. Les trois champs sont
+nullables : <code>null</code> signifie une information absente, qui ne bloque pas
+(politique fail-open).
+</dd>
+
+          <dt id="ZExamEditor">
+  <span class="name "><a href="../zcrud_study/ZExamEditor-class.html">ZExamEditor</a></span> 
+
+</dt>
+<dd>
+  Éditeur d'examen — composition d'un <code>ZExam</code> à saisie PRÉSERVÉE (AC1).
+</dd>
+
+          <dt id="ZExamRemindersSection">
+  <span class="name "><a href="../zcrud_study/ZExamRemindersSection-class.html">ZExamRemindersSection</a></span> 
+
+</dt>
+<dd>
+  Section listant les examens approchants, dérivés d'un <code>now</code> injecté.
+</dd>
+
+          <dt id="ZFadedOverflow">
+  <span class="name "><a href="../zcrud_study/ZFadedOverflow-class.html">ZFadedOverflow</a></span> 
+
+</dt>
+<dd>
+  Borne en hauteur son <a href="https://api.flutter.dev/flutter/widgets/SingleChildRenderObjectWidget/child.html">child</a> et <strong>signale</strong> la coupure par un fondu bas
+quand le contenu déborde réellement.
+</dd>
+
+          <dt id="ZFeatureAvailability">
+  <span class="name "><a href="../zcrud_study/ZFeatureAvailability-class.html">ZFeatureAvailability</a></span> 
+
+</dt>
+<dd>
+  Interface INJECTABLE de disponibilité de fonctionnalités.
+</dd>
+
+          <dt id="ZFeatureAvailabilityScope">
+  <span class="name "><a href="../zcrud_study/ZFeatureAvailabilityScope-class.html">ZFeatureAvailabilityScope</a></span> 
+
+</dt>
+<dd>
+  Injection Flutter-native de <a href="../zcrud_study/ZFeatureAvailability-class.html">ZFeatureAvailability</a> (AD-2/AD-15).
+</dd>
+
+          <dt id="ZFlashcardBatchMoveDestination">
+  <span class="name "><a href="../zcrud_study/ZFlashcardBatchMoveDestination-class.html">ZFlashcardBatchMoveDestination</a></span> 
+
+</dt>
+<dd>
+  Destination d'un <strong>déplacement</strong> de lot (me-3, AC3) — enveloppe la valeur
+choisie par le sélecteur INJECTÉ afin de distinguer « annulé » (le futur
+résout <code>null</code>) de « déplacer vers <code>null</code> » (racine, <code>value == null</code>).
+</dd>
+
+          <dt id="ZFlashcardCardReference">
+  <span class="name "><a href="../zcrud_study/ZFlashcardCardReference-class.html">ZFlashcardCardReference</a></span> 
+
+</dt>
+<dd>
+  Les valeurs de référence de la carte de flashcard (mesurées sur le rendu
+historique du socle), le point d'audit unique. Modifier une valeur ici
+change le défaut de la carte partout.
+</dd>
+
+          <dt id="ZFlashcardGenerationController">
+  <span class="name "><a href="../zcrud_study/ZFlashcardGenerationController-class.html">ZFlashcardGenerationController</a></span> 
+
+</dt>
+<dd>
+  Contrôleur du flux de génération (aucun store — AD-37/AD-43).
+</dd>
+
+          <dt id="ZFlashcardGenerationLabels">
+  <span class="name "><a href="../zcrud_study/ZFlashcardGenerationLabels-class.html">ZFlashcardGenerationLabels</a></span> 
+
+</dt>
+<dd>
+  Libellés INJECTÉS de la feuille de génération (i18n).
+</dd>
+
+          <dt id="ZFlashcardGenerationLauncher">
+  <span class="name "><a href="../zcrud_study/ZFlashcardGenerationLauncher-class.html">ZFlashcardGenerationLauncher</a></span> 
+
+</dt>
+<dd>
+  Point d'entrée CONDITIONNEL « Générer avec l'IA » (AC11).
+</dd>
+
+          <dt id="ZFlashcardGenerationMessages">
+  <span class="name "><a href="../zcrud_study/ZFlashcardGenerationMessages-class.html">ZFlashcardGenerationMessages</a></span> 
+
+</dt>
+<dd>
+  Libellés INJECTÉS des messages d'échec NON portés par un <code>ZFailure</code> (i18n —
+AC7/AC12). Aucun libellé en dur dans le contrôleur (FR-26/AD-13).
+</dd>
+
+          <dt id="ZFlashcardGenerationPort">
+  <span class="name "><a href="../zcrud_study/ZFlashcardGenerationPort-class.html">ZFlashcardGenerationPort</a></span> 
+
+</dt>
+<dd>
+  Port neutre de génération de flashcards (invariant AD-5 : domaine
+backend-agnostique).
+</dd>
+
+          <dt id="ZFlashcardGenerationRequest">
+  <span class="name "><a href="../zcrud_study/ZFlashcardGenerationRequest-class.html">ZFlashcardGenerationRequest</a></span> 
+
+</dt>
+<dd>
+  Requête immuable de génération de flashcards (value-object,
+<code>==</code>/<code>hashCode</code> par valeur).
+</dd>
+
+          <dt id="ZFlashcardGenerationScope">
+  <span class="name "><a href="../zcrud_study/ZFlashcardGenerationScope-class.html">ZFlashcardGenerationScope</a></span> 
+
+</dt>
+<dd>
+  Injection Flutter-native d'un <a href="../zcrud_study/ZFlashcardGenerationPort-class.html">ZFlashcardGenerationPort</a> OPTIONNEL (AD-2/AD-15).
+</dd>
+
+          <dt id="ZFlashcardGenerationSheet">
+  <span class="name "><a href="../zcrud_study/ZFlashcardGenerationSheet-class.html">ZFlashcardGenerationSheet</a></span> 
+
+</dt>
+<dd>
+  Feuille de génération IA d'un lot de flashcards.
+</dd>
+
+          <dt id="ZFlashcardListBatchMove">
+  <span class="name "><a href="../zcrud_study/ZFlashcardListBatchMove-class.html">ZFlashcardListBatchMove</a></span> 
+
+</dt>
+<dd>
+  Configuration OPTIONNELLE de l'action <strong>déplacer</strong> en lot (me-3, AC3).
+</dd>
+
+          <dt id="ZFlashcardListLabels">
+  <span class="name "><a href="../zcrud_study/ZFlashcardListLabels-class.html">ZFlashcardListLabels</a></span> 
+
+</dt>
+<dd>
+  Libellés <strong>INJECTÉS</strong> de la liste (i18n — AD-13/FR-23).
+</dd>
+
+          <dt id="ZFlashcardListSelection">
+  <span class="name "><a href="../zcrud_study/ZFlashcardListSelection-class.html">ZFlashcardListSelection</a></span> 
+
+</dt>
+<dd>
+  Configuration de la <strong>sélection multiple</strong> de la liste (me-3, FR-SU19).
+</dd>
+
+          <dt id="ZFlashcardListView">
+  <span class="name "><a href="../zcrud_study/ZFlashcardListView-class.html">ZFlashcardListView</a></span> 
+
+</dt>
+<dd>
+  Liste de flashcards : recherche, filtres, tris, ordre manuel, duplication.
+</dd>
+
+          <dt id="ZFlashcardPreview">
+  <span class="name "><a href="../zcrud_study/ZFlashcardPreview-class.html">ZFlashcardPreview</a></span> 
+
+</dt>
+<dd>
+  Aperçu d'une flashcard — délègue le rendu à <code>ZFlashcardReviewCard</code>.
+</dd>
+
+          <dt id="ZFlashcardTagConfirmSheet">
+  <span class="name "><a href="../zcrud_study/ZFlashcardTagConfirmSheet-class.html">ZFlashcardTagConfirmSheet</a></span> 
+
+</dt>
+<dd>
+  Feuille de confirmation des tags d'un lot généré — pré-cochage éditable.
+</dd>
+
+          <dt id="ZFolderCard">
+  <span class="name "><a href="../zcrud_study/ZFolderCard-class.html">ZFolderCard</a></span> 
+
+</dt>
+<dd>
+  Carte d'un dossier d'étude dans une grille.
+</dd>
+
+          <dt id="ZFolderCardCount">
+  <span class="name "><a href="../zcrud_study/ZFolderCardCount-class.html">ZFolderCardCount</a></span> 
+
+</dt>
+<dd>
+  Un badge de compteur de la carte de dossier par défaut : un glyphe et un
+libellé déjà localisés par l'hôte (« 12 fiches », « 3 sous-dossiers »).
+</dd>
+
+          <dt id="ZFolderCardGradientAccent">
+  <span class="name "><a href="../zcrud_study/ZFolderCardGradientAccent-class.html">ZFolderCardGradientAccent</a></span> 
+
+</dt>
+<dd>
+  Barre d'accent optionnelle pour <a href="../zcrud_study/ZFolderCard/headerDecoration.html">ZFolderCard.headerDecoration</a>.
+</dd>
+
+          <dt id="ZFolderCardReference">
+  <span class="name "><a href="../zcrud_study/ZFolderCardReference-class.html">ZFolderCardReference</a></span> 
+
+</dt>
+<dd>
+  Les valeurs de RÉFÉRENCE de la carte de dossier d'étude, le point
+d'audit unique. Modifier une valeur ici change le défaut de
+<code>ZDefaultFolderCard</code> partout.
+</dd>
+
+          <dt id="ZGenerationSourceOption">
+  <span class="name "><a href="../zcrud_study/ZGenerationSourceOption-class.html">ZGenerationSourceOption</a></span> 
+
+</dt>
+<dd>
+  Option de source SÉLECTIONNABLE. L'app la construit depuis
+<code>ZSourceRegistry</code> (document/pages, sujets, texte libre, article, note…) — la
+feuille reste registre-agnostique et EXTENSIBLE sans toucher zcrud.
+</dd>
+
+          <dt id="ZItemAction">
+  <span class="name "><a href="../zcrud_study/ZItemAction-class.html">ZItemAction</a></span> 
+
+</dt>
+<dd>
+  Une action d'item — data-class de présentation immuable (<code>const</code>).
+</dd>
+
+          <dt id="ZItemActionsMenu">
+  <span class="name "><a href="../zcrud_study/ZItemActionsMenu-class.html">ZItemActionsMenu</a></span> 
+
+</dt>
+<dd>
+  Menu d'actions par item paramétrique — façade sur <a href="../zcrud_study/ZActionMenu-class.html">ZActionMenu</a>.
+</dd>
+
+          <dt id="ZMapFeatureAvailability">
+  <span class="name "><a href="../zcrud_study/ZMapFeatureAvailability-class.html">ZMapFeatureAvailability</a></span> 
+
+</dt>
+<dd>
+  Implémentation de référence pilotée par une <a href="../zcrud_study/ZMapFeatureAvailability/flags.html">flags</a> <code>Map&lt;String,bool&gt;</code>.
+</dd>
+
+          <dt id="ZMenuEntry">
+  <span class="name "><a href="../zcrud_study/ZMenuEntry-class.html">ZMenuEntry</a></span> 
+
+</dt>
+<dd>
+  Une entrée de menu — donnée immuable, jamais un widget.
+</dd>
+
+          <dt id="ZMenuEntryIds">
+  <span class="name "><a href="../zcrud_study/ZMenuEntryIds-class.html">ZMenuEntryIds</a></span> 
+
+</dt>
+<dd>
+  Vocabulaire CANONIQUE des identités d'entrée (<code>ZMenuEntry.id</code>).
+</dd>
+
+          <dt id="ZMenuEntryTile">
+  <span class="name "><a href="../zcrud_study/ZMenuEntryTile-class.html">ZMenuEntryTile</a></span> 
+
+</dt>
+<dd>
+  Cellule d'entrée de menu : ≥ 48 dp, <code>Semantics</code> correctes, directionnelle,
+sans couleur ni chaîne codée en dur.
+</dd>
+
+          <dt id="ZMenuRenderer">
+  <span class="name "><a href="../zcrud_study/ZMenuRenderer-class.html">ZMenuRenderer</a></span> 
+
+</dt>
+<dd>
+  Abstraction de rendu d'un menu à partir d'une <a href="../zcrud_study/ZMenuRequest-class.html">ZMenuRequest</a> neutre.
+</dd>
+
+          <dt id="ZMenuRequest">
+  <span class="name "><a href="../zcrud_study/ZMenuRequest-class.html">ZMenuRequest</a></span> 
+
+</dt>
+<dd>
+  Requête neutre transmise à un <a href="../zcrud_study/ZMenuRenderer-class.html">ZMenuRenderer</a>.
+</dd>
+
+          <dt id="ZMenuScope">
+  <span class="name "><a href="../zcrud_study/ZMenuScope-class.html">ZMenuScope</a></span> 
+
+</dt>
+<dd>
+  Scope d'injection du renderer de menus.
+</dd>
+
+          <dt id="ZMenuTrigger">
+  <span class="name "><a href="../zcrud_study/ZMenuTrigger-class.html">ZMenuTrigger</a></span> 
+
+</dt>
+<dd>
+  Description immuable du déclencheur d'un menu.
+</dd>
+
+          <dt id="ZMindmapGenerationPort">
+  <span class="name "><a href="../zcrud_study/ZMindmapGenerationPort-class.html">ZMindmapGenerationPort</a></span> 
+
+</dt>
+<dd>
+  Port neutre de génération de carte mentale (invariant AD-5 : domaine
+backend-agnostique).
+</dd>
+
+          <dt id="ZMindmapGenerationRequest">
+  <span class="name "><a href="../zcrud_study/ZMindmapGenerationRequest-class.html">ZMindmapGenerationRequest</a></span> 
+
+</dt>
+<dd>
+  Requête immuable de génération de carte mentale (value-object,
+<code>==</code>/<code>hashCode</code> par valeur).
+</dd>
+
+          <dt id="ZMindmapSourceRef">
+  <span class="name "><a href="../zcrud_study/ZMindmapSourceRef-class.html">ZMindmapSourceRef</a></span> 
+
+</dt>
+<dd>
+  Référence neutre et opaque vers une source de génération.
+</dd>
+
+          <dt id="ZMultiFlashcardCommonField">
+  <span class="name "><a href="../zcrud_study/ZMultiFlashcardCommonField-class.html">ZMultiFlashcardCommonField</a></span> 
+
+</dt>
+<dd>
+  Un champ commun applicable à la sélection — déclaré en données.
+</dd>
+
+          <dt id="ZMultiFlashcardDraftController">
+  <span class="name "><a href="../zcrud_study/ZMultiFlashcardDraftController-class.html">ZMultiFlashcardDraftController</a></span> 
+
+</dt>
+<dd>
+  Contrôleur de brouillon en mémoire (aucun store).
+</dd>
+
+          <dt id="ZMultiFlashcardEditor">
+  <span class="name "><a href="../zcrud_study/ZMultiFlashcardEditor-class.html">ZMultiFlashcardEditor</a></span> 
+
+</dt>
+<dd>
+  Éditeur d'un lot de flashcards en régime brouillon.
+</dd>
+
+          <dt id="ZMultiFlashcardEditorLabels">
+  <span class="name "><a href="../zcrud_study/ZMultiFlashcardEditorLabels-class.html">ZMultiFlashcardEditorLabels</a></span> 
+
+</dt>
+<dd>
+  Libellés localisés injectés du multi-éditeur (i18n — invariant AD-13 /
+invariant FR-26 : aucun libellé en dur).
+</dd>
+
+          <dt id="ZMultiFlashcardGeneration">
+  <span class="name "><a href="../zcrud_study/ZMultiFlashcardGeneration-class.html">ZMultiFlashcardGeneration</a></span> 
+
+</dt>
+<dd>
+  Configuration optionnelle du flux de génération IA intégré au
+multi-éditeur. Absente ⇒ l'option « Générer » est absente de l'arbre
+(jamais grisée — patron <code>ZFlashcardGenerationLauncher</code>).
+</dd>
+
+          <dt id="ZNoteSummaryPort">
+  <span class="name "><a href="../zcrud_study/ZNoteSummaryPort-class.html">ZNoteSummaryPort</a></span> 
+
+</dt>
+<dd>
+  Port neutre de résumé de note (invariant AD-5 : domaine
+backend-agnostique).
+</dd>
+
+          <dt id="ZNoteSummaryRequest">
+  <span class="name "><a href="../zcrud_study/ZNoteSummaryRequest-class.html">ZNoteSummaryRequest</a></span> 
+
+</dt>
+<dd>
+  Requête immuable de résumé (value-object, <code>==</code>/<code>hashCode</code> par valeur).
+</dd>
+
+          <dt id="ZPodcastGenerationPort">
+  <span class="name "><a href="../zcrud_study/ZPodcastGenerationPort-class.html">ZPodcastGenerationPort</a></span> 
+
+</dt>
+<dd>
+  Port neutre de génération de podcast (invariant AD-5 : domaine
+backend-agnostique).
+</dd>
+
+          <dt id="ZPodcastGenerationRequest">
+  <span class="name "><a href="../zcrud_study/ZPodcastGenerationRequest-class.html">ZPodcastGenerationRequest</a></span> 
+
+</dt>
+<dd>
+  Requête immuable de génération de podcast (value-object, <code>==</code>/<code>hashCode</code>
+par valeur — égalité profonde de <a href="../zcrud_study/ZPodcastGenerationRequest/extra.html">extra</a>).
+</dd>
+
+          <dt id="ZPublicStudyFolder">
+  <span class="name "><a href="../zcrud_study/ZPublicStudyFolder-class.html">ZPublicStudyFolder</a></span> 
+
+</dt>
+<dd>
+  Fiche <strong>immuable</strong> de galerie publique (value-object, <code>==</code>/<code>hashCode</code> par
+valeur — égalité <strong>profonde</strong> de <a href="../zcrud_study/ZPublicStudyFolder/extra.html">extra</a>).
+</dd>
+
+          <dt id="ZRailItem">
+  <span class="name "><a href="../zcrud_study/ZRailItem-class.html">ZRailItem</a></span> 
+
+</dt>
+<dd>
+  Item de rail borné en largeur — enveloppe appliquée par les voies typées de
+<code>ZStudyToolsSectionSpec</code> en <code>axis: Axis.horizontal</code> UNIQUEMENT (jamais
+autour d'un <code>itemBuilder</code> d'hôte : neutralité stricte du constructeur
+principal), et réutilisable TELLE QUELLE par un hôte dans ses propres
+surfaces (liste de flashcards en grille/rail, carrousels…).
+</dd>
+
+          <dt id="ZRenderFadedOverflow">
+  <span class="name "><a href="../zcrud_study/ZRenderFadedOverflow-class.html">ZRenderFadedOverflow</a></span> 
+
+</dt>
+<dd>
+  Rendu de <a href="../zcrud_study/ZFadedOverflow-class.html">ZFadedOverflow</a> — expose <a href="../zcrud_study/ZRenderFadedOverflow/isTruncated.html">isTruncated</a>, <strong>mesuré</strong> au layout.
+</dd>
+
+          <dt id="ZResolvedGenerationSource">
+  <span class="name "><a href="../zcrud_study/ZResolvedGenerationSource-class.html">ZResolvedGenerationSource</a></span> 
+
+</dt>
+<dd>
+  Source de génération résolue — value-object immuable.
+</dd>
+
+          <dt id="ZSectionedStudyLayout">
+  <span class="name "><a href="../zcrud_study/ZSectionedStudyLayout-class.html">ZSectionedStudyLayout</a></span> 
+
+</dt>
+<dd>
+  Rend une liste de sections « study tools » décomposée.
+</dd>
+
+          <dt id="ZSectionedStudySliver">
+  <span class="name "><a href="../zcrud_study/ZSectionedStudySliver-class.html">ZSectionedStudySliver</a></span> 
+
+</dt>
+<dd>
+  <code>ZSectionedStudySliver</code> — <strong>variante SLIVER</strong> de <a href="../zcrud_study/ZSectionedStudyLayout-class.html">ZSectionedStudyLayout</a>.
+</dd>
+
+          <dt id="ZShareLink">
+  <span class="name "><a href="../zcrud_study/ZShareLink-class.html">ZShareLink</a></span> 
+
+</dt>
+<dd>
+  Lien de partage immuable et révocable (value-object, <code>==</code>/<code>hashCode</code> par
+valeur — égalité profonde de <a href="../zcrud_study/ZShareLink/extra.html">extra</a>).
+</dd>
+
+          <dt id="ZSourceAcquisitionGesture">
+  <span class="name "><a href="../zcrud_study/ZSourceAcquisitionGesture-class.html">ZSourceAcquisitionGesture</a></span> 
+
+</dt>
+<dd>
+  Geste d'<strong>ACQUISITION</strong> de source branché par l'hôte —
+« uploader », « scanner »… Libellé et icône INJECTÉS, jamais en dur.
+</dd>
+
+          <dt id="ZStudyCardChrome">
+  <span class="name "><a href="../zcrud_study/ZStudyCardChrome-class.html">ZStudyCardChrome</a></span> 
+
+</dt>
+<dd>
+  Chrome de référence résolu pour une carte d'étude par défaut : chaque champ
+applique la priorité paramètre &gt; jeton <code>studyCard*</code> &gt; référence et les
+rôles du <code>ColorScheme</code> courant. Produit par <a href="../zcrud_study/zStudyCardChromeOf.html">zStudyCardChromeOf</a>.
+</dd>
+
+          <dt id="ZStudyCardReference">
+  <span class="name "><a href="../zcrud_study/ZStudyCardReference-class.html">ZStudyCardReference</a></span> 
+
+</dt>
+<dd>
+  Les valeurs de référence (mesurées sur le rendu historique du socle) — le
+point d'audit unique. Modifier une valeur ici change le défaut des trois
+cartes.
+</dd>
+
+          <dt id="ZStudyDocumentCard">
+  <span class="name "><a href="../zcrud_study/ZStudyDocumentCard-class.html">ZStudyDocumentCard</a></span> 
+
+</dt>
+<dd>
+  Représentation compacte d'un document dans les outils d'étude.
+</dd>
+
+          <dt id="ZStudyFolderDetail">
+  <span class="name "><a href="../zcrud_study/ZStudyFolderDetail-class.html">ZStudyFolderDetail</a></span> 
+
+</dt>
+<dd>
+  Page-détail d'un dossier d'étude (ossature composée).
+</dd>
+
+          <dt id="ZStudyFolderReport">
+  <span class="name "><a href="../zcrud_study/ZStudyFolderReport-class.html">ZStudyFolderReport</a></span> 
+
+</dt>
+<dd>
+  Signalement immuable (value-object, <code>==</code>/<code>hashCode</code> par valeur —
+égalité profonde de <a href="../zcrud_study/ZStudyFolderReport/extra.html">extra</a>).
+</dd>
+
+          <dt id="ZStudyMembership">
+  <span class="name "><a href="../zcrud_study/ZStudyMembership-class.html">ZStudyMembership</a></span> 
+
+</dt>
+<dd>
+  Adhésion immuable d'un acteur à un dossier partagé (value-object,
+<code>==</code>/<code>hashCode</code> par valeur — égalité profonde de <a href="../zcrud_study/ZStudyMembership/extra.html">extra</a>).
+</dd>
+
+          <dt id="ZStudyMindmapSection">
+  <span class="name "><a href="../zcrud_study/ZStudyMindmapSection-class.html">ZStudyMindmapSection</a></span> 
+
+</dt>
+<dd>
+  Section « carte mentale » composée par <code>folderId</code> dans la page study-tools.
+</dd>
+
+          <dt id="ZStudyModerationPort">
+  <span class="name "><a href="../zcrud_study/ZStudyModerationPort-class.html">ZStudyModerationPort</a></span> 
+
+</dt>
+<dd>
+  Contrat neutre de modération d'un dossier partagé (invariant AD-5 :
+domaine backend-agnostique, <code>Either&lt;ZFailure, T&gt;</code>).
+</dd>
+
+          <dt id="ZStudyNoteCard">
+  <span class="name "><a href="../zcrud_study/ZStudyNoteCard-class.html">ZStudyNoteCard</a></span> 
+
+</dt>
+<dd>
+  Représentation compacte d'une note dans les outils d'étude.
+</dd>
+
+          <dt id="ZStudySessionChrome">
+  <span class="name "><a href="../zcrud_study/ZStudySessionChrome-class.html">ZStudySessionChrome</a></span> 
+
+</dt>
+<dd>
+  Chrome de référence <strong>RÉSOLU</strong> pour l'écran de session : chaque champ a
+appliqué la priorité <strong>paramètre &gt; jeton <code>studySession*</code> &gt; référence</strong> et
+les rôles du <code>ColorScheme</code> courant. Produit par <a href="../zcrud_study/zStudySessionChromeOf.html">zStudySessionChromeOf</a>.
+</dd>
+
+          <dt id="ZStudySessionHost">
+  <span class="name "><a href="../zcrud_study/ZStudySessionHost-class.html">ZStudySessionHost</a></span> 
+
+</dt>
+<dd>
+  Écran de session <strong>assemblé</strong> : détient le runtime, nourrit la vue.
+</dd>
+
+          <dt id="ZStudySessionLabels">
+  <span class="name "><a href="../zcrud_study/ZStudySessionLabels-class.html">ZStudySessionLabels</a></span> 
+
+</dt>
+<dd>
+  Libellés <strong>injectés</strong> de l'écran de session (FR-26).
+</dd>
+
+          <dt id="ZStudySessionProgress">
+  <span class="name "><a href="../zcrud_study/ZStudySessionProgress-class.html">ZStudySessionProgress</a></span> 
+
+</dt>
+<dd>
+  Compteurs de session — VO <strong>pur</strong>, recalculé depuis le runtime à chaque
+transition, jamais accumulé dans un widget.
+</dd>
+
+          <dt id="ZStudySessionReference">
+  <span class="name "><a href="../zcrud_study/ZStudySessionReference-class.html">ZStudySessionReference</a></span> 
+
+</dt>
+<dd>
+  Les valeurs de RÉFÉRENCE de l'écran de session — le point d'audit unique.
+</dd>
+
+          <dt id="ZStudySessionScaffold">
+  <span class="name "><a href="../zcrud_study/ZStudySessionScaffold-class.html">ZStudySessionScaffold</a></span> 
+
+</dt>
+<dd>
+  Page complète d'une session de révision : <code>ZPageScaffold</code> + session.
+</dd>
+
+          <dt id="ZStudySessionSlices">
+  <span class="name "><a href="../zcrud_study/ZStudySessionSlices-class.html">ZStudySessionSlices</a></span> 
+
+</dt>
+<dd>
+  Le faisceau de tranches qu'un hôte fournit à <a href="../zcrud_study/ZStudySessionView-class.html">ZStudySessionView</a>.
+</dd>
+
+          <dt id="ZStudySessionView">
+  <span class="name "><a href="../zcrud_study/ZStudySessionView-class.html">ZStudySessionView</a></span> 
+
+</dt>
+<dd>
+  Corps composable de l'écran de session de révision.
+</dd>
+
+          <dt id="ZStudySharingAcl">
+  <span class="name "><a href="../zcrud_study/ZStudySharingAcl-class.html">ZStudySharingAcl</a></span> 
+
+</dt>
+<dd>
+  Garde ACL pure des champs de contrôle d'un dossier partagé.
+</dd>
+
+          <dt id="ZStudySharingExtension">
+  <span class="name "><a href="../zcrud_study/ZStudySharingExtension-class.html">ZStudySharingExtension</a></span> 
+
+</dt>
+<dd>
+  Extension typée de partage d'un dossier — opt-in et versionnée
+(invariant AD-4).
+</dd>
+
+          <dt id="ZStudySharingPort">
+  <span class="name "><a href="../zcrud_study/ZStudySharingPort-class.html">ZStudySharingPort</a></span> 
+
+</dt>
+<dd>
+  Contrat neutre de partage d'un dossier d'étude (invariant AD-5 : domaine
+backend-agnostique, <code>Either&lt;ZFailure, T&gt;</code>).
+</dd>
+
+          <dt id="ZStudyToolsItemCard">
+  <span class="name "><a href="../zcrud_study/ZStudyToolsItemCard-class.html">ZStudyToolsItemCard</a></span> 
+
+</dt>
+<dd>
+  Carte d'item d'étude à <strong>slots</strong> — primitive de base réutilisable par tout
+hôte du socle.
+</dd>
+
+          <dt id="ZStudyToolsPage">
+  <span class="name "><a href="../zcrud_study/ZStudyToolsPage-class.html">ZStudyToolsPage</a></span> 
+
+</dt>
+<dd>
+  Page « study tools » à scoping réactif ISOLÉ (invariant AD-2).
+</dd>
+
+          <dt id="ZStudyToolsSectionSpec">
+  <span class="name "><a href="../zcrud_study/ZStudyToolsSectionSpec-class.html">ZStudyToolsSectionSpec</a></span> 
+
+</dt>
+<dd>
+  Descripteur immuable d'une section de la page « study tools ».
+</dd>
+
+          <dt id="ZSubfolderCompactSelector">
+  <span class="name "><a href="../zcrud_study/ZSubfolderCompactSelector-class.html">ZSubfolderCompactSelector</a></span> 
+
+</dt>
+<dd>
+  Sélecteur compact de sous-dossiers (petit écran).
+</dd>
+
+          <dt id="ZSubfolderLayoutScope">
+  <span class="name "><a href="../zcrud_study/ZSubfolderLayoutScope-class.html">ZSubfolderLayoutScope</a></span> 
+
+</dt>
+<dd>
+  Scope exposant le <a href="../zcrud_study/ZSubfolderLayoutMode.html">ZSubfolderLayoutMode</a> <strong>et</strong> la <a href="../zcrud_study/ZSubfolderSurface.html">ZSubfolderSurface</a>
+courants à l'<code>itemBuilder</code> injecté.
+</dd>
+
+          <dt id="ZSubfolderNarrowNav">
+  <span class="name "><a href="../zcrud_study/ZSubfolderNarrowNav-class.html">ZSubfolderNarrowNav</a></span> 
+
+</dt>
+<dd>
+  Aiguille la navigation étroite vers la coquille de l'hôte ou la surface du
+socle correspondant à <a href="../zcrud_study/ZSubfolderNavSpec/narrowMode.html">ZSubfolderNavSpec.narrowMode</a>.
+</dd>
+
+          <dt id="ZSubfolderNavRenderer">
+  <span class="name "><a href="../zcrud_study/ZSubfolderNavRenderer-class.html">ZSubfolderNavRenderer</a></span> 
+
+</dt>
+<dd>
+  Abstraction de rendu de la <strong>surface</strong> de navigation étroite.
+</dd>
+
+          <dt id="ZSubfolderNavRendererScope">
+  <span class="name "><a href="../zcrud_study/ZSubfolderNavRendererScope-class.html">ZSubfolderNavRendererScope</a></span> 
+
+</dt>
+<dd>
+  Porte le <a href="../zcrud_study/ZSubfolderNavRenderer-class.html">ZSubfolderNavRenderer</a> injecté par l'hôte jusqu'à la navigation.
+</dd>
+
+          <dt id="ZSubfolderNavRenderRequest">
+  <span class="name "><a href="../zcrud_study/ZSubfolderNavRenderRequest-class.html">ZSubfolderNavRenderRequest</a></span> 
+
+</dt>
+<dd>
+  Requête <strong>neutre</strong> de rendu d'une surface de navigation étroite.
+</dd>
+
+          <dt id="ZSubfolderNavSpec">
+  <span class="name "><a href="../zcrud_study/ZSubfolderNavSpec-class.html">ZSubfolderNavSpec</a></span> 
+
+</dt>
+<dd>
+  Descripteur immuable de la navigation de sous-dossiers.
+</dd>
+
+          <dt id="ZSubfolderRef">
+  <span class="name "><a href="../zcrud_study/ZSubfolderRef-class.html">ZSubfolderRef</a></span> 
+
+</dt>
+<dd>
+  Référence OPAQUE d'un sous-dossier pour la navigation (props primitives).
+</dd>
+
+          <dt id="ZSubfolderSelectionController">
+  <span class="name "><a href="../zcrud_study/ZSubfolderSelectionController-class.html">ZSubfolderSelectionController</a></span> 
+
+</dt>
+<dd>
+  Contrôleur de la <strong>sélection de sous-dossier</strong> (<code>null</code> = item racine).
+</dd>
+
+          <dt id="ZSubfolderSelectorBar">
+  <span class="name "><a href="../zcrud_study/ZSubfolderSelectorBar-class.html">ZSubfolderSelectorBar</a></span> 
+
+</dt>
+<dd>
+  Barre de sélection de sous-dossiers (petit écran, surface par DÉFAUT).
+</dd>
+
+          <dt id="ZSubfolderSidebar">
+  <span class="name "><a href="../zcrud_study/ZSubfolderSidebar-class.html">ZSubfolderSidebar</a></span> 
+
+</dt>
+<dd>
+  Sidebar de sous-dossiers (grand écran).
+</dd>
+
+          <dt id="ZTagChips">
+  <span class="name "><a href="../zcrud_study/ZTagChips-class.html">ZTagChips</a></span> 
+
+</dt>
+<dd>
+  Rangée de puces de tags (affichage seul — <code>StatelessWidget</code>).
+</dd>
+
+          <dt id="ZTagEditor">
+  <span class="name "><a href="../zcrud_study/ZTagEditor-class.html">ZTagEditor</a></span> 
+
+</dt>
+<dd>
+  Éditeur de tags — création dédupliquée, suppression à intégrité référentielle
+STRUCTURELLE, confirmation de suggestions IA.
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="ZEditingMode">
+  <span class="name "><a href="../zcrud_study/ZEditingMode.html">ZEditingMode</a></span> 
+
+</dt>
+<dd>
+  Régime d'édition déclaré — jamais implicite (enum, pas un <code>bool</code>).
+</dd>
+
+          <dt id="ZFlashcardGenerationStatus">
+  <span class="name "><a href="../zcrud_study/ZFlashcardGenerationStatus.html">ZFlashcardGenerationStatus</a></span> 
+
+</dt>
+<dd>
+  Statut du flux de génération (AD-2 : enum, jamais des booléens — AC6).
+</dd>
+
+          <dt id="ZFlashcardListItemStyle">
+  <span class="name "><a href="../zcrud_study/ZFlashcardListItemStyle.html">ZFlashcardListItemStyle</a></span> 
+
+</dt>
+<dd>
+  Forme d'un item de la liste de flashcards.
+</dd>
+
+          <dt id="ZItemActionKind">
+  <span class="name "><a href="../zcrud_study/ZItemActionKind.html">ZItemActionKind</a></span> 
+
+</dt>
+<dd>
+  Nature d'une action d'item — enum EXTENSIBLE (AD-4). <a href="../zcrud_study/ZItemActionKind.html">custom</a> couvre toute
+action hors nomenclature (l'appelant porte le <a href="../zcrud_study/ZItemAction/label.html">ZItemAction.label</a>/<code>icon</code>).
+</dd>
+
+          <dt id="ZMembershipRole">
+  <span class="name "><a href="../zcrud_study/ZMembershipRole.html">ZMembershipRole</a></span> 
+
+</dt>
+<dd>
+  Rôle d'un membre dans un dossier partagé — enum ouvert (invariant AD-10) :
+toute valeur inconnue retombe sur <a href="../zcrud_study/ZMembershipRole.html">unknown</a>, jamais de throw.
+</dd>
+
+          <dt id="ZReportStatus">
+  <span class="name "><a href="../zcrud_study/ZReportStatus.html">ZReportStatus</a></span> 
+
+</dt>
+<dd>
+  Statut de traitement d'un signalement — enum ouvert (invariant AD-10) :
+une valeur inconnue retombe sur <a href="../zcrud_study/ZReportStatus.html">unknown</a>, jamais de throw.
+</dd>
+
+          <dt id="ZStudyMindmapMode">
+  <span class="name "><a href="../zcrud_study/ZStudyMindmapMode.html">ZStudyMindmapMode</a></span> 
+
+</dt>
+<dd>
+  Mode d'affichage de <a href="../zcrud_study/ZStudyMindmapSection-class.html">ZStudyMindmapSection</a>, <strong>local au package</strong> (AD-4). Il ne
+se confond PAS avec <code>ZMindmapViewMode</code> (graphe ⇄ liste, interne à la lecture) :
+il choisit entre la surface LECTURE (<code>ZMindmapView</code>) et la surface ÉDITION
+(<code>ZMindmapOutlineEditor</code>).
+</dd>
+
+          <dt id="ZStudyReorderHandleMode">
+  <span class="name "><a href="../zcrud_study/ZStudyReorderHandleMode.html">ZStudyReorderHandleMode</a></span> 
+
+</dt>
+<dd>
+  Mode de présentation de la poignée de réordonnancement.
+</dd>
+
+          <dt id="ZStudySessionPhase">
+  <span class="name "><a href="../zcrud_study/ZStudySessionPhase.html">ZStudySessionPhase</a></span> 
+
+</dt>
+<dd>
+  Phase de l'écran de session — aiguillage <strong>exhaustif</strong>, jamais un booléen.
+</dd>
+
+          <dt id="ZSubfolderAddPlacement">
+  <span class="name "><a href="../zcrud_study/ZSubfolderAddPlacement.html">ZSubfolderAddPlacement</a></span> 
+
+</dt>
+<dd>
+  <strong>Où</strong> l'affordance d'ajout de la barre de fratrie est offerte.
+</dd>
+
+          <dt id="ZSubfolderLayoutMode">
+  <span class="name "><a href="../zcrud_study/ZSubfolderLayoutMode.html">ZSubfolderLayoutMode</a></span> 
+
+</dt>
+<dd>
+  Côté du seuil de bascule sur lequel un <a href="../zcrud_study/ZSubfolderItemBuilder.html">ZSubfolderItemBuilder</a> est invoqué.
+</dd>
+
+          <dt id="ZSubfolderNarrowMode">
+  <span class="name "><a href="../zcrud_study/ZSubfolderNarrowMode.html">ZSubfolderNarrowMode</a></span> 
+
+</dt>
+<dd>
+  Surface de navigation rendue SOUS le seuil de bascule (&lt; 600 dp).
+</dd>
+
+          <dt id="ZSubfolderNavPlacement">
+  <span class="name "><a href="../zcrud_study/ZSubfolderNavPlacement.html">ZSubfolderNavPlacement</a></span> 
+
+</dt>
+<dd>
+  <strong>Où</strong> la navigation de fratrie est rendue dans une page à onglets
+(<code>ZStudyFolderDetail</code>).
+</dd>
+
+          <dt id="ZSubfolderSurface">
+  <span class="name "><a href="../zcrud_study/ZSubfolderSurface.html">ZSubfolderSurface</a></span> 
+
+</dt>
+<dd>
+  <strong>Quelle surface concrète</strong> invoque un <a href="../zcrud_study/ZSubfolderItemBuilder.html">ZSubfolderItemBuilder</a> — point 1.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+    <section class="summary offset-anchor" id="constants">
+      <h2>Constants</h2>
+      <dl class="properties">
+          <dt id="kFlashcardAiGenerationFeature" class="constant">
+    <span class="name "><a href="../zcrud_study/kFlashcardAiGenerationFeature-constant.html">kFlashcardAiGenerationFeature</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  <code>featureKey</code> OPAQUE de la génération IA (AC16).
+  
+
+</dd>
+
+          <dt id="kFlashcardsContentType" class="constant">
+    <span class="name "><a href="../zcrud_study/kFlashcardsContentType-constant.html">kFlashcardsContentType</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  <code>contentType</code> <strong>canonique</strong> des flashcards — <strong>RISQUE DE DONNÉES</strong>.
+  
+
+</dd>
+
+          <dt id="kZCardShadowAlpha" class="constant">
+    <span class="name "><a href="../zcrud_study/kZCardShadowAlpha-constant.html">kZCardShadowAlpha</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Opacité par défaut de l'ombre de carte personnalisée, appliquée à la
+couleur d'ombre du thème — jamais une couleur (invariant FR-26).
+Voir <a href="../zcrud_study/kZCardShadowBlurRadius-constant.html">kZCardShadowBlurRadius</a> pour la règle d'activation.
+  
+
+</dd>
+
+          <dt id="kZCardShadowBlurRadius" class="constant">
+    <span class="name "><a href="../zcrud_study/kZCardShadowBlurRadius-constant.html">kZCardShadowBlurRadius</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Flou par défaut de l'ombre de carte <strong>personnalisée</strong>.
+  
+
+</dd>
+
+          <dt id="kZCardShadowOffset" class="constant">
+    <span class="name "><a href="../zcrud_study/kZCardShadowOffset-constant.html">kZCardShadowOffset</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-ui/Offset-class.html">Offset</a></span>
+  
+
+</dt>
+<dd>
+  Décalage par défaut de l'ombre de carte personnalisée.
+Voir <a href="../zcrud_study/kZCardShadowBlurRadius-constant.html">kZCardShadowBlurRadius</a> pour la règle d'activation.
+  
+
+</dd>
+
+          <dt id="kZDefaultDocumentIconTileSize" class="constant">
+    <span class="name "><a href="../zcrud_study/kZDefaultDocumentIconTileSize-constant.html">kZDefaultDocumentIconTileSize</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Côté de la tuile d'icône en hiérarchie <code>tintedTile</code> (dimension de layout,
+jamais une couleur). En hiérarchie de référence, le côté vient de
+<code>studyCardIconTileSize</code> (repli <a href="../zcrud_study/ZStudyCardReference/iconTileSize-constant.html">ZStudyCardReference.iconTileSize</a>).
+  
+
+</dd>
+
+          <dt id="kZDefaultExamAccentHeight" class="constant">
+    <span class="name "><a href="../zcrud_study/kZDefaultExamAccentHeight-constant.html">kZDefaultExamAccentHeight</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Épaisseur de la barre d'accent de tête (dimension de LAYOUT).
+  
+
+</dd>
+
+          <dt id="kZDefaultFlashcardAccentHeight" class="constant">
+    <span class="name "><a href="../zcrud_study/kZDefaultFlashcardAccentHeight-constant.html">kZDefaultFlashcardAccentHeight</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Épaisseur de la bande d'accent de tête (dimension de LAYOUT — la valeur de
+référence vit dans <a href="../zcrud_study/ZFlashcardCardReference/accentBandHeight-constant.html">ZFlashcardCardReference.accentBandHeight</a>).
+  
+
+</dd>
+
+          <dt id="kZDefaultMindmapVignetteMaxSatellites" class="constant">
+    <span class="name "><a href="../zcrud_study/kZDefaultMindmapVignetteMaxSatellites-constant.html">kZDefaultMindmapVignetteMaxSatellites</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre maximal de satellites dessinés dans la vignette (croquis, pas
+inventaire — l'inventaire exact passe par <a href="../zcrud_study/ZDefaultMindmapCard/nodeCountLabel.html">ZDefaultMindmapCard.nodeCountLabel</a>).
+  
+
+</dd>
+
+          <dt id="kZDefaultMindmapVignetteSize" class="constant">
+    <span class="name "><a href="../zcrud_study/kZDefaultMindmapVignetteSize-constant.html">kZDefaultMindmapVignetteSize</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Côté de la vignette en hiérarchie <code>tintedTile</code> (dimension de layout,
+jamais une couleur). En référence, le côté vient de
+<code>studyCardIconTileSize</code> (repli <a href="../zcrud_study/ZStudyCardReference/iconTileSize-constant.html">ZStudyCardReference.iconTileSize</a>).
+  
+
+</dd>
+
+          <dt id="kZDefaultNoteAccentHeight" class="constant">
+    <span class="name "><a href="../zcrud_study/kZDefaultNoteAccentHeight-constant.html">kZDefaultNoteAccentHeight</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Épaisseur de la barre d'accent de tête en hiérarchie <code>tintedTile</code>
+(dimension de layout).
+  
+
+</dd>
+
+          <dt id="kZFadedOverflowExtent" class="constant">
+    <span class="name "><a href="../zcrud_study/kZFadedOverflowExtent-constant.html">kZFadedOverflowExtent</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Étendue par défaut du fondu de continuation (dp).
+  
+
+</dd>
+
+          <dt id="kZFlashcardTypeGradientKeyPrefix" class="constant">
+    <span class="name "><a href="../zcrud_study/kZFlashcardTypeGradientKeyPrefix-constant.html">kZFlashcardTypeGradientKeyPrefix</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Préfixe de la clé de dégradé soumise au seam <code>ZcrudScope.gradientResolver</code>
+(couture EXISTANTE de l'epic VIS — aucun second mécanisme) : la clé
+complète est <code>'$kZFlashcardTypeGradientKeyPrefix&lt;type.name&gt;'</code>.
+  
+
+</dd>
+
+          <dt id="kZFolderCardFooterBesideMinWidth" class="constant">
+    <span class="name "><a href="../zcrud_study/kZFolderCardFooterBesideMinWidth-constant.html">kZFolderCardFooterBesideMinWidth</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Seuil de largeur (dp) au-delà duquel <code>ZFolderCardFooterPlacement.adaptive</code>
+rend le bas de carte <strong>côte à côte</strong>. Mesuré sur la largeur
+RÉELLEMENT offerte au bas de carte — padding interne déjà retranché, pas la
+largeur de la carte.
+  
+
+</dd>
+
+          <dt id="kZFolderCardMinHeight" class="constant">
+    <span class="name "><a href="../zcrud_study/kZFolderCardMinHeight-constant.html">kZFolderCardMinHeight</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Hauteur minimale de la cible d'activation d'une <a href="../zcrud_study/ZFolderCard-class.html">ZFolderCard</a> (AD-13). La
+carte activable ne descend jamais en dessous, quel que soit son contenu.
+  
+
+</dd>
+
+          <dt id="kZFolderCardTintAlpha" class="constant">
+    <span class="name "><a href="../zcrud_study/kZFolderCardTintAlpha-constant.html">kZFolderCardTintAlpha</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Teinte de fond par défaut d'une carte de dossier
+(<code>accent.withValues(alpha: 0.12)</code>). Dimension d'opacité (pas une couleur) :
+exposée pour rester ajustable sans coder de couleur en dur (invariant FR-26).
+  
+
+</dd>
+
+          <dt id="kZMenuMinTapTarget" class="constant">
+    <span class="name "><a href="../zcrud_study/kZMenuMinTapTarget-constant.html">kZMenuMinTapTarget</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Cible de taille interactive minimale (invariant AD-13).
+  
+
+</dd>
+
+          <dt id="kZNonTextMinContrast" class="constant">
+    <span class="name "><a href="../zcrud_study/kZNonTextMinContrast-constant.html">kZNonTextMinContrast</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Plancher WCAG 2.2 §1.4.11 — <strong>composants d'interface et objets graphiques</strong>
+(bande d'accent, liseré, glyphe, pastille) : <strong>3.0:1</strong>.
+  
+
+</dd>
+
+          <dt id="kZRailItemReferenceGap" class="constant">
+    <span class="name "><a href="../zcrud_study/kZRailItemReferenceGap-constant.html">kZRailItemReferenceGap</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Espacement de référence entre deux items d'un rail horizontal — 12 dp.
+  
+
+</dd>
+
+          <dt id="kZStudySharingFormatVersion" class="constant">
+    <span class="name "><a href="../zcrud_study/kZStudySharingFormatVersion-constant.html">kZStudySharingFormatVersion</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Version du sous-schéma de <a href="../zcrud_study/ZStudySharingExtension-class.html">ZStudySharingExtension</a>, indépendante de celle
+du parent (invariant AD-4). Une version non gérée fait rendre <code>null</code> à
+<code>fromJsonSafe</code>.
+  
+
+</dd>
+
+          <dt id="kZStudySharingFormatVersionKey" class="constant">
+    <span class="name "><a href="../zcrud_study/kZStudySharingFormatVersionKey-constant.html">kZStudySharingFormatVersionKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de la version dans la map <code>extension</code>.
+  
+
+</dd>
+
+          <dt id="kZStudyToolsItemMinHeight" class="constant">
+    <span class="name "><a href="../zcrud_study/kZStudyToolsItemMinHeight-constant.html">kZStudyToolsItemMinHeight</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Hauteur minimale d'une cible tactile (AD-13). La carte ne descend jamais
+en dessous, quels que soient les slots fournis.
+  
+
+</dd>
+
+          <dt id="kZSubfolderNavBandHeight" class="constant">
+    <span class="name "><a href="../zcrud_study/kZSubfolderNavBandHeight-constant.html">kZSubfolderNavBandHeight</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Hauteur <strong>mesurée</strong> de la bande <code>ZSubfolderNarrowNav</code> du socle.
+  
+
+</dd>
+
+          <dt id="kZTextMinContrast" class="constant">
+    <span class="name "><a href="../zcrud_study/kZTextMinContrast-constant.html">kZTextMinContrast</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Plancher WCAG 2.2 §1.4.3 AA — <strong>texte normal</strong> : <strong>4.5:1</strong>.
+  
+
+</dd>
+
+          <dt id="zDefaultDocumentFallbackIcon" class="constant">
+    <span class="name "><a href="../zcrud_study/zDefaultDocumentFallbackIcon-constant.html">zDefaultDocumentFallbackIcon</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a></span>
+  
+
+</dt>
+<dd>
+  Glyphe de repli quand le format est inconnu ou absent (invariant AD-10 —
+résolution totale, jamais un trou dans la tuile).
+  
+
+</dd>
+
+          <dt id="zDefaultDocumentFormatIcons" class="constant">
+    <span class="name "><a href="../zcrud_study/zDefaultDocumentFormatIcons-constant.html">zDefaultDocumentFormatIcons</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Table par défaut <code>clé de format normalisée → glyphe</code> — sensée, pas
+fermée : elle couvre les familles courantes, et tout hôte la complète ou
+la remplace par <a href="../zcrud_study/ZDefaultDocumentCard/formatIcons.html">ZDefaultDocumentCard.formatIcons</a> (invariant AD-4 —
+jamais un enum qui exigerait une évolution par format nouveau).
+  
+
+</dd>
+
+          <dt id="zDefaultDocumentReferenceIcon" class="constant">
+    <span class="name "><a href="../zcrud_study/zDefaultDocumentReferenceIcon-constant.html">zDefaultDocumentReferenceIcon</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a></span>
+  
+
+</dt>
+<dd>
+  Glyphe unique du rendu de référence : la différenciation par
+format passe par la couleur et le badge d'extension, pas par le glyphe.
+  
+
+</dd>
+
+          <dt id="zDefaultGenerationCount" class="constant">
+    <span class="name "><a href="../zcrud_study/zDefaultGenerationCount-constant.html">zDefaultGenerationCount</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Défaut appliqué quand <code>count == null</code> (l'application n'a rien demandé) :
+<code>10</code> cartes.
+  
+
+</dd>
+
+          <dt id="zDefaultMindmapReferenceIcon" class="constant">
+    <span class="name "><a href="../zcrud_study/zDefaultMindmapReferenceIcon-constant.html">zDefaultMindmapReferenceIcon</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a></span>
+  
+
+</dt>
+<dd>
+  Glyphe du rendu de référence — neutre, surchargable par
+<a href="../zcrud_study/ZDefaultMindmapCard/icon.html">ZDefaultMindmapCard.icon</a>.
+  
+
+</dd>
+
+          <dt id="zDefaultNoteReferenceIcon" class="constant">
+    <span class="name "><a href="../zcrud_study/zDefaultNoteReferenceIcon-constant.html">zDefaultNoteReferenceIcon</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a></span>
+  
+
+</dt>
+<dd>
+  Glyphe du rendu de référence — neutre, surchargable par
+<a href="../zcrud_study/ZDefaultNoteCard/icon.html">ZDefaultNoteCard.icon</a>.
+  
+
+</dd>
+
+          <dt id="zGenerationCountBounds" class="constant">
+    <span class="name "><a href="../zcrud_study/zGenerationCountBounds-constant.html">zGenerationCountBounds</a></span>
+  <span class="signature">&#8594; const (<span class="field">{<span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="field-name">max</span>, </span><span class="field"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="field-name">min</span>}</span>)</span>
+  
+
+</dt>
+<dd>
+  Bornes inclusives du nombre de cartes générables (<code>1..50</code>).
+  
+
+</dd>
+
+          <dt id="zRailItemFallbackWidth" class="constant">
+    <span class="name "><a href="../zcrud_study/zRailItemFallbackWidth-constant.html">zRailItemFallbackWidth</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Largeur de REPLI d'un item de rail horizontal, quand ni <a href="../zcrud_study/ZRailItem/width.html">ZRailItem.width</a>
+ni le token <code>ZcrudTheme.railItemWidth</code> ne sont fournis.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="approachingReminders" class="callable">
+  <span class="name"><a href="../zcrud_study/approachingReminders.html">approachingReminders</a></span><span class="signature">(<wbr>{<span class="parameter" id="approachingReminders-param-exams"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">ZExam</span>&gt;</span></span> <span class="parameter-name">exams</span>, </span><span class="parameter" id="approachingReminders-param-now"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">now</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study/ZApproachingReminder-class.html">ZApproachingReminder</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Examens approchants (avec décompte) dérivés de la vue quotidienne.
+  
+
+</dd>
+
+          <dt id="examDailyTasks" class="callable">
+  <span class="name"><a href="../zcrud_study/examDailyTasks.html">examDailyTasks</a></span><span class="signature">(<wbr>{<span class="parameter" id="examDailyTasks-param-dueCount"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">dueCount</span>, </span><span class="parameter" id="examDailyTasks-param-exams"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">ZExam</span>&gt;</span></span> <span class="parameter-name">exams</span>, </span><span class="parameter" id="examDailyTasks-param-now"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">now</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZDailyStudyTask</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Vue « rythme du jour » à partir d'examens réels.
+  
+
+</dd>
+
+          <dt id="zAccentSlot" class="callable">
+  <span class="name"><a href="../zcrud_study/zAccentSlot.html">zAccentSlot</a></span><span class="signature">(<wbr><span class="parameter" id="zAccentSlot-param-seed"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">seed</span>, </span><span class="parameter" id="zAccentSlot-param-count"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">count</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Créneau déterministe de <code>seed</code> dans une palette de <code>count</code> teintes.
+  
+
+</dd>
+
+          <dt id="zClampGenerationCount" class="callable">
+  <span class="name"><a href="../zcrud_study/zClampGenerationCount.html">zClampGenerationCount</a></span><span class="signature">(<wbr><span class="parameter" id="zClampGenerationCount-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Borne <code>raw</code> dans <code>[zGenerationCountBounds.min, .max]</code>, sans jamais lever
+(invariant AD-10).
+  
+
+</dd>
+
+          <dt id="zCompositeOver" class="callable">
+  <span class="name"><a href="../zcrud_study/zCompositeOver.html">zCompositeOver</a></span><span class="signature">(<wbr><span class="parameter" id="zCompositeOver-param-foreground"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">foreground</span>, </span><span class="parameter" id="zCompositeOver-param-background"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">background</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Compose <code>foreground</code> (avec SON alpha) <strong>par-dessus</strong> <code>background</code> supposé
+opaque, et rend la couleur OPAQUE réellement peinte — la seule contre
+laquelle un contraste a un sens quand un aplat est semi-transparent
+(ex. le fond <code>couleur du dossier @ tintAlpha</code> d'une carte teintée).
+  
+
+</dd>
+
+          <dt id="zContrastRatio" class="callable">
+  <span class="name"><a href="../zcrud_study/zContrastRatio.html">zContrastRatio</a></span><span class="signature">(<wbr><span class="parameter" id="zContrastRatio-param-a"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">a</span>, </span><span class="parameter" id="zContrastRatio-param-b"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">b</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Rapport de contraste WCAG 2.x</strong> entre deux couleurs OPAQUES, dans
+<code>[1.0, 21.0]</code>. Symétrique.
+  
+
+</dd>
+
+          <dt id="zDailyTasksChromeOf" class="callable">
+  <span class="name"><a href="../zcrud_study/zDailyTasksChromeOf.html">zDailyTasksChromeOf</a></span><span class="signature">(<wbr><span class="parameter" id="zDailyTasksChromeOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zDailyTasksChromeOf-param-bandPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">bandPadding</span>, </span><span class="parameter" id="zDailyTasksChromeOf-param-dayCellMargin"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">dayCellMargin</span>, </span><span class="parameter" id="zDailyTasksChromeOf-param-dayCellPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">dayCellPadding</span>, </span><span class="parameter" id="zDailyTasksChromeOf-param-dayCellRadius"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span> <span class="parameter-name">dayCellRadius</span>, </span><span class="parameter" id="zDailyTasksChromeOf-param-minTapTarget"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">minTapTarget</span>, </span><span class="parameter" id="zDailyTasksChromeOf-param-monthBreakpoint"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">monthBreakpoint</span>, </span><span class="parameter" id="zDailyTasksChromeOf-param-itemPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">itemPadding</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_study/ZDailyTasksChrome-class.html">ZDailyTasksChrome</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Résout le chrome de la vue des tâches du jour depuis le contexte (rôles du
+<code>ColorScheme</code>), avec surcharge ponctuelle par les paramètres de la vue.
+  
+
+</dd>
+
+          <dt id="zDailyTaskTileBuilder" class="callable">
+  <span class="name"><a href="../zcrud_study/zDailyTaskTileBuilder.html">zDailyTaskTileBuilder</a></span><span class="signature">(<wbr><span class="parameter" id="zDailyTaskTileBuilder-param-task"><span class="type-annotation">ZDailyStudyTask</span> <span class="parameter-name">task</span>, {</span><span class="parameter" id="zDailyTaskTileBuilder-param-dueCardsBuilder"><span class="type-annotation"><a href="../zcrud_study/ZDueCardsTaskBuilder.html">ZDueCardsTaskBuilder</a>?</span> <span class="parameter-name">dueCardsBuilder</span>, </span><span class="parameter" id="zDailyTaskTileBuilder-param-examBuilder"><span class="type-annotation"><a href="../zcrud_study/ZExamTaskBuilder.html">ZExamTaskBuilder</a>?</span> <span class="parameter-name">examBuilder</span>, </span><span class="parameter" id="zDailyTaskTileBuilder-param-unknownTaskBuilder"><span class="type-annotation"><a href="../zcrud_study/ZUnknownTaskBuilder.html">ZUnknownTaskBuilder</a>?</span> <span class="parameter-name">unknownTaskBuilder</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span></span>)</span>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le <strong>SITE UNIQUE</strong> de dispatch de la famille ouverte <code>ZDailyStudyTask</code> —
+<code>switch (task.kind)</code> avec <code>default</code> <strong>OBLIGATOIRE</strong> (exigence explicite de la
+dartdoc du kernel : « aucune exhaustivité figée »).
+  
+
+</dd>
+
+          <dt id="zDocumentFormatKeyCandidates" class="callable">
+  <span class="name"><a href="../zcrud_study/zDocumentFormatKeyCandidates.html">zDocumentFormatKeyCandidates</a></span><span class="signature">(<wbr><span class="parameter" id="zDocumentFormatKeyCandidates-param-formatKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">formatKey</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Candidats de résolution de la clé de format OPAQUE <code>formatKey</code>, normalisés
+(minuscules, point d'extension retiré ; un type MIME <code>'image/png'</code> produit
+la forme complète, le sous-type <code>'png'</code>, la famille <code>'image'</code>).
+  
+
+</dd>
+
+          <dt id="zEvenTypesDistribution" class="callable">
+  <span class="name"><a href="../zcrud_study/zEvenTypesDistribution.html">zEvenTypesDistribution</a></span><span class="signature">(<wbr><span class="parameter" id="zEvenTypesDistribution-param-count"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">count</span>, </span><span class="parameter" id="zEvenTypesDistribution-param-types"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcardType</span>&gt;</span></span> <span class="parameter-name">types</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcardType</span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Répartition équitable de <code>count</code> cartes sur <code>types</code>.
+  
+
+</dd>
+
+          <dt id="zExamAsApproaching" class="callable">
+  <span class="name"><a href="../zcrud_study/zExamAsApproaching.html">zExamAsApproaching</a></span><span class="signature">(<wbr><span class="parameter" id="zExamAsApproaching-param-exam"><span class="type-annotation">ZExam</span> <span class="parameter-name">exam</span></span>)
+    <span class="returntype parameter">&#8594; ZApproachingExam</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Adapte un <code>ZExam</code> au port neutre <code>ZApproachingExam</code> (forwarder trivial).
+  
+
+</dd>
+
+          <dt id="zFlashcardCascadeDeleteRoot" class="callable">
+  <span class="name"><a href="../zcrud_study/zFlashcardCascadeDeleteRoot.html">zFlashcardCascadeDeleteRoot</a></span><span class="signature">(<wbr>{<span class="parameter" id="zFlashcardCascadeDeleteRoot-param-deleteCard"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/dartz/0.10.1/dartz/Unit-class.html">Unit</a></span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">deleteCard</span>(<span class="parameter" id="param-flashcardId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">flashcardId</span></span>), </span><span class="parameter" id="zFlashcardCascadeDeleteRoot-param-repetitionStore"><span>required</span> <span class="type-annotation">ZRepetitionStore</span> <span class="parameter-name">repetitionStore</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/dartz/0.10.1/dartz/Unit-class.html">Unit</a></span>&gt;</span></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-flashcardId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">flashcardId</span></span>)</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Fabrique le seam <code>deleteRoot</code> de suppression cascadée d'une flashcard
+(carte puis purge de répétition espacée), attendu par
+<code>ZListSelectionController.batchDelete</code>.
+  
+
+</dd>
+
+          <dt id="zFlashcardsSectionKey" class="callable">
+  <span class="name"><a href="../zcrud_study/zFlashcardsSectionKey.html">zFlashcardsSectionKey</a></span><span class="signature">(<wbr>{<span class="parameter" id="zFlashcardsSectionKey-param-subfolderId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">subfolderId</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Clé de section canonique des flashcards de <code>subfolderId</code>.
+  
+
+</dd>
+
+          <dt id="zLookupDocumentFormatColor" class="callable">
+  <span class="name"><a href="../zcrud_study/zLookupDocumentFormatColor.html">zLookupDocumentFormatColor</a></span><span class="signature">(<wbr><span class="parameter" id="zLookupDocumentFormatColor-param-formatKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">formatKey</span>, </span><span class="parameter" id="zLookupDocumentFormatColor-param-colors"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">ZColorPair</span>&gt;</span>?</span> <span class="parameter-name">colors</span></span>)
+    <span class="returntype parameter">&#8594; ZColorPair?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Cherche une paire de couleurs injectée pour <code>formatKey</code> dans <code>colors</code>
+(mêmes candidats normalisés que le glyphe, par symétrie glyphe/couleur).
+<code>null</code> ⇒ aucune entrée injectée : l'appelant retombe sur
+le tirage de palette stable par format — le socle ne fige aucune
+convention <code>format → couleur</code> (invariant FR-26).
+  
+
+</dd>
+
+          <dt id="zMenuEntryIdForKind" class="callable">
+  <span class="name"><a href="../zcrud_study/zMenuEntryIdForKind.html">zMenuEntryIdForKind</a></span><span class="signature">(<wbr><span class="parameter" id="zMenuEntryIdForKind-param-kind"><span class="type-annotation"><a href="../zcrud_study/ZItemActionKind.html">ZItemActionKind</a></span> <span class="parameter-name">kind</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Identité PARTAGÉE (<a href="../zcrud_study/ZMenuEntryIds-class.html">ZMenuEntryIds</a>) correspondant à une <a href="../zcrud_study/ZItemActionKind.html">ZItemActionKind</a>.
+  
+
+</dd>
+
+          <dt id="zMindmapNodeCount" class="callable">
+  <span class="name"><a href="../zcrud_study/zMindmapNodeCount.html">zMindmapNodeCount</a></span><span class="signature">(<wbr><span class="parameter" id="zMindmapNodeCount-param-nodes"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZMindmapNode</span>&gt;</span></span> <span class="parameter-name">nodes</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Nombre total de nœuds de la forêt <code>nodes</code> (racines comprises) — parcours
+itératif défensif (aucune récursion non bornée sur pile).
+  
+
+</dd>
+
+          <dt id="zMirrorIfNeeded" class="callable">
+  <span class="name"><a href="../zcrud_study/zMirrorIfNeeded.html">zMirrorIfNeeded</a></span><span class="signature">(<wbr><span class="parameter" id="zMirrorIfNeeded-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zMirrorIfNeeded-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a></span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="zMirrorIfNeeded-param-child"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">child</span>, {</span><span class="parameter" id="zMirrorIfNeeded-param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enveloppe <code>child</code> de sorte que le glyphe <code>icon</code> soit retourné en RTL,
+même s'il ne porte pas <code>IconData.matchTextDirection</code>.
+  
+
+</dd>
+
+          <dt id="zMoveDownIndices" class="callable">
+  <span class="name"><a href="../zcrud_study/zMoveDownIndices.html">zMoveDownIndices</a></span><span class="signature">(<wbr><span class="parameter" id="zMoveDownIndices-param-visibleIds"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">visibleIds</span>, </span><span class="parameter" id="zMoveDownIndices-param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span></span>)
+    <span class="returntype parameter">&#8594; (<span class="field">{<span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="field-name">newIndex</span>, </span><span class="field"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="field-name">oldIndex</span>}</span>)?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Index de la carte <code>id</code> dans <code>visibleIds</code> déplacée d'un cran vers le <strong>bas</strong>
+(bouton a11y « Descendre ») — ou <code>null</code> si <strong>impossible</strong> (carte absente, ou
+<strong>déjà en dernier</strong>).
+  
+
+</dd>
+
+          <dt id="zMoveUpIndices" class="callable">
+  <span class="name"><a href="../zcrud_study/zMoveUpIndices.html">zMoveUpIndices</a></span><span class="signature">(<wbr><span class="parameter" id="zMoveUpIndices-param-visibleIds"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">visibleIds</span>, </span><span class="parameter" id="zMoveUpIndices-param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span></span>)
+    <span class="returntype parameter">&#8594; (<span class="field">{<span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="field-name">newIndex</span>, </span><span class="field"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="field-name">oldIndex</span>}</span>)?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Index de la carte <code>id</code> dans <code>visibleIds</code> déplacée d'un cran vers le <strong>haut</strong>
+(bouton a11y « Monter ») — ou <code>null</code> si le déplacement est <strong>impossible</strong>
+(carte absente, ou <strong>déjà en tête</strong>).
+  
+
+</dd>
+
+          <dt id="zNormalizeTypesDistribution" class="callable">
+  <span class="name"><a href="../zcrud_study/zNormalizeTypesDistribution.html">zNormalizeTypesDistribution</a></span><span class="signature">(<wbr><span class="parameter" id="zNormalizeTypesDistribution-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcardType</span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">raw</span>, {</span><span class="parameter" id="zNormalizeTypesDistribution-param-types"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcardType</span>&gt;</span></span> <span class="parameter-name">types</span>, </span><span class="parameter" id="zNormalizeTypesDistribution-param-countIfNull"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">countIfNull</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcardType</span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Normalise une répartition <code>raw</code> éventuellement incohérente (invariant
+AD-10 : jamais de throw).
+  
+
+</dd>
+
+          <dt id="zReadableTintOn" class="callable">
+  <span class="name"><a href="../zcrud_study/zReadableTintOn.html">zReadableTintOn</a></span><span class="signature">(<wbr><span class="parameter" id="zReadableTintOn-param-base"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">base</span>, {</span><span class="parameter" id="zReadableTintOn-param-surface"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">surface</span>, </span><span class="parameter" id="zReadableTintOn-param-minContrast"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">minContrast</span> = <span class="default-value">kZNonTextMinContrast</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Teinte <strong>LISIBLE</strong> dérivée de <code>base</code>, garantie à au moins <code>minContrast</code>
+contre <code>surface</code> — pour une couleur d'entrée <strong>ARBITRAIRE</strong> (choisie par
+l'utilisateur), dans <strong>les deux luminosités</strong>.
+  
+
+</dd>
+
+          <dt id="zReadableTypeTint" class="callable">
+  <span class="name"><a href="../zcrud_study/zReadableTypeTint.html">zReadableTypeTint</a></span><span class="signature">(<wbr><span class="parameter" id="zReadableTypeTint-param-base"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">base</span>, {</span><span class="parameter" id="zReadableTypeTint-param-isDark"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isDark</span>, </span><span class="parameter" id="zReadableTypeTint-param-surface"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">surface</span>, </span><span class="parameter" id="zReadableTypeTint-param-minContrast"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">minContrast</span> = <span class="default-value">kZTextMinContrast</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Teinte de type <strong>LISIBLE</strong> pour un premier plan (texte, glyphe) — dérivée
+de la couleur primaire du type par transformation HSL, <strong>jamais</strong> une
+couleur nouvelle.
+  
+
+</dd>
+
+          <dt id="zRelativeLuminance" class="callable">
+  <span class="name"><a href="../zcrud_study/zRelativeLuminance.html">zRelativeLuminance</a></span><span class="signature">(<wbr><span class="parameter" id="zRelativeLuminance-param-color"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">color</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Luminance relative WCAG 2.x</strong> de <code>color</code>, mesurée sur sa composante
+OPAQUE (un alpha est une décision de peinture, pas une propriété de la
+couleur — cf. <a href="../zcrud_study/zCompositeOver.html">zCompositeOver</a> pour mesurer un aplat semi-transparent).
+  
+
+</dd>
+
+          <dt id="zReorderFlashcards" class="callable">
+  <span class="name"><a href="../zcrud_study/zReorderFlashcards.html">zReorderFlashcards</a></span><span class="signature">(<wbr><span class="parameter" id="zReorderFlashcards-param-order"><span class="type-annotation">ZFolderContentsOrder</span> <span class="parameter-name">order</span>, {</span><span class="parameter" id="zReorderFlashcards-param-visibleIds"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">visibleIds</span>, </span><span class="parameter" id="zReorderFlashcards-param-oldIndex"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">oldIndex</span>, </span><span class="parameter" id="zReorderFlashcards-param-newIndex"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">newIndex</span>, </span><span class="parameter" id="zReorderFlashcards-param-subfolderId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">subfolderId</span></span>})
+    <span class="returntype parameter">&#8594; ZFolderContentsOrder</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Déplace la carte de <code>oldIndex</code> vers <code>newIndex</code> et rend l'ordre
+<strong>persistable</strong> — <strong>UNIQUE</strong> voie de réordonnancement.
+  
+
+</dd>
+
+          <dt id="zReorderIds" class="callable">
+  <span class="name"><a href="../zcrud_study/zReorderIds.html">zReorderIds</a></span><span class="signature">(<wbr><span class="parameter" id="zReorderIds-param-ids"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">ids</span>, </span><span class="parameter" id="zReorderIds-param-oldIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">oldIndex</span>, </span><span class="parameter" id="zReorderIds-param-newIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">newIndex</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Déplace l'id situé à <code>oldIndex</code> vers <code>newIndex</code> et retourne la <strong>nouvelle</strong>
+liste ordonnée (l'ordre relatif des autres ids est préservé).
+  
+
+</dd>
+
+          <dt id="zResolveCardShadowDecoration" class="callable">
+  <span class="name"><a href="../zcrud_study/zResolveCardShadowDecoration.html">zResolveCardShadowDecoration</a></span><span class="signature">(<wbr><span class="parameter" id="zResolveCardShadowDecoration-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zResolveCardShadowDecoration-param-shape"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/ShapeBorder-class.html">ShapeBorder</a></span> <span class="parameter-name">shape</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/painting/BoxDecoration-class.html">BoxDecoration</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Ombre de carte <strong>personnalisée</strong> dérivée des jetons <code>ZcrudTheme.cardShadow*</code>.
+  
+
+</dd>
+
+          <dt id="zResolveDocumentFormatIcon" class="callable">
+  <span class="name"><a href="../zcrud_study/zResolveDocumentFormatIcon.html">zResolveDocumentFormatIcon</a></span><span class="signature">(<wbr><span class="parameter" id="zResolveDocumentFormatIcon-param-formatKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">formatKey</span>, {</span><span class="parameter" id="zResolveDocumentFormatIcon-param-icons"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a></span>&gt;</span>?</span> <span class="parameter-name">icons</span>, </span><span class="parameter" id="zResolveDocumentFormatIcon-param-fallback"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a></span> <span class="parameter-name">fallback</span> = <span class="default-value">zDefaultDocumentFallbackIcon</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Résout la clé de format opaque <code>formatKey</code> en glyphe — totale
+(invariant AD-10).
+  
+
+</dd>
+
+          <dt id="zResolveMenuRenderer" class="callable">
+  <span class="name"><a href="../zcrud_study/zResolveMenuRenderer.html">zResolveMenuRenderer</a></span><span class="signature">(<wbr><span class="parameter" id="zResolveMenuRenderer-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zResolveMenuRenderer-param-override"><span class="type-annotation"><a href="../zcrud_study/ZMenuRenderer-class.html">ZMenuRenderer</a>?</span> <span class="parameter-name">override</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_study/ZMenuRenderer-class.html">ZMenuRenderer</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Chaîne <strong>totale</strong> : <code>override</code> → <a href="../zcrud_study/ZMenuScope-class.html">ZMenuScope</a> → <code>zFallbackMenuRenderer</code>.
+  
+
+</dd>
+
+          <dt id="zResolveSubfolderNav" class="callable">
+  <span class="name"><a href="../zcrud_study/zResolveSubfolderNav.html">zResolveSubfolderNav</a></span><span class="signature">(<wbr><span class="parameter" id="zResolveSubfolderNav-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zResolveSubfolderNav-param-request"><span class="type-annotation"><a href="../zcrud_study/ZSubfolderNavRenderRequest-class.html">ZSubfolderNavRenderRequest</a></span> <span class="parameter-name">request</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Chaîne <strong>TOTALE</strong> : seam hôte → <code>null</code>.
+  
+
+</dd>
+
+          <dt id="zReviewModeForKind" class="callable">
+  <span class="name"><a href="../zcrud_study/zReviewModeForKind.html">zReviewModeForKind</a></span><span class="signature">(<wbr><span class="parameter" id="zReviewModeForKind-param-kind"><span class="type-annotation">ZSessionModeKind</span> <span class="parameter-name">kind</span></span>)
+    <span class="returntype parameter">&#8594; ZReviewMode</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Traduit le choix du sélecteur (<code>ZSessionModeKind</code>) en mode de session
+(<code>ZReviewMode</code>) — <strong>voie UNIQUE</strong>, jamais dupliquée par un hôte.
+  
+
+</dd>
+
+          <dt id="zSessionQueueIdentity" class="callable">
+  <span class="name"><a href="../zcrud_study/zSessionQueueIdentity.html">zSessionQueueIdentity</a></span><span class="signature">(<wbr><span class="parameter" id="zSessionQueueIdentity-param-queue"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSessionItem</span>&gt;</span></span> <span class="parameter-name">queue</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Empreinte d'identité d'une file — l'ordre de ses <code>flashcardId</code>.
+  
+
+</dd>
+
+          <dt id="zStudyCardChromeOf" class="callable">
+  <span class="name"><a href="../zcrud_study/zStudyCardChromeOf.html">zStudyCardChromeOf</a></span><span class="signature">(<wbr><span class="parameter" id="zStudyCardChromeOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zStudyCardChromeOf-param-borderSide"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/BorderSide-class.html">BorderSide</a>?</span> <span class="parameter-name">borderSide</span>, </span><span class="parameter" id="zStudyCardChromeOf-param-borderRadius"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span> <span class="parameter-name">borderRadius</span>, </span><span class="parameter" id="zStudyCardChromeOf-param-contentPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">contentPadding</span>, </span><span class="parameter" id="zStudyCardChromeOf-param-margin"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">margin</span>, </span><span class="parameter" id="zStudyCardChromeOf-param-titleStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">titleStyle</span>, </span><span class="parameter" id="zStudyCardChromeOf-param-subtitleStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">subtitleStyle</span>, </span><span class="parameter" id="zStudyCardChromeOf-param-leadingGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">leadingGap</span>, </span><span class="parameter" id="zStudyCardChromeOf-param-elevation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">elevation</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_study/ZStudyCardChrome-class.html">ZStudyCardChrome</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Résout le chrome de référence depuis le contexte (rôles du <code>ColorScheme</code>)
+et les jetons <code>ZcrudTheme.studyCard*</code>, avec surcharge ponctuelle par les
+paramètres de la carte. Toute couleur est un rôle dérivé (invariant
+FR-26).
+  
+
+</dd>
+
+          <dt id="zStudyDayOf" class="callable">
+  <span class="name"><a href="../zcrud_study/zStudyDayOf.html">zStudyDayOf</a></span><span class="signature">(<wbr><span class="parameter" id="zStudyDayOf-param-moment"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">moment</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Normalise <code>moment</code> à sa <strong>date</strong>, en UTC — PURE / TOTALE / DÉTERMINISTE.
+  
+
+</dd>
+
+          <dt id="zStudyIsSameDay" class="callable">
+  <span class="name"><a href="../zcrud_study/zStudyIsSameDay.html">zStudyIsSameDay</a></span><span class="signature">(<wbr><span class="parameter" id="zStudyIsSameDay-param-a"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">a</span>, </span><span class="parameter" id="zStudyIsSameDay-param-b"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">b</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> ssi <code>a</code> et <code>b</code> désignent le même jour calendaire (comparaison de
+date pure — jamais une égalité d'instants).
+  
+
+</dd>
+
+          <dt id="zStudySessionChromeOf" class="callable">
+  <span class="name"><a href="../zcrud_study/zStudySessionChromeOf.html">zStudySessionChromeOf</a></span><span class="signature">(<wbr><span class="parameter" id="zStudySessionChromeOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zStudySessionChromeOf-param-stackFlex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">stackFlex</span>, </span><span class="parameter" id="zStudySessionChromeOf-param-inputFlex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">inputFlex</span>, </span><span class="parameter" id="zStudySessionChromeOf-param-contentPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">contentPadding</span>, </span><span class="parameter" id="zStudySessionChromeOf-param-dividerThickness"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">dividerThickness</span>, </span><span class="parameter" id="zStudySessionChromeOf-param-sectionGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">sectionGap</span>, </span><span class="parameter" id="zStudySessionChromeOf-param-minTarget"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">minTarget</span>, </span><span class="parameter" id="zStudySessionChromeOf-param-counterStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">counterStyle</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_study/ZStudySessionChrome-class.html">ZStudySessionChrome</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Résout le chrome de l'écran de session depuis le contexte (rôles du
+<code>ColorScheme</code>, styles du <code>TextTheme</code>) avec surcharge ponctuelle par
+paramètre. Toute couleur est un RÔLE dérivé — aucune n'est figée.
+  
+
+</dd>
+
+          <dt id="zStudyWeekDays" class="callable">
+  <span class="name"><a href="../zcrud_study/zStudyWeekDays.html">zStudyWeekDays</a></span><span class="signature">(<wbr><span class="parameter" id="zStudyWeekDays-param-around"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">around</span>, {</span><span class="parameter" id="zStudyWeekDays-param-weekStart"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">weekStart</span> = <span class="default-value">ZDailyTasksReference.weekStart</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Les 7 jours de la semaine contenant <code>around</code> — PURE / TOTALE / DÉTERMINISTE.
+  
+
+</dd>
+
+          <dt id="zVisibleMenuEntries" class="callable">
+  <span class="name"><a href="../zcrud_study/zVisibleMenuEntries.html">zVisibleMenuEntries</a></span><span class="signature">(<wbr><span class="parameter" id="zVisibleMenuEntries-param-entries"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study/ZMenuEntry-class.html">ZMenuEntry</a></span>&gt;</span></span> <span class="parameter-name">entries</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study/ZMenuEntry-class.html">ZMenuEntry</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Filtre la règle d'absence (invariant AD-4) — <strong>UN SEUL SITE</strong> dans tout le
+package.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZApproachingReminderTileBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZApproachingReminderTileBuilder.html">ZApproachingReminderTileBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-reminder"><span class="type-annotation"><a href="../zcrud_study/ZApproachingReminder-class.html">ZApproachingReminder</a></span> <span class="parameter-name">reminder</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit la ligne d'un rappel approchant (INJECTÉ). Reçoit l'examen complet +
+son décompte de jours (AD-13/FR-26 — couleurs/labels fournis par l'appelant).
+    
+
+  </dd>
+
+          
+  <dt id="ZCardTagIdsProvider" class="callable">
+    <span class="name"><a href="../zcrud_study/ZCardTagIdsProvider.html">ZCardTagIdsProvider</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span> Function<span class="signature">()</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Fournit le <strong>modèle de références</strong> courant : la liste des <code>tagIds</code> de chaque
+carte (clés opaques). Sert au calcul de la purge STRUCTURELLE (AC3).
+    
+
+  </dd>
+
+          
+  <dt id="ZContentHubPresenter" class="callable">
+    <span class="name"><a href="../zcrud_study/ZContentHubPresenter.html">ZContentHubPresenter</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-builder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a></span> <span class="parameter-name">builder</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    <strong>Comment</strong> la feuille est présentée — seam de PRÉSENTATION (AD-4).
+    
+
+  </dd>
+
+          
+  <dt id="ZDailyDayLabelBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZDailyDayLabelBuilder.html">ZDailyDayLabelBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-day"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">day</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Rend le libellé d'un jour du bandeau (intitulé, numéro, mois) — <strong>INJECTÉ</strong>.
+    
+
+  </dd>
+
+          
+  <dt id="ZDueCardsTaskBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZDueCardsTaskBuilder.html">ZDueCardsTaskBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-task"><span class="type-annotation">ZDueCardsTask</span> <span class="parameter-name">task</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit la ligne d'une tâche « cartes dues » — <strong>INJECTÉE</strong>.
+    
+
+  </dd>
+
+          
+  <dt id="ZExamDateLabeler" class="callable">
+    <span class="name"><a href="../zcrud_study/ZExamDateLabeler.html">ZExamDateLabeler</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-date"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">date</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Formate une date pour l'affichage (INJECTÉ, i18n — AD-13/FR-23).
+    
+
+  </dd>
+
+          
+  <dt id="ZExamDatePicker" class="callable">
+    <span class="name"><a href="../zcrud_study/ZExamDatePicker.html">ZExamDatePicker</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-current"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span> <span class="parameter-name">current</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Sélectionne une date d'examen (picker INJECTÉ — l'app apporte SON horloge, AC5).
+    
+
+  </dd>
+
+          
+  <dt id="ZExamTaskBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZExamTaskBuilder.html">ZExamTaskBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-task"><span class="type-annotation">ZExamTask</span> <span class="parameter-name">task</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit la ligne d'une tâche « examen approchant » — <strong>INJECTÉE</strong>.
+    
+
+  </dd>
+
+          
+  <dt id="ZExamTimePicker" class="callable">
+    <span class="name"><a href="../zcrud_study/ZExamTimePicker.html">ZExamTimePicker</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZReminderTime?</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-current"><span class="type-annotation">ZReminderTime?</span> <span class="parameter-name">current</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Sélectionne une heure de rappel TYPÉE (picker INJECTÉ, AC2/AC5).
+    
+
+  </dd>
+
+          
+  <dt id="ZFlashcardBatchCommit" class="callable">
+    <span class="name"><a href="../zcrud_study/ZFlashcardBatchCommit.html">ZFlashcardBatchCommit</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/dartz/0.10.1/dartz/Unit-class.html">Unit</a></span>&gt;</span></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-cards"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span></span> <span class="parameter-name">cards</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Signature du commit unique : remet l'intégralité de la liste de
+travail à l'appelant. Retourne un <code>Either&lt;ZFailure, Unit&gt;</code> — un <code>Left</code> laisse
+le brouillon dirty intact, un <code>Right</code> valide le brouillon.
+    
+
+  </dd>
+
+          
+  <dt id="ZFlashcardGeneratedCallback" class="callable">
+    <span class="name"><a href="../zcrud_study/ZFlashcardGeneratedCallback.html">ZFlashcardGeneratedCallback</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-cards"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span></span> <span class="parameter-name">cards</span>, </span><span class="parameter" id="param-confirmedTags"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcardTag</span>&gt;</span></span> <span class="parameter-name">confirmedTags</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Callback de <strong>handoff</strong> : remet le lot éphémère + les tags confirmés à
+l'appelant (typiquement le multi-éditeur FR-SU20). C'est l'UNIQUE canal de
+sortie du résultat — non persistant (AC5/AC6).
+    
+
+  </dd>
+
+          
+  <dt id="ZFlashcardTileContentBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZFlashcardTileContentBuilder.html">ZFlashcardTileContentBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-text"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">text</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Rend le <strong>contenu</strong> d'une carte dans une tuile.
+    
+
+  </dd>
+
+          
+  <dt id="ZGenerationSourceResolver" class="callable">
+    <span class="name"><a href="../zcrud_study/ZGenerationSourceResolver.html">ZGenerationSourceResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study/ZResolvedGenerationSource-class.html">ZResolvedGenerationSource</a></span>&gt;</span></span>&gt;</span> Function<span class="signature">()</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Résolveur à la demande du contenu d'une source (invariant AD-5 : domaine
+backend-agnostique).
+    
+
+  </dd>
+
+          
+  <dt id="ZItemActionsMenuBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZItemActionsMenuBuilder.html">ZItemActionsMenuBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-actions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study/ZItemAction-class.html">ZItemAction</a></span>&gt;</span></span> <span class="parameter-name">actions</span>, </span><span class="parameter" id="param-select"><span class="type-annotation">void</span> <span class="parameter-name">select</span>(<span class="parameter" id="param-action"><span class="type-annotation"><a href="../zcrud_study/ZItemAction-class.html">ZItemAction</a></span> <span class="parameter-name">action</span></span>)</span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Présentation INJECTÉE du contenu du menu.
+    
+
+  </dd>
+
+          
+  <dt id="ZMaterialSectionsBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZMaterialSectionsBuilder.html">ZMaterialSectionsBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study/ZStudyToolsSectionSpec-class.html">ZStudyToolsSectionSpec</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-selectedSubfolderId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">selectedSubfolderId</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit les sections « Matériel » pour le sous-dossier <code>selectedSubfolderId</code>
+(<code>null</code> = tous). Le widget ne filtre AUCUNE donnée lui-même (AD-2) : il
+re-fournit l'id sélectionné à ce builder INJECTÉ.
+    
+
+  </dd>
+
+          
+  <dt id="ZMaterialSlotBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZMaterialSlotBuilder.html">ZMaterialSlotBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-selectedSubfolderId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">selectedSubfolderId</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    CR-53 — construit un slot LIBRE (en-tête ou pied) de l'onglet « Matériel »
+pour le sous-dossier <code>selectedSubfolderId</code> (<code>null</code> = tous).
+    
+
+  </dd>
+
+          
+  <dt id="ZMenuContentBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZMenuContentBuilder.html">ZMenuContentBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-entries"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study/ZMenuEntry-class.html">ZMenuEntry</a></span>&gt;</span></span> <span class="parameter-name">entries</span>, </span><span class="parameter" id="param-select"><span class="type-annotation">void</span> <span class="parameter-name">select</span>(<span class="parameter" id="param-entry"><span class="type-annotation"><a href="../zcrud_study/ZMenuEntry-class.html">ZMenuEntry</a></span> <span class="parameter-name">entry</span></span>)</span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Présentation INJECTÉE du CONTENU du menu.
+    
+
+  </dd>
+
+          
+  <dt id="ZRemindersComputed" class="callable">
+    <span class="name"><a href="../zcrud_study/ZRemindersComputed.html">ZRemindersComputed</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-reminders"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study/ZApproachingReminder-class.html">ZApproachingReminder</a></span>&gt;</span></span> <span class="parameter-name">reminders</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Exposition des rappels approchants à l'application, pour qu'elle
+planifie ses propres notifications système. Invoquée après le calcul
+(post-frame) — cette section ne planifie jamais elle-même une
+notification.
+    
+
+  </dd>
+
+          
+  <dt id="ZStudySessionCelebrationBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZStudySessionCelebrationBuilder.html">ZStudySessionCelebrationBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit la couche de célébration, <strong>au-dessus</strong> du résumé.
+    
+
+  </dd>
+
+          
+  <dt id="ZStudySessionCounterBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZStudySessionCounterBuilder.html">ZStudySessionCounterBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-progress"><span class="type-annotation"><a href="../zcrud_study/ZStudySessionProgress-class.html">ZStudySessionProgress</a></span> <span class="parameter-name">progress</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit le bloc de compteurs (« 3 / 12 », lapses, restant…).
+    
+
+  </dd>
+
+          
+  <dt id="ZStudySessionGradingBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZStudySessionGradingBuilder.html">ZStudySessionGradingBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-item"><span class="type-annotation">ZSessionItem</span> <span class="parameter-name">item</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit la surface de saisie <strong>et</strong> de notation de la carte de devant.
+    
+
+  </dd>
+
+          
+  <dt id="ZStudySessionGradingSlotBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZStudySessionGradingSlotBuilder.html">ZStudySessionGradingSlotBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-item"><span class="type-annotation">ZSessionItem</span> <span class="parameter-name">item</span>, </span><span class="parameter" id="param-submit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcardSubmission</span>&gt;</span></span> <span class="parameter-name">submit</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit la surface de saisie/notation <strong>branchée sur le runtime</strong>.
+    
+
+  </dd>
+
+          
+  <dt id="ZStudySessionHeaderBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZStudySessionHeaderBuilder.html">ZStudySessionHeaderBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-progress"><span class="type-annotation"><a href="../zcrud_study/ZStudySessionProgress-class.html">ZStudySessionProgress</a></span> <span class="parameter-name">progress</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit l'en-tête de session (titre, contexte de dossier…).
+    
+
+  </dd>
+
+          
+  <dt id="ZStudySessionResultBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZStudySessionResultBuilder.html">ZStudySessionResultBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-result"><span class="type-annotation">ZStudySessionResult</span> <span class="parameter-name">result</span>, </span><span class="parameter" id="param-duration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">duration</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit le résumé de fin — reçoit le résultat <strong>agrégé</strong> et la durée.
+    
+
+  </dd>
+
+          
+  <dt id="ZStudySessionSummaryBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZStudySessionSummaryBuilder.html">ZStudySessionSummaryBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit le résumé de fin de session.
+    
+
+  </dd>
+
+          
+  <dt id="ZSubfolderItemActionBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZSubfolderItemActionBuilder.html">ZSubfolderItemActionBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-refOrNull"><span class="type-annotation"><a href="../zcrud_study/ZSubfolderRef-class.html">ZSubfolderRef</a>?</span> <span class="parameter-name">refOrNull</span>, </span><span class="parameter" id="param-selected"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">selected</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit l'<strong>action</strong> d'un item de fratrie — slot TRAILING, distinct du
+contenu (point 8).
+    
+
+  </dd>
+
+          
+  <dt id="ZSubfolderItemBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZSubfolderItemBuilder.html">ZSubfolderItemBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-ref"><span class="type-annotation"><a href="../zcrud_study/ZSubfolderRef-class.html">ZSubfolderRef</a></span> <span class="parameter-name">ref</span>, </span><span class="parameter" id="param-selected"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">selected</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit l'item visuel d'un sous-dossier. <code>selected</code> permet à l'hôte de
+styler la sélection ; le widget applique déjà sa propre surbrillance
+neutre autour de l'item (ce builder n'est donc pas obligé de la gérer).
+    
+
+  </dd>
+
+          
+  <dt id="ZSubfolderItemContentBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZSubfolderItemContentBuilder.html">ZSubfolderItemContentBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-refOrNull"><span class="type-annotation"><a href="../zcrud_study/ZSubfolderRef-class.html">ZSubfolderRef</a>?</span> <span class="parameter-name">refOrNull</span>, </span><span class="parameter" id="param-selected"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">selected</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Fabrique du SOCLE remise à une surface tierce : contenu visuel d'un item.
+    
+
+  </dd>
+
+          
+  <dt id="ZSuggestionSemanticLabel" class="callable">
+    <span class="name"><a href="../zcrud_study/ZSuggestionSemanticLabel.html">ZSuggestionSemanticLabel</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-suggestion"><span class="type-annotation">ZSuggestedTag</span> <span class="parameter-name">suggestion</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Libellé sémantique INJECTÉ dérivé d'une suggestion (i18n — AC7).
+    
+
+  </dd>
+
+          
+  <dt id="ZTagSemanticLabel" class="callable">
+    <span class="name"><a href="../zcrud_study/ZTagSemanticLabel.html">ZTagSemanticLabel</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-tag"><span class="type-annotation">ZFlashcardTag</span> <span class="parameter-name">tag</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Signature d'un libellé sémantique INJECTÉ dérivé d'un tag (i18n — AC6).
+    
+
+  </dd>
+
+          
+  <dt id="ZTagUsageCount" class="callable">
+    <span class="name"><a href="../zcrud_study/ZTagUsageCount.html">ZTagUsageCount</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a> Function<span class="signature">(<span class="parameter" id="param-tag"><span class="type-annotation">ZFlashcardTag</span> <span class="parameter-name">tag</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Signature d'un fournisseur de compteur d'usages <strong>DÉRIVÉ</strong> (AC4/AD-19) : le
+nombre de cartes référençant <code>tag</code>, recalculé À CHAQUE rendu (jamais un champ
+stocké sur l'entité).
+    
+
+  </dd>
+
+          
+  <dt id="ZUnknownTaskBuilder" class="callable">
+    <span class="name"><a href="../zcrud_study/ZUnknownTaskBuilder.html">ZUnknownTaskBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-task"><span class="type-annotation">ZDailyStudyTask</span> <span class="parameter-name">task</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit la ligne d'une variante <strong>INCONNUE</strong> de la famille ouverte
+<code>ZDailyStudyTask</code> (AD-4).
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li class="self-crumb">zcrud_study.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_study</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_study/">zcrud_study</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_study library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

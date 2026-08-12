@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_firestore API docs, for the Dart programming language.">
+  <title>zcrud_firestore - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_firestore package</a></li>
+  </ol>
+  <div class="self-name">zcrud_firestore</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_firestore">zcrud_firestore</h1>
+<p>Adaptateurs Firestore et Hive pour les ports neutres du cœur — aucun type
+backend ne fuit dans une signature publique (invariant AD-5).</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_firestore</code> implémente les ports déclarés par <code>zcrud_core</code>
+(<code>ZRepository&lt;T&gt;</code>, <code>ZLocalStore&lt;T&gt;</code>, <code>ZRemoteStore&lt;T&gt;</code>) contre Firestore et
+Hive. <code>cloud_firestore</code> et <code>hive</code> ne sont importés que dans ce paquet ;
+toutes les signatures publiques restent <code>ZResult&lt;…&gt;</code> / <code>Stream&lt;List&lt;T&gt;&gt;</code>
+nues — l'injection d'une instance <code>FirebaseFirestore</code> ou d'une <code>Box</code> Hive au
+constructeur est la seule couture voulue vers le backend.</p>
+<p>Ce paquet fournit :</p>
+<ul>
+<li>l'<strong>adaptateur Firestore</strong> <a href="zcrud_firestore/FirebaseZRepositoryImpl-class.html">FirebaseZRepositoryImpl</a> — CRUD, curseur,
+soft-delete/restore, comptage, décodage défensif ;</li>
+<li>les <strong>deux stores offline-first</strong> — <a href="zcrud_firestore/HiveZLocalStore-class.html">HiveZLocalStore</a> (local, source de
+vérité) et <a href="zcrud_firestore/FirestoreZRemoteStore-class.html">FirestoreZRemoteStore</a> (distant, fire-and-forget) — et les
+<strong>dépôts composites</strong> qui les fusionnent avec un merge Last-Write-Wins
+(<a href="zcrud_firestore/ZOfflineFirstRepository-class.html">ZOfflineFirstRepository</a>/<a href="zcrud_firestore/ZOfflineFirstBoxRepository-class.html">ZOfflineFirstBoxRepository</a>) ;</li>
+<li>un <strong>résolveur de chemins</strong> bi-topologie et des <strong>fabriques</strong> prêtes à
+l'emploi pour les topologies imbriquée et utilisateur-scopée ;</li>
+<li>un <strong>exécuteur de cascade</strong> borné à 450 écritures/lot pour le soft-delete
+d'un dossier et de sa descendance ;</li>
+<li>des utilitaires <strong>study</strong> : codec de normalisation legacy, migrateur de
+corpus, fabrique d'orchestrateur de synchronisation.</li>
+</ul>
+<p><strong>Utilisez ce paquet</strong> dès que votre application persiste des entités
+<code>zcrud</code> sur Firestore, avec ou sans cache Hive offline-first.
+<strong>N'utilisez pas ce paquet</strong> si votre backend n'est ni Firestore ni Hive :
+implémentez directement les ports <code>ZRepository&lt;T&gt;</code>/<code>ZLocalStore&lt;T&gt;</code>/
+<code>ZRemoteStore&lt;T&gt;</code> de <code>zcrud_core</code> pour votre backend.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:zcrud_firestore/zcrud_firestore.dart';
+
+// `Note` est un modèle applicatif : il étend `ZEntity` (zcrud_core) et
+// fournit `fromMap`/`toMap`. Le dépôt expose des ports neutres
+// (`ZResult&lt;…&gt;` / `Stream&lt;List&lt;T&gt;&gt;`) — aucun type cloud_firestore ne fuit.
+final repo = FirebaseZRepositoryImpl&lt;Note&gt;(
+  firestore: FirebaseFirestore.instance,
+  collectionPath: 'notes',
+  kind: 'note', // discriminant du registre pour la (dé)sérialisation
+  fromMap: Note.fromMap,
+  toMap: (n) =&gt; n.toMap(),
+);
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Isolation backend (invariant <a href="../../docs/site/concepts/invariants.md#ad-5">AD-5</a>)</strong> —
+<code>Query</code>/<code>Timestamp</code>/<code>DocumentSnapshot</code>/<code>FirebaseException</code>/<code>Box</code>/<code>HiveError</code>
+ne quittent jamais ce paquet. Un consommateur qui n'importe pas
+<code>zcrud_firestore</code> ne tire ni <code>cloud_firestore</code> ni <code>hive</code>.</li>
+<li><strong>Offline-first, local source de vérité (invariant <a href="../../docs/site/concepts/invariants.md#ad-9">AD-9</a>)</strong> —
+<a href="zcrud_firestore/ZOfflineFirstRepository-class.html">ZOfflineFirstRepository</a>/<a href="zcrud_firestore/ZOfflineFirstBoxRepository-class.html">ZOfflineFirstBoxRepository</a> composent un
+<code>ZLocalStore</code> autoritaire et un <code>ZRemoteStore</code> best-effort : une écriture
+hors-ligne réussit toujours localement (<code>Right</code>), le push distant est
+fire-and-forget, et le merge suit Last-Write-Wins sur <code>updatedAt</code>.</li>
+<li><strong>Décodage défensif (invariant <a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>)</strong> —
+un document corrompu ou non décodable est écarté et loggé, jamais propagé
+en exception : une page de N documents dont un est corrompu retourne N-1
+entités.</li>
+<li><strong>Corbeille et sémantiques de suppression</strong> — voir la section dédiée
+ci-dessous ; c'est le point d'attention le plus fréquent lors de
+l'intégration d'une collection préexistante.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FirebaseZRepositoryImpl&lt;T&gt;</code></td>
+<td>Adaptateur Firestore concret de <code>ZRepository&lt;T&gt;</code> — CRUD, curseur, soft-delete/restore, comptage.</td>
+</tr>
+<tr>
+<td><code>ZDeletionSemantics</code></td>
+<td>Sémantique de lecture du drapeau <code>is_deleted</code> (<code>strict</code> / <code>absentMeansAlive</code>).</td>
+</tr>
+<tr>
+<td><code>ZFirestoreLog</code></td>
+<td>Callback de journalisation neutre de l'adaptateur Firestore.</td>
+</tr>
+<tr>
+<td><code>HiveZLocalStore&lt;T&gt;</code></td>
+<td>Adaptateur Hive concret de <code>ZLocalStore&lt;T&gt;</code> — store local, source de vérité offline-first.</td>
+</tr>
+<tr>
+<td><code>FirestoreZRemoteStore&lt;T&gt;</code></td>
+<td>Adaptateur Firestore concret de <code>ZRemoteStore&lt;T&gt;</code>, par composition sur <code>FirebaseZRepositoryImpl</code>.</td>
+</tr>
+<tr>
+<td><code>ZOfflineFirstRepository&lt;T&gt;</code></td>
+<td>Dépôt composite : store local + store distant + merge Last-Write-Wins, injection libre des deux stores.</td>
+</tr>
+<tr>
+<td><code>ZOfflineFirstBoxRepository&lt;T&gt;</code></td>
+<td>Variante prête à l'emploi composant directement <code>HiveZLocalStore</code> + <code>FirestoreZRemoteStore</code> pour une topologie donnée.</td>
+</tr>
+<tr>
+<td><code>ZFirestorePathResolver</code> / <code>ZFirestorePathRule</code> / <code>ZFirestoreTopology</code></td>
+<td>Résolveur de chemins bi-topologie (plate / imbriquée / globale) — entrée neutre, sortie <code>String</code>.</td>
+</tr>
+<tr>
+<td><code>buildFolderScopedStudyRepository&lt;T&gt;</code> / <code>buildUserScopedStudyRepository&lt;T&gt;</code></td>
+<td>Fabriques prêtes à l'emploi pour les topologies imbriquée et utilisateur-scopée.</td>
+</tr>
+<tr>
+<td><code>ZFirestoreCascadeBatcher</code> / <code>ZCascadeReport</code></td>
+<td>Exécuteur borné (≤ 450 écritures/lot) de la cascade de suppression d'un dossier et de sa descendance.</td>
+</tr>
+<tr>
+<td><code>ZFirestoreAppFileResolver</code> (et types associés)</td>
+<td>Résolution des pièces jointes (<code>AppFile</code>) vers les alias de champs legacy.</td>
+</tr>
+<tr>
+<td><code>ZStudyLegacyCodec</code></td>
+<td>Normaliseur pur de <code>Map</code> : camelCase↔snake_case, mapping de statuts legacy, dates millis.</td>
+</tr>
+<tr>
+<td><code>ZLegacyStudyMigrator</code> / <code>ZDocumentMigrationOutcome</code> / <code>ZLegacyMigrationReport</code></td>
+<td>Migrateur de corpus legacy flat→canonique, idempotent, avec mode simulation.</td>
+</tr>
+<tr>
+<td><code>assembleZStudySyncOrchestrator</code></td>
+<td>Fabrique de câblage d'un <code>ZSyncOrchestrator</code> à partir d'une liste de dépôts injectée.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<h3 id="smantiques-de-suppression-et-corbeille">Sémantiques de suppression et corbeille</h3>
+<p>Le drapeau de soft-delete <code>is_deleted</code> peut être lu selon deux sémantiques,
+opt-in au constructeur de <a href="zcrud_firestore/FirebaseZRepositoryImpl-class.html">FirebaseZRepositoryImpl</a> via <code>deletionSemantics</code> :</p>
+<ul>
+<li><strong><a href="zcrud_firestore/ZDeletionSemantics.html">ZDeletionSemantics.strict</a></strong> (défaut, comportement historique
+inchangé) — le filtre serveur <code>where('is_deleted', isEqualTo: false)</code>
+exige la présence du champ. Un document sans <code>is_deleted</code> est exclu de
+<strong>tous</strong> les chemins de lecture. Cette sémantique suppose une collection
+gérée <strong>exclusivement</strong> par zcrud (précondition « collection
+zcrud-native ») : brancher l'adaptateur sur une collection préexistante
+impose un backfill (<code>id</code> de corps + <code>is_deleted:false</code> sur chaque
+document).</li>
+<li><strong><a href="zcrud_firestore/ZDeletionSemantics.html">ZDeletionSemantics.absentMeansAlive</a></strong> (opt-in, zéro migration de
+données) — un document sans <code>is_deleted</code> est considéré <strong>non supprimé</strong>
+(le sens métier legacy : absent = vivant). Le coût est un filtrage
+<strong>client</strong> plutôt que serveur (Firestore ne sait pas exprimer
+<code>!= true OU absent</code> en une clause), donc chaque page lit aussi les
+documents supprimés avant de les écarter — acceptable tant que la
+corbeille reste marginale. <code>count()</code> perd l'agrégat serveur (décompte
+client, même raison). L'auto-réparation à l'écriture demeure : chaque
+<code>save</code> pose <code>is_deleted:false</code>, le parc converge vers <code>strict</code> au fil des
+écritures. Un paramètre <code>legacyDeletedKey</code> optionnel désigne, dans ce
+mode uniquement, une clé de soft-delete legacy supplémentaire (ex.
+<code>'deleted'</code>) traitée comme équivalente à <code>is_deleted</code>.</li>
+</ul>
+<p>Dans les <strong>deux</strong> sémantiques, <code>ZDataRequest.deletedScope</code>
+(<code>ZDeletedScope.aliveOnly</code> / <code>includeDeleted</code> / <code>deletedOnly</code>, défini dans
+<code>zcrud_core</code>) est honoré sur <code>getAll</code>/<code>watch</code>/<a href="https://pub.dev/documentation/cloud_firestore_platform_interface/8.0.5/cloud_firestore_platform_interface/count-class.html">count</a> de
+<a href="zcrud_firestore/FirebaseZRepositoryImpl-class.html">FirebaseZRepositoryImpl</a> : clauses <code>where</code> en mode <code>strict</code>, filtrage
+client en mode <code>absentMeansAlive</code> (<code>deletedOnly</code> y inclut alors les
+documents dont <code>legacyDeletedKey == true</code>).</p>
+<h3 id="autres-cas-limites">Autres cas limites</h3>
+<ul>
+<li><strong>Le corps <code>id</code> est une précondition structurelle</strong> — tout document écrit
+par <a href="zcrud_firestore/FirebaseZRepositoryImpl/save.html">FirebaseZRepositoryImpl.save</a> porte systématiquement un champ de
+corps <code>id</code> (clé de départage du tri/curseur) ; un document sans ce champ
+disparaît silencieusement des lectures triées/paginées (sémantique
+Firestore de <code>orderBy</code>).</li>
+<li><strong>Dates ISO-8601 par défaut, <code>Timestamp</code> opt-in par champ</strong> — le décodage
+normalise tout horodatage (<code>Timestamp</code> natif, <code>DateTime</code>,
+<code>{_seconds,_nanoseconds}</code>) en <code>String</code> ISO avant d'appeler le <code>fromMap</code>
+injecté ; un champ peut être hinté en <code>Timestamp</code> natif via l'artefact
+généré <code>$XxxTimestampFields</code> (<code>zcrud_generator</code>, <code>persistAs: ZPersistAs.timestamp</code>), passé au paramètre <code>timestampFields</code>.</li>
+<li><strong>Recherche accent-insensible non servie</strong> — Firestore n'a ni <code>LIKE</code>, ni
+full-text, ni pliage diacritique natif : <code>ZDataRequest.search</code> n'est donc
+pas honoré ici (préfixe/égalité ou champ normalisé pré-calculé requis côté
+application).</li>
+<li><strong>Un <code>Left</code> distant en synchronisation offline-first est assimilé à
+« offline »</strong> — best-effort assumé : la distinction réseau vs. erreur
+serveur (permission, quota) n'est pas encore typée séparément ; le drop
+est toujours loggé, jamais silencieux.</li>
+<li><strong>La cascade est bornée et son bornage est observable</strong> — <code>deleteCascade</code>
+découpe <code>N</code> écritures en <code>ceil(N/450)</code> lots séquentiels, chacun committé
+atomiquement ; le nombre de lots effectivement exécutés est exposé via
+<code>ZCascadeReport.batchCount</code>. Une panne de <code>commit()</code> est remontée en
+<code>Left(ZServerFailure)</code>, jamais avalée.</li>
+<li><strong>Le codec et le migrateur legacy ne jettent jamais</strong> — <code>ZStudyLegacyCodec</code>
+et <code>ZLegacyStudyMigrator</code> sont des normaliseurs purs et défensifs
+(invariant AD-10) : une entrée hostile ne fait jamais échouer la
+migration, elle produit un rapport auditable.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_firestore.md"><code>docs/site/paquets/zcrud_firestore.md</code></a></li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_core</code> — les ports neutres (<code>ZRepository</code>, <code>ZLocalStore</code>, <code>ZRemoteStore</code>, <code>ZDataRequest</code>, <code>ZSyncOrchestrator</code>) implémentés par ce paquet.</li>
+<li><code>zcrud_generator</code> — génère l'artefact <code>$XxxTimestampFields</code> consommé par <code>timestampFields</code>.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_firestore">
+  <span class="name"><a href="zcrud_firestore/">zcrud_firestore</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_firestore</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_firestore package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_firestore</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_firestore/">zcrud_firestore</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_firestore
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

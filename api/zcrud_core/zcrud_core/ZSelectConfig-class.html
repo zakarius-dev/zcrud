@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZSelectConfig class from the zcrud_core library, for the Dart programming language.">
+  <title>ZSelectConfig class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZSelectConfig class</li>
+  </ol>
+  <div class="self-name">ZSelectConfig</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZSelectConfig-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZSelectConfig</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Config du champ <strong>select</strong> (<code>select</code>/<code>radio</code>/<code>checkbox</code>). Pur-données
+<code>const</code> : elle active le <strong>modal de recherche</strong> (<a href="../zcrud_core/ZSelectConfig/searchable.html">searchable</a> ou seuil
+<a href="../zcrud_core/ZSelectConfig/modalThreshold.html">modalThreshold</a>) et déclare les <strong>choix dynamiques cross-champ</strong>
+(<a href="../zcrud_core/ZSelectConfig/choicesFromKey.html">choicesFromKey</a> = lecture directe d'une tranche portant les options ;
+<a href="../zcrud_core/ZSelectConfig/choicesSourceKey.html">choicesSourceKey</a> = source <strong>calculée</strong> résolue au runtime dans
+<code>ZChoicesSourceRegistry</code>, filtrée par <a href="../zcrud_core/ZSelectConfig/filterKeys.html">filterKeys</a>).</p>
+<p><strong>const-safe (invariant AD-3)</strong> : aucune closure/<code>Function</code> (non
+émissibles par <code>ConstantReader</code>) — le calcul réel des choix vit hors du
+cœur (binding/app), résolu par <a href="../zcrud_core/ZSelectConfig/choicesSourceKey.html">choicesSourceKey</a> au runtime. La
+<strong>multiplicité</strong> single/multiple s'appuie sur <code>ZFieldSpec.multiple</code> (source
+unique — <strong>jamais</strong> dupliquée ici).</p>
+<p>Rétro-compat : un <code>select</code>/<code>radio</code>/<code>checkbox</code> <strong>sans</strong> cette config conserve
+exactement le dropdown/radio/checkbox statique sur <code>choices</code>.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="../zcrud_core/ZFieldConfig-class.html">ZFieldConfig</a></li>
+      <li>ZSelectConfig</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZSelectConfig.new" class="callable">
+          <span class="name"><a href="../zcrud_core/ZSelectConfig/ZSelectConfig.html">ZSelectConfig</a></span><span class="signature">({<span class="parameter" id="param-searchable"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">searchable</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-modalThreshold"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">modalThreshold</span>, </span><span class="parameter" id="param-choicesFromKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">choicesFromKey</span>, </span><span class="parameter" id="param-choicesSourceKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">choicesSourceKey</span>, </span><span class="parameter" id="param-filterKeys"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">filterKeys</span> = <span class="default-value">const &lt;String&gt;[]</span>, </span><span class="parameter" id="param-radioAsModal"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">radioAsModal</span> = <span class="default-value">false</span></span>})</span>
+        </dt>
+        <dd>
+          Construit une config select <code>const</code>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="choicesFromKey" class="property">
+  <span class="name"><a href="../zcrud_core/ZSelectConfig/choicesFromKey.html">choicesFromKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé d'un <strong>autre champ</strong> dont la tranche porte une <code>List&lt;ZFieldChoice&gt;</code> qui
+<strong>remplace</strong> <code>field.choices</code> (recalcul déclaratif pur-cœur). <code>null</code> ⇒
+aucune lecture cross-champ. L'abonnement à cette clé est <strong>ciblé</strong> —
+jamais un canal global.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="choicesSourceKey" class="property">
+  <span class="name"><a href="../zcrud_core/ZSelectConfig/choicesSourceKey.html">choicesSourceKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé de résolution d'une <code>ZChoicesSource</code> <strong>calculée</strong> dans
+<code>ZChoicesSourceRegistry</code> (choix arbitraires côté binding). <code>null</code> ⇒ pas de
+source calculée. Priorité : <a href="../zcrud_core/ZSelectConfig/choicesSourceKey.html">choicesSourceKey</a> &gt; <a href="../zcrud_core/ZSelectConfig/choicesFromKey.html">choicesFromKey</a> &gt;
+<code>field.choices</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="filterKeys" class="property">
+  <span class="name"><a href="../zcrud_core/ZSelectConfig/filterKeys.html">filterKeys</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés des champs formant le <code>filterContext</code> cross-champ passé à
+<code>ZChoicesSource.options(...)</code>. Vide ⇒ aucun filtre. L'abonnement à ces
+tranches est <strong>ciblé</strong>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_core/ZSelectConfig/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="modalThreshold" class="property">
+  <span class="name"><a href="../zcrud_core/ZSelectConfig/modalThreshold.html">modalThreshold</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Seuil de bascule automatique en modal : si <code>choices.length &gt;= modalThreshold</code>, le <code>select</code> passe en modal même si <a href="../zcrud_core/ZSelectConfig/searchable.html">searchable</a> est <code>false</code>.
+<code>null</code> (défaut) ⇒ pas de seuil.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="radioAsModal" class="property">
+  <span class="name"><a href="../zcrud_core/ZSelectConfig/radioAsModal.html">radioAsModal</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Quand <code>true</code>, un champ <code>radio</code> est rendu comme un <strong>déclencheur ouvrant
+un modal</strong> de choix unique (au lieu des <code>RadioListTile</code> inline). Sans
+effet sur <code>select</code>/<code>checkbox</code>. Défaut <code>false</code> ⇒ rendu <code>RadioListTile</code>
+inline inchangé (rétro-compat).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="searchable" class="property">
+  <span class="name"><a href="../zcrud_core/ZSelectConfig/searchable.html">searchable</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Active le <strong>modal de recherche</strong> (filtrage client sur les libellés). <code>false</code>
+(défaut) ⇒ dropdown natif (sauf si <a href="../zcrud_core/ZSelectConfig/modalThreshold.html">modalThreshold</a> atteint).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_core/ZSelectConfig/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZSelectConfig class</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

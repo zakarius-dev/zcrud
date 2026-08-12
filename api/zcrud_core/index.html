@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_core API docs, for the Dart programming language.">
+  <title>zcrud_core - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_core package</a></li>
+  </ol>
+  <div class="self-name">zcrud_core</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_core">zcrud_core</h1>
+<p>Domaine pur et moteur d'édition/liste Flutter-natif de l'écosystème zcrud —
+un même schéma déclaratif <code>ZFieldSpec</code> pilote les formulaires et les tableaux,
+avec une réactivité par tranche (invariant AD-2) : jamais de reconstruction
+globale du formulaire à la frappe.</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_core</code> est le <strong>puits du graphe de dépendances</strong> de l'écosystème
+(invariant AD-1) : il n'importe aucun autre paquet <code>zcrud_*</code>, aucun
+gestionnaire d'état (Riverpod/GetX/provider), aucun backend lourd (Firebase,
+Syncfusion, Quill, cartes). Tous les autres paquets du dépôt en dépendent ;
+lui ne dépend de rien d'entre eux.</p>
+<p>Le paquet est structuré en deux couches :</p>
+<ul>
+<li><strong><code>domain/</code></strong> — pur-Dart (aucune dépendance Flutter, testable sous <code>dart test</code>) : le schéma <code>ZFieldSpec</code>/<code>EditionFieldType</code>, les ports (<code>ZRepository</code>,
+<code>ZLocalStore</code>, <code>ZRemoteStore</code>, <code>ZAcl</code>…), la hiérarchie <code>ZFailure</code>/<code>ZResult</code>,
+les registres d'extensibilité, les contrats de synchronisation offline-first.
+Exposée seule par <code>package:zcrud_core/domain.dart</code>, pour les satellites dont
+seul le modèle a besoin de rester transitivement pur-Dart (invariant AD-14).</li>
+<li><strong><code>presentation/</code></strong> — Flutter-native : <code>ZFormController</code>
+(<code>ChangeNotifier</code>/<code>ValueListenable</code>), <code>DynamicEdition</code>/<code>DynamicList</code>, les
+familles de champs, <code>ZcrudScope</code>, <code>ZcrudTheme</code>, la l10n injectable.</li>
+</ul>
+<p><strong>Utilisez ce paquet</strong> comme fondation de tout CRUD <code>zcrud</code> : décrire un
+modèle avec <code>zcrud_annotations</code>/<code>zcrud_generator</code>, éditer avec
+<code>DynamicEdition</code>, lister avec <code>DynamicList</code>. <strong>N'utilisez pas</strong> directement
+<code>zcrud_core</code> pour du rendu riche (Markdown/LaTeX → <code>zcrud_markdown</code>), une
+grille <code>SfDataGrid</code> (→ <code>zcrud_list</code>), des flashcards/mindmaps (→
+<code>zcrud_flashcard</code>/<code>zcrud_mindmap</code>) ou la persistance Firestore (→
+<code>zcrud_firestore</code>) : ce sont des paquets satellites qui dépendent, eux, de
+<code>zcrud_core</code>.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour la recette d'épinglage par tag et de <code>dependency_overrides</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:flutter/widgets.dart';
+import 'package:zcrud_core/zcrud_core.dart';
+
+// Un champ décrit une fois : la même spec pilote édition et liste.
+const nameField = ZFieldSpec(
+  name: 'name',
+  type: EditionFieldType.text,
+  label: 'name',
+  validators: [ZValidatorSpec.required()],
+);
+
+// L'état du formulaire vit dans un ChangeNotifier pur Flutter — une tranche
+// ValueListenable par champ, jamais un rebuild global (invariant AD-2).
+final controller = ZFormController(initialValues: {nameField.name: ''});
+
+// Un widget qui n'écoute QUE la tranche 'name' : taper dans un autre champ
+// ne le reconstruit jamais.
+Widget buildNameSlice() =&gt; ValueListenableBuilder&lt;Object?&gt;(
+      valueListenable: controller.fieldListenable(nameField.name),
+      builder: (context, value, _) =&gt; Text('$value'),
+    );
+
+// Le formulaire de référence, place stable pour les champs conditionnels.
+Widget buildForm() =&gt; DynamicEdition(
+      controller: controller,
+      fields: const [nameField],
+    );
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Réactivité granulaire (invariant <a href="../../docs/site/concepts/invariants.md#ad-2">AD-2</a>)</strong>
+— <code>ZFormController</code> expose une <code>ValueListenable</code> par champ ; <code>DynamicEdition</code>
+n'écoute que les canaux structurels (liste des champs visibles, étape
+courante) et laisse chaque champ écouter sa propre tranche. C'est l'objectif
+produit qui corrige, par conception, le rafraîchissement global à la frappe.</li>
+<li><strong>Un schéma, deux moteurs</strong> — <code>ZFieldSpec[]</code> pilote à la fois
+<code>DynamicEdition</code> (édition) et <code>DynamicList</code> (tableau) : décrire un champ une
+fois évite la dérive entre le formulaire et la colonne qui l'affiche.</li>
+<li><strong>Extensibilité par composition (invariant <a href="../../docs/site/concepts/invariants.md#ad-4">AD-4</a>)</strong>
+— types servis ailleurs (<code>markdown</code>, <code>geoArea</code>, <code>phoneNumber</code>, <code>custom</code>…) se
+branchent via <code>ZTypeRegistry</code>/<code>ZWidgetRegistry</code> sans que le cœur importe le
+paquet qui les implémente ; configs spécialisées par extension de
+<code>ZFieldConfig</code>, jamais par <code>sealed</code> inter-paquet.</li>
+<li><strong>Domaine backend-agnostique (invariant <a href="../../docs/site/concepts/invariants.md#ad-5">AD-5</a>)</strong>
+— <code>ZRepository&lt;T&gt;</code>/<code>ZLocalStore</code>/<code>ZRemoteStore</code> ne connaissent aucun type
+Firestore ; les contrats renvoient <code>Either&lt;ZFailure, T&gt;</code> (invariant
+<a href="../../docs/site/concepts/invariants.md#ad-11">AD-11</a>) et des <code>Stream&lt;List&lt;T&gt;&gt;</code>
+nus. Les adaptateurs concrets vivent dans <code>zcrud_firestore</code>.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Schéma déclaratif</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZFieldSpec</code></td>
+<td>Spécification <code>const</code> d'un champ — projection runtime de <code>@ZcrudField</code>.</td>
+</tr>
+<tr>
+<td><code>EditionFieldType</code></td>
+<td>Catalogue canonique des types de champ (pilote édition <strong>et</strong> liste).</td>
+</tr>
+<tr>
+<td><code>ZFieldConfig</code> (+ sous-classes)</td>
+<td>Configuration spécialisée par type (<code>ZTextConfig</code>, <code>ZNumberConfig</code>, <code>ZSelectConfig</code>, <code>ZDateConfig</code>…).</td>
+</tr>
+<tr>
+<td><code>ZCondition</code> / <code>ZValidatorSpec</code> / <code>ZDerivation</code></td>
+<td>Visibilité conditionnelle, validation, dérivation cross-champ — toutes pur-données <code>const</code>.</td>
+</tr>
+<tr>
+<td><code>ZFieldChoice</code> / <code>ZFieldAdornment</code> / <code>ZFieldRename</code></td>
+<td>Option de sélection, ornement (leading/prefix/suffix), stratégie de renommage de clé.</td>
+</tr>
+<tr>
+<td><strong>État réactif</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZFormController</code></td>
+<td>Contrôleur <code>ChangeNotifier</code> du formulaire — une <code>ValueListenable</code> par champ.</td>
+</tr>
+<tr>
+<td><code>ZDependencyResolver</code> / <code>ZcrudScope</code></td>
+<td>Seam d'injection et son <code>InheritedWidget</code> par défaut (resolver, l10n, thème, registres).</td>
+</tr>
+<tr>
+<td><strong>Édition</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>DynamicEdition</code></td>
+<td>Formulaire de référence, dispatché par <code>EditionFieldType</code>, place stable pour les champs conditionnels.</td>
+</tr>
+<tr>
+<td><code>ZEditionField</code> / <code>ZFieldWidget</code></td>
+<td>Champ hôte scellé sur sa tranche ; dispatcher de widget par famille.</td>
+</tr>
+<tr>
+<td><code>ZStepperEdition</code></td>
+<td>Assistant multi-étapes sur le même <code>ZFormController</code>, validation par étape.</td>
+</tr>
+<tr>
+<td><code>ZEditionSubmitController</code> / <code>ZSubmitButton</code></td>
+<td>Soumission agrégée (<code>Either&lt;ZFailure,T&gt;</code>) et chrome accessible scellé sur l'état.</td>
+</tr>
+<tr>
+<td><strong>Liste</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>DynamicList</code></td>
+<td>Hôte de liste dispatché par <code>ZListLayout</code>, délègue le rendu grille à <code>ZListRenderer</code>.</td>
+</tr>
+<tr>
+<td><code>ZListController</code></td>
+<td>Contrôleur réactif — pagination curseur, recherche/tri in-memory de repli.</td>
+</tr>
+<tr>
+<td><code>ZRowAction&lt;T&gt;</code> / <code>ZBatchAction</code></td>
+<td>Actions de ligne et de lot (corbeille, déplacement…), filtrées par <code>ZAcl</code>.</td>
+</tr>
+<tr>
+<td><code>ZSubListScreen&lt;T&gt;</code> / <code>ZTabbedList</code></td>
+<td>Sous-liste filtrée par relation ; liste à onglets indépendants.</td>
+</tr>
+<tr>
+<td><strong>Domaine &amp; données</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZRepository&lt;T&gt;</code> / <code>ZReadOnlyRepository&lt;T&gt;</code></td>
+<td>Contrats repository backend-agnostiques (<code>Either&lt;ZFailure,T&gt;</code>, flux nus).</td>
+</tr>
+<tr>
+<td><code>ZFailure</code> (+ sous-classes)</td>
+<td>Hiérarchie d'erreurs maison (<code>DomainFailure</code>, <code>NotFoundFailure</code>, <code>CacheFailure</code>…).</td>
+</tr>
+<tr>
+<td><code>ZExtension</code> / <code>ZExtensible</code> / <code>extra</code></td>
+<td>Slots d'extensibilité additifs versionnés (invariant AD-4).</td>
+</tr>
+<tr>
+<td><code>ZSyncMeta</code> / <code>ZLwwResolver</code> / <code>ZSyncOrchestrator</code></td>
+<td>Méta de synchronisation hors-entité, résolution Last-Write-Wins, orchestrateur offline-first.</td>
+</tr>
+<tr>
+<td><code>ZTypeRegistry</code> / <code>ZWidgetRegistry</code> / <code>ZcrudRegistry</code></td>
+<td>Registres ouverts d'extensibilité (types, widgets, modèles).</td>
+</tr>
+<tr>
+<td><strong>Thème &amp; l10n</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZcrudTheme</code></td>
+<td><code>ThemeExtension</code> de jetons visuels — jamais de couleur/style codé en dur.</td>
+</tr>
+<tr>
+<td><code>ZcrudLocalizations</code> / <code>ZcrudLabels</code> / <code>label()</code></td>
+<td>Delegate l10n générique + registre de libellés injectable.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Désérialisation défensive (invariant <a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>)</strong>
+— un champ absent, inconnu ou corrompu ne fait jamais échouer le parent :
+repli sûr (<code>unknownEnumValue</code>, <code>fromJsonSafe → null</code>), jamais un <code>throw</code>. Un
+document écrit il y a longtemps se relit aujourd'hui.</li>
+<li><strong>Extension inter-paquet sans héritage</strong> — toute extension métier (types de
+configs, sources de choix, widgets custom) se branche par composition
+(registre, <code>ZExtension</code>, <code>extra</code>) ; le cœur n'expose jamais de classe
+<code>sealed</code> à étendre depuis un satellite.</li>
+<li><strong><code>ZDerivation</code> est le seul membre de <code>ZFieldSpec</code> à porter des closures</strong> —
+elle n'est donc jamais émise par le générateur : c'est une surcharge runtime
+posée par l'hôte (<code>spec.copyWith(derivedFrom: ...)</code>), volontairement exclue
+de <code>==</code>/<code>hashCode</code>.</li>
+<li><strong>Le rendu riche est toujours en repli explicite</strong> — un type dont le widget
+vit ailleurs (<code>markdown</code>, <code>geoArea</code>, <code>phoneNumber</code>, <code>custom</code>…) dégrade en
+<code>ZUnsupportedFieldWidget</code> tant que son <code>kind</code> n'est pas enregistré, jamais un
+crash.</li>
+<li><strong>Accessibilité et RTL (invariant <a href="../../docs/site/concepts/invariants.md#ad-13">AD-13</a>)</strong>
+— variantes directionnelles partout (<code>EdgeInsetsDirectional</code>,
+<code>TextAlign.start</code>/<code>end</code>), cibles tactiles ≥ 48 dp, <code>Semantics</code> explicites.</li>
+<li><strong>Offline-first (invariant <a href="../../docs/site/concepts/invariants.md#ad-9">AD-9</a>)</strong>
+— le store local est la source de vérité, le distant est fire-and-forget, la
+suppression est un soft-delete hors-entité (<code>ZSyncMeta.is_deleted</code>), le merge
+est Last-Write-Wins sur <code>updatedAt</code>.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_core.md"><code>docs/site/paquets/zcrud_core.md</code></a></li>
+<li><a href="../../docs/site/concepts/zfieldspec.md"><code>ZFieldSpec</code>, le schéma canonique</a> — le concept central du paquet.</li>
+<li><a href="../../docs/site/concepts/reactivite-granulaire.md">Réactivité granulaire</a> — AD-2 en pratique.</li>
+<li><a href="../../docs/site/concepts/architecture-hexagonale.md">Architecture hexagonale</a> — couches et ports.</li>
+<li><a href="../../docs/site/concepts/offline-first.md">Offline-first</a> — AD-9 en pratique.</li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_list</code> — rendu de liste <code>SfDataGrid</code> qui implémente <code>ZListRenderer</code>.</li>
+<li><code>zcrud_markdown</code> / <code>zcrud_geo</code> / <code>zcrud_intl</code> — widgets riches branchés via <code>ZWidgetRegistry</code>.</li>
+<li><code>zcrud_firestore</code> — adaptateurs <code>ZRepository</code>/<code>ZLocalStore</code>/<code>ZRemoteStore</code> sur Firebase et Hive.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="domain">
+  <span class="name"><a href="domain/">domain</a></span> 
+
+</dt>
+<dd>Surface <strong>domaine PUR-DART</strong> de <code>zcrud_core</code> (Flutter-free).
+</dd>
+
+          <dt id="edition">
+  <span class="name"><a href="edition/">edition</a></span> 
+
+</dt>
+<dd>Entrée publique <strong>pure-Dart</strong> de la surface d'autorité du moteur déclaratif :
+catalogue <code>EditionFieldType</code> + types-valeur <code>const</code>
+(<code>ZValidatorSpec</code>/<code>ZFieldChoice</code>/<code>ZCondition</code>/<code>ZFieldConfig</code>/<code>ZFieldRename</code>)
+</dd>
+
+          <dt id="zcrud_core">
+  <span class="name"><a href="zcrud_core/">zcrud_core</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_core</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_core package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_core</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="domain/">domain</a></li>
+      <li><a href="edition/">edition</a></li>
+      <li><a href="zcrud_core/">zcrud_core</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

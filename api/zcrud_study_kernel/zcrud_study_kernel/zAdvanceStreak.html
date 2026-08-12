@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zAdvanceStreak function from the zcrud_study_kernel library, for the Dart programming language.">
+  <title>zAdvanceStreak function - zcrud_study_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study_kernel</a></li>
+    <li><a href="../zcrud_study_kernel/">zcrud_study_kernel.dart</a></li>
+    <li class="self-crumb">zAdvanceStreak function</li>
+  </ol>
+  <div class="self-name">zAdvanceStreak</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_study_kernel&#47;zcrud_study_kernel-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zAdvanceStreak</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="../zcrud_study_kernel/ZStreakAdvance-class.html">ZStreakAdvance</a></span>
+<span class="name ">zAdvanceStreak</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="zAdvanceStreak-param-current"><span class="type-annotation"><a href="../zcrud_study_kernel/ZStudyStreak-class.html">ZStudyStreak</a></span> <span class="parameter-name">current</span>, {</span></li>
+<li><span class="parameter" id="zAdvanceStreak-param-at"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">at</span>, </span></li>
+<li><span class="parameter" id="zAdvanceStreak-param-mode"><span>required</span> <span class="type-annotation"><a href="../zcrud_study_kernel/ZReviewMode.html">ZReviewMode</a></span> <span class="parameter-name">mode</span>, </span></li>
+<li><span class="parameter" id="zAdvanceStreak-param-civilDayOf"><span class="type-annotation"><a href="../zcrud_study_kernel/ZCivilDayOf.html">ZCivilDayOf</a></span> <span class="parameter-name">civilDayOf</span> = <span class="default-value">zLocalCivilDay</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Fait avancer la flamme d'assiduité — fonction pure.</p>
+<ul>
+<li><code>current</code> : streak actuel ;</li>
+<li><code>at</code> : instant de la répétition — paramètre (invariant AD-14 :
+<code>DateTime.now()</code> est interdit dans ce corps) ;</li>
+<li><code>mode</code> : mode de session — seuls <code>spaced</code>/<code>learn</code> avancent ;</li>
+<li><code>civilDayOf</code> : dérivation instant → jour civil, défaut <a href="../zcrud_study_kernel/zLocalCivilDay.html">zLocalCivilDay</a>
+(jour civil local). Injectable : c'est ce qui rend un jour d'heure
+d'été/hiver (23 h ou 25 h) réellement testable sans dépendre du fuseau
+horaire de l'environnement d'exécution.</li>
+</ul>
+<h2 id="comportement--le-tableau-exactement">Comportement — le tableau, exactement</h2>
+<table>
+<thead>
+<tr>
+<th><code>lastGradedDay</code> vs jour civil de <code>at</code></th>
+<th>Résultat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>null</code> (ou illisible)</td>
+<td><code>current = 1</code>, <a href="../zcrud_study_kernel/ZStreakOutcome.html">ZStreakOutcome.started</a></td>
+</tr>
+<tr>
+<td><code>== jour(at)</code></td>
+<td>inchangé (idempotent), <a href="../zcrud_study_kernel/ZStreakOutcome.html">ZStreakOutcome.alreadyCountedToday</a></td>
+</tr>
+<tr>
+<td><code>== jour(at) - 1</code></td>
+<td><code>current + 1</code>, <a href="../zcrud_study_kernel/ZStreakOutcome.html">ZStreakOutcome.incremented</a></td>
+</tr>
+<tr>
+<td><code>&lt; jour(at) - 1</code> (trou)</td>
+<td><code>current = 1</code>, <a href="../zcrud_study_kernel/ZStreakOutcome.html">ZStreakOutcome.resetToOne</a> — jamais 0</td>
+</tr>
+<tr>
+<td><code>&gt; jour(at)</code> (date future)</td>
+<td>inchangé, <a href="../zcrud_study_kernel/ZStreakOutcome.html">ZStreakOutcome.alreadyCountedToday</a> (repli défensif)</td>
+</tr>
+</tbody>
+</table>
+<p><code>best = max(best, current)</code> après application.</p>
+<h2 id="jour-civil--jamais-une-dure">Jour civil : jamais une durée</h2>
+<p>L'écart est <code>zParseCivilDayNumber(jour(at)) - zParseCivilDayNumber(last)</code>
+— une soustraction d'entiers de calendrier (voir <a href="../zcrud_study_kernel/zCivilDayNumber.html">zCivilDayNumber</a>).
+<code>at.difference(other).inDays</code> est interdit : il mesure du temps écoulé et
+rend <code>0</code> pour un jour d'heure d'été/hiver de 23 h (« hier → aujourd'hui »
+deviendrait <code>alreadyCountedToday</code> : la flamme se figerait), et <code>0</code> aussi
+pour <code>23:59:59 → 00:00:01</code> (2 s d'écart réel, mais deux jours civils).</p>
+<h2 id="robustesse-invariant-ad-10--jamais-de-throw">Robustesse (invariant AD-10) — jamais de <code>throw</code></h2>
+<ul>
+<li><code>lastGradedDay</code> illisible (corruption) ⇒ traité comme <code>null</code> ⇒
+<code>started</code> (repli sûr, cohérent avec le décodeur de streak qui applique
+le même critère — aucune date ne tombe entre les deux) ;</li>
+<li><code>civilDayOf</code> rendant une valeur illisible ⇒ streak inchangé
+(<a href="../zcrud_study_kernel/ZStreakOutcome.html">ZStreakOutcome.alreadyCountedToday</a>) : on ne corrompt jamais la série
+sur une horloge folle ;</li>
+<li>date future persistée (horloge reculée) ⇒ jamais de <code>current</code> négatif,
+jamais de <code>throw</code> ;</li>
+<li>idempotence : rejouer N fois le même <code>at</code> rend strictement le même
+résultat (le 2ᵉ appel voit <code>last == jour(at)</code>).</li>
+</ul>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZStreakAdvance zAdvanceStreak(
+  ZStudyStreak current, {
+  required DateTime at,
+  required ZReviewMode mode,
+  ZCivilDayOf civilDayOf = zLocalCivilDay,
+}) {
+  &#47;&#47; Hors répétition notée (dont la consultation `list`) : strictement
+  &#47;&#47; inchangé. L&#39;objet d&#39;entrée est rendu tel quel.
+  if (!zIsGradedMode(mode)) {
+    return ZStreakAdvance(
+      streak: current,
+      outcome: ZStreakOutcome.skippedNotGraded,
+    );
+  }
+
+  final today = civilDayOf(at);
+  final todayNumber = zParseCivilDayNumber(today);
+  if (todayNumber == null) {
+    &#47;&#47; Une dérivation de jour folle ne corrompt jamais la série.
+    return ZStreakAdvance(
+      streak: current,
+      outcome: ZStreakOutcome.alreadyCountedToday,
+    );
+  }
+
+  final lastNumber = zParseCivilDayNumber(current.lastGradedDay);
+  if (lastNumber == null) {
+    &#47;&#47; Jamais noté (ou jour persisté illisible) ⇒ la série démarre à 1.
+    return ZStreakAdvance(
+      streak: _applied(current, next: 1, day: today),
+      outcome: ZStreakOutcome.started,
+    );
+  }
+
+  &#47;&#47; Écart en jours civils — entiers de calendrier, jamais une Duration.
+  final gap = todayNumber - lastNumber;
+
+  if (gap == 0) {
+    &#47;&#47; Déjà noté aujourd&#39;hui ⇒ idempotent, rien ne bouge.
+    return ZStreakAdvance(
+      streak: current,
+      outcome: ZStreakOutcome.alreadyCountedToday,
+    );
+  }
+  if (gap &lt; 0) {
+    &#47;&#47; Date future persistée (horloge reculée) — repli inchangé, jamais de
+    &#47;&#47; `current` négatif, jamais de `throw`.
+    return ZStreakAdvance(
+      streak: current,
+      outcome: ZStreakOutcome.alreadyCountedToday,
+    );
+  }
+  if (gap == 1) {
+    &#47;&#47; Plancher à 1 : `current.current + 1` nu propagerait un négatif. La
+    &#47;&#47; dartdoc de `ZStudyStreak.current` promet une valeur jamais négative,
+    &#47;&#47; garantie par le décodeur ET par cette fonction. Le constructeur est
+    &#47;&#47; `const` sans assert (délibéré, invariant AD-10 : le décodeur généré
+    &#47;&#47; l&#39;appelle avec des valeurs brutes) et le `copyWith` généré est
+    &#47;&#47; public, donc un appelant qui forcerait un `current` négatif à J
+    &#47;&#47; rendrait un résultat négatif à J+1, que le badge afficherait et
+    &#47;&#47; annoncerait tel quel. Cette branche — la seule voie d&#39;avancement —
+    &#47;&#47; planche donc aussi : une série qui avance vaut au moins 1.
+    final next = current.current &lt; 0 ? 1 : current.current + 1;
+    return ZStreakAdvance(
+      streak: _applied(current, next: next, day: today),
+      outcome: ZStreakOutcome.incremented,
+    );
+  }
+  &#47;&#47; Trou &gt;= 1 jour civil complet ⇒ reset à 1, jamais à 0 (la répétition du
+  &#47;&#47; jour compte).
+  return ZStreakAdvance(
+    streak: _applied(current, next: 1, day: today),
+    outcome: ZStreakOutcome.resetToOne,
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study_kernel</a></li>
+    <li><a href="../zcrud_study_kernel/">zcrud_study_kernel</a></li>
+    <li class="self-crumb">zAdvanceStreak function</li>
+</ol>
+
+    <h5>zcrud_study_kernel library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study_kernel
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

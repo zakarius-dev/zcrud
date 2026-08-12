@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_get library API docs, for the Dart programming language.">
+  <title>zcrud_get library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_get</a></li>
+    <li class="self-crumb">zcrud_get.dart</li>
+  </ol>
+  <div class="self-name">zcrud_get</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_get&#47;zcrud_get-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_get</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_get</code>.</p>
+<p>Binding état/injection &lt;-&gt; GetX + get_it (invariant AD-15) — cible l'hôte
+GetX (DODLP). Fournit <code>ZGetResolver</code> (seam de résolution via <code>get_it</code>/GetX)
+et <code>ZcrudGetScope</code> (scope de binding : création/scoping/dispose du
+<code>ZFormController</code> + enveloppe <code>ZcrudScope</code>). Réutilise la réactivité du cœur
+(<code>ZFormController</code>/<code>ZFieldListenableBuilder</code>) sans la réimplémenter.</p>
+<p><strong>Surfaces UI GetX (invariants AD-15/AD-4)</strong> — implémentations manager
+des ports UI purs, substituables aux défauts pur-Flutter via leurs seams :</p>
+<ul>
+<li><code>ZGetFormPresenter</code> implémente <code>ZFormPresenter</code> (de <code>zcrud_navigation</code>) :
+<code>page → Get.to(fullscreenDialog:)</code> / <code>sheet → Get.bottomSheet</code> / <code>dialog → Get.dialog</code>, form-agnostique, <code>MediaQuery.sizeOf</code> (jamais <code>Get.*</code>) ;</li>
+<li><code>ZGetToaster</code> implémente <code>ZToaster</code> (de <code>zcrud_ui_kit</code>) : <code>Get.snackbar</code>
+mappé sur <code>ZToastSeverity</code>, couleur dérivée du <code>ColorScheme</code> (jamais hex),
+icône + texte (couleur jamais seul canal) ;</li>
+<li><code>ZcrudGetUiScope</code> monte les 2 seams (<code>ZFormPresenterScope</code>/<code>ZToasterScope</code>)
+d'un coup pour un câblage app « une ligne ».
+Ces impls PROUVENT la pluggabilité des ports SANS modifier les paquets
+purs ; tout le code <code>get</code> reste CONFINÉ à ce binding (invariant AD-15).</li>
+</ul>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/</code>.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ReflectableCodec">
+  <span class="name "><a href="../zcrud_get/ReflectableCodec-class.html">ReflectableCodec</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Adapte un modèle <code>reflectable</code> <code>T</code> au <code>ZcrudRegistry</code> en s'appuyant sur une
+<a href="../zcrud_get/ZReflectionCapability-class.html">ZReflectionCapability</a> <strong>injectée</strong> (seam invariant AD-6). C'est un
+<code>ZModelAdapter</code> : <code>registerInto(registry)</code> (hérité) rend le modèle
+décodable/encodable via <code>registry.decode/encode(kind, …)</code>, et
+<code>fromMapSafe</code> (hérité) fournit le mode défensif invariant AD-10 — sans que
+le cœur ne connaisse <code>reflectable</code>.
+</dd>
+
+          <dt id="ReflectableMirrorCapability">
+  <span class="name "><a href="../zcrud_get/ReflectableMirrorCapability-class.html">ReflectableMirrorCapability</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Capacité de réflexion <strong>réelle</strong> au-dessus d'un <a href="https://pub.dev/documentation/reflectable/5.2.3/reflectable.reflectable/Reflectable-class.html">Reflectable</a> reflector
+(branchée par l'application hôte sur le reflector DODLP +
+<code>initializeReflectable()</code>).
+</dd>
+
+          <dt id="ZcrudGetScope">
+  <span class="name "><a href="../zcrud_get/ZcrudGetScope-class.html">ZcrudGetScope</a></span> 
+
+</dt>
+<dd>
+  Scope Flutter branchant l'injection/lifecycle sur <code>get_it</code>.
+</dd>
+
+          <dt id="ZcrudGetUiScope">
+  <span class="name "><a href="../zcrud_get/ZcrudGetUiScope-class.html">ZcrudGetUiScope</a></span> 
+
+</dt>
+<dd>
+  Monte <code>ZFormPresenterScope</code> + <code>ZToasterScope</code> (imbriqués) au-dessus de
+<a href="../zcrud_get/ZcrudGetUiScope/child.html">child</a>, substituant les défauts pur-Flutter par les surfaces GetX.
+</dd>
+
+          <dt id="ZGetApi">
+  <span class="name "><a href="../zcrud_get/ZGetApi-class.html">ZGetApi</a></span> 
+
+</dt>
+<dd>
+  Marqueur d'API publique de <code>zcrud_get</code>.
+</dd>
+
+          <dt id="ZGetFormPresenter">
+  <span class="name "><a href="../zcrud_get/ZGetFormPresenter-class.html">ZGetFormPresenter</a></span> 
+
+</dt>
+<dd>
+  Présentateur <strong>GetX</strong> : exécute chaque <code>ZEditionPresentation</code> via une
+primitive GetX. <code>const</code> (aucun état — un port de présentation ne conserve
+aucune référence manager en champ, il reçoit le <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a> à l'appel).
+Substituable au défaut <code>ZAdaptivePresenter</code> via le seam <code>ZFormPresenterScope</code>.
+</dd>
+
+          <dt id="ZGetResolver">
+  <span class="name "><a href="../zcrud_get/ZGetResolver-class.html">ZGetResolver</a></span> 
+
+</dt>
+<dd>
+  Résolveur de dépendances adossé au locator <code>get_it</code>.
+</dd>
+
+          <dt id="ZGetToaster">
+  <span class="name "><a href="../zcrud_get/ZGetToaster-class.html">ZGetToaster</a></span> 
+
+</dt>
+<dd>
+  Toaster GetX : mappe une <code>ZToastSeverity</code> sur <code>Get.snackbar</code>. <code>const</code> — aucun
+état (le <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a> est reçu à l'appel). Substituable via <code>ZToasterScope</code>.
+</dd>
+
+          <dt id="ZReflectionCapability">
+  <span class="name "><a href="../zcrud_get/ZReflectionCapability-class.html">ZReflectionCapability</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Port fin de <strong>capacité de réflexion</strong> d'un modèle <code>T</code> (seam invariant
+AD-6).
+</dd>
+
+          <dt id="ZSessionConfigKey">
+  <span class="name "><a href="../zcrud_get/ZSessionConfigKey-class.html">ZSessionConfigKey</a></span> 
+
+</dt>
+<dd>
+  Clé de cache d'instance GetX à égalité profonde par valeur, enveloppant une
+<code>ZStudySessionConfig</code> (l'égalité de clé, et son <code>tag</code> GetX, vivent au
+binding).
+</dd>
+
+          <dt id="ZStudyWatchController">
+  <span class="name "><a href="../zcrud_get/ZStudyWatchController-class.html">ZStudyWatchController</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  <code>GetxController</code> GÉNÉRIQUE branchant le flux <strong>nu</strong> <code>watchAll()</code> d'un
+<code>ZStudyRepository&lt;T&gt;</code> (kernel) sur un observable GetX.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="buildStudyWatchController" class="callable">
+  <span class="name"><a href="../zcrud_get/buildStudyWatchController.html">buildStudyWatchController</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="buildStudyWatchController-param-resolver"><span class="type-annotation">ZDependencyResolver</span> <span class="parameter-name">resolver</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_get/ZStudyWatchController-class.html">ZStudyWatchController</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Fabrique de résolution <strong>PAR SEAM</strong> d'un <a href="../zcrud_get/ZStudyWatchController-class.html">ZStudyWatchController</a>.
+  
+
+</dd>
+
+          <dt id="registerZcrudFormFields" class="callable">
+  <span class="name"><a href="../zcrud_get/registerZcrudFormFields.html">registerZcrudFormFields</a></span><span class="signature">(<wbr><span class="parameter" id="registerZcrudFormFields-param-registry"><span class="type-annotation">ZWidgetRegistry</span> <span class="parameter-name">registry</span>, {</span><span class="parameter" id="registerZcrudFormFields-param-richTextCodec"><span class="type-annotation">ZCodec?</span> <span class="parameter-name">richTextCodec</span>, </span><span class="parameter" id="registerZcrudFormFields-param-countryCatalog"><span class="type-annotation">ZCountryCatalog?</span> <span class="parameter-name">countryCatalog</span>, </span><span class="parameter" id="registerZcrudFormFields-param-subdivisionCatalog"><span class="type-annotation">ZSubdivisionCatalog?</span> <span class="parameter-name">subdivisionCatalog</span>, </span><span class="parameter" id="registerZcrudFormFields-param-placeSearch"><span class="type-annotation">ZPlaceSearchProvider?</span> <span class="parameter-name">placeSearch</span>, </span><span class="parameter" id="registerZcrudFormFields-param-geoAdapterFactory"><span class="type-annotation">ZMapAdapterFactory?</span> <span class="parameter-name">geoAdapterFactory</span>, </span><span class="parameter" id="registerZcrudFormFields-param-wireGeoArea"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">wireGeoArea</span> = <span class="default-value">false</span>, </span><span class="parameter" id="registerZcrudFormFields-param-additionalRegistrars"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">void Function<span class="signature">(<span class="parameter" id="param-"><span class="type-annotation">ZWidgetRegistry</span></span>)</span></span>&gt;</span></span> <span class="parameter-name">additionalRegistrars</span> = <span class="default-value">const &lt;void Function(ZWidgetRegistry)&gt;[]</span></span>})
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enrôle en UN point les widgets d'édition des satellites (markdown, intl,
+geo) dans le <code>registry</code> <strong>injecté</strong> (invariant AD-4).
+  
+
+</dd>
+
+          <dt id="zPutStudySessionSelector" class="callable">
+  <span class="name"><a href="../zcrud_get/zPutStudySessionSelector.html">zPutStudySessionSelector</a></span><span class="signature">(<wbr><span class="parameter" id="zPutStudySessionSelector-param-key"><span class="type-annotation"><a href="../zcrud_get/ZSessionConfigKey-class.html">ZSessionConfigKey</a></span> <span class="parameter-name">key</span>, {</span><span class="parameter" id="zPutStudySessionSelector-param-create"><span class="type-annotation">ZStudySessionSelector</span> <span class="parameter-name">create</span>(<span class="parameter" id="param-config"><span class="type-annotation">ZStudySessionConfig</span> <span class="parameter-name">config</span></span>)?</span>})
+    <span class="returntype parameter">&#8594; ZStudySessionSelector</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Fabrique de <strong>sélection de session dédupliquée</strong> — miroir GetX d'un motif
+de dédoublonnage par clé équivalent à une <code>family</code> Riverpod.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_get</a></li>
+    <li class="self-crumb">zcrud_get.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_get</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_get/">zcrud_get</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_get library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_get
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the collapseOnHeaderTap property from the ZStudyToolsSectionSpec class, for the Dart programming language.">
+  <title>collapseOnHeaderTap property - ZStudyToolsSectionSpec class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study.dart</a></li>
+    <li><a href="../../zcrud_study/ZStudyToolsSectionSpec-class.html">ZStudyToolsSectionSpec</a></li>
+    <li class="self-crumb">collapseOnHeaderTap property</li>
+  </ol>
+  <div class="self-name">collapseOnHeaderTap</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;ZStudyToolsSectionSpec-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">collapseOnHeaderTap</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>
+        <span class="name ">collapseOnHeaderTap</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p><strong>Toute la ligne d'en-tête</strong> devient zone de bascule du repli. <code>false</code>
+(défaut) ⇒ rendu et arbre <strong>strictement inchangés</strong> : le chevron reste
+la seule cible (invariant AD-4 : la zone est ABSENTE de l'arbre).</p>
+<h2 id="pourquoi-un-rglage-de-spec-et-non-un-token-de-thme">Pourquoi un réglage de SPEC et non un token de thème</h2>
+<p>Le geste dépend du <strong>contenu</strong> de la section : une ligne d'en-tête qui
+porte des actions cliquables (<a href="../../zcrud_study/ZStudyToolsSectionSpec/secondaryAction.html">secondaryAction</a>, <a href="../../zcrud_study/ZStudyToolsSectionSpec/addAction.html">addAction</a>) n'a pas le
+même arbitrage qu'une ligne nue — et c'est la spec, pas le thème, qui
+sait ce que SA ligne contient. La capacité qu'il étend (<a href="../../zcrud_study/ZStudyToolsSectionSpec/collapsible.html">collapsible</a>)
+est elle-même un champ de spec : porter le geste au thème aurait créé un
+réglage global inerte sur toute section non repliable (no-op silencieux,
+invariant AD-4) et non débrayable par section. Le token de thème
+<code>studySectionCollapsePlacement</code> place du CHROME uniforme ; il ne décide
+pas ce qu'un GESTE fait sur un contenu que l'hôte injecte.
+Un hôte qui veut la bascule partout la règle au point unique où il
+fabrique ses specs.</p>
+<h2 id="priorit-tactile-mesure-garde">Priorité tactile (MESURÉE, gardée)</h2>
+<p>Les contrôles INTERNES de la ligne gagnent l'arène contre la zone de
+bascule (résolution d'arène : le reconnaisseur le plus profond gagne) :
+un tap sur <a href="../../zcrud_study/ZStudyToolsSectionSpec/secondaryAction.html">secondaryAction</a>/<a href="../../zcrud_study/ZStudyToolsSectionSpec/addAction.html">addAction</a> déclenche l'action et ne replie
+JAMAIS ; un tap sur le chevron bascule UNE fois (jamais deux) ; un tap
+sur le titre, le badge ou l'espace libre bascule. Vaut aussi sous
+<code>studySectionCollapsePlacement: inHeaderRow</code> et en RTL.</p>
+<h2 id="smantique--une-seule-annonce">Sémantique — une seule annonce</h2>
+<p>La ligne est une <strong>extension de cible pour le pointeur</strong>, pas un second
+nœud d'action : sa zone de tap est EXCLUE de la sémantique
+(<code>excludeFromSemantics</code>), et l'annonce de bascule reste portée par le
+seul chevron (libellés injectés, ≥ 48 dp) — l'arbre sémantique est
+STRICTEMENT celui d'avant, jamais deux annonces de bascule. La demande
+est le GESTE, pas la structure : la ligne reste STATIQUE (hors tranche
+réactive — elle n'écoute pas l'état, le closure de tap écrit à la
+source), SM-1 préservé et gardé par comptage de builds.</p>
+<p>Exige <a href="../../zcrud_study/ZStudyToolsSectionSpec/collapsible.html">collapsible</a> (assert — invariant AD-4 : jamais un réglage inerte).</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final bool collapseOnHeaderTap;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/ZStudyToolsSectionSpec-class.html">ZStudyToolsSectionSpec</a></li>
+    <li class="self-crumb">collapseOnHeaderTap property</li>
+</ol>
+
+  <h5>ZStudyToolsSectionSpec class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

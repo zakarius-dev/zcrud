@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_document API docs, for the Dart programming language.">
+  <title>zcrud_document - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_document package</a></li>
+  </ol>
+  <div class="self-name">zcrud_document</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_document">zcrud_document</h1>
+<p>Document d'étude de zcrud — contenu partageable, état de lecture personnel
+et annotations accessibles, avec une bascule Flutter pour la présentation
+d'annotation (invariant AD-13, WCAG).</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_document</code> est le paquet <strong>satellite</strong> de la capacité document, au
+sens du patron <a href="../../docs/site/concepts/architecture-hexagonale.md#le-patron-kernel-satellite">kernel/satellite</a> :
+il dépend de <code>zcrud_study_kernel</code> pour le dossier et la palette de couleurs,
+et porte le modèle spécifique au document — son contenu, son état de
+lecture personnel et ses annotations.</p>
+<p>Ce paquet fournit :</p>
+<ul>
+<li>le <strong>document d'étude</strong> — <code>ZStudyDocument</code>, le contenu partageable
+(nom de fichier, chemin de stockage, statut d'ingestion, taille) ;</li>
+<li>l'<strong>état de lecture personnel</strong> — <code>ZDocumentReadingState</code> (page courante,
+préférences de viewer, pages maîtrisées), séparé par construction du
+contenu partageable : partager un document n'emporte jamais la
+progression de lecture d'autrui ;</li>
+<li>les <strong>préférences de lecture</strong> — <code>ZDocumentViewerPrefs</code> (zoom borné, sens,
+disposition) en enums pur-Dart, sans dépendance à une bibliothèque de
+rendu concrète ;</li>
+<li>l'<strong>annotation partageable</strong> — <code>ZDocumentAnnotation</code> (surlignage ou note
+ancrée), son rectangle d'ancrage borné <code>[0,1]</code> <code>ZAnnotationBounds</code> ;</li>
+<li>la <strong>présentation accessible</strong> de la toolbar et du panneau d'annotation
+(<code>ZAnnotationToolbar</code>, <code>ZAnnotationPanel</code>), et la coquille de viewer
+neutre <code>ZDocumentViewerChrome</code> — aucune n'importe de moteur de rendu PDF.</li>
+</ul>
+<p><strong>Utilisez ce paquet</strong> pour porter le modèle document d'une application
+d'étude, ou pour composer une UI d'annotation accessible au-dessus d'un
+viewer de votre choix. <strong>N'utilisez pas ce paquet</strong> si vous avez seulement
+besoin du dossier ou de la sélection de session — passez directement par
+<code>zcrud_study_kernel</code>.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:zcrud_document/zcrud_document.dart';
+
+void main() {
+  // Contenu partageable : round-trip sans perte, tel que le fera un store.
+  const document = ZStudyDocument(
+    folderId: 'folder-1',
+    fileName: 'Cours de droit douanier.pdf',
+  );
+  final Map&lt;String, dynamic&gt; persisted = document.toMap();
+  final ZStudyDocument relu = ZStudyDocument.fromMap(persisted);
+  assert(relu.fileName == document.fileName);
+  assert(relu.formatKey == 'pdf'); // dérivé de fileName, jamais stocké.
+
+  // État de lecture personnel : jamais colocalisé avec le document.
+  final state = ZDocumentReadingState.fromMap(const &lt;String, dynamic&gt;{
+    'doc_id': document.id,
+    'current_page': 12,
+  });
+  assert(state.currentPage == 12);
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Contenu partageable vs état personnel, séparés par construction</strong> —
+<code>ZStudyDocument</code> (contenu) et <code>ZDocumentReadingState</code> (lecture) ne sont
+jamais imbriqués l'un dans l'autre : aucune clé de lecture n'apparaît dans
+les spécifications de champ du document. Partager ou dupliquer un document
+n'emporte donc jamais la progression de lecture d'autrui.</li>
+<li><strong>Désérialisation totale, jamais levée (invariant <a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>)</strong> —
+chaque <code>fromMap</code>/<code>fromJson</code> de ce paquet rend un résultat même sur une
+entrée vide, corrompue ou de mauvais type : une page hors domaine retombe
+sur <code>1</code>, un zoom non fini ou négatif retombe sur le défaut, un rectangle
+d'ancrage corrompu retombe sur <code>(0,0,0,0)</code>.</li>
+<li><strong>Aucune clé de synchronisation dans les entités (invariant <a href="../../docs/site/concepts/invariants.md#ad-9">AD-9</a>)</strong> —
+ni <code>ZStudyDocument</code>, ni <code>ZDocumentReadingState</code>, ni <code>ZDocumentAnnotation</code>
+ne déclarent <code>updatedAt</code>/<code>isDeleted</code> inline ; l'autorité Last-Write-Wins et
+le soft-delete vivent hors-entité (<code>ZSyncMeta</code>).</li>
+<li><strong>Accessibilité WCAG native (invariant <a href="../../docs/site/concepts/invariants.md#ad-13">AD-13</a>)</strong> —
+la toolbar et le panneau d'annotation ne signalent jamais un état par la
+seule couleur : chaque swatch porte un libellé sémantique distinct et un
+marqueur structurel non-coloré, avec un contraste dérivé du <code>ColorScheme</code>
+courant.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Document</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZStudyDocument</code></td>
+<td>Document d'étude — contenu partageable (nom, statut, taille).</td>
+</tr>
+<tr>
+<td><code>ZDocumentStatus</code></td>
+<td>Cycle de vie du document (upload → validation → prêt).</td>
+</tr>
+<tr>
+<td><strong>Lecture personnelle</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZDocumentReadingState</code></td>
+<td>État de lecture personnel, clé par identifiant de document.</td>
+</tr>
+<tr>
+<td><code>ZDocumentViewerPrefs</code> / <code>ZDocumentScrollDirection</code> / <code>ZDocumentPageLayout</code></td>
+<td>Préférences de lecture (zoom borné, sens, disposition).</td>
+</tr>
+<tr>
+<td><code>ZDocumentLearningInfo</code> / <code>ZDocPageQuality</code></td>
+<td>Maîtrise par page, colocalisée dans l'état de lecture.</td>
+</tr>
+<tr>
+<td><strong>Annotation</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZDocumentAnnotation</code> / <code>ZDocumentAnnotationKind</code></td>
+<td>Annotation partageable (surlignage / note ancrée).</td>
+</tr>
+<tr>
+<td><code>ZAnnotationBounds</code></td>
+<td>Rectangle d'ancrage borné <code>[0,1]</code> d'une annotation.</td>
+</tr>
+<tr>
+<td><strong>Présentation</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZAnnotationToolbar</code> / <code>ZAnnotationToolController</code></td>
+<td>Barre d'outils accessible (kind + palette) et son état réactif isolé.</td>
+</tr>
+<tr>
+<td><code>ZAnnotationPanel</code></td>
+<td>Liste accessible et paresseuse des annotations d'un document.</td>
+</tr>
+<tr>
+<td><code>ZDocumentViewerChrome</code> / <code>ZDocumentPageNavigation</code> / <code>ZDocumentViewerLoadState</code></td>
+<td>Coquille de viewer indépendante de tout moteur de rendu.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>La pagination est 1-based partout</strong> — <code>ZDocumentReadingState.currentPage</code>
+et <code>ZDocumentAnnotation.page</code> retombent sur <code>1</code> (jamais <code>0</code> ni négatif) à
+la désérialisation comme à la copie ; <code>ZDocumentLearningInfo</code> ignore
+silencieusement toute entrée dont la page est hors domaine.</li>
+<li><strong><code>pageCount</code> distingue « inconnu » de « zéro page »</strong> — une valeur <code>&lt;= 0</code>
+retombe sur <code>null</code>, jamais sur <code>0</code> : un document a toujours au moins une
+page, ou son nombre de pages n'est simplement pas encore connu.</li>
+<li><strong><code>colorKey</code> est brute dans l'entité, bornée à l'affichage</strong> — l'entité ne
+clampe jamais la couleur d'une annotation contre une palette : la
+résolution <code>colorKey → Color</code> est un seam de présentation
+(<code>remapColorKey</code>, <code>zcrud_study_kernel</code>), jamais du domaine.</li>
+<li><strong><code>ZAnnotationToolController</code> n'expose aucune <code>Color</code></strong> — le contrôleur ne
+connaît que des <code>colorKey</code> opaques ; la résolution vers une couleur
+concrète est injectée via <code>ZcrudScope.colorKeyResolver</code>.</li>
+<li><strong>Le domaine reste pur-Dart, la présentation seule requiert Flutter</strong> — le
+sous-dossier <code>lib/src/domain/</code> n'importe aucun SDK Flutter et tourne sous
+<code>flutter test</code> comme sous <code>dart test</code> ; seul <code>lib/src/presentation/</code>
+compose des widgets.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_document.md"><code>docs/site/paquets/zcrud_document.md</code></a></li>
+<li><a href="../../docs/site/concepts/architecture-hexagonale.md">Architecture hexagonale</a> — couches, ports et patron kernel/satellite.</li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_study_kernel</code> — le kernel dont ce paquet porte le dossier, la palette et le port de référence document.</li>
+<li><code>zcrud_core</code> — <code>ZResult</code>/<code>ZFailure</code>, <code>ZcrudTheme</code>, résolution de libellés et de couleurs.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_document">
+  <span class="name"><a href="zcrud_document/">zcrud_document</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_document</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_document package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_document</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_document/">zcrud_document</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_document
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

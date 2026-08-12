@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZValidatorSpec class from the zcrud_core library, for the Dart programming language.">
+  <title>ZValidatorSpec class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZValidatorSpec class</li>
+  </ol>
+  <div class="self-name">ZValidatorSpec</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZValidatorSpec-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZValidatorSpec</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Spécification <code>const</code> d'un validateur de champ (pur-données).</p>
+<p>Chaque variante est construite par un <strong>constructeur de fabrique nommé</strong>
+<code>const</code> ; les paramètres non pertinents restent <code>null</code>. <code>errorText</code>
+(optionnel, partout) porte un message d'erreur littéral ou une clé l10n
+(résolu côté UI en E3).</p>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZValidatorSpec.address" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.address.html">ZValidatorSpec.address</a></span><span class="signature">({<span class="parameter" id="address-param-enforceFormat"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enforceFormat</span> = <span class="default-value">false</span>, </span><span class="parameter" id="address-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Adresse postale — <strong>no-op par défaut</strong> (rôle indice de clavier, aucune
+validation de format). Le format n'est vérifié que si
+<code>enforceFormat</code> est <code>true</code> (opt-in ⇒ <code>FormBuilderValidators.street</code>).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.creditCard" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.creditCard.html">ZValidatorSpec.creditCard</a></span><span class="signature">({<span class="parameter" id="creditCard-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Numéro de carte bancaire.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.dateString" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.dateString.html">ZValidatorSpec.dateString</a></span><span class="signature">({<span class="parameter" id="dateString-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Chaîne représentant une date.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.email" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.email.html">ZValidatorSpec.email</a></span><span class="signature">({<span class="parameter" id="email-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Format e-mail.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.equal" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.equal.html">ZValidatorSpec.equal</a></span><span class="signature">(<span class="parameter" id="equal-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span>, {</span><span class="parameter" id="equal-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Égalité à <code>value</code>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.integer" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.integer.html">ZValidatorSpec.integer</a></span><span class="signature">({<span class="parameter" id="integer-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Chaîne représentant un entier.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.ip" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.ip.html">ZValidatorSpec.ip</a></span><span class="signature">({<span class="parameter" id="ip-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Format adresse IP.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.match" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.match.html">ZValidatorSpec.match</a></span><span class="signature">(<span class="parameter" id="match-param-refKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">refKey</span>, {</span><span class="parameter" id="match-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Égalité à la valeur du champ <code>refKey</code> (⇒ <code>matchKey</code>).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.max" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.max.html">ZValidatorSpec.max</a></span><span class="signature">(<span class="parameter" id="max-param-bound"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/num-class.html">num</a></span> <span class="parameter-name">bound</span>, {</span><span class="parameter" id="max-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Borne maximale <strong>littérale</strong> <code>bound</code>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.maxKey" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.maxKey.html">ZValidatorSpec.maxKey</a></span><span class="signature">(<span class="parameter" id="maxKey-param-refKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">refKey</span>, {</span><span class="parameter" id="maxKey-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Borne maximale <strong>référencée</strong> sur un autre champ (<code>refKey</code> ⇒
+<code>maxValueKey</code>).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.maxLength" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.maxLength.html">ZValidatorSpec.maxLength</a></span><span class="signature">(<span class="parameter" id="maxLength-param-length"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">length</span>, {</span><span class="parameter" id="maxLength-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Longueur maximale <code>length</code>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.min" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.min.html">ZValidatorSpec.min</a></span><span class="signature">(<span class="parameter" id="min-param-bound"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/num-class.html">num</a></span> <span class="parameter-name">bound</span>, {</span><span class="parameter" id="min-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Borne minimale <strong>littérale</strong> <code>bound</code>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.minKey" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.minKey.html">ZValidatorSpec.minKey</a></span><span class="signature">(<span class="parameter" id="minKey-param-refKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">refKey</span>, {</span><span class="parameter" id="minKey-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Borne minimale <strong>référencée</strong> sur un autre champ (<code>refKey</code> ⇒
+<code>minValueKey</code>).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.minLength" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.minLength.html">ZValidatorSpec.minLength</a></span><span class="signature">(<span class="parameter" id="minLength-param-length"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">length</span>, {</span><span class="parameter" id="minLength-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Longueur minimale <code>length</code>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.notEqual" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.notEqual.html">ZValidatorSpec.notEqual</a></span><span class="signature">(<span class="parameter" id="notEqual-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span>, {</span><span class="parameter" id="notEqual-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Inégalité à <code>value</code>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.numeric" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.numeric.html">ZValidatorSpec.numeric</a></span><span class="signature">({<span class="parameter" id="numeric-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Chaîne purement numérique.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.password" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.password.html">ZValidatorSpec.password</a></span><span class="signature">({<span class="parameter" id="password-param-minLength"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">minLength</span> = <span class="default-value">8</span>, </span><span class="parameter" id="password-param-maxLength"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">maxLength</span> = <span class="default-value">20</span>, </span><span class="parameter" id="password-param-requireUppercase"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">requireUppercase</span> = <span class="default-value">true</span>, </span><span class="parameter" id="password-param-requireLowercase"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">requireLowercase</span> = <span class="default-value">true</span>, </span><span class="parameter" id="password-param-requireDigit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">requireDigit</span> = <span class="default-value">false</span>, </span><span class="parameter" id="password-param-requireSpecial"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">requireSpecial</span> = <span class="default-value">false</span>, </span><span class="parameter" id="password-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Politique de mot de passe <strong>paramétrable</strong> — défauts permissifs :
+<code>minLength</code> <code>8</code>, <code>maxLength</code> <code>20</code>, <code>requireUppercase</code> &amp;
+<code>requireLowercase</code> <code>true</code>, <code>requireDigit</code> &amp; <code>requireSpecial</code> <code>false</code>. La
+politique stricte est <strong>opt-in</strong>
+(<code>password(minLength: 12, requireDigit: true, requireSpecial: true, …)</code>).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.pattern" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.pattern.html">ZValidatorSpec.pattern</a></span><span class="signature">(<span class="parameter" id="pattern-param-pattern"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">pattern</span>, {</span><span class="parameter" id="pattern-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Correspondance à l'expression régulière <code>pattern</code>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.percentage" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.percentage.html">ZValidatorSpec.percentage</a></span><span class="signature">({<span class="parameter" id="percentage-param-enforceRange"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enforceRange</span> = <span class="default-value">false</span>, </span><span class="parameter" id="percentage-param-min"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/num-class.html">num</a></span> <span class="parameter-name">min</span> = <span class="default-value">0</span>, </span><span class="parameter" id="percentage-param-max"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/num-class.html">num</a></span> <span class="parameter-name">max</span> = <span class="default-value">100</span>, </span><span class="parameter" id="percentage-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Pourcentage — <strong>no-op par défaut</strong> (indice/format d'affichage, saisie
+numérique libre). La plage n'est vérifiée que si
+<code>enforceRange</code> est <code>true</code> (opt-in ⇒ <code>between([min], [max])</code>, défaut 0–100).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.phone" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.phone.html">ZValidatorSpec.phone</a></span><span class="signature">({<span class="parameter" id="phone-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Numéro de téléphone.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.required" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.required.html">ZValidatorSpec.required</a></span><span class="signature">({<span class="parameter" id="required-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Valeur requise.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.url" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.url.html">ZValidatorSpec.url</a></span><span class="signature">({<span class="parameter" id="url-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Format URL.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="bound" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/bound.html">bound</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/num-class.html">num</a>?</span>
+  
+
+</dt>
+<dd>
+  Borne numérique <strong>littérale</strong> (<a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind.min</a>/<a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind.max</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="enforceFormat" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/enforceFormat.html">enforceFormat</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span>
+  
+
+</dt>
+<dd>
+  <a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind.address</a> : <code>true</code> ⇒ valide le format (opt-in <code>street</code>) ;
+<code>false</code> (défaut) ⇒ <strong>no-op</strong>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="enforceRange" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/enforceRange.html">enforceRange</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span>
+  
+
+</dt>
+<dd>
+  <a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind.percentage</a> : <code>true</code> ⇒ valide la plage (opt-in <code>between</code>) ;
+<code>false</code> (défaut) ⇒ <strong>no-op</strong>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="errorText" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/errorText.html">errorText</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Message d'erreur (littéral ou clé l10n ; résolu en E3).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="kind" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/kind.html">kind</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind</a></span>
+  
+
+</dt>
+<dd>
+  Famille du validateur.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="length" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/length.html">length</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Longueur cible (<a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind.minLength</a>/<a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind.maxLength</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="passwordMaxLength" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/passwordMaxLength.html">passwordMaxLength</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Longueur maximale de la politique <strong>mot de passe</strong> (défaut <code>20</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="passwordMinLength" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/passwordMinLength.html">passwordMinLength</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Longueur minimale de la politique <strong>mot de passe</strong> (<a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind.password</a>
+; défaut <code>8</code>). Distinct de <a href="../zcrud_core/ZValidatorSpec/length.html">length</a> (min/maxLength de chaîne générique).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="pattern" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/pattern.html">pattern</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Expression régulière (<a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind.pattern</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="rangeMax" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/rangeMax.html">rangeMax</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/num-class.html">num</a>?</span>
+  
+
+</dt>
+<dd>
+  Borne haute de la plage <code>percentage</code> quand <a href="../zcrud_core/ZValidatorSpec/enforceRange.html">enforceRange</a> (défaut <code>100</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="rangeMin" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/rangeMin.html">rangeMin</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/num-class.html">num</a>?</span>
+  
+
+</dt>
+<dd>
+  Borne basse de la plage <code>percentage</code> quand <a href="../zcrud_core/ZValidatorSpec/enforceRange.html">enforceRange</a> (défaut <code>0</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="refKey" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/refKey.html">refKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé d'un autre champ référencé (<code>minValueKey</code>/<code>maxValueKey</code>/<code>matchKey</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="requireDigit" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/requireDigit.html">requireDigit</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span>
+  
+
+</dt>
+<dd>
+  Politique password : exige au moins un <strong>chiffre</strong> (défaut <code>false</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="requireLowercase" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/requireLowercase.html">requireLowercase</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span>
+  
+
+</dt>
+<dd>
+  Politique password : exige au moins une <strong>minuscule</strong> (défaut <code>true</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="requireSpecial" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/requireSpecial.html">requireSpecial</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span>
+  
+
+</dt>
+<dd>
+  Politique password : exige au moins un <strong>caractère spécial</strong> (défaut
+<code>false</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="requireUppercase" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/requireUppercase.html">requireUppercase</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span>
+  
+
+</dt>
+<dd>
+  Politique password : exige au moins une <strong>majuscule</strong> (défaut <code>true</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="value" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/value.html">value</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>
+  
+
+</dt>
+<dd>
+  Valeur de référence (<a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind.equal</a>/<a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind.notEqual</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A string representation of this object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZValidatorSpec class</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

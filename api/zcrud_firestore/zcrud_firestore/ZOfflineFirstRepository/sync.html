@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the sync method from the ZOfflineFirstRepository class, for the Dart programming language.">
+  <title>sync method - ZOfflineFirstRepository class - zcrud_firestore library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_firestore</a></li>
+    <li><a href="../../zcrud_firestore/">zcrud_firestore.dart</a></li>
+    <li><a href="../../zcrud_firestore/ZOfflineFirstRepository-class.html">ZOfflineFirstRepository<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></a></li>
+    <li class="self-crumb">sync method</li>
+  </ol>
+  <div class="self-name">sync</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_firestore&#47;ZOfflineFirstRepository-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">sync</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/dartz/0.10.1/dartz/Unit-class.html">Unit</a></span>&gt;</span></span>&gt;</span></span>
+<span class="name ">sync</span>(<wbr>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Synchronise <strong>une fois</strong> : pull des méta (tombstones inclus) des deux côtés,
+merge <strong>Last-Write-Wins</strong> via <code>ZLwwResolver</code>, puis application des gagnants
+(distants adoptés localement via <code>applyMerged</code> ; locaux propagés par lot
+borné via <code>applyMergedAll</code>).</p>
+<p><strong><code>Right(unit)</code> si déconnecté</strong> (AD-9/AD-11) : <code>isConnected == false</code> OU un
+<code>Left(ZServerFailure)</code> distant est assimilé à « offline » → <code>Right(unit)</code>
+(loggé). Une <strong>panne locale</strong> (<code>Left(ZCacheFailure)</code> sur <code>syncEntries</code>/
+<code>applyMerged</code>) est une vraie erreur → <code>Left</code> (jamais avalée).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+Future&lt;ZResult&lt;Unit&gt;&gt; sync() async {
+  &#47;&#47; (0) Court-circuit connectivité (couture optionnelle) → Right(unit).
+  final isConnected = _isConnected;
+  if (isConnected != null &amp;&amp; !await isConnected()) {
+    _log(&#39;sync: hors-ligne (isConnected=false) — Right(unit) best-effort&#39;);
+    return Right&lt;ZFailure, Unit&gt;(unit);
+  }
+
+  &#47;&#47; (a) Lecture LOCALE : une erreur locale est une VRAIE panne → Left.
+  final localRes = await _local.syncEntries();
+  final localEntries = localRes.fold&lt;List&lt;ZSyncEntry&lt;T&gt;&gt;?&gt;(
+    (_) =&gt; null,
+    (r) =&gt; r,
+  );
+  if (localEntries == null) {
+    return localRes.fold(
+      (f) =&gt; Left&lt;ZFailure, Unit&gt;(f),
+      (_) =&gt; Right&lt;ZFailure, Unit&gt;(unit), &#47;&#47; inatteignable
+    );
+  }
+
+  &#47;&#47; (a&#39;) Lecture DISTANTE : une erreur distante = offline → Right(unit).
+  final remoteRes = await _remote.syncEntries();
+  final remoteEntries = remoteRes.fold&lt;List&lt;ZSyncEntry&lt;T&gt;&gt;?&gt;(
+    (_) =&gt; null,
+    (r) =&gt; r,
+  );
+  if (remoteEntries == null) {
+    &#47;&#47; Un `Left` distant est assimilé à « offline » → Right(unit). Ceci
+    &#47;&#47; englobe AUSSI les erreurs NON réseau (permission&#47;quota&#47;misconfig) :
+    &#47;&#47; une telle sync « réussit » sans jamais converger. Le drop est loggé
+    &#47;&#47; en clair (jamais muet, invariant AD-11) ; la distinction réseau vs
+    &#47;&#47; serveur (pour ne re-Right que le réseau) est portée par
+    &#47;&#47; `ZSyncOrchestrator` + typage connectivité — dette assumée.
+    remoteRes.leftMap((f) =&gt; _log(
+        &#39;sync: pull distant en échec, assimilé offline → Right(unit) &#39;
+        &#39;best-effort — ⚠️ inclut permission&#47;quota (dette E5-4) : ${f.message}&#39;));
+    return Right&lt;ZFailure, Unit&gt;(unit);
+  }
+
+  &#47;&#47; (b) Index par `id` + union déterministe (tri stable).
+  final localById = &lt;String, ZSyncEntry&lt;T&gt;&gt;{
+    for (final e in localEntries)
+      if (e.id != null) e.id!: e,
+  };
+  final remoteById = &lt;String, ZSyncEntry&lt;T&gt;&gt;{
+    for (final e in remoteEntries)
+      if (e.id != null) e.id!: e,
+  };
+  final ids = &lt;String&gt;{...localById.keys, ...remoteById.keys}.toList()
+    ..sort();
+
+  &#47;&#47; (c) Résolution + application : adopt local immédiat ; push accumulé.
+  final toPush = &lt;ZSyncEntry&lt;T&gt;&gt;[];
+  for (final id in ids) {
+    final decision = _resolver.resolve&lt;T&gt;(localById[id], remoteById[id]);
+    switch (decision.action) {
+      case ZLwwAction.noop:
+        break;
+      case ZLwwAction.adoptRemoteIntoLocal:
+        final applied = await _local.applyMerged(decision.entry!);
+        &#47;&#47; Panne locale à l&#39;application → VRAIE erreur (Left, jamais avalée).
+        final failed = applied.fold&lt;ZFailure?&gt;((f) =&gt; f, (_) =&gt; null);
+        if (failed != null) return Left&lt;ZFailure, Unit&gt;(failed);
+      case ZLwwAction.pushLocalToRemote:
+        toPush.add(decision.entry!);
+    }
+  }
+
+  &#47;&#47; (d) Propagation distante bornée (best-effort : échec = offline → Right).
+  if (toPush.isNotEmpty) {
+    final pushed = await _remote.applyMergedAll(toPush);
+    pushed.leftMap((f) =&gt; _log(&#39;sync: propagation distante échouée &#39;
+        &#39;(${f.message}) — Right(unit) best-effort&#39;));
+  }
+
+  return Right&lt;ZFailure, Unit&gt;(unit);
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_firestore</a></li>
+    <li><a href="../../zcrud_firestore/">zcrud_firestore</a></li>
+    <li><a href="../../zcrud_firestore/ZOfflineFirstRepository-class.html">ZOfflineFirstRepository<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></a></li>
+    <li class="self-crumb">sync method</li>
+</ol>
+
+    <h5>ZOfflineFirstRepository class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_firestore
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

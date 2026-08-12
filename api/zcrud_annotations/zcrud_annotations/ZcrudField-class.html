@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZcrudField class from the zcrud_annotations library, for the Dart programming language.">
+  <title>ZcrudField class - zcrud_annotations library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_annotations</a></li>
+    <li><a href="../zcrud_annotations/">zcrud_annotations.dart</a></li>
+    <li class="self-crumb">ZcrudField class</li>
+  </ol>
+  <div class="self-name">ZcrudField</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_annotations&#47;zcrud_annotations-library-sidebar.html"
+    data-below-sidebar="zcrud_annotations&#47;ZcrudField-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZcrudField</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Annotation de <strong>champ d'instance</strong> déclarant la surface d'autorité d'un
+champ du schéma <code>zcrud</code> : un même schéma pilote formulaire d'édition <strong>et</strong>
+liste.</p>
+<p>Le générateur <code>zcrud_generator</code> lit chaque paramètre <strong>statiquement</strong>
+(<code>ConstantReader</code>) et le projette dans le <code>ZFieldSpec</code> correspondant (table
+de correspondance ci-dessous). Classe <code>const</code> <strong>pur-données</strong> : tous champs
+<code>final</code>, tous optionnels avec défaut sûr, <strong>zéro closure</strong>.</p>
+<p><strong>Table de correspondance <code>@ZcrudField</code> → <code>ZFieldSpec</code></strong> :</p>
+<table>
+<thead>
+<tr>
+<th>Paramètre</th>
+<th><code>ZFieldSpec</code></th>
+<th>Interprète</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../zcrud_annotations/ZcrudField/name.html">name</a> (ou dérivé via <code>fieldRename</code>)</td>
+<td><code>name</code> (clé persistée)</td>
+<td>générateur</td>
+</tr>
+<tr>
+<td><a href="../zcrud_annotations/ZcrudField/label.html">label</a></td>
+<td><code>label</code></td>
+<td>résolution l10n</td>
+</tr>
+<tr>
+<td><a href="../zcrud_annotations/ZcrudField/type.html">type</a> (<code>null</code> ⇒ inféré)</td>
+<td><code>type</code></td>
+<td>rendu du widget / de la colonne</td>
+</tr>
+<tr>
+<td><a href="../zcrud_annotations/ZcrudField/validators.html">validators</a></td>
+<td><code>validators</code></td>
+<td>compose <code>FormBuilderValidators</code></td>
+</tr>
+<tr>
+<td><a href="../zcrud_annotations/ZcrudField/config.html">config</a></td>
+<td><code>config</code></td>
+<td>config par type</td>
+</tr>
+<tr>
+<td><a href="../zcrud_annotations/ZcrudField/choices.html">choices</a></td>
+<td><code>choices</code></td>
+<td>select/radio/checkbox</td>
+</tr>
+<tr>
+<td><a href="../zcrud_annotations/ZcrudField/condition.html">condition</a></td>
+<td><code>condition</code> (displayCondition)</td>
+<td>visibilité conditionnelle (invariant AD-2)</td>
+</tr>
+<tr>
+<td><a href="../zcrud_annotations/ZcrudField/searchable.html">searchable</a></td>
+<td><code>searchable</code></td>
+<td>filtre/recherche de la liste</td>
+</tr>
+<tr>
+<td><a href="../zcrud_annotations/ZcrudField/defaultValue.html">defaultValue</a></td>
+<td><code>defaultValue</code></td>
+<td>défaut de <code>fromMap</code></td>
+</tr>
+<tr>
+<td><a href="../zcrud_annotations/ZcrudField/readOnly.html">readOnly</a> / <a href="../zcrud_annotations/ZcrudField/showIfNull.html">showIfNull</a></td>
+<td>idem</td>
+<td>mode lecture</td>
+</tr>
+<tr>
+<td><a href="../zcrud_annotations/ZcrudField/multiple.html">multiple</a></td>
+<td><code>multiple</code></td>
+<td>multi-sélection</td>
+</tr>
+<tr>
+<td><a href="../zcrud_annotations/ZcrudField/persistAs.html">persistAs</a></td>
+<td><em>(métadonnée neutre <code>Set&lt;String&gt;</code> séparée)</em></td>
+<td><code>zcrud_firestore</code> (encode <code>Timestamp</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Hint de persistance (<code>persistAs</code>)</strong> : contrairement aux autres
+paramètres, <a href="../zcrud_annotations/ZcrudField/persistAs.html">persistAs</a> n'est <strong>pas</strong> projeté dans le <code>ZFieldSpec</code> mais dans
+un artefact généré <strong>neutre</strong> (<code>const Set&lt;String&gt; $XxxTimestampFields</code>) — un
+ensemble de clés persistées consommé par l'adaptateur Firestore pour encoder
+ces champs en <code>Timestamp</code> natif (invariant AD-5 : <code>Timestamp</code> reste confiné
+à <code>zcrud_firestore</code>).</p>
+<p><strong>N'entre PAS dans l'annotation</strong> (exige une closure/valeur runtime,
+illisible par <code>ConstantReader</code>) — attaché au runtime à la place :</p>
+<ul>
+<li>builder <code>widget</code> libre → <code>EditionFieldType.widget</code> <strong>nomme</strong> le type ; la
+closure est fournie via <code>ZTypeRegistry</code> / la config de champ ;</li>
+<li><code>stateValidators</code> (dépendant de l'état) → <code>ZFormController</code> ;</li>
+<li><code>displayCondition</code> dynamique dépendant du CRUD → remplacé par <code>ZCondition</code>
+déclaratif ; cas irréductibles via surcouche runtime ;</li>
+<li>relation dynamique (<code>choiceItemsRepository</code>) → <code>EditionFieldType.relation</code>
+nomme le type ; la source est câblée au runtime.</li>
+</ul>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZcrudField.new" class="callable">
+          <span class="name"><a href="../zcrud_annotations/ZcrudField/ZcrudField.html">ZcrudField</a></span><span class="signature">({<span class="parameter" id="param-label"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">label</span>, </span><span class="parameter" id="param-type"><span class="type-annotation">EditionFieldType?</span> <span class="parameter-name">type</span>, </span><span class="parameter" id="param-validators"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZValidatorSpec</span>&gt;</span>?</span> <span class="parameter-name">validators</span>, </span><span class="parameter" id="param-config"><span class="type-annotation">ZFieldConfig?</span> <span class="parameter-name">config</span>, </span><span class="parameter" id="param-choices"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldChoice</span>&gt;</span>?</span> <span class="parameter-name">choices</span>, </span><span class="parameter" id="param-condition"><span class="type-annotation">ZCondition?</span> <span class="parameter-name">condition</span>, </span><span class="parameter" id="param-searchable"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">searchable</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-defaultValue"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">defaultValue</span>, </span><span class="parameter" id="param-readOnly"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readOnly</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-showIfNull"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showIfNull</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span><span class="parameter" id="param-multiple"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">multiple</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-persistAs"><span class="type-annotation"><a href="../zcrud_annotations/ZPersistAs.html">ZPersistAs</a></span> <span class="parameter-name">persistAs</span> = <span class="default-value">ZPersistAs.iso8601</span>, </span><span class="parameter" id="param-leading"><span class="type-annotation">ZFieldAdornment?</span> <span class="parameter-name">leading</span>, </span><span class="parameter" id="param-prefix"><span class="type-annotation">ZFieldAdornment?</span> <span class="parameter-name">prefix</span>, </span><span class="parameter" id="param-suffix"><span class="type-annotation">ZFieldAdornment?</span> <span class="parameter-name">suffix</span>, </span><span class="parameter" id="param-hintText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">hintText</span>, </span><span class="parameter" id="param-helperText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">helperText</span></span>})</span>
+        </dt>
+        <dd>
+          Construit l'annotation <code>const</code> avec des défauts sûrs.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="choices" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/choices.html">choices</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldChoice</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Options statiques pour <code>select</code>/<code>radio</code>/<code>checkbox</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="condition" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/condition.html">condition</a></span>
+  <span class="signature">&#8594; ZCondition?</span>
+  
+
+</dt>
+<dd>
+  Visibilité conditionnelle <strong>déclarative</strong> (<code>displayCondition</code>) ; évaluée
+par E3 dans un sélecteur de visibilité dédié (AD-2). Jamais une closure.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="config" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/config.html">config</a></span>
+  <span class="signature">&#8594; ZFieldConfig?</span>
+  
+
+</dt>
+<dd>
+  Config spécialisée par type (base d'extension <code>ZFieldConfig</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="defaultValue" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/defaultValue.html">defaultValue</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>
+  
+
+</dt>
+<dd>
+  Valeur par défaut si absente (appliquée par <code>fromMap</code>/E3).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="helperText" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/helperText.html">helperText</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Texte d'aide, projeté dans <code>ZFieldSpec.helperText</code>. Clé l10n ou littéral.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hintText" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/hintText.html">hintText</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Texte indicatif, projeté dans <code>ZFieldSpec.hintText</code>. Clé l10n ou littéral.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="label" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/label.html">label</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé d'affichage (clé l10n ou littéral ; résolu côté UI en E3/E4).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="leading" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/leading.html">leading</a></span>
+  <span class="signature">&#8594; ZFieldAdornment?</span>
+  
+
+</dt>
+<dd>
+  Ornement de <strong>tête</strong> du champ — projeté dans <code>ZFieldSpec.leading</code>.
+Pur-données (<code>ZFieldAdornment</code>, <code>text</code>/<code>icon</code>/<code>widget</code> — jamais une
+closure/<code>IconData</code>, invariants AD-3/AD-14).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="multiple" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/multiple.html">multiple</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Multi-sélection.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="name" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/name.html">name</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Override de la clé persistée. <code>null</code> ⇒ dérivée du nom Dart via
+<code>@ZcrudModel.fieldRename</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="persistAs" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/persistAs.html">persistAs</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_annotations/ZPersistAs.html">ZPersistAs</a></span>
+  
+
+</dt>
+<dd>
+  Hint de <strong>format de persistance</strong> d'un champ date (défaut
+<a href="../zcrud_annotations/ZPersistAs.html">ZPersistAs.iso8601</a>). Avec <a href="../zcrud_annotations/ZPersistAs.html">ZPersistAs.timestamp</a>, le générateur collecte
+la clé persistée du champ dans l'artefact neutre <code>$XxxTimestampFields</code>
+(<code>Set&lt;String&gt;</code>) que <code>zcrud_firestore</code> consomme pour encoder le champ en
+<code>Timestamp</code> natif (invariant AD-5 préservé). Sans effet hors du chemin
+Firestore distant.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="prefix" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/prefix.html">prefix</a></span>
+  <span class="signature">&#8594; ZFieldAdornment?</span>
+  
+
+</dt>
+<dd>
+  Ornement <strong>préfixe interne</strong> du champ — projeté dans <code>ZFieldSpec.prefix</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="readOnly" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/readOnly.html">readOnly</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Champ non éditable (mode lecture — DODLP <code>readOnly</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="searchable" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/searchable.html">searchable</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Participation à la recherche/filtre de la liste (E4).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showIfNull" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/showIfNull.html">showIfNull</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  En <strong>mode lecture global</strong>, afficher le champ même si sa valeur est
+vide/nulle.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="suffix" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/suffix.html">suffix</a></span>
+  <span class="signature">&#8594; ZFieldAdornment?</span>
+  
+
+</dt>
+<dd>
+  Ornement <strong>suffixe interne</strong> du champ — projeté dans <code>ZFieldSpec.suffix</code>.
+Le cas état-dépendant passe par <code>ZFieldAdornment.widget(kind)</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="type" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/type.html">type</a></span>
+  <span class="signature">&#8594; EditionFieldType?</span>
+  
+
+</dt>
+<dd>
+  Type de champ. <code>null</code> ⇒ le générateur <strong>E2-5</strong> l'infère du type statique
+Dart (<code>String</code>→<code>text</code>, <code>int</code>→<code>integer</code>, <code>bool</code>→<code>boolean</code>,
+<code>DateTime</code>→<code>dateTime</code>, <code>enum</code>→<code>select</code>, …). L'inférence est <strong>implémentée
+en E2-5</strong> (E2-4 ne fait que la documenter).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="validators" class="property">
+  <span class="name"><a href="../zcrud_annotations/ZcrudField/validators.html">validators</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZValidatorSpec</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Validateurs <strong>déclaratifs</strong> (composés en <code>FormBuilderValidators</code> par E3).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_annotations</a></li>
+    <li><a href="../zcrud_annotations/">zcrud_annotations</a></li>
+    <li class="self-crumb">ZcrudField class</li>
+</ol>
+
+    <h5>zcrud_annotations library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_annotations
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

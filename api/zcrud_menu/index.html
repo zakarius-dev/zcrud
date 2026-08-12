@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_menu API docs, for the Dart programming language.">
+  <title>zcrud_menu - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_menu package</a></li>
+  </ol>
+  <div class="self-name">zcrud_menu</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_menu">zcrud_menu</h1>
+<p>Menus contextuels à <strong>déclencheur et contenu découplés</strong> pour zcrud, servis
+en données plutôt qu'en widgets construits.</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_menu</code> n'est pas un menu spécifique à un domaine : aucun type de sa
+surface publique ne nomme une entité métier. Il sert indifféremment un item
+de liste, une carte de contenu, une barre d'application ou un message de
+conversation — parce que c'est le même geste : un déclencheur, des entrées
+d'action déclarées en données, un rendu résolu par un port injectable.</p>
+<p>L'hôte branche son propre package de menus derrière <code>ZMenuRenderer</code> ; sans
+injection, <code>ZDefaultMenuRenderer</code> (Flutter/Material seul, zéro dépendance
+tierce) reste pleinement fonctionnel.</p>
+<p><strong>Utilisez ce paquet</strong> pour tout menu contextuel d'action — liste, carte,
+barre d'app, conversation — construit en données plutôt qu'en widget dur.
+<strong>N'utilisez pas ce paquet</strong> dans <code>zcrud_core</code> : le cœur ne peut dépendre
+d'aucun satellite (invariant <a href="../../docs/site/concepts/invariants.md#ad-1">AD-1</a>),
+un menu qui y vit garde son rendu en dur tant que la couture n'y est pas
+elle-même déplacée.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:flutter/widgets.dart';
+import 'package:zcrud_menu/zcrud_menu.dart';
+
+Widget buildMenu(VoidCallback ouvrir, VoidCallback supprimer, bool peutSupprimer) {
+  return ZActionMenu(
+    trigger: ZMenuTrigger(icon: Icons.more_vert, semanticLabel: 'Plus d\'options'),
+    entries: [
+      ZMenuEntry(id: ZMenuEntryIds.open, label: 'Ouvrir', onSelected: ouvrir),
+      // présente, désactivée, motif annoncé :
+      ZMenuEntry(id: ZMenuEntryIds.edit, label: 'Éditer', disabledReason: 'Bientôt disponible'),
+      // ni actionnable ni désactivée ⇒ absente :
+      const ZMenuEntry(id: ZMenuEntryIds.share, label: '—'),
+      // droit refusé ⇒ absente, sans traduction côté appelant :
+      ZMenuEntry(
+        id: ZMenuEntryIds.delete,
+        label: 'Supprimer',
+        permitted: peutSupprimer,
+        onSelected: supprimer,
+      ),
+    ],
+  );
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Trois états représentables (invariant <a href="../../docs/site/concepts/invariants.md#ad-4">AD-4</a>)</strong> —
+une entrée est actionnable (<code>onSelected</code> non nul), absente (les deux nuls)
+ou présente-mais-désactivée-avec-motif (<code>disabledReason</code> non nul,
+<code>onSelected</code> nul). <code>permitted: false</code> force l'absence quel que soit le
+reste. Le filtrage de la règle d'absence a un site unique
+(<code>zVisibleMenuEntries</code>), appliqué avant tout renderer — il est donc
+inopposable à un renderer injecté.</li>
+<li><strong>Déclencheur et contenu déclarés en données</strong> — <code>ZMenuTrigger</code> et
+<code>ZMenuEntry</code> sont des data-class immuables, jamais des widgets construits :
+c'est ce qui permet à un <code>ZMenuRenderer</code> injecté de rendre le déclencheur
+autrement (appui long, clic droit, feuille modale) sans que l'appelant
+change d'un caractère.</li>
+<li><strong>Voie unique de sélection</strong> — toute sélection passe par
+<code>ZMenuRequest.select</code>, jamais par <code>entry.onSelected</code> directement : un
+renderer (y compris un adaptateur tiers) ne peut ni exécuter une entrée
+désactivée, ni une entrée qu'il aurait fabriquée lui-même.</li>
+<li><strong>Chaîne de résolution totale</strong> — <code>zResolveMenuRenderer</code> ne rend jamais
+<code>null</code> et ne lève jamais : paramètre explicite → <code>ZMenuScope</code> → repli
+<code>ZDefaultMenuRenderer</code>. Brancher ce paquet sans rien configurer ne change
+rien à ce qu'un hôte voit.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZActionMenu</code></td>
+<td>Point d'entrée unique : déclare entrées et déclencheur, délègue au renderer résolu.</td>
+</tr>
+<tr>
+<td><code>ZMenuEntry</code> / <code>ZMenuEntryIds</code></td>
+<td>Entrée de menu déclarée en données ; vocabulaire canonique d'identités.</td>
+</tr>
+<tr>
+<td><code>ZMenuTrigger</code></td>
+<td>Description immuable du déclencheur (glyphe ou widget).</td>
+</tr>
+<tr>
+<td><code>ZMenuRenderer</code> / <code>ZMenuRequest</code></td>
+<td>Port de rendu et sa requête neutre.</td>
+</tr>
+<tr>
+<td><code>ZDefaultMenuRenderer</code></td>
+<td>Repli zéro-dépendance, Material seul.</td>
+</tr>
+<tr>
+<td><code>ZMenuEntryTile</code></td>
+<td>Cellule d'entrée réutilisable, offerte aux présentations de contenu injectées.</td>
+</tr>
+<tr>
+<td><code>ZMenuScope</code> / <code>zResolveMenuRenderer</code></td>
+<td>Scope d'injection et chaîne de résolution totale du renderer.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li>Une entrée désactivée reste <strong>présente</strong> dans le menu, jamais absente ni
+grisée sans motif — le silence seul est proscrit, la désactivation avec
+motif est un état de première classe.</li>
+<li><code>ZMenuEntryTile.gridDelegate</code> borne <code>mainAxisExtent</code> par le bas à la cible
+tactile minimale : une disposition en grille qui l'écraserait signale une
+erreur de disposition en mode debug plutôt que de livrer silencieusement
+une cellule sous-dimensionnée (invariant <a href="../../docs/site/concepts/invariants.md#ad-13">AD-13</a>).</li>
+<li>Une liste d'entrées vide sans contenu injecté rend un déclencheur
+<strong>inerte</strong>, jamais une surface fantôme ni une exception (invariant
+<a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>).</li>
+<li>Une exception levée par le renderer de l'hôte se propage : elle n'est
+jamais avalée par la chaîne de résolution.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> —
+définitions canoniques AD-1 à AD-16.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_menu">
+  <span class="name"><a href="zcrud_menu/">zcrud_menu</a></span> 
+
+</dt>
+<dd><code>zcrud_menu</code> — menus contextuels à <strong>déclencheur et contenu découplés</strong>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_menu package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_menu</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_menu/">zcrud_menu</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_menu
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

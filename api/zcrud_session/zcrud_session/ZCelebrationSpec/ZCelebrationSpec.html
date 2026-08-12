@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZCelebrationSpec.new constructor from Class ZCelebrationSpec from the zcrud_session library, for the Dart programming language.">
+  <title>ZCelebrationSpec.new constructor - ZCelebrationSpec - zcrud_session library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_session</a></li>
+    <li><a href="../../zcrud_session/">zcrud_session.dart</a></li>
+    <li><a href="../../zcrud_session/ZCelebrationSpec-class.html">ZCelebrationSpec</a></li>
+    <li class="self-crumb">ZCelebrationSpec.new const constructor</li>
+  </ol>
+  <div class="self-name">ZCelebrationSpec.new</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_session&#47;ZCelebrationSpec-class-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-constructor">ZCelebrationSpec</span> constructor 
+</h1></div>
+
+    <section class="multi-line-signature">
+      const
+      <span class="name ">ZCelebrationSpec</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-burstDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a>?</span> <span class="parameter-name">burstDuration</span>, </span></li>
+<li><span class="parameter" id="param-numberOfParticles"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">numberOfParticles</span>, </span></li>
+<li><span class="parameter" id="param-gravity"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">gravity</span>, </span></li>
+<li><span class="parameter" id="param-emissionFrequency"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">emissionFrequency</span>, </span></li>
+<li><span class="parameter" id="param-entranceCurve"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/animation/Curve-class.html">Curve</a>?</span> <span class="parameter-name">entranceCurve</span>, </span></li>
+<li><span class="parameter" id="param-trophyIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">trophyIcon</span>, </span></li>
+<li><span class="parameter" id="param-trophyDecoration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/BoxDecoration-class.html">BoxDecoration</a>?</span> <span class="parameter-name">trophyDecoration</span>, </span></li>
+<li><span class="parameter" id="param-ringsDiameter"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">ringsDiameter</span>, </span></li>
+<li><span class="parameter" id="param-ringsStrokeWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">ringsStrokeWidth</span>, </span></li>
+<li><span class="parameter" id="param-ringsTrackColorKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">ringsTrackColorKey</span>, </span></li>
+<li><span class="parameter" id="param-ringsProgressColorKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">ringsProgressColorKey</span>, </span></li>
+</ol>})
+    </section>
+    
+<section class="desc markdown">
+  <p>Crée une recette de célébration partielle ou complète.</p>
+<p>Les bornes ci-dessous reprennent celles que <code>confetti</code> assertionne en
+interne (durée strictement positive, particules &gt; 0, gravité et
+fréquence dans <code>[0, 1]</code>). Sans elles, une valeur invalide traverserait
+cette API publique sans bruit et n'échouerait qu'au fond du paquet
+tiers, avec un message sans rapport avec le préréglage fautif. Échouer
+ici nomme le vrai coupable — et <code>null</code> reste toujours licite : il
+signifie « garde le défaut historique ».</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">const ZCelebrationSpec({
+  this.burstDuration,
+  this.numberOfParticles,
+  this.gravity,
+  this.emissionFrequency,
+  this.entranceCurve,
+  this.trophyIcon,
+  this.trophyDecoration,
+  this.ringsDiameter,
+  this.ringsStrokeWidth,
+  this.ringsTrackColorKey,
+  this.ringsProgressColorKey,
+}) : &#47;&#47; `burstDuration` n&#39;est pas vérifiée ici : comparer deux `Duration`
+     &#47;&#47; n&#39;est pas évaluable dans un `assert` de constructeur `const`
+     &#47;&#47; (opérateur non constant) — l&#39;y mettre casserait la compilation de
+     &#47;&#47; tout appelant const. Sa validation vit donc au point de
+     &#47;&#47; consommation, dans `_ConfettiBurst`.
+     assert(
+       numberOfParticles == null || numberOfParticles &gt; 0,
+       &#39;numberOfParticles doit être &gt; 0 ; utiliser `null` pour le défaut.&#39;,
+     ),
+     assert(
+       gravity == null || (gravity &gt;= 0 &amp;&amp; gravity &lt;= 1),
+       &#39;gravity doit appartenir à [0, 1] ; utiliser `null` pour le défaut.&#39;,
+     ),
+     assert(
+       emissionFrequency == null ||
+           (emissionFrequency &gt;= 0 &amp;&amp; emissionFrequency &lt;= 1),
+       &#39;emissionFrequency doit appartenir à [0, 1] ; `null` pour le défaut.&#39;,
+     ),
+     assert(
+       ringsDiameter == null || ringsDiameter &gt; 0,
+       &#39;ringsDiameter doit être &gt; 0 ; utiliser `null` pour le défaut.&#39;,
+     ),
+     assert(
+       ringsStrokeWidth == null || ringsStrokeWidth &gt; 0,
+       &#39;ringsStrokeWidth doit être &gt; 0 ; utiliser `null` pour le défaut.&#39;,
+     );</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_session</a></li>
+    <li><a href="../../zcrud_session/">zcrud_session</a></li>
+    <li><a href="../../zcrud_session/ZCelebrationSpec-class.html">ZCelebrationSpec</a></li>
+    <li class="self-crumb">ZCelebrationSpec.new const constructor</li>
+</ol>
+
+    <h5>ZCelebrationSpec class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_session
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

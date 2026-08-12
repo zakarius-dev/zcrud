@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the normalizeNoteContentOps function from the zcrud_note library, for the Dart programming language.">
+  <title>normalizeNoteContentOps function - zcrud_note library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_note</a></li>
+    <li><a href="../zcrud_note/">zcrud_note.dart</a></li>
+    <li class="self-crumb">normalizeNoteContentOps function</li>
+  </ol>
+  <div class="self-name">normalizeNoteContentOps</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_note&#47;zcrud_note-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">normalizeNoteContentOps</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>&gt;</span></span>
+<span class="name ">normalizeNoteContentOps</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="normalizeNoteContentOps-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span></li>
+</ol>)
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Coerce <code>raw</code> (valeur <strong>persistée</strong>, de type quelconque) en <strong>ops Delta
+neutres</strong> — <strong>totale</strong>, <strong>déterministe</strong>, <strong>ne throw JAMAIS</strong> (AD-10).</p>
+<table>
+<thead>
+<tr>
+<th>Entrée persistée</th>
+<th>Résultat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>absente / <code>null</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>List</code> d'ops valides (chaque élément = <code>Map</code> portant <code>insert</code>)</td>
+<td><strong>ops verbatim</strong> (clés coercées en <code>String</code>) — embeds opaques (LaTeX/tables) <strong>préservés</strong></td>
+</tr>
+<tr>
+<td><code>List</code> <strong>PARTIELLEMENT</strong> valide (<code>[{insert: …}, {retain: 1}]</code>, <code>[{insert: …}, null]</code>)</td>
+<td><strong>les ops portant <code>insert</code> SURVIVENT</strong> ; l'élément parasite est <strong>écarté</strong>. <strong>JAMAIS <code>[]</code></strong></td>
+</tr>
+<tr>
+<td><code>List</code> portant une <code>String</code> (fragment texte)</td>
+<td>l'élément devient <code>{'insert': '&lt;txt&gt;\n'}</code> — <strong>le texte SURVIT</strong></td>
+</tr>
+<tr>
+<td><code>String</code> qui <strong>parse</strong> en JSON <code>List</code> d'ops <strong>TOUTES</strong> valides</td>
+<td>ops décodées (compat <code>ZDeltaCodec.encode</code> / corpus Delta un consommateur legacy)</td>
+</tr>
+<tr>
+<td><code>String</code> <strong>non-Delta</strong> non vide (markdown lex, sticky-note un consommateur legacy, texte plat, <code>'[1,2]'</code>, <code>'{}'</code>)</td>
+<td><strong><code>[{'insert': '&lt;raw&gt;\n'}]</code> — le texte SURVIT VERBATIM</strong></td>
+</tr>
+<tr>
+<td><code>String</code> vide / blanche</td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>List</code> <strong>sans aucun contenu</strong> (<code>[]</code>, <code>[1, 2]</code>, <code>[{retain: 1}]</code>)</td>
+<td><code>[]</code> — il n'y a <strong>rien</strong> à préserver (aucun <code>insert</code>, aucun texte)</td>
+</tr>
+<tr>
+<td><code>int</code>, <code>bool</code>, <code>Map</code> nue</td>
+<td><code>[]</code> (défensif : aucune interprétation possible)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Invariant</strong> : <strong>aucune</strong> entrée portant du <strong>contenu</strong> (un <code>insert</code>, ou du
+texte) ne rend <code>[]</code>. C'est la règle, et elle vaut désormais sur <strong>les
+deux</strong> branches (<code>String</code> <strong>et</strong> <code>List</code>) — la v1 ne la tenait que sur <code>String</code>
+().</p>
+<p>Le résultat est <strong>non modifiable</strong> (cohérence de contrat : une note vide et une
+note pleine ont le <strong>même</strong> contrat — <strong>L1</strong>).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">List&lt;Map&lt;String, dynamic&gt;&gt; normalizeNoteContentOps(Object? raw) {
+  if (raw == null) return kEmptyNoteContent;
+
+  if (raw is List) {
+    &#47;&#47; branche PRÉSERVANTE : on sauve TOUT ce qui est sauvable.
+    &#47;&#47; Une op parasite (`retain`&#47;`delete`, `null`, scalaire) est ÉCARTÉE ; elle
+    &#47;&#47; n&#39;emporte PLUS le corps de la note avec elle.
+    return _freeze(_coerceOpsPreserving(raw));
+  }
+
+  if (raw is String) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return kEmptyNoteContent;
+
+    &#47;&#47; Détection STRUCTURELLE du Delta : on tente le décodage JSON et on exige la
+    &#47;&#47; FORME (`List` d&#39;ops portant `insert`). Aucun examen textuel du contenu.
+    &#47;&#47;
+    &#47;&#47; ICI la validation DOIT être STRICTE (tout-ou-rien) : elle ne « valide »
+    &#47;&#47; pas une donnée, elle DÉCIDE d&#39;une NATURE (« ce JSON est-il un Delta ? »).
+    &#47;&#47; Une tolérance rendrait `&#39;[1,2]&#39;` « Delta (vide) » ⇒ le TEXTE `&#39;[1,2]&#39;`
+    &#47;&#47; serait DÉTRUIT. Le doute profite au TEXTE, jamais au vide.
+    Object? decoded;
+    try {
+      decoded = jsonDecode(trimmed);
+    } on FormatException {
+      decoded = null; &#47;&#47; Pas du JSON ⇒ c&#39;est du texte (voir plus bas).
+    }
+    if (decoded is List) {
+      &#47;&#47; `null` ⇒ ce n&#39;est PAS un Delta (donc du texte). Une liste vide (`&#39;[]&#39;`)
+      &#47;&#47; EST un Delta — vide : elle ne porte AUCUN contenu, rien n&#39;est détruit.
+      final ops = _deltaOpsStrict(decoded);
+      if (ops != null) return _freeze(ops);
+    }
+
+    &#47;&#47; LE POINT LE PLUS IMPORTANT DU PACKAGE : ce n&#39;est pas du Delta, donc
+    &#47;&#47; c&#39;est du TEXTE. On le PRÉSERVE VERBATIM. Retomber sur `[]` ici (le repli de
+    &#47;&#47; `DeltaNeutralOps`) effacerait le corps de toute note markdown lex au premier
+    &#47;&#47; `put`. Le rendu RICHE du markdown (markdown → Delta formaté) reste le travail
+    &#47;&#47; EXPLICITE — jamais une devinette faite ici.
+    return _freeze(&lt;Map&lt;String, dynamic&gt;&gt;[_textOp(raw)]);
+  }
+
+  &#47;&#47; `int`, `bool`, `Map`, … : aucune interprétation possible ⇒ défaut sûr.
+  return kEmptyNoteContent;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_note</a></li>
+    <li><a href="../zcrud_note/">zcrud_note</a></li>
+    <li class="self-crumb">normalizeNoteContentOps function</li>
+</ol>
+
+    <h5>zcrud_note library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_note
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

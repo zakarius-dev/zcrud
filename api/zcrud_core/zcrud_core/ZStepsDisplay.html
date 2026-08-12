@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZStepsDisplay enum from the zcrud_core library, for the Dart programming language.">
+  <title>ZStepsDisplay enum - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZStepsDisplay enum</li>
+  </ol>
+  <div class="self-name">ZStepsDisplay</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZStepsDisplay-enum-sidebar.html">
+    <div>
+
+      <h1>
+        <span class="kind-enum">ZStepsDisplay</span>
+        enum 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p><strong>Forme d'affichage des étapes.</strong></p>
+<p>Le besoin est à <strong>TROIS</strong> états, alors que <a href="../zcrud_core/ZStepperConfig/showAllSteps.html">ZStepperConfig.showAllSteps</a> est
+un booléen — il ne peut en porter que deux. Cette énumération les nomme :</p>
+<table>
+<thead>
+<tr>
+<th>Valeur</th>
+<th>En-têtes des autres étapes</th>
+<th>Contenu monté</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../zcrud_core/ZStepsDisplay.html">paged</a></td>
+<td><strong>absents</strong> (compteur « k/N »)</td>
+<td>l'étape courante seule</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZStepsDisplay.html">allExpanded</a></td>
+<td>tous, en rail</td>
+<td><strong>toutes</strong> les étapes</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZStepsDisplay.html">accordion</a></td>
+<td><strong>tous</strong>, en rail, <strong>tapables</strong></td>
+<td>l'étape active seule</td>
+</tr>
+</tbody>
+</table>
+<p><a href="../zcrud_core/ZStepsDisplay.html">accordion</a> reproduit le rendu <code>Stepper(type: vertical)</code> de Material.</p>
+<p><strong>Une énumération, et NON un patron <code>String</code>.</strong> Un jeton typé par une
+<code>String</code> se justifierait si le type cible vivait dans un satellite (que
+l'invariant AD-1 interdit d'importer ici). Ici, rien de tel : les trois
+enums voisines (<a href="../zcrud_core/ZStepOrientation.html">ZStepOrientation</a>, <a href="../zcrud_core/ZStepStyle.html">ZStepStyle</a>, <a href="../zcrud_core/ZStepIndicatorPosition.html">ZStepIndicatorPosition</a>)
+vivent déjà dans CE fichier, dans CE paquet. Reprendre le <code>String</code>
+reviendrait à payer la perte d'exhaustivité du <code>switch</code> (le compilateur
+cesse de signaler un mode non traité) pour contourner une contrainte qui
+ne s'applique pas.</p>
+</section>
+
+
+      <section>
+        <dl class="dl-horizontal">
+          
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark eNum-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://api.flutter.dev/flutter/dart-core/Enum-class.html">Enum</a></li>
+      <li>ZStepsDisplay</li>
+    </ul>
+  </dd>
+
+          
+          
+          
+  <dt>Available extensions</dt>
+  <dd><ul class="comma-separated clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/EnumName.html">EnumName</a></li>
+  </ul></dd>
+          
+
+
+        </dl>
+      </section>
+
+      <section class="summary offset-anchor" id="values">
+        <h2>Values</h2>
+        <dl class="properties">
+            <dt id="paged" class="constant">
+    <span class="name ">paged</span>
+  <span class="signature">&#8594; const <a href="../zcrud_core/ZStepsDisplay.html">ZStepsDisplay</a></span>
+  
+
+</dt>
+<dd>
+  <p>Assistant <strong>paginé</strong> : une étape à la fois, en-têtes des autres absents.
+C'est le défaut de <a href="../zcrud_core/ZStepperConfig-class.html">ZStepperConfig</a>.</p>
+  
+
+</dd>
+
+            <dt id="allExpanded" class="constant">
+    <span class="name ">allExpanded</span>
+  <span class="signature">&#8594; const <a href="../zcrud_core/ZStepsDisplay.html">ZStepsDisplay</a></span>
+  
+
+</dt>
+<dd>
+  <p><strong>Tout affiché</strong> : toutes les étapes dépliées simultanément, rail numéroté.
+Équivalent de <code>showAllSteps: true</code>.</p>
+<h2 id="canaux-inertes-dans-cette-forme">Canaux INERTES dans cette forme</h2>
+<p><a href="../zcrud_core/ZStepperConfig/indicatorPosition.html">ZStepperConfig.indicatorPosition</a>, <a href="../zcrud_core/ZStepperConfig/orientation.html">ZStepperConfig.orientation</a>,
+<a href="../zcrud_core/ZStepperConfig/style.html">ZStepperConfig.style</a>, <a href="../zcrud_core/ZStepperConfig/allowStepTap.html">ZStepperConfig.allowStepTap</a>,
+<a href="../zcrud_core/ZStepperConfig/validateOnNext.html">ZStepperConfig.validateOnNext</a> et <a href="../zcrud_core/ZStepperConfig/stepSpacing.html">ZStepperConfig.stepSpacing</a> : le rail
+est toujours vertical, du côté début de lecture, à badges numérotés ; il
+n'y a ni étape courante, ni en-tête tapable, ni gate de navigation.</p>
+  
+
+</dd>
+
+            <dt id="accordion" class="constant">
+    <span class="name ">accordion</span>
+  <span class="signature">&#8594; const <a href="../zcrud_core/ZStepsDisplay.html">ZStepsDisplay</a></span>
+  
+
+</dt>
+<dd>
+  <p><strong>Accordéon Material</strong> : tous les en-têtes visibles dans le rail numéroté,
+<strong>une seule étape dépliée</strong> (l'active), en-têtes <strong>tapables</strong>.</p>
+<h2 id="matrice-dinertie--rgle--un-paramtre-est-honor-ou-son-inertie">Matrice d'inertie — règle : un paramètre est honoré, ou son inertie</h2>
+<p>est ÉCRITE.</p>
+<table>
+<thead>
+<tr>
+<th>Canal</th>
+<th><a href="../zcrud_core/ZStepsDisplay.html">allExpanded</a></th>
+<th><a href="../zcrud_core/ZStepsDisplay.html">accordion</a></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../zcrud_core/ZStepperConfig/allowStepTap.html">ZStepperConfig.allowStepTap</a></td>
+<td>inerte</td>
+<td><strong>HONORÉ</strong> — <code>false</code> ⇒ en-têtes non tapables (aucun <code>InkWell</code>, aucun rôle <code>button</code>)</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZStepperConfig/validateOnNext.html">ZStepperConfig.validateOnNext</a></td>
+<td>inerte (pas d'étape courante)</td>
+<td><strong>HONORÉ</strong> — même voie que le paginé (cf. <code>_accordionLayout</code>)</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZStepperConfig/indicatorPosition.html">ZStepperConfig.indicatorPosition</a></td>
+<td>inerte</td>
+<td><strong>inerte</strong> — le rail est toujours du côté début de lecture (le badge est le rail ; il n'y a pas de bande séparée à placer)</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZStepperConfig/orientation.html">ZStepperConfig.orientation</a></td>
+<td>inerte</td>
+<td><strong>inerte</strong> — un accordéon est vertical par construction</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZStepperConfig/style.html">ZStepperConfig.style</a></td>
+<td>inerte</td>
+<td><strong>inerte</strong> — le rail est à badges numérotés ; <code>dots</code>/<code>progressBar</code>/<code>icons</code> ne décrivent pas ce rendu</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZStepperConfig/stepSpacing.html">ZStepperConfig.stepSpacing</a></td>
+<td>inerte</td>
+<td><strong>inerte</strong> — l'écart entre étapes vient du jeton <code>ZcrudTheme.stepperAllStepsGap</code></td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZStepperConfig/showLabels.html">ZStepperConfig.showLabels</a> / <a href="../zcrud_core/ZStepperConfig/showSubtitles.html">ZStepperConfig.showSubtitles</a></td>
+<td>honorés</td>
+<td><strong>honorés</strong></td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZStepperConfig/indicatorSize.html">ZStepperConfig.indicatorSize</a></td>
+<td>honoré (diamètre du badge)</td>
+<td><strong>honoré</strong></td>
+</tr>
+<tr>
+<td>couleurs <code>active</code>/<code>completed</code>/<code>inactive</code>/<code>rail</code>/<code>badgeForeground</code></td>
+<td>honorées</td>
+<td><strong>honorées</strong> (<code>completed</code>/<code>inactive</code> n'y prennent leur sens qu'ici)</td>
+</tr>
+</tbody>
+</table>
+<p><a href="../zcrud_core/ZStepperConfig/errorColor.html">ZStepperConfig.errorColor</a> reste inerte dans les DEUX formes : aucune
+étape n'est peinte « en erreur » par le rail (l'erreur est révélée dans le
+champ, par <code>AutovalidateMode</code>).</p>
+  
+
+</dd>
+
+        </dl>
+      </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="index" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Enum/index.html">index</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A numeric identifier for the enumerated value.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="name" class="property">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/EnumName/name.html">name</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+      <p class="from-extension">
+        <span>Available on <a href="https://api.flutter.dev/flutter/dart-core/Enum-class.html">Enum</a>,
+        provided by the <a href="https://api.flutter.dev/flutter/dart-core/EnumName.html">EnumName</a> extension</span>
+      </p>
+  The name of the enum value.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  <section class="summary offset-anchor" id="constants">
+    <h2>Constants</h2>
+    <dl class="properties">
+        <dt id="values" class="constant">
+    <span class="name "><a href="../zcrud_core/ZStepsDisplay/values-constant.html">values</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZStepsDisplay.html">ZStepsDisplay</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  A constant List of the values in this enum, in order of their declaration.
+  
+
+</dd>
+
+    </dl>
+  </section>
+</div><!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZStepsDisplay enum</li>
+</ol>
+
+  <h5>zcrud_core library</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div>
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!-- /.sidebar-offcanvas -->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

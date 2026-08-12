@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the buildMap method from the ZGoogleMapAdapter class, for the Dart programming language.">
+  <title>buildMap method - ZGoogleMapAdapter class - google library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_geo</a></li>
+    <li><a href="../../adapters_google/">adapters&#47;google.dart</a></li>
+    <li><a href="../../adapters_google/ZGoogleMapAdapter-class.html">ZGoogleMapAdapter</a></li>
+    <li class="self-crumb">buildMap method</li>
+  </ol>
+  <div class="self-name">buildMap</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="adapters_google&#47;ZGoogleMapAdapter-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">buildMap</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>
+<span class="name ">buildMap</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="buildMap-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span></li>
+<li><span class="parameter" id="buildMap-param-center"><span class="type-annotation"><a href="../../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a>?</span> <span class="parameter-name">center</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-shape"><span class="type-annotation"><a href="../../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a>?</span> <span class="parameter-name">shape</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-circle"><span class="type-annotation"><a href="../../zcrud_geo/ZGeoCircle-class.html">ZGeoCircle</a>?</span> <span class="parameter-name">circle</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-onTap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a></span>&gt;</span>?</span> <span class="parameter-name">onTap</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-interactive"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">interactive</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-tileUrlTemplate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">tileUrlTemplate</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-tileUrlTemplates"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_geo/ZGeoMapType.html">ZGeoMapType</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">tileUrlTemplates</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-mapStyleJson"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">mapStyleJson</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-defaultZoom"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">defaultZoom</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-mapOptions"><span class="type-annotation"><a href="../../zcrud_geo/ZGeoMapOptions-class.html">ZGeoMapOptions</a>?</span> <span class="parameter-name">mapOptions</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-renderShapeAsPolyline"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">renderShapeAsPolyline</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-minZoom"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">minZoom</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-maxZoom"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">maxZoom</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-overlays"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_geo/ZGeoMapOverlay-class.html">ZGeoMapOverlay</a></span>&gt;</span>?</span> <span class="parameter-name">overlays</span>, </span></li>
+<li><span class="parameter" id="buildMap-param-onOverlayMarkerTap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">onOverlayMarkerTap</span>, </span></li>
+</ol>})
+
+      <div class="features"><span class="feature">override</span></div>
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Construit la surface carte.</p>
+<ul>
+<li><code>center</code> : point de centrage initial (si <code>null</code>, l'implémentation
+choisit un centre neutre par défaut) ;</li>
+<li><code>shape</code> : aire à surligner (sommets/polyligne) — optionnel ;</li>
+<li><code>circle</code> : cercle à surligner (centre + rayon mètres) — optionnel,
+défaut <code>null</code> → aucun cercle ;</li>
+<li><code>onTap</code> : remonté quand l'utilisateur tape la carte, en <strong>coordonnées
+neutres</strong> (<a href="../../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a>) — jamais un type SDK ;</li>
+<li><code>interactive</code> : <code>false</code> pour un aperçu non manipulable (lecture seule) ;</li>
+<li><code>tileUrlTemplate</code> : gabarit d'URL de tuiles <strong>surchargeable par-champ</strong>
+(honoré par l'adaptateur OSM ; ignoré par Google) — <code>null</code> → défaut de
+l'adaptateur ;</li>
+<li><code>tileUrlTemplates</code> : gabarits de tuiles <strong>par type de carte</strong> (honoré
+par l'adaptateur OSM pour rendre <code>mapOptions.mapType</code>
+satellite/hybride/terrain ; ignoré par Google qui a des types natifs) —
+<code>null</code> → défauts audités <code>ZGeoTileReference.defaults</code> ;</li>
+<li><code>mapStyleJson</code> : style de carte <strong>surchargeable par-champ</strong> (honoré
+par l'adaptateur Google ; ignoré par OSM) — <code>null</code> → défaut de
+l'adaptateur ;</li>
+<li><code>defaultZoom</code> : zoom initial <strong>surchargeable par-champ</strong> (honoré par
+les deux adaptateurs) — <code>null</code> → défaut de l'adaptateur ;</li>
+<li><code>mapOptions</code> : options de carte <strong>neutres</strong> pilotées par la barre
+d'outils d'éditeur (type de carte, trafic, bâtiments, gestes,
+contrôles…) — <code>null</code> (défaut) → comportement inchangé. Chaque
+adaptateur <strong>honore ce qu'il supporte, ignore le reste</strong> (même
+contrat que <code>tileUrlTemplate</code>/<code>mapStyleJson</code>) ;</li>
+<li><code>renderShapeAsPolyline</code> : quand <code>true</code>, <code>shape</code> est rendue en <strong>tracé
+ouvert</strong> (polyligne) et non en polygone fermé — aucun segment de
+fermeture, aucun remplissage. <code>false</code> (défaut) → rendu polygone
+inchangé. Signal <strong>neutre</strong>, même contrat honoré-si-supporté que
+<code>mapOptions</code> ;</li>
+<li><code>minZoom</code>/<code>maxZoom</code> : bornes de zoom <strong>surchargeables par-champ</strong>
+(honorées-si-supportées : OSM <code>MapOptions.minZoom/maxZoom</code>, Google
+<code>minMaxZoomPreference</code>) — <code>null</code> → défaut de l'adaptateur ;</li>
+<li><code>overlays</code> : <strong>couches de lecture multi-formes</strong> (base de
+<code>ZGeoMapView</code>) — chaque entrée (<a href="../../zcrud_geo/ZGeoMapOverlay-class.html">ZGeoMapOverlay</a>) porte une valeur
+neutre (point/cercle/forme) rendue en plus de <code>shape</code>/<code>circle</code>, avec
+son style porté par la valeur et un <strong>marqueur d'ancrage</strong>
+(centre/centroïde) identifié par <code>overlay.id</code>. <code>null</code>/vide (défaut) →
+rendu inchangé ;</li>
+<li><code>onOverlayMarkerTap</code> : tap sur le marqueur d'ancrage d'un overlay →
+remonte son <code>id</code> (la sélection passe par le <strong>tap marqueur</strong>, pas par
+le corps de la forme). <code>null</code> → marqueurs d'overlay non tappables.</li>
+</ul>
+<p><strong>Style de forme</strong> : le rendu honore le style porté par la <strong>valeur
+elle-même</strong> — <a href="../../zcrud_geo/ZGeoShape/style.html">ZGeoShape.style</a>, <a href="../../zcrud_geo/ZGeoCircle/style.html">ZGeoCircle.style</a> et <a href="../../zcrud_geo/ZGeoPoint/style.html">ZGeoPoint.style</a>
+— couleurs ARGB neutres → <code>Color</code> SDK confiné, épaisseur/visibilité,
+marqueur labellisé (<code>infoWindowTitle</code>/<code>iconAsset</code>/<code>iconColorArgb</code>) et
+géométrie d'icône (<code>iconSize</code>/<code>iconRotation</code>/<code>iconAnchor</code>), <strong>si
+l'adaptateur les supporte</strong>, avec repli sur le thème injecté quand une
+couleur est absente. <code>style == null</code> ⇒ rendu inchangé. Aucun paramètre
+supplémentaire : le style voyage avec la valeur.</p>
+<p>Retourne un <code>Widget</code> opaque : l'appelant ne voit aucun type carte.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+Widget buildMap(
+  BuildContext context, {
+  ZGeoPoint? center,
+  ZGeoShape? shape,
+  ZGeoCircle? circle,
+  ValueChanged&lt;ZGeoPoint&gt;? onTap,
+  bool interactive = true,
+  String? tileUrlTemplate, &#47;&#47; ignoré (spécifique OSM) — Google n&#39;a pas de tuiles URL
+  &#47;&#47; Ignoré aussi — Google rend satellite&#47;hybride&#47;terrain NATIVEMENT via
+  &#47;&#47; `mapOptions.mapType` (contrat honoré-si-supporté).
+  Map&lt;ZGeoMapType, String&gt;? tileUrlTemplates,
+  String? mapStyleJson,
+  double? defaultZoom,
+  ZGeoMapOptions? mapOptions,
+  bool renderShapeAsPolyline = false,
+  &#47;&#47; Bornes de zoom honorées via `minMaxZoomPreference`.
+  double? minZoom,
+  double? maxZoom,
+  &#47;&#47; Couches de lecture multi-formes + sélection par tap marqueur.
+  List&lt;ZGeoMapOverlay&gt;? overlays,
+  ValueChanged&lt;String&gt;? onOverlayMarkerTap,
+}) {
+  &#47;&#47; Surcharges par-champ : priment sur les défauts du constructeur.
+  final String? effectiveStyle = mapStyleJson ?? this.mapStyleJson;
+  final double effectiveZoom = defaultZoom ?? initialZoom;
+  &#47;&#47; Centre effectif : centre explicite, sinon centre du cercle (si valide),
+  &#47;&#47; sinon repli neutre. Aucun défaut « national » en dur (AD-12).
+  final ZGeoPoint c = center ??
+      (circle != null &amp;&amp; circle.isValid ? circle.center : fallbackCenter);
+
+  &#47;&#47; Le marqueur central honore le style porté par la valeur (point →
+  &#47;&#47; `center.style` ; cercle → `circle.style`). `style == null` → marqueur
+  &#47;&#47; d&#39;origine strictement inchangé (AD-4).
+  final Set&lt;Marker&gt; markers = &lt;Marker&gt;{
+    if (center != null)
+      _styledMarker(LatLng(center.lat, center.lng), center.style)
+    else if (circle != null &amp;&amp; circle.isValid)
+      _styledMarker(
+        LatLng(circle.center.lat, circle.center.lng),
+        circle.style,
+      ),
+  };
+
+  &#47;&#47; Style de forme neutre honoré (couleurs ARGB → `Color` confiné à ce
+  &#47;&#47; fichier, AD-1). Repli sur les défauts SDK d&#39;origine quand `style` est
+  &#47;&#47; `null` — mêmes valeurs qu&#39;un champ non stylé.
+  const Color sdkDefault = Color(0xFF000000); &#47;&#47; = Colors.black (défaut SDK)
+  final ZGeoShapeStyle? shapeStyle = shape?.style;
+  final Color fillColor = _argb(shapeStyle?.fillColorArgb) ?? sdkDefault;
+  final Color strokeColor = _argb(shapeStyle?.strokeColorArgb) ?? sdkDefault;
+  final int strokeWidth = shapeStyle?.strokeWidth ?? 10; &#47;&#47; défaut SDK = 10
+  final bool geodesic = shapeStyle?.geodesic ?? false;
+  final bool visible = shapeStyle?.visible ?? true;
+  final int zIndex = shapeStyle?.zIndex ?? 0;
+  final bool consumeTapEvents = shapeStyle?.consumeTapEvents ?? false;
+
+  final List&lt;LatLng&gt; shapePoints = &lt;LatLng&gt;[
+    if (shape != null)
+      for (final ZGeoPoint v in shape.vertices) LatLng(v.lat, v.lng),
+  ];
+
+  &#47;&#47; Trous intérieurs du polygone (≥3 sommets par trou honoré).
+  final List&lt;List&lt;LatLng&gt;&gt; holes = &lt;List&lt;LatLng&gt;&gt;[
+    if (shape?.holes != null)
+      for (final List&lt;ZGeoPoint&gt; hole in shape!.holes!)
+        if (hole.length &gt;= 3)
+          &lt;LatLng&gt;[for (final ZGeoPoint v in hole) LatLng(v.lat, v.lng)],
+  ];
+
+  &#47;&#47; Sommets DRAGGABLES natifs quand un handler est posé (`null` ⇒ aucun
+  &#47;&#47; marqueur de sommet — comportement antérieur strict, AD-4).
+  if (onVertexDragEnd != null) {
+    for (int i = 0; i &lt; shapePoints.length; i++) {
+      final int index = i;
+      markers.add(
+        Marker(
+          markerId: MarkerId(&#39;z-geo-vertex-$i&#39;),
+          position: shapePoints[i],
+          draggable: true,
+          zIndexInt: 2,
+          onDragEnd: (LatLng ll) {
+            final ZGeoPoint p = ZGeoPoint(lat: ll.latitude, lng: ll.longitude);
+            if (p.isValid) onVertexDragEnd?.call(index, p);
+          },
+        ),
+      );
+    }
+  }
+  &#47;&#47; Marqueur de déplacement au CENTROÏDE — fin de drag → delta appliqué
+  &#47;&#47; par le champ.
+  if (onShapeDragEnd != null &amp;&amp; shapePoints.isNotEmpty) {
+    final LatLng centroid = _centroid(shapePoints);
+    markers.add(
+      Marker(
+        markerId: const MarkerId(&#39;z-geo-move-handle&#39;),
+        position: centroid,
+        draggable: true,
+        zIndexInt: 3,
+        onDragEnd: (LatLng ll) =&gt; onShapeDragEnd?.call(
+          ll.latitude - centroid.latitude,
+          ll.longitude - centroid.longitude,
+        ),
+      ),
+    );
+  }
+  &#47;&#47; Poignée de rayon draggable sur le périmètre EST du cercle — fin de
+  &#47;&#47; drag → nouveau rayon = distance haversine centre→poignée.
+  if (onCircleRadiusDragEnd != null &amp;&amp; circle != null &amp;&amp; circle.isValid) {
+    final LatLng? edge = _circleEastEdge(circle);
+    if (edge != null) {
+      final ZGeoPoint circleCenter = circle.center;
+      markers.add(
+        Marker(
+          markerId: const MarkerId(&#39;z-geo-radius-handle&#39;),
+          position: edge,
+          draggable: true,
+          zIndexInt: 3,
+          onDragEnd: (LatLng ll) {
+            final double radius = circleCenter
+                .distanceMetersTo(ZGeoPoint(lat: ll.latitude, lng: ll.longitude));
+            if (radius.isFinite &amp;&amp; radius &gt; 0) {
+              onCircleRadiusDragEnd?.call(radius);
+            }
+          },
+        ),
+      );
+    }
+  }
+
+  &#47;&#47; Polygone FERMÉ (≥3 sommets) sauf si `renderShapeAsPolyline` (DP-21).
+  final Set&lt;Polygon&gt; polygons = &lt;Polygon&gt;{
+    if (shape != null &amp;&amp; !renderShapeAsPolyline &amp;&amp; shapePoints.length &gt;= 3)
+      Polygon(
+        polygonId: const PolygonId(&#39;z-geo-area&#39;),
+        points: shapePoints,
+        holes: holes,
+        fillColor: fillColor,
+        strokeColor: strokeColor,
+        strokeWidth: strokeWidth,
+        geodesic: geodesic,
+        visible: visible,
+        zIndex: zIndex,
+        consumeTapEvents: consumeTapEvents,
+      ),
+  };
+
+  &#47;&#47; Polyligne (tracé OUVERT, ≥2 sommets) quand demandé — pas de
+  &#47;&#47; remplissage, pas de segment de fermeture (honoré-si-supporté).
+  final Set&lt;Polyline&gt; polylines = &lt;Polyline&gt;{
+    if (shape != null &amp;&amp; renderShapeAsPolyline &amp;&amp; shapePoints.length &gt;= 2)
+      Polyline(
+        polylineId: const PolylineId(&#39;z-geo-polyline&#39;),
+        points: shapePoints,
+        color: strokeColor,
+        width: strokeWidth,
+        geodesic: geodesic,
+        visible: visible,
+        zIndex: zIndex,
+        consumeTapEvents: consumeTapEvents,
+      ),
+  };
+
+  &#47;&#47; Le cercle honore `circle.style` — chaque propriété absente retombe
+  &#47;&#47; EXACTEMENT sur le défaut SDK antérieur (style `null` ⇒ `Circle`
+  &#47;&#47; identique à un champ non stylé, AD-4). NB : les défauts SDK
+  &#47;&#47; (noir&#47;transparent) restent ceux du SDK ; la voie thémée passe par un
+  &#47;&#47; `style` posé sur la valeur.
+  final Set&lt;Circle&gt; circles = &lt;Circle&gt;{
+    if (circle != null &amp;&amp; circle.isValid)
+      Circle(
+        circleId: const CircleId(&#39;z-geo-circle&#39;),
+        center: LatLng(circle.center.lat, circle.center.lng),
+        radius: circle.radiusMeters,
+        fillColor:
+            _argb(circle.style?.fillColorArgb) ?? const Color(0x00000000),
+        strokeColor:
+            _argb(circle.style?.strokeColorArgb) ?? const Color(0xFF000000),
+        strokeWidth: circle.style?.strokeWidth ?? 10,
+        visible: circle.style?.visible ?? true,
+        zIndex: circle.style?.zIndex ?? 0,
+        consumeTapEvents: circle.style?.consumeTapEvents ?? false,
+      ),
+  };
+
+  &#47;&#47; Couches de lecture multi-formes (styles portés par les valeurs,
+  &#47;&#47; marqueur d&#39;ancrage tappable). Valeur inconnue&#47;invalide → ignorée (AD-10).
+  if (overlays != null) {
+    for (int i = 0; i &lt; overlays.length; i++) {
+      final ZGeoMapOverlay overlay = overlays[i];
+      final Object value = overlay.value;
+      if (value is ZGeoShape &amp;&amp; value.isNotEmpty) {
+        final ZGeoShapeStyle? style = value.style;
+        final List&lt;LatLng&gt; pts = &lt;LatLng&gt;[
+          for (final ZGeoPoint v in value.vertices) LatLng(v.lat, v.lng),
+        ];
+        if (overlay.renderAsPolyline &amp;&amp; pts.length &gt;= 2) {
+          polylines.add(Polyline(
+            polylineId: PolylineId(&#39;z-geo-overlay-line-${overlay.id}&#39;),
+            points: pts,
+            color: _argb(style?.strokeColorArgb) ?? sdkDefault,
+            width: style?.strokeWidth ?? 10,
+            visible: style?.visible ?? true,
+          ));
+        } else if (pts.length &gt;= 3) {
+          polygons.add(Polygon(
+            polygonId: PolygonId(&#39;z-geo-overlay-area-${overlay.id}&#39;),
+            points: pts,
+            holes: &lt;List&lt;LatLng&gt;&gt;[
+              if (value.holes != null)
+                for (final List&lt;ZGeoPoint&gt; hole in value.holes!)
+                  if (hole.length &gt;= 3)
+                    &lt;LatLng&gt;[
+                      for (final ZGeoPoint v in hole) LatLng(v.lat, v.lng),
+                    ],
+            ],
+            fillColor: _argb(style?.fillColorArgb) ?? sdkDefault,
+            strokeColor: _argb(style?.strokeColorArgb) ?? sdkDefault,
+            strokeWidth: style?.strokeWidth ?? 10,
+            visible: style?.visible ?? true,
+          ));
+        }
+        double latSum = 0, lngSum = 0;
+        for (final LatLng p in pts) {
+          latSum += p.latitude;
+          lngSum += p.longitude;
+        }
+        markers.add(_overlayMarker(
+          overlay.id,
+          LatLng(latSum &#47; pts.length, lngSum &#47; pts.length),
+          style,
+          onOverlayMarkerTap,
+        ));
+      } else if (value is ZGeoCircle &amp;&amp; value.isValid) {
+        circles.add(Circle(
+          circleId: CircleId(&#39;z-geo-overlay-circle-${overlay.id}&#39;),
+          center: LatLng(value.center.lat, value.center.lng),
+          radius: value.radiusMeters,
+          fillColor:
+              _argb(value.style?.fillColorArgb) ?? const Color(0x00000000),
+          strokeColor:
+              _argb(value.style?.strokeColorArgb) ?? const Color(0xFF000000),
+          strokeWidth: value.style?.strokeWidth ?? 10,
+          visible: value.style?.visible ?? true,
+        ));
+        markers.add(_overlayMarker(
+          overlay.id,
+          LatLng(value.center.lat, value.center.lng),
+          value.style,
+          onOverlayMarkerTap,
+        ));
+      } else if (value is ZGeoPoint &amp;&amp; value.isValid) {
+        markers.add(_overlayMarker(
+          overlay.id,
+          LatLng(value.lat, value.lng),
+          value.style,
+          onOverlayMarkerTap,
+        ));
+      }
+    }
+  }
+
+  &#47;&#47; DP-7 : options de carte neutres → traduites vers le SDK Google (honoré-si-
+  &#47;&#47; supporté). `null` → comportement inchangé (défauts du widget GoogleMap
+  &#47;&#47; préservés via `?? &lt;défaut widget&gt;`).
+  return GoogleMap(
+    mapType: _toGoogleMapType(mapOptions?.mapType),
+    trafficEnabled: mapOptions?.trafficEnabled ?? false,
+    buildingsEnabled: mapOptions?.buildingsEnabled ?? true,
+    indoorViewEnabled: mapOptions?.indoorViewEnabled ?? true,
+    compassEnabled: mapOptions?.compassEnabled ?? true,
+    zoomControlsEnabled: mapOptions?.zoomControlsEnabled ?? true,
+    mapToolbarEnabled: mapOptions?.mapToolbarEnabled ?? true,
+    &#47;&#47; Point bleu natif + bouton — opt-in (`false` par défaut : la
+    &#47;&#47; permission de localisation appartient à l&#39;app hôte, cf. ZGeoMapOptions).
+    myLocationEnabled: mapOptions?.myLocationEnabled ?? false,
+    myLocationButtonEnabled: mapOptions?.myLocationButtonEnabled ?? true,
+    &#47;&#47; Bornes de zoom surchargeables (`null`&#47;`null` → non bornées,
+    &#47;&#47; comportement antérieur strict).
+    minMaxZoomPreference: (minZoom == null &amp;&amp; maxZoom == null)
+        ? MinMaxZoomPreference.unbounded
+        : MinMaxZoomPreference(minZoom, maxZoom),
+    initialCameraPosition: CameraPosition(
+      target: LatLng(c.lat, c.lng),
+      zoom: effectiveZoom,
+    ),
+    style: effectiveStyle,
+    onMapCreated: (GoogleMapController controller) {
+      &#47;&#47; Idempotent : ne compléter qu&#39;une fois, et jamais après dispose.
+      if (_disposed) {
+        controller.dispose();
+        return;
+      }
+      if (!_controllerCompleter.isCompleted) {
+        _controllerCompleter.complete(controller);
+      }
+    },
+    onTap: onTap == null
+        ? null
+        : (LatLng ll) =&gt;
+            onTap(ZGeoPoint(lat: ll.latitude, lng: ll.longitude)),
+    markers: markers,
+    polygons: polygons,
+    polylines: polylines,
+    circles: circles,
+    &#47;&#47; `interactive: false` → aperçu non manipulable (lecture seule). Rotation&#47;
+    &#47;&#47; tilt sont en outre pilotables par la barre d&#39;outils : gardés à
+    &#47;&#47; `interactive` quand aucune option n&#39;est fournie (comportement inchangé),
+    &#47;&#47; sinon `interactive &amp;&amp; &lt;toggle&gt;`.
+    zoomGesturesEnabled: interactive,
+    scrollGesturesEnabled: interactive,
+    rotateGesturesEnabled:
+        interactive &amp;&amp; (mapOptions?.rotateGesturesEnabled ?? true),
+    tiltGesturesEnabled:
+        interactive &amp;&amp; (mapOptions?.tiltGesturesEnabled ?? true),
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_geo</a></li>
+    <li><a href="../../adapters_google/">google</a></li>
+    <li><a href="../../adapters_google/ZGoogleMapAdapter-class.html">ZGoogleMapAdapter</a></li>
+    <li class="self-crumb">buildMap method</li>
+</ol>
+
+    <h5>ZGoogleMapAdapter class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_geo
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

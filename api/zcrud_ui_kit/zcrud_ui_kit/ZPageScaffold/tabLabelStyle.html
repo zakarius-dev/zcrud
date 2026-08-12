@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the tabLabelStyle property from the ZPageScaffold class, for the Dart programming language.">
+  <title>tabLabelStyle property - ZPageScaffold class - zcrud_ui_kit library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_ui_kit</a></li>
+    <li><a href="../../zcrud_ui_kit/">zcrud_ui_kit.dart</a></li>
+    <li><a href="../../zcrud_ui_kit/ZPageScaffold-class.html">ZPageScaffold</a></li>
+    <li class="self-crumb">tabLabelStyle property</li>
+  </ol>
+  <div class="self-name">tabLabelStyle</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_ui_kit&#47;ZPageScaffold-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">tabLabelStyle</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?
+        <span class="name ">tabLabelStyle</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p>Typographie du libellé d'onglet <strong>SÉLECTIONNÉ</strong> —
+priorité <strong>paramètre &gt; jeton
+<code>ZcrudTheme.pageHeaderTabSelectedLabelStyle</code> &gt; défaut Material 3</strong>
+(<code>TextTheme.titleSmall</code>).</p>
+<p><strong>Métriques seules, couleur ignorée</strong> — et ce n'est pas un choix de
+style: <code>TabBar</code> dérive sa couleur de sélection de <code>labelStyle?.color</code>
+quand aucun <code>labelColor</code> n'est fourni. MESURÉ avec un style coloré des
+deux côtés: les onglets sélectionné et non sélectionné rendent la MÊME
+couleur — le canal chromatique de la sélection disparaît. Le poids doit
+AJOUTER un canal de distinction, jamais en retirer un (AD-13: la couleur
+n'est pas le seul canal, mais elle reste UN canal).</p>
+<p>Réglé SEUL, ce paramètre ne touche que l'onglet sélectionné: la
+retombée <code>unselectedLabelStyle ?? labelStyle</code> du SDK est explicitement
+neutralisée (sans quoi tous les onglets adopteraient le style
+« sélectionné » — mesuré).</p>
+<p><strong>Un libellé plus GRAND n'agrandit pas la bande d'onglets</strong> (mesuré:
+<code>TabBar.preferredSize.height</code> reste 48 dp, la tuile <code>Tab</code> 46 dp, pour
+<code>fontSize</code> 14, 18 <strong>et</strong> 24). La cible tactile reste donc ≥ 48 dp, mais
+au-delà d'une vingtaine de dp le glyphe est rogné verticalement par le
+SDK. Le <strong>poids</strong> n'a pas cet effet: il ne change pas la hauteur de ligne.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final TextStyle? tabLabelStyle;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_ui_kit</a></li>
+    <li><a href="../../zcrud_ui_kit/">zcrud_ui_kit</a></li>
+    <li><a href="../../zcrud_ui_kit/ZPageScaffold-class.html">ZPageScaffold</a></li>
+    <li class="self-crumb">tabLabelStyle property</li>
+</ol>
+
+  <h5>ZPageScaffold class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_ui_kit
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

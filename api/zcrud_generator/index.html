@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_generator API docs, for the Dart programming language.">
+  <title>zcrud_generator - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_generator package</a></li>
+  </ol>
+  <div class="self-name">zcrud_generator</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_generator">zcrud_generator</h1>
+<p>Générateur <code>build_runner</code> du moteur codegen zcrud — lit <code>@ZcrudModel</code>
+statiquement et émet la (dé)sérialisation, le <code>ZFieldSpec[]</code> et
+l'enregistrement au registre (invariant AD-3).</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_generator</code> est le seul point de la chaîne où les modèles annotés par
+<code>zcrud_annotations</code> (<code>@ZcrudModel</code>, <code>@ZcrudField</code>, <code>@ZcrudId</code>) sont <strong>lus</strong>.
+Il produit, dans le <code>part '&lt;file&gt;.g.dart'</code> de chaque bibliothèque, quatre
+artefacts :</p>
+<ol>
+<li><code>_$XxxFromMap</code> — reconstruction défensive du modèle depuis une
+<code>Map&lt;String, dynamic&gt;</code> ;</li>
+<li>l'extension <code>XxxZcrud</code> — <code>toMap()</code> (snake_case, enum <code>.name</code> camelCase,
+dates ISO-8601) et <code>copyWith()</code> à sentinelle ;</li>
+<li><code>$XxxFieldSpecs</code> — le <code>List&lt;ZFieldSpec&gt;</code> projeté 1:1 des <code>@ZcrudField</code>,
+avec inférence de type quand <code>type</code> n'est pas explicite ;</li>
+<li><code>registerXxx(ZcrudRegistry)</code> — le câblage <code>kind → (fromMap, toMap, fieldSpecs)</code>.</li>
+</ol>
+<p>La toolchain codegen (<code>build</code>, <code>source_gen</code>, <code>analyzer</code>) est confinée à ce
+paquet, en <code>dev_dependency</code> (invariant AD-1) : elle ne fuit jamais dans le
+build d'une application consommatrice.</p>
+<p><strong>Utilisez ce paquet</strong> en <code>dev_dependency</code>, dès qu'un modèle de votre
+application porte <code>@ZcrudModel</code>. <strong>N'utilisez pas ce paquet</strong> en
+<code>dependency</code> (runtime) : il n'a rien à offrir hors du <code>build_runner</code>, et
+tirerait <code>analyzer</code>/<code>build</code> dans votre application.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>. Déclarez-le en <code>dev_dependency</code>, aux côtés de
+<code>build_runner</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-yaml"><code class="language-yaml"># pubspec.yaml
+dev_dependencies:
+  build_runner: ^2.5.0
+  zcrud_generator: ^0.1.0
+</code></pre>
+<pre class="language-bash"><code class="language-bash"># Régénère les compagnons *.g.dart :
+dart run build_runner build --delete-conflicting-outputs
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Le modèle est la source unique de vérité (invariant <a href="../../docs/site/concepts/invariants.md#ad-3">AD-3</a>)</strong> —
+<code>zcrud_generator</code> ne fait que <strong>projeter</strong> ce que <code>@ZcrudModel</code>/<code>@ZcrudField</code>
+déclarent ; il n'invente aucune règle de schéma. Un type de champ non
+(dé)sérialisable (ni scalaire, ni enum, ni <code>@ZcrudModel</code> annoté) est un
+<strong>échec de build explicite</strong> (<code>InvalidGenerationSourceError</code>), jamais un
+cast silencieux.</li>
+<li><strong>Désérialisation défensive (invariant <a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>)</strong> —
+<code>_$XxxFromMap</code> ne jette jamais : champ absent → <code>defaultValue</code>/valeur sûre,
+enum inconnu → repli (jamais <code>byName</code> nu), sous-objet corrompu → <code>null</code>
+filtrable, sans jamais faire échouer le parent.</li>
+<li><strong><code>persistAs: ZPersistAs.timestamp</code> et l'artefact neutre</strong> — un champ date
+hinté fait collecter sa clé persistée dans <code>$XxxTimestampFields</code>
+(<code>Set&lt;String&gt;</code> pur-Dart) ; c'est <code>zcrud_firestore</code>, seul, qui traduit cette
+métadonnée en <code>Timestamp</code> natif (invariant <a href="../../docs/site/concepts/invariants.md#ad-5">AD-5</a>).</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>zcrudModelBuilder</code> (<code>builder.dart</code>)</td>
+<td>Fabrique de <code>Builder</code> référencée par <code>build.yaml</code> — point d'entrée <code>build_runner</code>.</td>
+</tr>
+<tr>
+<td><code>ZGeneratorApi</code></td>
+<td>Marqueur de version de l'API publique du paquet.</td>
+</tr>
+</tbody>
+</table>
+<p>L'implémentation du générateur (<code>ZcrudModelGenerator</code>, sous <code>lib/src/</code>) n'est
+pas destinée à un import direct : le point d'entrée public est
+<code>package:zcrud_generator/builder.dart</code>, câblé par <code>build.yaml</code>.</p>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<h3 id="contrat-obligatoire--un-dcodeur-de-domaine-frommap">Contrat obligatoire — un décodeur de domaine <code>fromMap</code></h3>
+<p>Toute classe <code>@ZcrudModel</code> <strong>doit</strong> déclarer
+<code>Xxx.fromMap(Map&lt;String, dynamic&gt; map)</code> — factory ou méthode statique, avec
+autant de paramètres optionnels supplémentaires que nécessaire. C'est ce
+décodeur que le registrar généré câble (<code>fromMap: Xxx.fromMap</code>), <strong>jamais</strong>
+<code>_$XxxFromMap</code>. Son absence est un <strong>échec de build</strong>, jamais un repli
+silencieux :</p>
+<pre class="language-dart"><code class="language-dart">@ZcrudModel(kind: 'article')
+class Article {
+  // Factory OU méthode statique ; des paramètres optionnels supplémentaires
+  // sont autorisés.
+  factory Article.fromMap(Map&lt;String, dynamic&gt; map) =&gt; _$ArticleFromMap(map);
+  // ...
+}
+</code></pre>
+<p><strong>Si la classe est <code>ZExtensible</code></strong> (elle porte un slot <code>extra</code>, invariant
+<a href="../../docs/site/concepts/invariants.md#ad-4">AD-4</a>), cette délégation nue
+est <strong>rejetée au build</strong>. <code>_$XxxFromMap</code> ne connaît que les champs
+<code>@ZcrudField</code> et laisse <code>extra</code> <strong>vide</strong> — un store câblé sur
+<code>registry.decode</code> effacerait alors toute clé métier hors schéma, à chaque
+cycle lecture → écriture, irréversiblement. La factory doit peupler <code>extra</code>,
+et le <code>toMap()</code> d'instance doit le réémettre (le <code>toMap()</code> <strong>généré</strong> n'étale
+pas <code>extra</code>) :</p>
+<pre class="language-dart"><code class="language-dart">@ZcrudModel(kind: 'flashcard')
+class ZFlashcard with ZExtensible {
+  factory ZFlashcard.fromMap(Map&lt;String, dynamic&gt; map) {
+    final base = _$ZFlashcardFromMap(map); // champs du schéma
+    return ZFlashcard(/* …champs recopiés depuis `base`… */,
+        extra: _extraFrom(map)); // clés hors schéma
+  }
+
+  /// Masque le `toMap()` généré, qui n'étale pas `extra`.
+  Map&lt;String, dynamic&gt; toMap() =&gt; {...extra, ...ZFlashcardZcrud(this).toMap()};
+
+  static final Set&lt;String&gt; _reservedKeys = &lt;String&gt;{
+    for (final spec in $ZFlashcardFieldSpecs) spec.name,
+    ...ZSyncMeta.reservedKeys,
+  };
+
+  static Map&lt;String, dynamic&gt; _extraFrom(Map&lt;String, dynamic&gt; map) =&gt;
+      Map&lt;String, dynamic&gt;.unmodifiable({
+        for (final e in map.entries)
+          if (!_reservedKeys.contains(e.key)) e.key: e.value,
+      });
+}
+</code></pre>
+<p>Le <code>registerZFlashcard</code> émis porte en plus un <strong>garde exécutoire</strong> : il
+décode une sonde portant une clé hors schéma et exige qu'elle survive au
+round-trip complet (<code>fromMap</code> <strong>et</strong> <code>toMap</code>), levant un <code>StateError</code>
+explicite sinon. Ce garde n'est <strong>pas</strong> sous <code>assert</code> — il tient en release,
+là où la perte serait définitive, et c'est le seul filet qui suive un paquet
+publié chez un consommateur externe.</p>
+<h3 id="autres-cas-limites">Autres cas limites</h3>
+<ul>
+<li><strong>Collision de clé persistée</strong> — deux champs qui se résolvent à la même
+clé (après renommage) sont un échec de build ; désambiguïser via
+<code>@ZcrudField(name:)</code>.</li>
+<li><strong>Renommage de champ (<code>fieldRename</code>)</strong> — <code>snake</code> (défaut, persistance
+snake_case), <code>none</code>, <code>kebab</code>, <code>pascal</code> ; un <code>@ZcrudField.name</code> explicite
+prime toujours sur la stratégie de classe.</li>
+<li><strong><code>copyWith</code> à sentinelle</strong> — un paramètre omis préserve la valeur
+courante ; <code>null</code> explicite la remet à <code>null</code> (distinction reset vs. non
+fourni).</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_generator.md"><code>docs/site/paquets/zcrud_generator.md</code></a></li>
+<li><code>zcrud_annotations</code> — les annotations lues par ce générateur.</li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="builder">
+  <span class="name"><a href="builder/">builder</a></span> 
+
+</dt>
+<dd>Fabrique de <code>Builder</code> <code>build_runner</code> de <code>zcrud_generator</code> (invariant AD-3).
+</dd>
+
+          <dt id="zcrud_generator">
+  <span class="name"><a href="zcrud_generator/">zcrud_generator</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_generator</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_generator package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_generator</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="builder/">builder</a></li>
+      <li><a href="zcrud_generator/">zcrud_generator</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_generator
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

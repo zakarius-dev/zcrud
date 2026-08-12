@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zcrudGeolocatorResolver function from the zcrud_geo_location library, for the Dart programming language.">
+  <title>zcrudGeolocatorResolver function - zcrud_geo_location library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_geo_location</a></li>
+    <li><a href="../zcrud_geo_location/">zcrud_geo_location.dart</a></li>
+    <li class="self-crumb">zcrudGeolocatorResolver function</li>
+  </ol>
+  <div class="self-name">zcrudGeolocatorResolver</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_geo_location&#47;zcrud_geo_location-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zcrudGeolocatorResolver</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype">ZGeoLocationResolver</span>
+<span class="name ">zcrudGeolocatorResolver</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="zcrudGeolocatorResolver-param-onFailure"><span class="type-annotation"><a href="../zcrud_geo_location/ZGeoLocationFailureListener.html">ZGeoLocationFailureListener</a>?</span> <span class="parameter-name">onFailure</span>, </span></li>
+<li><span class="parameter" id="zcrudGeolocatorResolver-param-gateway"><span class="type-annotation"><a href="../zcrud_geo_location/ZGeoLocationGateway-class.html">ZGeoLocationGateway</a>?</span> <span class="parameter-name">gateway</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Construit un <code>ZGeoLocationResolver</code> adossé à <code>geolocator</code>.</p>
+<ul>
+<li><code>onFailure</code> : notifié de la <a href="../zcrud_geo_location/ZGeoLocationFailureCause.html">ZGeoLocationFailureCause</a> (au plus une par
+appel) juste avant que le resolver rende <code>null</code>. Jamais appelé en
+succès. Un throw dans ce callback est avalé (invariant AD-10).</li>
+<li><code>gateway</code> : couche plugin injectable — un faux en test, la passerelle
+<code>geolocator</code> réelle par défaut (le plugin ne tourne pas en test widget).</li>
+</ul>
+<p>Cycle de résolution :</p>
+<ol>
+<li>service désactivé → cause <a href="../zcrud_geo_location/ZGeoLocationFailureCause.html">ZGeoLocationFailureCause.serviceDisabled</a> ;</li>
+<li>permission <code>denied</code> → une redemande ; encore <code>denied</code> → cause
+<a href="../zcrud_geo_location/ZGeoLocationFailureCause.html">ZGeoLocationFailureCause.permissionDenied</a> ;</li>
+<li><code>deniedForever</code> (au contrôle — sans redemande — ou après la redemande)
+→ cause <a href="../zcrud_geo_location/ZGeoLocationFailureCause.html">ZGeoLocationFailureCause.permissionDeniedForever</a> ;</li>
+<li>lecture en précision haute (10 s max) ; throw ou position hors-bornes →
+cause <a href="../zcrud_geo_location/ZGeoLocationFailureCause.html">ZGeoLocationFailureCause.error</a> ;</li>
+<li>succès → <code>ZGeoPoint</code>.</li>
+</ol>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZGeoLocationResolver zcrudGeolocatorResolver({
+  ZGeoLocationFailureListener? onFailure,
+  ZGeoLocationGateway? gateway,
+}) {
+  final ZGeoLocationGateway effective = gateway ?? const GeolocatorGateway();
+
+  void notify(ZGeoLocationFailureCause cause) {
+    try {
+      onFailure?.call(cause);
+    } catch (_) {
+      &#47;&#47; AD-10 : un listener hôte défaillant ne fait jamais throw le resolver.
+    }
+  }
+
+  return () async {
+    try {
+      if (!await effective.isServiceEnabled()) {
+        notify(ZGeoLocationFailureCause.serviceDisabled);
+        return null;
+      }
+
+      var permission = await effective.checkPermission();
+      if (permission == ZGeoLocationPermission.denied) {
+        &#47;&#47; Une SEULE redemande.
+        permission = await effective.requestPermission();
+        if (permission == ZGeoLocationPermission.denied) {
+          notify(ZGeoLocationFailureCause.permissionDenied);
+          return null;
+        }
+      }
+      if (permission == ZGeoLocationPermission.deniedForever) {
+        notify(ZGeoLocationFailureCause.permissionDeniedForever);
+        return null;
+      }
+
+      final point = await effective.currentPosition();
+      if (!point.isValid) {
+        &#47;&#47; Position non finie &#47; hors-bornes : jamais réinjectée dans le champ.
+        notify(ZGeoLocationFailureCause.error);
+        return null;
+      }
+      return point;
+    } catch (_) {
+      &#47;&#47; AD-10 : tout throw (plugin, canal natif, timeout) est confiné en
+      &#47;&#47; échec propre.
+      notify(ZGeoLocationFailureCause.error);
+      return null;
+    }
+  };
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_geo_location</a></li>
+    <li><a href="../zcrud_geo_location/">zcrud_geo_location</a></li>
+    <li class="self-crumb">zcrudGeolocatorResolver function</li>
+</ol>
+
+    <h5>zcrud_geo_location library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_geo_location
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

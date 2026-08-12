@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZReorderableAdaptiveGrid class from the zcrud_responsive library, for the Dart programming language.">
+  <title>ZReorderableAdaptiveGrid class - zcrud_responsive library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_responsive</a></li>
+    <li><a href="../zcrud_responsive/">zcrud_responsive.dart</a></li>
+    <li class="self-crumb">ZReorderableAdaptiveGrid class</li>
+  </ol>
+  <div class="self-name">ZReorderableAdaptiveGrid</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_responsive&#47;zcrud_responsive-library-sidebar.html"
+    data-below-sidebar="zcrud_responsive&#47;ZReorderableAdaptiveGrid-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZReorderableAdaptiveGrid</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Grille <strong>adaptative RÉORDONNABLE</strong> — multi-colonnes ET drag-and-drop, sans
+aucun paquet tiers.</p>
+<h2 id="pourquoi-une-primitive-maison-ad-1">Pourquoi une primitive maison (AD-1)</h2>
+<p><code>ReorderableListView</code> (SDK) ne dispose <strong>pas</strong> en grille, et
+<code>reorderable_grid_view</code> (paquet tiers) est <strong>refusé par AD-1</strong>. Cette grille
+est donc bâtie <strong>uniquement</strong> sur le SDK: <a href="https://api.flutter.dev/flutter/widgets/LongPressDraggable-class.html">LongPressDraggable</a> +
+<a href="https://api.flutter.dev/flutter/widgets/DragTarget-class.html">DragTarget</a> pour le geste, <a href="https://api.flutter.dev/flutter/widgets/Scrollable-class.html">Scrollable</a> pour l'autoscroll.</p>
+<h2 id="ce-quelle-ne-rimplmente-pas">Ce qu'elle NE réimplémente PAS</h2>
+<p>Le nombre de colonnes, la gouttière, la largeur d'item, le ratio et les replis
+AD-10 sont <strong>délégués à <a href="../zcrud_responsive/ZAdaptiveGrid-class.html">ZAdaptiveGrid</a></strong> (elle-même bâtie sur
+<code>computeCrossAxisCount</code>). Il n'existe <strong>aucun second calcul de colonnes</strong> dans
+ce fichier: cette grille est <a href="../zcrud_responsive/ZAdaptiveGrid-class.html">ZAdaptiveGrid</a> <strong>plus</strong> une couche de geste.</p>
+<h2 id="modle-dordre-linaire-la-grille-nest-quune-projection">Modèle d'ordre: LINÉAIRE, la grille n'est qu'une projection</h2>
+<p>L'ordre est une permutation linéaire <code>0..n-1</code> de <a href="../zcrud_responsive/ZReorderableAdaptiveGrid/itemIds.html">itemIds</a>; la disposition en
+<code>n</code> colonnes n'en est qu'une <strong>projection</strong>. Déposer sur la cellule de
+position <code>k</code> signifie donc « <strong>index <code>k</code></strong> », <strong>quelle que soit la ligne</strong> —
+le déplacement franchit librement les lignes. La transformation appliquée est
+exactement <code>removeAt(oldIndex)</code> puis <code>insert(newIndex)</code>: la <strong>même
+convention</strong> que <code>onReorderItem</code> du SDK et que <code>zReorderIds</code> côté
+<code>zcrud_study</code> (symétrie hôte/primitive). Cette convention est ré-implémentée
+ici en privé (<code>_moveId</code>) car <code>zcrud_study</code> <strong>ne peut pas</strong> être une dépendance
+de <code>zcrud_responsive</code> (AD-1: l'arête irait dans le mauvais sens) — la
+duplication est de <strong>7 lignes</strong>, imposée par la frontière de paquets, et
+verrouillée par un test de symétrie.</p>
+<h2 id="geste--alternative-accessible-ad-13">Geste + alternative accessible (AD-13)</h2>
+<ul>
+<li><strong>Appui long</strong> sur la cellule ENTIÈRE (pas de poignée: les cartes d'items
+sont déjà denses);</li>
+<li><strong>Alternative obligatoire au lecteur d'écran</strong>: un appui long n'est pas
+atteignable en navigation assistée, donc chaque cellule expose deux
+<strong>actions sémantiques</strong> (<a href="https://api.flutter.dev/flutter/semantics/CustomSemanticsAction-class.html">CustomSemanticsAction</a>) « déplacer avant » /
+« déplacer après », dont les libellés sont <strong>INJECTÉS</strong>
+(<a href="../zcrud_responsive/ZReorderableAdaptiveGrid/moveBeforeSemanticLabel.html">moveBeforeSemanticLabel</a>/<a href="../zcrud_responsive/ZReorderableAdaptiveGrid/moveAfterSemanticLabel.html">moveAfterSemanticLabel</a>) — jamais codés en dur.
+La première cellule n'expose pas « avant », la dernière pas « après ».</li>
+</ul>
+<h2 id="autoscroll-vertical">Autoscroll vertical</h2>
+<p>Pendant le glissement, quand le pointeur approche à moins de
+<a href="../zcrud_responsive/ZReorderableAdaptiveGrid/autoScrollEdgeExtent.html">autoScrollEdgeExtent</a> d'un bord vertical du <a href="https://api.flutter.dev/flutter/widgets/Scrollable-class.html">Scrollable</a> englobant, la vue
+défile de <a href="../zcrud_responsive/ZReorderableAdaptiveGrid/autoScrollStep.html">autoScrollStep</a> par frame, <strong>bornée</strong> par
+<code>min/maxScrollExtent</code>. Sans <code>Scrollable</code> vertical englobant, l'autoscroll est
+simplement inactif (jamais de throw — AD-10).</p>
+<h2 id="invariant-ad-2--ordre-optimiste-local">Invariant AD-2 — ordre optimiste LOCAL</h2>
+<p>L'ordre optimiste vit dans un <code>ValueNotifier</code> <strong>local</strong> à cette grille et
+n'est consommé que par un <a href="https://api.flutter.dev/flutter/widgets/ValueListenableBuilder-class.html">ValueListenableBuilder</a>: réordonner ne
+reconstruit <strong>ni</strong> le parent <strong>ni</strong> la page. Aucun gestionnaire d'état.
+L'ordre est resynchronisé sur <a href="../zcrud_responsive/ZReorderableAdaptiveGrid/itemIds.html">itemIds</a> dans <code>didUpdateWidget</code> dès que
+l'hôte repousse un ordre persisté.</p>
+<h2 id="ad-10--repli-si-onreorder-choue">AD-10 — repli si <a href="../zcrud_responsive/ZReorderableAdaptiveGrid/onReorder.html">onReorder</a> échoue</h2>
+<p>Si <a href="../zcrud_responsive/ZReorderableAdaptiveGrid/onReorder.html">onReorder</a> lève <strong>de façon synchrone</strong>, l'ordre affiché est <strong>restauré</strong>
+à l'identique et l'exception est <strong>absorbée</strong> (jamais de crash de rendu,
+jamais d'état incohérent). Un échec <strong>asynchrone</strong> (persistance) est hors
+de portée d'un callback <code>void</code>: l'hôte le signale en repoussant l'ancien
+<a href="../zcrud_responsive/ZReorderableAdaptiveGrid/itemIds.html">itemIds</a>, ce qui resynchronise la grille par <code>didUpdateWidget</code>.</p>
+<h2 id="non-combin-avec-la-virtualisation">Non combiné avec la virtualisation</h2>
+<p>Cette grille est <strong>eager</strong> (comme le ctor historique de <a href="../zcrud_responsive/ZAdaptiveGrid-class.html">ZAdaptiveGrid</a>):
+une cellule non construite ne peut pas être une cible de dépôt. Réordonner et
+virtualiser sont donc exclusifs — documenté, jamais dégradé en silence.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree-class.html">DiagnosticableTree</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/StatefulWidget-class.html">StatefulWidget</a></li>
+      <li>ZReorderableAdaptiveGrid</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZReorderableAdaptiveGrid.new" class="callable">
+          <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/ZReorderableAdaptiveGrid.html">ZReorderableAdaptiveGrid</a></span><span class="signature">({<span class="parameter" id="param-itemIds"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">itemIds</span>, </span><span class="parameter" id="param-itemBuilder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">itemBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-index"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">index</span></span>), </span><span class="parameter" id="param-onReorder"><span>required</span> <span class="type-annotation">void</span> <span class="parameter-name">onReorder</span>(<span class="parameter" id="param-oldIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">oldIndex</span>, </span><span class="parameter" id="param-newIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">newIndex</span></span>), </span><span class="parameter" id="param-minItemWidth"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">minItemWidth</span>, </span><span class="parameter" id="param-moveBeforeSemanticLabel"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">moveBeforeSemanticLabel</span>, </span><span class="parameter" id="param-moveAfterSemanticLabel"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">moveAfterSemanticLabel</span>, </span><span class="parameter" id="param-spacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">spacing</span> = <span class="default-value">8.0</span>, </span><span class="parameter" id="param-runSpacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">runSpacing</span>, </span><span class="parameter" id="param-itemHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">itemHeight</span>, </span><span class="parameter" id="param-aspectRatio"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">aspectRatio</span>, </span><span class="parameter" id="param-minColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">minColumns</span> = <span class="default-value">1</span>, </span><span class="parameter" id="param-maxColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">maxColumns</span>, </span><span class="parameter" id="param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">padding</span>, </span><span class="parameter" id="param-autoScrollEdgeExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">autoScrollEdgeExtent</span> = <span class="default-value">64.0</span>, </span><span class="parameter" id="param-autoScrollStep"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">autoScrollStep</span> = <span class="default-value">24.0</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+        </dt>
+        <dd>
+          Construit une grille adaptative réordonnable.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="aspectRatio" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/aspectRatio.html">aspectRatio</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Ratio largeur/hauteur d'une cellule. Ignoré si <a href="../zcrud_responsive/ZReorderableAdaptiveGrid/itemHeight.html">itemHeight</a> est fourni.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="autoScrollEdgeExtent" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/autoScrollEdgeExtent.html">autoScrollEdgeExtent</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Distance (dp) à un bord vertical du <code>Scrollable</code> englobant en deçà de
+laquelle l'autoscroll s'enclenche pendant le glissement.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="autoScrollStep" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/autoScrollStep.html">autoScrollStep</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Pas de défilement (dp) appliqué par frame pendant l'autoscroll.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="itemBuilder" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/itemBuilder.html">itemBuilder</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-index"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">index</span></span>)</span></span>
+  
+
+</dt>
+<dd>
+  Construit l'item d'<strong>index SOURCE</strong> (index dans <a href="../zcrud_responsive/ZReorderableAdaptiveGrid/itemIds.html">itemIds</a>, jamais la
+position visuelle courante): l'ordre optimiste local peut avoir permuté
+l'affichage sans que l'hôte ait encore repoussé un nouvel <a href="../zcrud_responsive/ZReorderableAdaptiveGrid/itemIds.html">itemIds</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="itemHeight" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/itemHeight.html">itemHeight</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Hauteur cible d'une cellule (dp). Prime sur <a href="../zcrud_responsive/ZReorderableAdaptiveGrid/aspectRatio.html">aspectRatio</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="itemIds" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/itemIds.html">itemIds</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Ordre COURANT des ids d'items (clés STABLES). <code>itemIds[i]</code> identifie l'item
+rendu par <code>itemBuilder(context, i)</code>. Vide ⇒ <code>SizedBox.shrink()</code> (AD-10).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="key" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/key.html">key</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span>
+  
+
+</dt>
+<dd class="inherited">
+  Controls how one widget replaces another widget in the tree.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="maxColumns" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/maxColumns.html">maxColumns</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Plafond de colonnes. <code>null</code> → illimité.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="minColumns" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/minColumns.html">minColumns</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Plancher de colonnes (remonté à 1 si <code>&lt; 1</code>, AD-10).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="minItemWidth" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/minItemWidth.html">minItemWidth</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Largeur minimale d'un item (dp) — pilote le nombre de colonnes via
+<a href="../zcrud_responsive/ZAdaptiveGrid-class.html">ZAdaptiveGrid</a> / <code>computeCrossAxisCount</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="moveAfterSemanticLabel" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/moveAfterSemanticLabel.html">moveAfterSemanticLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Libellé LOCALISÉ de l'action sémantique « déplacer après » (AD-13).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="moveBeforeSemanticLabel" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/moveBeforeSemanticLabel.html">moveBeforeSemanticLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Libellé LOCALISÉ de l'action sémantique « déplacer avant » (AD-13).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onReorder" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/onReorder.html">onReorder</a></span>
+  <span class="signature">&#8594; void Function<span class="signature">(<span class="parameter" id="param-oldIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">oldIndex</span>, </span><span class="parameter" id="param-newIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">newIndex</span></span>)</span></span>
+  
+
+</dt>
+<dd>
+  Notifié après un dépôt, en convention <code>removeAt(oldIndex)</code> /
+<code>insert(newIndex)</code> — <strong>indices linéaires</strong>, jamais des coordonnées de
+grille. Peut lever: l'ordre affiché est alors restauré (AD-10).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="padding" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/padding.html">padding</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span>
+  
+
+</dt>
+<dd>
+  Marge interne — <code>EdgeInsetsGeometry?</code> (accepte <code>EdgeInsetsDirectional</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runSpacing" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/runSpacing.html">runSpacing</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Espacement inter-lignes (dp). <code>null</code> → reprend <a href="../zcrud_responsive/ZReorderableAdaptiveGrid/spacing.html">spacing</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="spacing" class="property">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/spacing.html">spacing</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Espacement inter-colonnes (dp), défaut de l'inter-lignes si <a href="../zcrud_responsive/ZReorderableAdaptiveGrid/runSpacing.html">runSpacing</a>
+est <code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="createElement" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/StatefulWidget/createElement.html">createElement</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/StatefulElement-class.html">StatefulElement</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Creates a <a href="https://api.flutter.dev/flutter/widgets/StatefulElement-class.html">StatefulElement</a> to manage this widget's location in the tree.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="createState" class="callable">
+  <span class="name"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid/createState.html">createState</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_responsive/ZReorderableAdaptiveGrid-class.html">ZReorderableAdaptiveGrid</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Creates the mutable state for this widget at a given location in the tree.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="debugDescribeChildren" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/debugDescribeChildren.html">debugDescribeChildren</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a list of <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a> objects describing this node's
+children.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="debugFillProperties" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/debugFillProperties.html">debugFillProperties</a></span><span class="signature">(<wbr><span class="parameter" id="debugFillProperties-param-properties"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticPropertiesBuilder-class.html">DiagnosticPropertiesBuilder</a></span> <span class="parameter-name">properties</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Add additional properties associated with the node.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toDiagnosticsNode" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toDiagnosticsNode.html">toDiagnosticsNode</a></span><span class="signature">(<wbr>{<span class="parameter" id="toDiagnosticsNode-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span><span class="parameter" id="toDiagnosticsNode-param-style"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsTreeStyle.html">DiagnosticsTreeStyle</a>?</span> <span class="parameter-name">style</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a debug representation of the object that is used by debugging
+tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode/toStringDeep.html">DiagnosticsNode.toStringDeep</a>.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/Diagnosticable/toString.html">toString</a></span><span class="signature">(<wbr>{<span class="parameter" id="toString-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.info</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringDeep" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringDeep.html">toStringDeep</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringDeep-param-prefixLineOne"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">prefixLineOne</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="toStringDeep-param-prefixOtherLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">prefixOtherLines</span>, </span><span class="parameter" id="toStringDeep-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span>, </span><span class="parameter" id="toStringDeep-param-wrapWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">wrapWidth</span> = <span class="default-value">65</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a string representation of this node and its descendants.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShallow" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringShallow.html">toStringShallow</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringShallow-param-joiner"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">joiner</span> = <span class="default-value">&#39;, &#39;</span>, </span><span class="parameter" id="toStringShallow-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a one-line detailed description of the object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShort" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/toStringShort.html">toStringShort</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A short, textual description of this widget.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_responsive</a></li>
+    <li><a href="../zcrud_responsive/">zcrud_responsive</a></li>
+    <li class="self-crumb">ZReorderableAdaptiveGrid class</li>
+</ol>
+
+    <h5>zcrud_responsive library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_responsive
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

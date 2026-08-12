@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the footerPlacement constant from the ZFolderCardReference class, for the Dart programming language.">
+  <title>footerPlacement constant - ZFolderCardReference class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study.dart</a></li>
+    <li><a href="../../zcrud_study/ZFolderCardReference-class.html">ZFolderCardReference</a></li>
+    <li class="self-crumb">footerPlacement constant</li>
+  </ol>
+  <div class="self-name">footerPlacement</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;ZFolderCardReference-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">footerPlacement</span> constant 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        ZFolderCardFooterPlacement
+        const <span class="name ">footerPlacement</span>
+        
+
+      </section>
+      
+<section class="desc markdown">
+  <p>DISPOSITION de référence du bas de carte
+(<strong><code>ZFolderCardFooterPlacement.below</code></strong>).</p>
+<p><strong>C'est un CHANGEMENT DE DÉFAUT</strong> de <code>ZDefaultFolderCard</code> uniquement.
+La primitive <code>ZFolderCard</code>, elle, garde <code>beside</code> : <strong>aucun hôte de la
+primitive ne bouge d'un pixel</strong> (garde dédiée).</p>
+<p><strong>Ce qui change à l'écran pour un hôte PASSIF de la carte par défaut</strong>,
+et rien d'autre : une carte qui passe <code>counts</code> <strong>et</strong> <code>footer</code> empile
+désormais le pied sous les compteurs — le pied descend de <code>gapS</code> + une
+ligne (mesuré : <strong>+18 dp</strong> de hauteur en régime non borné, à ×1), et les
+compteurs récupèrent la largeur ENTIÈRE (mesuré à 320 dp : la fenêtre
+passe de <strong>146 à 296 dp</strong>, les badges visibles de <strong>2 à 4</strong>). Une carte
+SANS pied, ou SANS compteurs, ne bouge pas d'un pixel : il n'y a rien à
+empiler, et la ligne antérieure (badge « Archivé » compris) est rendue
+telle quelle.</p>
+<p><strong>Pourquoi <code>below</code> et NON un défaut adaptatif.</strong> Le côte-à-côte cesse
+d'amputer à <code>2 × largeurDeLaRangée + gapS</code>, soit ~<strong>740 dp de bas de
+carte</strong> dans les cas mesurés (rangée de 569 dp en police de test, 4
+badges visibles sur 4 seulement à partir d'une carte de 1200 dp).
+Aucune cellule de grille de dossiers n'approche cette largeur. Et
+surtout : le point d'équilibre dépend des LIBELLÉS (≈350 dp pour des
+libellés courts, &gt;900 dp pour cinq badges verbeux), donc <strong>aucun seuil
+fixe ne peut être juste pour tous les hôtes</strong> — placé trop bas, il
+réintroduit le défaut exactement à la largeur où il bascule (mesuré : à
+600 dp, côte à côte ne montre plus que 2 badges sur 4). Le régime
+adaptatif reste <strong>offert</strong> (paramètre <code>footerPlacement</code> + jeton
+<code>folderCardFooterPlacement</code>), avec un seuil réglable : seul l'hôte
+connaît ses libellés.</p>
+<p>Le côte-à-côte reste donc « raisonnable pour un pied court et UN
+compteur » — et le reste, puisqu'un seul créneau ne s'empile pas.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">static const ZFolderCardFooterPlacement footerPlacement =
+    ZFolderCardFooterPlacement.below;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/ZFolderCardReference-class.html">ZFolderCardReference</a></li>
+    <li class="self-crumb">footerPlacement constant</li>
+</ol>
+
+  <h5>ZFolderCardReference class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

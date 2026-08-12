@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the stepsDisplay property from the ZStepperConfig class, for the Dart programming language.">
+  <title>stepsDisplay property - ZStepperConfig class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core.dart</a></li>
+    <li><a href="../../zcrud_core/ZStepperConfig-class.html">ZStepperConfig</a></li>
+    <li class="self-crumb">stepsDisplay property</li>
+  </ol>
+  <div class="self-name">stepsDisplay</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;ZStepperConfig-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">stepsDisplay</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="../../zcrud_core/ZStepsDisplay.html">ZStepsDisplay</a>?
+        <span class="name ">stepsDisplay</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p><strong>Forme d'affichage à trois états.</strong> Défaut <strong><code>null</code></strong> ⇒ la forme est
+<strong>DÉRIVÉE</strong> de <a href="../../zcrud_core/ZStepperConfig/showAllSteps.html">showAllSteps</a>, donc un hôte qui n'y touche pas rend
+<strong>exactement</strong> comme avant (cf. <a href="../../zcrud_core/ZStepperConfig/effectiveDisplay.html">effectiveDisplay</a>).</p>
+<h2 id="la-rgle-de-prsance-crite-deux-canaux-pour-une-mme-ide">La règle de préséance, écrite (deux canaux pour une même idée)</h2>
+<p><a href="../../zcrud_core/ZStepperConfig/showAllSteps.html">showAllSteps</a> et <a href="../../zcrud_core/ZStepperConfig/stepsDisplay.html">stepsDisplay</a> peuvent se <strong>contredire</strong> (<code>showAllSteps: true</code> + <code>stepsDisplay: ZStepsDisplay.paged</code>, par exemple). La règle est :</p>
+<blockquote>
+<p><strong><code>stepsDisplay</code> non <code>null</code> GAGNE, toujours. <code>showAllSteps</code> n'est plus
+consulté du tout.</strong></p>
+</blockquote>
+<p>Elle n'est pas arbitraire : <code>stepsDisplay</code> est le canal <strong>explicite et
+complet</strong> (il sait dire les trois états), <code>showAllSteps</code> est l'<strong>alias
+hérité</strong> qui n'en sait dire que deux. Faire gagner l'alias rendrait le
+troisième état inatteignable pour tout hôte qui passe aussi le booléen. Et
+la préséance ne peut PAS être « le dernier écrit » : le constructeur est
+<code>const</code>, il n'y a pas d'ordre.</p>
+<p>Corollaire assumé : <code>stepsDisplay: ZStepsDisplay.paged</code> <strong>annule</strong> un
+<code>showAllSteps: true</code>. C'est un choix délibéré, gardé par un test.</p>
+<p><a href="../../zcrud_core/ZStepperConfig/copyWith.html">copyWith</a> ne permet pas de <strong>remettre</strong> ce champ à <code>null</code> (même limite
+que les overrides couleur de cette classe) : repasser explicitement
+<code>stepsDisplay: ZStepsDisplay.paged</code> ou <code>.allExpanded</code>.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final ZStepsDisplay? stepsDisplay;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/ZStepperConfig-class.html">ZStepperConfig</a></li>
+    <li class="self-crumb">stepsDisplay property</li>
+</ol>
+
+  <h5>ZStepperConfig class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

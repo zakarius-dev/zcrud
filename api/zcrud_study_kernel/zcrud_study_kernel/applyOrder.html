@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the applyOrder function from the zcrud_study_kernel library, for the Dart programming language.">
+  <title>applyOrder function - zcrud_study_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study_kernel</a></li>
+    <li><a href="../zcrud_study_kernel/">zcrud_study_kernel.dart</a></li>
+    <li class="self-crumb">applyOrder&lt;<wbr><span class="type-parameter">T</span>&gt; function</li>
+  </ol>
+  <div class="self-name">applyOrder</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_study_kernel&#47;zcrud_study_kernel-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">applyOrder&lt;<wbr><span class="type-parameter">T</span>&gt;</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>
+<span class="name ">applyOrder</span>&lt;<wbr><span class="type-parameter">T</span>&gt;(<wbr><ol class="parameter-list"> <li><span class="parameter" id="applyOrder-param-items"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">items</span>, </span></li>
+<li><span class="parameter" id="applyOrder-param-order"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">order</span>, {</span></li>
+<li><span class="parameter" id="applyOrder-param-idOf"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">idOf</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span></span></li>
+</ol>), </span></li>
+<li><span class="parameter" id="applyOrder-param-unordered"><span class="type-annotation"><a href="../zcrud_study_kernel/ZUnorderedPlacement.html">ZUnorderedPlacement</a></span> <span class="parameter-name">unordered</span> = <span class="default-value">ZUnorderedPlacement.end</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Applique <code>order</code> (liste d'ids, partielle possible) à <code>items</code> :</p>
+<ul>
+<li>les items dont <code>idOf(item)</code> figure dans <code>order</code> sortent dans l'ordre de
+<code>order</code> ;</li>
+<li>les items absents de <code>order</code> gardent une position déterministe — à la
+fin par défaut (<a href="../zcrud_study_kernel/ZUnorderedPlacement.html">ZUnorderedPlacement.end</a>) ou au début
+(<a href="../zcrud_study_kernel/ZUnorderedPlacement.html">ZUnorderedPlacement.start</a>) — en préservant leur ordre relatif
+d'entrée (tri stable) ;</li>
+<li><code>order</code> vide → l'ordre d'entrée de <code>items</code> est intégralement préservé ;</li>
+<li>un id de <code>order</code> qui ne correspond à aucun item est simplement ignoré ;</li>
+<li>un id dupliqué dans <code>order</code> → la première occurrence fait foi pour la
+position ;</li>
+<li>des ids dupliqués dans <code>items</code> sont tous conservés, dans leur ordre
+relatif d'entrée.</li>
+</ul>
+<p>Ne mute ni <code>items</code> ni <code>order</code> ; retourne une nouvelle <code>List&lt;T&gt;</code>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">List&lt;T&gt; applyOrder&lt;T&gt;(
+  Iterable&lt;T&gt; items,
+  List&lt;String&gt; order, {
+  required String Function(T item) idOf,
+  ZUnorderedPlacement unordered = ZUnorderedPlacement.end,
+}) {
+  &#47;&#47; Position de chaque id dans `order` — 1re occurrence gagne.
+  final position = &lt;String, int&gt;{};
+  for (var i = 0; i &lt; order.length; i++) {
+    position.putIfAbsent(order[i], () =&gt; i);
+  }
+
+  &#47;&#47; Partition en un seul passage, préservant l&#39;ordre d&#39;entrée dans chaque
+  &#47;&#47; sous-liste (nécessaire à la stabilité du tri final).
+  final entries = items.toList(growable: false);
+  final ordered = &lt;_Indexed&lt;T&gt;&gt;[];
+  final unorderedItems = &lt;T&gt;[];
+  for (var i = 0; i &lt; entries.length; i++) {
+    final item = entries[i];
+    final pos = position[idOf(item)];
+    if (pos != null) {
+      ordered.add(_Indexed(pos, i, item));
+    } else {
+      unorderedItems.add(item);
+    }
+  }
+
+  &#47;&#47; Tri stable par construction : la clé secondaire (index d&#39;entrée
+  &#47;&#47; d&#39;origine) départage tout ex-aequo sur la position — indépendant de la
+  &#47;&#47; stabilité (non garantie) de `List.sort` du SDK.
+  ordered.sort((a, b) {
+    final byPosition = a.position.compareTo(b.position);
+    return byPosition != 0 ? byPosition : a.entryIndex.compareTo(b.entryIndex);
+  });
+  final orderedItems = ordered.map((e) =&gt; e.item).toList(growable: false);
+
+  return switch (unordered) {
+    ZUnorderedPlacement.end =&gt; &lt;T&gt;[...orderedItems, ...unorderedItems],
+    ZUnorderedPlacement.start =&gt; &lt;T&gt;[...unorderedItems, ...orderedItems],
+  };
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study_kernel</a></li>
+    <li><a href="../zcrud_study_kernel/">zcrud_study_kernel</a></li>
+    <li class="self-crumb">applyOrder&lt;<wbr><span class="type-parameter">T</span>&gt; function</li>
+</ol>
+
+    <h5>zcrud_study_kernel library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study_kernel
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZSrsConfig.new constructor from Class ZSrsConfig from the zcrud_flashcard library, for the Dart programming language.">
+  <title>ZSrsConfig.new constructor - ZSrsConfig - zcrud_flashcard library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_flashcard</a></li>
+    <li><a href="../../zcrud_flashcard/">zcrud_flashcard.dart</a></li>
+    <li><a href="../../zcrud_flashcard/ZSrsConfig-class.html">ZSrsConfig</a></li>
+    <li class="self-crumb">ZSrsConfig.new const constructor</li>
+  </ol>
+  <div class="self-name">ZSrsConfig.new</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_flashcard&#47;ZSrsConfig-class-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-constructor">ZSrsConfig</span> constructor 
+</h1></div>
+
+    <section class="multi-line-signature">
+      const
+      <span class="name ">ZSrsConfig</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-minEaseFactor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">minEaseFactor</span> = <span class="default-value">1.3</span>, </span></li>
+<li><span class="parameter" id="param-maxEaseFactor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">maxEaseFactor</span> = <span class="default-value">2.5</span>, </span></li>
+<li><span class="parameter" id="param-defaultEaseFactor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">defaultEaseFactor</span> = <span class="default-value">kDefaultEaseFactor</span>, </span></li>
+<li><span class="parameter" id="param-defaultIntervalModifier"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">defaultIntervalModifier</span> = <span class="default-value">1.0</span>, </span></li>
+<li><span class="parameter" id="param-overdueBonusFactor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">overdueBonusFactor</span> = <span class="default-value">0.0</span>, </span></li>
+<li><span class="parameter" id="param-passThreshold"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">passThreshold</span> = <span class="default-value">3</span>, </span></li>
+<li><span class="parameter" id="param-minQuality"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">minQuality</span> = <span class="default-value">0</span>, </span></li>
+<li><span class="parameter" id="param-maxQuality"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">maxQuality</span> = <span class="default-value">5</span>, </span></li>
+</ol>})
+    </section>
+    
+<section class="desc markdown">
+  <p>Construit une configuration SRS avec les défauts canoniques. Tout
+paramètre peut être surchargé pour ajuster la courbe.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">const ZSrsConfig({
+  this.minEaseFactor = 1.3,
+  this.maxEaseFactor = 2.5,
+  this.defaultEaseFactor = kDefaultEaseFactor,
+  this.defaultIntervalModifier = 1.0,
+  this.overdueBonusFactor = 0.0,
+  this.passThreshold = 3,
+  this.minQuality = 0,
+  this.maxQuality = 5,
+})  : assert(
+        minQuality &lt; maxQuality,
+        &#39;minQuality doit être STRICTEMENT inférieur à maxQuality : une échelle &#39;
+        &#39;vide ou inversée ne peut porter aucun cran de notation. Reçu : &#39;
+        &#39;minQuality=$minQuality, maxQuality=$maxQuality.&#39;,
+      ),
+      assert(
+        minQuality &lt; passThreshold &amp;&amp; passThreshold &lt;= maxQuality,
+        &#39;passThreshold doit vérifier minQuality &lt; passThreshold &lt;= maxQuality : &#39;
+        &#39;un seuil hors de cet intervalle rendrait la réussite soit systématique &#39;
+        &#39;(seuil &lt;= min), soit inatteignable (seuil &gt; max). Reçu : &#39;
+        &#39;minQuality=$minQuality, passThreshold=$passThreshold, &#39;
+        &#39;maxQuality=$maxQuality.&#39;,
+      ),
+      assert(
+        maxQuality == 5,
+        &#39;maxQuality DOIT valoir 5 : SM-2 est intrinsèquement un algorithme &#39;
+        &#39;0..5 (AD-46, « échelle canonique : 0..5 — SM-2 complet »). Sa &#39;
+        &#39;formule de facteur de facilité est bâtie sur le sommet 5 — &#39;
+        &#39;`EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))` — et elle est GELÉE &#39;
+        &#39;par le contrat `z_sm2_contract_test.dart`. Un sommet tronqué ne &#39;
+        &#39;généralise donc PAS l\&#39;algorithme : il fabrique une config que le &#39;
+        &#39;moteur ne sait pas servir. Ex. maxQuality=4 ⇒ deltaEF(4) = 0.0000 au &#39;
+        &#39;MEILLEUR score possible, et strictement négatif partout ailleurs : &#39;
+        &#39;l\&#39;easeFactor ne croîtrait JAMAIS, silencieusement (aucune &#39;
+        &#39;exception, aucun test rouge) — les intervalles cesseraient de &#39;
+        &#39;s\&#39;espacer pour un apprenant sans faute. Pour tronquer l\&#39;échelle, &#39;
+        &#39;n\&#39;utilisez que minQuality (1 = « sans blackout »), qui est sûr. &#39;
+        &#39;Reçu : maxQuality=$maxQuality.&#39;,
+      ),
+      assert(
+        minQuality == 0 || minQuality == 1,
+        &#39;minQuality DOIT valoir 0 ou 1 : ce sont les deux seules bornes &#39;
+        &#39;basses que SM-2 sait honorer (0 = échelle complète avec blackout &#39;
+        &#39;total, 1 = échelle « sans blackout »). Toute autre borne basse &#39;
+        &#39;décalerait l\&#39;échelle sous la formule gelée `(5 - q)` et fausserait &#39;
+        &#39;la courbe sans le signaler (AD-46). Reçu : minQuality=$minQuality.&#39;,
+      );</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_flashcard</a></li>
+    <li><a href="../../zcrud_flashcard/">zcrud_flashcard</a></li>
+    <li><a href="../../zcrud_flashcard/ZSrsConfig-class.html">ZSrsConfig</a></li>
+    <li class="self-crumb">ZSrsConfig.new const constructor</li>
+</ol>
+
+    <h5>ZSrsConfig class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_flashcard
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

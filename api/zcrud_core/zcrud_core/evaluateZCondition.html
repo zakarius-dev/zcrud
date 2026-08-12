@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the evaluateZCondition function from the zcrud_core library, for the Dart programming language.">
+  <title>evaluateZCondition function - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">evaluateZCondition function</li>
+  </ol>
+  <div class="self-name">evaluateZCondition</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">evaluateZCondition</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+<span class="name ">evaluateZCondition</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="evaluateZCondition-param-condition"><span class="type-annotation"><a href="../zcrud_core/ZCondition-class.html">ZCondition</a></span> <span class="parameter-name">condition</span>, </span></li>
+<li><span class="parameter" id="evaluateZCondition-param-valueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a></span> <span class="parameter-name">valueOf</span>, {</span></li>
+<li><span class="parameter" id="evaluateZCondition-param-persistedValueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">persistedValueOf</span>, </span></li>
+<li><span class="parameter" id="evaluateZCondition-param-contextValueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">contextValueOf</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Évalue <code>condition</code> contre l'état lu via <code>valueOf</code> et retourne sa vérité.</p>
+<p><strong>Accesseurs par source</strong> : chaque feuille désigne sa source de
+valeur (<a href="../zcrud_core/ZCondition/source.html">ZCondition.source</a>). L'accesseur est résolu AVANT la lecture :</p>
+<ul>
+<li><a href="../zcrud_core/ZValueSource.html">ZValueSource.state</a> → <code>valueOf</code> (défaut ; comportement historique) ;</li>
+<li><a href="../zcrud_core/ZValueSource.html">ZValueSource.persisted</a> → <code>persistedValueOf</code> (item d'origine / baseline) ;</li>
+<li><a href="../zcrud_core/ZValueSource.html">ZValueSource.context</a> → <code>contextValueOf</code> (crud/mode/drapeaux).</li>
+</ul>
+<p>Les paramètres <code>persistedValueOf</code>/<code>contextValueOf</code> sont <strong>nommés optionnels</strong> :
+un appel historique à 2 arguments <code>evaluateZCondition(c, valueOf)</code> compile et
+se comporte à l'identique. Un accesseur <strong>absent</strong> (non fourni) résout <code>null</code>
+(défensif — AD-10), jamais une exception.</p>
+<p>Sémantique par <a href="../zcrud_core/ZConditionOp.html">ZConditionOp</a> :</p>
+<ul>
+<li><a href="../zcrud_core/ZConditionOp.html">ZConditionOp.equals</a> / <a href="../zcrud_core/ZConditionOp.html">ZConditionOp.notEquals</a> : comparaison <code>==</code> de la
+valeur du champ à <code>condition.value</code> ;</li>
+<li><a href="../zcrud_core/ZConditionOp.html">ZConditionOp.isNull</a> / <a href="../zcrud_core/ZConditionOp.html">ZConditionOp.notNull</a> : test de nullité ;</li>
+<li><a href="../zcrud_core/ZConditionOp.html">ZConditionOp.truthy</a> : « vrai » = non <code>null</code>, non <code>false</code>, non <code>0</code>/<code>0.0</code>,
+et non <strong>vide</strong> (<code>String</code>/<code>Iterable</code>/<code>Map</code> vide ⇒ faux) — cf. <a href="../zcrud_core/zIsTruthy.html">zIsTruthy</a> ;</li>
+<li><a href="../zcrud_core/ZConditionOp.html">ZConditionOp.isEmpty</a> / <a href="../zcrud_core/ZConditionOp.html">ZConditionOp.isNotEmpty</a> : test de <strong>forme</strong> via
+<a href="../zcrud_core/zLengthOf.html">zLengthOf</a> (<code>== 0</code> / <code>&gt; 0</code>) — reproduit <code>(list).isNotEmpty</code> /
+<code>(str ?? '').isEmpty</code> ;</li>
+<li><a href="../zcrud_core/ZConditionOp.html">ZConditionOp.lengthEquals</a>/<code>lengthGt</code>/<code>lengthGte</code>/<code>lengthLt</code>/<code>lengthLte</code> :
+comparaison de <a href="../zcrud_core/zLengthOf.html">zLengthOf</a> au seuil <code>condition.length</code> (<code>null</code> ⇒ <code>0</code>) ;</li>
+<li><a href="../zcrud_core/ZConditionOp.html">ZConditionOp.and</a> : conjonction de TOUS les <code>operands</code> (vide ⇒ <code>true</code>) ;</li>
+<li><a href="../zcrud_core/ZConditionOp.html">ZConditionOp.or</a> : disjonction d'AU MOINS un <code>operand</code> (vide ⇒ <code>false</code>) ;</li>
+<li><a href="../zcrud_core/ZConditionOp.html">ZConditionOp.not</a> : négation de l'unique <code>operand</code>.</li>
+</ul>
+<p><strong>Pur / total</strong> : ne lève jamais ; un combinateur mal formé (opérande <code>null</code>)
+est traité de façon défensive (<code>and</code>/<code>not</code> d'un <code>null</code> ⇒ neutre) — cohérent
+avec la désérialisation défensive (AD-10). Une FEUILLE mal formée (<code>field</code>
+<code>null</code>, non atteignable via les constructeurs publics) lit une valeur <code>null</code>
+au lieu de lever (garde défensive — LOW-4). Le <code>switch</code> est <strong>total</strong> sur
+l'enum <a href="../zcrud_core/ZConditionOp.html">ZConditionOp</a> ; toute donnée corrompue est neutralisée en amont par
+la lecture défensive de feuille et par <code>unknownEnumValue</code> (AD-10). Récursif
+sur les combinateurs (les accesseurs sont propagés inchangés).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">bool evaluateZCondition(
+  ZCondition condition,
+  ZValueOf valueOf, {
+  ZValueOf? persistedValueOf,
+  ZValueOf? contextValueOf,
+}) {
+  &#47;&#47; Lecture défensive de la valeur d&#39;une feuille : `field` `null` ⇒ `null` ;
+  &#47;&#47; accesseur de source absent ⇒ `null` (jamais de `!`&#47;throw — AD-10).
+  Object? leafValue() {
+    final field = condition.field;
+    if (field == null) return null;
+    switch (condition.source) {
+      case ZValueSource.state:
+        return valueOf(field);
+      case ZValueSource.persisted:
+        return persistedValueOf == null ? null : persistedValueOf(field);
+      case ZValueSource.context:
+        return contextValueOf == null ? null : contextValueOf(field);
+    }
+  }
+
+  bool recurse(ZCondition c) =&gt; evaluateZCondition(
+        c,
+        valueOf,
+        persistedValueOf: persistedValueOf,
+        contextValueOf: contextValueOf,
+      );
+
+  switch (condition.op) {
+    case ZConditionOp.equals:
+      return leafValue() == condition.value;
+    case ZConditionOp.notEquals:
+      return leafValue() != condition.value;
+    case ZConditionOp.isNull:
+      return leafValue() == null;
+    case ZConditionOp.notNull:
+      return leafValue() != null;
+    case ZConditionOp.truthy:
+      return zIsTruthy(leafValue());
+    case ZConditionOp.isEmpty:
+      return zLengthOf(leafValue()) == 0;
+    case ZConditionOp.isNotEmpty:
+      return zLengthOf(leafValue()) &gt; 0;
+    case ZConditionOp.lengthEquals:
+      return zLengthOf(leafValue()) == (condition.length ?? 0);
+    case ZConditionOp.lengthGt:
+      return zLengthOf(leafValue()) &gt; (condition.length ?? 0);
+    case ZConditionOp.lengthGte:
+      return zLengthOf(leafValue()) &gt;= (condition.length ?? 0);
+    case ZConditionOp.lengthLt:
+      return zLengthOf(leafValue()) &lt; (condition.length ?? 0);
+    case ZConditionOp.lengthLte:
+      return zLengthOf(leafValue()) &lt;= (condition.length ?? 0);
+    case ZConditionOp.and:
+      final operands = condition.operands;
+      if (operands == null || operands.isEmpty) return true;
+      for (final o in operands) {
+        if (!recurse(o)) return false;
+      }
+      return true;
+    case ZConditionOp.or:
+      final operands = condition.operands;
+      if (operands == null || operands.isEmpty) return false;
+      for (final o in operands) {
+        if (recurse(o)) return true;
+      }
+      return false;
+    case ZConditionOp.not:
+      final operand = condition.operand;
+      if (operand == null) return true;
+      return !recurse(operand);
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">evaluateZCondition function</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

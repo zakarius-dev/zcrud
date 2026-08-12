@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the build method from the ZContentHubSheet class, for the Dart programming language.">
+  <title>build method - ZContentHubSheet class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study.dart</a></li>
+    <li><a href="../../zcrud_study/ZContentHubSheet-class.html">ZContentHubSheet</a></li>
+    <li class="self-crumb">build method</li>
+  </ol>
+  <div class="self-name">build</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;ZContentHubSheet-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">build</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>
+<span class="name ">build</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="build-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span></li>
+</ol>)
+
+      <div class="features"><span class="feature">override</span></div>
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Describes the part of the user interface represented by this widget.</p>
+<p>The framework calls this method when this widget is inserted into the tree
+in a given <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a> and when the dependencies of this widget change
+(e.g., an <a href="https://api.flutter.dev/flutter/widgets/InheritedWidget-class.html">InheritedWidget</a> referenced by this widget changes). This
+method can potentially be called in every frame and should not have any side
+effects beyond building a widget.</p>
+<p>The framework replaces the subtree below this widget with the widget
+returned by this method, either by updating the existing subtree or by
+removing the subtree and inflating a new subtree, depending on whether the
+widget returned by this method can update the root of the existing
+subtree, as determined by calling <a href="https://api.flutter.dev/flutter/widgets/Widget/canUpdate.html">Widget.canUpdate</a>.</p>
+<p>Typically implementations return a newly created constellation of widgets
+that are configured with information from this widget's constructor and
+from the given <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a>.</p>
+<p>The given <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a> contains information about the location in the
+tree at which this widget is being built. For example, the context
+provides the set of inherited widgets for this location in the tree. A
+given widget might be built with multiple different <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a>
+arguments over time if the widget is moved around the tree or if the
+widget is inserted into the tree in multiple places at once.</p>
+<p>The implementation of this method must only depend on:</p>
+<ul>
+<li>the fields of the widget, which themselves must not change over time,
+and</li>
+<li>any ambient state obtained from the <code>context</code> using
+<a href="https://api.flutter.dev/flutter/widgets/BuildContext/dependOnInheritedWidgetOfExactType.html">BuildContext.dependOnInheritedWidgetOfExactType</a>.</li>
+</ul>
+<p>If a widget's <a href="../../zcrud_study/ZContentHubSheet/build.html">build</a> method is to depend on anything else, use a
+<a href="https://api.flutter.dev/flutter/widgets/StatefulWidget-class.html">StatefulWidget</a> instead.</p>
+<p>See also:</p>
+<ul>
+<li><a href="https://api.flutter.dev/flutter/widgets/StatelessWidget-class.html">StatelessWidget</a>, which contains the discussion on performance considerations.</li>
+</ul>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+Widget build(BuildContext context) {
+  final ZcrudTheme theme = ZcrudTheme.of(context);
+  final ThemeData material = Theme.of(context);
+  final ZContentHubDensity resolvedDensity =
+      density ?? theme.contentHubDensity ?? ZContentHubDensity.comfortable;
+  final bool comfortable = resolvedDensity == ZContentHubDensity.comfortable;
+
+  final List&lt;Color&gt; palette =
+      accents ?? theme.contentHubAccents ?? ZContentHubReference.accents;
+  final double floor =
+      minContrast ??
+      theme.contentHubMinContrast ??
+      ZContentHubReference.minContrast;
+  &#47;&#47; Surface sur laquelle la carte repose réellement — c&#39;est contre elle que
+  &#47;&#47; le contraste se mesure, jamais contre une surface nominale. En thème
+  &#47;&#47; sombre elle est sombre : c&#39;est ce qui fait remonter la teinte, là où un
+  &#47;&#47; rendu antérieur peignait le même hex dans les deux luminosités (mesuré :
+  &#47;&#47; aucune branche `Brightness` dans son rendu).
+  final Color baseSurface =
+      CardTheme.of(context).color ?? material.colorScheme.surface;
+
+  final _ZContentHubChrome chrome = _ZContentHubChrome(
+    comfortable: comfortable,
+    extent:
+        itemExtent ??
+        theme.contentHubItemExtent ??
+        ZContentHubReference.itemExtent,
+    radius:
+        itemRadius ??
+        theme.contentHubItemRadius ??
+        ZContentHubReference.itemRadius,
+    padding:
+        itemPadding ??
+        theme.contentHubItemPadding ??
+        ZContentHubReference.itemPadding,
+    tintAlpha:
+        itemTintAlpha ??
+        theme.contentHubItemTintAlpha ??
+        ZContentHubReference.itemTintAlpha,
+    avatarSize:
+        avatarSize ??
+        theme.contentHubAvatarSize ??
+        ZContentHubReference.avatarSize,
+    avatarTintAlpha:
+        avatarTintAlpha ??
+        theme.contentHubAvatarTintAlpha ??
+        ZContentHubReference.avatarTintAlpha,
+    glyphSize:
+        glyphSize ??
+        theme.contentHubGlyphSize ??
+        ZContentHubReference.glyphSize,
+    badgeColor:
+        badgeColor ??
+        theme.contentHubBadgeColor ??
+        ZContentHubReference.badgeAccent,
+    chevron: chevronGlyph ?? ZContentHubReference.chevronGlyph,
+    palette: palette,
+    minContrast: floor,
+    baseSurface: baseSurface,
+    neutralColor: material.colorScheme.onSurfaceVariant,
+    borderSide: BorderSide(
+      color: material.colorScheme.outlineVariant,
+      width: ZContentHubReference.borderWidth,
+    ),
+    spacing: ZContentHubReference.itemSpacing,
+  );
+
+  final List&lt;ZContentHubSection&gt; groups = _groups();
+  final TextStyle? titleStyle =
+      (sectionTitleStyle ??
+              theme.contentHubSectionTitleStyle ??
+              material.textTheme.titleMedium)
+          ?.copyWith(fontWeight: ZContentHubReference.sectionTitleFontWeight);
+
+  return Semantics(
+    container: true,
+    child: LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        &#47;&#47; Mesuré : le rendu historique passe à deux colonnes dès 600 lp de
+        &#47;&#47; large.
+        final double breakpoint =
+            gridBreakpoint ??
+            theme.contentHubGridBreakpoint ??
+            ZContentHubReference.gridBreakpoint;
+        final int wideColumns =
+            gridCrossAxisCount ??
+            theme.contentHubGridCrossAxisCount ??
+            ZContentHubReference.gridCrossAxisCount;
+        final int columns = !comfortable || constraints.maxWidth &lt; breakpoint
+            ? 1
+            : (wideColumns &lt; 1 ? 1 : wideColumns);
+
+        return CustomScrollView(
+          shrinkWrap: true,
+          slivers: &lt;Widget&gt;[
+            SliverPadding(
+              padding: padding ?? ZContentHubReference.listPadding,
+              sliver: SliverMainAxisGroup(
+                slivers: &lt;Widget&gt;[
+                  for (final ZContentHubSection group in groups) ...&lt;Widget&gt;[
+                    if (group.title != null)
+                      SliverToBoxAdapter(
+                        child: _ZSectionHeader(
+                          section: group,
+                          style: titleStyle,
+                        ),
+                      ),
+                    if (columns == 1)
+                      SliverList.builder(
+                        itemCount: group.entries.length,
+                        itemBuilder: (BuildContext context, int index) =&gt;
+                            Padding(
+                              padding: EdgeInsetsDirectional.only(
+                                bottom: chrome.spacing,
+                              ),
+                              child: _ZContentHubTile(
+                                entry: group.entries[index],
+                                chrome: chrome,
+                              ),
+                            ),
+                      )
+                    else
+                      SliverGrid.builder(
+                        gridDelegate:
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: columns,
+                              mainAxisSpacing: chrome.spacing,
+                              crossAxisSpacing: chrome.spacing,
+                              &#47;&#47; Facteur d&#39;échelle de texte : une cellule de
+                              &#47;&#47; grille a une hauteur imposée — la figer à
+                              &#47;&#47; 112 déborderait dès que l&#39;utilisateur
+                              &#47;&#47; agrandit le texte. L&#39;extent suit donc le
+                              &#47;&#47; `TextScaler` ambiant. En colonne unique,
+                              &#47;&#47; c&#39;est un simple plancher, donc le problème
+                              &#47;&#47; ne se pose pas.
+                              mainAxisExtent: MediaQuery.textScalerOf(
+                                context,
+                              ).scale(chrome.extent),
+                            ),
+                        itemCount: group.entries.length,
+                        itemBuilder: (BuildContext context, int index) =&gt;
+                            _ZContentHubTile(
+                              entry: group.entries[index],
+                              chrome: chrome,
+                            ),
+                      ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/ZContentHubSheet-class.html">ZContentHubSheet</a></li>
+    <li class="self-crumb">build method</li>
+</ol>
+
+    <h5>ZContentHubSheet class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

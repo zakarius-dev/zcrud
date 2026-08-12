@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZFlashcardAnswerEvaluationRequest class from the zcrud_flashcard library, for the Dart programming language.">
+  <title>ZFlashcardAnswerEvaluationRequest class - zcrud_flashcard library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_flashcard</a></li>
+    <li><a href="../zcrud_flashcard/">zcrud_flashcard.dart</a></li>
+    <li class="self-crumb">ZFlashcardAnswerEvaluationRequest class</li>
+  </ol>
+  <div class="self-name">ZFlashcardAnswerEvaluationRequest</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_flashcard&#47;zcrud_flashcard-library-sidebar.html"
+    data-below-sidebar="zcrud_flashcard&#47;ZFlashcardAnswerEvaluationRequest-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZFlashcardAnswerEvaluationRequest</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Requête immuable d'évaluation d'une réponse rédigée (value-object,
+<code>==</code>/<code>hashCode</code> par valeur).</p>
+<p>Ne porte que du contenu neutre : aucun prompt, aucun point de
+terminaison, aucune clé (invariant AD-12). N'est jamais construite pour
+un QCM ou un vrai/faux.</p>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZFlashcardAnswerEvaluationRequest.new" class="callable">
+          <span class="name"><a href="../zcrud_flashcard/ZFlashcardAnswerEvaluationRequest/ZFlashcardAnswerEvaluationRequest.html">ZFlashcardAnswerEvaluationRequest</a></span><span class="signature">({<span class="parameter" id="param-question"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">question</span>, </span><span class="parameter" id="param-userAnswer"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">userAnswer</span>, </span><span class="parameter" id="param-cardType"><span>required</span> <span class="type-annotation"><a href="../zcrud_flashcard/ZFlashcardType.html">ZFlashcardType</a></span> <span class="parameter-name">cardType</span>, </span><span class="parameter" id="param-expectedAnswer"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">expectedAnswer</span>, </span><span class="parameter" id="param-explanation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">explanation</span>, </span><span class="parameter" id="param-timeTaken"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a>?</span> <span class="parameter-name">timeTaken</span>, </span><span class="parameter" id="param-hintsUsed"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">hintsUsed</span> = <span class="default-value">0</span>, </span><span class="parameter" id="param-extra"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">extra</span> = <span class="default-value">const &lt;String, dynamic&gt;{}</span></span>})</span>
+        </dt>
+        <dd>
+          Construit une requête d'évaluation.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="cardType" class="property">
+  <span class="name"><a href="../zcrud_flashcard/ZFlashcardAnswerEvaluationRequest/cardType.html">cardType</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_flashcard/ZFlashcardType.html">ZFlashcardType</a></span>
+  
+
+</dt>
+<dd>
+  Type de la carte évaluée — jamais <a href="../zcrud_flashcard/ZFlashcardType.html">ZFlashcardType.multipleChoice</a> ni
+<a href="../zcrud_flashcard/ZFlashcardType.html">ZFlashcardType.trueOrFalse</a> (évalués localement).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="expectedAnswer" class="property">
+  <span class="name"><a href="../zcrud_flashcard/ZFlashcardAnswerEvaluationRequest/expectedAnswer.html">expectedAnswer</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Réponse attendue (<code>ZFlashcard.answer</code>), ou <code>null</code> si la carte n'en porte
+pas — l'application décide alors de son barème.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="explanation" class="property">
+  <span class="name"><a href="../zcrud_flashcard/ZFlashcardAnswerEvaluationRequest/explanation.html">explanation</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Explication pédagogique de la carte (<code>ZFlashcard.explanation</code>), ou
+<code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="extra" class="property">
+  <span class="name"><a href="../zcrud_flashcard/ZFlashcardAnswerEvaluationRequest/extra.html">extra</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Échappatoire non typée (paramètres applicatifs neutres). Défaut
+<code>const {}</code>. Normalisée à la lecture : les clés de synchronisation
+réservées sont écartées, jamais réémises.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_flashcard/ZFlashcardAnswerEvaluationRequest/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="hintsUsed" class="property">
+  <span class="name"><a href="../zcrud_flashcard/ZFlashcardAnswerEvaluationRequest/hintsUsed.html">hintsUsed</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre d'indices consommés — informatif seulement.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="question" class="property">
+  <span class="name"><a href="../zcrud_flashcard/ZFlashcardAnswerEvaluationRequest/question.html">question</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Énoncé de la carte (<code>ZFlashcard.question</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="timeTaken" class="property">
+  <span class="name"><a href="../zcrud_flashcard/ZFlashcardAnswerEvaluationRequest/timeTaken.html">timeTaken</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a>?</span>
+  
+
+</dt>
+<dd>
+  Temps de réponse mesuré, ou <code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="userAnswer" class="property">
+  <span class="name"><a href="../zcrud_flashcard/ZFlashcardAnswerEvaluationRequest/userAnswer.html">userAnswer</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Réponse rédigée par l'apprenant (texte brut).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable">
+  <span class="name"><a href="../zcrud_flashcard/ZFlashcardAnswerEvaluationRequest/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A string representation of this object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_flashcard/ZFlashcardAnswerEvaluationRequest/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_flashcard</a></li>
+    <li><a href="../zcrud_flashcard/">zcrud_flashcard</a></li>
+    <li class="self-crumb">ZFlashcardAnswerEvaluationRequest class</li>
+</ol>
+
+    <h5>zcrud_flashcard library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_flashcard
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

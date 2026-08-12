@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_export library API docs, for the Dart programming language.">
+  <title>zcrud_export library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_export</a></li>
+    <li class="self-crumb">zcrud_export.dart</li>
+  </ol>
+  <div class="self-name">zcrud_export</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_export&#47;zcrud_export-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_export</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_export</code>.</p>
+<p>Export tabulaire <strong>neutre</strong> : <code>ZListRenderRequest</code> (colonnes dérivées + lignes
+du cœur <code>zcrud_core</code>) → bytes Excel (<code>.xlsx</code>) / PDF via <a href="../zcrud_export/ZExporter-class.html">ZExporter</a>.</p>
+<p><strong>Isolation (invariants AD-1/AD-8)</strong> : les backends Syncfusion
+(<code>syncfusion_flutter_xlsio</code> / <code>_pdf</code>) sont CONFINÉS à
+<code>lib/src/data/z_{excel,pdf}_exporter.dart</code> et ne sont JAMAIS réexportés
+ici. Ce barrel n'expose AUCUN symbole Syncfusion ; les signatures
+publiques sont neutres (entrées <code>zcrud_core</code>, sorties <code>Uint8List</code>).</p>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/</code>.</p>
+<p>Au-delà de l'export tabulaire, ce barrel expose aussi l'assemblage
+images→PDF (<a href="../zcrud_export/ZPdfCreationService-class.html">ZPdfCreationService</a>), la sauvegarde cross-platform
+(<a href="../zcrud_export/ZFileSaver-class.html">ZFileSaver</a> / <a href="../zcrud_export/ZFileSaveResult-class.html">ZFileSaveResult</a>) et les options de mise en page PDF
+anti-rognage (<a href="../zcrud_export/ZPdfExportOptions-class.html">ZPdfExportOptions</a> / <a href="../zcrud_export/ZPdfOrientation.html">ZPdfOrientation</a>). Tous NEUTRES
+(bytes/chaînes), Syncfusion/<code>dart:io</code>/<code>package:web</code> restant confinés hors
+du barrel. Cette surface est <strong>additive et stable</strong> : aucun symbole n'en
+est jamais retiré ni renommé, un paquet aval pouvant s'y ancrer
+durablement.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZExportApi">
+  <span class="name "><a href="../zcrud_export/ZExportApi-class.html">ZExportApi</a></span> 
+
+</dt>
+<dd>
+  Marqueur d'API publique de <code>zcrud_export</code> (édge AD-1).
+</dd>
+
+          <dt id="ZExportedFile">
+  <span class="name "><a href="../zcrud_export/ZExportedFile-class.html">ZExportedFile</a></span> 
+
+</dt>
+<dd>
+  Un fichier produit par un export : ses <strong>bytes</strong>, un <strong>nom</strong> suggéré et son
+<strong>type MIME</strong>. Neutre et immuable — aucune fuite de type de plateforme.
+</dd>
+
+          <dt id="ZExporter">
+  <span class="name "><a href="../zcrud_export/ZExporter-class.html">ZExporter</a></span> 
+
+</dt>
+<dd>
+  Façade d'export neutre et immuable (<code>const</code>-constructible).
+</dd>
+
+          <dt id="ZExportTable">
+  <span class="name "><a href="../zcrud_export/ZExportTable-class.html">ZExportTable</a></span> 
+
+</dt>
+<dd>
+  Table d'export <strong>neutre et immuable</strong> : une ligne d'<a href="../zcrud_export/ZExportTable/headers.html">headers</a> + N lignes de
+cellules déjà formatées en <code>String</code>. Chaque sous-liste de <a href="../zcrud_export/ZExportTable/rows.html">rows</a> a la même
+longueur que <a href="../zcrud_export/ZExportTable/headers.html">headers</a> (une cellule par colonne, dans l'ordre <code>order</code>).
+</dd>
+
+          <dt id="ZFileSaver">
+  <span class="name "><a href="../zcrud_export/ZFileSaver-class.html">ZFileSaver</a></span> 
+
+</dt>
+<dd>
+  Sauvegarde de bytes en fichier, <strong>neutre et immuable</strong> (<code>const</code>).
+</dd>
+
+          <dt id="ZFileSaveResult">
+  <span class="name "><a href="../zcrud_export/ZFileSaveResult-class.html">ZFileSaveResult</a></span> 
+
+</dt>
+<dd>
+  Résultat immuable d'un <code>ZFileSaver.save</code> : nom du fichier, chemin écrit (io)
+ou identifiant de téléchargement (web), et indicateur de succès.
+</dd>
+
+          <dt id="ZFlashcardPdfCard">
+  <span class="name "><a href="../zcrud_export/ZFlashcardPdfCard-class.html">ZFlashcardPdfCard</a></span> 
+
+</dt>
+<dd>
+  Une carte <strong>projetée en primitives neutres</strong> (aucun type <code>zcrud_flashcard</code>).
+</dd>
+
+          <dt id="ZFlashcardPdfChoice">
+  <span class="name "><a href="../zcrud_export/ZFlashcardPdfChoice-class.html">ZFlashcardPdfChoice</a></span> 
+
+</dt>
+<dd>
+  Un choix de QCM <strong>neutre</strong> : libellé + caractère correct (projeté depuis
+<code>ZChoice</code>). Immuable.
+</dd>
+
+          <dt id="ZFlashcardPdfInput">
+  <span class="name "><a href="../zcrud_export/ZFlashcardPdfInput-class.html">ZFlashcardPdfInput</a></span> 
+
+</dt>
+<dd>
+  Entrée complète du gabarit : titre + cartes + mode d'affichage + libellés.
+</dd>
+
+          <dt id="ZFlashcardPdfLabels">
+  <span class="name "><a href="../zcrud_export/ZFlashcardPdfLabels-class.html">ZFlashcardPdfLabels</a></span> 
+
+</dt>
+<dd>
+  Libellés <strong>injectés</strong> du gabarit (défauts FR documentés). Aucun texte figé
+dans le rendu : l'appelant peut fournir des libellés localisés (invariant
+AD-13).
+</dd>
+
+          <dt id="ZFlashcardPdfTemplate">
+  <span class="name "><a href="../zcrud_export/ZFlashcardPdfTemplate-class.html">ZFlashcardPdfTemplate</a></span> 
+
+</dt>
+<dd>
+  Gabarit PDF flashcards <strong>PUR</strong> (bytes in → bytes out).
+</dd>
+
+          <dt id="ZFontCoverage">
+  <span class="name "><a href="../zcrud_export/ZFontCoverage-class.html">ZFontCoverage</a></span> 
+
+</dt>
+<dd>
+  Couverture en points de code d'une police TrueType, lue dans sa table <code>cmap</code>.
+</dd>
+
+          <dt id="ZLatexRasterizer">
+  <span class="name "><a href="../zcrud_export/ZLatexRasterizer-class.html">ZLatexRasterizer</a></span> 
+
+</dt>
+<dd>
+  Rasterise une formule LaTeX en <strong>PNG</strong> (bytes neutres) pour insertion inline
+dans un document généré par ce paquet.
+</dd>
+
+          <dt id="ZPdfCreationService">
+  <span class="name "><a href="../zcrud_export/ZPdfCreationService-class.html">ZPdfCreationService</a></span> 
+
+</dt>
+<dd>
+  Service d'assemblage d'images en PDF, <strong>neutre et immuable</strong> (<code>const</code>).
+</dd>
+
+          <dt id="ZPdfExportOptions">
+  <span class="name "><a href="../zcrud_export/ZPdfExportOptions-class.html">ZPdfExportOptions</a></span> 
+
+</dt>
+<dd>
+  Options de mise en page immuables pour l'export PDF (tabulaire + images).
+</dd>
+
+          <dt id="ZPdfFontProvider">
+  <span class="name "><a href="../zcrud_export/ZPdfFontProvider-class.html">ZPdfFontProvider</a></span> 
+
+</dt>
+<dd>
+  Fournit les octets d'une police <strong>TrueType</strong> au gabarit PDF.
+</dd>
+
+          <dt id="ZPdfHeaderSpec">
+  <span class="name "><a href="../zcrud_export/ZPdfHeaderSpec-class.html">ZPdfHeaderSpec</a></span> 
+
+</dt>
+<dd>
+  En-tête PDF <strong>riche</strong>, neutre et immuable : logo + hiérarchie
+organisationnelle + sous-titre.
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="ZAnswerVisibility">
+  <span class="name "><a href="../zcrud_export/ZAnswerVisibility.html">ZAnswerVisibility</a></span> 
+
+</dt>
+<dd>
+  Contrôle la présence des éléments <strong>réponse</strong> dans le PDF généré par
+<code>ZFlashcardPdfTemplate</code>.
+</dd>
+
+          <dt id="ZPdfOrientation">
+  <span class="name "><a href="../zcrud_export/ZPdfOrientation.html">ZPdfOrientation</a></span> 
+
+</dt>
+<dd>
+  Orientation de page PDF <strong>neutre</strong> (mappe vers <code>PdfPageOrientation</code> dans le
+backend confiné — jamais exposée sous forme de type Syncfusion).
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+    <section class="summary offset-anchor" id="constants">
+      <h2>Constants</h2>
+      <dl class="properties">
+          <dt id="kFlashcardPdfTypeExercise" class="constant">
+    <span class="name "><a href="../zcrud_export/kFlashcardPdfTypeExercise-constant.html">kFlashcardPdfTypeExercise</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Exercice.
+  
+
+</dd>
+
+          <dt id="kFlashcardPdfTypeFillBlank" class="constant">
+    <span class="name "><a href="../zcrud_export/kFlashcardPdfTypeFillBlank-constant.html">kFlashcardPdfTypeFillBlank</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Texte à trous.
+  
+
+</dd>
+
+          <dt id="kFlashcardPdfTypeMultipleChoice" class="constant">
+    <span class="name "><a href="../zcrud_export/kFlashcardPdfTypeMultipleChoice-constant.html">kFlashcardPdfTypeMultipleChoice</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clés de type <strong>neutres</strong> (camelCase = <code>ZFlashcardType.name</code>) — miroir STABLE
+des 6 types canoniques, sans dépendre de <code>zcrud_flashcard</code>. L'appelant
+projette <code>card.type.name</code> vers l'une d'elles ; le gabarit les mappe à un badge.
+  
+
+</dd>
+
+          <dt id="kFlashcardPdfTypeOpenQuestion" class="constant">
+    <span class="name "><a href="../zcrud_export/kFlashcardPdfTypeOpenQuestion-constant.html">kFlashcardPdfTypeOpenQuestion</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Question ouverte — <strong>valeur de repli défensive</strong> (type inconnu → celle-ci).
+  
+
+</dd>
+
+          <dt id="kFlashcardPdfTypeShortAnswer" class="constant">
+    <span class="name "><a href="../zcrud_export/kFlashcardPdfTypeShortAnswer-constant.html">kFlashcardPdfTypeShortAnswer</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Réponse courte.
+  
+
+</dd>
+
+          <dt id="kFlashcardPdfTypeTrueOrFalse" class="constant">
+    <span class="name "><a href="../zcrud_export/kFlashcardPdfTypeTrueOrFalse-constant.html">kFlashcardPdfTypeTrueOrFalse</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Vrai/Faux — réponse portée par <a href="../zcrud_export/ZFlashcardPdfCard/isTrue.html">ZFlashcardPdfCard.isTrue</a>.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="buildPdfBytes" class="callable">
+  <span class="name"><a href="../zcrud_export/buildPdfBytes.html">buildPdfBytes</a></span><span class="signature">(<wbr><span class="parameter" id="buildPdfBytes-param-table"><span class="type-annotation"><a href="../zcrud_export/ZExportTable-class.html">ZExportTable</a></span> <span class="parameter-name">table</span>, {</span><span class="parameter" id="buildPdfBytes-param-options"><span class="type-annotation"><a href="../zcrud_export/ZPdfExportOptions-class.html">ZPdfExportOptions</a>?</span> <span class="parameter-name">options</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-typed_data/Uint8List-class.html">Uint8List</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Construit un document PDF tabulaire à partir de la <code>table</code> neutre et renvoie
+ses <strong>bytes</strong> (<code>Uint8List</code>, préfixe <code>%PDF-</code>). En-tête + <code>rows.length</code> lignes.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_export</a></li>
+    <li class="self-crumb">zcrud_export.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_export</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_export/">zcrud_export</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_export library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_export
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

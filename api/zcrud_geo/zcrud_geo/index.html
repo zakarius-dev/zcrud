@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_geo library API docs, for the Dart programming language.">
+  <title>zcrud_geo library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_geo</a></li>
+    <li class="self-crumb">zcrud_geo.dart</li>
+  </ol>
+  <div class="self-name">zcrud_geo</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_geo&#47;zcrud_geo-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_geo</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_geo</code>.</p>
+<p>Champ géo (<code>location</code>/<code>geoArea</code>) : modèle de valeur <strong>neutre</strong>
+(<code>ZGeoPoint</code>/<code>ZGeoShape</code>), port carte <strong>pur</strong> (<code>ZMapAdapter</code>) et widget de
+champ (<code>ZGeoFieldWidget</code> + factory <code>builder</code>) servi via <code>ZWidgetRegistry</code>.</p>
+<p><strong>AD-1 (isolation)</strong> : ce barrel n'exporte AUCUN symbole de SDK carte
+(<code>flutter_map</code>/<code>latlong2</code>). L'adaptateur concret OSM est atteint via l'entrée
+dédiée <code>package:zcrud_geo/adapters/osm.dart</code> — le SDK reste hors de la voie
+d'import par défaut. Aucun type carte ne fuit dans la valeur de tranche ni
+dans une signature publique.</p>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/</code>.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZGeoApi">
+  <span class="name "><a href="../zcrud_geo/ZGeoApi-class.html">ZGeoApi</a></span> 
+
+</dt>
+<dd>
+  Marqueur d'API publique de <code>zcrud_geo</code>.
+</dd>
+
+          <dt id="ZGeoBounds">
+  <span class="name "><a href="../zcrud_geo/ZGeoBounds-class.html">ZGeoBounds</a></span> 
+
+</dt>
+<dd>
+  Boîte englobante géographique neutre (coins sud-ouest/nord-est) — résultat
+des getters <code>bounds</code>.
+</dd>
+
+          <dt id="ZGeoChromeReference">
+  <span class="name "><a href="../zcrud_geo/ZGeoChromeReference-class.html">ZGeoChromeReference</a></span> 
+
+</dt>
+<dd>
+  Valeurs de chrome de référence legacy (auditées, opt-in).
+Espace de noms statique : non instanciable.
+</dd>
+
+          <dt id="ZGeoCircle">
+  <span class="name "><a href="../zcrud_geo/ZGeoCircle-class.html">ZGeoCircle</a></span> 
+
+</dt>
+<dd>
+  Cercle géographique neutre : centre (<a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a>) + rayon en mètres.
+</dd>
+
+          <dt id="ZGeoEditorToolbarConfig">
+  <span class="name "><a href="../zcrud_geo/ZGeoEditorToolbarConfig-class.html">ZGeoEditorToolbarConfig</a></span> 
+
+</dt>
+<dd>
+  Config <code>const</code> de la barre d'outils d'éditeur géo. Portée par
+<a href="../zcrud_geo/ZGeoFieldConfig/toolbarConfig.html">ZGeoFieldConfig.toolbarConfig</a> ; <code>null</code> côté config → barre <code>standard</code>.
+</dd>
+
+          <dt id="ZGeoFieldConfig">
+  <span class="name "><a href="../zcrud_geo/ZGeoFieldConfig-class.html">ZGeoFieldConfig</a></span> 
+
+</dt>
+<dd>
+  Config additive <code>const</code> du champ géo (AD-4). Vit dans <code>zcrud_geo</code> ; aucune
+modification du cœur. Tous les défauts sont neutres/surchargeables (AD-12).
+</dd>
+
+          <dt id="ZGeoFieldWidget">
+  <span class="name "><a href="../zcrud_geo/ZGeoFieldWidget-class.html">ZGeoFieldWidget</a></span> 
+
+</dt>
+<dd>
+  Champ d'édition géo (invariant AD-2 : contrôleurs stables, rebuild ciblé).
+</dd>
+
+          <dt id="ZGeoJson">
+  <span class="name "><a href="../zcrud_geo/ZGeoJson-class.html">ZGeoJson</a></span> 
+
+</dt>
+<dd>
+  Import GeoJSON <strong>défensif et discriminé</strong> — le pendant RFC 7946 du
+routeur <a href="../zcrud_geo/ZGeoValue/fromMapSafe.html">ZGeoValue.fromMapSafe</a>. Espace de noms statique : non
+instanciable.
+</dd>
+
+          <dt id="ZGeoMapOptions">
+  <span class="name "><a href="../zcrud_geo/ZGeoMapOptions-class.html">ZGeoMapOptions</a></span> 
+
+</dt>
+<dd>
+  Options de carte <strong>neutres</strong> pilotées par la barre d'outils. <code>const</code>,
+immuable, <code>copyWith</code>/<code>==</code>/<code>hashCode</code>. Passé à <code>ZMapAdapter.buildMap</code> via le
+paramètre additif <code>mapOptions</code> ; défauts = comportement de base inchangé.
+</dd>
+
+          <dt id="ZGeoMapOverlay">
+  <span class="name "><a href="../zcrud_geo/ZGeoMapOverlay-class.html">ZGeoMapOverlay</a></span> 
+
+</dt>
+<dd>
+  <strong>Couche de lecture multi-formes</strong> : une valeur géo neutre
+(<a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a>/<a href="../zcrud_geo/ZGeoCircle-class.html">ZGeoCircle</a>/<a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a> — champ <a href="../zcrud_geo/ZGeoMapOverlay/value.html">value</a> typé <code>Object</code> faute
+d'ancêtre commun, routé par <code>is</code> dans l'adaptateur) + un <a href="../zcrud_geo/ZGeoMapOverlay/id.html">id</a> stable pour
+la sélection par tap marqueur. <a href="../zcrud_geo/ZGeoMapOverlay/renderAsPolyline.html">renderAsPolyline</a> : <code>true</code> → une
+<a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a> est rendue en tracé ouvert. Une valeur d'un autre type est
+<strong>ignorée</strong> sans erreur (invariant AD-10).
+</dd>
+
+          <dt id="ZGeoMapView">
+  <span class="name "><a href="../zcrud_geo/ZGeoMapView-class.html">ZGeoMapView</a></span> 
+
+</dt>
+<dd>
+  Vue carte multi-formes en lecture seule.
+</dd>
+
+          <dt id="ZGeoMapViewEntry">
+  <span class="name "><a href="../zcrud_geo/ZGeoMapViewEntry-class.html">ZGeoMapViewEntry</a></span> 
+
+</dt>
+<dd>
+  Entrée de <a href="../zcrud_geo/ZGeoMapView-class.html">ZGeoMapView</a> : une valeur géo neutre + libellé/rappel optionnels.
+</dd>
+
+          <dt id="ZGeoPoint">
+  <span class="name "><a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a></span> 
+
+</dt>
+<dd>
+  Point géographique neutre : latitude/longitude + libellé/adresse optionnels.
+</dd>
+
+          <dt id="ZGeoShape">
+  <span class="name "><a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a></span> 
+
+</dt>
+<dd>
+  Forme géographique neutre : liste ordonnée de sommets + attributs optionnels
+(id/label/style/holes/metadata).
+</dd>
+
+          <dt id="ZGeoShapeStyle">
+  <span class="name "><a href="../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a></span> 
+
+</dt>
+<dd>
+  Style de rendu neutre d'une <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a> : couleurs ARGB, contour, opacité,
+icône de marqueur, draggable, info-window. Aucun type SDK/<code>Color</code> exposé.
+</dd>
+
+          <dt id="ZGeoShapeStylePicker">
+  <span class="name "><a href="../zcrud_geo/ZGeoShapeStylePicker-class.html">ZGeoShapeStylePicker</a></span> 
+
+</dt>
+<dd>
+  Toolbar de style d'une forme géo : remplissage / trait / épaisseur.
+</dd>
+
+          <dt id="ZGeoStyleReference">
+  <span class="name "><a href="../zcrud_geo/ZGeoStyleReference-class.html">ZGeoStyleReference</a></span> 
+
+</dt>
+<dd>
+  Couleurs et presets de style de référence (audités, opt-in). Espace de
+noms statique : non instanciable.
+</dd>
+
+          <dt id="ZGeoTileReference">
+  <span class="name "><a href="../zcrud_geo/ZGeoTileReference-class.html">ZGeoTileReference</a></span> 
+
+</dt>
+<dd>
+  Jeux de tuiles de référence par <a href="../zcrud_geo/ZGeoMapType.html">ZGeoMapType</a> (surchargeables). Espace de
+noms statique : non instanciable.
+</dd>
+
+          <dt id="ZGeoValue">
+  <span class="name "><a href="../zcrud_geo/ZGeoValue-class.html">ZGeoValue</a></span> 
+
+</dt>
+<dd>
+  Routeur de lecture discriminé d'une valeur géo (format legacy ou zcrud).
+Espace de noms statique : non instanciable.
+</dd>
+
+          <dt id="ZMapAdapter">
+  <span class="name "><a href="../zcrud_geo/ZMapAdapter-class.html">ZMapAdapter</a></span> 
+
+</dt>
+<dd>
+  Port de rendu carte en <strong>types neutres uniquement</strong>. Optionnel : si aucun
+adaptateur n'est injecté, le champ géo dégrade proprement (saisie
+coordonnées seule), sans crash.
+</dd>
+
+          <dt id="ZMapCameraCapable">
+  <span class="name "><a href="../zcrud_geo/ZMapCameraCapable-class.html">ZMapCameraCapable</a></span> 
+
+</dt>
+<dd>
+  <strong>Capacité caméra optionnelle</strong> d'un adaptateur carte.
+</dd>
+
+          <dt id="ZMapGesturesCapable">
+  <span class="name "><a href="../zcrud_geo/ZMapGesturesCapable-class.html">ZMapGesturesCapable</a></span> 
+
+</dt>
+<dd>
+  <strong>Capacité de gestes d'édition optionnelle</strong> d'un adaptateur carte. Même
+logique opt-in que <a href="../zcrud_geo/ZMapCameraCapable-class.html">ZMapCameraCapable</a> (invariant AD-4 : rien n'est ajouté
+au port pur — un implémenteur externe existant compile inchangé et
+n'offre simplement pas le drag, contrat honoré-si-supporté).
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="ZGeoGeometry">
+  <span class="name "><a href="../zcrud_geo/ZGeoGeometry.html">ZGeoGeometry</a></span> 
+
+</dt>
+<dd>
+  Géométrie d'un champ géo. Valeurs <strong>camelCase</strong>.
+</dd>
+
+          <dt id="ZGeoMapType">
+  <span class="name "><a href="../zcrud_geo/ZGeoMapType.html">ZGeoMapType</a></span> 
+
+</dt>
+<dd>
+  Type de carte <strong>neutre</strong> (traduit par chaque adaptateur vers son SDK).
+Valeurs <strong>camelCase</strong> (canonique §5).
+</dd>
+
+          <dt id="ZGeoPresentation">
+  <span class="name "><a href="../zcrud_geo/ZGeoPresentation.html">ZGeoPresentation</a></span> 
+
+</dt>
+<dd>
+  Présentation du champ géo dans le <strong>flux du formulaire</strong>. La restriction
+porte sur la présentation <strong>en flux uniquement</strong> — la route plein écran
+rend toujours le champ avec toutes ses capacités, quelle que soit cette
+valeur.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+    <section class="summary offset-anchor" id="extensions">
+      <h2>Extensions</h2>
+      <dl>
+          <dt id="ZGeoCircleGeoJson">
+  <span class="name "><a href="../zcrud_geo/ZGeoCircleGeoJson.html">ZGeoCircleGeoJson</a></span>
+  on <a href="../zcrud_geo/ZGeoCircle-class.html">ZGeoCircle</a>
+  
+
+</dt>
+<dd>
+  Export GeoJSON d'un <a href="../zcrud_geo/ZGeoCircle-class.html">ZGeoCircle</a> — <strong>convention documentée</strong> (RFC 7946 n'a
+aucun type cercle) : <code>Feature</code> portant un <code>Point</code> + <code>properties.radius_m</code>.
+</dd>
+
+          <dt id="ZGeoCircleMetrics">
+  <span class="name "><a href="../zcrud_geo/ZGeoCircleMetrics.html">ZGeoCircleMetrics</a></span>
+  on <a href="../zcrud_geo/ZGeoCircle-class.html">ZGeoCircle</a>
+  
+
+</dt>
+<dd>
+  Métriques pures d'un <a href="../zcrud_geo/ZGeoCircle-class.html">ZGeoCircle</a>.
+</dd>
+
+          <dt id="ZGeoPointGeoJson">
+  <span class="name "><a href="../zcrud_geo/ZGeoPointGeoJson.html">ZGeoPointGeoJson</a></span>
+  on <a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a>
+  
+
+</dt>
+<dd>
+  Export GeoJSON d'un <a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a> (<code>Point</code>, position <code>[lng, lat]</code>).
+</dd>
+
+          <dt id="ZGeoShapeGeoJson">
+  <span class="name "><a href="../zcrud_geo/ZGeoShapeGeoJson.html">ZGeoShapeGeoJson</a></span>
+  on <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a>
+  
+
+</dt>
+<dd>
+  Export GeoJSON d'une <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a> (<code>Polygon</code> fermé + trous, ou <code>LineString</code>).
+</dd>
+
+          <dt id="ZGeoShapeMetrics">
+  <span class="name "><a href="../zcrud_geo/ZGeoShapeMetrics.html">ZGeoShapeMetrics</a></span>
+  on <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a>
+  
+
+</dt>
+<dd>
+  Métriques pures d'une <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a> — voir la doc de bibliothèque pour la
+nature des formules.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZGeoLocationResolver" class="callable">
+    <span class="name"><a href="../zcrud_geo/ZGeoLocationResolver.html">ZGeoLocationResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a>?</span>&gt;</span> Function<span class="signature">()</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Seam <strong>neutre</strong> de résolution « ma position ». Renvoie un <a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a>
+neutre (ou <code>null</code> si indisponible/refusée/erreur). <strong>Aucun SDK de
+géolocalisation, aucune permission</strong> n'est embarqué par <code>zcrud_geo</code> :
+l'application hôte injecte sa propre implémentation via
+<code>ZGeoFieldWidget.builder(locationResolver:)</code> (capturée par closure —
+invariant AD-4, aucun slot <code>zcrud_core</code>). Le bouton « ma position » est
+masqué/désactivé si ce seam est absent.
+    
+
+  </dd>
+
+          
+  <dt id="ZGeoMapViewLabelBuilder" class="callable">
+    <span class="name"><a href="../zcrud_geo/ZGeoMapViewLabelBuilder.html">ZGeoMapViewLabelBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>? Function<span class="signature">(<span class="parameter" id="param-entry"><span class="type-annotation"><a href="../zcrud_geo/ZGeoMapViewEntry-class.html">ZGeoMapViewEntry</a></span> <span class="parameter-name">entry</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Libellé d'une entrée, repris en <code>style.infoWindowTitle</code>.
+    
+
+  </dd>
+
+          
+  <dt id="ZGeoRadiusDragEnd" class="callable">
+    <span class="name"><a href="../zcrud_geo/ZGeoRadiusDragEnd.html">ZGeoRadiusDragEnd</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-radiusMeters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">radiusMeters</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Callback de fin de <strong>drag de la poignée de rayon</strong> d'un cercle : nouveau
+rayon en mètres (distance haversine centre→poignée).
+    
+
+  </dd>
+
+          
+  <dt id="ZGeoShapeDragEnd" class="callable">
+    <span class="name"><a href="../zcrud_geo/ZGeoShapeDragEnd.html">ZGeoShapeDragEnd</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-deltaLat"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">deltaLat</span>, </span><span class="parameter" id="param-deltaLng"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">deltaLng</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Callback de fin de <strong>déplacement de forme entière</strong> via le marqueur au
+centroïde : delta en degrés décimaux à appliquer à chaque sommet.
+    
+
+  </dd>
+
+          
+  <dt id="ZGeoVertexDragEnd" class="callable">
+    <span class="name"><a href="../zcrud_geo/ZGeoVertexDragEnd.html">ZGeoVertexDragEnd</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-index"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">index</span>, </span><span class="parameter" id="param-position"><span class="type-annotation"><a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a></span> <span class="parameter-name">position</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Callback de fin de <strong>drag d'un sommet</strong> : <code>index</code> du sommet dans
+<code>shape.vertices</code> + nouvelle <code>position</code> neutre.
+    
+
+  </dd>
+
+          
+  <dt id="ZMapAdapterFactory" class="callable">
+    <span class="name"><a href="../zcrud_geo/ZMapAdapterFactory.html">ZMapAdapterFactory</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="../zcrud_geo/ZMapAdapter-class.html">ZMapAdapter</a> Function<span class="signature">()</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Fabrique d'<a href="../zcrud_geo/ZMapAdapter-class.html">ZMapAdapter</a> : crée une <strong>nouvelle</strong> instance possédée à
+chaque appel. Le champ géo l'invoque <strong>une fois par montage</strong>
+(<code>initState</code>) pour garantir « une instance par montage » — jamais
+d'instance partagée/aliasée.
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_geo</a></li>
+    <li class="self-crumb">zcrud_geo.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_geo</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../adapters_google/">adapters/google</a></li>
+      <li><a href="../adapters_osm/">adapters/osm</a></li>
+      <li><a href="../zcrud_geo/">zcrud_geo</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_geo library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_geo
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

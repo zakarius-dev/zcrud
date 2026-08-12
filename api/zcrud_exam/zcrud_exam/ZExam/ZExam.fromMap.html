@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZExam.fromMap constructor from Class ZExam from the zcrud_exam library, for the Dart programming language.">
+  <title>ZExam.fromMap constructor - ZExam - zcrud_exam library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_exam</a></li>
+    <li><a href="../../zcrud_exam/">zcrud_exam.dart</a></li>
+    <li><a href="../../zcrud_exam/ZExam-class.html">ZExam</a></li>
+    <li class="self-crumb">ZExam.fromMap factory constructor</li>
+  </ol>
+  <div class="self-name">ZExam.fromMap</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_exam&#47;ZExam-class-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-constructor">ZExam.fromMap</span> constructor 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+      <span class="name ">ZExam.fromMap</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="fromMap-param-map"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">map</span>, {</span></li>
+<li><span class="parameter" id="fromMap-param-extensionParser"><span class="type-annotation"><a href="../../zcrud_exam/ZExamExtensionParser.html">ZExamExtensionParser</a>?</span> <span class="parameter-name">extensionParser</span>, </span></li>
+</ol>})
+    </section>
+    
+<section class="desc markdown">
+  <p>Reconstruit défensivement un examen depuis une map persistée (invariant
+AD-10) — aucun cas ne lève, pas même <code>ZExam.fromMap(const {})</code>.</p>
+<p>Délègue au décodeur généré pour les champs de schéma (défauts sûrs :
+<code>folder_id</code>/<code>title</code> absents → <code>''</code> ; <code>date</code> illisible → <code>null</code> ;
+<code>reminder_enabled</code> absent → <code>false</code> ; <code>reminder_days_before</code> illisible →
+<code>const []</code>), puis câble les canaux hors schéma :</p>
+<ul>
+<li><a href="../../zcrud_exam/ZExam/reminderTime.html">reminderTime</a> via <a href="../../zcrud_exam/ZReminderTime/parse.html">ZReminderTime.parse</a> — une valeur invalide comme
+<code>'99:99'</code> rend <code>null</code>, jamais une exception ;</li>
+<li><a href="../../zcrud_exam/ZExam/extension.html">extension</a> via <code>extensionParser</code> (repli <code>null</code>, <code>ZExtension.guard</code>) ;</li>
+<li><a href="../../zcrud_exam/ZExam/extra.html">extra</a> = les clés non réservées de la map (round-trip préservé).</li>
+</ul>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">factory ZExam.fromMap(
+  Map&lt;String, dynamic&gt; map, {
+  ZExamExtensionParser? extensionParser,
+}) {
+  final base = _$ZExamFromMap(map);
+  return ZExam(
+    id: base.id,
+    folderId: base.folderId,
+    title: base.title,
+    date: base.date,
+    reminderEnabled: base.reminderEnabled,
+    reminderDaysBefore: base.reminderDaysBefore,
+    &#47;&#47; Canal hors schéma — décodé à la main, défensivement (invariant
+    &#47;&#47; AD-10).
+    reminderTime: ZReminderTime.parse(map[kReminderTimeKey] as String?),
+    &#47;&#47; Canal hors schéma — décodé à la main, défensivement (invariant
+    &#47;&#47; AD-10).
+    reminderRecurrence:
+        ZReminderRecurrence.fromJsonSafe(map[kReminderRecurrenceKey]),
+    extension: _decodeExtension(map[&#39;extension&#39;], extensionParser),
+    extra: _extraFrom(map),
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_exam</a></li>
+    <li><a href="../../zcrud_exam/">zcrud_exam</a></li>
+    <li><a href="../../zcrud_exam/ZExam-class.html">ZExam</a></li>
+    <li class="self-crumb">ZExam.fromMap factory constructor</li>
+</ol>
+
+    <h5>ZExam class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_exam
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

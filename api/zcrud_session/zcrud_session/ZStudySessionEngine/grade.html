@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the grade method from the ZStudySessionEngine class, for the Dart programming language.">
+  <title>grade method - ZStudySessionEngine class - zcrud_session library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_session</a></li>
+    <li><a href="../../zcrud_session/">zcrud_session.dart</a></li>
+    <li><a href="../../zcrud_session/ZStudySessionEngine-class.html">ZStudySessionEngine</a></li>
+    <li class="self-crumb">grade method</li>
+  </ol>
+  <div class="self-name">grade</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_session&#47;ZStudySessionEngine-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">grade</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter">ZRepetitionInfo</span>&gt;</span></span>&gt;</span></span>
+<span class="name ">grade</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="grade-param-quality"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">quality</span>, {</span></li>
+<li><span class="parameter" id="grade-param-now"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span> <span class="parameter-name">now</span>, </span></li>
+</ol>})
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Applique un grade de <code>quality</code> (échelle SuperMemo-2 <code>0..5</code>) à la carte
+courante, de façon atomique et ordonnée :</p>
+<ol>
+<li>invoque le seam <a href="../../zcrud_session/ZSessionReviewer.html">ZSessionReviewer</a> exactement une fois (écrit la
+lapse/réussite via la voie unique <code>reviewCard</code>) ;</li>
+<li>sur succès : mute la file via le reducer pur <a href="../../zcrud_session/reduceGrade.html">reduceGrade</a> puis
+notifie une seule fois si l'état change ;</li>
+<li>sur échec : la file n'est pas mutée, l'échec est exposé (état
+<code>error</code> et valeur de retour), jamais avalé silencieusement.</li>
+</ol>
+<p>Sur une session complète (aucune carte courante) : no-op — le seam
+n'est pas invoqué, aucune notification n'est émise, un échec de type
+domaine signale l'absence de carte.</p>
+<p><code>clampQuality</code> est l'unique voie de clamp. La <code>quality</code> est ramenée
+dans l'échelle possédée par <code>ZSrsConfig</code> avant d'atteindre le seam et
+avant le reducer : c'est ici, et nulle part ailleurs, que passe la
+notation d'une session SRS. Jamais un <code>.clamp(0, 5)</code> littéral : une
+application qui tronque son échelle (<code>ZSrsConfig(minQuality: 1)</code>)
+verrait sinon une note hors de son échelle écrite par la voie légitime.
+Défensif (invariant AD-10) : une note aberrante venue d'un port
+d'évaluation est clampée, jamais rejetée.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;ZResult&lt;ZRepetitionInfo&gt;&gt; grade(int quality, {DateTime? now}) async {
+  final card = _state.current;
+  if (card == null) {
+    &#47;&#47; No-op : aucune carte courante, donc pas de seam, pas de notification.
+    return const Left&lt;ZDomainFailure, ZRepetitionInfo&gt;(
+      ZDomainFailure(&#39;ZStudySessionEngine.grade: aucune carte courante &#39;
+          &#39;(session complète)&#39;),
+    );
+  }
+
+  &#47;&#47; Clamp par le propriétaire de l&#39;échelle, avant toute écriture.
+  final clamped = _config.clampQuality(quality);
+
+  &#47;&#47; Seam d&#39;abord — voie d&#39;écriture SRS unique, exactement une fois par
+  &#47;&#47; appel à `grade`.
+  final result = await _review(
+    flashcardId: card.flashcardId,
+    folderId: card.folderId,
+    quality: clamped,
+    now: now,
+  );
+
+  return result.fold(
+    (failure) {
+      &#47;&#47; Échec exposé, file inchangée (jamais de réinsertion fantôme).
+      _setState(_state.withError(failure));
+      return Left&lt;ZFailure, ZRepetitionInfo&gt;(failure);
+    },
+    (info) {
+      &#47;&#47; File mutée par le reducer pur, puis notification granulaire. La
+      &#47;&#47; même valeur clampée que celle écrite par le seam : sinon la file
+      &#47;&#47; pourrait juger « lapse » une note que le SRS a, lui, reçue en
+      &#47;&#47; réussite.
+      _setState(reduceGrade(_state, clamped, passThreshold: _passThreshold));
+      return Right&lt;ZFailure, ZRepetitionInfo&gt;(info);
+    },
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_session</a></li>
+    <li><a href="../../zcrud_session/">zcrud_session</a></li>
+    <li><a href="../../zcrud_session/ZStudySessionEngine-class.html">ZStudySessionEngine</a></li>
+    <li class="self-crumb">grade method</li>
+</ol>
+
+    <h5>ZStudySessionEngine class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_session
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZLinearSessionState.new constructor from Class ZLinearSessionState from the zcrud_session library, for the Dart programming language.">
+  <title>ZLinearSessionState.new constructor - ZLinearSessionState - zcrud_session library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_session</a></li>
+    <li><a href="../../zcrud_session/">zcrud_session.dart</a></li>
+    <li><a href="../../zcrud_session/ZLinearSessionState-class.html">ZLinearSessionState</a></li>
+    <li class="self-crumb">ZLinearSessionState.new constructor</li>
+  </ol>
+  <div class="self-name">ZLinearSessionState.new</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_session&#47;ZLinearSessionState-class-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-constructor">ZLinearSessionState</span> constructor 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+      <span class="name ">ZLinearSessionState</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-queue"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_session/ZSessionItem-class.html">ZSessionItem</a></span>&gt;</span></span> <span class="parameter-name">queue</span>, </span></li>
+<li><span class="parameter" id="param-mode"><span class="type-annotation">ZReviewMode</span> <span class="parameter-name">mode</span> = <span class="default-value">ZReviewMode.list</span>, </span></li>
+<li><span class="parameter" id="param-config"><span class="type-annotation">ZSrsConfig</span> <span class="parameter-name">config</span> = <span class="default-value">const ZSrsConfig()</span>, </span></li>
+</ol>})
+    </section>
+    
+<section class="desc markdown">
+  <p>Construit le runtime à partir d'une file déjà sélectionnée <code>queue</code> et
+d'un <code>mode</code> linéaire (défaut <code>ZReviewMode.list</code>). Le <code>config</code> fournit le
+seuil de lapse <code>passThreshold</code> (réutilisé, jamais recopié), utilisé
+uniquement en mode cramming.</p>
+<p>Aucun paramètre de review/scheduler : ce runtime ne sait pas écrire du
+SRS, par construction. Un <code>mode</code> SRS (<code>spaced</code>/<code>learn</code>) ou examen
+(<code>whiteExam</code>/<code>test</code>) est refusé par l'<code>assert</code>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZLinearSessionState({
+  required List&lt;ZSessionItem&gt; queue,
+  ZReviewMode mode = ZReviewMode.list,
+  ZSrsConfig config = const ZSrsConfig(),
+})  : assert(
+        mode == ZReviewMode.list || mode == ZReviewMode.cramming,
+        &#39;ZLinearSessionState ne supporte que les modes linéaires &#39;
+        &#39;(list&#47;cramming) : il ne détient AUCUN seam SRS et ne peut donc pas &#39;
+        &#39;servir un mode qui écrirait de la répétition espacée &#39;
+        &#39;(spaced&#47;learn&#47;whiteExam&#47;test). Mode reçu : $mode.&#39;,
+      ),
+      &#47;&#47; `prefer_initializing_formals` : FAUX POSITIF — le champ est PRIVÉ
+      &#47;&#47; (`_config`) et le paramètre PUBLIC (`config`) ; `this._config` en
+      &#47;&#47; paramètre nommé est ILLÉGAL en Dart (PRIVATE_OPTIONAL_PARAMETER).
+      &#47;&#47; Même cas que `z_study_session_engine.dart`.
+      &#47;&#47; ignore: prefer_initializing_formals
+      _config = config,
+      &#47;&#47; Amorçage direct via le constructeur public de `ZSessionState` (et
+      &#47;&#47; non la factory `.initial`) : le runtime linéaire n&#39;emprunte aucun
+      &#47;&#47; symbole de la famille SRS.
+      _state = ZSessionState(
+        queue: List&lt;ZSessionItem&gt;.unmodifiable(queue),
+        cursor: 0,
+        reviewed: 0,
+        lapses: 0,
+        mode: mode,
+        error: null,
+      );</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_session</a></li>
+    <li><a href="../../zcrud_session/">zcrud_session</a></li>
+    <li><a href="../../zcrud_session/ZLinearSessionState-class.html">ZLinearSessionState</a></li>
+    <li class="self-crumb">ZLinearSessionState.new constructor</li>
+</ol>
+
+    <h5>ZLinearSessionState class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_session
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

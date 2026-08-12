@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_session library API docs, for the Dart programming language.">
+  <title>zcrud_session library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_session</a></li>
+    <li class="self-crumb">zcrud_session.dart</li>
+  </ol>
+  <div class="self-name">zcrud_session</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_session&#47;zcrud_session-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_session</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_session</code>.</p>
+<p>Runtime de session d'étude en cycle :</p>
+<ul>
+<li><code>ZStudySessionEngine</code> — moteur <code>ChangeNotifier</code> pur-Flutter (état
+immuable + reducer pur), sans aucun gestionnaire d'état (invariant AD-2).
+Fait progresser la file par <code>grade</code>, en réinsérant une carte ratée à un
+offset déterministe (+2/+4 selon la sévérité du lapse) et en écrivant
+l'état SRS uniquement via le seam injecté (voie unique, invariant AD-9).
+Les constantes d'offset (<code>kLapseOffsetSoft</code>/<code>kLapseOffsetHard</code>) et le
+reducer pur <code>reduceGrade</code> sont exposés pour la testabilité.</li>
+<li><code>ZSessionState</code> — instantané immuable de la file et de ses compteurs
+(<code>reviewed</code>/<code>lapses</code>/<code>remaining</code>/<code>isComplete</code>), value-object.</li>
+<li><code>ZSessionItem</code> — identité neutre de carte (<code>{flashcardId, folderId, typeKey?}</code>) — le moteur ne tire aucun widget flashcard.</li>
+<li><code>ZSessionReviewer</code> — seam d'écriture SRS injecté (= <code>reviewCard</code> en
+production).</li>
+</ul>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/domain/</code>. Aucun
+codegen : l'état de session runtime n'est pas persisté, il n'y a donc pas
+de <code>*.g.dart</code>.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZCelebrationSpec">
+  <span class="name "><a href="../zcrud_session/ZCelebrationSpec-class.html">ZCelebrationSpec</a></span> 
+
+</dt>
+<dd>
+  Recette visuelle optionnelle de la célébration du résumé.
+</dd>
+
+          <dt id="ZDefaultFeedbackBank">
+  <span class="name "><a href="../zcrud_session/ZDefaultFeedbackBank-class.html">ZDefaultFeedbackBank</a></span> 
+
+</dt>
+<dd>
+  Banque par défaut FR/EN, embarquée dans <code>zcrud_session</code>.
+</dd>
+
+          <dt id="ZFeedbackBank">
+  <span class="name "><a href="../zcrud_session/ZFeedbackBank-class.html">ZFeedbackBank</a></span> 
+
+</dt>
+<dd>
+  Banque de messages de feedback : clé l10n → texte, par <code>languageCode</code>.
+</dd>
+
+          <dt id="ZFeedbackThresholds">
+  <span class="name "><a href="../zcrud_session/ZFeedbackThresholds-class.html">ZFeedbackThresholds</a></span> 
+
+</dt>
+<dd>
+  Seuils du palier « exceptionnel » — configurables, jamais une durée en
+dur dans un <code>build()</code>.
+</dd>
+
+          <dt id="ZFlashcardAnswerInput">
+  <span class="name "><a href="../zcrud_session/ZFlashcardAnswerInput-class.html">ZFlashcardAnswerInput</a></span> 
+
+</dt>
+<dd>
+  Surface de saisie notée d'une flashcard.
+</dd>
+
+          <dt id="ZFlashcardSubmission">
+  <span class="name "><a href="../zcrud_session/ZFlashcardSubmission-class.html">ZFlashcardSubmission</a></span> 
+
+</dt>
+<dd>
+  Fait immuable d'une réponse soumise (value-object, <code>==</code>/<code>hashCode</code> par
+valeur).
+</dd>
+
+          <dt id="ZLinearSessionState">
+  <span class="name "><a href="../zcrud_session/ZLinearSessionState-class.html">ZLinearSessionState</a></span> 
+
+</dt>
+<dd>
+  Runtime de session linéaire (list/cramming). Consomme une file déjà
+sélectionnée et la parcourt sans jamais écrire d'état SRS — il n'existe
+aucun seam/scheduler/store SRS à appeler, par construction.
+</dd>
+
+          <dt id="ZListSessionView">
+  <span class="name "><a href="../zcrud_session/ZListSessionView-class.html">ZListSessionView</a></span> 
+
+</dt>
+<dd>
+  UI d'examen blanc en liste.
+</dd>
+
+          <dt id="ZProgressRingsData">
+  <span class="name "><a href="../zcrud_session/ZProgressRingsData-class.html">ZProgressRingsData</a></span> 
+
+</dt>
+<dd>
+  DTO d'affichage PRÉ-CALCULÉ de l'anneau de progression (value-object PUR).
+</dd>
+
+          <dt id="ZQualityScale">
+  <span class="name "><a href="../zcrud_session/ZQualityScale-class.html">ZQualityScale</a></span> 
+
+</dt>
+<dd>
+  Échelle de qualité dérivée du domaine (value-object pur).
+</dd>
+
+          <dt id="ZSessionCardSwiper">
+  <span class="name "><a href="../zcrud_session/ZSessionCardSwiper-class.html">ZSessionCardSwiper</a></span> 
+
+</dt>
+<dd>
+  Pile de session swipeable — navigation seule.
+</dd>
+
+          <dt id="ZSessionFeedbackText">
+  <span class="name "><a href="../zcrud_session/ZSessionFeedbackText-class.html">ZSessionFeedbackText</a></span> 
+
+</dt>
+<dd>
+  Rend le message de feedback d'une clé — widget pur (invariants AD-2/AD-15).
+</dd>
+
+          <dt id="ZSessionItem">
+  <span class="name "><a href="../zcrud_session/ZSessionItem-class.html">ZSessionItem</a></span> 
+
+</dt>
+<dd>
+  Un candidat de la file de session : couple d'identité neutre
+<code>{flashcardId, folderId}</code> + <a href="../zcrud_session/ZSessionItem/typeKey.html">typeKey</a> opaque optionnel.
+</dd>
+
+          <dt id="ZSessionModeSelector">
+  <span class="name "><a href="../zcrud_session/ZSessionModeSelector-class.html">ZSessionModeSelector</a></span> 
+
+</dt>
+<dd>
+  Sélecteur de session : quatre options et badge flamme.
+</dd>
+
+          <dt id="ZSessionProgressIndicator">
+  <span class="name "><a href="../zcrud_session/ZSessionProgressIndicator-class.html">ZSessionProgressIndicator</a></span> 
+
+</dt>
+<dd>
+  Indicateur de progression d'une session (présentation pure).
+</dd>
+
+          <dt id="ZSessionQualityBreakdown">
+  <span class="name "><a href="../zcrud_session/ZSessionQualityBreakdown-class.html">ZSessionQualityBreakdown</a></span> 
+
+</dt>
+<dd>
+  Répartition des qualités d'une session (présentation pure).
+</dd>
+
+          <dt id="ZSessionState">
+  <span class="name "><a href="../zcrud_session/ZSessionState-class.html">ZSessionState</a></span> 
+
+</dt>
+<dd>
+  Instantané immuable de la file de session + compteurs dérivés.
+</dd>
+
+          <dt id="ZSessionSummaryView">
+  <span class="name "><a href="../zcrud_session/ZSessionSummaryView-class.html">ZSessionSummaryView</a></span> 
+
+</dt>
+<dd>
+  Écran de fin de session — assemble, ne réimplémente rien.
+</dd>
+
+          <dt id="ZSessionSummaryViewState">
+  <span class="name "><a href="../zcrud_session/ZSessionSummaryViewState-class.html">ZSessionSummaryViewState</a></span> 
+
+</dt>
+<dd>
+  État de <a href="../zcrud_session/ZSessionSummaryView-class.html">ZSessionSummaryView</a> — public pour exposer le compteur de tirs
+aux tests.
+</dd>
+
+          <dt id="ZSrsQualityButtons">
+  <span class="name "><a href="../zcrud_session/ZSrsQualityButtons-class.html">ZSrsQualityButtons</a></span> 
+
+</dt>
+<dd>
+  Boutons de notation qualité SM-2 (présentation pure).
+</dd>
+
+          <dt id="ZSrsQualityEmphasis">
+  <span class="name "><a href="../zcrud_session/ZSrsQualityEmphasis-class.html">ZSrsQualityEmphasis</a></span> 
+
+</dt>
+<dd>
+  Affordance d'emphase d'un cran de qualité — injectée par l'appelant.
+</dd>
+
+          <dt id="ZStreakBadge">
+  <span class="name "><a href="../zcrud_session/ZStreakBadge-class.html">ZStreakBadge</a></span> 
+
+</dt>
+<dd>
+  Badge affichant la série d'assiduité en cours (« flamme »).
+</dd>
+
+          <dt id="ZStudyProgressRings">
+  <span class="name "><a href="../zcrud_session/ZStudyProgressRings-class.html">ZStudyProgressRings</a></span> 
+
+</dt>
+<dd>
+  Anneau de progression <code>correct / total</code> (présentation PURE).
+</dd>
+
+          <dt id="ZStudySessionEngine">
+  <span class="name "><a href="../zcrud_session/ZStudySessionEngine-class.html">ZStudySessionEngine</a></span> 
+
+</dt>
+<dd>
+  Moteur de session SRS en cycle. Consomme une file déjà sélectionnée et la
+fait progresser via <a href="../zcrud_session/ZStudySessionEngine/grade.html">grade</a>, en écrivant l'état SRS uniquement par le
+seam <a href="../zcrud_session/ZSessionReviewer.html">ZSessionReviewer</a> injecté (voie unique, invariant AD-9).
+</dd>
+
+          <dt id="ZSwipeEmotionIndicator">
+  <span class="name "><a href="../zcrud_session/ZSwipeEmotionIndicator-class.html">ZSwipeEmotionIndicator</a></span> 
+
+</dt>
+<dd>
+  Retour émotionnel pendant le drag (présentation pure).
+</dd>
+
+          <dt id="ZTestFiltersDialog">
+  <span class="name "><a href="../zcrud_session/ZTestFiltersDialog-class.html">ZTestFiltersDialog</a></span> 
+
+</dt>
+<dd>
+  Dialog de composition des filtres test/examen.
+</dd>
+
+          <dt id="ZWhiteExamQuestionContext">
+  <span class="name "><a href="../zcrud_session/ZWhiteExamQuestionContext-class.html">ZWhiteExamQuestionContext</a></span> 
+
+</dt>
+<dd>
+  Contexte réel remis au slot de question.
+</dd>
+
+          <dt id="ZWhiteExamSessionController">
+  <span class="name "><a href="../zcrud_session/ZWhiteExamSessionController-class.html">ZWhiteExamSessionController</a></span> 
+
+</dt>
+<dd>
+  Contrôleur stable consommable par une surface d'examen.
+</dd>
+
+          <dt id="ZWhiteExamSessionEngine">
+  <span class="name "><a href="../zcrud_session/ZWhiteExamSessionEngine-class.html">ZWhiteExamSessionEngine</a></span> 
+
+</dt>
+<dd>
+  Runtime d'examen blanc : machine à états <code>setup → running → submitted</code>
+avec scoring différé, sans jamais écrire d'état SRS (aucun
+seam/scheduler/store à appeler, par construction). Consomme une file
+déjà sélectionnée et produit un <code>ZStudySessionResult</code> à la soumission.
+</dd>
+
+          <dt id="ZWhiteExamSessionLabels">
+  <span class="name "><a href="../zcrud_session/ZWhiteExamSessionLabels-class.html">ZWhiteExamSessionLabels</a></span> 
+
+</dt>
+<dd>
+  Libellés et annonces entièrement fournis par l'hôte.
+</dd>
+
+          <dt id="ZWhiteExamSessionView">
+  <span class="name "><a href="../zcrud_session/ZWhiteExamSessionView-class.html">ZWhiteExamSessionView</a></span> 
+
+</dt>
+<dd>
+  Surface d'examen blanc, branchée sur le contrôleur du moteur.
+</dd>
+
+          <dt id="ZWhiteExamSessionViewState">
+  <span class="name "><a href="../zcrud_session/ZWhiteExamSessionViewState-class.html">ZWhiteExamSessionViewState</a></span> 
+
+</dt>
+<dd>
+  Projection de lecture de l'état réel du moteur pour la présentation.
+</dd>
+
+          <dt id="ZWhiteExamState">
+  <span class="name "><a href="../zcrud_session/ZWhiteExamState-class.html">ZWhiteExamState</a></span> 
+
+</dt>
+<dd>
+  État immuable dédié d'un examen blanc (value-object).
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="ZCardAdvanceBehavior">
+  <span class="name "><a href="../zcrud_session/ZCardAdvanceBehavior.html">ZCardAdvanceBehavior</a></span> 
+
+</dt>
+<dd>
+  Comportement d'avance à la carte suivante après soumission (2 valeurs).
+</dd>
+
+          <dt id="ZCorrectionVisibility">
+  <span class="name "><a href="../zcrud_session/ZCorrectionVisibility.html">ZCorrectionVisibility</a></span> 
+
+</dt>
+<dd>
+  Régime d'apparition de la correction d'une carte.
+</dd>
+
+          <dt id="ZExamViewPhase">
+  <span class="name "><a href="../zcrud_session/ZExamViewPhase.html">ZExamViewPhase</a></span> 
+
+</dt>
+<dd>
+  Phase d'examen telle que la vue la consomme — miroir 1:1 de
+<code>ZWhiteExamPhase</code> (domaine).
+</dd>
+
+          <dt id="ZFeedbackTier">
+  <span class="name "><a href="../zcrud_session/ZFeedbackTier.html">ZFeedbackTier</a></span> 
+
+</dt>
+<dd>
+  Seau de feedback, dérivé de la qualité clampée — aucune note n'est hors
+seau.
+</dd>
+
+          <dt id="ZQualityBreakdownCoverage">
+  <span class="name "><a href="../zcrud_session/ZQualityBreakdownCoverage.html">ZQualityBreakdownCoverage</a></span> 
+
+</dt>
+<dd>
+  Couverture des crans rendus par <a href="../zcrud_session/ZSessionQualityBreakdown-class.html">ZSessionQualityBreakdown</a> — un enum
+plutôt qu'un booléen, chaque variante étant un choix nommé explicite.
+</dd>
+
+          <dt id="ZSessionModeKind">
+  <span class="name "><a href="../zcrud_session/ZSessionModeKind.html">ZSessionModeKind</a></span> 
+
+</dt>
+<dd>
+  Le type d'option choisie — un enum, jamais un <code>bool isTest</code>.
+</dd>
+
+          <dt id="ZSessionProgressStyle">
+  <span class="name "><a href="../zcrud_session/ZSessionProgressStyle.html">ZSessionProgressStyle</a></span> 
+
+</dt>
+<dd>
+  Style de rendu de la progression — un enum, jamais un booléen.
+</dd>
+
+          <dt id="ZSessionRuntimeKind">
+  <span class="name "><a href="../zcrud_session/ZSessionRuntimeKind.html">ZSessionRuntimeKind</a></span> 
+
+</dt>
+<dd>
+  Régime d'exécution d'un mode de session — propriété du runtime désigné.
+</dd>
+
+          <dt id="ZSummaryCelebration">
+  <span class="name "><a href="../zcrud_session/ZSummaryCelebration.html">ZSummaryCelebration</a></span> 
+
+</dt>
+<dd>
+  Variante de célébration de l'écran de fin — un enum, jamais un booléen.
+</dd>
+
+          <dt id="ZSwipeEmotion">
+  <span class="name "><a href="../zcrud_session/ZSwipeEmotion.html">ZSwipeEmotion</a></span> 
+
+</dt>
+<dd>
+  Sens du drag en cours — un enum, jamais un <code>bool isRight</code>.
+</dd>
+
+          <dt id="ZTimerDisplay">
+  <span class="name "><a href="../zcrud_session/ZTimerDisplay.html">ZTimerDisplay</a></span> 
+
+</dt>
+<dd>
+  Modes d'affichage du minuteur d'une carte (3 valeurs).
+</dd>
+
+          <dt id="ZWhiteExamPhase">
+  <span class="name "><a href="../zcrud_session/ZWhiteExamPhase.html">ZWhiteExamPhase</a></span> 
+
+</dt>
+<dd>
+  Phase de la machine à états d'un examen blanc.
+</dd>
+
+          <dt id="ZWhiteExamSessionViewPhase">
+  <span class="name "><a href="../zcrud_session/ZWhiteExamSessionViewPhase.html">ZWhiteExamSessionViewPhase</a></span> 
+
+</dt>
+<dd>
+  Phase de vue, projection totale de la phase du moteur : <a href="../zcrud_session/ZWhiteExamSessionViewPhase.html">setup</a> avant le
+démarrage, <a href="../zcrud_session/ZWhiteExamSessionViewPhase.html">running</a> tant que des questions restent à répondre,
+<a href="../zcrud_session/ZWhiteExamSessionViewPhase.html">submitted</a> une fois l'examen soumis et son résultat disponible.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+    <section class="summary offset-anchor" id="extensions">
+      <h2>Extensions</h2>
+      <dl>
+          <dt id="ZCorrectionVisibilityX">
+  <span class="name "><a href="../zcrud_session/ZCorrectionVisibilityX.html">ZCorrectionVisibilityX</a></span>
+  on <a href="../zcrud_session/ZCorrectionVisibility.html">ZCorrectionVisibility</a>
+  
+
+</dt>
+<dd>
+  Décision de rendu de la correction — source unique des trois gates.
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="constants">
+      <h2>Constants</h2>
+      <dl class="properties">
+          <dt id="kLapseOffsetHard" class="constant">
+    <span class="name "><a href="../zcrud_session/kLapseOffsetHard-constant.html">kLapseOffsetHard</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Offset de réinsertion d'un lapse dur (<code>quality</code> 2 ou plus, en-deçà du
+seuil) : la carte ratée réapparaît comme la 4ᵉ carte à venir.
+  
+
+</dd>
+
+          <dt id="kLapseOffsetSoft" class="constant">
+    <span class="name "><a href="../zcrud_session/kLapseOffsetSoft-constant.html">kLapseOffsetSoft</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Offset de réinsertion d'un lapse léger (<code>quality</code> 0 ou 1) : la carte
+ratée réapparaît comme la 2ᵉ carte à venir. Propre à la file de session —
+jamais une constante SM-2 recopiée.
+  
+
+</dd>
+
+          <dt id="kLapseSoftMaxQuality" class="constant">
+    <span class="name "><a href="../zcrud_session/kLapseSoftMaxQuality-constant.html">kLapseSoftMaxQuality</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Frontière léger/dur : un lapse de <code>quality ≤ kLapseSoftMaxQuality</code> utilise
+<a href="../zcrud_session/kLapseOffsetSoft-constant.html">kLapseOffsetSoft</a>, au-delà <a href="../zcrud_session/kLapseOffsetHard-constant.html">kLapseOffsetHard</a>. Garantit que <code>q=0</code> et
+<code>q=1</code> produisent le même offset (+2) et que <code>q=2</code> bascule sur +4.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="advanceLinear" class="callable">
+  <span class="name"><a href="../zcrud_session/advanceLinear.html">advanceLinear</a></span><span class="signature">(<wbr><span class="parameter" id="advanceLinear-param-state"><span class="type-annotation"><a href="../zcrud_session/ZSessionState-class.html">ZSessionState</a></span> <span class="parameter-name">state</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_session/ZSessionState-class.html">ZSessionState</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Reducer pur du mode <code>ZReviewMode.list</code> : fait progresser le curseur d'un
+cran et retourne un nouvel état (aucun effet de bord, aucune horloge,
+aucune I/O, aucun symbole SRS).
+  
+
+</dd>
+
+          <dt id="recordAnswer" class="callable">
+  <span class="name"><a href="../zcrud_session/recordAnswer.html">recordAnswer</a></span><span class="signature">(<wbr><span class="parameter" id="recordAnswer-param-state"><span class="type-annotation"><a href="../zcrud_session/ZWhiteExamState-class.html">ZWhiteExamState</a></span> <span class="parameter-name">state</span>, </span><span class="parameter" id="recordAnswer-param-quality"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">quality</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_session/ZWhiteExamState-class.html">ZWhiteExamState</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Reducer pur : enregistre <code>quality</code> pour la carte courante et avance le
+curseur d'un cran (parcours strictement linéaire, aucune ré-insertion,
+aucun ré-ordonnancement — comme le mode <code>list</code>). Aucun effet de bord,
+aucune horloge, aucun symbole SRS.
+  
+
+</dd>
+
+          <dt id="reduceGrade" class="callable">
+  <span class="name"><a href="../zcrud_session/reduceGrade.html">reduceGrade</a></span><span class="signature">(<wbr><span class="parameter" id="reduceGrade-param-state"><span class="type-annotation"><a href="../zcrud_session/ZSessionState-class.html">ZSessionState</a></span> <span class="parameter-name">state</span>, </span><span class="parameter" id="reduceGrade-param-quality"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">quality</span>, {</span><span class="parameter" id="reduceGrade-param-passThreshold"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">passThreshold</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_session/ZSessionState-class.html">ZSessionState</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Reducer pur de la file de session : applique un grade de <code>quality</code> à
+<code>state</code> et retourne un nouvel état (aucun effet de bord, aucune horloge,
+aucune I/O). Le <code>passThreshold</code> est injecté (lu de <code>ZSrsConfig</code>, jamais
+codé en dur) : la carte re-boucle si et seulement si
+<code>quality &lt; passThreshold</code>.
+  
+
+</dd>
+
+          <dt id="requeueCramming" class="callable">
+  <span class="name"><a href="../zcrud_session/requeueCramming.html">requeueCramming</a></span><span class="signature">(<wbr><span class="parameter" id="requeueCramming-param-state"><span class="type-annotation"><a href="../zcrud_session/ZSessionState-class.html">ZSessionState</a></span> <span class="parameter-name">state</span>, </span><span class="parameter" id="requeueCramming-param-quality"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">quality</span>, {</span><span class="parameter" id="requeueCramming-param-passThreshold"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">passThreshold</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_session/ZSessionState-class.html">ZSessionState</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Reducer pur du mode <code>ZReviewMode.cramming</code> : applique un grade de
+<code>quality</code> à la carte courante de <code>state</code> et retourne un nouvel état
+(aucun effet de bord, aucune horloge, aucune I/O, aucun symbole SRS).
+  
+
+</dd>
+
+          <dt id="scoreWhiteExam" class="callable">
+  <span class="name"><a href="../zcrud_session/scoreWhiteExam.html">scoreWhiteExam</a></span><span class="signature">(<wbr><span class="parameter" id="scoreWhiteExam-param-qualities"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">qualities</span>, {</span><span class="parameter" id="scoreWhiteExam-param-passThreshold"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">passThreshold</span></span>})
+    <span class="returntype parameter">&#8594; ZStudySessionResult</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Reducer pur de scoring, calculé à la soumission — défaut de
+<a href="../zcrud_session/ZExamScoringPort.html">ZExamScoringPort</a>.
+  
+
+</dd>
+
+          <dt id="startExam" class="callable">
+  <span class="name"><a href="../zcrud_session/startExam.html">startExam</a></span><span class="signature">(<wbr><span class="parameter" id="startExam-param-state"><span class="type-annotation"><a href="../zcrud_session/ZWhiteExamState-class.html">ZWhiteExamState</a></span> <span class="parameter-name">state</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_session/ZWhiteExamState-class.html">ZWhiteExamState</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Reducer pur : <code>setup → running</code> (amorce le parcours). Aucun effet de
+bord, aucune horloge, aucun symbole SRS.
+  
+
+</dd>
+
+          <dt id="zDefaultAdvanceBehavior" class="callable">
+  <span class="name"><a href="../zcrud_session/zDefaultAdvanceBehavior.html">zDefaultAdvanceBehavior</a></span><span class="signature">(<wbr><span class="parameter" id="zDefaultAdvanceBehavior-param-mode"><span class="type-annotation">ZReviewMode</span> <span class="parameter-name">mode</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_session/ZCardAdvanceBehavior.html">ZCardAdvanceBehavior</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Table unique des défauts d'avance par mode.
+  
+
+</dd>
+
+          <dt id="zDefaultQualityLabelKey" class="callable">
+  <span class="name"><a href="../zcrud_session/zDefaultQualityLabelKey.html">zDefaultQualityLabelKey</a></span><span class="signature">(<wbr><span class="parameter" id="zDefaultQualityLabelKey-param-quality"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">quality</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Clé l10n par défaut d'un cran de qualité (<code>zcrud.srs.quality.&lt;q&gt;</code>).
+  
+
+</dd>
+
+          <dt id="zFeedbackKeyFor" class="callable">
+  <span class="name"><a href="../zcrud_session/zFeedbackKeyFor.html">zFeedbackKeyFor</a></span><span class="signature">(<wbr><span class="parameter" id="zFeedbackKeyFor-param-tier"><span class="type-annotation"><a href="../zcrud_session/ZFeedbackTier.html">ZFeedbackTier</a></span> <span class="parameter-name">tier</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Clé l10n du message d'un seau (<code>zcrud.session.feedback.&lt;tier&gt;</code>).
+  
+
+</dd>
+
+          <dt id="zFeedbackText" class="callable">
+  <span class="name"><a href="../zcrud_session/zFeedbackText.html">zFeedbackText</a></span><span class="signature">(<wbr><span class="parameter" id="zFeedbackText-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zFeedbackText-param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">key</span>, {</span><span class="parameter" id="zFeedbackText-param-bank"><span class="type-annotation"><a href="../zcrud_session/ZFeedbackBank-class.html">ZFeedbackBank</a>?</span> <span class="parameter-name">bank</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Résout le texte d'une clé de feedback pour le contexte courant.
+  
+
+</dd>
+
+          <dt id="zFeedbackTierFor" class="callable">
+  <span class="name"><a href="../zcrud_session/zFeedbackTierFor.html">zFeedbackTierFor</a></span><span class="signature">(<wbr>{<span class="parameter" id="zFeedbackTierFor-param-quality"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">quality</span>, </span><span class="parameter" id="zFeedbackTierFor-param-timeTaken"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeTaken</span>, </span><span class="parameter" id="zFeedbackTierFor-param-hintsUsed"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">hintsUsed</span>, </span><span class="parameter" id="zFeedbackTierFor-param-config"><span>required</span> <span class="type-annotation">ZSrsConfig</span> <span class="parameter-name">config</span>, </span><span class="parameter" id="zFeedbackTierFor-param-masteredThreshold"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">masteredThreshold</span>, </span><span class="parameter" id="zFeedbackTierFor-param-thresholds"><span class="type-annotation"><a href="../zcrud_session/ZFeedbackThresholds-class.html">ZFeedbackThresholds</a></span> <span class="parameter-name">thresholds</span> = <span class="default-value">const ZFeedbackThresholds()</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_session/ZFeedbackTier.html">ZFeedbackTier</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Sélectionne le seau de feedback d'une soumission — fonction pure.
+  
+
+</dd>
+
+          <dt id="zMasteredCount" class="callable">
+  <span class="name"><a href="../zcrud_session/zMasteredCount.html">zMasteredCount</a></span><span class="signature">(<wbr><span class="parameter" id="zMasteredCount-param-byQuality"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">byQuality</span>, </span><span class="parameter" id="zMasteredCount-param-scale"><span class="type-annotation"><a href="../zcrud_session/ZQualityScale-class.html">ZQualityScale</a></span> <span class="parameter-name">scale</span>, </span><span class="parameter" id="zMasteredCount-param-masteredThreshold"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">masteredThreshold</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Compte des cartes maîtrisées — dérivé de <code>byQuality</code>.
+  
+
+</dd>
+
+          <dt id="zMasteryFallback" class="callable">
+  <span class="name"><a href="../zcrud_session/zMasteryFallback.html">zMasteryFallback</a></span><span class="signature">(<wbr><span class="parameter" id="zMasteryFallback-param-level"><span class="type-annotation">ZMasteryLevel</span> <span class="parameter-name">level</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Repli lisible d'un seau (utilisé si l'app ne fournit pas la clé).
+  
+
+</dd>
+
+          <dt id="zMasteryLabelKey" class="callable">
+  <span class="name"><a href="../zcrud_session/zMasteryLabelKey.html">zMasteryLabelKey</a></span><span class="signature">(<wbr><span class="parameter" id="zMasteryLabelKey-param-level"><span class="type-annotation">ZMasteryLevel</span> <span class="parameter-name">level</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Clé l10n du libellé d'un seau de maîtrise — dérivée de l'enum, jamais
+d'une table recopiée (un quatrième seau ajouté demain ne peut pas être
+oublié).
+  
+
+</dd>
+
+          <dt id="zSessionRuntimeForMode" class="callable">
+  <span class="name"><a href="../zcrud_session/zSessionRuntimeForMode.html">zSessionRuntimeForMode</a></span><span class="signature">(<wbr><span class="parameter" id="zSessionRuntimeForMode-param-mode"><span class="type-annotation">ZReviewMode</span> <span class="parameter-name">mode</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_session/ZSessionRuntimeKind.html">ZSessionRuntimeKind</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Désigne le runtime qui sert <code>mode</code> — table unique de production.
+  
+
+</dd>
+
+          <dt id="zShowStreakToast" class="callable">
+  <span class="name"><a href="../zcrud_session/zShowStreakToast.html">zShowStreakToast</a></span><span class="signature">(<wbr><span class="parameter" id="zShowStreakToast-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zShowStreakToast-param-advance"><span class="type-annotation">ZStreakAdvance</span> <span class="parameter-name">advance</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Affiche la confirmation de flamme correspondant à <code>advance</code> — ou rien.
+  
+
+</dd>
+
+          <dt id="zStreakToastSeverityFor" class="callable">
+  <span class="name"><a href="../zcrud_session/zStreakToastSeverityFor.html">zStreakToastSeverityFor</a></span><span class="signature">(<wbr><span class="parameter" id="zStreakToastSeverityFor-param-outcome"><span class="type-annotation">ZStreakOutcome</span> <span class="parameter-name">outcome</span></span>)
+    <span class="returntype parameter">&#8594; ZToastSeverity?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Sévérité du toast pour <code>outcome</code>, ou <code>null</code> si aucun toast ne doit
+s'afficher — fonction pure (testable sans widget).
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZExamAnswerCallback" class="callable">
+    <span class="name"><a href="../zcrud_session/ZExamAnswerCallback.html">ZExamAnswerCallback</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-index"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">index</span>, </span><span class="parameter" id="param-submission"><span class="type-annotation"><a href="../zcrud_session/ZFlashcardSubmission-class.html">ZFlashcardSubmission</a></span> <span class="parameter-name">submission</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Callback de réponse : la carte d'index <code>index</code> a émis <code>submission</code>.
+    
+
+  </dd>
+
+          
+  <dt id="ZExamScoringPort" class="callable">
+    <span class="name"><a href="../zcrud_session/ZExamScoringPort.html">ZExamScoringPort</a></span><span class="signature">
+      <span class="returntype parameter">= ZStudySessionResult Function<span class="signature">(<span class="parameter" id="param-qualities"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">qualities</span>, {</span><span class="parameter" id="param-passThreshold"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">passThreshold</span></span>})</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Seam de scoring pur d'un examen blanc.
+    
+
+  </dd>
+
+          
+  <dt id="ZQualityColorKeyResolver" class="callable">
+    <span class="name"><a href="../zcrud_session/ZQualityColorKeyResolver.html">ZQualityColorKeyResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="zDefaultQualityLabelKey-param-quality"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">quality</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Résout la clé de couleur (<code>colorKey</code>) d'un cran de qualité (seam injecté).
+    
+
+  </dd>
+
+          
+  <dt id="ZQualityLabelKeyResolver" class="callable">
+    <span class="name"><a href="../zcrud_session/ZQualityLabelKeyResolver.html">ZQualityLabelKeyResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="zDefaultQualityLabelKey-param-quality"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">quality</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Résout la clé de libellé l10n d'un cran de qualité (seam injecté).
+    
+
+  </dd>
+
+          
+  <dt id="ZSessionCardBuilder" class="callable">
+    <span class="name"><a href="../zcrud_session/ZSessionCardBuilder.html">ZSessionCardBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-item"><span class="type-annotation"><a href="../zcrud_session/ZSessionItem-class.html">ZSessionItem</a></span> <span class="parameter-name">item</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit la carte d'affichage d'un item (typiquement
+<code>ZFlashcardReviewCard</code>). Jamais une surface de saisie ou de notation :
+celles-ci vivent en frères, hors de la pile.
+    
+
+  </dd>
+
+          
+  <dt id="ZSessionQualityAtIndex" class="callable">
+    <span class="name"><a href="../zcrud_session/ZSessionQualityAtIndex.html">ZSessionQualityAtIndex</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>? Function<span class="signature">(<span class="parameter" id="param-index"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">index</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Résout la <strong>qualité déjà obtenue</strong> pour la carte d'index donné, ou <code>null</code> si
+la carte n'est pas encore notée (seam injecté — le widget ne calcule rien et
+ne détient aucun état).
+    
+
+  </dd>
+
+          
+  <dt id="ZSessionReviewer" class="callable">
+    <span class="name"><a href="../zcrud_session/ZSessionReviewer.html">ZSessionReviewer</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter">ZRepetitionInfo</span>&gt;</span></span>&gt;</span> Function<span class="signature">({<span class="parameter" id="param-flashcardId"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">flashcardId</span>, </span><span class="parameter" id="param-folderId"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">folderId</span>, </span><span class="parameter" id="param-now"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span> <span class="parameter-name">now</span>, </span><span class="parameter" id="param-quality"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">quality</span></span>})</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Callback d'écriture SRS : applique une révision de <code>quality</code> à la carte
+<code>flashcardId</code>/<code>folderId</code> et renvoie le nouvel état <code>ZRepetitionInfo</code>
+enveloppé dans un <code>ZResult</code> (<code>Either&lt;ZFailure, …&gt;</code>, invariants AD-5/AD-11).
+L'horloge éventuelle <code>now</code> est relayée telle quelle : le moteur ne lit
+jamais <code>DateTime.now</code> lui-même, pour rester déterministe et testable.
+    
+
+  </dd>
+
+          
+  <dt id="ZWhiteExamCorrectionBuilder" class="callable">
+    <span class="name"><a href="../zcrud_session/ZWhiteExamCorrectionBuilder.html">ZWhiteExamCorrectionBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-state"><span class="type-annotation"><a href="../zcrud_session/ZWhiteExamSessionViewState-class.html">ZWhiteExamSessionViewState</a></span> <span class="parameter-name">state</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Slot de correction post-soumission.
+    
+
+  </dd>
+
+          
+  <dt id="ZWhiteExamQuestionBuilder" class="callable">
+    <span class="name"><a href="../zcrud_session/ZWhiteExamQuestionBuilder.html">ZWhiteExamQuestionBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-question"><span class="type-annotation"><a href="../zcrud_session/ZWhiteExamQuestionContext-class.html">ZWhiteExamQuestionContext</a></span> <span class="parameter-name">question</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Slot de contenu d'une question.
+    
+
+  </dd>
+
+          
+  <dt id="ZWhiteExamResultBuilder" class="callable">
+    <span class="name"><a href="../zcrud_session/ZWhiteExamResultBuilder.html">ZWhiteExamResultBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-state"><span class="type-annotation"><a href="../zcrud_session/ZWhiteExamSessionViewState-class.html">ZWhiteExamSessionViewState</a></span> <span class="parameter-name">state</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Slot de résultat produit par le moteur.
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_session</a></li>
+    <li class="self-crumb">zcrud_session.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_session</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_session/">zcrud_session</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_session library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_session
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

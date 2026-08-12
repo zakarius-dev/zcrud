@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the send method from the ZChatController class, for the Dart programming language.">
+  <title>send method - ZChatController class - zcrud_chat library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_chat</a></li>
+    <li><a href="../../zcrud_chat/">zcrud_chat.dart</a></li>
+    <li><a href="../../zcrud_chat/ZChatController-class.html">ZChatController</a></li>
+    <li class="self-crumb">send method</li>
+  </ol>
+  <div class="self-name">send</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat&#47;ZChatController-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">send</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter">ZChatRequestToken</span>&gt;</span></span>&gt;</span></span>
+<span class="name ">send</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="send-param-settings"><span class="type-annotation">ZChatGenerationSettings?</span> <span class="parameter-name">settings</span>, </span></li>
+<li><span class="parameter" id="send-param-corpusScope"><span class="type-annotation">ZChatCorpusScope?</span> <span class="parameter-name">corpusScope</span>, </span></li>
+</ol>})
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Soumet la saisie courante et <strong>consomme le flux</strong> jusqu'à son terme.</p>
+<p>Rend le jeton de la requête (identité stable, y compris à travers les
+reprises) ou l'échec <strong>typé</strong>. Aucun appel concurrent n'est interdit :
+deux <code>send()</code> produisent deux jetons <strong>indépendants</strong>.</p>
+<p>La saisie est vidée à la soumission ; si le tour échoue <strong>sans avoir rien
+produit</strong>, elle est <strong>restituée</strong> et le message optimiste est retiré
+(AD-10 : une panne ne coûte jamais la frappe de l'utilisateur).</p>
+<h2 id="les-rglages-sont-appliqus-aprs-le-builder-et-cest-le-point">Les réglages sont appliqués APRÈS le builder, et c'est le point</h2>
+<p><code>settings</code> et <code>corpusScope</code> sont les porteurs neutres du kernel
+(<code>ZChatGenerationSettings</code>, <code>ZChatCorpusScope</code>). Ils sont
+<strong>optionnels</strong> : omis, ils laissent le chemin d'exécution <em>strictement</em>
+inchangé — <code>withSettings(null)</code> rend <code>identical(this)</code>, si bien que le
+port reçoit <strong>l'objet même</strong> que le builder de l'hôte a construit.</p>
+<p>Ils sont appliqués <strong>après</strong> <code>_buildRequest</code>, jamais passés dedans. Ce
+n'est pas un détail d'ordre : un hôte qui recevrait les réglages
+directement dans son builder pourrait les transmettre en amont puis les
+laisser être ignorés plus loin dans sa propre chaîne, sans que rien ne
+détrompe l'utilisateur qui croit avoir restreint sa recherche. Ici
+l'application n'a pas la main sur ce site : le socle écrit les réglages
+sur la requête, et le port les lit sur les champs du contrat.</p>
+<p><code>settings</code> est un <strong>remplacement</strong>, pas une fusion (règle du kernel) :
+un porteur <em>vide</em> remet les quatre réglages à « l'hôte décide », y
+compris ceux que le builder avait posés. C'est délibéré — une feuille
+de réglages qui <strong>retire</strong> un réglage doit pouvoir le retirer.
+<code>corpusScope</code> <code>null</code>, lui, ne retire <strong>rien</strong> : la portée éventuellement
+posée par le builder est conservée (l'absence d'argument n'est pas une
+demande d'élargissement).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;ZResult&lt;ZChatRequestToken&gt;&gt; send({
+  ZChatGenerationSettings? settings,
+  ZChatCorpusScope? corpusScope,
+}) async {
+  &#47;&#47; Pendant une ÉDITION, l&#39;envoi « nouveau message » est REFUSÉ, par un
+  &#47;&#47; échec typé. La soumission d&#39;une édition passe par
+  &#47;&#47; `runAction(ZChatEditAction(...))` — le point d&#39;entrée unique des
+  &#47;&#47; verbes, avec son impact chiffré et sa confirmation. Laisser `send()`
+  &#47;&#47; passer ouvrirait une seconde voie : le même texte tantôt nouveau
+  &#47;&#47; message, tantôt ré-exécution, selon la surface qui l&#39;a déclenché.
+  if (_editing.value != null) {
+    const ZFailure failure = ZDomainFailure(
+      &#39;chat send is unavailable while editing a message: submit the edit &#39;
+      &#39;via runAction(ZChatEditAction) or cancelEditing() first&#39;,
+    );
+    _lastFailure.value = failure;
+    return const Left&lt;ZFailure, ZChatRequestToken&gt;(failure);
+  }
+  final ZChatDraft draft = currentDraft;
+  if (draft.text.trim().isEmpty &amp;&amp; draft.attachmentIds.isEmpty) {
+    const ZFailure failure = ZDomainFailure(
+      &#39;chat send requires a non-empty draft&#39;,
+    );
+    _lastFailure.value = failure;
+    return const Left&lt;ZFailure, ZChatRequestToken&gt;(failure);
+  }
+
+  final String requestId = _newRequestId();
+  final ZChatRequestToken token = ZChatRequestToken(requestId);
+  _tokens[requestId] = token;
+
+  final ZChatGenerationRequest built;
+  try {
+    built = _buildRequest(draft);
+  } catch (e) {
+    return _abort(requestId, &#39;chat request builder threw ${e.runtimeType}&#39;);
+  }
+  &#47;&#47; UN SEUL site d&#39;application des réglages, hors d&#39;atteinte de l&#39;hôte.
+  &#47;&#47; `withSettings(null)` rend `identical(built)` : sans argument, la
+  &#47;&#47; requête envoyée est l&#39;objet même du builder — aucun défaut n&#39;a bougé.
+  final ZChatGenerationRequest request = corpusScope == null
+      ? built.withSettings(settings)
+      : built.withSettings(settings).withCorpusScope(corpusScope);
+  _states[requestId] = _ZRequestState(request);
+
+  _setComposer(const ZChatDraft());
+  _messages.value = List&lt;ZChatMessage&gt;.unmodifiable(&lt;ZChatMessage&gt;[
+    ..._messages.value,
+    ZChatMessage(
+      id: requestId,
+      conversationId: _conversationId,
+      role: ZChatRole.user,
+      contentBlocks: &lt;ZContentBlock&gt;[ZTextBlock(text: draft.text)],
+    ),
+  ]);
+  _activeRequests.value = List&lt;String&gt;.unmodifiable(&lt;String&gt;[
+    ..._activeRequests.value,
+    requestId,
+  ]);
+  _publish(requestId, (ZChatStreamProgress p) =&gt; p.copyWith(phase: ZChatPhase.streaming));
+
+  return _consume(requestId: requestId, first: token, draft: draft);
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_chat</a></li>
+    <li><a href="../../zcrud_chat/">zcrud_chat</a></li>
+    <li><a href="../../zcrud_chat/ZChatController-class.html">ZChatController</a></li>
+    <li class="self-crumb">send method</li>
+</ol>
+
+    <h5>ZChatController class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

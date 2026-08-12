@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zCategorize function from the zcrud_flashcard library, for the Dart programming language.">
+  <title>zCategorize function - zcrud_flashcard library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_flashcard</a></li>
+    <li><a href="../zcrud_flashcard/">zcrud_flashcard.dart</a></li>
+    <li class="self-crumb">zCategorize function</li>
+  </ol>
+  <div class="self-name">zCategorize</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_flashcard&#47;zcrud_flashcard-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zCategorize</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="../zcrud_flashcard/ZSessionCategories-class.html">ZSessionCategories</a></span>
+<span class="name ">zCategorize</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="zCategorize-param-cards"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_flashcard/ZFlashcard-class.html">ZFlashcard</a></span>&gt;</span></span> <span class="parameter-name">cards</span>, {</span></li>
+<li><span class="parameter" id="zCategorize-param-srsById"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../zcrud_flashcard/ZRepetitionInfo-class.html">ZRepetitionInfo</a></span>&gt;</span></span> <span class="parameter-name">srsById</span>, </span></li>
+<li><span class="parameter" id="zCategorize-param-at"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">at</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Catégorise <code>cards</code> en « jamais apprises » et « dues » — fonction pure,
+O(1) par carte.</p>
+<ul>
+<li><code>srsById</code> : état SRS déjà indexé par <code>flashcardId</code> (voir
+<a href="../zcrud_flashcard/zIndexSrsById.html">zIndexSrsById</a>) — lookup, jamais un <code>firstWhere</code> ;</li>
+<li><code>at</code> : instant de référence — paramètre (<code>DateTime.now()</code> est interdit
+ici).</li>
+</ul>
+<h2 id="rgles-exactes">Règles exactes</h2>
+<ul>
+<li>jamais apprise : aucun état SRS ou <code>repetitions == 0</code> (une carte sans
+<code>ZRepetitionInfo</code> est « jamais vue » — repli défensif, invariant
+AD-10) ;</li>
+<li>due : <code>repetitions &gt; 0</code> et <code>nextReviewDate != null</code> et
+<code>nextReviewDate &lt;= at</code> (l'échéance pile à <code>at</code> est due) ;</li>
+<li>une carte apprise dont l'échéance est future n'est ni l'un ni l'autre ;</li>
+<li>une carte apprise sans <code>nextReviewDate</code> n'est pas due (aucune échéance
+⇒ rien à réclamer), et n'est pas « jamais apprise » non plus (elle l'a
+été) — elle est simplement absente des deux listes.</li>
+</ul>
+<h2 id="tri-par-urgence--exact-et-stable">Tri par urgence : exact et stable</h2>
+<p><code>due</code> est trié par <code>nextReviewDate</code> croissant (la plus en retard
+d'abord). <code>List.sort</code> n'est pas stable en Dart : à échéance égale,
+l'ordre d'entrée est préservé explicitement (tri décoré par l'index) —
+sans quoi deux cartes de même échéance pourraient permuter d'un
+rafraîchissement à l'autre, rendant l'interface non déterministe.</p>
+<p>Une carte sans <code>id</code> (éphémère) ne peut porter aucun état SRS : elle est
+« jamais apprise » (repli sûr).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZSessionCategories zCategorize(
+  Iterable&lt;ZFlashcard&gt; cards, {
+  required Map&lt;String, ZRepetitionInfo&gt; srsById,
+  required DateTime at,
+}) {
+  final neverLearned = &lt;ZFlashcard&gt;[];
+  final dueDecorated = &lt;_DecoratedDue&gt;[];
+  var index = 0;
+
+  for (final card in cards) {
+    final id = card.id;
+    &#47;&#47; Lookup O(1) — jamais `infos.firstWhere(...)`, qui serait O(n) par
+    &#47;&#47; carte, donc quadratique au total.
+    final info = id == null ? null : srsById[id];
+
+    if (info == null || info.repetitions == 0) {
+      neverLearned.add(card);
+      index++;
+      continue;
+    }
+
+    final next = info.nextReviewDate;
+    if (next != null &amp;&amp; !next.isAfter(at)) {
+      dueDecorated.add(_DecoratedDue(card: card, next: next, index: index));
+    }
+    index++;
+  }
+
+  &#47;&#47; Tri stable par urgence : échéance croissante, puis ordre d&#39;entrée à
+  &#47;&#47; égalité.
+  dueDecorated.sort((a, b) {
+    final byDate = a.next.compareTo(b.next);
+    return byDate != 0 ? byDate : a.index.compareTo(b.index);
+  });
+
+  return ZSessionCategories(
+    neverLearned: neverLearned,
+    due: &lt;ZFlashcard&gt;[for (final d in dueDecorated) d.card],
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_flashcard</a></li>
+    <li><a href="../zcrud_flashcard/">zcrud_flashcard</a></li>
+    <li class="self-crumb">zCategorize function</li>
+</ol>
+
+    <h5>zcrud_flashcard library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_flashcard
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

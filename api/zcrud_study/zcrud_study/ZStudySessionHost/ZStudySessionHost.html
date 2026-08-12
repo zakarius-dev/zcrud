@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZStudySessionHost.new constructor from Class ZStudySessionHost from the zcrud_study library, for the Dart programming language.">
+  <title>ZStudySessionHost.new constructor - ZStudySessionHost - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study.dart</a></li>
+    <li><a href="../../zcrud_study/ZStudySessionHost-class.html">ZStudySessionHost</a></li>
+    <li class="self-crumb">ZStudySessionHost.new const constructor</li>
+  </ol>
+  <div class="self-name">ZStudySessionHost.new</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_study&#47;ZStudySessionHost-class-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-constructor">ZStudySessionHost</span> constructor 
+</h1></div>
+
+    <section class="multi-line-signature">
+      const
+      <span class="name ">ZStudySessionHost</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-mode"><span>required</span> <span class="type-annotation">ZReviewMode</span> <span class="parameter-name">mode</span>, </span></li>
+<li><span class="parameter" id="param-queue"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span></span> <span class="parameter-name">queue</span>, </span></li>
+<li><span class="parameter" id="param-reviewer"><span class="type-annotation">ZSessionReviewer?</span> <span class="parameter-name">reviewer</span>, </span></li>
+<li><span class="parameter" id="param-config"><span class="type-annotation">ZSrsConfig</span> <span class="parameter-name">config</span> = <span class="default-value">const ZSrsConfig()</span>, </span></li>
+<li><span class="parameter" id="param-cardBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">cardBuilder</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span></li>
+<li><span class="parameter" id="param-card"><span class="type-annotation">ZFlashcard</span> <span class="parameter-name">card</span></span></li>
+</ol>)?, </span></li>
+<li><span class="parameter" id="param-contentBuilder"><span class="type-annotation">ZFlashcardContentBuilder?</span> <span class="parameter-name">contentBuilder</span>, </span></li>
+<li><span class="parameter" id="param-evaluationPort"><span class="type-annotation">ZFlashcardAnswerEvaluationPort?</span> <span class="parameter-name">evaluationPort</span>, </span></li>
+<li><span class="parameter" id="param-hintPort"><span class="type-annotation">ZFlashcardHintPort?</span> <span class="parameter-name">hintPort</span>, </span></li>
+<li><span class="parameter" id="param-headerBuilder"><span class="type-annotation"><a href="../../zcrud_study/ZStudySessionHeaderBuilder.html">ZStudySessionHeaderBuilder</a>?</span> <span class="parameter-name">headerBuilder</span>, </span></li>
+<li><span class="parameter" id="param-counterBuilder"><span class="type-annotation"><a href="../../zcrud_study/ZStudySessionCounterBuilder.html">ZStudySessionCounterBuilder</a>?</span> <span class="parameter-name">counterBuilder</span>, </span></li>
+<li><span class="parameter" id="param-gradingBuilder"><span class="type-annotation"><a href="../../zcrud_study/ZStudySessionGradingSlotBuilder.html">ZStudySessionGradingSlotBuilder</a>?</span> <span class="parameter-name">gradingBuilder</span>, </span></li>
+<li><span class="parameter" id="param-summaryBuilder"><span class="type-annotation"><a href="../../zcrud_study/ZStudySessionResultBuilder.html">ZStudySessionResultBuilder</a>?</span> <span class="parameter-name">summaryBuilder</span>, </span></li>
+<li><span class="parameter" id="param-emptyBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a>?</span> <span class="parameter-name">emptyBuilder</span>, </span></li>
+<li><span class="parameter" id="param-celebrationBuilder"><span class="type-annotation"><a href="../../zcrud_study/ZStudySessionCelebrationBuilder.html">ZStudySessionCelebrationBuilder</a>?</span> <span class="parameter-name">celebrationBuilder</span>, </span></li>
+<li><span class="parameter" id="param-labels"><span class="type-annotation"><a href="../../zcrud_study/ZStudySessionLabels-class.html">ZStudySessionLabels</a>?</span> <span class="parameter-name">labels</span>, </span></li>
+<li><span class="parameter" id="param-onSessionEnd"><span class="type-annotation">void</span> <span class="parameter-name">onSessionEnd</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-result"><span class="type-annotation">ZStudySessionResult</span> <span class="parameter-name">result</span>, </span></li>
+<li><span class="parameter" id="param-duration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">duration</span></span></li>
+</ol>)?, </span></li>
+<li><span class="parameter" id="param-onExit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onExit</span>, </span></li>
+<li><span class="parameter" id="param-indexController"><span class="type-annotation">ZIndexController?</span> <span class="parameter-name">indexController</span>, </span></li>
+<li><span class="parameter" id="param-progressStyle"><span class="type-annotation">ZSessionProgressStyle</span> <span class="parameter-name">progressStyle</span> = <span class="default-value">ZSessionProgressStyle.dots</span>, </span></li>
+<li><span class="parameter" id="param-fallbackFolderId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">fallbackFolderId</span> = <span class="default-value">&#39;&#39;</span>, </span></li>
+<li><span class="parameter" id="param-stackFlex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">stackFlex</span>, </span></li>
+<li><span class="parameter" id="param-inputFlex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">inputFlex</span>, </span></li>
+<li><span class="parameter" id="param-contentPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">contentPadding</span>, </span></li>
+<li><span class="parameter" id="param-dividerThickness"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">dividerThickness</span>, </span></li>
+<li><span class="parameter" id="param-sectionGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">sectionGap</span>, </span></li>
+<li><span class="parameter" id="param-minTarget"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">minTarget</span>, </span></li>
+<li><span class="parameter" id="param-counterStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">counterStyle</span>, </span></li>
+<li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
+</ol>})
+    </section>
+    
+<section class="desc markdown">
+  <p>Assemble une session sur <code>queue</code> dans le <code>mode</code> donné.</p>
+<p><code>reviewer</code> est la <strong>voie d'écriture SRS unique</strong> (AD-33) — injectée par
+l'hôte, jamais fabriquée ici. Elle n'est consommée que par le runtime
+<code>srsEngine</code> ; les modes non-SRS n'en reçoivent aucune, et <strong>aucun no-op
+n'est inventé</strong> pour combler son absence (AD-34).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">const ZStudySessionHost({
+  required this.mode,
+  required this.queue,
+  this.reviewer,
+  this.config = const ZSrsConfig(),
+  this.cardBuilder,
+  this.contentBuilder,
+  this.evaluationPort,
+  this.hintPort,
+  this.headerBuilder,
+  this.counterBuilder,
+  this.gradingBuilder,
+  this.summaryBuilder,
+  this.emptyBuilder,
+  this.celebrationBuilder,
+  this.labels,
+  this.onSessionEnd,
+  this.onExit,
+  this.indexController,
+  this.progressStyle = ZSessionProgressStyle.dots,
+  this.fallbackFolderId = &#39;&#39;,
+  this.stackFlex,
+  this.inputFlex,
+  this.contentPadding,
+  this.dividerThickness,
+  this.sectionGap,
+  this.minTarget,
+  this.counterStyle,
+  super.key,
+});</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/ZStudySessionHost-class.html">ZStudySessionHost</a></li>
+    <li class="self-crumb">ZStudySessionHost.new const constructor</li>
+</ol>
+
+    <h5>ZStudySessionHost class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

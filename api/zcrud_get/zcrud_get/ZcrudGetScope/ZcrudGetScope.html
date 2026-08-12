@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZcrudGetScope.new constructor from Class ZcrudGetScope from the zcrud_get library, for the Dart programming language.">
+  <title>ZcrudGetScope.new constructor - ZcrudGetScope - zcrud_get library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_get</a></li>
+    <li><a href="../../zcrud_get/">zcrud_get.dart</a></li>
+    <li><a href="../../zcrud_get/ZcrudGetScope-class.html">ZcrudGetScope</a></li>
+    <li class="self-crumb">ZcrudGetScope.new const constructor</li>
+  </ol>
+  <div class="self-name">ZcrudGetScope.new</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_get&#47;ZcrudGetScope-class-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-constructor">ZcrudGetScope</span> constructor 
+</h1></div>
+
+    <section class="multi-line-signature">
+      const
+      <span class="name ">ZcrudGetScope</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-child"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">child</span>, </span></li>
+<li><span class="parameter" id="param-locator"><span class="type-annotation"><a href="https://pub.dev/documentation/get_it/9.2.1/get_it/GetIt-class.html">GetIt</a>?</span> <span class="parameter-name">locator</span>, </span></li>
+<li><span class="parameter" id="param-createController"><span class="type-annotation">ZFormController</span> <span class="parameter-name">createController</span>()?, </span></li>
+<li><span class="parameter" id="param-acl"><span class="type-annotation">ZAcl</span> <span class="parameter-name">acl</span> = <span class="default-value">const ZAllowAllAcl()</span>, </span></li>
+<li><span class="parameter" id="param-registerController"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">registerController</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="param-registerInGetX"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">registerInGetX</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
+</ol>})
+    </section>
+    
+<section class="desc markdown">
+  <p>Construit le scope.</p>
+<p><code>locator</code> : locator <code>get_it</code> (par défaut une <strong>instance isolée</strong>,
+<code>GetIt.asNewInstance()</code>, pour ne pas polluer le singleton global — idéal en
+test et pour un scoping strict). Une app peut passer son locator applicatif
+pour partager ses enregistrements. <strong>Locator partagé</strong>
+(plusieurs scopes) : le slot de type <code>ZFormController</code> du locator est
+occupé par le PREMIER scope ; les scopes suivants NE le réenregistrent pas
+(le controller reste résolu directement, pas via le locator). Grâce à la
+garde d'appartenance, le <code>dispose</code> d'un scope ne désenregistre QUE son
+propre enregistrement (jamais celui d'un autre scope encore vivant). Pour
+résoudre DEUX <code>ZFormController</code> par type sur un locator partagé, isoler
+chaque formulaire (locator dédié) ou un scope <code>get_it</code> par formulaire.
+<strong><code>registerInGetX</code></strong> (singleton GLOBAL <code>Get</code>) suit la même règle : un seul
+scope actif « possède » l'enregistrement GetX à la fois.
+<code>createController</code> : fabrique du <code>ZFormController</code> possédé par ce scope
+(par défaut un <code>ZFormController()</code> vide). <code>acl</code> : port d'autorisation
+exposé au cœur (défaut permissif). <code>registerController</code> : enregistre le
+controller dans le locator (défaut vrai). <code>registerInGetX</code> : bridge GetX
+optionnel (défaut faux — évite tout état global partagé).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">const ZcrudGetScope({
+  required this.child,
+  this.locator,
+  this.createController,
+  this.acl = const ZAllowAllAcl(),
+  this.registerController = true,
+  this.registerInGetX = false,
+  super.key,
+});</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_get</a></li>
+    <li><a href="../../zcrud_get/">zcrud_get</a></li>
+    <li><a href="../../zcrud_get/ZcrudGetScope-class.html">ZcrudGetScope</a></li>
+    <li class="self-crumb">ZcrudGetScope.new const constructor</li>
+</ol>
+
+    <h5>ZcrudGetScope class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_get
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

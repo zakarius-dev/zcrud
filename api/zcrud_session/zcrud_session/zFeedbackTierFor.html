@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zFeedbackTierFor function from the zcrud_session library, for the Dart programming language.">
+  <title>zFeedbackTierFor function - zcrud_session library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_session</a></li>
+    <li><a href="../zcrud_session/">zcrud_session.dart</a></li>
+    <li class="self-crumb">zFeedbackTierFor function</li>
+  </ol>
+  <div class="self-name">zFeedbackTierFor</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_session&#47;zcrud_session-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zFeedbackTierFor</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="../zcrud_session/ZFeedbackTier.html">ZFeedbackTier</a></span>
+<span class="name ">zFeedbackTierFor</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="zFeedbackTierFor-param-quality"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">quality</span>, </span></li>
+<li><span class="parameter" id="zFeedbackTierFor-param-timeTaken"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeTaken</span>, </span></li>
+<li><span class="parameter" id="zFeedbackTierFor-param-hintsUsed"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">hintsUsed</span>, </span></li>
+<li><span class="parameter" id="zFeedbackTierFor-param-config"><span>required</span> <span class="type-annotation">ZSrsConfig</span> <span class="parameter-name">config</span>, </span></li>
+<li><span class="parameter" id="zFeedbackTierFor-param-masteredThreshold"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">masteredThreshold</span>, </span></li>
+<li><span class="parameter" id="zFeedbackTierFor-param-thresholds"><span class="type-annotation"><a href="../zcrud_session/ZFeedbackThresholds-class.html">ZFeedbackThresholds</a></span> <span class="parameter-name">thresholds</span> = <span class="default-value">const ZFeedbackThresholds()</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Sélectionne le seau de feedback d'une soumission — fonction pure.</p>
+<ul>
+<li><code>quality</code> est clampée par <code>config.clampQuality</code> (voie unique,
+invariant AD-10) : <code>-3</code> devient <code>min</code>, <code>9</code> devient <code>max</code>, jamais
+d'exception ;</li>
+<li><code>timeTaken</code> et <code>hintsUsed</code> aberrants (négatifs) sont refusés pour le
+palier exceptionnel plutôt que ramenés à zéro (voir plus bas) ;</li>
+<li><code>q &gt;= masteredThreshold</code> → <a href="../zcrud_session/ZFeedbackTier.html">ZFeedbackTier.encouragement</a>, promu en
+<a href="../zcrud_session/ZFeedbackTier.html">ZFeedbackTier.exceptional</a> si <code>timeTaken &lt; thresholds.exceptionalUnder</code>
+et <code>hintsUsed &lt;= thresholds.exceptionalMaxHints</code> ;</li>
+<li><code>q &gt;= config.passThreshold</code> (mais non maîtrisée) → <a href="../zcrud_session/ZFeedbackTier.html">ZFeedbackTier.neutral</a> ;</li>
+<li>sinon → <a href="../zcrud_session/ZFeedbackTier.html">ZFeedbackTier.motivation</a> (<code>q0-2</code> : aucune note hors seau).</li>
+</ul>
+<p>Le seuil de comparaison est <code>&gt;=</code> plutôt que <code>==</code> sur <code>passThreshold</code> : les
+deux formulations coïncident sur une configuration par défaut
+(<code>passThreshold=3</code>, <code>masteredThreshold=4</code>, où <code>3</code> est la seule note entre
+les deux seuils), mais seul le <code>&gt;=</code> reste correct sur une échelle
+tronquée — avec <code>passThreshold=1</code>, un <code>q2</code> est une réussite et doit
+recevoir « bon », pas « mauvais » ; un <code>==</code> l'enverrait silencieusement en
+<code>motivation</code>. Le <code>&gt;=</code> colle par ailleurs à la définition normative des
+seaux : « bon » signifie réussi mais non maîtrisé.</p>
+<h2 id="une-mesure-aberrante-ne-peut-pas-mriter-le-palier-exceptionnel">Une mesure aberrante ne peut pas mériter le palier exceptionnel</h2>
+<p><code>timeTaken</code> et <code>hintsUsed</code> sont fournis par l'hôte, typiquement mesurés
+par différence entre deux horodatages. Sur une correction NTP ou un
+changement d'heure système entre les deux relevés, <code>timeTaken</code> peut
+devenir négatif — et un apprenant ayant peiné cinq minutes recevrait à
+tort le message « exceptionnel, en un éclair ! ».</p>
+<p>Ces valeurs négatives ne sont pas clampées à zéro : ce serait exactement
+le bug, <code>0</code> signifiant « instantané », la valeur la plus flatteuse de
+l'échelle. Une entrée aberrante refuse donc le palier exceptionnel
+(repli sur <a href="../zcrud_session/ZFeedbackTier.html">ZFeedbackTier.encouragement</a> — la carte est maîtrisée, le
+message reste juste et positif), jamais une exception, jamais une perte
+de fonction.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZFeedbackTier zFeedbackTierFor({
+  required int quality,
+  required Duration timeTaken,
+  required int hintsUsed,
+  required ZSrsConfig config,
+  required int masteredThreshold,
+  ZFeedbackThresholds thresholds = const ZFeedbackThresholds(),
+}) {
+  &#47;&#47; Voie unique de clamp : jamais de bornes réécrites ici, jamais
+  &#47;&#47; d&#39;exception sur une note aberrante.
+  final q = config.clampQuality(quality);
+
+  if (q &gt;= masteredThreshold) {
+    &#47;&#47; Une mesure aberrante refuse le palier : la ramener à zéro la rendrait
+    &#47;&#47; au contraire maximalement flatteuse (`0 s` = « en un éclair », `-1`
+    &#47;&#47; indice = « sans aide »).
+    final fastEnough =
+        !timeTaken.isNegative &amp;&amp; timeTaken &lt; thresholds.exceptionalUnder;
+    final unaided = hintsUsed &gt;= 0 &amp;&amp; hintsUsed &lt;= thresholds.exceptionalMaxHints;
+    &#47;&#47; Les deux conditions sont exigées : un indice fait perdre le palier,
+    &#47;&#47; même sur une réponse fulgurante.
+    if (fastEnough &amp;&amp; unaided) return ZFeedbackTier.exceptional;
+    return ZFeedbackTier.encouragement;
+  }
+  if (q &gt;= config.passThreshold) return ZFeedbackTier.neutral;
+  return ZFeedbackTier.motivation;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_session</a></li>
+    <li><a href="../zcrud_session/">zcrud_session</a></li>
+    <li class="self-crumb">zFeedbackTierFor function</li>
+</ol>
+
+    <h5>zcrud_session library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_session
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

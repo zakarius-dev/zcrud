@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the contentHubLauncher property from the ZStudyFolderDetail class, for the Dart programming language.">
+  <title>contentHubLauncher property - ZStudyFolderDetail class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study.dart</a></li>
+    <li><a href="../../zcrud_study/ZStudyFolderDetail-class.html">ZStudyFolderDetail</a></li>
+    <li class="self-crumb">contentHubLauncher property</li>
+  </ol>
+  <div class="self-name">contentHubLauncher</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;ZStudyFolderDetail-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">contentHubLauncher</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="../../zcrud_study/ZContentHubLauncher-class.html">ZContentHubLauncher</a>?
+        <span class="name ">contentHubLauncher</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p>Le hub d'ajout de contenu partagé par tous les <code>+</code> de la page.</p>
+<p><code>null</code> (défaut) ⇒ capacité ABSENTE et <strong>arbre STRICTEMENT identique</strong> à
+sans ce slot : aucun <code>ZContentHubScope</code> n'est inséré, <a href="../../zcrud_study/ZStudyFolderDetail/addAction.html">addAction</a> est
+projetée telle quelle, aucune section ne peut résoudre de hub. Garde
+dédiée (comparaison d'arbre, pas de simple absence d'exception).</p>
+<p>Non-null ⇒ <strong>deux</strong> effets, tous deux additifs :</p>
+<ol>
+<li>un <a href="../../zcrud_study/ZContentHubScope-class.html">ZContentHubScope</a> enveloppe la page — c'est ce qui fait que le <code>+</code>
+d'app-bar et le <code>+</code> d'une section
+(<code>ZStudyToolsSectionSpec.addOpensContentHub</code>) ouvrent <strong>le même</strong> hub,
+configuré <strong>une seule fois</strong> ;</li>
+<li>si (et seulement si) <a href="../../zcrud_study/ZStudyFolderDetail/addAction.html">addAction</a> est fournie <strong>avec un <code>onPressed</code>
+nul</strong>, sa commande est complétée par l'ouverture du hub.</li>
+</ol>
+<p><strong>Le paramètre de l'hôte PRIME, toujours.</strong> Une <a href="../../zcrud_study/ZStudyFolderDetail/addAction.html">addAction</a> qui porte
+déjà un <code>onPressed</code> n'est <strong>jamais</strong> réécrite : le hub ne peut pas
+détourner silencieusement une commande que l'hôte a explicitement câblée.
+C'est la même priorité que partout ailleurs dans ce package (paramètre &gt;
+jeton &gt; référence), appliquée ici au comportement.</p>
+<p><strong>Le socle n'invente ni glyphe ni libellé</strong> : sans <a href="../../zcrud_study/ZStudyFolderDetail/addAction.html">addAction</a>, aucun
+bouton n'apparaît — <code>ZAppBarAction</code> exige un <code>icon</code> <strong>et</strong> un
+<code>semanticLabel</code>, que seul l'hôte peut fournir (FR-26/AD-13). Le launcher
+apporte la <em>commande</em>, jamais l'<em>apparence</em>.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final ZContentHubLauncher? contentHubLauncher;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/ZStudyFolderDetail-class.html">ZStudyFolderDetail</a></li>
+    <li class="self-crumb">contentHubLauncher property</li>
+</ol>
+
+  <h5>ZStudyFolderDetail class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

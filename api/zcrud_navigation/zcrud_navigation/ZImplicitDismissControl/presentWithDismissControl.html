@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the presentWithDismissControl method from the ZImplicitDismissControl class, for the Dart programming language.">
+  <title>presentWithDismissControl method - ZImplicitDismissControl class - zcrud_navigation library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_navigation</a></li>
+    <li><a href="../../zcrud_navigation/">zcrud_navigation.dart</a></li>
+    <li><a href="../../zcrud_navigation/ZImplicitDismissControl-class.html">ZImplicitDismissControl</a></li>
+    <li class="self-crumb">presentWithDismissControl&lt;<wbr><span class="type-parameter">T</span>&gt; abstract method</li>
+  </ol>
+  <div class="self-name">presentWithDismissControl</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_navigation&#47;ZImplicitDismissControl-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">presentWithDismissControl&lt;<wbr><span class="type-parameter">T</span>&gt;</span> abstract method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">T?</span>&gt;</span></span>
+<span class="name ">presentWithDismissControl</span>&lt;<wbr><span class="type-parameter">T</span>&gt;(<wbr><ol class="parameter-list"> <li><span class="parameter" id="presentWithDismissControl-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-builder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a></span> <span class="parameter-name">builder</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-mode"><span>required</span> <span class="type-annotation"><a href="../../zcrud_navigation/ZEditionPresentation.html">ZEditionPresentation</a></span> <span class="parameter-name">mode</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-maxWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">maxWidth</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-maxHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">maxHeight</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-useSafeArea"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">useSafeArea</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-barrierDismissible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">barrierDismissible</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-allowImplicitDismiss"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">allowImplicitDismiss</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-isDismissible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isDismissible</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="presentWithDismissControl-param-sheetFrame"><span class="type-annotation"><a href="../../zcrud_navigation/ZSheetFrameSpec-class.html">ZSheetFrameSpec</a>?</span> <span class="parameter-name">sheetFrame</span>, </span></li>
+</ol>})
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Comme <code>ZFormPresenter.present</code>, plus <code>allowImplicitDismiss</code>.</p>
+<ul>
+<li><code>allowImplicitDismiss: true</code> (défaut) ⇒ comportement <strong>strictement
+identique</strong> à <code>present</code> : c'est la voie que <code>present</code> lui-même emprunte.</li>
+<li><code>allowImplicitDismiss: false</code> ⇒ les voies de fermeture <strong>non gardées</strong>
+sont désactivées. Concrètement, en mode <code>sheet</code> : <code>enableDrag: false</code>.
+Le tap sur la barrière <strong>reste</strong> actif (il passe par <code>maybePop</code>, donc
+par <code>PopScope</code>) — le neutraliser aussi retirerait une voie de sortie
+parfaitement sûre, ce qui serait une régression d'ergonomie.</li>
+</ul>
+<p><code>sheetFrame</code> surcharge <strong>par paramètre</strong> la feuille contrainte et
+encadrée (cf. <code>z_sheet_frame.dart</code>). <code>null</code> ⇒ le maillon suivant décide
+(jetons <code>ZcrudTheme.editionSheet*</code>, puis <code>ZSheetFrameReference</code>) — <strong>ce
+n'est donc PAS « pas de cadre »</strong> : le défaut du socle encadre. Pour ne
+pas encadrer, il faut le <strong>dire</strong> :
+<code>sheetFrame: ZSheetFrameSpec(mode: ZSheetFrameMode.never)</code>.</p>
+<p>Paramètre <strong>nommé et optionnel</strong> : aucun appelant existant ne casse ; une
+implémentation externe qui adopte ce port ajoute simplement le
+paramètre.</p>
+<h2 id="isdismissible--interdire-le-renoncement"><code>isDismissible</code> — INTERDIRE le renoncement</h2>
+<p>Ne pas confondre avec <code>allowImplicitDismiss</code> : <strong>ce sont deux
+intentions opposées, et elles se composent sans se contredire.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Réglage</th>
+<th>Voie visée</th>
+<th>Intention</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>allowImplicitDismiss: false</code></td>
+<td><strong>glissement</strong> de la feuille</td>
+<td><em>garder</em> le renoncement — la voie qui court-circuite <code>PopScope</code> est retirée, celle qui l'honore reste</td>
+</tr>
+<tr>
+<td><code>isDismissible: false</code></td>
+<td><strong>barrière</strong> de la feuille</td>
+<td><em>interdire</em> le renoncement — la voie est retirée, <code>PopScope</code> n'est même plus consulté</td>
+</tr>
+</tbody>
+</table>
+<p>Conséquences <strong>mesurées</strong> de la combinaison (mode <code>sheet</code>) :</p>
+<ul>
+<li><code>allowImplicitDismiss: false</code> seul (ce que pose un <code>ZEditionChrome</code> qui
+garde l'abandon) ⇒ glissement mort, <strong>tap barrière vivant</strong> et passant
+par <code>Navigator.maybePop</code>, donc par le garde d'abandon : l'utilisateur
+peut renoncer, on lui demande confirmation. C'est le comportement par
+défaut, <strong>inchangé</strong>.</li>
+<li><code>isDismissible: false</code> seul ⇒ glissement vivant (et <strong>non gardé</strong> :
+<code>BottomSheet.onClosing</code> appelle <code>Navigator.pop</code>), barrière morte. Un
+hôte qui coupe la barrière <strong>sans</strong> couper le glissement se retire la
+voie sûre en laissant la voie non gardée : combinaison déconseillée.</li>
+<li>les deux à <code>false</code> ⇒ <strong>aucune</strong> sortie implicite : ni glissement, ni
+barrière. La seule sortie est celle que le contenu offre (bouton
+« Annuler », <code>Navigator.pop</code>). C'est la voie « interdire le
+renoncement » ; elle <strong>n'annule pas</strong> le garde d'abandon, elle le rend
+sans objet sur ces deux voies — mesuré : le seam de confirmation
+n'est appelé sur aucune des deux.</li>
+</ul>
+<p>Défaut <code>true</code> ⇒ <strong>comportement d'aujourd'hui strictement conservé</strong>
+(barrière fermante), pour tout hôte passif.</p>
+<p>Portée : mode <strong><code>sheet</code></strong> uniquement. En <code>dialog</code>, la barrière se règle
+par <code>barrierDismissible</code> (un second canal pour la même propriété serait le
+motif de divergence que ce dépôt s'interdit) ; en <code>page</code>, il n'y a pas de
+barrière. Ces deux inerties sont <strong>mesurées</strong> par la matrice de paramètres
+(<code>doc/parameter-matrix-z-adaptive-presenter.md</code>), pas déclarées à la main.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;T?&gt; presentWithDismissControl&lt;T&gt;(
+  BuildContext context, {
+  required WidgetBuilder builder,
+  required ZEditionPresentation mode,
+  double? maxWidth,
+  double? maxHeight,
+  bool useSafeArea = true,
+  bool barrierDismissible = true,
+  bool allowImplicitDismiss = true,
+  bool isDismissible = true,
+  ZSheetFrameSpec? sheetFrame,
+});</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_navigation</a></li>
+    <li><a href="../../zcrud_navigation/">zcrud_navigation</a></li>
+    <li><a href="../../zcrud_navigation/ZImplicitDismissControl-class.html">ZImplicitDismissControl</a></li>
+    <li class="self-crumb">presentWithDismissControl&lt;<wbr><span class="type-parameter">T</span>&gt; abstract method</li>
+</ol>
+
+    <h5>ZImplicitDismissControl class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_navigation
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

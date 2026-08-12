@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_intl API docs, for the Dart programming language.">
+  <title>zcrud_intl - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_intl package</a></li>
+  </ol>
+  <div class="self-name">zcrud_intl</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_intl">zcrud_intl</h1>
+<p>Champs internationaux de zcrud — téléphone, pays, devise, état/province et
+adresse — dont chaque valeur de tranche reste <strong>neutre</strong> (aucun type d'une
+lib tierce ne fuit dans le <code>ZFormController</code>, invariant <a href="../../docs/site/concepts/invariants.md#ad-1">AD-1</a>).</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_intl</code> sert cinq champs additifs via <code>ZWidgetRegistry</code> : <code>phoneNumber</code>
+(rendu natif, sélecteur pays + formatage « as-you-type »), <code>country</code>
+(sélecteur pays inline), <code>address</code>/<code>addressSearchField</code> (sous-formulaire
+structuré, avec recherche géo optionnelle) — plus deux champs composables
+que l'app enregistre elle-même sous le <code>kind</code> de son choix : devise
+(<a href="zcrud_intl/ZCurrencyField-class.html">ZCurrencyField</a>) et état/province (<a href="zcrud_intl/ZStateField-class.html">ZStateField</a>). Chaque champ émet une
+valeur de tranche <strong>neutre</strong> : une <code>String</code> internationale pour le
+téléphone, un code ISO alpha-2 pour le pays, un code ISO 4217 (ou un
+<a href="zcrud_intl/ZMoney-class.html">ZMoney</a>) pour la devise, un code ISO 3166-2 pour l'état/province, un
+<a href="zcrud_intl/ZPostalAddress-class.html">ZPostalAddress</a> structuré pour l'adresse. Les catalogues pays/devise/
+subdivisions sont servis depuis des <strong>assets JSON bundlés</strong>, chargés
+paresseusement et mis en cache.</p>
+<p>Ce paquet <strong>dépend de <code>zcrud_core</code></strong> et confine ses deux seules
+dépendances téléphone (<code>phone_numbers_parser</code> pour le (dé)codage E.164,
+<code>intl_phone_number_input</code> pour le rendu) à deux ponts internes jamais
+exportés — aucun type de ces libs n'apparaît dans une signature publique
+ni dans une valeur de tranche (invariant <a href="../../docs/site/concepts/invariants.md#ad-1">AD-1</a>).</p>
+<p><strong>Utilisez ce paquet</strong> pour ajouter des champs téléphone/pays/devise/
+état/adresse à un formulaire <code>zcrud_core</code>, ou pour manipuler leurs valeurs
+neutres (<a href="zcrud_intl/ZPhoneNumber-class.html">ZPhoneNumber</a>, <a href="zcrud_intl/ZPostalAddress-class.html">ZPostalAddress</a>…) hors formulaire. <strong>N'utilisez
+pas ce paquet</strong> si vous avez seulement besoin du formatage de date localisé
+(<code>ZIntlDateDisplayFormatter</code>) : c'est un point d'entrée séparé
+(<code>package:zcrud_intl/date_formatter.dart</code>), qui évite de payer le poids
+des données de locale CLDR à un hôte qui ne l'utilise pas.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_intl/zcrud_intl.dart';
+
+/// Enregistre les champs internationaux dans le registre de widgets de
+/// l'hôte. `phoneNumber`/`country`/`address` sont les kinds canoniques ;
+/// devise et état/province sont composables, sous un kind au choix.
+void registerIntlFields(ZWidgetRegistry registry) {
+  registry.register('phoneNumber', ZPhoneFieldWidget.builder());
+  registry.register('country', ZCountryFieldWidget.builder());
+  registerZAddressFieldWidgets(registry); // enregistre address + addressSearchField
+  registry.register('currency', ZCurrencyField.builder());
+  registry.register('state', ZStateField.builder());
+}
+
+// Valeur neutre, sans passer par un formulaire : (dé)sérialisation sûre.
+void roundTrip() {
+  const addr = ZPostalAddress(city: 'Niamey', countryCode: 'NE');
+  final map = addr.toMap();
+  final restored = ZPostalAddress.fromMapSafe(map); // ne throw jamais
+  assert(restored?.city == 'Niamey');
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Valeur de tranche toujours neutre</strong> — chaque champ n'émet que des types
+pur-Dart (<code>String</code>, <code>int</code>, ou un modèle de ce paquet comme
+<a href="zcrud_intl/ZPostalAddress-class.html">ZPostalAddress</a>). Le pont vers une lib tierce (<code>ZPhoneCodec</code>,
+<code>z_intl_phone_input_bridge.dart</code>) reste <strong>interne</strong>, jamais exporté par
+le barrel — vérifié par une garde de confinement.</li>
+<li><strong>Catalogues paresseux et partagés</strong> — <a href="zcrud_intl/ZCountryCatalog-class.html">ZCountryCatalog</a>,
+<a href="zcrud_intl/ZCurrencyCatalog-class.html">ZCurrencyCatalog</a> et <a href="zcrud_intl/ZSubdivisionCatalog-class.html">ZSubdivisionCatalog</a> chargent leur asset JSON à
+la première demande, le mettent en cache (lecture seule, donc
+partageable), et ne lèvent jamais : asset absent ou JSON malformé
+retombent sur un catalogue vide.</li>
+<li><strong>Désérialisation défensive (invariant <a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>)</strong> — tout <code>fromMapSafe</code> de ce paquet
+accepte une entrée hostile (<code>Map</code> non conforme, type inattendu, champ
+absent) et rend <code>null</code> plutôt que de lever ; un champ non désérialisable
+ne fait jamais échouer le parent.</li>
+<li><strong>Config additive par champ (invariant <a href="../../docs/site/concepts/invariants.md#ad-4">AD-4</a>)</strong> — <a href="zcrud_intl/ZIntlFieldConfig-class.html">ZIntlFieldConfig</a>, posée sur
+<code>ZFieldSpec.config</code>, porte les défauts par champ (pays initial, pays
+préférés/autorisés, validateur téléphonique national opt-in…) sans
+jamais modifier <code>zcrud_core</code> : <code>config == null</code> reproduit exactement le
+comportement sans config.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Valeurs neutres</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZPhoneNumber</code></td>
+<td>Numéro de téléphone neutre (pur-Dart) — modèle legacy, encore ingéré à l'amorçage.</td>
+</tr>
+<tr>
+<td><code>ZPostalAddress</code> / <code>ZAddressCodec</code></td>
+<td>Adresse structurée neutre et son codec de compatibilité avec un schéma <code>String</code> legacy.</td>
+</tr>
+<tr>
+<td><code>ZMoney</code></td>
+<td>Couple montant + devise ISO 4217, pour le champ devise en mode groupe.</td>
+</tr>
+<tr>
+<td><code>ZCountryInfo</code> / <code>ZCurrencyInfo</code> / <code>ZSubdivision</code></td>
+<td>Entrées de catalogue enrichissant l'affichage (nom, drapeau, symbole…) — jamais la valeur de tranche elle-même.</td>
+</tr>
+<tr>
+<td><strong>Catalogues</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZCountryCatalog</code> / <code>ZCurrencyCatalog</code> / <code>ZSubdivisionCatalog</code></td>
+<td>Catalogues paresseux + cachés, injectables, chargés depuis un asset bundlé.</td>
+</tr>
+<tr>
+<td><code>sharedDefaultCountryCatalog</code></td>
+<td>Instance partagée lazy, pour qu'un formulaire à plusieurs champs intl ne lise l'asset qu'une fois.</td>
+</tr>
+<tr>
+<td><strong>Champs de formulaire</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZPhoneFieldWidget</code></td>
+<td>Champ téléphone international — rendu natif (sélecteur pays + formatage as-you-type), valeur <code>String</code>.</td>
+</tr>
+<tr>
+<td><code>ZCountryFieldWidget</code> / <code>ZCountryPickerField</code></td>
+<td>Champ pays et son sélecteur inline (interne) réutilisé par les autres champs.</td>
+</tr>
+<tr>
+<td><code>ZAddressFieldWidget</code></td>
+<td>Sous-formulaire adresse structuré, avec recherche géo optionnelle via <code>ZPlaceSearchProvider</code>.</td>
+</tr>
+<tr>
+<td><code>ZCurrencyField</code></td>
+<td>Champ devise composable — code ISO 4217 seul, ou <code>ZMoney</code> en mode groupe.</td>
+</tr>
+<tr>
+<td><code>ZStateField</code></td>
+<td>Champ état/province composable, dépendant du pays — repli texte libre si aucune subdivision.</td>
+</tr>
+<tr>
+<td><strong>Configuration et validation</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZIntlFieldConfig</code></td>
+<td>Config additive par champ (pays/devise par défaut, restrictions, retrait de sélecteur, validateur national).</td>
+</tr>
+<tr>
+<td><code>ZNationalPhoneValidator</code> / <code>ZNationalPhoneError</code></td>
+<td>Validateur de numéro national paramétrable (longueur + préfixes), opt-in, sans politique codée en dur.</td>
+</tr>
+<tr>
+<td><code>nationalPhoneErrorText</code></td>
+<td>Résout le message l10n d'un <code>ZNationalPhoneError</code> — repli français, surchargeable via <code>ZcrudScope</code>.</td>
+</tr>
+<tr>
+<td><code>ZPlaceSearchProvider</code> / <code>ZPlacePrediction</code></td>
+<td>Port de recherche géographique injectable — l'implémentation (Google Places, OSM…) vit hors de ce paquet.</td>
+</tr>
+<tr>
+<td><strong>Formatage de date (point d'entrée séparé)</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZIntlDateDisplayFormatter</code></td>
+<td>Implémentation <code>intl</code> du port <code>ZDateDisplayFormatter</code> — <code>package:zcrud_intl/date_formatter.dart</code> uniquement.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Aucune donnée fabriquée</strong> — le pays présélectionné du champ téléphone
+n'est jamais inventé : il est dérivé, dans l'ordre, de la valeur déjà
+saisie, de la config par champ, du paramètre de widget, de la locale
+ambiante, puis des locales de l'appareil. Sans aucune source, aucun pays
+n'est transmis plutôt qu'un choix arbitraire.</li>
+<li><strong>Rupture de contrat assumée sur <code>phoneNumber</code></strong> — la valeur de tranche
+du champ téléphone est une <strong><code>String</code></strong> en forme internationale
+(<code>^\+[0-9]+$</code>), pas un <a href="zcrud_intl/ZPhoneNumber-class.html">ZPhoneNumber</a>. La lecture reste défensive : une
+valeur d'un ancien schéma <a href="zcrud_intl/ZPhoneNumber-class.html">ZPhoneNumber</a> (ou sa map sérialisée) est
+encore ingérée à l'amorçage, puis ré-émise en <code>String</code>.</li>
+<li><strong>Zéro secret, zéro réseau (invariant <a href="../../docs/site/concepts/invariants.md#ad-12">AD-12</a>)</strong> — aucune clé API, aucun endpoint en dur.
+La recherche géographique de <code>ZAddressFieldWidget</code> est optionnelle : sans
+<code>ZPlaceSearchProvider</code> injecté par l'app, aucune affordance de recherche
+n'apparaît (comportement strictement identique).</li>
+<li><strong>Défauts nationaux toujours surchargeables (invariant <a href="../../docs/site/concepts/invariants.md#ad-12">AD-12</a>)</strong> — aucun code
+pays, préfixe ou longueur téléphonique n'est codé en dur dans ce
+paquet : une politique nationale (ex. validation d'un numéro togolais)
+se déclare entièrement par paramètres, côté application.</li>
+<li><strong>RTL et accessibilité (invariant <a href="../../docs/site/concepts/invariants.md#ad-13">AD-13</a>)</strong> — sélecteurs et déclencheurs exposent une
+action sémantique opérable au lecteur d'écran (<code>ExcludeSemantics</code> +
+<code>onTap</code> porté par le nœud englobant), cibles ≥ 48 dp, layout
+directionnel.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_intl.md"><code>docs/site/paquets/zcrud_intl.md</code></a></li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_core</code> — <code>ZWidgetRegistry</code>, <code>ZFieldSpec.config</code>, <code>ZDateDisplayFormatter</code>.</li>
+<li><code>zcrud_geo</code> — champs géographiques complémentaires (coordonnées, carte).</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="date_formatter">
+  <span class="name"><a href="date_formatter/">date_formatter</a></span> 
+
+</dt>
+<dd>Point d'entrée <strong>séparé</strong>: implémentation <code>intl</code> du port
+<code>ZDateDisplayFormatter</code> de <code>zcrud_core</code>.
+</dd>
+
+          <dt id="zcrud_intl">
+  <span class="name"><a href="zcrud_intl/">zcrud_intl</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_intl</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_intl package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_intl</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="date_formatter/">date_formatter</a></li>
+      <li><a href="zcrud_intl/">zcrud_intl</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_intl
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

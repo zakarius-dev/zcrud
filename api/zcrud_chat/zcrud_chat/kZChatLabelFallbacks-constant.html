@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the kZChatLabelFallbacks constant from the zcrud_chat library, for the Dart programming language.">
+  <title>kZChatLabelFallbacks constant - zcrud_chat library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat.dart</a></li>
+    <li class="self-crumb">kZChatLabelFallbacks constant</li>
+  </ol>
+  <div class="self-name">kZChatLabelFallbacks</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_chat&#47;zcrud_chat-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-top-level-property">kZChatLabelFallbacks</span> top-level constant 
+ 
+</h1></div>
+
+        <section class="multi-line-signature">
+          
+          <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>
+          const <span class="name ">kZChatLabelFallbacks</span>
+          
+
+        </section>
+        
+<section class="desc markdown">
+  <p>Repli lisible de chaque clé — jamais prioritaire sur l'hôte.</p>
+<p>La langue est le français, comme le reste des replis du dépôt : deux
+conventions de repli dans un même socle multi-consommateurs coûteraient
+plus qu'une langue de secours unique. L'hôte qui traduit passe
+<code>ZcrudScope(labels:)</code> — le repli n'est jamais atteint dans ce cas
+(<code>label()</code> ne le consulte qu'en dernier ressort).</p>
+<p>Cette table couvre exactement l'ensemble de <a href="../zcrud_chat/kZChatLabelKeys-constant.html">kZChatLabelKeys</a> — jamais
+une inclusion partielle.</p>
+</section>
+
+        
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">const Map&lt;String, String&gt; kZChatLabelFallbacks = &lt;String, String&gt;{
+  kZChatLabelShowMore: &#39;Afficher plus&#39;,
+  kZChatLabelShowLess: &#39;Afficher moins&#39;,
+  kZChatLabelSources: &#39;Sources&#39;,
+  kZChatLabelSuggestions: &#39;Suggestions&#39;,
+  kZChatLabelDiagram: &#39;Diagramme&#39;,
+  kZChatLabelUnsupportedBlock: &#39;Contenu non pris en charge&#39;,
+  kZChatLabelLiveRegion: &#39;Conversation&#39;,
+  kZChatLabelStreaming: &#39;Réponse en cours&#39;,
+  kZChatLabelAttachments: &#39;Pièces jointes&#39;,
+  kZChatLabelRemoveAttachment: &#39;Retirer&#39;,
+  kZChatLabelSpeak: &#39;Lire à voix haute&#39;,
+  kZChatLabelStopSpeaking: &#39;Arrêter la lecture&#39;,
+  kZChatLabelShare: &#39;Partager&#39;,
+  kZChatLabelDiffusion: &#39;Diffusion&#39;,
+  kZChatLabelAssistedInput: &#39;Saisie assistée&#39;,
+  kZChatLabelDictate: &#39;Dicter&#39;,
+  kZChatLabelStopDictation: &#39;Arrêter la dictée&#39;,
+  kZChatLabelListening: &#39;Micro à l\&#39;écoute&#39;,
+  kZChatLabelScanText: &#39;Extraire le texte d\&#39;une image&#39;,
+  kZChatLabelRecognizing: &#39;Extraction du texte en cours&#39;,
+  kZChatLabelReviewCapture: &#39;Relire avant envoi&#39;,
+  kZChatLabelAcceptCapture: &#39;Insérer dans le message&#39;,
+  kZChatLabelCancelCapture: &#39;Abandonner&#39;,
+  kZChatLabelComposer: &#39;Zone de saisie&#39;,
+  kZChatLabelComposerHint: &#39;Écrivez votre message&#39;,
+  kZChatLabelSettings: &#39;Réglages de génération&#39;,
+  kZChatLabelResponseLength: &#39;Longueur de réponse&#39;,
+  kZChatLabelLengthConcise: &#39;Concise&#39;,
+  kZChatLabelLengthStandard: &#39;Standard&#39;,
+  kZChatLabelLengthDetailed: &#39;Détaillée&#39;,
+  kZChatLabelLengthBias: &#39;Régénération&#39;,
+  kZChatLabelBiasShorter: &#39;Plus court&#39;,
+  kZChatLabelBiasAsIs: &#39;Tel quel&#39;,
+  kZChatLabelBiasLonger: &#39;Plus long&#39;,
+  kZChatLabelComputeBudget: &#39;Budget de calcul&#39;,
+  kZChatLabelComputeBudgetLevel: &#39;Niveau $kZChatCountPlaceholder&#39;,
+  kZChatLabelRevealThinking: &#39;Afficher le raisonnement&#39;,
+  kZChatLabelCorpusScope: &#39;Portée documentaire&#39;,
+  kZChatLabelCorpusAll: &#39;Tous les corpus&#39;,
+  kZChatLabelSettingAuto: &#39;Automatique&#39;,
+  kZChatLabelGenerated: &#39;Déjà généré&#39;,
+  kZChatLabelSend: &#39;Envoyer&#39;,
+  kZChatLabelSettingsReset: &#39;Réinitialiser&#39;,
+  kZChatLabelSettingsClose: &#39;Fermer&#39;,
+  kZChatLabelComputeBudgetFast: &#39;Rapide&#39;,
+  kZChatLabelComputeBudgetBalanced: &#39;Équilibré&#39;,
+  kZChatLabelComputeBudgetDeep: &#39;Profond&#39;,
+  kZChatLabelPresets: &#39;Préréglages&#39;,
+  kZChatLabelPresetNone: &#39;Aucun&#39;,
+  kZChatLabelCapabilities: &#39;Capacités&#39;,
+  kZChatLabelCapabilityWebSearch: &#39;Recherche web&#39;,
+  kZChatLabelToggleOn: &#39;Activé&#39;,
+  kZChatLabelToggleOff: &#39;Désactivé&#39;,
+  kZChatLabelDecrease: &#39;Diminuer&#39;,
+  kZChatLabelIncrease: &#39;Augmenter&#39;,
+  kZChatLabelModelSelector: &#39;Modèle&#39;,
+  kZChatLabelEditing: &#39;Modification en cours&#39;,
+  kZChatLabelEditingCancel: &#39;Annuler la modification&#39;,
+  kZChatLabelStopGeneration: &#39;Arrêter la génération&#39;,
+  kZChatLabelAttachmentPickers: &#39;Ajouter&#39;,
+  kZChatLabelTools: &#39;Outils&#39;,
+  kZChatLabelConversations: &#39;Conversations&#39;,
+  kZChatLabelLoadingConversations: &#39;Chargement des conversations&#39;,
+  kZChatLabelConversationsError: &#39;Les conversations n\&#39;ont pas pu être chargées&#39;,
+  kZChatLabelRetry: &#39;Réessayer&#39;,
+  kZChatLabelNoConversations: &#39;Aucune conversation&#39;,
+  kZChatLabelNoResults: &#39;Aucun résultat&#39;,
+  kZChatLabelNewConversation: &#39;Nouvelle conversation&#39;,
+  kZChatLabelLoadMore: &#39;Charger la suite&#39;,
+  kZChatLabelSelectedCount: &#39;$kZChatCountPlaceholder sélectionnée(s)&#39;,
+  kZChatLabelExitSelection: &#39;Quitter la sélection&#39;,
+  kZChatLabelRowSelected: &#39;Sélectionnée&#39;,
+  kZChatLabelPin: &#39;Épingler&#39;,
+  kZChatLabelUnpin: &#39;Désépingler&#39;,
+  kZChatLabelRetire: &#39;Retirer la conversation&#39;,
+  kZChatLabelRestore: &#39;Restaurer&#39;,
+  kZChatLabelTrim: &#39;Reprendre à partir d\&#39;ici&#39;,
+  kZChatLabelRetireSelected: &#39;Retirer la sélection&#39;,
+  kZChatLabelTimeNow: &#39;à l\&#39;instant&#39;,
+  kZChatLabelTimeMinutes: &#39;il y a $kZChatCountPlaceholder min&#39;,
+  kZChatLabelTimeHours: &#39;il y a $kZChatCountPlaceholder h&#39;,
+  kZChatLabelTimeDays: &#39;il y a $kZChatCountPlaceholder j&#39;,
+  kZChatLabelTimeWeeks: &#39;il y a $kZChatCountPlaceholder sem.&#39;,
+  kZChatLabelTimeMonths: &#39;il y a $kZChatCountPlaceholder mois&#39;,
+  kZChatLabelTimeYears: &#39;il y a $kZChatCountPlaceholder an(s)&#39;,
+};</code></pre>
+</section>
+
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat</a></li>
+    <li class="self-crumb">kZChatLabelFallbacks constant</li>
+</ol>
+
+    <h5>zcrud_chat library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

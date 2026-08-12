@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZWhiteExamState class from the zcrud_session library, for the Dart programming language.">
+  <title>ZWhiteExamState class - zcrud_session library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_session</a></li>
+    <li><a href="../zcrud_session/">zcrud_session.dart</a></li>
+    <li class="self-crumb">ZWhiteExamState class</li>
+  </ol>
+  <div class="self-name">ZWhiteExamState</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_session&#47;zcrud_session-library-sidebar.html"
+    data-below-sidebar="zcrud_session&#47;ZWhiteExamState-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZWhiteExamState</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>État immuable dédié d'un examen blanc (value-object).</p>
+<p>Ne clone pas <code>ZSessionState</code> : la sémantique file/ré-insertion/lapse de
+<code>ZSessionState</code> est inadaptée à une machine <code>setup</code>/<code>running</code>/<code>submitted</code>.
+Cet état porte une <a href="../zcrud_session/ZWhiteExamState/phase.html">phase</a> explicite, la file <a href="../zcrud_session/ZWhiteExamState/queue.html">queue</a> inchangée (parcours
+strict, aucune ré-insertion), un <a href="../zcrud_session/ZWhiteExamState/cursor.html">cursor</a> linéaire, la liste des
+<a href="../zcrud_session/ZWhiteExamState/answers.html">answers</a> enregistrées, et le <a href="../zcrud_session/ZWhiteExamState/result.html">result</a> de scoring (non-<code>null</code>
+uniquement en phase <a href="../zcrud_session/ZWhiteExamPhase.html">ZWhiteExamPhase.submitted</a>).</p>
+<p><code>==</code>/<code>hashCode</code> profonds (<code>listEquals</code>/<code>Object.hashAll</code>) : le
+<code>notifyListeners()</code> granulaire ne se déclenche que sur un changement réel.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://api.flutter.dev/flutter/meta/immutable-constant.html">immutable</a></li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZWhiteExamState.new" class="callable">
+          <span class="name"><a href="../zcrud_session/ZWhiteExamState/ZWhiteExamState.html">ZWhiteExamState</a></span><span class="signature">({<span class="parameter" id="param-phase"><span>required</span> <span class="type-annotation"><a href="../zcrud_session/ZWhiteExamPhase.html">ZWhiteExamPhase</a></span> <span class="parameter-name">phase</span>, </span><span class="parameter" id="param-queue"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_session/ZSessionItem-class.html">ZSessionItem</a></span>&gt;</span></span> <span class="parameter-name">queue</span>, </span><span class="parameter" id="param-cursor"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">cursor</span>, </span><span class="parameter" id="param-answers"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">answers</span>, </span><span class="parameter" id="param-result"><span class="type-annotation">ZStudySessionResult?</span> <span class="parameter-name">result</span></span>})</span>
+        </dt>
+        <dd>
+          Construit un état d'examen blanc immuable.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="answered" class="property">
+  <span class="name"><a href="../zcrud_session/ZWhiteExamState/answered.html">answered</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre de cartes déjà répondues (= longueur de <a href="../zcrud_session/ZWhiteExamState/answers.html">answers</a>).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="answers" class="property">
+  <span class="name"><a href="../zcrud_session/ZWhiteExamState/answers.html">answers</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Réponses enregistrées dans l'ordre d'arrivée (qualité SM-2 <code>0..5</code>),
+c'est-à-dire l'ordre des appels à <a href="../zcrud_session/ZWhiteExamSessionEngine/answer.html">ZWhiteExamSessionEngine.answer</a>. Sa
+longueur est le nombre de cartes déjà répondues.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="current" class="property">
+  <span class="name"><a href="../zcrud_session/ZWhiteExamState/current.html">current</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_session/ZSessionItem-class.html">ZSessionItem</a>?</span>
+  
+
+</dt>
+<dd>
+  Carte courante, ou <code>null</code> si le curseur a dépassé la fin de file.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="cursor" class="property">
+  <span class="name"><a href="../zcrud_session/ZWhiteExamState/cursor.html">cursor</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Curseur linéaire <code>0 → N</code> : index de la carte courante (avance d'un cran
+à chaque réponse enregistrée).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_session/ZWhiteExamState/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="isSubmitted" class="property">
+  <span class="name"><a href="../zcrud_session/ZWhiteExamState/isSubmitted.html">isSubmitted</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si et seulement si l'examen est soumis et figé (phase
+<a href="../zcrud_session/ZWhiteExamPhase.html">ZWhiteExamPhase.submitted</a>).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="phase" class="property">
+  <span class="name"><a href="../zcrud_session/ZWhiteExamState/phase.html">phase</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_session/ZWhiteExamPhase.html">ZWhiteExamPhase</a></span>
+  
+
+</dt>
+<dd>
+  Phase courante de la machine à états.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="queue" class="property">
+  <span class="name"><a href="../zcrud_session/ZWhiteExamState/queue.html">queue</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_session/ZSessionItem-class.html">ZSessionItem</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  File des cartes à présenter — inchangée durant l'examen (parcours
+strictement linéaire, aucune ré-insertion, aucun ré-ordonnancement).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="remaining" class="property">
+  <span class="name"><a href="../zcrud_session/ZWhiteExamState/remaining.html">remaining</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre de cartes restant à présenter (<code>N − cursor</code>, borné à <code>≥ 0</code>).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="result" class="property">
+  <span class="name"><a href="../zcrud_session/ZWhiteExamState/result.html">result</a></span>
+  <span class="signature">&#8594; ZStudySessionResult?</span>
+  
+
+</dt>
+<dd>
+  Résultat de scoring, non-<code>null</code> uniquement en phase
+<a href="../zcrud_session/ZWhiteExamPhase.html">ZWhiteExamPhase.submitted</a> (agrégat pur <code>{mode, total, correct, byQuality}</code>, jamais une écriture SRS).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="copyWith" class="callable">
+  <span class="name"><a href="../zcrud_session/ZWhiteExamState/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-phase"><span class="type-annotation"><a href="../zcrud_session/ZWhiteExamPhase.html">ZWhiteExamPhase</a>?</span> <span class="parameter-name">phase</span>, </span><span class="parameter" id="copyWith-param-queue"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_session/ZSessionItem-class.html">ZSessionItem</a></span>&gt;</span>?</span> <span class="parameter-name">queue</span>, </span><span class="parameter" id="copyWith-param-cursor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">cursor</span>, </span><span class="parameter" id="copyWith-param-answers"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">answers</span>, </span><span class="parameter" id="copyWith-param-result"><span class="type-annotation">ZStudySessionResult?</span> <span class="parameter-name">result</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_session/ZWhiteExamState-class.html">ZWhiteExamState</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Copie modifiée (les champs non fournis sont conservés). <code>result</code> ne peut
+être que posé, jamais effacé : l'examen ne calcule un score qu'à la
+soumission, et ne revient jamais à un état sans score.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable">
+  <span class="name"><a href="../zcrud_session/ZWhiteExamState/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A string representation of this object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_session/ZWhiteExamState/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_session</a></li>
+    <li><a href="../zcrud_session/">zcrud_session</a></li>
+    <li class="self-crumb">ZWhiteExamState class</li>
+</ol>
+
+    <h5>zcrud_session library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_session
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the build method from the ZDateFieldWidget class, for the Dart programming language.">
+  <title>build method - ZDateFieldWidget class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core.dart</a></li>
+    <li><a href="../../zcrud_core/ZDateFieldWidget-class.html">ZDateFieldWidget</a></li>
+    <li class="self-crumb">build method</li>
+  </ol>
+  <div class="self-name">build</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;ZDateFieldWidget-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">build</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>
+<span class="name ">build</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="build-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span></li>
+</ol>)
+
+      <div class="features"><span class="feature">override</span></div>
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Describes the part of the user interface represented by this widget.</p>
+<p>The framework calls this method when this widget is inserted into the tree
+in a given <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a> and when the dependencies of this widget change
+(e.g., an <a href="https://api.flutter.dev/flutter/widgets/InheritedWidget-class.html">InheritedWidget</a> referenced by this widget changes). This
+method can potentially be called in every frame and should not have any side
+effects beyond building a widget.</p>
+<p>The framework replaces the subtree below this widget with the widget
+returned by this method, either by updating the existing subtree or by
+removing the subtree and inflating a new subtree, depending on whether the
+widget returned by this method can update the root of the existing
+subtree, as determined by calling <a href="https://api.flutter.dev/flutter/widgets/Widget/canUpdate.html">Widget.canUpdate</a>.</p>
+<p>Typically implementations return a newly created constellation of widgets
+that are configured with information from this widget's constructor and
+from the given <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a>.</p>
+<p>The given <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a> contains information about the location in the
+tree at which this widget is being built. For example, the context
+provides the set of inherited widgets for this location in the tree. A
+given widget might be built with multiple different <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a>
+arguments over time if the widget is moved around the tree or if the
+widget is inserted into the tree in multiple places at once.</p>
+<p>The implementation of this method must only depend on:</p>
+<ul>
+<li>the fields of the widget, which themselves must not change over time,
+and</li>
+<li>any ambient state obtained from the <code>context</code> using
+<a href="https://api.flutter.dev/flutter/widgets/BuildContext/dependOnInheritedWidgetOfExactType.html">BuildContext.dependOnInheritedWidgetOfExactType</a>.</li>
+</ul>
+<p>If a widget's <a href="../../zcrud_core/ZDateFieldWidget/build.html">build</a> method is to depend on anything else, use a
+<a href="https://api.flutter.dev/flutter/widgets/StatefulWidget-class.html">StatefulWidget</a> instead.</p>
+<p>See also:</p>
+<ul>
+<li><a href="https://api.flutter.dev/flutter/widgets/StatelessWidget-class.html">StatelessWidget</a>, which contains the discussion on performance considerations.</li>
+</ul>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+Widget build(BuildContext context) {
+  final resolvedLabel =
+      label(context, field.label ?? field.name, fallback: field.label ?? field.name);
+  &#47;&#47; La graine est LUE quel que soit le type que l&#39;hôte porte, pas
+  &#47;&#47; seulement celui que le sélecteur de ce champ ÉCRIT (cf. `_seedText`).
+  final current = _seedText(value, _mode);
+  final placeholderKey = switch (_mode) {
+    ZDateMode.time =&gt; &#39;selectTime&#39;,
+    ZDateMode.dateTime =&gt; &#39;selectDateTime&#39;,
+    ZDateMode.date =&gt; &#39;selectDate&#39;,
+  };
+  &#47;&#47; Repli défensif : `selectDateTime` absent ⇒ retombe sur `selectDate`.
+  final placeholder =
+      label(context, placeholderKey, fallback: label(context, &#39;selectDate&#39;));
+  &#47;&#47; Projection d&#39;AFFICHAGE de la valeur SAISIE par le même port
+  &#47;&#47; `ZDateDisplayFormatter` que la fiche de lecture, le résumé de
+  &#47;&#47; sous-liste et la liste : le même champ rend `Dim. 9 août 2026` en
+  &#47;&#47; liste et dans le formulaire, jamais l&#39;ISO brut d&#39;un côté seulement.
+  &#47;&#47;
+  &#47;&#47; Hôte passif STRICTEMENT immobile (invariant AD-10) : la règle de repli
+  &#47;&#47; est partagée (`zDateDisplayTextOf`, via `zDateDisplayText` qui lit le
+  &#47;&#47; scope et la locale) et vaut **la chaîne brute** dans TOUS les chemins
+  &#47;&#47; dégradés — port absent, mode `time` (jamais routé), valeur non
+  &#47;&#47; parsable, port rendant `null`&#47;vide, port qui lève. Le mode est lu par
+  &#47;&#47; `zDateModeOf` : la MÊME source que `_mode` et que les voies de lecture
+  &#47;&#47; (jamais recopiée).
+  &#47;&#47;
+  &#47;&#47; Seul l&#39;AFFICHAGE passe par le port : `current` (ISO brut) reste la
+  &#47;&#47; valeur pilotant `hasValue`, la croix d&#39;effacement et `_pick`.
+  final valueDisplay =
+      current.isEmpty ? &#39;&#39; : zDateDisplayText(context, field, current);
+  final display = current.isEmpty ? placeholder : valueDisplay;
+
+  &#47;&#47; Croix d&#39;effacement rendue seulement si un callback est fourni
+  &#47;&#47; (champ non requis + éditable) ET qu&#39;une valeur existe (rien à effacer sinon).
+  final showClear =
+      onCleared != null &amp;&amp; !field.readOnly &amp;&amp; current.isNotEmpty;
+
+  final onTap = field.readOnly ? null : () =&gt; _pick(context, current);
+
+  &#47;&#47; Champ DÉCORÉ par défaut (même chaîne `zFieldDecoration` que
+  &#47;&#47; `text`&#47;`number`&#47;`select` : libellé flottant, astérisque requis, jetons
+  &#47;&#47; `fieldFillColor`&#47;`fieldBorderColor`). `decorated: false` (ou le jeton
+  &#47;&#47; de thème) restitue le rendu bouton.
+  final Widget trigger = zResolveDateFieldDecorated(context, decorated)
+      ? ZDecoratedFieldTrigger(
+          field: field,
+          semanticsLabel: resolvedLabel,
+          placeholder: placeholder,
+          valueText: valueDisplay,
+          hasValue: current.isNotEmpty,
+          onTap: onTap,
+          trailingIcon: Icon(
+            _mode == ZDateMode.time
+                ? Icons.access_time_outlined
+                : Icons.calendar_today_outlined,
+          ),
+        )
+      &#47;&#47; ── Échappatoire : rendu simple `OutlinedButton` ────────────────────
+      &#47;&#47; UN SEUL nœud sémantique cohérent : le wrapper porte rôle bouton
+      &#47;&#47; + libellé + valeur + action de tap, et EXCLUT la sémantique
+      &#47;&#47; descendante (bouton Material + Text) — pas de double annonce.
+      : Semantics(
+          button: true,
+          enabled: !field.readOnly,
+          label: resolvedLabel,
+          value: display,
+          excludeSemantics: true,
+          onTap: onTap,
+          child: OutlinedButton(
+            &#47;&#47; Cible tactile ≥ 48 dp (AD-13) — les boutons Material sont ~40 dp
+            &#47;&#47; par défaut, on force la hauteur minimale.
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              alignment: AlignmentDirectional.centerStart,
+            ),
+            onPressed: onTap,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(&#39;$resolvedLabel : $display&#39;),
+            ),
+          ),
+        );
+
+  if (!showClear) return trigger;
+
+  &#47;&#47; La croix vit HORS du nœud `excludeSemantics` du déclencheur → son propre
+  &#47;&#47; rôle bouton + libellé (`clear`), cible ≥ 48 dp (AD-13), directionnel.
+  return Row(
+    children: &lt;Widget&gt;[
+      Expanded(child: trigger),
+      IconButton(
+        icon: const Icon(Icons.clear),
+        tooltip: label(context, &#39;clear&#39;),
+        onPressed: onCleared,
+      ),
+    ],
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/ZDateFieldWidget-class.html">ZDateFieldWidget</a></li>
+    <li class="self-crumb">build method</li>
+</ol>
+
+    <h5>ZDateFieldWidget class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

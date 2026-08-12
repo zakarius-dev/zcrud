@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the menuBuilder property from the ZItemActionsMenu class, for the Dart programming language.">
+  <title>menuBuilder property - ZItemActionsMenu class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study.dart</a></li>
+    <li><a href="../../zcrud_study/ZItemActionsMenu-class.html">ZItemActionsMenu</a></li>
+    <li class="self-crumb">menuBuilder property</li>
+  </ol>
+  <div class="self-name">menuBuilder</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;ZItemActionsMenu-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">menuBuilder</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="../../zcrud_study/ZItemActionsMenuBuilder.html">ZItemActionsMenuBuilder</a>?
+        <span class="name ">menuBuilder</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p>Présentation INJECTÉE du contenu du menu.</p>
+<p><code>null</code> (défaut) ⇒ <strong>colonne unique</strong> de <code>PopupMenuItem</code> — rendu
+<strong>strictement inchangé</strong> pour tout hôte qui ne renseigne pas ce slot.</p>
+<p>Non-null ⇒ la surface flottante ne contient plus qu'UNE entrée, dont le
+contenu est celui rendu par l'hôte. Ce qui reste <strong>la propriété du socle</strong>,
+et qui ne peut donc pas régresser : la liste transmise est déjà filtrée par
+la règle d'absence (AD-4), et la sélection passe par le même chemin que le
+rendu par défaut.</p>
+<p><strong>Pourquoi un SLOT et pas une option de grille</strong> : au-delà de six ou
+sept entrées, une colonne unique impose un balayage
+vertical long sur une surface flottante — le plafond de lisibilité est
+réel. Mais y répondre par un <code>crossAxisMaxColumns</code> figerait dans le socle
+<em>une</em> ergonomie de menu flottant (largeur de panneau, ordre de lecture,
+parcours clavier, position du séparateur destructif) alors que ces
+décisions dépendent de l'hôte.</p>
+<p><strong>A11y (AD-13) — le renoncement est LEVÉ.</strong> La cellule
+<a href="../../zcrud_study/ZMenuEntryTile-class.html">ZMenuEntryTile</a> est offerte à l'hôte : <code>ZMenuEntryTile(entry: action.toMenuEntry(), onSelected: () =&gt; select(action))</code> lui donne la cible
+≥ 48 dp, les <code>Semantics</code> NON dupliquées et la directionnalité sans les
+réécrire. La DISPOSITION reste sa liberté ; la CELLULE reste la propriété
+du socle. S'il rend autre chose, l'a11y de ce qu'il rend est à sa charge.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final ZItemActionsMenuBuilder? menuBuilder;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/ZItemActionsMenu-class.html">ZItemActionsMenu</a></li>
+    <li class="self-crumb">menuBuilder property</li>
+</ol>
+
+  <h5>ZItemActionsMenu class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

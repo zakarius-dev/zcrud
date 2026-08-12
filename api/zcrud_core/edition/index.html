@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="edition library API docs, for the Dart programming language.">
+  <title>edition library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li class="self-crumb">edition.dart</li>
+  </ol>
+  <div class="self-name">edition</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="edition&#47;edition-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">edition</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Entrée publique <strong>pure-Dart</strong> de la surface d'autorité du moteur déclaratif :
+catalogue <code>EditionFieldType</code> + types-valeur <code>const</code>
+(<code>ZValidatorSpec</code>/<code>ZFieldChoice</code>/<code>ZCondition</code>/<code>ZFieldConfig</code>/<code>ZFieldRename</code>)</p>
+<ul>
+<li>marqueur <code>ZCoreApi</code>.</li>
+</ul>
+<p><strong>Pourquoi une entrée dédiée</strong> (en plus du barrel principal <code>zcrud_core.dart</code>,
+qui exporte aussi ces types) : le barrel principal ré-exporte la couche
+<code>presentation</code> (<code>ChangeNotifier</code>/<code>ValueListenable</code>, qui tire le SDK Flutter
+→ <code>dart:ui</code>). Les consommateurs <strong>pur-Dart</strong> de la seule surface
+d'autorité — au premier chef <code>zcrud_annotations</code> (annotations <code>const</code>) et
+<code>zcrud_generator</code> — importent CE point d'entrée pour référencer le
+catalogue et les types-valeur <strong>sans</strong> charger transitivement Flutter, et
+rester exécutables sous <code>dart test</code>. L'arête <code>zcrud_annotations → zcrud_core</code> (invariant AD-1, déclarée dans le pubspec) est inchangée ;
+seule la granularité d'import l'est.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="FileFieldConfig">
+  <span class="name "><a href="../zcrud_core/FileFieldConfig-class.html">FileFieldConfig</a></span> 
+
+</dt>
+<dd>
+  Config du champ <strong>fichier/image/document</strong> (<code>file</code>/<code>image</code>/<code>document</code>).
+Pur-données <code>const</code> : le rendu (boutons/préviz) vit dans <code>ZAppFileField</code> ;
+l'acquisition/stockage sont des <strong>seams injectés</strong>
+(<code>ZFilePicker</code>/<code>CloudStorageRepository</code>) — jamais des dépendances lourdes
+du cœur (invariant AD-1).
+</dd>
+
+          <dt id="ZBooleanConfig">
+  <span class="name "><a href="../zcrud_core/ZBooleanConfig-class.html">ZBooleanConfig</a></span> 
+
+</dt>
+<dd>
+  Config triviale pur-cœur du champ <strong>booléen</strong> (<code>boolean</code>). Pur-données
+<code>const</code> : elle active le <strong>texte d'état</strong> rendu à côté du <code>Switch</code> et
+permet d'en surcharger les libellés.
+</dd>
+
+          <dt id="ZColorConfig">
+  <span class="name "><a href="../zcrud_core/ZColorConfig-class.html">ZColorConfig</a></span> 
+
+</dt>
+<dd>
+  Config additive <code>const</code> du champ <strong>couleur</strong> (<code>color</code>).
+</dd>
+
+          <dt id="ZCondition">
+  <span class="name "><a href="../zcrud_core/ZCondition-class.html">ZCondition</a></span> 
+
+</dt>
+<dd>
+  Expression <code>const</code> de visibilité conditionnelle (pur-données).
+</dd>
+
+          <dt id="ZCoreApi">
+  <span class="name "><a href="../zcrud_core/ZCoreApi-class.html">ZCoreApi</a></span> 
+
+</dt>
+<dd>
+  Marqueur d'API publique du cœur <code>zcrud_core</code>.
+</dd>
+
+          <dt id="ZcrudRegistry">
+  <span class="name "><a href="../zcrud_core/ZcrudRegistry-class.html">ZcrudRegistry</a></span> 
+
+</dt>
+<dd>
+  Registre <strong>instanciable</strong> de modèles (PAS un singleton statique mutable :
+instances injectées via <code>ZcrudScope</code>/binding, pour l'isolation inter-app
+et la testabilité).
+</dd>
+
+          <dt id="ZDateConfig">
+  <span class="name "><a href="../zcrud_core/ZDateConfig-class.html">ZDateConfig</a></span> 
+
+</dt>
+<dd>
+  Config triviale pur-cœur des champs <strong>date/heure</strong> (<code>dateTime</code>/<code>time</code>).
+Les bornes s'expriment soit comme <strong>clés d'autres champs</strong>
+(<a href="../zcrud_core/ZDateConfig/firstDateKey.html">firstDateKey</a>/<a href="../zcrud_core/ZDateConfig/lastDateKey.html">lastDateKey</a>, résolution cross-champ), soit comme
+<strong>littéraux ISO-8601</strong> (<a href="../zcrud_core/ZDateConfig/minDateIso.html">minDateIso</a>/<a href="../zcrud_core/ZDateConfig/maxDateIso.html">maxDateIso</a>).
+</dd>
+
+          <dt id="ZDateRange">
+  <span class="name "><a href="../zcrud_core/ZDateRange-class.html">ZDateRange</a></span> 
+
+</dt>
+<dd>
+  Plage de dates immuable <code>{start, end}</code> (ISO-8601), invariant <strong><code>end &gt;= start</code></strong>.
+</dd>
+
+          <dt id="ZDerivation">
+  <span class="name "><a href="../zcrud_core/ZDerivation-class.html">ZDerivation</a></span> 
+
+</dt>
+<dd>
+  Déclaration « ce champ <strong>dérive</strong> de ces champs-là ».
+</dd>
+
+          <dt id="ZDerivationChannels">
+  <span class="name "><a href="../zcrud_core/ZDerivationChannels-class.html">ZDerivationChannels</a></span> 
+
+</dt>
+<dd>
+  Clés des <strong>tranches compagnes</strong> dans lesquelles le moteur de dérivation
+publie les cibles qui ne sont pas la valeur du champ (<code>options</code>, <code>bounds</code>).
+</dd>
+
+          <dt id="ZFieldAdornment">
+  <span class="name "><a href="../zcrud_core/ZFieldAdornment-class.html">ZFieldAdornment</a></span> 
+
+</dt>
+<dd>
+  Ornement <code>const</code> <strong>pur-données</strong> d'un champ (<code>leading</code>/<code>prefix</code>/<code>suffix</code>).
+</dd>
+
+          <dt id="ZFieldBounds">
+  <span class="name "><a href="../zcrud_core/ZFieldBounds-class.html">ZFieldBounds</a></span> 
+
+</dt>
+<dd>
+  Bornes <strong>dérivées</strong> d'un champ (cible <code>bounds</code>).
+</dd>
+
+          <dt id="ZFieldChoice">
+  <span class="name "><a href="../zcrud_core/ZFieldChoice-class.html">ZFieldChoice</a></span> 
+
+</dt>
+<dd>
+  Une option <code>{value, label}</code> proposée à la sélection.
+</dd>
+
+          <dt id="ZFieldConfig">
+  <span class="name "><a href="../zcrud_core/ZFieldConfig-class.html">ZFieldConfig</a></span> 
+
+</dt>
+<dd>
+  Base abstraite <code>const</code> d'une configuration de champ (point d'extension,
+invariant AD-4). Les apps/satellites déclarent leurs sous-classes
+concrètes sans forker le cœur.
+</dd>
+
+          <dt id="ZFieldSpec">
+  <span class="name "><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> 
+
+</dt>
+<dd>
+  Spécification <code>const</code> d'un champ du schéma <code>zcrud</code>, projetée depuis
+<code>@ZcrudField</code>/<code>@ZcrudId</code> par le générateur <code>zcrud_generator</code>.
+</dd>
+
+          <dt id="ZModelCodec">
+  <span class="name "><a href="../zcrud_core/ZModelCodec-class.html">ZModelCodec</a></span> 
+
+</dt>
+<dd>
+  Couple de (dé)sérialisation d'un <strong>modèle</strong> enregistré, discriminé par
+<a href="../zcrud_core/ZModelCodec/kind.html">kind</a>. Immuable (<code>const</code>), <code>==</code>/<code>hashCode</code> non requis (identité de codec).
+</dd>
+
+          <dt id="ZNumberConfig">
+  <span class="name "><a href="../zcrud_core/ZNumberConfig-class.html">ZNumberConfig</a></span> 
+
+</dt>
+<dd>
+  Config triviale pur-cœur des champs <strong>numériques</strong>
+(<code>number</code>/<code>integer</code>/<code>float</code>).
+</dd>
+
+          <dt id="ZRatingConfig">
+  <span class="name "><a href="../zcrud_core/ZRatingConfig-class.html">ZRatingConfig</a></span> 
+
+</dt>
+<dd>
+  Config triviale pur-cœur du champ <strong>note</strong> (<code>rating</code>) — nombre
+d'étoiles/segments d'un contrôle de notation. Pur-données <code>const</code> ; le
+rendu (étoiles) vit dans <code>ZRatingFieldWidget</code>. Défaut <code>5</code>.
+</dd>
+
+          <dt id="ZRelationConfig">
+  <span class="name "><a href="../zcrud_core/ZRelationConfig-class.html">ZRelationConfig</a></span> 
+
+</dt>
+<dd>
+  Config du champ <strong>relation</strong> (<code>relation</code>). Pur-données <code>const</code> : elle
+porte SEULEMENT la <strong>clé de source</strong> dynamique (résolue au runtime dans
+<code>ZRelationSourceRegistry</code>), les <strong>clés de champ</strong> formant le filtre
+cross-champ, l'activation du modal de recherche, et la <strong>clé de handler
+CRUD inline</strong> (<a href="../zcrud_core/ZRelationConfig/crudKey.html">crudKey</a>, résolue dans <code>ZRelationCrudRegistry</code>).
+</dd>
+
+          <dt id="ZSelectConfig">
+  <span class="name "><a href="../zcrud_core/ZSelectConfig-class.html">ZSelectConfig</a></span> 
+
+</dt>
+<dd>
+  Config du champ <strong>select</strong> (<code>select</code>/<code>radio</code>/<code>checkbox</code>). Pur-données
+<code>const</code> : elle active le <strong>modal de recherche</strong> (<a href="../zcrud_core/ZSelectConfig/searchable.html">searchable</a> ou seuil
+<a href="../zcrud_core/ZSelectConfig/modalThreshold.html">modalThreshold</a>) et déclare les <strong>choix dynamiques cross-champ</strong>
+(<a href="../zcrud_core/ZSelectConfig/choicesFromKey.html">choicesFromKey</a> = lecture directe d'une tranche portant les options ;
+<a href="../zcrud_core/ZSelectConfig/choicesSourceKey.html">choicesSourceKey</a> = source <strong>calculée</strong> résolue au runtime dans
+<code>ZChoicesSourceRegistry</code>, filtrée par <a href="../zcrud_core/ZSelectConfig/filterKeys.html">filterKeys</a>).
+</dd>
+
+          <dt id="ZSliderConfig">
+  <span class="name "><a href="../zcrud_core/ZSliderConfig-class.html">ZSliderConfig</a></span> 
+
+</dt>
+<dd>
+  Config triviale pur-cœur du champ <strong>curseur</strong> (<code>slider</code>). Pur-données
+<code>const</code> : le mapping vers le widget <code>Slider</code> vit dans <code>ZSliderFieldWidget</code>.
+</dd>
+
+          <dt id="ZTextConfig">
+  <span class="name "><a href="../zcrud_core/ZTextConfig-class.html">ZTextConfig</a></span> 
+
+</dt>
+<dd>
+  Config triviale pur-cœur des champs <strong>texte</strong> (<code>text</code>/<code>multiline</code>).
+</dd>
+
+          <dt id="ZTimeCodec">
+  <span class="name "><a href="../zcrud_core/ZTimeCodec-class.html">ZTimeCodec</a></span> 
+
+</dt>
+<dd>
+  Codec pur-données <code>time</code> ↔ <code>Map{hour, minute}</code> (helpers <code>static</code>).
+</dd>
+
+          <dt id="ZUnchanged">
+  <span class="name "><a href="../zcrud_core/ZUnchanged-class.html">ZUnchanged</a></span> 
+
+</dt>
+<dd>
+  Marqueur rendu par un <a href="../zcrud_core/ZDerivationValueFn.html">ZDerivationValueFn</a> pour dire <strong>« ne touche à rien »</strong>.
+</dd>
+
+          <dt id="ZValidatorSpec">
+  <span class="name "><a href="../zcrud_core/ZValidatorSpec-class.html">ZValidatorSpec</a></span> 
+
+</dt>
+<dd>
+  Spécification <code>const</code> d'un validateur de champ (pur-données).
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="EditionFieldType">
+  <span class="name "><a href="../zcrud_core/EditionFieldType.html">EditionFieldType</a></span> 
+
+</dt>
+<dd>
+  Type déclaratif d'un champ du schéma <code>zcrud</code> — source unique entre le
+modèle annoté (<code>@ZcrudField.type</code>) et le schéma runtime (<code>ZFieldSpec.type</code>,
+produit par le générateur).
+</dd>
+
+          <dt id="ZAdornmentKind">
+  <span class="name "><a href="../zcrud_core/ZAdornmentKind.html">ZAdornmentKind</a></span> 
+
+</dt>
+<dd>
+  Nature d'un <a href="../zcrud_core/ZFieldAdornment-class.html">ZFieldAdornment</a> — discriminant du payload <a href="../zcrud_core/ZFieldAdornment/value.html">ZFieldAdornment.value</a>.
+</dd>
+
+          <dt id="ZBooleanStyle">
+  <span class="name "><a href="../zcrud_core/ZBooleanStyle.html">ZBooleanStyle</a></span> 
+
+</dt>
+<dd>
+  Forme d'affichage de la famille <code>boolean</code>.
+</dd>
+
+          <dt id="ZConditionOp">
+  <span class="name "><a href="../zcrud_core/ZConditionOp.html">ZConditionOp</a></span> 
+
+</dt>
+<dd>
+  Opérateur d'une <a href="../zcrud_core/ZCondition-class.html">ZCondition</a> déclarative.
+</dd>
+
+          <dt id="ZDateMode">
+  <span class="name "><a href="../zcrud_core/ZDateMode.html">ZDateMode</a></span> 
+
+</dt>
+<dd>
+  Mode d'édition d'un champ <strong>date/heure</strong> (orthogonal à
+<code>EditionFieldType</code>) — valeurs <strong>camelCase</strong>. Neutre, pur-Dart, <strong>non
+persisté</strong> (porté par la config <code>const</code>, jamais sérialisé) : la discipline
+<code>@JsonKey(unknownEnumValue:)</code> ne s'applique donc pas ici.
+</dd>
+
+          <dt id="ZDerivationOverwrite">
+  <span class="name "><a href="../zcrud_core/ZDerivationOverwrite.html">ZDerivationOverwrite</a></span> 
+
+</dt>
+<dd>
+  Politique d'écrasement d'une dérivation — <strong>OBLIGATOIRE à la déclaration</strong>,
+aucun défaut : le comportement legacy (écraser une saisie) et le
+comportement prudent divergent trop pour qu'un défaut soit choisi par le
+socle.
+</dd>
+
+          <dt id="ZFieldRename">
+  <span class="name "><a href="../zcrud_core/ZFieldRename.html">ZFieldRename</a></span> 
+
+</dt>
+<dd>
+  Renommage de la clé persistée dérivé du nom Dart du champ.
+</dd>
+
+          <dt id="ZFileSource">
+  <span class="name "><a href="../zcrud_core/ZFileSource.html">ZFileSource</a></span> 
+
+</dt>
+<dd>
+  Source d'acquisition d'un fichier — valeurs <strong>camelCase</strong>. L'implémentation
+concrète (scan/caméra/galerie/sélecteur) vit dans le picker injecté
+(<code>ZFilePicker</code>) ; le cœur ne fait qu'énumérer les sources <strong>autorisées</strong>
+par la config.
+</dd>
+
+          <dt id="ZTextCapitalization">
+  <span class="name "><a href="../zcrud_core/ZTextCapitalization.html">ZTextCapitalization</a></span> 
+
+</dt>
+<dd>
+  Capitalisation <strong>déclarative</strong> d'un champ texte — pur-données, aucun type
+Flutter (le mapping vers <code>TextCapitalization</code> + un <code>TextInputFormatter</code>
+déterministe vit en présentation, invariants AD-2/AD-15).
+</dd>
+
+          <dt id="ZValidatorKind">
+  <span class="name "><a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind</a></span> 
+
+</dt>
+<dd>
+  Famille de validateurs déclaratifs (discriminant de <a href="../zcrud_core/ZValidatorSpec-class.html">ZValidatorSpec</a>).
+</dd>
+
+          <dt id="ZValueSource">
+  <span class="name "><a href="../zcrud_core/ZValueSource.html">ZValueSource</a></span> 
+
+</dt>
+<dd>
+  <strong>Source de valeur</strong> d'une feuille de <a href="../zcrud_core/ZCondition-class.html">ZCondition</a> (parité DODLP — DP-2, B3).
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+    <section class="summary offset-anchor" id="constants">
+      <h2>Constants</h2>
+      <dl class="properties">
+          <dt id="zUnchanged" class="constant">
+    <span class="name "><a href="../zcrud_core/zUnchanged-constant.html">zUnchanged</a></span>
+  <span class="signature">&#8594; const <a href="../zcrud_core/ZUnchanged-class.html">ZUnchanged</a></span>
+  
+
+</dt>
+<dd>
+  Instance unique du marqueur <a href="../zcrud_core/ZUnchanged-class.html">ZUnchanged</a>.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="zDerivationCycles" class="callable">
+  <span class="name"><a href="../zcrud_core/zDerivationCycles.html">zDerivationCycles</a></span><span class="signature">(<wbr><span class="parameter" id="zDerivationCycles-param-fields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">fields</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Détecte les <strong>cycles</strong> du graphe de dérivation de <code>fields</code>.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZDerivationBoundsFn" class="callable">
+    <span class="name"><a href="../zcrud_core/ZDerivationBoundsFn.html">ZDerivationBoundsFn</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="../zcrud_core/ZFieldBounds-class.html">ZFieldBounds</a>? Function<span class="signature">(<span class="parameter" id="param-sources"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">sources</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Fonction de <strong>bornes</strong> dérivées — SYNCHRONE (même raison).
+    
+
+  </dd>
+
+          
+  <dt id="ZDerivationOptionsFn" class="callable">
+    <span class="name"><a href="../zcrud_core/ZDerivationOptionsFn.html">ZDerivationOptionsFn</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldChoice-class.html">ZFieldChoice</a></span>&gt;</span></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-sources"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">sources</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Fonction de dérivation des <strong>options</strong> d'un <code>select</code>/<code>radio</code>/<code>checkbox</code>.
+    
+
+  </dd>
+
+          
+  <dt id="ZDerivationValueFn" class="callable">
+    <span class="name"><a href="../zcrud_core/ZDerivationValueFn.html">ZDerivationValueFn</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-sources"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">sources</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Fonction de dérivation <strong>asynchrone</strong> : reçoit le snapshot <code>nom → valeur</code>
+des <a href="../zcrud_core/ZDerivation/sources.html">ZDerivation.sources</a> et renvoie la cible. Toujours <code>Future</code> : c'est le
+cas dangereux (résolutions dans le désordre) que le socle doit sérialiser ;
+les cibles purement synchrones (<code>visible</code>/<code>bounds</code>) ont leur propre type.
+    
+
+  </dd>
+
+          
+  <dt id="ZDerivationVisibleFn" class="callable">
+    <span class="name"><a href="../zcrud_core/ZDerivationVisibleFn.html">ZDerivationVisibleFn</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a> Function<span class="signature">(<span class="parameter" id="param-sources"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">sources</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Prédicat de <strong>visibilité</strong> dérivée — SYNCHRONE (il alimente le canal
+structurel <code>visibleFields</code>, recalculé en un temps).
+    
+
+  </dd>
+
+          
+  <dt id="ZFromMap" class="callable">
+    <span class="name"><a href="../zcrud_core/ZFromMap.html">ZFromMap</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a> Function<span class="signature">(<span class="parameter" id="param-map"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">map</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Reconstruit un modèle depuis sa map persistée.
+    
+
+  </dd>
+
+          
+  <dt id="ZFromMapWithContext" class="callable">
+    <span class="name"><a href="../zcrud_core/ZFromMapWithContext.html">ZFromMapWithContext</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a> Function<span class="signature">(<span class="parameter" id="param-map"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">map</span>, </span><span class="parameter" id="param-context"><span class="type-annotation"><a href="../zcrud_core/ZDecodeContext-class.html">ZDecodeContext</a>?</span> <span class="parameter-name">context</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Reconstruit un modèle en fournissant le <a href="../zcrud_core/ZDecodeContext-class.html">ZDecodeContext</a> injecté
+aux <code>fromMap</code> d'entité extensible (<code>extensionParser</code>/<code>sourceRegistry</code>, AD-4).
+    
+
+  </dd>
+
+          
+  <dt id="ZToMap" class="callable">
+    <span class="name"><a href="../zcrud_core/ZToMap.html">ZToMap</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">value</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Sérialise un modèle vers sa map persistée.
+    
+
+  </dd>
+
+          
+  <dt id="ZToMapWithContext" class="callable">
+    <span class="name"><a href="../zcrud_core/ZToMapWithContext.html">ZToMapWithContext</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="param-context"><span class="type-annotation"><a href="../zcrud_core/ZDecodeContext-class.html">ZDecodeContext</a>?</span> <span class="parameter-name">context</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Sérialise un modèle en fournissant le <a href="../zcrud_core/ZDecodeContext-class.html">ZDecodeContext</a> injecté (provenance
+<code>source</code>) au <code>toMap</code> d'entité.
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="exceptions">
+      <h2>Exceptions / Errors</h2>
+      <dl>
+          <dt id="ZDuplicateRegistrationError">
+  <span class="name "><a href="../zcrud_core/ZDuplicateRegistrationError-class.html">ZDuplicateRegistrationError</a></span> 
+
+</dt>
+<dd>
+  Levée quand un <code>kind</code> <strong>déjà enregistré</strong> est ré-enregistré sur le même
+registre (collision).
+</dd>
+
+          <dt id="ZUnregisteredTypeError">
+  <span class="name "><a href="../zcrud_core/ZUnregisteredTypeError-class.html">ZUnregisteredTypeError</a></span> 
+
+</dt>
+<dd>
+  Levée quand un <code>kind</code> demandé n'est <strong>enregistré dans aucun</strong> registre
+(<code>ZcrudRegistry</code>, <code>ZTypeRegistry</code>, <code>ZSourceRegistry</code>).
+</dd>
+
+      </dl>
+    </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li class="self-crumb">edition.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_core</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../domain/">domain</a></li>
+      <li><a href="../edition/">edition</a></li>
+      <li><a href="../zcrud_core/">zcrud_core</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>edition library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

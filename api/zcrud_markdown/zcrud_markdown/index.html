@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_markdown library API docs, for the Dart programming language.">
+  <title>zcrud_markdown library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_markdown</a></li>
+    <li class="self-crumb">zcrud_markdown.dart</li>
+  </ol>
+  <div class="self-name">zcrud_markdown</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_markdown&#47;zcrud_markdown-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_markdown</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_markdown</code>.</p>
+<p>Édition/lecture Markdown riche (Quill + <code>ZCodec</code> + embeds).</p>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/</code>.</p>
+<p>ISOLATION (AD-1/AD-7) : ce barrel n'exporte AUCUN symbole <code>flutter_quill</code>
+(aucun <code>QuillController</code>/<code>Document</code>/<code>Delta</code>). <code>ZMarkdownField</code> consomme/expose
+une <strong>valeur neutre</strong> (Delta JSON) via <code>ZFormController</code> — aucun type Quill ne
+fuit dans la signature publique.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZCodec">
+  <span class="name "><a href="../zcrud_markdown/ZCodec-class.html">ZCodec</a></span> 
+
+</dt>
+<dd>
+  Codec pluggable Delta ↔ format persisté (AD-7).
+</dd>
+
+          <dt id="ZDeltaCodec">
+  <span class="name "><a href="../zcrud_markdown/ZDeltaCodec-class.html">ZDeltaCodec</a></span> 
+
+</dt>
+<dd>
+  Codec par DÉFAUT : le format persisté EST le Delta JSON neutre.
+</dd>
+
+          <dt id="ZHtmlCodec">
+  <span class="name "><a href="../zcrud_markdown/ZHtmlCodec-class.html">ZHtmlCodec</a></span> 
+
+</dt>
+<dd>
+  Codec <strong>HTML</strong> : le format persisté est une <code>String</code> HTML (B5).
+</dd>
+
+          <dt id="ZMarkdownApi">
+  <span class="name "><a href="../zcrud_markdown/ZMarkdownApi-class.html">ZMarkdownApi</a></span> 
+
+</dt>
+<dd>
+  Marqueur d'API publique de <code>zcrud_markdown</code> (placeholder).
+</dd>
+
+          <dt id="ZMarkdownBridges">
+  <span class="name "><a href="../zcrud_markdown/ZMarkdownBridges-class.html">ZMarkdownBridges</a></span> 
+
+</dt>
+<dd>
+  Ponts prêts à l'emploi, <strong>opt-in</strong> (AD-57).
+</dd>
+
+          <dt id="ZMarkdownChromeReference">
+  <span class="name "><a href="../zcrud_markdown/ZMarkdownChromeReference-class.html">ZMarkdownChromeReference</a></span> 
+
+</dt>
+<dd>
+  Dimensions et scalaires de RÉFÉRENCE du chrome carte (mesurés <code>mef:141-310</code>)
+— patron <code>ZStudyCardReference</code> : point d'audit UNIQUE, <strong>aucune couleur</strong>
+(les couleurs suivent la chaîne paramètre &gt; seam &gt; rôle, cf. en-tête).
+</dd>
+
+          <dt id="ZMarkdownCodec">
+  <span class="name "><a href="../zcrud_markdown/ZMarkdownCodec-class.html">ZMarkdownCodec</a></span> 
+
+</dt>
+<dd>
+  Codec <strong>Markdown</strong> : le format persisté est une <code>String</code> Markdown lisible.
+</dd>
+
+          <dt id="ZMarkdownCodecScope">
+  <span class="name "><a href="../zcrud_markdown/ZMarkdownCodecScope-class.html">ZMarkdownCodecScope</a></span> 
+
+</dt>
+<dd>
+  Fournit le <a href="../zcrud_markdown/ZCodec-class.html">ZCodec</a> par défaut aux <a href="../zcrud_markdown/ZMarkdownField-class.html">ZMarkdownField</a> descendants.
+</dd>
+
+          <dt id="ZMarkdownEmbedBridge">
+  <span class="name "><a href="../zcrud_markdown/ZMarkdownEmbedBridge-class.html">ZMarkdownEmbedBridge</a></span> 
+
+</dt>
+<dd>
+  Décrit comment une <strong>syntaxe Markdown INLINE</strong> correspond à un <strong>embed
+Delta</strong>, dans les deux sens.
+</dd>
+
+          <dt id="ZMarkdownField">
+  <span class="name "><a href="../zcrud_markdown/ZMarkdownField-class.html">ZMarkdownField</a></span> 
+
+</dt>
+<dd>
+  Champ d'édition <strong>rich-text</strong> (Quill) scellé sur la tranche <code>field.name</code>.
+</dd>
+
+          <dt id="ZMarkdownFieldChrome">
+  <span class="name "><a href="../zcrud_markdown/ZMarkdownFieldChrome-class.html">ZMarkdownFieldChrome</a></span> 
+
+</dt>
+<dd>
+  Configuration OPT-IN de l'habillage carte d'un champ rich-text.
+</dd>
+
+          <dt id="ZMarkdownFieldDebug">
+  <span class="name "><a href="../zcrud_markdown/ZMarkdownFieldDebug-class.html">ZMarkdownFieldDebug</a></span> 
+
+</dt>
+<dd>
+  Fenêtre de test (AD-2 anti-fuite / efficacité MED-1) exposant l'état interne
+VÉRIFIABLE du champ, SANS divulguer le <a href="https://api.flutter.dev/flutter/widgets/State-class.html">State</a> privé ni un type Quill.
+</dd>
+
+          <dt id="ZMarkdownReader">
+  <span class="name "><a href="../zcrud_markdown/ZMarkdownReader-class.html">ZMarkdownReader</a></span> 
+
+</dt>
+<dd>
+  Lecteur rich-text NON éditable d'une <strong>valeur neutre</strong> (Delta JSON).
+</dd>
+
+          <dt id="ZMarkdownRichTextRenderer">
+  <span class="name "><a href="../zcrud_markdown/ZMarkdownRichTextRenderer-class.html">ZMarkdownRichTextRenderer</a></span> 
+
+</dt>
+<dd>
+  Moteur de rendu Markdown branché sur le port <code>ZRichTextRenderer</code>.
+</dd>
+
+          <dt id="ZMediaEmbedScope">
+  <span class="name "><a href="../zcrud_markdown/ZMediaEmbedScope-class.html">ZMediaEmbedScope</a></span> 
+
+</dt>
+<dd>
+  <code>InheritedWidget</code> fournissant le <a href="../zcrud_markdown/ZMediaResolver.html">ZMediaResolver</a> aux embeds image/vidéo.
+</dd>
+
+          <dt id="ZMediaRef">
+  <span class="name "><a href="../zcrud_markdown/ZMediaRef-class.html">ZMediaRef</a></span> 
+
+</dt>
+<dd>
+  Référence NEUTRE à une source de média : nature + source OPAQUE (URL / URI /
+chemin d'asset / data-uri — le package n'en interprète RIEN).
+</dd>
+
+          <dt id="ZRichTextFormulaSpec">
+  <span class="name "><a href="../zcrud_markdown/ZRichTextFormulaSpec-class.html">ZRichTextFormulaSpec</a></span> 
+
+</dt>
+<dd>
+  Rendu des <strong>formules LaTeX</strong> PAR CHAMP — NEUTRE (aucun type Quill /
+math dans la signature).
+</dd>
+
+          <dt id="ZRichTextFullscreenDialog">
+  <span class="name "><a href="../zcrud_markdown/ZRichTextFullscreenDialog-class.html">ZRichTextFullscreenDialog</a></span> 
+
+</dt>
+<dd>
+  Contenu du dialog d'édition plein-écran (exposé pour les tests widget).
+</dd>
+
+          <dt id="ZRichTextSpacing">
+  <span class="name "><a href="../zcrud_markdown/ZRichTextSpacing-class.html">ZRichTextSpacing</a></span> 
+
+</dt>
+<dd>
+  Espacement vertical NEUTRE (haut/bas, dp logiques) d'un bloc rich-text.
+</dd>
+
+          <dt id="ZRichTextStyleSet">
+  <span class="name "><a href="../zcrud_markdown/ZRichTextStyleSet-class.html">ZRichTextStyleSet</a></span> 
+
+</dt>
+<dd>
+  Jeu de styles rich-text PAR CHAMP — chaque slot <code>null</code> laisse le
+style courant (thème + défauts Quill) STRICTEMENT inchangé (AD-57).
+</dd>
+
+          <dt id="ZRichTextToolbarConfig">
+  <span class="name "><a href="../zcrud_markdown/ZRichTextToolbarConfig-class.html">ZRichTextToolbarConfig</a></span> 
+
+</dt>
+<dd>
+  Configuration granulaire (par bouton) de la toolbar rich-text.
+</dd>
+
+          <dt id="ZTableCellScope">
+  <span class="name "><a href="../zcrud_markdown/ZTableCellScope-class.html">ZTableCellScope</a></span> 
+
+</dt>
+<dd>
+  Diffuse le mode d'interprétation des cellules au sous-arbre.
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="ZMarkdownFieldMode">
+  <span class="name "><a href="../zcrud_markdown/ZMarkdownFieldMode.html">ZMarkdownFieldMode</a></span> 
+
+</dt>
+<dd>
+  Mode de présentation d'un champ rich-text servi par le registre (B6).
+</dd>
+
+          <dt id="ZMarkdownReaderChrome">
+  <span class="name "><a href="../zcrud_markdown/ZMarkdownReaderChrome.html">ZMarkdownReaderChrome</a></span> 
+
+</dt>
+<dd>
+  Habillage du <a href="../zcrud_markdown/ZMarkdownReader-class.html">ZMarkdownReader</a>.
+</dd>
+
+          <dt id="ZMediaKind">
+  <span class="name "><a href="../zcrud_markdown/ZMediaKind.html">ZMediaKind</a></span> 
+
+</dt>
+<dd>
+  Nature d'un média embed (image ou vidéo) — NEUTRE (aucun type Quill).
+</dd>
+
+          <dt id="ZTableCellContent">
+  <span class="name "><a href="../zcrud_markdown/ZTableCellContent.html">ZTableCellContent</a></span> 
+
+</dt>
+<dd>
+  Comment le contenu d'une cellule de tableau doit être interprété.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+    <section class="summary offset-anchor" id="constants">
+      <h2>Constants</h2>
+      <dl class="properties">
+          <dt id="kTableEmbedType" class="constant">
+    <span class="name "><a href="../zcrud_markdown/kTableEmbedType-constant.html">kTableEmbedType</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Type Delta de l'embed tableau — op <code>{"insert": {"table": &lt;structure&gt;}}</code>.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="registerZHtmlFields" class="callable">
+  <span class="name"><a href="../zcrud_markdown/registerZHtmlFields.html">registerZHtmlFields</a></span><span class="signature">(<wbr><span class="parameter" id="registerZHtmlFields-param-registry"><span class="type-annotation">ZWidgetRegistry</span> <span class="parameter-name">registry</span>, {</span><span class="parameter" id="registerZHtmlFields-param-codec"><span class="type-annotation"><a href="../zcrud_markdown/ZCodec-class.html">ZCodec</a>?</span> <span class="parameter-name">codec</span></span>})
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre les builders <strong>HTML</strong> <code>zcrud_markdown</code> dans <code>registry</code>.
+  
+
+</dd>
+
+          <dt id="registerZMarkdownFields" class="callable">
+  <span class="name"><a href="../zcrud_markdown/registerZMarkdownFields.html">registerZMarkdownFields</a></span><span class="signature">(<wbr><span class="parameter" id="registerZMarkdownFields-param-registry"><span class="type-annotation">ZWidgetRegistry</span> <span class="parameter-name">registry</span>, {</span><span class="parameter" id="registerZMarkdownFields-param-codec"><span class="type-annotation"><a href="../zcrud_markdown/ZCodec-class.html">ZCodec</a>?</span> <span class="parameter-name">codec</span>, </span><span class="parameter" id="registerZMarkdownFields-param-minLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">minLines</span>, </span><span class="parameter" id="registerZMarkdownFields-param-maxLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">maxLines</span>, </span><span class="parameter" id="registerZMarkdownFields-param-characterLimit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">characterLimit</span>, </span><span class="parameter" id="registerZMarkdownFields-param-styleSet"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextStyleSet-class.html">ZRichTextStyleSet</a>?</span> <span class="parameter-name">styleSet</span>, </span><span class="parameter" id="registerZMarkdownFields-param-chrome"><span class="type-annotation"><a href="../zcrud_markdown/ZMarkdownFieldChrome-class.html">ZMarkdownFieldChrome</a>?</span> <span class="parameter-name">chrome</span>, </span><span class="parameter" id="registerZMarkdownFields-param-textScaleFactor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">textScaleFactor</span>, </span><span class="parameter" id="registerZMarkdownFields-param-formulaSpec"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextFormulaSpec-class.html">ZRichTextFormulaSpec</a>?</span> <span class="parameter-name">formulaSpec</span>, </span><span class="parameter" id="registerZMarkdownFields-param-toolbarConfig"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextToolbarConfig-class.html">ZRichTextToolbarConfig</a>?</span> <span class="parameter-name">toolbarConfig</span>, </span><span class="parameter" id="registerZMarkdownFields-param-showLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showLabel</span> = <span class="default-value">true</span></span>})
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre les builders rich-text <code>zcrud_markdown</code> dans <code>registry</code>.
+  
+
+</dd>
+
+          <dt id="showZRichTextFullscreenDialog" class="callable">
+  <span class="name"><a href="../zcrud_markdown/showZRichTextFullscreenDialog.html">showZRichTextFullscreenDialog</a></span><span class="signature">(<wbr><span class="parameter" id="showZRichTextFullscreenDialog-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="showZRichTextFullscreenDialog-param-initialValue"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">initialValue</span>, </span><span class="parameter" id="showZRichTextFullscreenDialog-param-title"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">title</span>, </span><span class="parameter" id="showZRichTextFullscreenDialog-param-codec"><span class="type-annotation"><a href="../zcrud_markdown/ZCodec-class.html">ZCodec</a>?</span> <span class="parameter-name">codec</span>, </span><span class="parameter" id="showZRichTextFullscreenDialog-param-placeholder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">placeholder</span>, </span><span class="parameter" id="showZRichTextFullscreenDialog-param-styleSet"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextStyleSet-class.html">ZRichTextStyleSet</a>?</span> <span class="parameter-name">styleSet</span>, </span><span class="parameter" id="showZRichTextFullscreenDialog-param-textScaleFactor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">textScaleFactor</span>, </span><span class="parameter" id="showZRichTextFullscreenDialog-param-formulaSpec"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextFormulaSpec-class.html">ZRichTextFormulaSpec</a>?</span> <span class="parameter-name">formulaSpec</span>, </span><span class="parameter" id="showZRichTextFullscreenDialog-param-toolbarConfig"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextToolbarConfig-class.html">ZRichTextToolbarConfig</a>?</span> <span class="parameter-name">toolbarConfig</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Ouvre l'éditeur rich-text plein-écran et retourne la <strong>valeur neutre</strong> éditée
+(Delta JSON) si l'utilisateur <strong>valide</strong>, ou <code>null</code> s'il <strong>annule</strong>/ferme.
+  
+
+</dd>
+
+          <dt id="zLatexPayloadLooksLikeFormula" class="callable">
+  <span class="name"><a href="../zcrud_markdown/zLatexPayloadLooksLikeFormula.html">zLatexPayloadLooksLikeFormula</a></span><span class="signature">(<wbr><span class="parameter" id="zLatexPayloadLooksLikeFormula-param-match"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Match-class.html">Match</a></span> <span class="parameter-name">match</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Garde par défaut des ponts LaTeX fournis (CR-54).
+  
+
+</dd>
+
+          <dt id="zTableEmbedOp" class="callable">
+  <span class="name"><a href="../zcrud_markdown/zTableEmbedOp.html">zTableEmbedOp</a></span><span class="signature">(<wbr>{<span class="parameter" id="zTableEmbedOp-param-cells"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">cells</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Fabrique <strong>NEUTRE</strong> l'op embed tableau à partir de la matrice <code>cells</code>.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZMediaResolver" class="callable">
+    <span class="name"><a href="../zcrud_markdown/ZMediaResolver.html">ZMediaResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-ref"><span class="type-annotation"><a href="../zcrud_markdown/ZMediaRef-class.html">ZMediaRef</a></span> <span class="parameter-name">ref</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    <strong>Seam de résolution de source</strong> : transforme une <a href="../zcrud_markdown/ZMediaRef-class.html">ZMediaRef</a> neutre en widget
+rendu. FOURNI PAR L'HÔTE (via <a href="../zcrud_markdown/ZMediaEmbedScope-class.html">ZMediaEmbedScope</a>). C'est le SEUL endroit où un
+accès réseau/asset peut être décidé — le package n'en câble AUCUN.
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_markdown</a></li>
+    <li class="self-crumb">zcrud_markdown.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_markdown</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_markdown/">zcrud_markdown</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_markdown library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_markdown
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

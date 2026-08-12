@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the present method from the ZSmartSelectPresenter class, for the Dart programming language.">
+  <title>present method - ZSmartSelectPresenter class - zcrud_select library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_select</a></li>
+    <li><a href="../../zcrud_select/">zcrud_select.dart</a></li>
+    <li><a href="../../zcrud_select/ZSmartSelectPresenter-class.html">ZSmartSelectPresenter</a></li>
+    <li class="self-crumb">present method</li>
+  </ol>
+  <div class="self-name">present</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_select&#47;ZSmartSelectPresenter-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">present</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>
+<span class="name ">present</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="present-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span></li>
+<li><span class="parameter" id="present-param-presentation"><span class="type-annotation">ZSelectPresentation</span> <span class="parameter-name">presentation</span></span></li>
+</ol>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Construit le widget de sélection pour la <code>presentation</code> neutre fournie.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+Widget present(BuildContext context, ZSelectPresentation presentation) {
+  &#47;&#47; Titre du modal + déclencheur : label déjà résolu (l10n) sinon repli sur la
+  &#47;&#47; spéc du champ. TOUJOURS non-null (assert `SmartSelect`).
+  final String title = presentation.label ??
+      presentation.field.label ??
+      presentation.field.name;
+
+  &#47;&#47; chaîne `paramètre &gt; jeton &gt; référence`, résolue UNE fois
+  &#47;&#47; pour tout le sous-arbre.
+  final ZSelectTileMetrics metrics =
+      zSelectTileMetricsOf(context, spec: spec);
+
+  &#47;&#47; AD-10 : projection défensive — options vides restent une `List` non-null
+  &#47;&#47; (assert `choiceItems != null`), aucune exception.
+  &#47;&#47;
+  &#47;&#47; Type-param `dynamic` (valeurs métier opaques) : `SmartSelect&lt;dynamic&gt;` a
+  &#47;&#47; pour `runtimeType` le littéral `SmartSelect` — indispensable pour la garde
+  &#47;&#47; de rendu `find.byType(SmartSelect)` (comparaison d&#39;égalité de type).
+  final List&lt;S2Choice&lt;dynamic&gt;&gt; choiceItems =
+      _toS2Choices(context, presentation.options);
+
+  final bool enabled = !presentation.readOnly;
+  final ColorScheme scheme = Theme.of(context).colorScheme;
+
+  &#47;&#47; `field.leading`, parité de référence (`ListTile.leading`).
+  &#47;&#47;
+  &#47;&#47; Cette capacité avait été rapportée « inatteignable, le DTO ne la porte
+  &#47;&#47; pas ». C&#39;était FAUX : le DTO porte `field`, donc `field.leading`, et
+  &#47;&#47; `resolveAdornment` est exporté par le barrel de `zcrud_core`. Aucun
+  &#47;&#47; élargissement du seam n&#39;était nécessaire — seulement de le lire.
+  &#47;&#47; Résolu ICI, pendant `build` (le résolveur consulte des `InheritedWidget`).
+  &#47;&#47; `null` ⇒ slot ABSENT de l&#39;arbre (AD-4), rendu antérieur strictement
+  &#47;&#47; conservé pour tout champ sans ornement de tête.
+  final Widget? leading = resolveAdornment(
+    context,
+    presentation.field.leading,
+    field: presentation.field,
+  );
+
+  &#47;&#47; règle d&#39;inertie EXACTE de référence :
+  &#47;&#47; `choiceBuilder == null &amp;&amp; (readOnly || isLoading) ? null : showModal`.
+  &#47;&#47; Autrement dit un `choiceBuilder` RÉ-ACTIVE le déclencheur, y compris en
+  &#47;&#47; lecture seule : c&#39;est le seul rendu possible de la donnée, il faut
+  &#47;&#47; pouvoir l&#39;atteindre.
+  &#47;&#47;
+  &#47;&#47; Hôte passif : avec les défauts du seam (`isLoading: false`,
+  &#47;&#47; `choiceBuilder: null`), cette expression vaut `!readOnly` — exactement
+  &#47;&#47; l&#39;ancienne règle. Rien ne bouge.
+  final bool tappable = presentation.choiceBuilder != null ||
+      (!presentation.readOnly &amp;&amp; !presentation.isLoading);
+
+  &#47;&#47; barre d&#39;actions du modal : ACTIVE par défaut (parité
+  &#47;&#47; de référence). Un hôte peut la couper (`ZSelectTileSpec.showModalActions:
+  &#47;&#47; false`) pour retrouver les seules actions par défaut du fork.
+  final bool showActions = spec?.showModalActions ?? true;
+
+  &#47;&#47; chargeur asynchrone d&#39;options, ENVELOPPÉ (AD-10).
+  final S2ChoiceLoader&lt;dynamic&gt;? choiceLoader =
+      _wrapLoader(context, presentation);
+
+  &#47;&#47; FR-26 : placeholder de l&#39;état vide LOCALISÉ via la l10n injectée (clé
+  &#47;&#47; `select`, résolue en&#47;fr par `ZcrudLocalizations`) — JAMAIS le littéral
+  &#47;&#47; anglais `&#39;Select one&#39;` &#47; `&#39;Select one or more&#39;` du fork. Passé à
+  &#47;&#47; `SmartSelect` (paramètre `placeholder:`) ET employé directement dans le
+  &#47;&#47; déclencheur, pour que le libellé anglais du fork ne surface nulle part.
+  &#47;&#47;
+  &#47;&#47; `field.hintText` **et** `isLoading` se déversent ICI, et
+  &#47;&#47; nulle part ailleurs, parce que c&#39;est la place que leur donne le rendu
+  &#47;&#47; NATIF :
+  &#47;&#47;
+  &#47;&#47; * `hintText` est, dans `zFieldDecoration`, le texte de l&#39;ÉTAT VIDE
+  &#47;&#47;   (`InputDecoration.hintText`) — exactement ce qu&#39;est le placeholder du
+  &#47;&#47;   tile. Aucun autre slot de la tuile n&#39;a ce sens.
+  &#47;&#47; * `isLoading` : le natif de `relation` écrit
+  &#47;&#47;   `hintText: label(loading ? &#39;loading&#39; : &#39;select&#39;)` — le chargement
+  &#47;&#47;   l&#39;emporte donc sur le hint, et « je n&#39;ai pas encore les options » cesse
+  &#47;&#47;   de se confondre avec « il n&#39;y a rien à choisir ».
+  &#47;&#47;
+  &#47;&#47; Hôte passif : sans `hintText` et sans chargement, l&#39;expression vaut
+  &#47;&#47; `label(context, &#39;select&#39;)` — le littéral d&#39;avant, au caractère près.
+  final String? hintText = presentation.field.hintText == null
+      ? null
+      : label(context, presentation.field.hintText!,
+          fallback: presentation.field.hintText!);
+  final String placeholder = presentation.isLoading
+      ? label(context, &#39;loading&#39;)
+      : (hintText ?? label(context, &#39;select&#39;));
+
+  &#47;&#47; `field.helperText` : ligne d&#39;aide PERSISTANTE que le
+  &#47;&#47; natif rend SOUS le champ (`InputDecoration.helperText`), en plus du
+  &#47;&#47; contenu et jamais à sa place. Son équivalent en tuile est donc une ligne
+  &#47;&#47; de plus au BAS du sous-titre — surtout pas le sous-titre lui-même, qui
+  &#47;&#47; porte déjà la valeur ou les puces (l&#39;y écraser aurait été une régression
+  &#47;&#47; déguisée en correctif). `null` ⇒ aucun nœud ajouté (AD-4).
+  final String? helperText = presentation.field.helperText == null
+      ? null
+      : label(context, presentation.field.helperText!,
+          fallback: presentation.field.helperText!);
+
+  &#47;&#47; ornements `prefix`&#47;`suffix`. Le natif les pose DANS le
+  &#47;&#47; champ, de part et d&#39;autre du CONTENU (`prefix`&#47;`prefixIcon` et
+  &#47;&#47; `suffix`&#47;`suffixIcon` de l&#39;`InputDecoration`), pas dans ses marges : la
+  &#47;&#47; tête hors bordure est le slot `icon`, déjà occupé ici par `leading`, et la
+  &#47;&#47; fin de ligne du tile est occupée par le chevron. L&#39;équivalent est donc la
+  &#47;&#47; ligne du sous-titre, qui porte la valeur.
+  &#47;&#47;
+  &#47;&#47; Comme `leading`, ces deux membres étaient **déjà atteignables** via
+  &#47;&#47; `presentation.field` : aucun élargissement du seam n&#39;était nécessaire —
+  &#47;&#47; seulement de les lire. `null` ⇒ slot ABSENT de l&#39;arbre (AD-4).
+  final Widget? prefix = resolveAdornment(
+    context,
+    presentation.field.prefix,
+    field: presentation.field,
+  );
+  final Widget? suffix = resolveAdornment(
+    context,
+    presentation.field.suffix,
+    field: presentation.field,
+  );
+
+  &#47;&#47; AD-13 — un ornement `.text` porte de l&#39;INFORMATION (« € », « % », « kg »)
+  &#47;&#47; et le natif la fait lire : elle vit dans l&#39;arbre sémantique de
+  &#47;&#47; l&#39;`InputDecorator`. Le tile, lui, n&#39;a qu&#39;UNE annonce (`excludeSemantics:
+  &#47;&#47; true` écarte tous les descendants) : sans reprise explicite, ce texte
+  &#47;&#47; serait visible et JAMAIS annoncé — un canal purement visuel. Les
+  &#47;&#47; ornements `.icon`&#47;`.widget` n&#39;ont pas de texte à reprendre ; ils restent
+  &#47;&#47; décoratifs, exactement comme dans le natif.
+  final String? prefixText =
+      _adornmentText(context, presentation.field.prefix);
+  final String? suffixText =
+      _adornmentText(context, presentation.field.suffix);
+
+  &#47;&#47; **Modifier &#47; Copier par option**. Le rendu NATIF de
+  &#47;&#47; `relation` les expose dès qu&#39;un `crudHandler` est résolu
+  &#47;&#47; (`_CrudRowActions`) ; le présentateur n&#39;en rendait que **Créer** —
+  &#47;&#47; enrôler le présentateur RETIRAIT donc deux actions. Le DTO porte déjà
+  &#47;&#47; `crudHandler` : rien à élargir, seulement à lire.
+  &#47;&#47;
+  &#47;&#47; Priorité : un `choiceSecondaryBuilder` fourni par l&#39;hôte l&#39;emporte
+  &#47;&#47; TOUJOURS (c&#39;est le même slot, et c&#39;est SA décision). Sans handler ⇒ slot
+  &#47;&#47; absent (AD-4), rendu antérieur strictement conservé.
+  &#47;&#47;
+  &#47;&#47; Écart ASSUMÉ avec le natif : celui-ci ne conditionne pas ces deux
+  &#47;&#47; actions à `readOnly`. Ici elles suivent `enabled`, comme **Créer** — les
+  &#47;&#47; trois écrivent la sélection (auto-sélection du résultat), et une écriture
+  &#47;&#47; sur un champ en lecture seule n&#39;a pas de sens.
+  final bool crudRowActions = presentation.choiceSecondaryBuilder == null &amp;&amp;
+      presentation.crudHandler != null &amp;&amp;
+      enabled;
+
+  &#47;&#47; FR-26 — infobulles RÉSOLUES ICI, dans le `context` du CHAMP, et
+  &#47;&#47; passées par valeur. Mesuré : le modal est poussé sur le `Navigator`, donc
+  &#47;&#47; **au-dessus** du `ZcrudScope` — un `label(modalContext, &#39;edit&#39;)` ne voit
+  &#47;&#47; PAS les libellés injectés au scope et retombe silencieusement sur la table
+  &#47;&#47; anglaise du cœur. C&#39;est la même discipline de capture synchrone que
+  &#47;&#47; `_wrapLoader`.
+  final String editTooltip = label(context, &#39;edit&#39;);
+  final String copyTooltip = label(context, &#39;copy&#39;);
+
+  &#47;&#47; règle EXACTE de `ZFieldLabel` (cœur) :
+  &#47;&#47; `field.isRequired &amp;&amp; !field.readOnly`. Lue sur `field`, pas sur
+  &#47;&#47; `presentation.readOnly` : c&#39;est la spec du champ qui décide, comme dans le
+  &#47;&#47; rendu natif décoré (`zFieldDecoration` → `ZFieldLabel`).
+  &#47;&#47;
+  &#47;&#47; Hôte passif : un champ NON requis rend `false` ⇒ aucune des deux
+  &#47;&#47; branches ci-dessous n&#39;est empruntée (ni libellé enrichi, ni
+  &#47;&#47; `modalHeaderBuilder`), le rendu antérieur est strictement conservé.
+  final bool requiredIndicator =
+      presentation.field.isRequired &amp;&amp; !presentation.field.readOnly;
+
+  &#47;&#47; FR-26 : indice du champ de recherche du modal — l10n (clé `search`),
+  &#47;&#47; jamais le `&#39;Search on $title&#39;` anglais que le fork poserait sinon
+  &#47;&#47; (`s2_state.dart:289`).
+  final String filterHint = label(context, &#39;search&#39;);
+
+  &#47;&#47; Parité de référence : `S2ChoiceStyle` d&#39;option (sous-titre gris italique) et
+  &#47;&#47; d&#39;option active (accent, gras) — exprimés en RÔLES.
+  final S2ChoiceStyle choiceStyle = S2ChoiceStyle(
+    subtitleStyle: TextStyle(
+      fontStyle: FontStyle.italic,
+      color: scheme.onSurfaceVariant,
+    ),
+  );
+  final S2ChoiceStyle choiceActiveStyle = S2ChoiceStyle(
+    opacity: 1,
+    color: scheme.primary,
+    titleStyle: const TextStyle(fontWeight: FontWeight.bold),
+  );
+
+  &#47;&#47; Parité de référence : en-tête de modal translucide + élévation 3.
+  final S2ModalHeaderStyle headerStyle = S2ModalHeaderStyle(
+    backgroundColor: scheme.surface.withValues(
+      alpha: ZSelectTileReference.modalHeaderOpacity,
+    ),
+    elevation: ZSelectTileReference.modalHeaderElevation,
+  );
+
+  &#47;&#47; Parité de référence : `enableDrag`, `barrierDismissible`, `filterAuto` (la
+  &#47;&#47; recherche s&#39;applique à la frappe, sans validation).
+  const S2ModalConfig modalConfig = S2ModalConfig(
+    enableDrag: true,
+    barrierDismissible: true,
+    filterAuto: true,
+  );
+
+  final S2ModalType modalType = _modalType(context, metrics);
+  final int pageLimit = metrics.choicePageLimit;
+
+  if (presentation.multiple) {
+    return SmartSelect&lt;dynamic&gt;.multiple(
+      title: title,
+      placeholder: placeholder,
+      &#47;&#47; AD-10 : normalise scalaire&#47;`null`&#47;`List` → `List&lt;Object?&gt;` ; une
+      &#47;&#47; valeur hors options est simplement non représentée (placeholder).
+      selectedValue: _asList(presentation.selected),
+      choiceItems: choiceItems,
+      &#47;&#47; `null` ⇒ le fork reste SYNCHRONE sur `choiceItems`,
+      &#47;&#47; strictement comme avant (`S2Choices.isSync`).
+      choiceLoader: choiceLoader,
+      &#47;&#47; builder d&#39;option hôte. `null` ⇒ le fork rend
+      &#47;&#47; l&#39;option lui-même (switches&#47;radios&#47;…), rendu antérieur inchangé.
+      choiceBuilder: presentation.choiceBuilder == null
+          ? null
+          : (ctx, _, choice) =&gt;
+              _buildHostChoice(ctx, presentation, choice, enabled: enabled),
+      &#47;&#47; affordance de fin de ligne (Modifier&#47;Copier chez
+      &#47;&#47; de référence). `null` ⇒ slot ABSENT (AD-4), rendu antérieur inchangé.
+      choiceSecondaryBuilder: presentation.choiceSecondaryBuilder != null
+          ? (ctx, _, choice) =&gt; _buildHostSecondary(
+                ctx,
+                presentation,
+                choice,
+                enabled: enabled,
+              )
+          : (crudRowActions
+              ? (_, state, choice) =&gt; _crudRowActions(
+                    state,
+                    presentation,
+                    choice,
+                    multiple: true,
+                    editTooltip: editTooltip,
+                    copyTooltip: copyTooltip,
+                  )
+              : null),
+      &#47;&#47; Parité de référence EXACTE (`choiceDivider: field.choiceBuilder != null`) :
+      &#47;&#47; un rendu d&#39;option sur mesure a besoin d&#39;un séparateur, le rendu natif
+      &#47;&#47; du fork non. Hôte passif : `false` — c&#39;est aussi le DÉFAUT du fork
+      &#47;&#47; (`S2ChoiceConfig.useDivider = false`), donc rien ne bouge.
+      choiceDivider: presentation.choiceBuilder != null,
+      &#47;&#47; barre d&#39;ACTIONS du modal (parité
+      &#47;&#47; `_modalActionsBuilder` de référence) : créer &#47; confirmer &#47; réinitialiser.
+      &#47;&#47; En MULTI searchable, la loupe est retirée : le champ de recherche
+      &#47;&#47; est rendu en PERMANENCE sous la barre (cf. `modalHeaderBuilder`).
+      modalActionsBuilder: showActions
+          ? (ctx, state) =&gt; _modalActions(
+                ctx,
+                state,
+                presentation,
+                multiple: true,
+                withFilterToggle: !presentation.searchable,
+              )
+          : null,
+      modalHeaderBuilder: presentation.searchable
+          ? (ctx, state) =&gt; _multiHeaderWithFilter(
+                ctx,
+                state,
+                presentation,
+                title: title,
+                showActions: showActions,
+                requiredIndicator: requiredIndicator,
+              )
+          &#47;&#47; hors multi searchable, l&#39;en-tête du fork
+          &#47;&#47; n&#39;est REMPLACÉ que si l&#39;astérisque est dû — sinon `null`, et
+          &#47;&#47; `defaultModalHeader` reste seul en charge (rendu inchangé).
+          : (requiredIndicator
+              ? (ctx, state) =&gt; _headerWithRequiredTitle(ctx, state, title)
+              : null),
+      choiceType: _s2ChoiceType(metrics.multiChoiceStyle),
+      choicePageLimit: pageLimit,
+      choiceStyle: choiceStyle,
+      choiceActiveStyle: choiceActiveStyle,
+      modalType: modalType,
+      modalFilter: presentation.searchable,
+      modalFilterHint: filterHint,
+      &#47;&#47; Parité de référence (`useConfirm: readOnly ? false : true`) : en multi, la
+      &#47;&#47; sélection se valide explicitement.
+      modalConfirm: enabled,
+      modalHeader: true,
+      modalHeaderStyle: headerStyle,
+      modalConfig: modalConfig,
+      &#47;&#47; Valeur MÉTIER : une vraie `List&lt;Object?&gt;` (jamais la concat &quot;S2Choice&quot;).
+      onChange: enabled
+          ? (state) =&gt; presentation.onChanged(
+                List&lt;Object?&gt;.from(state.value),
+              )
+          : (_) {},
+      tileBuilder: (context, state) =&gt; _ZSmartSelectTile(
+        label: title,
+        placeholder: placeholder,
+        &#47;&#47; Parité de référence : le multi affiche des PUCES, une par titre
+        &#47;&#47; sélectionné — jamais `state.selected.toString()` (qui retombe sur
+        &#47;&#47; `&#39;Select one or more&#39;` du fork quand la liste est vide, et rend un
+        &#47;&#47; `[a, b]` littéral sinon).
+        chipLabels: state.selected.title ?? const &lt;String&gt;[],
+        hasValue: state.selected.isNotEmpty,
+        enabled: enabled,
+        tappable: tappable,
+        leading: leading,
+        onTap: state.showModal,
+        metrics: metrics,
+        showChevron: spec?.showTrailingChevron ?? enabled,
+        requiredIndicator: requiredIndicator,
+        isLoading: presentation.isLoading,
+        helperText: helperText,
+        prefix: prefix,
+        suffix: suffix,
+        prefixText: prefixText,
+        suffixText: suffixText,
+      ),
+    );
+  }
+
+  &#47;&#47; Mono : `select` &#47; `radio` (parité `radioAsModal` de référence) — choix unique en
+  &#47;&#47; modal S2, `choiceType: radios` par défaut.
+  return SmartSelect&lt;dynamic&gt;.single(
+    title: title,
+    placeholder: placeholder,
+    selectedValue: presentation.selected,
+    choiceItems: choiceItems,
+    choiceLoader: choiceLoader,
+    choiceBuilder: presentation.choiceBuilder == null
+        ? null
+        : (ctx, _, choice) =&gt;
+            _buildHostChoice(ctx, presentation, choice, enabled: enabled),
+    choiceSecondaryBuilder: presentation.choiceSecondaryBuilder != null
+        ? (ctx, _, choice) =&gt; _buildHostSecondary(
+              ctx,
+              presentation,
+              choice,
+              enabled: enabled,
+            )
+        : (crudRowActions
+            ? (_, state, choice) =&gt; _crudRowActions(
+                  state,
+                  presentation,
+                  choice,
+                  multiple: false,
+                  editTooltip: editTooltip,
+                  copyTooltip: copyTooltip,
+                )
+            : null),
+    choiceDivider: presentation.choiceBuilder != null,
+    &#47;&#47; même barre d&#39;actions ; en MONO la recherche reste une
+    &#47;&#47; BASCULE (loupe), exactement comme de référence (`useFilter: true`).
+    modalActionsBuilder: showActions
+        ? (ctx, state) =&gt; _modalActions(
+              ctx,
+              state,
+              presentation,
+              multiple: false,
+              withFilterToggle: true,
+            )
+        : null,
+    &#47;&#47; même règle qu&#39;en multi : en-tête remplacé
+    &#47;&#47; UNIQUEMENT si l&#39;astérisque est dû.
+    modalHeaderBuilder: requiredIndicator
+        ? (ctx, state) =&gt; _headerWithRequiredTitle(ctx, state, title)
+        : null,
+    choiceType: _s2ChoiceType(metrics.monoChoiceStyle),
+    choicePageLimit: pageLimit,
+    choiceStyle: choiceStyle,
+    choiceActiveStyle: choiceActiveStyle,
+    modalType: modalType,
+    modalFilter: presentation.searchable,
+    modalFilterHint: filterHint,
+    modalHeader: true,
+    modalHeaderStyle: headerStyle,
+    modalConfig: modalConfig,
+    &#47;&#47; Valeur MÉTIER scalaire (jamais un type S2).
+    onChange:
+        enabled ? (state) =&gt; presentation.onChanged(state.value) : (_) {},
+    tileBuilder: (context, state) =&gt; _ZSmartSelectTile(
+      label: title,
+      placeholder: placeholder,
+      &#47;&#47; État vide → placeholder LOCALISÉ (jamais `&#39;Select one&#39;` du fork).
+      valueText: state.selected.isResolved ? state.selected.title : null,
+      hasValue: state.selected.isResolved,
+      enabled: enabled,
+      tappable: tappable,
+      leading: leading,
+      onTap: state.showModal,
+      metrics: metrics,
+      showChevron: spec?.showTrailingChevron ?? enabled,
+      requiredIndicator: requiredIndicator,
+      isLoading: presentation.isLoading,
+      helperText: helperText,
+      prefix: prefix,
+      suffix: suffix,
+      prefixText: prefixText,
+      suffixText: suffixText,
+    ),
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_select</a></li>
+    <li><a href="../../zcrud_select/">zcrud_select</a></li>
+    <li><a href="../../zcrud_select/ZSmartSelectPresenter-class.html">ZSmartSelectPresenter</a></li>
+    <li class="self-crumb">present method</li>
+</ol>
+
+    <h5>ZSmartSelectPresenter class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_select
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

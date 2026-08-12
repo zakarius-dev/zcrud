@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_document library API docs, for the Dart programming language.">
+  <title>zcrud_document library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_document</a></li>
+    <li class="self-crumb">zcrud_document.dart</li>
+  </ol>
+  <div class="self-name">zcrud_document</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_document&#47;zcrud_document-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_document</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_document</code>.</p>
+<p>Document d'étude et état de lecture personnel, séparés par construction :</p>
+<ul>
+<li><code>ZStudyDocument</code> : le contenu partageable (nom, chemin de stockage,
+statut d'ingestion, taille) — destiné au sous-arbre partageable d'un
+dossier ;</li>
+<li><code>ZDocumentReadingState</code> : l'état personnel (page courante, préférences
+de viewer, pages maîtrisées) — jamais colocalisé dans le document, donc
+jamais emporté par un partage/une duplication ;</li>
+<li><code>ZDocumentViewerPrefs</code> : préférences de lecture (zoom borné, sens,
+disposition) — enums pur-Dart (jamais un enum d'une bibliothèque de
+rendu concrète : le mapping vers celle-ci vit en presentation, côté
+application) ;</li>
+<li><code>ZDocumentLearningInfo</code> / <code>ZDocPageQuality</code> : maîtrise par page
+(<code>Map&lt;int,int&gt;</code> ⇒ value object écrit à la main — le générateur ne
+supporte aucun type <code>Map</code>) ;</li>
+<li><code>ZDocumentAnnotation</code> : annotation partageable (surlignage / note
+ancrée) — <code>ZEntity</code> + <code>ZExtensible</code>, top-level à identité propre. Son
+rectangle d'ancrage <code>ZAnnotationBounds</code> est un value object borné
+<code>[0,1]</code> (<code>sanitizeCoord</code> aux deux frontières) ; <code>ZDocumentAnnotationKind</code>
+en fixe la nature (repli défensif <code>highlight</code>).</li>
+</ul>
+<p>Aucune de ces entités ne déclare <code>updated_at</code>/<code>is_deleted</code> — l'autorité
+Last-Write-Wins et le soft-delete vivent hors-entité (<code>ZSyncMeta</code>,
+invariant AD-9). Porter un schéma legacy verbatim — qui les logerait
+inline, et dont <code>updatedAt</code> serait littéralement la clé Last-Write-Wins
+de l'état de lecture — recréerait une perte de valeur métier.</p>
+<p>Dépend uniquement de <code>zcrud_core</code> (surface pur-Dart <code>domain.dart</code>/
+<code>edition.dart</code>), <code>zcrud_study_kernel</code> et <code>zcrud_annotations</code> (invariant
+AD-1) — zéro dépendance lourde, zéro gestionnaire d'état, zéro
+<code>cloud_firestore</code>, zéro SDK Flutter dans le domaine. Tests de domaine
+sous <code>dart test</code>.</p>
+<h2 id="extensions-gnres-masques-hide--les-trois-sans-exception">Extensions générées masquées (<code>hide</code>) — les trois, sans exception</h2>
+<p><code>ZStudyDocumentZcrud</code> et <code>ZDocumentReadingStateZcrud</code> portent un
+<code>copyWith</code> généré qui ignore les canaux hors-codegen (<code>extra</code>,
+<code>extension</code>, <code>learning</code>) et les remettrait à leurs défauts ⇒ perte
+silencieuse. La copie et la (dé)sérialisation passent par l'API
+d'instance (<code>fromMap</code>/<code>toMap</code>/<code>copyWith</code> à sentinelle).</p>
+<p><code>ZDocumentViewerPrefsZcrud</code> est masquée elle aussi. La justification «
+cette entité n'est pas <code>ZExtensible</code> ⇒ son extension générée n'a rien à
+perdre » cesse d'être vraie dès l'instant où l'entité reçoit un
+invariant de valeur (zoom fini, <code>&gt; 0</code>, clampé) : elle a désormais
+quelque chose à perdre. Le <code>copyWith</code> d'instance ne masque le <code>copyWith</code>
+généré que sur l'appel implicite ; l'appel explicite d'extension restait
+ouvert depuis l'API publique et contournait la garde :</p>
+<pre class="language-dart"><code class="language-dart">ZDocumentViewerPrefsZcrud(const ZDocumentViewerPrefs()).copyWith(zoomLevel: -5)
+// ⇒ zoomLevel == -5.0 : invariant « fini, &gt; 0, clampé » contourné
+</code></pre>
+<p>D'où une politique uniforme du barrel : aucune extension générée n'est
+exportée. Le <code>toMap()</code> de <code>ZDocumentViewerPrefs</code> est promu en méthode
+d'instance — la surface publique de (dé)sérialisation est préservée, la
+porte du <code>copyWith</code> est fermée. (Le fichier compagnon généré reste dans
+la même bibliothèque que l'entité : le registrar généré et le <code>toMap()</code>
+imbriqué de l'état de lecture continuent d'y accéder normalement.)</p>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/domain/</code>.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZAnnotationBounds">
+  <span class="name "><a href="../zcrud_document/ZAnnotationBounds-class.html">ZAnnotationBounds</a></span> 
+
+</dt>
+<dd>
+  Rectangle d'ancrage d'une annotation, en fractions <code>[0,1]</code> de la page.
+</dd>
+
+          <dt id="ZAnnotationPanel">
+  <span class="name "><a href="../zcrud_document/ZAnnotationPanel-class.html">ZAnnotationPanel</a></span> 
+
+</dt>
+<dd>
+  Panneau listant les <a href="../zcrud_document/ZDocumentAnnotation-class.html">ZDocumentAnnotation</a> d'un document (présentation).
+</dd>
+
+          <dt id="ZAnnotationToolbar">
+  <span class="name "><a href="../zcrud_document/ZAnnotationToolbar-class.html">ZAnnotationToolbar</a></span> 
+
+</dt>
+<dd>
+  Barre d'outils d'annotation (présentation, owned/injected controller).
+</dd>
+
+          <dt id="ZAnnotationToolController">
+  <span class="name "><a href="../zcrud_document/ZAnnotationToolController-class.html">ZAnnotationToolController</a></span> 
+
+</dt>
+<dd>
+  Controller <code>ChangeNotifier</code> pur-Flutter de la toolbar d'annotation.
+</dd>
+
+          <dt id="ZDocumentAnnotation">
+  <span class="name "><a href="../zcrud_document/ZDocumentAnnotation-class.html">ZDocumentAnnotation</a></span> 
+
+</dt>
+<dd>
+  Annotation d'un document — contenu partageable à identité propre.
+</dd>
+
+          <dt id="ZDocumentLearningInfo">
+  <span class="name "><a href="../zcrud_document/ZDocumentLearningInfo-class.html">ZDocumentLearningInfo</a></span> 
+
+</dt>
+<dd>
+  Qualité d'apprentissage par page d'un document, colocalisée dans l'état
+personnel <a href="../zcrud_document/ZDocumentReadingState-class.html">ZDocumentReadingState</a> (jamais dans le sous-arbre partageable
+du document, invariant AD-9).
+</dd>
+
+          <dt id="ZDocumentPageNavigation">
+  <span class="name "><a href="../zcrud_document/ZDocumentPageNavigation-class.html">ZDocumentPageNavigation</a></span> 
+
+</dt>
+<dd>
+  Navigation de pages fournie et localisée par l'hôte.
+</dd>
+
+          <dt id="ZDocumentReadingState">
+  <span class="name "><a href="../zcrud_document/ZDocumentReadingState-class.html">ZDocumentReadingState</a></span> 
+
+</dt>
+<dd>
+  État de lecture personnel d'un document — clé par <a href="../zcrud_document/ZDocumentReadingState/docId.html">docId</a> (pas un
+<code>ZEntity</code>).
+</dd>
+
+          <dt id="ZDocumentViewerChrome">
+  <span class="name "><a href="../zcrud_document/ZDocumentViewerChrome-class.html">ZDocumentViewerChrome</a></span> 
+
+</dt>
+<dd>
+  Chrome composable d'un viewer de document, sans moteur de rendu.
+</dd>
+
+          <dt id="ZDocumentViewerPrefs">
+  <span class="name "><a href="../zcrud_document/ZDocumentViewerPrefs-class.html">ZDocumentViewerPrefs</a></span> 
+
+</dt>
+<dd>
+  Préférences de lecture persistées d'un document (zoom, sens,
+disposition).
+</dd>
+
+          <dt id="ZStudyDocument">
+  <span class="name "><a href="../zcrud_document/ZStudyDocument-class.html">ZStudyDocument</a></span> 
+
+</dt>
+<dd>
+  Document d'étude rattaché à un dossier — contenu partageable.
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="ZDocPageQuality">
+  <span class="name "><a href="../zcrud_document/ZDocPageQuality.html">ZDocPageQuality</a></span> 
+
+</dt>
+<dd>
+  Qualité d'une page : à revoir (défaut) ou maîtrisée.
+</dd>
+
+          <dt id="ZDocumentAnnotationKind">
+  <span class="name "><a href="../zcrud_document/ZDocumentAnnotationKind.html">ZDocumentAnnotationKind</a></span> 
+
+</dt>
+<dd>
+  Nature d'une <a href="../zcrud_document/ZDocumentAnnotation-class.html">ZDocumentAnnotation</a> : surlignage ou note ancrée.
+</dd>
+
+          <dt id="ZDocumentPageLayout">
+  <span class="name "><a href="../zcrud_document/ZDocumentPageLayout.html">ZDocumentPageLayout</a></span> 
+
+</dt>
+<dd>
+  Disposition des pages du viewer.
+</dd>
+
+          <dt id="ZDocumentScrollDirection">
+  <span class="name "><a href="../zcrud_document/ZDocumentScrollDirection.html">ZDocumentScrollDirection</a></span> 
+
+</dt>
+<dd>
+  Sens de défilement du viewer.
+</dd>
+
+          <dt id="ZDocumentStatus">
+  <span class="name "><a href="../zcrud_document/ZDocumentStatus.html">ZDocumentStatus</a></span> 
+
+</dt>
+<dd>
+  État du cycle de vie d'un <a href="../zcrud_document/ZStudyDocument-class.html">ZStudyDocument</a> (upload → validation → prêt).
+</dd>
+
+          <dt id="ZDocumentViewerLoadState">
+  <span class="name "><a href="../zcrud_document/ZDocumentViewerLoadState.html">ZDocumentViewerLoadState</a></span> 
+
+</dt>
+<dd>
+  État de lecture affiché par <a href="../zcrud_document/ZDocumentViewerChrome-class.html">ZDocumentViewerChrome</a>.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+    <section class="summary offset-anchor" id="constants">
+      <h2>Constants</h2>
+      <dl class="properties">
+          <dt id="$ZAnnotationBoundsFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZAnnotationBoundsFieldSpecs-constant.html">$ZAnnotationBoundsFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZAnnotationBoundsPersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZAnnotationBoundsPersistedKeys-constant.html">$ZAnnotationBoundsPersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZAnnotationBounds.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZAnnotationBoundsTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZAnnotationBoundsTimestampFields-constant.html">$ZAnnotationBoundsTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="$ZDocumentAnnotationFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZDocumentAnnotationFieldSpecs-constant.html">$ZDocumentAnnotationFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZDocumentAnnotationPersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZDocumentAnnotationPersistedKeys-constant.html">$ZDocumentAnnotationPersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZDocumentAnnotation.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZDocumentAnnotationTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZDocumentAnnotationTimestampFields-constant.html">$ZDocumentAnnotationTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="$ZDocumentReadingStateFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZDocumentReadingStateFieldSpecs-constant.html">$ZDocumentReadingStateFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZDocumentReadingStatePersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZDocumentReadingStatePersistedKeys-constant.html">$ZDocumentReadingStatePersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZDocumentReadingState.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZDocumentReadingStateTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZDocumentReadingStateTimestampFields-constant.html">$ZDocumentReadingStateTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="$ZDocumentViewerPrefsFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZDocumentViewerPrefsFieldSpecs-constant.html">$ZDocumentViewerPrefsFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZDocumentViewerPrefsPersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZDocumentViewerPrefsPersistedKeys-constant.html">$ZDocumentViewerPrefsPersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZDocumentViewerPrefs.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZDocumentViewerPrefsTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZDocumentViewerPrefsTimestampFields-constant.html">$ZDocumentViewerPrefsTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="$ZStudyDocumentFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZStudyDocumentFieldSpecs-constant.html">$ZStudyDocumentFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZStudyDocumentPersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZStudyDocumentPersistedKeys-constant.html">$ZStudyDocumentPersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZStudyDocument.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZStudyDocumentTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_document/$ZStudyDocumentTimestampFields-constant.html">$ZStudyDocumentTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="kAnnotationKindKeyPrefix" class="constant">
+    <span class="name "><a href="../zcrud_document/kAnnotationKindKeyPrefix-constant.html">kAnnotationKindKeyPrefix</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Préfixe de <a href="https://api.flutter.dev/flutter/foundation/ValueKey-class.html">ValueKey</a> d'un bouton de <code>kind</code> (<code>zAnnotationKind_&lt;name&gt;</code>).
+  
+
+</dd>
+
+          <dt id="kAnnotationPanelEntryKeyPrefix" class="constant">
+    <span class="name "><a href="../zcrud_document/kAnnotationPanelEntryKeyPrefix-constant.html">kAnnotationPanelEntryKeyPrefix</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Préfixe de <a href="https://api.flutter.dev/flutter/foundation/ValueKey-class.html">ValueKey</a> d'une entrée de <code>ZAnnotationPanel</code>
+(<code>zAnnotationPanelEntry_&lt;id|index&gt;</code>).
+  
+
+</dd>
+
+          <dt id="kAnnotationSelectedMarkerKey" class="constant">
+    <span class="name "><a href="../zcrud_document/kAnnotationSelectedMarkerKey-constant.html">kAnnotationSelectedMarkerKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de <a href="https://api.flutter.dev/flutter/foundation/ValueKey-class.html">ValueKey</a> du marqueur structurel non-coloré de sélection (icône
+« coché ») — présent uniquement dans la swatch sélectionnée (la
+sélection n'est jamais signalée par la seule couleur d'un anneau).
+  
+
+</dd>
+
+          <dt id="kAnnotationSwatchFillKeyPrefix" class="constant">
+    <span class="name "><a href="../zcrud_document/kAnnotationSwatchFillKeyPrefix-constant.html">kAnnotationSwatchFillKeyPrefix</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Préfixe de <a href="https://api.flutter.dev/flutter/foundation/ValueKey-class.html">ValueKey</a> du fond coloré d'une swatch
+(<code>zAnnotationSwatchFill_&lt;key&gt;</code>) — permet aux tests de lire la <code>Color</code>
+réellement rendue (contraste mesuré, couleur injectée).
+  
+
+</dd>
+
+          <dt id="kAnnotationSwatchKeyPrefix" class="constant">
+    <span class="name "><a href="../zcrud_document/kAnnotationSwatchKeyPrefix-constant.html">kAnnotationSwatchKeyPrefix</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Préfixe de <a href="https://api.flutter.dev/flutter/foundation/ValueKey-class.html">ValueKey</a> d'une swatch de <code>colorKey</code>
+(<code>zAnnotationSwatch_&lt;key&gt;</code>).
+  
+
+</dd>
+
+          <dt id="kDefaultZoomLevel" class="constant">
+    <span class="name "><a href="../zcrud_document/kDefaultZoomLevel-constant.html">kDefaultZoomLevel</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Zoom par défaut (aucune transformation) — repli de toute valeur
+persistée non finie, nulle ou négative.
+  
+
+</dd>
+
+          <dt id="kLearningKey" class="constant">
+    <span class="name "><a href="../zcrud_document/kLearningKey-constant.html">kLearningKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé persistée du canal hors-codegen <code>learning</code>.
+  
+
+</dd>
+
+          <dt id="kMaxZoomLevel" class="constant">
+    <span class="name "><a href="../zcrud_document/kMaxZoomLevel-constant.html">kMaxZoomLevel</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Borne supérieure du zoom persistable (agrandissement ×10).
+  
+
+</dd>
+
+          <dt id="kMinZoomLevel" class="constant">
+    <span class="name "><a href="../zcrud_document/kMinZoomLevel-constant.html">kMinZoomLevel</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Borne inférieure du zoom persistable (dézoom ×4).
+  
+
+</dd>
+
+          <dt id="kQualityByPageKey" class="constant">
+    <span class="name "><a href="../zcrud_document/kQualityByPageKey-constant.html">kQualityByPageKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé persistée de la map d'apprentissage (snake_case, imbriquée sous
+<code>learning</code>).
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="registerZAnnotationBounds" class="callable">
+  <span class="name"><a href="../zcrud_document/registerZAnnotationBounds.html">registerZAnnotationBounds</a></span><span class="signature">(<wbr><span class="parameter" id="registerZAnnotationBounds-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZAnnotationBounds</code> (kind "annotation_bounds") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+          <dt id="registerZDocumentAnnotation" class="callable">
+  <span class="name"><a href="../zcrud_document/registerZDocumentAnnotation.html">registerZDocumentAnnotation</a></span><span class="signature">(<wbr><span class="parameter" id="registerZDocumentAnnotation-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZDocumentAnnotation</code> (kind "document_annotation") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+          <dt id="registerZDocumentReadingState" class="callable">
+  <span class="name"><a href="../zcrud_document/registerZDocumentReadingState.html">registerZDocumentReadingState</a></span><span class="signature">(<wbr><span class="parameter" id="registerZDocumentReadingState-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZDocumentReadingState</code> (kind "document_reading_state") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+          <dt id="registerZDocumentViewerPrefs" class="callable">
+  <span class="name"><a href="../zcrud_document/registerZDocumentViewerPrefs.html">registerZDocumentViewerPrefs</a></span><span class="signature">(<wbr><span class="parameter" id="registerZDocumentViewerPrefs-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZDocumentViewerPrefs</code> (kind "document_viewer_prefs") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+          <dt id="registerZStudyDocument" class="callable">
+  <span class="name"><a href="../zcrud_document/registerZStudyDocument.html">registerZStudyDocument</a></span><span class="signature">(<wbr><span class="parameter" id="registerZStudyDocument-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZStudyDocument</code> (kind "study_document") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZDocumentAnnotationExtensionParser" class="callable">
+    <span class="name"><a href="../zcrud_document/ZDocumentAnnotationExtensionParser.html">ZDocumentAnnotationExtensionParser</a></span><span class="signature">
+      <span class="returntype parameter">= ZExtension? Function<span class="signature">(<span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Reconstruit une <code>ZExtension</code> concrète depuis sa map JSON, ou <code>null</code>.
+    
+
+  </dd>
+
+          
+  <dt id="ZDocumentReadingStateExtensionParser" class="callable">
+    <span class="name"><a href="../zcrud_document/ZDocumentReadingStateExtensionParser.html">ZDocumentReadingStateExtensionParser</a></span><span class="signature">
+      <span class="returntype parameter">= ZExtension? Function<span class="signature">(<span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Reconstruit une <code>ZExtension</code> concrète depuis sa map JSON, ou <code>null</code>
+(invariant AD-4).
+    
+
+  </dd>
+
+          
+  <dt id="ZStudyDocumentExtensionParser" class="callable">
+    <span class="name"><a href="../zcrud_document/ZStudyDocumentExtensionParser.html">ZStudyDocumentExtensionParser</a></span><span class="signature">
+      <span class="returntype parameter">= ZExtension? Function<span class="signature">(<span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Reconstruit une <code>ZExtension</code> concrète depuis sa map JSON, ou <code>null</code>.
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_document</a></li>
+    <li class="self-crumb">zcrud_document.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_document</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_document/">zcrud_document</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_document library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_document
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

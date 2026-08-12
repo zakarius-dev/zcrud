@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the crossAxisVirtualized property from the ZStudyToolsSectionSpec class, for the Dart programming language.">
+  <title>crossAxisVirtualized property - ZStudyToolsSectionSpec class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study.dart</a></li>
+    <li><a href="../../zcrud_study/ZStudyToolsSectionSpec-class.html">ZStudyToolsSectionSpec</a></li>
+    <li class="self-crumb">crossAxisVirtualized property</li>
+  </ol>
+  <div class="self-name">crossAxisVirtualized</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;ZStudyToolsSectionSpec-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">crossAxisVirtualized</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>
+        <span class="name ">crossAxisVirtualized</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p><strong>COMBINABLE avec <a href="../../zcrud_study/ZStudyToolsSectionSpec/onReorder.html">onReorder</a></strong> : déclarer les deux produit une <strong>grille
+multi-colonnes RÉORDONNABLE</strong> (<code>ZReorderableAdaptiveGrid</code> de
+<code>zcrud_responsive</code>), et non une liste mono-colonne signalée par un
+<code>assert</code>. L'activation est <strong>implicite</strong> — aucun drapeau supplémentaire.
+Le geste est un <strong>appui long sur la cellule</strong>, doublé de deux actions
+sémantiques (<a href="../../zcrud_study/ZStudyToolsSectionSpec/reorderMoveBeforeSemanticLabel.html">reorderMoveBeforeSemanticLabel</a> /
+<a href="../../zcrud_study/ZStudyToolsSectionSpec/reorderMoveAfterSemanticLabel.html">reorderMoveAfterSemanticLabel</a>) pour le lecteur d'écran (invariant
+AD-13).</p>
+<p><strong>L'AFFORDANCE est présente sur les DEUX chemins</strong> : la poignée
+n'existant QUE sur le chemin liste ferait DISPARAÎTRE la poignée d'une
+section réordonnable passée en grille (renseigner cette largeur)
+<strong>sans aucun signal</strong> — ni erreur, ni <code>assert</code>, et le glisser
+continuerait de passer en test. Chaque cellule de grille porte donc la
+MÊME poignée que le mode liste : glyphe <a href="../../zcrud_study/ZStudyToolsSectionSpec/reorderHandleIcon.html">reorderHandleIcon</a> (repli
+<code>Icons.drag_handle</code>), nœud <code>Semantics</code> au libellé INJECTÉ
+(<a href="../../zcrud_study/ZStudyToolsSectionSpec/reorderHandleSemanticLabel.html">reorderHandleSemanticLabel</a>, repli <a href="../../zcrud_study/ZStudyToolsSectionSpec/title.html">title</a>) et cible ≥ 48 dp.</p>
+<p><strong>Écart ASSUMÉ et documenté entre les deux chemins</strong> : en liste, la
+poignée est un <code>ReorderableDragStartListener</code> — un point de départ de drag
+DISTINCT (glisser depuis la poignée, sans appui long). En grille, le
+déclencheur reste l'<strong>appui long sur la cellule entière</strong> (poignée
+comprise) : la poignée y est une <strong>affordance</strong>, pas un second déclencheur.
+La raison est structurelle — <code>ReorderableDragStartListener</code> ne fait rien
+hors d'un <code>SliverReorderableList</code> du SDK (absent du chemin grille), et un
+<code>Draggable</code> local ne connaîtrait pas la <strong>position d'affichage</strong> attendue
+par le protocole de dépôt de la grille (l'<code>itemBuilder</code> reçoit l'index
+SOURCE, pas la position courante). Une poignée qui <em>paraîtrait</em> déclencher
+sans déclencher serait pire que pas de poignée.</p>
+<p>ℹ️ L'affordance est posée <strong>autour de l'item, en amont du renderer</strong> : elle
+s'applique donc AUSSI à un <code>ZReorderRenderer</code> injecté par l'hôte (AD-57),
+et pas seulement au repli <code>zcrud_responsive</code>.</p>
+<p>Reste <strong>exclusif avec <a href="../../zcrud_study/ZStudyToolsSectionSpec/crossAxisVirtualized.html">crossAxisVirtualized</a></strong> : une cellule non
+construite ne peut pas être une cible de dépôt. Une section à la fois
+réordonnable et virtualisée est rendue <strong>eager</strong> (réordonnable), la
+virtualisation cédant — documenté, jamais dégradé en silence.</p>
+<p>Grille <strong>virtualisée</strong> : ne construit que les cellules du viewport et
+scrolle d'elle-même. <code>false</code> par défaut (grille <em>eager</em>,
+imbriquée dans le défilement de la page — rendu antérieur inchangé).</p>
+<p>À activer dès qu'une section peut porter plusieurs dizaines d'items : en
+mode <em>eager</em>, TOUTES les cellules sont construites ET layoutées, même hors
+écran. Une section alimentée par tout le contenu d'un dossier (héritage
+parent compris) est exactement ce cas.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final bool crossAxisVirtualized;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/ZStudyToolsSectionSpec-class.html">ZStudyToolsSectionSpec</a></li>
+    <li class="self-crumb">crossAxisVirtualized property</li>
+</ol>
+
+  <h5>ZStudyToolsSectionSpec class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZRichTextStyleSet class from the zcrud_markdown library, for the Dart programming language.">
+  <title>ZRichTextStyleSet class - zcrud_markdown library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_markdown</a></li>
+    <li><a href="../zcrud_markdown/">zcrud_markdown.dart</a></li>
+    <li class="self-crumb">ZRichTextStyleSet class</li>
+  </ol>
+  <div class="self-name">ZRichTextStyleSet</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_markdown&#47;zcrud_markdown-library-sidebar.html"
+    data-below-sidebar="zcrud_markdown&#47;ZRichTextStyleSet-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZRichTextStyleSet</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Jeu de styles rich-text PAR CHAMP — chaque slot <code>null</code> laisse le
+style courant (thème + défauts Quill) STRICTEMENT inchangé (AD-57).</p>
+<p>Les slots couvrent la liste <code>qdsh</code> mesurée : corps/titres, gras / italique /
+souligné / barré / indice / exposant, code inline (+ fond + rayon) &amp; bloc
+(+ décoration), citation (+ décoration — la bordure latérale legacy y
+passe), listes, lien, tailles small/large/huge, placeholder, hauteurs de
+ligne (corps / titres) et espacements par famille de bloc.</p>
+<p>Chaque <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a> fourni est <strong>fusionné</strong> (<code>merge</code>) sur le style courant du
+slot : un <code>TextStyle(color: …)</code> ne change QUE la couleur, la taille/graisse
+du thème restent. Les hauteurs de ligne s'appliquent AVANT les slots (un
+slot portant <code>height</code> l'emporte).</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://api.flutter.dev/flutter/meta/immutable-constant.html">immutable</a></li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZRichTextStyleSet.new" class="callable">
+          <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/ZRichTextStyleSet.html">ZRichTextStyleSet</a></span><span class="signature">({<span class="parameter" id="param-paragraph"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">paragraph</span>, </span><span class="parameter" id="param-h1"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">h1</span>, </span><span class="parameter" id="param-h2"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">h2</span>, </span><span class="parameter" id="param-h3"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">h3</span>, </span><span class="parameter" id="param-h4"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">h4</span>, </span><span class="parameter" id="param-h5"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">h5</span>, </span><span class="parameter" id="param-h6"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">h6</span>, </span><span class="parameter" id="param-bold"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">bold</span>, </span><span class="parameter" id="param-italic"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">italic</span>, </span><span class="parameter" id="param-underline"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">underline</span>, </span><span class="parameter" id="param-strikeThrough"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">strikeThrough</span>, </span><span class="parameter" id="param-subscript"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">subscript</span>, </span><span class="parameter" id="param-superscript"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">superscript</span>, </span><span class="parameter" id="param-inlineCode"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">inlineCode</span>, </span><span class="parameter" id="param-inlineCodeBackgroundColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">inlineCodeBackgroundColor</span>, </span><span class="parameter" id="param-inlineCodeRadius"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span> <span class="parameter-name">inlineCodeRadius</span>, </span><span class="parameter" id="param-codeBlock"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">codeBlock</span>, </span><span class="parameter" id="param-codeBlockDecoration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/BoxDecoration-class.html">BoxDecoration</a>?</span> <span class="parameter-name">codeBlockDecoration</span>, </span><span class="parameter" id="param-quote"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">quote</span>, </span><span class="parameter" id="param-quoteDecoration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/BoxDecoration-class.html">BoxDecoration</a>?</span> <span class="parameter-name">quoteDecoration</span>, </span><span class="parameter" id="param-lists"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">lists</span>, </span><span class="parameter" id="param-link"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">link</span>, </span><span class="parameter" id="param-sizeSmall"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">sizeSmall</span>, </span><span class="parameter" id="param-sizeLarge"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">sizeLarge</span>, </span><span class="parameter" id="param-sizeHuge"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">sizeHuge</span>, </span><span class="parameter" id="param-placeholder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">placeholder</span>, </span><span class="parameter" id="param-lineHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">lineHeight</span>, </span><span class="parameter" id="param-headingLineHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">headingLineHeight</span>, </span><span class="parameter" id="param-paragraphSpacing"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextSpacing-class.html">ZRichTextSpacing</a>?</span> <span class="parameter-name">paragraphSpacing</span>, </span><span class="parameter" id="param-headingSpacing"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextSpacing-class.html">ZRichTextSpacing</a>?</span> <span class="parameter-name">headingSpacing</span>, </span><span class="parameter" id="param-quoteSpacing"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextSpacing-class.html">ZRichTextSpacing</a>?</span> <span class="parameter-name">quoteSpacing</span>, </span><span class="parameter" id="param-codeBlockSpacing"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextSpacing-class.html">ZRichTextSpacing</a>?</span> <span class="parameter-name">codeBlockSpacing</span>, </span><span class="parameter" id="param-listSpacing"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextSpacing-class.html">ZRichTextSpacing</a>?</span> <span class="parameter-name">listSpacing</span></span>})</span>
+        </dt>
+        <dd>
+          Construit un jeu de styles — tout est optionnel, <code>null</code> ⇒ inchangé.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="bold" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/bold.html">bold</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Gras.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="codeBlock" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/codeBlock.html">codeBlock</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Bloc de code (style de texte).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="codeBlockDecoration" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/codeBlockDecoration.html">codeBlockDecoration</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/BoxDecoration-class.html">BoxDecoration</a>?</span>
+  
+
+</dt>
+<dd>
+  Décoration du bloc de code (fond/bordure/rayon — legacy : fond gris,
+bordure, rayon 8).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="codeBlockSpacing" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/codeBlockSpacing.html">codeBlockSpacing</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_markdown/ZRichTextSpacing-class.html">ZRichTextSpacing</a>?</span>
+  
+
+</dt>
+<dd>
+  Espacement vertical du bloc de code.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="h1" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/h1.html">h1</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Titre niveau 1.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="h2" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/h2.html">h2</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Titre niveau 2.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="h3" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/h3.html">h3</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Titre niveau 3.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="h4" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/h4.html">h4</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Titre niveau 4.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="h5" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/h5.html">h5</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Titre niveau 5.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="h6" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/h6.html">h6</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Titre niveau 6.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="headingLineHeight" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/headingLineHeight.html">headingLineHeight</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Hauteur de ligne des TITRES (H1..H6) — legacy : 1.8 édition / 1.3 lecture.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="headingSpacing" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/headingSpacing.html">headingSpacing</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_markdown/ZRichTextSpacing-class.html">ZRichTextSpacing</a>?</span>
+  
+
+</dt>
+<dd>
+  Espacement vertical des titres (appliqué H1..H6).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="inlineCode" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/inlineCode.html">inlineCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Code inline (style de texte).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="inlineCodeBackgroundColor" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/inlineCodeBackgroundColor.html">inlineCodeBackgroundColor</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span>
+  
+
+</dt>
+<dd>
+  Fond du code inline (legacy : gris 200/800).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="inlineCodeRadius" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/inlineCodeRadius.html">inlineCodeRadius</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span>
+  
+
+</dt>
+<dd>
+  Rayon du fond du code inline (legacy : 4).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="italic" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/italic.html">italic</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Italique.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="lineHeight" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/lineHeight.html">lineHeight</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Hauteur de ligne du CORPS (paragraphe, listes, citation, code bloc) —
+legacy : 2.0 édition / 1.7 lecture. Appliquée AVANT les slots.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="link" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/link.html">link</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Lien.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="lists" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/lists.html">lists</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Listes (puces/numéros + items).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="listSpacing" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/listSpacing.html">listSpacing</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_markdown/ZRichTextSpacing-class.html">ZRichTextSpacing</a>?</span>
+  
+
+</dt>
+<dd>
+  Espacement vertical des listes.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="paragraph" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/paragraph.html">paragraph</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Corps de texte (paragraphe).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="paragraphSpacing" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/paragraphSpacing.html">paragraphSpacing</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_markdown/ZRichTextSpacing-class.html">ZRichTextSpacing</a>?</span>
+  
+
+</dt>
+<dd>
+  Espacement vertical du paragraphe.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="placeholder" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/placeholder.html">placeholder</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Placeholder (texte indicatif de l'éditeur vide).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="quote" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/quote.html">quote</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Citation (style de texte).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="quoteDecoration" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/quoteDecoration.html">quoteDecoration</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/BoxDecoration-class.html">BoxDecoration</a>?</span>
+  
+
+</dt>
+<dd>
+  Décoration de la citation — la <strong>bordure latérale teal 4 px</strong> legacy passe
+ici (<code>Border(left: …)</code> chez l'hôte ; préférer une bordure directionnelle
+si l'hôte vise le RTL).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="quoteSpacing" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/quoteSpacing.html">quoteSpacing</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_markdown/ZRichTextSpacing-class.html">ZRichTextSpacing</a>?</span>
+  
+
+</dt>
+<dd>
+  Espacement vertical de la citation.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="sizeHuge" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/sizeHuge.html">sizeHuge</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Taille « huge ».
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="sizeLarge" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/sizeLarge.html">sizeLarge</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Taille « large ».
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="sizeSmall" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/sizeSmall.html">sizeSmall</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Taille « small ».
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="strikeThrough" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/strikeThrough.html">strikeThrough</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Barré.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="subscript" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/subscript.html">subscript</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Indice.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="superscript" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/superscript.html">superscript</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Exposant.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="underline" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextStyleSet/underline.html">underline</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Souligné.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_markdown</a></li>
+    <li><a href="../zcrud_markdown/">zcrud_markdown</a></li>
+    <li class="self-crumb">ZRichTextStyleSet class</li>
+</ol>
+
+    <h5>zcrud_markdown library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_markdown
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

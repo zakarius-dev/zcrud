@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the build method from the ZAdaptiveGrid class, for the Dart programming language.">
+  <title>build method - ZAdaptiveGrid class - zcrud_responsive library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_responsive</a></li>
+    <li><a href="../../zcrud_responsive/">zcrud_responsive.dart</a></li>
+    <li><a href="../../zcrud_responsive/ZAdaptiveGrid-class.html">ZAdaptiveGrid</a></li>
+    <li class="self-crumb">build method</li>
+  </ol>
+  <div class="self-name">build</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_responsive&#47;ZAdaptiveGrid-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">build</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>
+<span class="name ">build</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="build-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span></li>
+</ol>)
+
+      <div class="features"><span class="feature">override</span></div>
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Describes the part of the user interface represented by this widget.</p>
+<p>The framework calls this method when this widget is inserted into the tree
+in a given <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a> and when the dependencies of this widget change
+(e.g., an <a href="https://api.flutter.dev/flutter/widgets/InheritedWidget-class.html">InheritedWidget</a> referenced by this widget changes). This
+method can potentially be called in every frame and should not have any side
+effects beyond building a widget.</p>
+<p>The framework replaces the subtree below this widget with the widget
+returned by this method, either by updating the existing subtree or by
+removing the subtree and inflating a new subtree, depending on whether the
+widget returned by this method can update the root of the existing
+subtree, as determined by calling <a href="https://api.flutter.dev/flutter/widgets/Widget/canUpdate.html">Widget.canUpdate</a>.</p>
+<p>Typically implementations return a newly created constellation of widgets
+that are configured with information from this widget's constructor and
+from the given <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a>.</p>
+<p>The given <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a> contains information about the location in the
+tree at which this widget is being built. For example, the context
+provides the set of inherited widgets for this location in the tree. A
+given widget might be built with multiple different <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a>
+arguments over time if the widget is moved around the tree or if the
+widget is inserted into the tree in multiple places at once.</p>
+<p>The implementation of this method must only depend on:</p>
+<ul>
+<li>the fields of the widget, which themselves must not change over time,
+and</li>
+<li>any ambient state obtained from the <code>context</code> using
+<a href="https://api.flutter.dev/flutter/widgets/BuildContext/dependOnInheritedWidgetOfExactType.html">BuildContext.dependOnInheritedWidgetOfExactType</a>.</li>
+</ul>
+<p>If a widget's <a href="../../zcrud_responsive/ZAdaptiveGrid/build.html">build</a> method is to depend on anything else, use a
+<a href="https://api.flutter.dev/flutter/widgets/StatefulWidget-class.html">StatefulWidget</a> instead.</p>
+<p>See also:</p>
+<ul>
+<li><a href="https://api.flutter.dev/flutter/widgets/StatelessWidget-class.html">StatelessWidget</a>, which contains the discussion on performance considerations.</li>
+</ul>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+Widget build(BuildContext context) {
+  &#47;&#47; Mode VIRTUALISÉ (`.builder`) ou HISTORIQUE (`children:`) — une seule
+  &#47;&#47; mécanique en dessous (aucune branche de calcul dupliquée).
+  final bool virtualized = _itemBuilder != null;
+  final int count = _itemCount ?? children.length;
+  final IndexedWidgetBuilder itemBuilder = _itemBuilder ?? _childAt;
+
+  &#47;&#47; Garde vide AD-10 **PARTAGÉE**: jamais de LayoutBuilder&#47;GridView fantôme.
+  &#47;&#47; `&lt;= 0` (et non `== 0`): un `itemCount` négatif fourni par un appelant est
+  &#47;&#47; absorbé ici, jamais propagé au delegate (qui lèverait).
+  if (count &lt;= 0) {
+    return const SizedBox.shrink();
+  }
+
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      &#47;&#47; Padding horizontal résolu **directionnellement** (invariant AD-13): il est
+      &#47;&#47; retranché de la largeur pour le calcul des colonnes ET de la largeur
+      &#47;&#47; d&#39;item, mais reste appliqué au GridView pour l&#39;espace visuel (jamais
+      &#47;&#47; double-compté).
+      final double horizontalPadding =
+          padding?.resolve(Directionality.of(context)).horizontal ?? 0;
+
+      final int n = computeCrossAxisCount(
+        availableWidth: constraints.maxWidth,
+        minItemWidth: minItemWidth,
+        minColumns: minColumns,
+        maxColumns: maxColumns,
+        spacing: spacing,
+        horizontalPadding: horizontalPadding,
+      );
+
+      &#47;&#47; Largeur d&#39;item déduite sur la MÊME base cohérente que le calcul des
+      &#47;&#47; colonnes (largeur utile = maxWidth − padding horizontal; les items
+      &#47;&#47; remplissent la largeur, gouttières comprises, pas de reste).
+      final double effectiveWidth = constraints.maxWidth - horizontalPadding;
+      final double rawItemWidth =
+          (effectiveWidth - spacing * (n - 1)) &#47; n;
+      &#47;&#47; AD-10 (défensif, jamais de throw): `spacing &gt; minItemWidth` (n ≥ 2 →
+      &#47;&#47; largeur négative) ou une contrainte infinie peuvent produire une largeur
+      &#47;&#47; ≤ 0 &#47; non finie qui violerait l&#39;assertion `childAspectRatio &gt; 0` du
+      &#47;&#47; delegate. On retombe alors sur `minItemWidth`.
+      final double itemWidth =
+          (rawItemWidth.isFinite &amp;&amp; rawItemWidth &gt; 0) ? rawItemWidth : minItemWidth;
+
+      final double? height = itemHeight;
+      double ratio = (height != null &amp;&amp; height &gt; 0)
+          ? itemWidth &#47; height
+          : (aspectRatio ?? 1.0);
+      &#47;&#47; Plancher défensif ultime: le delegate exige `childAspectRatio &gt; 0` fini
+      &#47;&#47; (AD-10) — couvre aussi un `aspectRatio`&#47;`minItemWidth` dégénéré fourni.
+      if (!ratio.isFinite || ratio &lt;= 0) ratio = 1.0;
+
+      return GridView.builder(
+        &#47;&#47; La seule différence entre les deux modes.
+        &#47;&#47; `children:` : shrinkWrap + physics figées (le parent scrolle) —
+        &#47;&#47;   contrat historique, inchangé.
+        &#47;&#47; `.builder` : la grille est la surface scrollable ⇒ le viewport
+        &#47;&#47;   cull réellement les items. `shrinkWrap: true` ici
+        &#47;&#47;   layouterait tout et tuerait la virtualisation.
+        shrinkWrap: !virtualized,
+        physics: virtualized ? null : const NeverScrollableScrollPhysics(),
+        padding: padding,
+        itemCount: count,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: n,
+          mainAxisSpacing: runSpacing ?? spacing,
+          crossAxisSpacing: spacing,
+          childAspectRatio: ratio,
+        ),
+        itemBuilder: itemBuilder,
+      );
+    },
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_responsive</a></li>
+    <li><a href="../../zcrud_responsive/">zcrud_responsive</a></li>
+    <li><a href="../../zcrud_responsive/ZAdaptiveGrid-class.html">ZAdaptiveGrid</a></li>
+    <li class="self-crumb">build method</li>
+</ol>
+
+    <h5>ZAdaptiveGrid class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_responsive
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

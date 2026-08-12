@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_study_kernel library API docs, for the Dart programming language.">
+  <title>zcrud_study_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study_kernel</a></li>
+    <li class="self-crumb">zcrud_study_kernel.dart</li>
+  </ol>
+  <div class="self-name">zcrud_study_kernel</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_study_kernel&#47;zcrud_study_kernel-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_study_kernel</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_study_kernel</code>.</p>
+<p>Noyau d'étude bas-niveau, source unique de :</p>
+<ul>
+<li><code>ZStudyFolder</code> : dossier d'organisation multi-type (rattachement
+inverse) ;</li>
+<li><code>validatePlacement</code> : primitive pure de hiérarchie 2 niveaux ;</li>
+<li><code>ZReviewMode</code> : enum de mode de session ;</li>
+<li><code>ZStudySessionConfig</code> : config de session persistable (filtres <code>types</code>
+neutralisés en <code>List&lt;String&gt;</code> pour l'acyclicité) ;</li>
+<li><code>ZSessionCandidate</code> : port neutre filtrable (implémenté par les
+entités des satellites, ex. une flashcard) ;</li>
+<li><code>ZStudySessionSelector</code> : sélection pure opérant sur
+<code>ZSessionCandidate</code>.</li>
+</ul>
+<p>Dépend uniquement de <code>zcrud_core</code> (surface pur-Dart) et
+<code>zcrud_annotations</code> (invariant AD-1) — aucune dépendance lourde.</p>
+<p><strong>Extensions générées masquées (<code>hide</code>)</strong> : les extensions générées de
+<code>ZStudyFolder</code>/<code>ZStudySessionConfig</code> portent un <code>copyWith</code>/<code>toMap</code>
+internes ; la (dé)sérialisation et la copie passent par l'API d'instance
+(<code>fromMap</code>/<code>toMap</code>/<code>copyWith</code> à sentinelle), pas par l'extension générée
+(qui remettrait <code>extra</code>/<code>extension</code> à leurs défauts → perte silencieuse).</p>
+<p><strong>Utilitaires domaine purs partagés</strong> : trois familles d'utilitaires sans
+dépendance métier, réutilisables par tout satellite d'étude :</p>
+<ul>
+<li><code>ZColorPalette</code>/<code>ZKeyHash</code>/<code>zFnv1a32</code> : registre borné + repli + remap
+déterministe de <code>colorKey</code> (zéro <code>Color</code> — la résolution <code>colorKey → Color</code> est injectée côté <code>zcrud_core</code>, <code>ZcrudScope.colorKeyResolver</code>) ;</li>
+<li><code>ZUnorderedPlacement</code>/<code>applyOrder&lt;T&gt;</code> : tri stable à ordre personnel
+partiel ;</li>
+<li><code>normalizeTagTitle</code>/<code>dedupeByNormalizedTitle&lt;T&gt;</code> : normalisation et
+dédoublonnage de titre de tag.</li>
+</ul>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/</code>.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZApproachingExam">
+  <span class="name "><a href="../zcrud_study_kernel/ZApproachingExam-class.html">ZApproachingExam</a></span> 
+
+</dt>
+<dd>
+  Port neutre pur-Dart d'un examen consommé par l'agrégation quotidienne
+(invariant AD-1).
+</dd>
+
+          <dt id="ZCascadeEdge">
+  <span class="name "><a href="../zcrud_study_kernel/ZCascadeEdge-class.html">ZCascadeEdge</a></span> 
+
+</dt>
+<dd>
+  Arête déclarative d'une relation de cascade <code>parentKind → childKind</code>.
+</dd>
+
+          <dt id="ZCascadeRegistry">
+  <span class="name "><a href="../zcrud_study_kernel/ZCascadeRegistry-class.html">ZCascadeRegistry</a></span> 
+
+</dt>
+<dd>
+  Registre immuable des arêtes de cascade, indexé par <code>parentKind</code>.
+</dd>
+
+          <dt id="ZColorPalette">
+  <span class="name "><a href="../zcrud_study_kernel/ZColorPalette-class.html">ZColorPalette</a></span> 
+
+</dt>
+<dd>
+  Registre borné et ordonné de <code>colorKey</code> (<code>String</code>) + remap déterministe
+d'une clé inconnue. Zéro couleur : le kernel ne porte que des clés
+sémantiques <code>String</code> — la résolution concrète <code>colorKey → Color</code> vit dans
+<code>zcrud_core</code> (<code>ZcrudScope.colorKeyResolver</code>).
+</dd>
+
+          <dt id="ZDailyStudyTask">
+  <span class="name "><a href="../zcrud_study_kernel/ZDailyStudyTask-class.html">ZDailyStudyTask</a></span> 
+
+</dt>
+<dd>
+  Tâche quotidienne d'étude — famille ouverte (invariant AD-4).
+</dd>
+
+          <dt id="ZDueCardsTask">
+  <span class="name "><a href="../zcrud_study_kernel/ZDueCardsTask-class.html">ZDueCardsTask</a></span> 
+
+</dt>
+<dd>
+  Ligne « cartes dues » — présente ssi <code>count &gt; 0</code>, toujours en tête de
+l'agrégation. Immuable, <code>==</code>/<code>hashCode</code> de valeur (clé de rebuild
+stable).
+</dd>
+
+          <dt id="ZExamTask">
+  <span class="name "><a href="../zcrud_study_kernel/ZExamTask-class.html">ZExamTask</a></span> 
+
+</dt>
+<dd>
+  Ligne « examen approchant » — un par examen dont <code>isApproaching(now)</code> est
+vrai, triés par date d'échéance croissante, après la ligne dues.
+Immuable, <code>==</code>/<code>hashCode</code> de valeur (sur <a href="../zcrud_study_kernel/ZExamTask/exam.html">exam</a> + <a href="../zcrud_study_kernel/ZExamTask/daysUntil.html">daysUntil</a>).
+</dd>
+
+          <dt id="ZFlashcardTag">
+  <span class="name "><a href="../zcrud_study_kernel/ZFlashcardTag-class.html">ZFlashcardTag</a></span> 
+
+</dt>
+<dd>
+  Tag de flashcard canonique immuable (données + <code>copyWith</code> ; identité
+opaque).
+</dd>
+
+          <dt id="ZFolderContentsOrder">
+  <span class="name "><a href="../zcrud_study_kernel/ZFolderContentsOrder-class.html">ZFolderContentsOrder</a></span> 
+
+</dt>
+<dd>
+  Ordre de contenu personnel d'un dossier — clé par <a href="../zcrud_study_kernel/ZFolderContentsOrder/folderId.html">folderId</a> (pas un
+<code>ZEntity</code>).
+</dd>
+
+          <dt id="ZSessionCandidate">
+  <span class="name "><a href="../zcrud_study_kernel/ZSessionCandidate-class.html">ZSessionCandidate</a></span> 
+
+</dt>
+<dd>
+  Candidat neutre à la sélection de session (implémenté par les entités
+d'étude des satellites).
+</dd>
+
+          <dt id="ZStreakAdvance">
+  <span class="name "><a href="../zcrud_study_kernel/ZStreakAdvance-class.html">ZStreakAdvance</a></span> 
+
+</dt>
+<dd>
+  Résultat d'un avancement : le <a href="../zcrud_study_kernel/ZStreakAdvance/streak.html">streak</a> résultant + l'<a href="../zcrud_study_kernel/ZStreakAdvance/outcome.html">outcome</a> qui
+explique ce qui s'est passé (l'hôte s'en sert pour décider d'une
+notification).
+</dd>
+
+          <dt id="ZStudyDocumentRef">
+  <span class="name "><a href="../zcrud_study_kernel/ZStudyDocumentRef-class.html">ZStudyDocumentRef</a></span> 
+
+</dt>
+<dd>
+  Référence neutre d'un document d'étude (implémentée côté satellite — par
+exemple une entité de document, un adaptateur d'hôte, ou tout autre
+porteur).
+</dd>
+
+          <dt id="ZStudyFolder">
+  <span class="name "><a href="../zcrud_study_kernel/ZStudyFolder-class.html">ZStudyFolder</a></span> 
+
+</dt>
+<dd>
+  Dossier d'organisation canonique immuable (données + <code>copyWith</code> ;
+invariants au repository).
+</dd>
+
+          <dt id="ZStudyNoteRef">
+  <span class="name "><a href="../zcrud_study_kernel/ZStudyNoteRef-class.html">ZStudyNoteRef</a></span> 
+
+</dt>
+<dd>
+  Référence neutre d'une note d'étude (implémentée côté satellite — par
+exemple une entité de note, un adaptateur d'hôte, ou tout autre porteur).
+</dd>
+
+          <dt id="ZStudyPodcast">
+  <span class="name "><a href="../zcrud_study_kernel/ZStudyPodcast-class.html">ZStudyPodcast</a></span> 
+
+</dt>
+<dd>
+  Référence <em>content-addressed</em> d'un podcast généré — contenu personnel
+top-level à identité propre (invariant AD-14).
+</dd>
+
+          <dt id="ZStudyRepository">
+  <span class="name "><a href="../zcrud_study_kernel/ZStudyRepository-class.html">ZStudyRepository</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Contrat abstrait (port) d'un dépôt d'agrégat d'étude <code>T</code>, offline-first
+et synchronisable, doté d'un hook de validation métier par override
+garanti d'être exécuté avant toute persistance.
+</dd>
+
+          <dt id="ZStudySessionConfig">
+  <span class="name "><a href="../zcrud_study_kernel/ZStudySessionConfig-class.html">ZStudySessionConfig</a></span> 
+
+</dt>
+<dd>
+  Filtres persistés d'une session d'étude (config de valeur immuable).
+</dd>
+
+          <dt id="ZStudySessionResult">
+  <span class="name "><a href="../zcrud_study_kernel/ZStudySessionResult-class.html">ZStudySessionResult</a></span> 
+
+</dt>
+<dd>
+  Résultat d'une session d'étude — value-object immuable.
+</dd>
+
+          <dt id="ZStudySessionSelector">
+  <span class="name "><a href="../zcrud_study_kernel/ZStudySessionSelector-class.html">ZStudySessionSelector</a></span> 
+
+</dt>
+<dd>
+  Sélecteur pur de candidats de session (enveloppe une
+<a href="../zcrud_study_kernel/ZStudySessionConfig-class.html">ZStudySessionConfig</a>).
+</dd>
+
+          <dt id="ZStudyStreak">
+  <span class="name "><a href="../zcrud_study_kernel/ZStudyStreak-class.html">ZStudyStreak</a></span> 
+
+</dt>
+<dd>
+  Série d'assiduité (« flamme ») — compteur de jours civils consécutifs
+portant au moins une répétition notée.
+</dd>
+
+          <dt id="ZSuggestedTag">
+  <span class="name "><a href="../zcrud_study_kernel/ZSuggestedTag-class.html">ZSuggestedTag</a></span> 
+
+</dt>
+<dd>
+  Proposition de tag par un port IA (value object immuable).
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="ZPodcastFreshness">
+  <span class="name "><a href="../zcrud_study_kernel/ZPodcastFreshness.html">ZPodcastFreshness</a></span> 
+
+</dt>
+<dd>
+  Fraîcheur du cache d'un podcast au regard de sa source courante.
+</dd>
+
+          <dt id="ZPodcastMode">
+  <span class="name "><a href="../zcrud_study_kernel/ZPodcastMode.html">ZPodcastMode</a></span> 
+
+</dt>
+<dd>
+  Mode de génération d'un podcast (voix unique vs dialogue).
+</dd>
+
+          <dt id="ZPodcastSourceKind">
+  <span class="name "><a href="../zcrud_study_kernel/ZPodcastSourceKind.html">ZPodcastSourceKind</a></span> 
+
+</dt>
+<dd>
+  Type de source à partir de laquelle un podcast est synthétisé.
+</dd>
+
+          <dt id="ZPodcastStatus">
+  <span class="name "><a href="../zcrud_study_kernel/ZPodcastStatus.html">ZPodcastStatus</a></span> 
+
+</dt>
+<dd>
+  État du cycle de vie d'un <a href="../zcrud_study_kernel/ZStudyPodcast-class.html">ZStudyPodcast</a> (généré → prêt / échec /
+obsolète).
+</dd>
+
+          <dt id="ZReviewMode">
+  <span class="name "><a href="../zcrud_study_kernel/ZReviewMode.html">ZReviewMode</a></span> 
+
+</dt>
+<dd>
+  Modes de session d'étude supportés.
+</dd>
+
+          <dt id="ZStreakOutcome">
+  <span class="name "><a href="../zcrud_study_kernel/ZStreakOutcome.html">ZStreakOutcome</a></span> 
+
+</dt>
+<dd>
+  Issue d'un <a href="../zcrud_study_kernel/zAdvanceStreak.html">zAdvanceStreak</a> — un enum, jamais un <code>bool</code> : un simple
+booléen ne saurait pas dire <em>pourquoi</em> rien n'a bougé.
+</dd>
+
+          <dt id="ZUnorderedPlacement">
+  <span class="name "><a href="../zcrud_study_kernel/ZUnorderedPlacement.html">ZUnorderedPlacement</a></span> 
+
+</dt>
+<dd>
+  Où placer les items dont l'id est absent de l'ordre personnel.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+    <section class="summary offset-anchor" id="extensions">
+      <h2>Extensions</h2>
+      <dl>
+          <dt id="ZStudyStreakZcrud">
+  <span class="name "><a href="../zcrud_study_kernel/ZStudyStreakZcrud.html">ZStudyStreakZcrud</a></span>
+  on <a href="../zcrud_study_kernel/ZStudyStreak-class.html">ZStudyStreak</a>
+  
+
+</dt>
+<dd>
+  
+</dd>
+
+          <dt id="ZSuggestedTagZcrud">
+  <span class="name "><a href="../zcrud_study_kernel/ZSuggestedTagZcrud.html">ZSuggestedTagZcrud</a></span>
+  on <a href="../zcrud_study_kernel/ZSuggestedTag-class.html">ZSuggestedTag</a>
+  
+
+</dt>
+<dd>
+  
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="constants">
+      <h2>Constants</h2>
+      <dl class="properties">
+          <dt id="$ZFlashcardTagFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZFlashcardTagFieldSpecs-constant.html">$ZFlashcardTagFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZFlashcardTagPersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZFlashcardTagPersistedKeys-constant.html">$ZFlashcardTagPersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZFlashcardTag.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZFlashcardTagTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZFlashcardTagTimestampFields-constant.html">$ZFlashcardTagTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="$ZFolderContentsOrderFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZFolderContentsOrderFieldSpecs-constant.html">$ZFolderContentsOrderFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZFolderContentsOrderPersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZFolderContentsOrderPersistedKeys-constant.html">$ZFolderContentsOrderPersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZFolderContentsOrder.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZFolderContentsOrderTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZFolderContentsOrderTimestampFields-constant.html">$ZFolderContentsOrderTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="$ZStudyFolderFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZStudyFolderFieldSpecs-constant.html">$ZStudyFolderFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZStudyFolderPersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZStudyFolderPersistedKeys-constant.html">$ZStudyFolderPersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZStudyFolder.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZStudyFolderTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZStudyFolderTimestampFields-constant.html">$ZStudyFolderTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="$ZStudyPodcastFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZStudyPodcastFieldSpecs-constant.html">$ZStudyPodcastFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZStudyPodcastPersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZStudyPodcastPersistedKeys-constant.html">$ZStudyPodcastPersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZStudyPodcast.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZStudyPodcastTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZStudyPodcastTimestampFields-constant.html">$ZStudyPodcastTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="$ZStudySessionConfigFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZStudySessionConfigFieldSpecs-constant.html">$ZStudySessionConfigFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZStudySessionConfigPersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZStudySessionConfigPersistedKeys-constant.html">$ZStudySessionConfigPersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZStudySessionConfig.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZStudySessionConfigTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZStudySessionConfigTimestampFields-constant.html">$ZStudySessionConfigTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="$ZStudyStreakFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZStudyStreakFieldSpecs-constant.html">$ZStudyStreakFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZStudyStreakPersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZStudyStreakPersistedKeys-constant.html">$ZStudyStreakPersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZStudyStreak.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZStudyStreakTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZStudyStreakTimestampFields-constant.html">$ZStudyStreakTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="$ZSuggestedTagFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZSuggestedTagFieldSpecs-constant.html">$ZSuggestedTagFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZSuggestedTagPersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZSuggestedTagPersistedKeys-constant.html">$ZSuggestedTagPersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZSuggestedTag.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZSuggestedTagTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/$ZSuggestedTagTimestampFields-constant.html">$ZSuggestedTagTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="kSectionOrdersKey" class="constant">
+    <span class="name "><a href="../zcrud_study_kernel/kSectionOrdersKey-constant.html">kSectionOrdersKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé persistée du canal hors-codegen <a href="../zcrud_study_kernel/ZFolderContentsOrder/sectionOrders.html">ZFolderContentsOrder.sectionOrders</a>.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="aggregateDailyStudyTasks" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/aggregateDailyStudyTasks.html">aggregateDailyStudyTasks</a></span><span class="signature">(<wbr>{<span class="parameter" id="aggregateDailyStudyTasks-param-dueCount"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">dueCount</span>, </span><span class="parameter" id="aggregateDailyStudyTasks-param-exams"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study_kernel/ZApproachingExam-class.html">ZApproachingExam</a></span>&gt;</span></span> <span class="parameter-name">exams</span>, </span><span class="parameter" id="aggregateDailyStudyTasks-param-now"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">now</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study_kernel/ZDailyStudyTask-class.html">ZDailyStudyTask</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Combine cartes dues + examens approchants en une liste ordonnée de
+tâches du jour. Pure, totale, déterministe — jamais de <code>throw</code> (invariant
+AD-10).
+  
+
+</dd>
+
+          <dt id="applyOrder" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/applyOrder.html">applyOrder</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="applyOrder-param-items"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">items</span>, </span><span class="parameter" id="applyOrder-param-order"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">order</span>, {</span><span class="parameter" id="applyOrder-param-idOf"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">idOf</span>(<span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span></span>), </span><span class="parameter" id="applyOrder-param-unordered"><span class="type-annotation"><a href="../zcrud_study_kernel/ZUnorderedPlacement.html">ZUnorderedPlacement</a></span> <span class="parameter-name">unordered</span> = <span class="default-value">ZUnorderedPlacement.end</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Applique <code>order</code> (liste d'ids, partielle possible) à <code>items</code> :
+  
+
+</dd>
+
+          <dt id="dedupeByNormalizedTitle" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/dedupeByNormalizedTitle.html">dedupeByNormalizedTitle</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="dedupeByNormalizedTitle-param-items"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">items</span>, {</span><span class="parameter" id="dedupeByNormalizedTitle-param-titleOf"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">titleOf</span>(<span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span></span>)</span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Dédoublonne <code>items</code> par titre normalisé (<a href="../zcrud_study_kernel/normalizeTagTitle.html">normalizeTagTitle</a>) : conserve
+la première occurrence de chaque titre normalisé, dans l'ordre d'entrée
+(tri stable implicite — un seul passage, jamais de réordonnancement).
+  
+
+</dd>
+
+          <dt id="normalizeTagTitle" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/normalizeTagTitle.html">normalizeTagTitle</a></span><span class="signature">(<wbr><span class="parameter" id="normalizeTagTitle-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Normalise <code>raw</code> pour comparaison : <code>trim()</code> + collapse de toute séquence
+d'espaces (<code>\s+</code>, y compris NBSP/espaces Unicode couverts par <code>\s</code> en Dart)
+vers un espace unique + <code>toLowerCase()</code>.
+  
+
+</dd>
+
+          <dt id="orphanTagIds" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/orphanTagIds.html">orphanTagIds</a></span><span class="signature">(<wbr>{<span class="parameter" id="orphanTagIds-param-referencedTagIds"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">referencedTagIds</span>, </span><span class="parameter" id="orphanTagIds-param-existingTagIds"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">existingTagIds</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Sous-ensemble des <code>referencedTagIds</code> qui ne correspondent à <strong>aucun</strong> tag
+de <code>existingTagIds</code> — les références orphelines.
+  
+
+</dd>
+
+          <dt id="podcastFreshness" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/podcastFreshness.html">podcastFreshness</a></span><span class="signature">(<wbr>{<span class="parameter" id="podcastFreshness-param-storedHash"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">storedHash</span>, </span><span class="parameter" id="podcastFreshness-param-currentSourceHash"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">currentSourceHash</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_study_kernel/ZPodcastFreshness.html">ZPodcastFreshness</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Dérive purement la <a href="../zcrud_study_kernel/ZPodcastFreshness.html">ZPodcastFreshness</a> de la comparaison de deux
+empreintes opaques — aucun calcul de hash, aucune horloge.
+  
+
+</dd>
+
+          <dt id="registerZFlashcardTag" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/registerZFlashcardTag.html">registerZFlashcardTag</a></span><span class="signature">(<wbr><span class="parameter" id="registerZFlashcardTag-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZFlashcardTag</code> (kind "flashcard_tag") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+          <dt id="registerZFolderContentsOrder" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/registerZFolderContentsOrder.html">registerZFolderContentsOrder</a></span><span class="signature">(<wbr><span class="parameter" id="registerZFolderContentsOrder-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZFolderContentsOrder</code> (kind "folder_contents_order") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+          <dt id="registerZStudyFolder" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/registerZStudyFolder.html">registerZStudyFolder</a></span><span class="signature">(<wbr><span class="parameter" id="registerZStudyFolder-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZStudyFolder</code> (kind "study_folder") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+          <dt id="registerZStudyPodcast" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/registerZStudyPodcast.html">registerZStudyPodcast</a></span><span class="signature">(<wbr><span class="parameter" id="registerZStudyPodcast-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZStudyPodcast</code> (kind "study_podcast") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+          <dt id="registerZStudySessionConfig" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/registerZStudySessionConfig.html">registerZStudySessionConfig</a></span><span class="signature">(<wbr><span class="parameter" id="registerZStudySessionConfig-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZStudySessionConfig</code> (kind "study_session_config") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+          <dt id="registerZStudyStreak" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/registerZStudyStreak.html">registerZStudyStreak</a></span><span class="signature">(<wbr><span class="parameter" id="registerZStudyStreak-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZStudyStreak</code> (kind "study_streak") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+          <dt id="registerZSuggestedTag" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/registerZSuggestedTag.html">registerZSuggestedTag</a></span><span class="signature">(<wbr><span class="parameter" id="registerZSuggestedTag-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZSuggestedTag</code> (kind "suggested_tag") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+          <dt id="remapColorKey" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/remapColorKey.html">remapColorKey</a></span><span class="signature">(<wbr>{<span class="parameter" id="remapColorKey-param-palette"><span>required</span> <span class="type-annotation"><a href="../zcrud_study_kernel/ZColorPalette-class.html">ZColorPalette</a></span> <span class="parameter-name">palette</span>, </span><span class="parameter" id="remapColorKey-param-rawColorKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">rawColorKey</span>, </span><span class="parameter" id="remapColorKey-param-seedTitle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">seedTitle</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Résout la <code>colorKey</code> affichable d'un tag contre une palette injectée.
+  
+
+</dd>
+
+          <dt id="validatePlacement" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/validatePlacement.html">validatePlacement</a></span><span class="signature">(<wbr>{<span class="parameter" id="validatePlacement-param-parentId"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">parentId</span>, </span><span class="parameter" id="validatePlacement-param-parent"><span class="type-annotation"><a href="../zcrud_study_kernel/ZStudyFolder-class.html">ZStudyFolder</a>?</span> <span class="parameter-name">parent</span>, </span><span class="parameter" id="validatePlacement-param-selfId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">selfId</span></span>})
+    <span class="returntype parameter">&#8594; ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/dartz/0.10.1/dartz/Unit-class.html">Unit</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Valide le placement d'un dossier dans la hiérarchie 2 niveaux max.
+  
+
+</dd>
+
+          <dt id="zAdvanceStreak" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/zAdvanceStreak.html">zAdvanceStreak</a></span><span class="signature">(<wbr><span class="parameter" id="zAdvanceStreak-param-current"><span class="type-annotation"><a href="../zcrud_study_kernel/ZStudyStreak-class.html">ZStudyStreak</a></span> <span class="parameter-name">current</span>, {</span><span class="parameter" id="zAdvanceStreak-param-at"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">at</span>, </span><span class="parameter" id="zAdvanceStreak-param-mode"><span>required</span> <span class="type-annotation"><a href="../zcrud_study_kernel/ZReviewMode.html">ZReviewMode</a></span> <span class="parameter-name">mode</span>, </span><span class="parameter" id="zAdvanceStreak-param-civilDayOf"><span class="type-annotation"><a href="../zcrud_study_kernel/ZCivilDayOf.html">ZCivilDayOf</a></span> <span class="parameter-name">civilDayOf</span> = <span class="default-value">zLocalCivilDay</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_study_kernel/ZStreakAdvance-class.html">ZStreakAdvance</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Fait avancer la flamme d'assiduité — fonction pure.
+  
+
+</dd>
+
+          <dt id="zCivilDayNumber" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/zCivilDayNumber.html">zCivilDayNumber</a></span><span class="signature">(<wbr><span class="parameter" id="zCivilDayNumber-param-year"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">year</span>, </span><span class="parameter" id="zCivilDayNumber-param-month"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">month</span>, </span><span class="parameter" id="zCivilDayNumber-param-day"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">day</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Numéro de jour civil (jours depuis l'époque civile 1970-01-01) — pure
+arithmétique entière, algorithme <em>days_from_civil</em> de Howard Hinnant.
+  
+
+</dd>
+
+          <dt id="zFnv1a32" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/zFnv1a32.html">zFnv1a32</a></span><span class="signature">(<wbr><span class="parameter" id="zFnv1a32-param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">key</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  FNV-1a 32 bits sur les octets UTF-8 de <code>key</code> — déterministe entre
+exécutions, appareils et <strong>plateforme web</strong>.
+  
+
+</dd>
+
+          <dt id="zFormatCivilDay" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/zFormatCivilDay.html">zFormatCivilDay</a></span><span class="signature">(<wbr><span class="parameter" id="zFormatCivilDay-param-year"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">year</span>, </span><span class="parameter" id="zFormatCivilDay-param-month"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">month</span>, </span><span class="parameter" id="zFormatCivilDay-param-day"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">day</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Formate un triplet civil en <code>yyyy-MM-dd</code> (zéro-padding strict).
+  
+
+</dd>
+
+          <dt id="zIsCivilDay" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/zIsCivilDay.html">zIsCivilDay</a></span><span class="signature">(<wbr><span class="parameter" id="zIsCivilDay-param-day"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">day</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>day</code> est-il un jour civil lisible (<code>yyyy-MM-dd</code>, date réellement
+existante) ?
+  
+
+</dd>
+
+          <dt id="zIsGradedMode" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/zIsGradedMode.html">zIsGradedMode</a></span><span class="signature">(<wbr><span class="parameter" id="zIsGradedMode-param-mode"><span class="type-annotation"><a href="../zcrud_study_kernel/ZReviewMode.html">ZReviewMode</a></span> <span class="parameter-name">mode</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le mode <code>mode</code> correspond-il à une répétition notée (⇒ fait avancer la
+flamme) ? Voir <code>_gradedModes</code> pour la règle et son périmètre.
+  
+
+</dd>
+
+          <dt id="zLocalCivilDay" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/zLocalCivilDay.html">zLocalCivilDay</a></span><span class="signature">(<wbr><span class="parameter" id="zLocalCivilDay-param-at"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">at</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Jour civil local de <code>at</code>, au format ISO-8601 <code>yyyy-MM-dd</code> (défaut de
+<a href="../zcrud_study_kernel/ZCivilDayOf.html">ZCivilDayOf</a>).
+  
+
+</dd>
+
+          <dt id="zParseCivilDayNumber" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/zParseCivilDayNumber.html">zParseCivilDayNumber</a></span><span class="signature">(<wbr><span class="parameter" id="zParseCivilDayNumber-param-day"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">day</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Parse un jour civil <code>yyyy-MM-dd</code> en numéro de jour civil, ou <code>null</code> si
+illisible (jamais de <code>throw</code> — invariant AD-10).
+  
+
+</dd>
+
+          <dt id="zSectionKey" class="callable">
+  <span class="name"><a href="../zcrud_study_kernel/zSectionKey.html">zSectionKey</a></span><span class="signature">(<wbr>{<span class="parameter" id="zSectionKey-param-contentType"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">contentType</span>, </span><span class="parameter" id="zSectionKey-param-subfolderId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">subfolderId</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Compose la clé canonique de la section <code>(contentType, subfolderId)</code>.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZCivilDayOf" class="callable">
+    <span class="name"><a href="../zcrud_study_kernel/ZCivilDayOf.html">ZCivilDayOf</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="zLocalCivilDay-param-at"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">at</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Dérive le jour civil (<code>yyyy-MM-dd</code>) d'un instant — le seul point de
+dérivation instant → jour.
+    
+
+  </dd>
+
+          
+  <dt id="ZFlashcardTagExtensionParser" class="callable">
+    <span class="name"><a href="../zcrud_study_kernel/ZFlashcardTagExtensionParser.html">ZFlashcardTagExtensionParser</a></span><span class="signature">
+      <span class="returntype parameter">= ZExtension? Function<span class="signature">(<span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Reconstruit une <code>ZExtension</code> concrète depuis sa map JSON, ou <code>null</code>.
+    
+
+  </dd>
+
+          
+  <dt id="ZFolderContentsOrderExtensionParser" class="callable">
+    <span class="name"><a href="../zcrud_study_kernel/ZFolderContentsOrderExtensionParser.html">ZFolderContentsOrderExtensionParser</a></span><span class="signature">
+      <span class="returntype parameter">= ZExtension? Function<span class="signature">(<span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Reconstruit une <code>ZExtension</code> concrète depuis sa map JSON, ou <code>null</code>
+(invariant AD-4).
+    
+
+  </dd>
+
+          
+  <dt id="ZFolderExtensionParser" class="callable">
+    <span class="name"><a href="../zcrud_study_kernel/ZFolderExtensionParser.html">ZFolderExtensionParser</a></span><span class="signature">
+      <span class="returntype parameter">= ZExtension? Function<span class="signature">(<span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Reconstruit une <code>ZExtension</code> concrète depuis sa map JSON, ou <code>null</code>.
+    
+
+  </dd>
+
+          
+  <dt id="ZKeyHash" class="callable">
+    <span class="name"><a href="../zcrud_study_kernel/ZKeyHash.html">ZKeyHash</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a> Function<span class="signature">(<span class="parameter" id="zFnv1a32-param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">key</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Signature d'un algorithme de hash injectable pour
+<a href="../zcrud_study_kernel/ZColorPalette/resolveKey.html">ZColorPalette.resolveKey</a> (invariant AD-4). Défaut : <a href="../zcrud_study_kernel/zFnv1a32.html">zFnv1a32</a>. Permet
+à une application de substituer un algorithme sans faire dépendre le
+kernel d'un paquet cryptographique.
+    
+
+  </dd>
+
+          
+  <dt id="ZSessionConfigExtensionParser" class="callable">
+    <span class="name"><a href="../zcrud_study_kernel/ZSessionConfigExtensionParser.html">ZSessionConfigExtensionParser</a></span><span class="signature">
+      <span class="returntype parameter">= ZExtension? Function<span class="signature">(<span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Reconstruit une <code>ZExtension</code> concrète depuis sa map JSON, ou <code>null</code>.
+    
+
+  </dd>
+
+          
+  <dt id="ZStudyPodcastExtensionParser" class="callable">
+    <span class="name"><a href="../zcrud_study_kernel/ZStudyPodcastExtensionParser.html">ZStudyPodcastExtensionParser</a></span><span class="signature">
+      <span class="returntype parameter">= ZExtension? Function<span class="signature">(<span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Reconstruit une <code>ZExtension</code> concrète depuis sa map JSON, ou <code>null</code>
+(invariant AD-4).
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study_kernel</a></li>
+    <li class="self-crumb">zcrud_study_kernel.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_study_kernel</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_study_kernel/">zcrud_study_kernel</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_study_kernel library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study_kernel
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

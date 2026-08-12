@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the registerZcrudFormFields function from the zcrud_get library, for the Dart programming language.">
+  <title>registerZcrudFormFields function - zcrud_get library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_get</a></li>
+    <li><a href="../zcrud_get/">zcrud_get.dart</a></li>
+    <li class="self-crumb">registerZcrudFormFields function</li>
+  </ol>
+  <div class="self-name">registerZcrudFormFields</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_get&#47;zcrud_get-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">registerZcrudFormFields</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype">void</span>
+<span class="name ">registerZcrudFormFields</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="registerZcrudFormFields-param-registry"><span class="type-annotation">ZWidgetRegistry</span> <span class="parameter-name">registry</span>, {</span></li>
+<li><span class="parameter" id="registerZcrudFormFields-param-richTextCodec"><span class="type-annotation">ZCodec?</span> <span class="parameter-name">richTextCodec</span>, </span></li>
+<li><span class="parameter" id="registerZcrudFormFields-param-countryCatalog"><span class="type-annotation">ZCountryCatalog?</span> <span class="parameter-name">countryCatalog</span>, </span></li>
+<li><span class="parameter" id="registerZcrudFormFields-param-subdivisionCatalog"><span class="type-annotation">ZSubdivisionCatalog?</span> <span class="parameter-name">subdivisionCatalog</span>, </span></li>
+<li><span class="parameter" id="registerZcrudFormFields-param-placeSearch"><span class="type-annotation">ZPlaceSearchProvider?</span> <span class="parameter-name">placeSearch</span>, </span></li>
+<li><span class="parameter" id="registerZcrudFormFields-param-geoAdapterFactory"><span class="type-annotation">ZMapAdapterFactory?</span> <span class="parameter-name">geoAdapterFactory</span>, </span></li>
+<li><span class="parameter" id="registerZcrudFormFields-param-wireGeoArea"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">wireGeoArea</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="registerZcrudFormFields-param-additionalRegistrars"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">void Function<span class="signature">(<span class="parameter" id="param-"><span class="type-annotation">ZWidgetRegistry</span></span>)</span></span>&gt;</span></span> <span class="parameter-name">additionalRegistrars</span> = <span class="default-value">const &lt;void Function(ZWidgetRegistry)&gt;[]</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Enrôle en UN point les widgets d'édition des satellites (markdown, intl,
+geo) dans le <code>registry</code> <strong>injecté</strong> (invariant AD-4).</p>
+<p>Tous les paramètres de composition sont optionnels (défauts sûrs) :</p>
+<ul>
+<li><code>richTextCodec</code> — format persisté partagé par la voie markdown (défaut
+<code>ZDeltaCodec</code> côté <code>ZMarkdownField</code>) ;</li>
+<li><code>countryCatalog</code> — catalogue pays partagé par <code>phoneNumber</code>/<code>country</code>/
+<code>address</code> (défaut <code>sharedDefaultCountryCatalog()</code>) ;</li>
+<li><code>subdivisionCatalog</code> — subdivisions pour le champ <code>address</code> ;</li>
+<li><code>placeSearch</code> — seam d'autocomplétion d'adresse (<code>addressSearchField</code>) ;</li>
+<li><code>geoAdapterFactory</code> — fabrique de carte du champ <code>location</code> (défaut <code>null</code>
+→ repli coordonnées-seules, aucun SDK carte, aucun secret — invariant
+AD-12) ;</li>
+<li><code>wireGeoArea</code> — enrôle aussi le <code>kind</code> <code>geoArea</code> (même patron que
+<code>location</code>) ;</li>
+<li><code>additionalRegistrars</code> — <strong>seam d'extension opt-in</strong> : chaque entrée est
+appelée avec <code>registry</code> <strong>en dernier</strong> (html/media/field_extras futurs, une
+ligne au site d'appel de l'app — sans dépendance du binding).</li>
+</ul>
+<p>Collision de <code>kind</code> (double composition, ou opt-in en conflit avec une voie
+déjà câblée) → <strong><code>throw</code> <code>ZDuplicateRegistrationError</code></strong>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">void registerZcrudFormFields(
+  ZWidgetRegistry registry, {
+  ZCodec? richTextCodec,
+  ZCountryCatalog? countryCatalog,
+  ZSubdivisionCatalog? subdivisionCatalog,
+  ZPlaceSearchProvider? placeSearch,
+  ZMapAdapterFactory? geoAdapterFactory,
+  bool wireGeoArea = false,
+  Iterable&lt;void Function(ZWidgetRegistry)&gt; additionalRegistrars =
+      const &lt;void Function(ZWidgetRegistry)&gt;[],
+}) {
+  &#47;&#47; Voie rich-text PAR DÉFAUT (markdown&#47;inlineMarkdown&#47;richText — invariant AD-7).
+  registerZMarkdownFields(registry, codec: richTextCodec);
+
+  &#47;&#47; intl : phone&#47;country enrôlés par `.builder()` (les satellites n&#39;exposent
+  &#47;&#47; PAS de `registerZ&lt;Pkg&gt;Fields` pour ces kinds — écart connu, conforme :
+  &#47;&#47; le point de composition est le binding). address a SON registrar dédié.
+  registry.register(
+    &#39;phoneNumber&#39;,
+    ZPhoneFieldWidget.builder(catalog: countryCatalog),
+  );
+  registry.register(
+    &#39;country&#39;,
+    ZCountryFieldWidget.builder(catalog: countryCatalog),
+  );
+  registerZAddressFieldWidgets(
+    registry,
+    catalog: countryCatalog,
+    subdivisionCatalog: subdivisionCatalog,
+    placeSearch: placeSearch,
+  );
+
+  &#47;&#47; geo : `location` (+ `geoArea` opt-in). CORE OUT=0 — le satellite reste isolé.
+  registry.register(
+    &#39;location&#39;,
+    ZGeoFieldWidget.builder(adapterFactory: geoAdapterFactory),
+  );
+  if (wireGeoArea) {
+    registry.register(
+      &#39;geoArea&#39;,
+      ZGeoFieldWidget.builder(adapterFactory: geoAdapterFactory),
+    );
+  }
+
+  &#47;&#47; Seam opt-in EN DERNIER : toute collision (ex. html revendiquant un kind déjà
+  &#47;&#47; pris, ou double html) throw de façon déterministe.
+  for (final registrar in additionalRegistrars) {
+    registrar(registry);
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_get</a></li>
+    <li><a href="../zcrud_get/">zcrud_get</a></li>
+    <li class="self-crumb">registerZcrudFormFields function</li>
+</ol>
+
+    <h5>zcrud_get library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_get
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

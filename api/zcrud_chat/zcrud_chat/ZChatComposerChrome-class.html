@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZChatComposerChrome class from the zcrud_chat library, for the Dart programming language.">
+  <title>ZChatComposerChrome class - zcrud_chat library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat.dart</a></li>
+    <li class="self-crumb">ZChatComposerChrome class</li>
+  </ol>
+  <div class="self-name">ZChatComposerChrome</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat&#47;zcrud_chat-library-sidebar.html"
+    data-below-sidebar="zcrud_chat&#47;ZChatComposerChrome-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZChatComposerChrome</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Réglage partiel du chrome du composer : tout champ <code>null</code> délègue au
+niveau suivant (jeton s'il existe, puis référence).</p>
+<p>Strictement additif et immuable — même patron que <code>ZChatNotebookSkin</code>.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://api.flutter.dev/flutter/meta/immutable-constant.html">immutable</a></li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZChatComposerChrome.new" class="callable">
+          <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/ZChatComposerChrome.html">ZChatComposerChrome</a></span><span class="signature">({<span class="parameter" id="param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span> <span class="parameter-name">padding</span>, </span><span class="parameter" id="param-containerRadius"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span> <span class="parameter-name">containerRadius</span>, </span><span class="parameter" id="param-fieldContentPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span> <span class="parameter-name">fieldContentPadding</span>, </span><span class="parameter" id="param-badgeRadius"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span> <span class="parameter-name">badgeRadius</span>, </span><span class="parameter" id="param-borderWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">borderWidth</span>, </span><span class="parameter" id="param-sendTargetSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">sendTargetSize</span>, </span><span class="parameter" id="param-sendScaleIdle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">sendScaleIdle</span>, </span><span class="parameter" id="param-sendScaleActive"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">sendScaleActive</span>, </span><span class="parameter" id="param-sendScaleDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a>?</span> <span class="parameter-name">sendScaleDuration</span>, </span><span class="parameter" id="param-mobileBreakpoint"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">mobileBreakpoint</span>, </span><span class="parameter" id="param-hintRotationPeriod"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a>?</span> <span class="parameter-name">hintRotationPeriod</span>, </span><span class="parameter" id="param-hintSwitchDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a>?</span> <span class="parameter-name">hintSwitchDuration</span>, </span><span class="parameter" id="param-responseLengthAccents"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatResponseLength</span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span>&gt;</span>?</span> <span class="parameter-name">responseLengthAccents</span></span>})</span>
+        </dt>
+        <dd>
+          Construit un réglage. <code>const ZChatComposerChrome()</code> signifie « la
+référence, telle que mesurée » (aux jetons de l'hôte près).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="badgeRadius" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/badgeRadius.html">badgeRadius</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span>
+  
+
+</dt>
+<dd>
+  Rayon des badges. <code>null</code> ⇒ jeton <code>badgeRadius</code>, puis référence (8).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="borderWidth" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/borderWidth.html">borderWidth</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Épaisseur du filet du conteneur. <code>null</code> signifie jeton
+<code>chatComposerBorderWidth</code>, puis référence (1).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="containerRadius" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/containerRadius.html">containerRadius</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span>
+  
+
+</dt>
+<dd>
+  Rayon du conteneur. <code>null</code> ⇒ jeton <code>radiusM</code>, puis référence (12).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="fieldContentPadding" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/fieldContentPadding.html">fieldContentPadding</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span>
+  
+
+</dt>
+<dd>
+  Marge interne du champ. <code>null</code> ⇒ jeton <code>inputContentPadding</code>, puis
+référence.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="hintRotationPeriod" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/hintRotationPeriod.html">hintRotationPeriod</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a>?</span>
+  
+
+</dt>
+<dd>
+  Période de rotation du placeholder. <code>null</code> ⇒ jeton
+<code>chatComposerHintRotationPeriod</code>, puis référence (4 s).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hintSwitchDuration" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/hintSwitchDuration.html">hintSwitchDuration</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a>?</span>
+  
+
+</dt>
+<dd>
+  Durée du fondu de changement de texte. <code>null</code> ⇒ jeton
+<code>chatComposerHintSwitchDuration</code>, puis référence (350 ms).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="mobileBreakpoint" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/mobileBreakpoint.html">mobileBreakpoint</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Largeur du mode « icône seule ». <code>null</code> ⇒ jeton
+<code>chatComposerMobileBreakpoint</code>, puis référence (400).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="padding" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/padding.html">padding</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span>
+  
+
+</dt>
+<dd>
+  Marge externe. <code>null</code> ⇒ jeton <code>formPadding</code>, puis référence.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="responseLengthAccents" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/responseLengthAccents.html">responseLengthAccents</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatResponseLength</span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Accents des paliers de verbosité, consultés clé par clé : renseigner
+<code>concise</code> seul ne fait pas disparaître les deux autres accents de
+référence. <code>null</code>/clé absente signifie jeton <code>chatResponseLengthAccents</code>
+(indexé par <code>ZChatResponseLength.name</code>), puis référence — cf.
+<code>ZChatComposerReference.responseLengthAccents</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="sendScaleActive" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/sendScaleActive.html">sendScaleActive</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Échelle « saisie non vide ». <code>null</code> ⇒ jeton
+<code>chatComposerSendScaleActive</code>, puis référence (1).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="sendScaleDuration" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/sendScaleDuration.html">sendScaleDuration</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a>?</span>
+  
+
+</dt>
+<dd>
+  Durée de la transition d'échelle. <code>null</code> ⇒ jeton
+<code>chatComposerSendScaleDuration</code>, puis référence (150 ms).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="sendScaleIdle" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/sendScaleIdle.html">sendScaleIdle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Échelle « saisie vide ». <code>null</code> ⇒ jeton <code>chatComposerSendScaleIdle</code>,
+puis référence (0.7).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="sendTargetSize" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerChrome/sendTargetSize.html">sendTargetSize</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Côté de la cible d'envoi. <code>null</code> ⇒ jeton <code>chatComposerSendTargetSize</code>,
+puis référence (48). Toujours <strong>écrêté</strong> à <code>kZChatMinTapTarget</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat</a></li>
+    <li class="self-crumb">ZChatComposerChrome class</li>
+</ol>
+
+    <h5>zcrud_chat library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

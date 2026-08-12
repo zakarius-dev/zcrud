@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zApplyListRequest function from the zcrud_core library, for the Dart programming language.">
+  <title>zApplyListRequest function - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">zApplyListRequest function</li>
+  </ol>
+  <div class="self-name">zApplyListRequest</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zApplyListRequest</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="../zcrud_core/ZListPage-class.html">ZListPage</a></span>
+<span class="name ">zApplyListRequest</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="zApplyListRequest-param-rows"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span>&gt;</span></span> <span class="parameter-name">rows</span>, </span></li>
+<li><span class="parameter" id="zApplyListRequest-param-request"><span class="type-annotation"><a href="../zcrud_core/ZDataRequest-class.html">ZDataRequest</a></span> <span class="parameter-name">request</span>, {</span></li>
+<li><span class="parameter" id="zApplyListRequest-param-schema"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">schema</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Applique un <code>request</code> <strong>entièrement en mémoire</strong> à <code>rows</code> et retourne une
+<a href="../zcrud_core/ZListPage-class.html">ZListPage</a> (filtre → recherche → tri → saut curseur → <code>take(limit)</code> →
+dérivation <code>nextCursor</code>/<code>hasMore</code>).</p>
+<p>La sémantique du curseur (comparaison positionnelle par
+<code>ZCursor.values</code> alignées sur <code>request.sorts</code>, <code>id</code> en départage,
+<code>id: null</code> légitime, ancre introuvable gérée <strong>gracieusement</strong> — page vide
+au-delà de la fin, sans exception) est celle qu'un backend réel doit
+reproduire pour rester interchangeable avec ce repli. Aucune comparaison
+ne lève (AD-10) : un type non comparable retombe sur « ne matche pas »
+(filtre) ou « égal » (tri, stable).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZListPage zApplyListRequest(
+  List&lt;ZListRow&gt; rows,
+  ZDataRequest request, {
+  required List&lt;ZFieldSpec&gt; schema,
+}) {
+  &#47;&#47; (1) Filtres (conjonction) sur les cellules brutes.
+  var result = rows;
+  for (final filter in request.filters) {
+    result = &lt;ZListRow&gt;[
+      for (final row in result)
+        if (_matchesFilter(row, filter)) row,
+    ];
+  }
+  &#47;&#47; (2) Recherche sans accents sur les champs `searchable`.
+  final search = request.search;
+  if (search != null &amp;&amp; zFoldDiacritics(search.trim()).isNotEmpty) {
+    result = &lt;ZListRow&gt;[
+      for (final row in result)
+        if (zMatchesSearch(row, search, schema: schema)) row,
+    ];
+  }
+  &#47;&#47; (3) Tri multi-clés STABLE (direction respectée ; `null` ordonné en dernier
+  &#47;&#47; dans le sens ascendant).
+  result = _sortRows(result, request.sorts);
+  &#47;&#47; (4) Saut curseur : ignore les lignes situées AVANT l&#39;ancre dans l&#39;ordre
+  &#47;&#47; courant. Ancre introuvable → simple position d&#39;ordre, jamais
+  &#47;&#47; d&#39;exception.
+  final cursor = request.startAfter;
+  if (cursor != null) {
+    result = _skipCursor(result, cursor, request.sorts);
+  }
+  &#47;&#47; (5)+(6) Troncature + dérivation du nextCursor : non-null SSI il reste des
+  &#47;&#47; lignes après la page prise.
+  final limit = request.limit;
+  if (limit != null &amp;&amp; result.length &gt; limit) {
+    final page = result.sublist(0, limit);
+    return ZListPage(
+      rows: page,
+      nextCursor: zDeriveCursor(page.last, request.sorts),
+      hasMore: true,
+    );
+  }
+  return ZListPage(rows: result, nextCursor: null, hasMore: false);
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">zApplyListRequest function</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

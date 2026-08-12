@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_menu library API docs, for the Dart programming language.">
+  <title>zcrud_menu library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_menu</a></li>
+    <li class="self-crumb">zcrud_menu.dart</li>
+  </ol>
+  <div class="self-name">zcrud_menu</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_menu&#47;zcrud_menu-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_menu</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p><code>zcrud_menu</code> — menus contextuels à <strong>déclencheur et contenu découplés</strong>.</p>
+<p>L'hôte branche SON package de menus derrière <a href="../zcrud_menu/ZMenuRenderer-class.html">ZMenuRenderer</a> ; sans
+injection, <a href="../zcrud_menu/ZDefaultMenuRenderer-class.html">ZDefaultMenuRenderer</a> (Flutter/Material seul, ZÉRO dépendance
+tierce) reste pleinement fonctionnel.</p>
+<pre class="language-dart"><code class="language-dart">ZActionMenu(
+  trigger: ZMenuTrigger(icon: monGlyphe, semanticLabel: l10n.moreOptions),
+  entries: [
+    ZMenuEntry(id: 'open', label: l10n.open, onSelected: ouvrir),
+    // présente, INERTE, motif annoncé :
+    ZMenuEntry(id: 'edit', label: l10n.edit, disabledReason: l10n.comingSoon),
+    // ni actionnable ni désactivée ⇒ ABSENTE (invariant AD-4) :
+    const ZMenuEntry(id: ZMenuEntryIds.share, label: '—'),
+    // droit refusé ⇒ ABSENTE, sans que l'appelant traduise quoi que ce soit :
+    ZMenuEntry(
+      id: ZMenuEntryIds.delete,
+      label: l10n.delete,
+      permitted: peutSupprimer,
+      onSelected: supprimer,
+    ),
+  ],
+)
+</code></pre>
+<h2 id="une-seule-couture-pour-plusieurs-surfaces">Une seule couture pour plusieurs surfaces</h2>
+<p>Ce package n'est <strong>pas</strong> un menu spécifique à un domaine : aucun type de
+sa surface publique ne nomme un message, une conversation ou une entité
+métier. Il sert indifféremment un item de liste, une carte de contenu,
+une barre d'application ou un message de conversation — parce que c'est
+le même geste (déclencheur + entrées d'action). Un satellite métier qui a
+besoin d'un menu contextuel construit ses entrées en données et délègue à
+<a href="../zcrud_menu/ZActionMenu-class.html">ZActionMenu</a>, plutôt que de reconstruire son propre <code>PopupMenuButton</code>.</p>
+<h2 id="ce-qui-reste-hors-de-cette-couture">Ce qui reste hors de cette couture</h2>
+<p><code>zcrud_core</code> ne peut dépendre d'aucun satellite (invariant AD-1) : un menu
+qui vit dans le cœur (ex. le débordement d'une barre d'actions par lot) ne
+peut donc pas être injecté via ce package sans que la couture soit
+elle-même déplacée dans le cœur (<code>ZcrudScope.menuRenderer</code>).</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZActionMenu">
+  <span class="name "><a href="../zcrud_menu/ZActionMenu-class.html">ZActionMenu</a></span> 
+
+</dt>
+<dd>
+  Menu contextuel à déclencheur et contenu DÉCOUPLÉS.
+</dd>
+
+          <dt id="ZDefaultMenuRenderer">
+  <span class="name "><a href="../zcrud_menu/ZDefaultMenuRenderer-class.html">ZDefaultMenuRenderer</a></span> 
+
+</dt>
+<dd>
+  Repli zéro-dépendance : déclencheur <code>PopupMenuButton</code>, surface Material.
+</dd>
+
+          <dt id="ZMenuEntry">
+  <span class="name "><a href="../zcrud_menu/ZMenuEntry-class.html">ZMenuEntry</a></span> 
+
+</dt>
+<dd>
+  Une entrée de menu — donnée immuable, jamais un widget.
+</dd>
+
+          <dt id="ZMenuEntryIds">
+  <span class="name "><a href="../zcrud_menu/ZMenuEntryIds-class.html">ZMenuEntryIds</a></span> 
+
+</dt>
+<dd>
+  Vocabulaire CANONIQUE des identités d'entrée (<code>ZMenuEntry.id</code>).
+</dd>
+
+          <dt id="ZMenuEntryTile">
+  <span class="name "><a href="../zcrud_menu/ZMenuEntryTile-class.html">ZMenuEntryTile</a></span> 
+
+</dt>
+<dd>
+  Cellule d'entrée de menu : ≥ 48 dp, <code>Semantics</code> correctes, directionnelle,
+sans couleur ni chaîne codée en dur.
+</dd>
+
+          <dt id="ZMenuRenderer">
+  <span class="name "><a href="../zcrud_menu/ZMenuRenderer-class.html">ZMenuRenderer</a></span> 
+
+</dt>
+<dd>
+  Abstraction de rendu d'un menu à partir d'une <a href="../zcrud_menu/ZMenuRequest-class.html">ZMenuRequest</a> neutre.
+</dd>
+
+          <dt id="ZMenuRequest">
+  <span class="name "><a href="../zcrud_menu/ZMenuRequest-class.html">ZMenuRequest</a></span> 
+
+</dt>
+<dd>
+  Requête neutre transmise à un <a href="../zcrud_menu/ZMenuRenderer-class.html">ZMenuRenderer</a>.
+</dd>
+
+          <dt id="ZMenuScope">
+  <span class="name "><a href="../zcrud_menu/ZMenuScope-class.html">ZMenuScope</a></span> 
+
+</dt>
+<dd>
+  Scope d'injection du renderer de menus.
+</dd>
+
+          <dt id="ZMenuTrigger">
+  <span class="name "><a href="../zcrud_menu/ZMenuTrigger-class.html">ZMenuTrigger</a></span> 
+
+</dt>
+<dd>
+  Description immuable du déclencheur d'un menu.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+
+    <section class="summary offset-anchor" id="constants">
+      <h2>Constants</h2>
+      <dl class="properties">
+          <dt id="kZMenuMinTapTarget" class="constant">
+    <span class="name "><a href="../zcrud_menu/kZMenuMinTapTarget-constant.html">kZMenuMinTapTarget</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Cible de taille interactive minimale (invariant AD-13).
+  
+
+</dd>
+
+          <dt id="zFallbackMenuRenderer" class="constant">
+    <span class="name "><a href="../zcrud_menu/zFallbackMenuRenderer-constant.html">zFallbackMenuRenderer</a></span>
+  <span class="signature">&#8594; const <a href="../zcrud_menu/ZMenuRenderer-class.html">ZMenuRenderer</a></span>
+  
+
+</dt>
+<dd>
+  Repli du dépôt : Material/SDK seul, ZÉRO dépendance tierce.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="zResolveMenuRenderer" class="callable">
+  <span class="name"><a href="../zcrud_menu/zResolveMenuRenderer.html">zResolveMenuRenderer</a></span><span class="signature">(<wbr><span class="parameter" id="zResolveMenuRenderer-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zResolveMenuRenderer-param-override"><span class="type-annotation"><a href="../zcrud_menu/ZMenuRenderer-class.html">ZMenuRenderer</a>?</span> <span class="parameter-name">override</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_menu/ZMenuRenderer-class.html">ZMenuRenderer</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Chaîne <strong>totale</strong> : <code>override</code> → <a href="../zcrud_menu/ZMenuScope-class.html">ZMenuScope</a> → <a href="../zcrud_menu/zFallbackMenuRenderer-constant.html">zFallbackMenuRenderer</a>.
+  
+
+</dd>
+
+          <dt id="zVisibleMenuEntries" class="callable">
+  <span class="name"><a href="../zcrud_menu/zVisibleMenuEntries.html">zVisibleMenuEntries</a></span><span class="signature">(<wbr><span class="parameter" id="zVisibleMenuEntries-param-entries"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_menu/ZMenuEntry-class.html">ZMenuEntry</a></span>&gt;</span></span> <span class="parameter-name">entries</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_menu/ZMenuEntry-class.html">ZMenuEntry</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Filtre la règle d'absence (invariant AD-4) — <strong>UN SEUL SITE</strong> dans tout le
+package.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZMenuContentBuilder" class="callable">
+    <span class="name"><a href="../zcrud_menu/ZMenuContentBuilder.html">ZMenuContentBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-entries"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_menu/ZMenuEntry-class.html">ZMenuEntry</a></span>&gt;</span></span> <span class="parameter-name">entries</span>, </span><span class="parameter" id="param-select"><span class="type-annotation">void</span> <span class="parameter-name">select</span>(<span class="parameter" id="param-entry"><span class="type-annotation"><a href="../zcrud_menu/ZMenuEntry-class.html">ZMenuEntry</a></span> <span class="parameter-name">entry</span></span>)</span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Présentation INJECTÉE du CONTENU du menu.
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_menu</a></li>
+    <li class="self-crumb">zcrud_menu.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_menu</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_menu/">zcrud_menu</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_menu library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_menu
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

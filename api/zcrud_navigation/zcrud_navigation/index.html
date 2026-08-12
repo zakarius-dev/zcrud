@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_navigation library API docs, for the Dart programming language.">
+  <title>zcrud_navigation library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_navigation</a></li>
+    <li class="self-crumb">zcrud_navigation.dart</li>
+  </ol>
+  <div class="self-name">zcrud_navigation</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_navigation&#47;zcrud_navigation-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_navigation</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_navigation</code>.</p>
+<p>Infrastructure UI de <strong>navigation transverse</strong>. Ce paquet pose le
+<strong>maillon manquant</strong> — la <strong>politique de présentation
+dérivée du breakpoint</strong> :</p>
+<ul>
+<li><a href="../zcrud_navigation/ZEditionPresentation.html">ZEditionPresentation</a> : mode d'édition en <strong>enum</strong> (<code>page</code>/<code>sheet</code>/<code>dialog</code>)
+— remplace les booléens <code>fullscreenDialog</code>/<code>dialog</code>/<code>isWebOrDesktop</code> d'une
+intégration ad hoc ;</li>
+<li><a href="../zcrud_navigation/ZFormWeight.html">ZFormWeight</a> : poids de formulaire en <strong>enum</strong> (<code>light</code>/<code>heavy</code>), critère qui
+départage <code>expanded → dialog|page</code> ;</li>
+<li><a href="../zcrud_navigation/ZPresentationPolicy-class.html">ZPresentationPolicy</a> : dérive <strong>PUREMENT</strong> (sans <code>BuildContext</code>) un
+<a href="../zcrud_navigation/ZEditionPresentation.html">ZEditionPresentation</a> d'un <code>ZWindowSizeClass</code> (fourni par <code>zcrud_responsive</code>),
+<strong>injectable / surchargeable</strong> (jamais figée — invariant AD-6),
+<strong>non-<code>sealed</code></strong> (invariant AD-4).</li>
+</ul>
+<p><strong>Dépendances (invariant AD-1)</strong> : ce package <strong>dépend de <code>zcrud_core</code> ET
+<code>zcrud_responsive</code></strong> (arêtes SORTANTES ; <code>CORE OUT=0</code> intact ; graphe
+ACYCLIQUE). Il n'importe <strong>aucun</strong> gestionnaire d'état ni routeur ; la politique
+est <strong>pur-Dart</strong> (aucun <code>import 'package:flutter/...'</code>).</p>
+<p><strong>Présentation (<code>lib/src/presentation/</code>)</strong> — exécution du mode :</p>
+<ul>
+<li><a href="../zcrud_navigation/ZFormPresenter-class.html">ZFormPresenter</a> : <strong>port pluggable</strong> (jamais <code>sealed</code>, invariant AD-4)
+qui exécute un <a href="../zcrud_navigation/ZEditionPresentation.html">ZEditionPresentation</a> sur la bonne surface modale,
+<strong>form-agnostique</strong> ;</li>
+<li><a href="../zcrud_navigation/ZAdaptivePresenter-class.html">ZAdaptivePresenter</a> : présentateur <strong>par défaut pur-Flutter</strong> —
+<code>Navigator.push(MaterialPageRoute(fullscreenDialog:))</code> / <code>showModalBottomSheet</code>
+/ <code>showDialog(Dialog + ConstrainedBox)</code>, <strong>aucun</strong> <code>get</code>/<code>go_router</code>
+(invariant AD-2) ;</li>
+<li><a href="../zcrud_navigation/ZFormPresenterScope-class.html">ZFormPresenterScope</a> : <strong>seam local</strong> (<code>InheritedWidget</code>) de résolution du
+présentateur effectif — défaut <code>const ZAdaptivePresenter()</code> ; <code>ZcrudScope</code>
+de <code>zcrud_core</code> <strong>inchangé</strong> (<code>CORE OUT=0</code>, invariant AD-1) ;</li>
+<li><a href="../zcrud_navigation/presentEdition.html">presentEdition</a> : <strong>helper de câblage</strong> <code>largeur → breakpoint → politique → mode → surface</code> (le maillon qu'aucune app ne réalise nativement).</li>
+</ul>
+<p><strong>Bindings manager</strong> : les présentateurs de binding implémentent <strong>ce même
+port</strong> <a href="../zcrud_navigation/ZFormPresenter-class.html">ZFormPresenter</a>, injectés via <a href="../zcrud_navigation/ZFormPresenterScope-class.html">ZFormPresenterScope</a> — c'est le cas
+de <code>ZGetFormPresenter</code> (<code>zcrud_get</code>), qui implémente aussi la capacité
+optionnelle de contrôle des fermetures implicites et la feuille
+contrainte/encadrée.</p>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/</code>.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZAdaptivePresenter">
+  <span class="name "><a href="../zcrud_navigation/ZAdaptivePresenter-class.html">ZAdaptivePresenter</a></span> 
+
+</dt>
+<dd>
+  Présentateur <strong>par défaut</strong> : exécute chaque <a href="../zcrud_navigation/ZEditionPresentation.html">ZEditionPresentation</a> via une
+primitive Flutter <strong>vanilla</strong>. <code>const</code> (aucun état). Substituable par un
+binding via le seam <code>ZFormPresenterScope</code>.
+</dd>
+
+          <dt id="ZAdaptivePresenterDefaults">
+  <span class="name "><a href="../zcrud_navigation/ZAdaptivePresenterDefaults-class.html">ZAdaptivePresenterDefaults</a></span> 
+
+</dt>
+<dd>
+  Bornes d'écran par défaut de la présentation adaptative (dp) — <strong>publiques</strong>
+pour qu'un binding qui implémente le port <code>ZFormPresenter</code> puisse s'aligner
+sur la source plutôt que de la recopier localement (dialog ~ largeur
+bornée, sheet ~ 90 % hauteur, dérivées de <code>MediaQuery.sizeOf</code> quand
+<code>maxWidth</code>/<code>maxHeight</code> ne sont pas fournis).
+</dd>
+
+          <dt id="ZDiscardGuardHost">
+  <span class="name "><a href="../zcrud_navigation/ZDiscardGuardHost-class.html">ZDiscardGuardHost</a></span> 
+
+</dt>
+<dd>
+  Enveloppe conditionnelle par <code>ZDiscardGuard</code> — <strong>exposée</strong> pour que
+<code>presentEdition</code> et les gardes puissent raisonner sur la même décision.
+</dd>
+
+          <dt id="ZEditionChrome">
+  <span class="name "><a href="../zcrud_navigation/ZEditionChrome-class.html">ZEditionChrome</a></span> 
+
+</dt>
+<dd>
+  Descripteur du <strong>chrome interne</strong> d'un formulaire d'édition présenté.
+</dd>
+
+          <dt id="ZEditionChromeMetrics">
+  <span class="name "><a href="../zcrud_navigation/ZEditionChromeMetrics-class.html">ZEditionChromeMetrics</a></span> 
+
+</dt>
+<dd>
+  Métriques <strong>résolues</strong> du chrome (paramètre &gt; jeton &gt; référence).
+</dd>
+
+          <dt id="ZEditionChromeReference">
+  <span class="name "><a href="../zcrud_navigation/ZEditionChromeReference-class.html">ZEditionChromeReference</a></span> 
+
+</dt>
+<dd>
+  Les <strong>valeurs de référence</strong> du chrome d'édition — le point d'audit unique.
+</dd>
+
+          <dt id="ZEditionScaffold">
+  <span class="name "><a href="../zcrud_navigation/ZEditionScaffold-class.html">ZEditionScaffold</a></span> 
+
+</dt>
+<dd>
+  Rend le <a href="../zcrud_navigation/ZEditionScaffold/chrome.html">chrome</a> autour de <a href="../zcrud_navigation/ZEditionScaffold/body.html">body</a>, sous la forme dictée par <a href="../zcrud_navigation/ZEditionScaffold/mode.html">mode</a>.
+</dd>
+
+          <dt id="ZFormPresenter">
+  <span class="name "><a href="../zcrud_navigation/ZFormPresenter-class.html">ZFormPresenter</a></span> 
+
+</dt>
+<dd>
+  Contrat <strong>pluggable</strong> de présentation d'un formulaire d'édition.
+</dd>
+
+          <dt id="ZFormPresenterScope">
+  <span class="name "><a href="../zcrud_navigation/ZFormPresenterScope-class.html">ZFormPresenterScope</a></span> 
+
+</dt>
+<dd>
+  <code>InheritedWidget</code> local exposant le <a href="../zcrud_navigation/ZFormPresenter-class.html">ZFormPresenter</a> effectif à la
+sous-arborescence.
+</dd>
+
+          <dt id="ZImplicitDismissControl">
+  <span class="name "><a href="../zcrud_navigation/ZImplicitDismissControl-class.html">ZImplicitDismissControl</a></span> 
+
+</dt>
+<dd>
+  Capacité <strong>optionnelle</strong> d'un <code>ZFormPresenter</code> : neutraliser les voies de
+fermeture qui <strong>court-circuitent <code>PopScope</code></strong>.
+</dd>
+
+          <dt id="ZPresentationPolicy">
+  <span class="name "><a href="../zcrud_navigation/ZPresentationPolicy-class.html">ZPresentationPolicy</a></span> 
+
+</dt>
+<dd>
+  Politique dérivant un <a href="../zcrud_navigation/ZEditionPresentation.html">ZEditionPresentation</a> d'un <code>ZWindowSizeClass</code>.
+</dd>
+
+          <dt id="ZSheetFrameMetrics">
+  <span class="name "><a href="../zcrud_navigation/ZSheetFrameMetrics-class.html">ZSheetFrameMetrics</a></span> 
+
+</dt>
+<dd>
+  Métriques <strong>résolues</strong> de la feuille (paramètre &gt; jeton &gt; référence).
+</dd>
+
+          <dt id="ZSheetFrameReference">
+  <span class="name "><a href="../zcrud_navigation/ZSheetFrameReference-class.html">ZSheetFrameReference</a></span> 
+
+</dt>
+<dd>
+  Les <strong>valeurs de référence</strong> de la feuille contrainte — point d'audit unique.
+</dd>
+
+          <dt id="ZSheetFrameSpec">
+  <span class="name "><a href="../zcrud_navigation/ZSheetFrameSpec-class.html">ZSheetFrameSpec</a></span> 
+
+</dt>
+<dd>
+  <strong>Surcharge par paramètre</strong> (priorité la plus haute) de la feuille contrainte.
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="ZEditionBodyFit">
+  <span class="name "><a href="../zcrud_navigation/ZEditionBodyFit.html">ZEditionBodyFit</a></span> 
+
+</dt>
+<dd>
+  Déclare <strong>comment le corps du chrome d'édition veut être placé</strong>.
+</dd>
+
+          <dt id="ZEditionPresentation">
+  <span class="name "><a href="../zcrud_navigation/ZEditionPresentation.html">ZEditionPresentation</a></span> 
+
+</dt>
+<dd>
+  Mode de présentation d'un formulaire d'édition (valeurs <strong>camelCase</strong>).
+</dd>
+
+          <dt id="ZFormWeight">
+  <span class="name "><a href="../zcrud_navigation/ZFormWeight.html">ZFormWeight</a></span> 
+
+</dt>
+<dd>
+  Poids d'un formulaire d'édition (valeurs <strong>camelCase</strong>).
+</dd>
+
+          <dt id="ZSheetFrameMode">
+  <span class="name "><a href="../zcrud_navigation/ZSheetFrameMode.html">ZSheetFrameMode</a></span> 
+
+</dt>
+<dd>
+  <strong>Quand</strong> encadrer une bottom-sheet — déclaré par l'hôte, jamais deviné.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="presentEdition" class="callable">
+  <span class="name"><a href="../zcrud_navigation/presentEdition.html">presentEdition</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="presentEdition-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="presentEdition-param-builder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a></span> <span class="parameter-name">builder</span>, </span><span class="parameter" id="presentEdition-param-formWeight"><span class="type-annotation"><a href="../zcrud_navigation/ZFormWeight.html">ZFormWeight</a></span> <span class="parameter-name">formWeight</span> = <span class="default-value">ZFormWeight.light</span>, </span><span class="parameter" id="presentEdition-param-policy"><span class="type-annotation"><a href="../zcrud_navigation/ZPresentationPolicy-class.html">ZPresentationPolicy</a></span> <span class="parameter-name">policy</span> = <span class="default-value">const ZPresentationPolicy()</span>, </span><span class="parameter" id="presentEdition-param-presenter"><span class="type-annotation"><a href="../zcrud_navigation/ZFormPresenter-class.html">ZFormPresenter</a>?</span> <span class="parameter-name">presenter</span>, </span><span class="parameter" id="presentEdition-param-maxWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">maxWidth</span>, </span><span class="parameter" id="presentEdition-param-maxHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">maxHeight</span>, </span><span class="parameter" id="presentEdition-param-useSafeArea"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">useSafeArea</span> = <span class="default-value">true</span>, </span><span class="parameter" id="presentEdition-param-barrierDismissible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">barrierDismissible</span> = <span class="default-value">true</span>, </span><span class="parameter" id="presentEdition-param-isDismissible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isDismissible</span> = <span class="default-value">true</span>, </span><span class="parameter" id="presentEdition-param-chrome"><span class="type-annotation"><a href="../zcrud_navigation/ZEditionChrome-class.html">ZEditionChrome</a>?</span> <span class="parameter-name">chrome</span>, </span><span class="parameter" id="presentEdition-param-forcedMode"><span class="type-annotation"><a href="../zcrud_navigation/ZEditionPresentation.html">ZEditionPresentation</a>?</span> <span class="parameter-name">forcedMode</span>, </span><span class="parameter" id="presentEdition-param-sheetFrame"><span class="type-annotation"><a href="../zcrud_navigation/ZSheetFrameSpec-class.html">ZSheetFrameSpec</a>?</span> <span class="parameter-name">sheetFrame</span>, </span><span class="parameter" id="presentEdition-param-bodyFit"><span class="type-annotation"><a href="../zcrud_navigation/ZEditionBodyFit.html">ZEditionBodyFit</a></span> <span class="parameter-name">bodyFit</span> = <span class="default-value">ZEditionBodyFit.intrinsic</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">T?</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Présente un formulaire d'édition en <strong>dérivant le mode du breakpoint courant</strong>.
+  
+
+</dd>
+
+          <dt id="zEditionChromeMetricsOf" class="callable">
+  <span class="name"><a href="../zcrud_navigation/zEditionChromeMetricsOf.html">zEditionChromeMetricsOf</a></span><span class="signature">(<wbr><span class="parameter" id="zEditionChromeMetricsOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zEditionChromeMetricsOf-param-minTouchTarget"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">minTouchTarget</span>, </span><span class="parameter" id="zEditionChromeMetricsOf-param-headerPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">headerPadding</span>, </span><span class="parameter" id="zEditionChromeMetricsOf-param-actionBarPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">actionBarPadding</span>, </span><span class="parameter" id="zEditionChromeMetricsOf-param-actionPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">actionPadding</span>, </span><span class="parameter" id="zEditionChromeMetricsOf-param-gap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">gap</span>, </span><span class="parameter" id="zEditionChromeMetricsOf-param-pageHeaderExpandedHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">pageHeaderExpandedHeight</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_navigation/ZEditionChromeMetrics-class.html">ZEditionChromeMetrics</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Résout les métriques du chrome — <strong>paramètre &gt; jeton <code>ZcrudTheme</code> &gt;
+référence <a href="../zcrud_navigation/ZEditionChromeReference-class.html">ZEditionChromeReference</a></strong>.
+  
+
+</dd>
+
+          <dt id="zSheetFrameMetricsOf" class="callable">
+  <span class="name"><a href="../zcrud_navigation/zSheetFrameMetricsOf.html">zSheetFrameMetricsOf</a></span><span class="signature">(<wbr><span class="parameter" id="zSheetFrameMetricsOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zSheetFrameMetricsOf-param-spec"><span class="type-annotation"><a href="../zcrud_navigation/ZSheetFrameSpec-class.html">ZSheetFrameSpec</a>?</span> <span class="parameter-name">spec</span>, </span><span class="parameter" id="zSheetFrameMetricsOf-param-hasChrome"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">hasChrome</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_navigation/ZSheetFrameMetrics-class.html">ZSheetFrameMetrics</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Résout les métriques de la feuille — <strong>paramètre &gt; jeton
+<code>ZcrudTheme.editionSheet*</code> &gt; référence</strong>.
+  
+
+</dd>
+
+          <dt id="zSheetFrameModeFromToken" class="callable">
+  <span class="name"><a href="../zcrud_navigation/zSheetFrameModeFromToken.html">zSheetFrameModeFromToken</a></span><span class="signature">(<wbr><span class="parameter" id="zSheetFrameModeFromToken-param-token"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">token</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_navigation/ZSheetFrameMode.html">ZSheetFrameMode</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Traduit le jeton <strong><code>String</code></strong> <code>ZcrudTheme.editionSheetFrameMode</code> en
+<a href="../zcrud_navigation/ZSheetFrameMode.html">ZSheetFrameMode</a> — <strong>le seul</strong> point de traduction du paquet.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZPresentationResolver" class="callable">
+    <span class="name"><a href="../zcrud_navigation/ZPresentationResolver.html">ZPresentationResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="../zcrud_navigation/ZEditionPresentation.html">ZEditionPresentation</a> Function<span class="signature">(<span class="parameter" id="param-sizeClass"><span class="type-annotation">ZWindowSizeClass</span> <span class="parameter-name">sizeClass</span>, {</span><span class="parameter" id="param-formWeight"><span class="type-annotation"><a href="../zcrud_navigation/ZFormWeight.html">ZFormWeight</a></span> <span class="parameter-name">formWeight</span></span>})</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Signature d'une règle de dérivation <code>ZWindowSizeClass (+ ZFormWeight) → ZEditionPresentation</code>, injectable via <a href="../zcrud_navigation/ZPresentationPolicy/ZPresentationPolicy.from.html">ZPresentationPolicy.from</a>.
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_navigation</a></li>
+    <li class="self-crumb">zcrud_navigation.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_navigation</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_navigation/">zcrud_navigation</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_navigation library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_navigation
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZStudyToolsSectionSpec class from the zcrud_study library, for the Dart programming language.">
+  <title>ZStudyToolsSectionSpec class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study.dart</a></li>
+    <li class="self-crumb">ZStudyToolsSectionSpec class</li>
+  </ol>
+  <div class="self-name">ZStudyToolsSectionSpec</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;zcrud_study-library-sidebar.html"
+    data-below-sidebar="zcrud_study&#47;ZStudyToolsSectionSpec-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZStudyToolsSectionSpec</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Descripteur immuable d'une section de la page « study tools ».</p>
+<p>Une instance par section (rail de flashcards, grille de documents, grille
+de notes, grille de cartes mentales…). Chaque section est rendue par
+<a href="../zcrud_study/ZSectionedStudyLayout-class.html">ZSectionedStudyLayout</a> dans son propre sous-arbre isolé (frontière de
+rebuild — invariant AD-2).</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://pub.dev/documentation/meta/1.18.0/meta/immutable-constant.html">immutable</a></li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZStudyToolsSectionSpec.new" class="callable">
+          <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/ZStudyToolsSectionSpec.html">ZStudyToolsSectionSpec</a></span><span class="signature">({<span class="parameter" id="param-id"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span>, </span><span class="parameter" id="param-title"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span>, </span><span class="parameter" id="param-itemCount"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">itemCount</span>, </span><span class="parameter" id="param-itemBuilder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">itemBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-index"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">index</span></span>), </span><span class="parameter" id="param-emptyState"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">emptyState</span>, </span><span class="parameter" id="param-addAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">addAction</span>, </span><span class="parameter" id="param-addActionIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">addActionIcon</span>, </span><span class="parameter" id="param-addActionSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">addActionSemanticLabel</span>, </span><span class="parameter" id="param-addOpensContentHub"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">addOpensContentHub</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-axis"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/Axis.html">Axis</a></span> <span class="parameter-name">axis</span> = <span class="default-value">Axis.vertical</span>, </span><span class="parameter" id="param-itemIds"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">itemIds</span>, </span><span class="parameter" id="param-onReorder"><span class="type-annotation">void</span> <span class="parameter-name">onReorder</span>(<span class="parameter" id="param-oldIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">oldIndex</span>, </span><span class="parameter" id="param-newIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">newIndex</span></span>)?, </span><span class="parameter" id="param-reorderHandleSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reorderHandleSemanticLabel</span>, </span><span class="parameter" id="param-reorderHandleIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">reorderHandleIcon</span>, </span><span class="parameter" id="param-reorderMoveBeforeSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reorderMoveBeforeSemanticLabel</span>, </span><span class="parameter" id="param-reorderMoveAfterSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reorderMoveAfterSemanticLabel</span>, </span><span class="parameter" id="param-reorderHandleMode"><span class="type-annotation"><a href="../zcrud_study/ZStudyReorderHandleMode.html">ZStudyReorderHandleMode</a></span> <span class="parameter-name">reorderHandleMode</span> = <span class="default-value">ZStudyReorderHandleMode.visible</span>, </span><span class="parameter" id="param-collapsible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">collapsible</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-initiallyExpanded"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">initiallyExpanded</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-collapseOnHeaderTap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">collapseOnHeaderTap</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-crossAxisMinItemWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisMinItemWidth</span>, </span><span class="parameter" id="param-crossAxisItemHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisItemHeight</span>, </span><span class="parameter" id="param-crossAxisAspectRatio"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisAspectRatio</span>, </span><span class="parameter" id="param-crossAxisMaxColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">crossAxisMaxColumns</span>, </span><span class="parameter" id="param-crossAxisVirtualized"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">crossAxisVirtualized</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-crossAxisViewportHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisViewportHeight</span>, </span><span class="parameter" id="param-railItemGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">railItemGap</span>, </span><span class="parameter" id="param-railPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">railPadding</span>, </span><span class="parameter" id="param-collapseSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">collapseSemanticLabel</span>, </span><span class="parameter" id="param-expandSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">expandSemanticLabel</span>, </span><span class="parameter" id="param-headerCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">headerCount</span>, </span><span class="parameter" id="param-secondaryAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">secondaryAction</span>, </span><span class="parameter" id="param-secondaryActionIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">secondaryActionIcon</span>, </span><span class="parameter" id="param-secondaryActionLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">secondaryActionLabel</span>, </span><span class="parameter" id="param-secondaryActionSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">secondaryActionSemanticLabel</span>, </span><span class="parameter" id="param-expandController"><span class="type-annotation">ZToggleController?</span> <span class="parameter-name">expandController</span></span>})</span>
+        </dt>
+        <dd>
+          Construit un descripteur de section.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZStudyToolsSectionSpec.exams" class="callable">
+          <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/ZStudyToolsSectionSpec.exams.html">ZStudyToolsSectionSpec.exams</a></span><span class="signature">({<span class="parameter" id="exams-param-id"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span>, </span><span class="parameter" id="exams-param-title"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span>, </span><span class="parameter" id="exams-param-exams"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZExam</span>&gt;</span></span> <span class="parameter-name">exams</span>, </span><span class="parameter" id="exams-param-emptyState"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">emptyState</span>, </span><span class="parameter" id="exams-param-untitledLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">untitledLabel</span>, </span><span class="parameter" id="exams-param-dateLabelOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">dateLabelOf</span>(<span class="parameter" id="param-exam"><span class="type-annotation">ZExam</span> <span class="parameter-name">exam</span></span>)?, </span><span class="parameter" id="exams-param-reminderLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reminderLabel</span>, </span><span class="parameter" id="exams-param-colorKeyOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">colorKeyOf</span>(<span class="parameter" id="param-exam"><span class="type-annotation">ZExam</span> <span class="parameter-name">exam</span></span>)?, </span><span class="parameter" id="exams-param-semanticLabelOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">semanticLabelOf</span>(<span class="parameter" id="param-exam"><span class="type-annotation">ZExam</span> <span class="parameter-name">exam</span></span>)?, </span><span class="parameter" id="exams-param-onCardTap"><span class="type-annotation">void</span> <span class="parameter-name">onCardTap</span>(<span class="parameter" id="param-exam"><span class="type-annotation">ZExam</span> <span class="parameter-name">exam</span></span>)?, </span><span class="parameter" id="exams-param-onCardLongPress"><span class="type-annotation">void</span> <span class="parameter-name">onCardLongPress</span>(<span class="parameter" id="param-exam"><span class="type-annotation">ZExam</span> <span class="parameter-name">exam</span></span>)?, </span><span class="parameter" id="exams-param-cardTrailingBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">cardTrailingBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-exam"><span class="type-annotation">ZExam</span> <span class="parameter-name">exam</span></span>)?, </span><span class="parameter" id="exams-param-palette"><span class="type-annotation">ZColorPalette</span> <span class="parameter-name">palette</span> = <span class="default-value">const ZColorPalette.defaultStudy()</span>, </span><span class="parameter" id="exams-param-titleMaxLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">titleMaxLines</span> = <span class="default-value">2</span>, </span><span class="parameter" id="exams-param-addAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">addAction</span>, </span><span class="parameter" id="exams-param-addActionIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">addActionIcon</span>, </span><span class="parameter" id="exams-param-addActionSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">addActionSemanticLabel</span>, </span><span class="parameter" id="exams-param-addOpensContentHub"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">addOpensContentHub</span> = <span class="default-value">false</span>, </span><span class="parameter" id="exams-param-axis"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/Axis.html">Axis</a></span> <span class="parameter-name">axis</span> = <span class="default-value">Axis.vertical</span>, </span><span class="parameter" id="exams-param-railItemWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">railItemWidth</span>, </span><span class="parameter" id="exams-param-railItemHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">railItemHeight</span>, </span><span class="parameter" id="exams-param-railPreviewCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">railPreviewCount</span>, </span><span class="parameter" id="exams-param-onReorder"><span class="type-annotation">void</span> <span class="parameter-name">onReorder</span>(<span class="parameter" id="param-oldIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">oldIndex</span>, </span><span class="parameter" id="param-newIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">newIndex</span></span>)?, </span><span class="parameter" id="exams-param-reorderHandleSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reorderHandleSemanticLabel</span>, </span><span class="parameter" id="exams-param-reorderHandleIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">reorderHandleIcon</span>, </span><span class="parameter" id="exams-param-reorderMoveBeforeSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reorderMoveBeforeSemanticLabel</span>, </span><span class="parameter" id="exams-param-reorderMoveAfterSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reorderMoveAfterSemanticLabel</span>, </span><span class="parameter" id="exams-param-reorderHandleMode"><span class="type-annotation"><a href="../zcrud_study/ZStudyReorderHandleMode.html">ZStudyReorderHandleMode</a></span> <span class="parameter-name">reorderHandleMode</span> = <span class="default-value">ZStudyReorderHandleMode.visible</span>, </span><span class="parameter" id="exams-param-collapsible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">collapsible</span> = <span class="default-value">false</span>, </span><span class="parameter" id="exams-param-initiallyExpanded"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">initiallyExpanded</span> = <span class="default-value">true</span>, </span><span class="parameter" id="exams-param-collapseOnHeaderTap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">collapseOnHeaderTap</span> = <span class="default-value">false</span>, </span><span class="parameter" id="exams-param-crossAxisMinItemWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisMinItemWidth</span>, </span><span class="parameter" id="exams-param-crossAxisItemHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisItemHeight</span>, </span><span class="parameter" id="exams-param-crossAxisAspectRatio"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisAspectRatio</span>, </span><span class="parameter" id="exams-param-crossAxisMaxColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">crossAxisMaxColumns</span>, </span><span class="parameter" id="exams-param-crossAxisVirtualized"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">crossAxisVirtualized</span> = <span class="default-value">false</span>, </span><span class="parameter" id="exams-param-crossAxisViewportHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisViewportHeight</span>, </span><span class="parameter" id="exams-param-railItemGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">railItemGap</span> = <span class="default-value">kZRailItemReferenceGap</span>, </span><span class="parameter" id="exams-param-railPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">railPadding</span>, </span><span class="parameter" id="exams-param-collapseSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">collapseSemanticLabel</span>, </span><span class="parameter" id="exams-param-expandSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">expandSemanticLabel</span>, </span><span class="parameter" id="exams-param-headerCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">headerCount</span>, </span><span class="parameter" id="exams-param-secondaryAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">secondaryAction</span>, </span><span class="parameter" id="exams-param-secondaryActionIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">secondaryActionIcon</span>, </span><span class="parameter" id="exams-param-secondaryActionLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">secondaryActionLabel</span>, </span><span class="parameter" id="exams-param-secondaryActionSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">secondaryActionSemanticLabel</span>, </span><span class="parameter" id="exams-param-expandController"><span class="type-annotation">ZToggleController?</span> <span class="parameter-name">expandController</span></span>})</span>
+        </dt>
+        <dd>
+          Section d'<strong>examens</strong> dont le socle fournit le rendu d'item — la voie
+TYPÉE qui <strong>porte les données</strong>.
+        </dd>
+        <dt id="ZStudyToolsSectionSpec.flashcards" class="callable">
+          <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/ZStudyToolsSectionSpec.flashcards.html">ZStudyToolsSectionSpec.flashcards</a></span><span class="signature">({<span class="parameter" id="flashcards-param-id"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span>, </span><span class="parameter" id="flashcards-param-title"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span>, </span><span class="parameter" id="flashcards-param-cards"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span></span> <span class="parameter-name">cards</span>, </span><span class="parameter" id="flashcards-param-emptyState"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">emptyState</span>, </span><span class="parameter" id="flashcards-param-typeLabels"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">typeLabels</span>, </span><span class="parameter" id="flashcards-param-tagsOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcardTag</span>&gt;</span></span> <span class="parameter-name">tagsOf</span>(<span class="parameter" id="param-card"><span class="type-annotation">ZFlashcard</span> <span class="parameter-name">card</span></span>)?, </span><span class="parameter" id="flashcards-param-colorKeyOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">colorKeyOf</span>(<span class="parameter" id="param-card"><span class="type-annotation">ZFlashcard</span> <span class="parameter-name">card</span></span>)?, </span><span class="parameter" id="flashcards-param-semanticLabelOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">semanticLabelOf</span>(<span class="parameter" id="param-card"><span class="type-annotation">ZFlashcard</span> <span class="parameter-name">card</span></span>)?, </span><span class="parameter" id="flashcards-param-emptyTagsLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">emptyTagsLabel</span>, </span><span class="parameter" id="flashcards-param-onTagsTap"><span class="type-annotation">void</span> <span class="parameter-name">onTagsTap</span>(<span class="parameter" id="param-card"><span class="type-annotation">ZFlashcard</span> <span class="parameter-name">card</span></span>)?, </span><span class="parameter" id="flashcards-param-onCardTap"><span class="type-annotation">void</span> <span class="parameter-name">onCardTap</span>(<span class="parameter" id="param-card"><span class="type-annotation">ZFlashcard</span> <span class="parameter-name">card</span></span>)?, </span><span class="parameter" id="flashcards-param-onCardLongPress"><span class="type-annotation">void</span> <span class="parameter-name">onCardLongPress</span>(<span class="parameter" id="param-card"><span class="type-annotation">ZFlashcard</span> <span class="parameter-name">card</span></span>)?, </span><span class="parameter" id="flashcards-param-cardTrailingBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">cardTrailingBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-card"><span class="type-annotation">ZFlashcard</span> <span class="parameter-name">card</span></span>)?, </span><span class="parameter" id="flashcards-param-palette"><span class="type-annotation">ZColorPalette</span> <span class="parameter-name">palette</span> = <span class="default-value">const ZColorPalette.defaultStudy()</span>, </span><span class="parameter" id="flashcards-param-typeColors"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">ZGradientSpec</span>&gt;</span>?</span> <span class="parameter-name">typeColors</span>, </span><span class="parameter" id="flashcards-param-cardIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">cardIcon</span>, </span><span class="parameter" id="flashcards-param-cardBorderSide"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/BorderSide-class.html">BorderSide</a>?</span> <span class="parameter-name">cardBorderSide</span>, </span><span class="parameter" id="flashcards-param-cardBorderRadius"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span> <span class="parameter-name">cardBorderRadius</span>, </span><span class="parameter" id="flashcards-param-cardBackgroundColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">cardBackgroundColor</span>, </span><span class="parameter" id="flashcards-param-cardHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">cardHeight</span> = <span class="default-value">ZFlashcardCardReference.cardHeight</span>, </span><span class="parameter" id="flashcards-param-questionBuilder"><span class="type-annotation">ZFlashcardContentBuilder?</span> <span class="parameter-name">questionBuilder</span>, </span><span class="parameter" id="flashcards-param-questionMaxHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">questionMaxHeight</span> = <span class="default-value">ZFlashcardCardReference.questionMaxHeight</span>, </span><span class="parameter" id="flashcards-param-cardQuestionFadeExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">cardQuestionFadeExtent</span> = <span class="default-value">ZFlashcardCardReference.questionFadeExtent</span>, </span><span class="parameter" id="flashcards-param-cardContentAlignment"><span class="type-annotation">ZStudyCardContentAlignment?</span> <span class="parameter-name">cardContentAlignment</span>, </span><span class="parameter" id="flashcards-param-showAnswerPreview"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showAnswerPreview</span>, </span><span class="parameter" id="flashcards-param-answerLabels"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">answerLabels</span>, </span><span class="parameter" id="flashcards-param-addAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">addAction</span>, </span><span class="parameter" id="flashcards-param-addActionIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">addActionIcon</span>, </span><span class="parameter" id="flashcards-param-addActionSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">addActionSemanticLabel</span>, </span><span class="parameter" id="flashcards-param-addOpensContentHub"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">addOpensContentHub</span> = <span class="default-value">false</span>, </span><span class="parameter" id="flashcards-param-axis"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/Axis.html">Axis</a></span> <span class="parameter-name">axis</span> = <span class="default-value">Axis.vertical</span>, </span><span class="parameter" id="flashcards-param-railItemWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">railItemWidth</span>, </span><span class="parameter" id="flashcards-param-railItemHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">railItemHeight</span>, </span><span class="parameter" id="flashcards-param-railPreviewCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">railPreviewCount</span>, </span><span class="parameter" id="flashcards-param-onReorder"><span class="type-annotation">void</span> <span class="parameter-name">onReorder</span>(<span class="parameter" id="param-oldIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">oldIndex</span>, </span><span class="parameter" id="param-newIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">newIndex</span></span>)?, </span><span class="parameter" id="flashcards-param-reorderHandleSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reorderHandleSemanticLabel</span>, </span><span class="parameter" id="flashcards-param-reorderHandleIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">reorderHandleIcon</span>, </span><span class="parameter" id="flashcards-param-reorderMoveBeforeSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reorderMoveBeforeSemanticLabel</span>, </span><span class="parameter" id="flashcards-param-reorderMoveAfterSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reorderMoveAfterSemanticLabel</span>, </span><span class="parameter" id="flashcards-param-reorderHandleMode"><span class="type-annotation"><a href="../zcrud_study/ZStudyReorderHandleMode.html">ZStudyReorderHandleMode</a></span> <span class="parameter-name">reorderHandleMode</span> = <span class="default-value">ZStudyReorderHandleMode.visible</span>, </span><span class="parameter" id="flashcards-param-collapsible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">collapsible</span> = <span class="default-value">false</span>, </span><span class="parameter" id="flashcards-param-initiallyExpanded"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">initiallyExpanded</span> = <span class="default-value">true</span>, </span><span class="parameter" id="flashcards-param-collapseOnHeaderTap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">collapseOnHeaderTap</span> = <span class="default-value">false</span>, </span><span class="parameter" id="flashcards-param-crossAxisMinItemWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisMinItemWidth</span>, </span><span class="parameter" id="flashcards-param-crossAxisItemHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisItemHeight</span>, </span><span class="parameter" id="flashcards-param-crossAxisAspectRatio"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisAspectRatio</span>, </span><span class="parameter" id="flashcards-param-crossAxisMaxColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">crossAxisMaxColumns</span>, </span><span class="parameter" id="flashcards-param-crossAxisVirtualized"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">crossAxisVirtualized</span> = <span class="default-value">false</span>, </span><span class="parameter" id="flashcards-param-crossAxisViewportHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisViewportHeight</span>, </span><span class="parameter" id="flashcards-param-railItemGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">railItemGap</span> = <span class="default-value">kZRailItemReferenceGap</span>, </span><span class="parameter" id="flashcards-param-railPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">railPadding</span>, </span><span class="parameter" id="flashcards-param-collapseSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">collapseSemanticLabel</span>, </span><span class="parameter" id="flashcards-param-expandSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">expandSemanticLabel</span>, </span><span class="parameter" id="flashcards-param-headerCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">headerCount</span>, </span><span class="parameter" id="flashcards-param-secondaryAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">secondaryAction</span>, </span><span class="parameter" id="flashcards-param-secondaryActionIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">secondaryActionIcon</span>, </span><span class="parameter" id="flashcards-param-secondaryActionLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">secondaryActionLabel</span>, </span><span class="parameter" id="flashcards-param-secondaryActionSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">secondaryActionSemanticLabel</span>, </span><span class="parameter" id="flashcards-param-expandController"><span class="type-annotation">ZToggleController?</span> <span class="parameter-name">expandController</span></span>})</span>
+        </dt>
+        <dd>
+          Section de <strong>flashcards</strong> dont le socle fournit le rendu d'item — la voie
+TYPÉE qui <strong>porte les données</strong>.
+        </dd>
+        <dt id="ZStudyToolsSectionSpec.mindmaps" class="callable">
+          <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/ZStudyToolsSectionSpec.mindmaps.html">ZStudyToolsSectionSpec.mindmaps</a></span><span class="signature">({<span class="parameter" id="mindmaps-param-id"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span>, </span><span class="parameter" id="mindmaps-param-title"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span>, </span><span class="parameter" id="mindmaps-param-maps"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZMindmap</span>&gt;</span></span> <span class="parameter-name">maps</span>, </span><span class="parameter" id="mindmaps-param-emptyState"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">emptyState</span>, </span><span class="parameter" id="mindmaps-param-untitledLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">untitledLabel</span>, </span><span class="parameter" id="mindmaps-param-nodeCountLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">nodeCountLabel</span>(<span class="parameter" id="param-nodeCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">nodeCount</span></span>)?, </span><span class="parameter" id="mindmaps-param-colorKeyOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">colorKeyOf</span>(<span class="parameter" id="param-map"><span class="type-annotation">ZMindmap</span> <span class="parameter-name">map</span></span>)?, </span><span class="parameter" id="mindmaps-param-semanticLabelOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">semanticLabelOf</span>(<span class="parameter" id="param-map"><span class="type-annotation">ZMindmap</span> <span class="parameter-name">map</span></span>)?, </span><span class="parameter" id="mindmaps-param-onCardTap"><span class="type-annotation">void</span> <span class="parameter-name">onCardTap</span>(<span class="parameter" id="param-map"><span class="type-annotation">ZMindmap</span> <span class="parameter-name">map</span></span>)?, </span><span class="parameter" id="mindmaps-param-onCardLongPress"><span class="type-annotation">void</span> <span class="parameter-name">onCardLongPress</span>(<span class="parameter" id="param-map"><span class="type-annotation">ZMindmap</span> <span class="parameter-name">map</span></span>)?, </span><span class="parameter" id="mindmaps-param-cardTrailingBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">cardTrailingBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-map"><span class="type-annotation">ZMindmap</span> <span class="parameter-name">map</span></span>)?, </span><span class="parameter" id="mindmaps-param-palette"><span class="type-annotation">ZColorPalette</span> <span class="parameter-name">palette</span> = <span class="default-value">const ZColorPalette.defaultStudy()</span>, </span><span class="parameter" id="mindmaps-param-titleMaxLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">titleMaxLines</span>, </span><span class="parameter" id="mindmaps-param-hierarchy"><span class="type-annotation">ZStudyCardHierarchy?</span> <span class="parameter-name">hierarchy</span>, </span><span class="parameter" id="mindmaps-param-cardIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">cardIcon</span>, </span><span class="parameter" id="mindmaps-param-cardTitleStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">cardTitleStyle</span>, </span><span class="parameter" id="mindmaps-param-cardSubtitleStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">cardSubtitleStyle</span>, </span><span class="parameter" id="mindmaps-param-cardContentPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">cardContentPadding</span>, </span><span class="parameter" id="mindmaps-param-cardMargin"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">cardMargin</span>, </span><span class="parameter" id="mindmaps-param-cardBorderSide"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/BorderSide-class.html">BorderSide</a>?</span> <span class="parameter-name">cardBorderSide</span>, </span><span class="parameter" id="mindmaps-param-cardBorderRadius"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span> <span class="parameter-name">cardBorderRadius</span>, </span><span class="parameter" id="mindmaps-param-progressOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">progressOf</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-map"><span class="type-annotation">ZMindmap</span> <span class="parameter-name">map</span></span>)?, </span><span class="parameter" id="mindmaps-param-progressMaxWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">progressMaxWidth</span> = <span class="default-value">120</span>, </span><span class="parameter" id="mindmaps-param-hidesTrailingWhileBusy"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">hidesTrailingWhileBusy</span> = <span class="default-value">true</span>, </span><span class="parameter" id="mindmaps-param-addAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">addAction</span>, </span><span class="parameter" id="mindmaps-param-addActionIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">addActionIcon</span>, </span><span class="parameter" id="mindmaps-param-addActionSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">addActionSemanticLabel</span>, </span><span class="parameter" id="mindmaps-param-addOpensContentHub"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">addOpensContentHub</span> = <span class="default-value">false</span>, </span><span class="parameter" id="mindmaps-param-axis"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/Axis.html">Axis</a></span> <span class="parameter-name">axis</span> = <span class="default-value">Axis.vertical</span>, </span><span class="parameter" id="mindmaps-param-railItemWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">railItemWidth</span>, </span><span class="parameter" id="mindmaps-param-railItemHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">railItemHeight</span>, </span><span class="parameter" id="mindmaps-param-railPreviewCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">railPreviewCount</span>, </span><span class="parameter" id="mindmaps-param-onReorder"><span class="type-annotation">void</span> <span class="parameter-name">onReorder</span>(<span class="parameter" id="param-oldIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">oldIndex</span>, </span><span class="parameter" id="param-newIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">newIndex</span></span>)?, </span><span class="parameter" id="mindmaps-param-reorderHandleSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reorderHandleSemanticLabel</span>, </span><span class="parameter" id="mindmaps-param-reorderHandleIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">reorderHandleIcon</span>, </span><span class="parameter" id="mindmaps-param-reorderMoveBeforeSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reorderMoveBeforeSemanticLabel</span>, </span><span class="parameter" id="mindmaps-param-reorderMoveAfterSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reorderMoveAfterSemanticLabel</span>, </span><span class="parameter" id="mindmaps-param-reorderHandleMode"><span class="type-annotation"><a href="../zcrud_study/ZStudyReorderHandleMode.html">ZStudyReorderHandleMode</a></span> <span class="parameter-name">reorderHandleMode</span> = <span class="default-value">ZStudyReorderHandleMode.visible</span>, </span><span class="parameter" id="mindmaps-param-collapsible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">collapsible</span> = <span class="default-value">false</span>, </span><span class="parameter" id="mindmaps-param-initiallyExpanded"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">initiallyExpanded</span> = <span class="default-value">true</span>, </span><span class="parameter" id="mindmaps-param-collapseOnHeaderTap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">collapseOnHeaderTap</span> = <span class="default-value">false</span>, </span><span class="parameter" id="mindmaps-param-crossAxisMinItemWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisMinItemWidth</span>, </span><span class="parameter" id="mindmaps-param-crossAxisItemHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisItemHeight</span>, </span><span class="parameter" id="mindmaps-param-crossAxisAspectRatio"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisAspectRatio</span>, </span><span class="parameter" id="mindmaps-param-crossAxisMaxColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">crossAxisMaxColumns</span>, </span><span class="parameter" id="mindmaps-param-crossAxisVirtualized"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">crossAxisVirtualized</span> = <span class="default-value">false</span>, </span><span class="parameter" id="mindmaps-param-crossAxisViewportHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisViewportHeight</span>, </span><span class="parameter" id="mindmaps-param-railItemGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">railItemGap</span> = <span class="default-value">kZRailItemReferenceGap</span>, </span><span class="parameter" id="mindmaps-param-railPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">railPadding</span>, </span><span class="parameter" id="mindmaps-param-collapseSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">collapseSemanticLabel</span>, </span><span class="parameter" id="mindmaps-param-expandSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">expandSemanticLabel</span>, </span><span class="parameter" id="mindmaps-param-headerCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">headerCount</span>, </span><span class="parameter" id="mindmaps-param-secondaryAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">secondaryAction</span>, </span><span class="parameter" id="mindmaps-param-secondaryActionIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">secondaryActionIcon</span>, </span><span class="parameter" id="mindmaps-param-secondaryActionLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">secondaryActionLabel</span>, </span><span class="parameter" id="mindmaps-param-secondaryActionSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">secondaryActionSemanticLabel</span>, </span><span class="parameter" id="mindmaps-param-expandController"><span class="type-annotation">ZToggleController?</span> <span class="parameter-name">expandController</span></span>})</span>
+        </dt>
+        <dd>
+          Section de <strong>cartes mentales</strong> dont le socle fournit le rendu d'item —
+la voie TYPÉE qui <strong>porte les données</strong>.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="addAction" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/addAction.html">addAction</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span>
+  
+
+</dt>
+<dd>
+  Action d'ajout de la section (<code>+</code>). <code>null</code> = action ABSENTE (AD-4).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="addActionIcon" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/addActionIcon.html">addActionIcon</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span>
+  
+
+</dt>
+<dd>
+  Glyphe INJECTÉ du bouton d'ajout (<code>+</code>). <code>null</code> = l'appelant n'impose pas
+d'icône ; le layout se replie sur un glyphe « add » neutre documenté
+(<a href="../zcrud_study/ZSectionedStudyLayout-class.html">ZSectionedStudyLayout</a>). Solde DW-ES51-1 MEDIUM-1 : plus aucun
+<code>Icons.add</code> codé en dur INCONDITIONNELLEMENT dans le package (FR-26 — les
+<code>IconData</code> significatifs sont fournis par l'appelant).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="addActionSemanticLabel" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/addActionSemanticLabel.html">addActionSemanticLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Label sémantique LOCALISÉ du bouton d'ajout (lecteur d'écran). <code>null</code> = le
+layout se replie sur <a href="../zcrud_study/ZStudyToolsSectionSpec/title.html">title</a> (toléré, documenté). Solde DW-ES51-1
+MEDIUM-1 : le label injecté PRIME sur <a href="../zcrud_study/ZStudyToolsSectionSpec/title.html">title</a> pour lever l'ambiguïté
+<code>« &lt;titre&gt;, bouton »</code> (le screen-reader annonce l'ACTION « ajouter … », pas
+l'en-tête homonyme). JAMAIS de « Ajouter »/« Add » codé en dur (i18n —
+AD-13/FR-23).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="addOpensContentHub" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/addOpensContentHub.html">addOpensContentHub</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <strong>Lot 2</strong> — le <code>+</code> de cette section ouvre le <strong>hub d'ajout partagé</strong> en
+portée (<code>ZContentHubScope</code>), au lieu d'une commande propre.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="axis" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/axis.html">axis</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/Axis.html">Axis</a></span>
+  
+
+</dt>
+<dd>
+  Orientation de la disposition des items de la section.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="collapseOnHeaderTap" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/collapseOnHeaderTap.html">collapseOnHeaderTap</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <strong>Toute la ligne d'en-tête</strong> devient zone de bascule du repli. <code>false</code>
+(défaut) ⇒ rendu et arbre <strong>strictement inchangés</strong> : le chevron reste
+la seule cible (invariant AD-4 : la zone est ABSENTE de l'arbre).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="collapseSemanticLabel" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/collapseSemanticLabel.html">collapseSemanticLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé accessible du contrôle de repli quand la section est DÉPLIÉE.
+Repli : <code>'Replier'</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="collapsible" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/collapsible.html">collapsible</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Section <strong>repliable</strong>. <code>false</code> par défaut — le rendu antérieur
+(toujours déplié) est strictement préservé.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="crossAxisAspectRatio" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/crossAxisAspectRatio.html">crossAxisAspectRatio</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Ratio largeur/hauteur d'une cellule, alternative à <a href="../zcrud_study/ZStudyToolsSectionSpec/crossAxisItemHeight.html">crossAxisItemHeight</a>
+quand la hauteur doit suivre la largeur de colonne.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="crossAxisItemHeight" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/crossAxisItemHeight.html">crossAxisItemHeight</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Hauteur fixe d'une cellule de grille. <code>null</code> ⇒ forme par défaut de la
+grille.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="crossAxisMaxColumns" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/crossAxisMaxColumns.html">crossAxisMaxColumns</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Plafond</strong> du nombre de colonnes de la grille.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="crossAxisMinItemWidth" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/crossAxisMinItemWidth.html">crossAxisMinItemWidth</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Largeur minimale d'un item pour un rendu <strong>multi-colonnes</strong>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="crossAxisViewportHeight" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/crossAxisViewportHeight.html">crossAxisViewportHeight</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Hauteur du viewport d'une grille <a href="../zcrud_study/ZStudyToolsSectionSpec/crossAxisVirtualized.html">crossAxisVirtualized</a> — <strong>obligatoire</strong>
+dans ce mode.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="crossAxisVirtualized" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/crossAxisVirtualized.html">crossAxisVirtualized</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <strong>COMBINABLE avec <a href="../zcrud_study/ZStudyToolsSectionSpec/onReorder.html">onReorder</a></strong> : déclarer les deux produit une <strong>grille
+multi-colonnes RÉORDONNABLE</strong> (<code>ZReorderableAdaptiveGrid</code> de
+<code>zcrud_responsive</code>), et non une liste mono-colonne signalée par un
+<code>assert</code>. L'activation est <strong>implicite</strong> — aucun drapeau supplémentaire.
+Le geste est un <strong>appui long sur la cellule</strong>, doublé de deux actions
+sémantiques (<a href="../zcrud_study/ZStudyToolsSectionSpec/reorderMoveBeforeSemanticLabel.html">reorderMoveBeforeSemanticLabel</a> /
+<a href="../zcrud_study/ZStudyToolsSectionSpec/reorderMoveAfterSemanticLabel.html">reorderMoveAfterSemanticLabel</a>) pour le lecteur d'écran (invariant
+AD-13).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="emptyState" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/emptyState.html">emptyState</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>
+  
+
+</dt>
+<dd>
+  Widget affiché quand la section est vide (<code>itemCount == 0</code>). Fourni par
+l'appelant (équivalent <code>EmtyFolderContent</code> IFFD) — jamais un <code>SizedBox</code>
+silencieux imposé par le descripteur.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="expandController" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/expandController.html">expandController</a></span>
+  <span class="signature">&#8594; ZToggleController?</span>
+  
+
+</dt>
+<dd>
+  Pilote <strong>optionnel</strong> du déplié/replié de CETTE section (patron
+<code>ZDisplayState</code> de <code>zcrud_core</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="expandSemanticLabel" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/expandSemanticLabel.html">expandSemanticLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé accessible du contrôle de repli quand la section est REPLIÉE.
+Repli : <code>'Déplier'</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="headerCount" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/headerCount.html">headerCount</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Compteur affiché dans l'en-tête, <strong>découplé</strong> du nombre d'items rendus.
+<code>null</code> (défaut) ⇒ le badge affiche <a href="../zcrud_study/ZStudyToolsSectionSpec/itemCount.html">itemCount</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="id" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/id.html">id</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Identifiant STABLE de la section (String opaque). Sert de clé de frontière
+de widget (<code>ValueKey('section:$id')</code>) — DOIT être unique dans une page.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="initiallyExpanded" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/initiallyExpanded.html">initiallyExpanded</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  État initial quand <a href="../zcrud_study/ZStudyToolsSectionSpec/collapsible.html">collapsible</a> est <code>true</code>. Ignoré sinon.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="itemBuilder" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/itemBuilder.html">itemBuilder</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-index"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">index</span></span>)</span></span>
+  
+
+</dt>
+<dd>
+  Construit l'item à l'index donné (<code>0 &lt;= index &lt; itemCount</code>). L'appelant
+fournit ici la carte d'item (équivalent <code>_buildGridItemCard</code> IFFD) —
+couleurs/icônes/labels y sont injectés, jamais dans le descripteur.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="itemCount" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/itemCount.html">itemCount</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre d'items de la section. <code>0</code> ⇒ <a href="../zcrud_study/ZSectionedStudyLayout-class.html">ZSectionedStudyLayout</a> rend
+<a href="../zcrud_study/ZStudyToolsSectionSpec/emptyState.html">emptyState</a> (jamais <a href="../zcrud_study/ZStudyToolsSectionSpec/itemBuilder.html">itemBuilder</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="itemIds" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/itemIds.html">itemIds</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Ordre COURANT des ids d'items rendus (clés STABLES de réordonnancement).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onReorder" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/onReorder.html">onReorder</a></span>
+  <span class="signature">&#8594; void Function<span class="signature">(<span class="parameter" id="param-oldIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">oldIndex</span>, </span><span class="parameter" id="param-newIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">newIndex</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  Callback de réordonnancement. <strong><code>null</code> = section NON réordonnable</strong>
+(invariant AD-4 — capacité ABSENTE, jamais un no-op silencieux).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="railItemGap" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/railItemGap.html">railItemGap</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  ESPACEMENT entre deux items du <strong>rail horizontal</strong>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="railPadding" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/railPadding.html">railPadding</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span>
+  
+
+</dt>
+<dd>
+  PADDING du défileur du <strong>rail horizontal</strong> — son retrait latéral
+propre. Sans effet en <a href="https://api.flutter.dev/flutter/painting/Axis.html">Axis.vertical</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="reorderHandleIcon" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/reorderHandleIcon.html">reorderHandleIcon</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span>
+  
+
+</dt>
+<dd>
+  Glyphe INJECTÉ de la poignée de réordonnancement.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="reorderHandleMode" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/reorderHandleMode.html">reorderHandleMode</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_study/ZStudyReorderHandleMode.html">ZStudyReorderHandleMode</a></span>
+  
+
+</dt>
+<dd>
+  Mode de présentation de la poignée de réordonnancement.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="reorderHandleSemanticLabel" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/reorderHandleSemanticLabel.html">reorderHandleSemanticLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Label sémantique LOCALISÉ (i18n) de la poignée de drag (lecteur d'écran).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="reorderMoveAfterSemanticLabel" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/reorderMoveAfterSemanticLabel.html">reorderMoveAfterSemanticLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé LOCALISÉ de l'action sémantique « déplacer après » du mode
+GRILLE réordonnable. Voir <a href="../zcrud_study/ZStudyToolsSectionSpec/reorderMoveBeforeSemanticLabel.html">reorderMoveBeforeSemanticLabel</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="reorderMoveBeforeSemanticLabel" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/reorderMoveBeforeSemanticLabel.html">reorderMoveBeforeSemanticLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé LOCALISÉ de l'action sémantique « déplacer avant » du mode
+GRILLE réordonnable. <code>null</code> ⇒ repli neutre documenté côté layout.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="secondaryAction" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/secondaryAction.html">secondaryAction</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span>
+  
+
+</dt>
+<dd>
+  Action d'en-tête <strong>secondaire</strong>, en plus de <a href="../zcrud_study/ZStudyToolsSectionSpec/addAction.html">addAction</a> — typiquement
+« Afficher tout » (navigation). <code>null</code> ⇒ action ABSENTE (invariant AD-4).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="secondaryActionIcon" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/secondaryActionIcon.html">secondaryActionIcon</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span>
+  
+
+</dt>
+<dd>
+  Icône de <a href="../zcrud_study/ZStudyToolsSectionSpec/secondaryAction.html">secondaryAction</a> (repli neutre si absente).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="secondaryActionLabel" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/secondaryActionLabel.html">secondaryActionLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé <strong>VISIBLE</strong> de <a href="../zcrud_study/ZStudyToolsSectionSpec/secondaryAction.html">secondaryAction</a> — ex. « Afficher tout », rendu
+<strong>à côté</strong> de l'icône.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="secondaryActionSemanticLabel" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/secondaryActionSemanticLabel.html">secondaryActionSemanticLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé accessible de <a href="../zcrud_study/ZStudyToolsSectionSpec/secondaryAction.html">secondaryAction</a> (a11y invariant AD-13 — repli
+sur <a href="../zcrud_study/ZStudyToolsSectionSpec/title.html">title</a>, ou sur <a href="../zcrud_study/ZStudyToolsSectionSpec/secondaryActionLabel.html">secondaryActionLabel</a> visible quand il existe).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="title" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyToolsSectionSpec/title.html">title</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Titre de la section (déjà localisé par l'appelant — AD-13/FR-23).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study</a></li>
+    <li class="self-crumb">ZStudyToolsSectionSpec class</li>
+</ol>
+
+    <h5>zcrud_study library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zFnv1a32 function from the zcrud_study_kernel library, for the Dart programming language.">
+  <title>zFnv1a32 function - zcrud_study_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study_kernel</a></li>
+    <li><a href="../zcrud_study_kernel/">zcrud_study_kernel.dart</a></li>
+    <li class="self-crumb">zFnv1a32 function</li>
+  </ol>
+  <div class="self-name">zFnv1a32</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_study_kernel&#47;zcrud_study_kernel-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zFnv1a32</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+<span class="name ">zFnv1a32</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="zFnv1a32-param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">key</span></span></li>
+</ol>)
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>FNV-1a 32 bits sur les octets UTF-8 de <code>key</code> — déterministe entre
+exécutions, appareils et <strong>plateforme web</strong>.</p>
+<hr>
+<h2 id="ne-jamais--simplifier--la-multiplication">Ne jamais « simplifier » la multiplication</h2>
+<p>La multiplication est décomposée en deux moitiés de 16 bits parce que
+<code>hash * 16777619</code> dépasse la précision entière exacte sur <code>dart2js</code> (les
+<code>int</code> y sont des <code>double</code>) → perte de précision → hash différent sur le
+web.</p>
+<p>Le piège est vicieux : la variante naïve
+<code>hash = (hash * 0x01000193) &amp; 0xFFFFFFFF</code> passe tous les tests sur la VM
+(elle produit exactement les mêmes valeurs) et diverge sur le web. Mesuré
+par compilation <code>dart2js</code> réelle et exécution sous Node :</p>
+<table>
+<thead>
+<tr>
+<th>Entrée</th>
+<th>décomposée (VM &amp; JS)</th>
+<th>naïve (VM)</th>
+<th>naïve (JS)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>'a'</code></td>
+<td><code>0xE40C292C</code></td>
+<td><code>0xE40C292C</code></td>
+<td><code>0xE40C2930</code> (divergent)</td>
+</tr>
+<tr>
+<td><code>'foobar'</code></td>
+<td><code>0xBF9CF968</code></td>
+<td><code>0xBF9CF968</code></td>
+<td><code>0x06610426</code> (divergent)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="un-refactor--quivalent--est-donc-invisible-en-local--ce-qui-lattrapeest-le-rejeu-des-vecteurs-golden-de-ce-fichier-sur-plateforme-javascriptdart-test--p-node-ne-jamais-retirer-ce-gate-ne-jamais-rintroduiredartio-dans-le-fichier-de-test-associ-il-redeviendrait-noncompilable-en-js-et-le-filet-tomberait-silencieusement">Un refactor « équivalent » est donc invisible en local : ce qui l'attrape
+est le rejeu des vecteurs golden de ce fichier sur plateforme JavaScript
+(<code>dart test -p node</code>). Ne jamais retirer ce gate, ne jamais réintroduire
+<code>dart:io</code> dans le fichier de test associé (il redeviendrait non
+compilable en JS et le filet tomberait silencieusement).</h2>
+<p>Vecteurs de test publiés (oracle indépendant de cette implémentation) :
+<code>zFnv1a32('') == 0x811C9DC5</code>, <code>zFnv1a32('a') == 0xE40C292C</code>,
+<code>zFnv1a32('foobar') == 0xBF9CF968</code>. Si un vecteur échoue, l'implémentation
+est fausse — ne jamais ajuster le test pour le faire coller.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">int zFnv1a32(String key) {
+  var hash = 0x811c9dc5; &#47;&#47; offset basis FNV-1a 32 bits.
+  for (final byte in utf8.encode(key)) {
+    hash ^= byte;
+    &#47;&#47; Multiplication décomposée 16&#47;16 bits (JS-safe) — cf. dartdoc ci-dessus.
+    final lo = (hash &amp; 0xFFFF) * 0x01000193;
+    final hi = ((hash &gt;&gt;&gt; 16) * 0x01000193) &amp; 0xFFFF;
+    hash = (lo + (hi &lt;&lt; 16)) &amp; 0xFFFFFFFF;
+  }
+  return hash;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study_kernel</a></li>
+    <li><a href="../zcrud_study_kernel/">zcrud_study_kernel</a></li>
+    <li class="self-crumb">zFnv1a32 function</li>
+</ol>
+
+    <h5>zcrud_study_kernel library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study_kernel
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

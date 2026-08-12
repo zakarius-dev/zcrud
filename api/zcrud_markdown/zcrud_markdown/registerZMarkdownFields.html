@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the registerZMarkdownFields function from the zcrud_markdown library, for the Dart programming language.">
+  <title>registerZMarkdownFields function - zcrud_markdown library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_markdown</a></li>
+    <li><a href="../zcrud_markdown/">zcrud_markdown.dart</a></li>
+    <li class="self-crumb">registerZMarkdownFields function</li>
+  </ol>
+  <div class="self-name">registerZMarkdownFields</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_markdown&#47;zcrud_markdown-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">registerZMarkdownFields</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype">void</span>
+<span class="name ">registerZMarkdownFields</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="registerZMarkdownFields-param-registry"><span class="type-annotation">ZWidgetRegistry</span> <span class="parameter-name">registry</span>, {</span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-codec"><span class="type-annotation"><a href="../zcrud_markdown/ZCodec-class.html">ZCodec</a>?</span> <span class="parameter-name">codec</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-minLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">minLines</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-maxLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">maxLines</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-characterLimit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">characterLimit</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-styleSet"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextStyleSet-class.html">ZRichTextStyleSet</a>?</span> <span class="parameter-name">styleSet</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-chrome"><span class="type-annotation"><a href="../zcrud_markdown/ZMarkdownFieldChrome-class.html">ZMarkdownFieldChrome</a>?</span> <span class="parameter-name">chrome</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-textScaleFactor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">textScaleFactor</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-formulaSpec"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextFormulaSpec-class.html">ZRichTextFormulaSpec</a>?</span> <span class="parameter-name">formulaSpec</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-toolbarConfig"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextToolbarConfig-class.html">ZRichTextToolbarConfig</a>?</span> <span class="parameter-name">toolbarConfig</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-showLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showLabel</span> = <span class="default-value">true</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Enregistre les builders rich-text <code>zcrud_markdown</code> dans <code>registry</code>.</p>
+<p><code>codec</code> optionnel : format persisté partagé par tous les champs (défaut
+<code>ZDeltaCodec</code> via <a href="../zcrud_markdown/ZMarkdownField-class.html">ZMarkdownField</a>). Chaque builder construit un
+<a href="../zcrud_markdown/ZMarkdownField/ZMarkdownField.fromContext.html">ZMarkdownField.fromContext</a> avec <code>key: ValueKey(field.name)</code> (place stable —
+AD-2) et le <a href="../zcrud_markdown/ZMarkdownFieldMode.html">ZMarkdownFieldMode</a> dérivé du <code>kind</code> :</p>
+<table>
+<thead>
+<tr>
+<th><code>kind</code></th>
+<th>mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>inlineMarkdown</code></td>
+<td>inline</td>
+</tr>
+<tr>
+<td><code>markdown</code></td>
+<td>block</td>
+</tr>
+<tr>
+<td><code>richText</code></td>
+<td>block</td>
+</tr>
+</tbody>
+</table>
+<p><code>field.readOnly</code> est honoré par l'adaptateur (rendu lecteur, prioritaire).
+<code>minLines</code>/<code>maxLines</code> bornent la hauteur de l'éditeur inline
+(mode compact) ; <code>characterLimit</code> active un compteur + troncature
+souple. <code>styleSet</code>/<code>chrome</code>/<code>textScaleFactor</code>/<code>formulaSpec</code> (6/7, CR
+parité 2026-08-11) : défauts de REGISTRE partagés par tous les champs
+rich-text du sous-arbre (styles « signature » de l'hôte, habillage carte,
+échelle, formules). <code>toolbarConfig</code> (CR B2 2026-08-11) :
+config granulaire de la barre d'outils (boutons + <code>themedBarBackground</code>)
+partagée par tous les champs rich-text — le registre est la SEULE voie de
+construction pour un hôte, donc tout paramètre par-champ de <a href="../zcrud_markdown/ZMarkdownField-class.html">ZMarkdownField</a>
+DOIT être posable ici (garde de parité
+<code>z_markdown_registration_parity_test.dart</code>). <code>showLabel</code> : <code>false</code> masque
+le libellé rendu par le champ (hôte posant le sien).
+Tous OPTIONNELS : omis ⇒ comportement INCHANGÉ.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">void registerZMarkdownFields(
+  ZWidgetRegistry registry, {
+  ZCodec? codec,
+  int? minLines,
+  int? maxLines,
+  int? characterLimit,
+  ZRichTextStyleSet? styleSet,
+  ZMarkdownFieldChrome? chrome,
+  double? textScaleFactor,
+  ZRichTextFormulaSpec? formulaSpec,
+  ZRichTextToolbarConfig? toolbarConfig,
+  bool showLabel = true,
+}) {
+  Widget build(ZFieldWidgetContext ctx, ZMarkdownFieldMode mode) =&gt;
+      ZMarkdownField.fromContext(
+        &#47;&#47; Place stable (AD-2) : `State` persiste ⇒ QuillController jamais recréé.
+        key: ValueKey&lt;String&gt;(&#39;z-markdown-${ctx.field.name}&#39;),
+        ctx: ctx,
+        mode: mode,
+        codec: codec,
+        minLines: minLines,
+        maxLines: maxLines,
+        characterLimit: characterLimit,
+        styleSet: styleSet,
+        chrome: chrome,
+        textScaleFactor: textScaleFactor,
+        formulaSpec: formulaSpec,
+        toolbarConfig: toolbarConfig,
+        showLabel: showLabel,
+      );
+
+  registry.register(
+    &#39;inlineMarkdown&#39;,
+    (context, ctx) =&gt; build(ctx, ZMarkdownFieldMode.inline),
+  );
+  registry.register(
+    &#39;markdown&#39;,
+    (context, ctx) =&gt; build(ctx, ZMarkdownFieldMode.block),
+  );
+  registry.register(
+    &#39;richText&#39;,
+    (context, ctx) =&gt; build(ctx, ZMarkdownFieldMode.block),
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_markdown</a></li>
+    <li><a href="../zcrud_markdown/">zcrud_markdown</a></li>
+    <li class="self-crumb">registerZMarkdownFields function</li>
+</ol>
+
+    <h5>zcrud_markdown library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_markdown
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

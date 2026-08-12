@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZcrudScope class from the zcrud_core library, for the Dart programming language.">
+  <title>ZcrudScope class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZcrudScope class</li>
+  </ol>
+  <div class="self-name">ZcrudScope</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZcrudScope-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZcrudScope</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Scope d'injection Flutter-natif du cœur <code>zcrud_core</code>.</p>
+<p>Porte un <strong>bundle immuable de seams</strong> résolus :</p>
+<ul>
+<li><a href="../zcrud_core/ZcrudScope/resolver.html">resolver</a> : seam de résolution de dépendances applicatives (défaut :
+<a href="../zcrud_core/ZDependencyResolver/throwing-constant.html">ZDependencyResolver.throwing</a>) — inclut, côté binding, le <strong>seam de cycle
+de vie</strong> du <code>ZFormController</code> (défaut zéro-config : cycle local possédé par
+l'hôte) ;</li>
+<li><a href="../zcrud_core/ZcrudScope/acl.html">acl</a> : port d'autorisation (défaut sûr <a href="../zcrud_core/ZAllowAllAcl-class.html">ZAllowAllAcl</a>) ;</li>
+<li><a href="../zcrud_core/ZcrudScope/labels.html">labels</a> : registre de libellés surchargeables (défaut <code>null</code> →
+résolution retombe sur <code>ZcrudLocalizations</code>) ;</li>
+<li><a href="../zcrud_core/ZcrudScope/theme.html">theme</a> : design-tokens injectés (défaut <code>null</code> → <code>ZcrudTheme.of</code>
+retombe sur <code>Theme.of(context)</code>) ;</li>
+<li><a href="../zcrud_core/ZcrudScope/widgetRegistry.html">widgetRegistry</a> : registre de widgets d'édition servis <strong>ailleurs</strong>
+(AD-4 ; défaut <code>null</code> → tout type <code>registryOrFallback</code> retombe sur le repli
+<code>ZUnsupportedFieldWidget</code>). Instanciable, jamais un singleton statique.</li>
+</ul>
+<p>Résolution via <a href="../zcrud_core/ZcrudScope/of.html">of</a> / <a href="../zcrud_core/ZcrudScope/maybeOf.html">maybeOf</a>. Le constructeur par défaut (zéro-config) est
+utilisable sans fournir de manager : il expose un <a href="../zcrud_core/ZAllowAllAcl-class.html">ZAllowAllAcl</a> et un
+resolver throwing, <code>labels</code>/<code>theme</code> à <code>null</code> — les dépendances applicatives
+DOIVENT être fournies explicitement (« seams throw par défaut », AD-6).</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree-class.html">DiagnosticableTree</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/ProxyWidget-class.html">ProxyWidget</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/InheritedWidget-class.html">InheritedWidget</a></li>
+      <li>ZcrudScope</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZcrudScope.new" class="callable">
+          <span class="name"><a href="../zcrud_core/ZcrudScope/ZcrudScope.html">ZcrudScope</a></span><span class="signature">({<span class="parameter" id="param-child"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">child</span>, </span><span class="parameter" id="param-resolver"><span class="type-annotation"><a href="../zcrud_core/ZDependencyResolver-class.html">ZDependencyResolver</a></span> <span class="parameter-name">resolver</span> = <span class="default-value">ZDependencyResolver.throwing</span>, </span><span class="parameter" id="param-acl"><span class="type-annotation"><a href="../zcrud_core/ZAcl-class.html">ZAcl</a></span> <span class="parameter-name">acl</span> = <span class="default-value">const ZAllowAllAcl()</span>, </span><span class="parameter" id="param-labels"><span class="type-annotation"><a href="../zcrud_core/ZcrudLabels-class.html">ZcrudLabels</a>?</span> <span class="parameter-name">labels</span>, </span><span class="parameter" id="param-theme"><span class="type-annotation"><a href="../zcrud_core/ZcrudTheme-class.html">ZcrudTheme</a>?</span> <span class="parameter-name">theme</span>, </span><span class="parameter" id="param-widgetRegistry"><span class="type-annotation"><a href="../zcrud_core/ZWidgetRegistry-class.html">ZWidgetRegistry</a>?</span> <span class="parameter-name">widgetRegistry</span>, </span><span class="parameter" id="param-relationSourceRegistry"><span class="type-annotation"><a href="../zcrud_core/ZRelationSourceRegistry-class.html">ZRelationSourceRegistry</a>?</span> <span class="parameter-name">relationSourceRegistry</span>, </span><span class="parameter" id="param-choicesSourceRegistry"><span class="type-annotation"><a href="../zcrud_core/ZChoicesSourceRegistry-class.html">ZChoicesSourceRegistry</a>?</span> <span class="parameter-name">choicesSourceRegistry</span>, </span><span class="parameter" id="param-relationCrudRegistry"><span class="type-annotation"><a href="../zcrud_core/ZRelationCrudRegistry-class.html">ZRelationCrudRegistry</a>?</span> <span class="parameter-name">relationCrudRegistry</span>, </span><span class="parameter" id="param-filePicker"><span class="type-annotation"><a href="../zcrud_core/ZFilePicker-class.html">ZFilePicker</a>?</span> <span class="parameter-name">filePicker</span>, </span><span class="parameter" id="param-cloudStorage"><span class="type-annotation"><a href="../zcrud_core/CloudStorageRepository-class.html">CloudStorageRepository</a>?</span> <span class="parameter-name">cloudStorage</span>, </span><span class="parameter" id="param-appFileResolver"><span class="type-annotation"><a href="../zcrud_core/ZAppFileResolver-class.html">ZAppFileResolver</a>?</span> <span class="parameter-name">appFileResolver</span>, </span><span class="parameter" id="param-listRenderer"><span class="type-annotation"><a href="../zcrud_core/ZListRenderer-class.html">ZListRenderer</a>?</span> <span class="parameter-name">listRenderer</span>, </span><span class="parameter" id="param-reorderRenderer"><span class="type-annotation"><a href="../zcrud_core/ZReorderRenderer-class.html">ZReorderRenderer</a>?</span> <span class="parameter-name">reorderRenderer</span>, </span><span class="parameter" id="param-dropRegionRenderer"><span class="type-annotation"><a href="../zcrud_core/ZDropRegionRenderer-class.html">ZDropRegionRenderer</a>?</span> <span class="parameter-name">dropRegionRenderer</span>, </span><span class="parameter" id="param-selectPresenter"><span class="type-annotation"><a href="../zcrud_core/ZSelectPresenter-class.html">ZSelectPresenter</a>?</span> <span class="parameter-name">selectPresenter</span>, </span><span class="parameter" id="param-iconResolver"><span class="type-annotation"><a href="../zcrud_core/ZAdornmentIconResolver.html">ZAdornmentIconResolver</a>?</span> <span class="parameter-name">iconResolver</span>, </span><span class="parameter" id="param-colorPicker"><span class="type-annotation"><a href="../zcrud_core/ZColorPicker.html">ZColorPicker</a>?</span> <span class="parameter-name">colorPicker</span>, </span><span class="parameter" id="param-colorKeyResolver"><span class="type-annotation"><a href="../zcrud_core/ZColorKeyResolver.html">ZColorKeyResolver</a>?</span> <span class="parameter-name">colorKeyResolver</span>, </span><span class="parameter" id="param-gradientResolver"><span class="type-annotation"><a href="../zcrud_core/ZGradientResolver.html">ZGradientResolver</a>?</span> <span class="parameter-name">gradientResolver</span>, </span><span class="parameter" id="param-richTextRenderer"><span class="type-annotation"><a href="../zcrud_core/ZRichTextRenderer-class.html">ZRichTextRenderer</a>?</span> <span class="parameter-name">richTextRenderer</span>, </span><span class="parameter" id="param-dateDisplayFormatter"><span class="type-annotation"><a href="../zcrud_core/ZDateDisplayFormatter-class.html">ZDateDisplayFormatter</a>?</span> <span class="parameter-name">dateDisplayFormatter</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+        </dt>
+        <dd>
+          Construit le scope. Zéro-config par défaut : <code>resolver</code> throwing + <code>acl</code>
+permissive + <code>labels</code>/<code>theme</code> <code>null</code>. Un binding/app fournit des seams
+concrets en les passant ici.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="acl" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/acl.html">acl</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZAcl-class.html">ZAcl</a></span>
+  
+
+</dt>
+<dd>
+  Port d'autorisation (défaut : permissif <a href="../zcrud_core/ZAllowAllAcl-class.html">ZAllowAllAcl</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="appFileResolver" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/appFileResolver.html">appFileResolver</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZAppFileResolver-class.html">ZAppFileResolver</a>?</span>
+  
+
+</dt>
+<dd>
+  Port de résolution des <strong>références opaques</strong> de fichiers (<code>String</code> →
+<code>AppFile</code>), pour un hôte qui stocke des identifiants et non des objets
+fichier.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="child" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/ProxyWidget/child.html">child</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The widget below this widget in the tree.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="choicesSourceRegistry" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/choicesSourceRegistry.html">choicesSourceRegistry</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZChoicesSourceRegistry-class.html">ZChoicesSourceRegistry</a>?</span>
+  
+
+</dt>
+<dd>
+  Registre de sources d'options <strong>calculées</strong> du champ <code>select</code> (AD-4 ;
+défaut <code>null</code> → tout <code>select</code> retombe sur <code>choicesFromKey</code> puis sur
+le <strong>dropdown statique</strong> sur <code>choices</code> — repli universel rétro-compatible).
+Instanciable, injecté (jamais un singleton statique mutable). L'impl concrète
+de <code>ZChoicesSource</code> (calcul métier des options depuis l'état) vit hors du
+cœur (binding/app), jamais ici (AD-1).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="cloudStorage" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/cloudStorage.html">cloudStorage</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/CloudStorageRepository-class.html">CloudStorageRepository</a>?</span>
+  
+
+</dt>
+<dd>
+  Port de stockage cloud (AD-1/AD-5/AD-6 ; défaut <code>null</code> → fichier
+reste <code>pending</code>, orchestration draft→cloud déférée à l'app/<code>onSubmit</code>).
+Impl concrète (Firebase Storage) fournie par <code>zcrud_firestore</code>,
+jamais le cœur.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="colorKeyResolver" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/colorKeyResolver.html">colorKeyResolver</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZColorKeyResolver.html">ZColorKeyResolver</a>?</span>
+  
+
+</dt>
+<dd>
+  Résolveur de <strong>couleur de clé de palette</strong> host-fourni.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="colorPicker" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/colorPicker.html">colorPicker</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZColorPicker.html">ZColorPicker</a>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Seam de picker de couleur</strong> host-fourni (roue HSV/hex/
+opacité tierce, ex. <code>flex_color_picker</code> ; défaut <code>null</code> → repli sur le
+<strong>picker built-in NEUTRE</strong> du cœur). Le cœur ne dépend d'AUCUN package de
+picker (AD-1) : l'impl concrète vit dans l'app/le binding. Instanciable,
+injecté (jamais un singleton statique mutable).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="dateDisplayFormatter" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/dateDisplayFormatter.html">dateDisplayFormatter</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZDateDisplayFormatter-class.html">ZDateDisplayFormatter</a>?</span>
+  
+
+</dt>
+<dd>
+  Seam de <strong>formatage d'affichage des dates</strong>.
+<code>null</code> (défaut) ⇒ toute voie de lecture rend la <strong>chaîne stockée brute</strong>
+(l'ISO-8601) — comportement d'aujourd'hui <strong>strictement inchangé</strong> pour un
+hôte passif. C'est un changement visible UNIQUEMENT pour qui injecte.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="dropRegionRenderer" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/dropRegionRenderer.html">dropRegionRenderer</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZDropRegionRenderer-class.html">ZDropRegionRenderer</a>?</span>
+  
+
+</dt>
+<dd>
+  Seam de <strong>zone de dépôt NATIVE</strong> (défaut <code>null</code> →
+<a href="../zcrud_core/ZNoDropRegionRenderer-class.html">ZNoDropRegionRenderer</a>, qui rend le contenu SANS capacité de dépôt).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="filePicker" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/filePicker.html">filePicker</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZFilePicker-class.html">ZFilePicker</a>?</span>
+  
+
+</dt>
+<dd>
+  Seam d'acquisition de fichiers (AD-1/AD-6 ; défaut <code>null</code> → actions
+scan/caméra/galerie/picker désactivées proprement). Impl concrète
+(image_picker/file_picker) fournie par l'app/binding, jamais le cœur.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="gradientResolver" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/gradientResolver.html">gradientResolver</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZGradientResolver.html">ZGradientResolver</a>?</span>
+  
+
+</dt>
+<dd>
+  Couture de dégradé hôte. <code>null</code> conserve le repli neutre ou
+l'accent uni ; fournir une instance <code>const</code> ou mémoïsée hors de <code>build</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="iconResolver" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/iconResolver.html">iconResolver</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZAdornmentIconResolver.html">ZAdornmentIconResolver</a>?</span>
+  
+
+</dt>
+<dd>
+  Résolveur d'<strong>icône d'ornement</strong> host-fourni (défaut <code>null</code> →
+le cœur retombe sur sa <strong>table Material bornée</strong> par défaut, puis <code>null</code> si
+la clé reste inconnue — AD-10). Traduit une <strong>clé neutre</strong> (<code>String</code>) de
+<code>ZFieldAdornment.icon(key)</code> en <code>IconData</code> <strong>sans</strong> que le domaine ne porte
+jamais d'<code>IconData</code> (AD-3/AD-14). Instanciable, injecté (jamais un singleton).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="key" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/key.html">key</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span>
+  
+
+</dt>
+<dd class="inherited">
+  Controls how one widget replaces another widget in the tree.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="labels" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/labels.html">labels</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZcrudLabels-class.html">ZcrudLabels</a>?</span>
+  
+
+</dt>
+<dd>
+  Registre de libellés surchargeables (défaut <code>null</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="listRenderer" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/listRenderer.html">listRenderer</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZListRenderer-class.html">ZListRenderer</a>?</span>
+  
+
+</dt>
+<dd>
+  Seam de rendu de liste (AD-8 ; défaut <code>null</code> → <code>DynamicList</code>
+lève une <a href="../zcrud_core/ZScopeError-class.html">ZScopeError</a> actionnable tant qu'aucun backend n'est injecté).
+<code>zcrud_core</code> ne fournit AUCUNE implémentation concrète : le rendu Syncfusion
+(<code>ZSfDataGridRenderer</code>) vit dans <code>zcrud_list</code> et est injecté par l'app/le
+binding (<code>ZcrudScope(listRenderer: const ZSfDataGridRenderer())</code>). Un
+backend Material <code>DataTable</code> reste implémentable sur le même port. Jamais
+un singleton statique mutable.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="relationCrudRegistry" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/relationCrudRegistry.html">relationCrudRegistry</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZRelationCrudRegistry-class.html">ZRelationCrudRegistry</a>?</span>
+  
+
+</dt>
+<dd>
+  Registre de handlers <strong>CRUD inline</strong> du champ <code>relation</code> (AD-4 ;
+défaut <code>null</code> → aucun bouton créer/modifier/copier — comportement du
+dropdown statique identique). Instanciable, injecté (jamais un singleton
+statique mutable). L'impl concrète
+de <code>ZRelationCrudHandler</code> (formulaire d'édition + repository create/update/copy)
+vit hors du cœur (app/<code>zcrud_firestore</code>), jamais ici (AD-1).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="relationSourceRegistry" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/relationSourceRegistry.html">relationSourceRegistry</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZRelationSourceRegistry-class.html">ZRelationSourceRegistry</a>?</span>
+  
+
+</dt>
+<dd>
+  Registre de sources dynamiques du champ <code>relation</code> (AD-4 ;
+défaut <code>null</code> → tout champ <code>relation</code> retombe sur le <strong>dropdown statique</strong>
+sur <code>choices</code> — repli universel rétro-compatible). Instanciable, injecté
+(jamais un singleton statique mutable). L'impl concrète de <code>ZRelationSource</code>
+(flux repository + mapping entité→<code>ZFieldChoice</code> + filtre
+métier) vit hors du cœur (<code>zcrud_firestore</code>/app), jamais ici (AD-1).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="reorderRenderer" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/reorderRenderer.html">reorderRenderer</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZReorderRenderer-class.html">ZReorderRenderer</a>?</span>
+  
+
+</dt>
+<dd>
+  Seam de <strong>rendu réordonnable</strong> (défaut <code>null</code> → le repli
+zéro-dépendance s'applique, donc AUCUNE régression
+pour un hôte qui n'injecte rien).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="resolver" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/resolver.html">resolver</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZDependencyResolver-class.html">ZDependencyResolver</a></span>
+  
+
+</dt>
+<dd>
+  Seam de résolution des dépendances applicatives (défaut : throwing).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="richTextRenderer" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/richTextRenderer.html">richTextRenderer</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZRichTextRenderer-class.html">ZRichTextRenderer</a>?</span>
+  
+
+</dt>
+<dd>
+  Seam de <strong>rendu de texte riche</strong>. <code>null</code> (défaut) ⇒
+tout balisage est rendu en <strong>texte simple</strong>, comportement d'aujourd'hui
+<strong>strictement inchangé</strong> pour un hôte passif.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="selectPresenter" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/selectPresenter.html">selectPresenter</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSelectPresenter-class.html">ZSelectPresenter</a>?</span>
+  
+
+</dt>
+<dd>
+  Seam de <strong>présentation riche des familles de sélection</strong> (défaut
+<code>null</code> → rendu <strong>natif</strong> zcrud strictement conservé). Injecté par l'app/le
+binding pour brancher un présentateur riche
+sur <code>select</code>/<code>radio</code>/<code>checkbox</code>/<code>relation</code>. <code>zcrud_core</code> ne fournit AUCUNE
+implémentation concrète : l'impl vit dans le paquet de sélection riche,
+jamais dans le cœur (AD-1). Le présentateur ne
+reçoit qu'un <code>ZSelectPresentation</code> neutre (jamais le <code>ZFormController</code> —
+AD-2). Jamais un singleton statique mutable.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="theme" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/theme.html">theme</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZcrudTheme-class.html">ZcrudTheme</a>?</span>
+  
+
+</dt>
+<dd>
+  Design-tokens injectés (défaut <code>null</code> → repli <code>Theme.of</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="widgetRegistry" class="property">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/widgetRegistry.html">widgetRegistry</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZWidgetRegistry-class.html">ZWidgetRegistry</a>?</span>
+  
+
+</dt>
+<dd>
+  Registre de widgets d'édition servis <strong>ailleurs</strong> (AD-4 ; défaut
+<code>null</code> → repli <code>ZUnsupportedFieldWidget</code>). Instanciable, injecté (jamais
+un singleton statique mutable).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="createElement" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/InheritedWidget/createElement.html">createElement</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/InheritedElement-class.html">InheritedElement</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Inflates this configuration to a concrete instance.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="debugDescribeChildren" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/debugDescribeChildren.html">debugDescribeChildren</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a list of <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a> objects describing this node's
+children.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="debugFillProperties" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/debugFillProperties.html">debugFillProperties</a></span><span class="signature">(<wbr><span class="parameter" id="debugFillProperties-param-properties"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticPropertiesBuilder-class.html">DiagnosticPropertiesBuilder</a></span> <span class="parameter-name">properties</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Add additional properties associated with the node.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toDiagnosticsNode" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toDiagnosticsNode.html">toDiagnosticsNode</a></span><span class="signature">(<wbr>{<span class="parameter" id="toDiagnosticsNode-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span><span class="parameter" id="toDiagnosticsNode-param-style"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsTreeStyle.html">DiagnosticsTreeStyle</a>?</span> <span class="parameter-name">style</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a debug representation of the object that is used by debugging
+tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode/toStringDeep.html">DiagnosticsNode.toStringDeep</a>.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/Diagnosticable/toString.html">toString</a></span><span class="signature">(<wbr>{<span class="parameter" id="toString-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.info</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringDeep" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringDeep.html">toStringDeep</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringDeep-param-prefixLineOne"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">prefixLineOne</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="toStringDeep-param-prefixOtherLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">prefixOtherLines</span>, </span><span class="parameter" id="toStringDeep-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span>, </span><span class="parameter" id="toStringDeep-param-wrapWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">wrapWidth</span> = <span class="default-value">65</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a string representation of this node and its descendants.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShallow" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringShallow.html">toStringShallow</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringShallow-param-joiner"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">joiner</span> = <span class="default-value">&#39;, &#39;</span>, </span><span class="parameter" id="toStringShallow-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a one-line detailed description of the object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShort" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/toStringShort.html">toStringShort</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A short, textual description of this widget.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="updateShouldNotify" class="callable">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/updateShouldNotify.html">updateShouldNotify</a></span><span class="signature">(<wbr><span class="parameter" id="updateShouldNotify-param-oldWidget"><span>covariant</span> <span class="type-annotation"><a href="../zcrud_core/ZcrudScope-class.html">ZcrudScope</a></span> <span class="parameter-name">oldWidget</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Whether the framework should notify widgets that inherit from this widget.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="maybeOf" class="callable">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/maybeOf.html">maybeOf</a></span><span class="signature">(<wbr><span class="parameter" id="maybeOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZcrudScope-class.html">ZcrudScope</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Retourne le <a href="../zcrud_core/ZcrudScope-class.html">ZcrudScope</a> le plus proche, ou <code>null</code> s'il n'y en a pas.
+  
+
+</dd>
+
+        <dt id="of" class="callable">
+  <span class="name"><a href="../zcrud_core/ZcrudScope/of.html">of</a></span><span class="signature">(<wbr><span class="parameter" id="of-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZcrudScope-class.html">ZcrudScope</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Retourne le <a href="../zcrud_core/ZcrudScope-class.html">ZcrudScope</a> le plus proche.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZcrudScope class</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

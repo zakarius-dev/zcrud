@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the resolve method from the ZGetResolver class, for the Dart programming language.">
+  <title>resolve method - ZGetResolver class - zcrud_get library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_get</a></li>
+    <li><a href="../../zcrud_get/">zcrud_get.dart</a></li>
+    <li><a href="../../zcrud_get/ZGetResolver-class.html">ZGetResolver</a></li>
+    <li class="self-crumb">resolve&lt;<wbr><span class="type-parameter">T</span>&gt; method</li>
+  </ol>
+  <div class="self-name">resolve</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_get&#47;ZGetResolver-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">resolve&lt;<wbr><span class="type-parameter">T</span>&gt;</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype">T</span>
+<span class="name ">resolve</span>&lt;<wbr><span class="type-parameter">T</span>&gt;(<wbr>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Résout la dépendance de type <code>T</code> fournie par le binding.</p>
+<p>Lève <code>ZScopeError</code> (message actionnable) si <code>T</code> n'a pas été fournie.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+T resolve&lt;T&gt;() {
+  &#47;&#47; Lookup par Type (escape hatch get_it) → compatible avec un `T` non borné.
+  if (!_locator.isRegistered&lt;Object&gt;(type: T)) {
+    throw ZScopeError(
+      &#39;Aucune dépendance de type «$T» enregistrée dans le locator get_it &#39;
+      &#39;du ZcrudGetScope. Enregistrez-la (getIt.registerSingleton&lt;$T&gt;(...) ou &#39;
+      &#39;Get.put&lt;$T&gt;(...)) avant de la résoudre.&#39;,
+    );
+  }
+  return _locator.get&lt;Object&gt;(type: T) as T;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_get</a></li>
+    <li><a href="../../zcrud_get/">zcrud_get</a></li>
+    <li><a href="../../zcrud_get/ZGetResolver-class.html">ZGetResolver</a></li>
+    <li class="self-crumb">resolve&lt;<wbr><span class="type-parameter">T</span>&gt; method</li>
+</ol>
+
+    <h5>ZGetResolver class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_get
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

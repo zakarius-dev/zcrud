@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Référence d'API — zcrud</title>
+<meta name="description" content="Index de la référence d'API dartdoc des paquets zcrud, groupés par capacité.">
+<style>
+:root {
+  --bg: #ffffff;
+  --bg-alt: #f4f5f7;
+  --fg: #1a1c20;
+  --fg-muted: #5a6270;
+  --border: #dfe2e8;
+  --accent: #2563eb;
+  --ok-bg: #eaf7ee;
+  --ok-fg: #1c7a3d;
+  --ko-bg: #fbeaea;
+  --ko-fg: #a3272c;
+  --card-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14161a;
+    --bg-alt: #1c1f25;
+    --fg: #e7e9ee;
+    --fg-muted: #9aa2b1;
+    --border: #2b2f38;
+    --accent: #6ea8ff;
+    --ok-bg: #123321;
+    --ok-fg: #6fd897;
+    --ko-bg: #391c1d;
+    --ko-fg: #f19b9e;
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+main { max-width: 960px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+header h1 { font-size: 1.75rem; margin: 0 0 0.4rem; }
+header p.lede { color: var(--fg-muted); margin: 0 0 1.5rem; }
+.summary {
+  display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem;
+}
+.pill {
+  border-radius: 999px; padding: 0.3rem 0.8rem; font-size: 0.85rem;
+  border: 1px solid var(--border); background: var(--bg-alt); color: var(--fg-muted);
+}
+.pill strong { color: var(--fg); }
+section.category { margin-bottom: 2rem; }
+section.category h2 {
+  font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--fg-muted); border-bottom: 1px solid var(--border); padding-bottom: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+ul.pkg-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+li.pkg-card {
+  border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 1rem;
+  background: var(--bg-alt); box-shadow: var(--card-shadow);
+}
+li.pkg-card .row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+li.pkg-card a.pkg-name { font-weight: 600; text-decoration: none; color: var(--accent); font-size: 1rem; }
+li.pkg-card a.pkg-name:hover { text-decoration: underline; }
+li.pkg-card span.pkg-name.disabled { font-weight: 600; color: var(--fg-muted); font-size: 1rem; }
+li.pkg-card p.role { margin: 0.35rem 0 0; color: var(--fg-muted); font-size: 0.92rem; }
+.badge {
+  font-size: 0.72rem; padding: 0.15rem 0.55rem; border-radius: 999px; white-space: nowrap;
+}
+.badge.ok { background: var(--ok-bg); color: var(--ok-fg); }
+.badge.ko { background: var(--ko-bg); color: var(--ko-fg); }
+footer { margin-top: 3rem; color: var(--fg-muted); font-size: 0.85rem; }
+footer a { color: var(--accent); }
+
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>Référence d'API — zcrud</h1>
+<p class="lede">Documentation générée par <code>dart doc</code> pour chaque paquet du monorepo, groupée par capacité — même découpage que le catalogue des paquets du <a href="../">site zcrud</a>.</p>
+</header>
+<div class="summary">
+<span class="pill"><strong>39</strong> paquets</span>
+<span class="pill"><strong>39</strong> documentés</span>
+</div>
+<section class="category">
+<h2>Cœur</h2>
+<ul class="pkg-list">
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_core/index.html">zcrud_core</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Domaine pur et moteur d'édition Flutter-natif : ZFieldSpec, ports, thème, l10n, ZcrudScope.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_annotations/index.html">zcrud_annotations</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Annotations @ZcrudModel/@ZcrudField/@ZcrudId, lues par le générateur.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_generator/index.html">zcrud_generator</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Générateur build_runner : (dé)sérialisation, ZFieldSpec[] et enregistrement au registre.</p>
+</li>
+</ul>
+</section>
+<section class="category">
+<h2>Bindings d'état</h2>
+<ul class="pkg-list">
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_riverpod/index.html">zcrud_riverpod</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Binding état/injection Riverpod (optionnel) — cible lex_douane/IFFD.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_get/index.html">zcrud_get</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Binding état/injection GetX + get_it (optionnel) — cible DODLP.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_provider/index.html">zcrud_provider</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Binding état/injection provider (optionnel).</p>
+</li>
+</ul>
+</section>
+<section class="category">
+<h2>Liste &amp; données</h2>
+<ul class="pkg-list">
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_list/index.html">zcrud_list</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Backend de liste Syncfusion (SfDataGrid) derrière le port ZListRenderer du cœur.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_firestore/index.html">zcrud_firestore</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Adaptateurs Firestore/Hive offline-first derrière les ports neutres du cœur.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_select/index.html">zcrud_select</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Présentateur de sélection (page/dialogue/feuille) au-dessus d'un fork vendored d'awesome_select.</p>
+</li>
+</ul>
+</section>
+<section class="category">
+<h2>Rich-text</h2>
+<ul class="pkg-list">
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_markdown/index.html">zcrud_markdown</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Édition/lecture Markdown riche (Quill) avec ZCodec pluggable et embeds LaTeX/tableaux.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_html/index.html">zcrud_html</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Champ HTML riche via WebView à contrôleur isolé — exclusif de zcrud_markdown.</p>
+</li>
+</ul>
+</section>
+<section class="category">
+<h2>Étude</h2>
+<ul class="pkg-list">
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_study/index.html">zcrud_study</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Orchestration de présentation des outils d'étude (sections paramétriques, layout sectionné).</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_study_kernel/index.html">zcrud_study_kernel</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Noyau bas niveau de l'étude : dossiers, hiérarchie à 2 niveaux, modes de révision, sélecteur de session.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_session/index.html">zcrud_session</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Moteur de session (ZStudySessionEngine) : file SRS cyclique, écriture par seam reviewCard unique.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_flashcard/index.html">zcrud_flashcard</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Flashcards en répétition espacée : modèle, planificateur SuperMemo-2, dossiers/sessions, repository offline-first.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_exam/index.html">zcrud_exam</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Domaine des examens datés (rappels, calcul de proximité par horloge injectée).</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_mindmap/index.html">zcrud_mindmap</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Cartes mentales : arbre immuable, vue à disposition automatique, éditeur en plan.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_note/index.html">zcrud_note</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Domaine des notes intelligentes à contenu Delta typé, avec extension audio optionnelle.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_document/index.html">zcrud_document</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Domaine des documents d'étude partageables et de leur état de lecture personnel.</p>
+</li>
+</ul>
+</section>
+<section class="category">
+<h2>Chat</h2>
+<ul class="pkg-list">
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_chat/index.html">zcrud_chat</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Contrôleur de conversation Flutter-natif (tranches ValueListenable, flux reprenables).</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_chat_kernel/index.html">zcrud_chat_kernel</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Noyau neutre de conversation IA (messages, blocs de contenu, sources, quotas).</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_chat_markdown/index.html">zcrud_chat_markdown</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Rendu Markdown/LaTeX du chat, derrière le seam ZChatRenderer.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_chat_material/index.html">zcrud_chat_material</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Builders Material calqués sur la référence lex_douane pour le composeur et les réglages de chat.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_chat_study/index.html">zcrud_chat_study</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Pont chat → SRS : cartes générées depuis les conversations, pool d'étude dédupliqué.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_chat_syncfusion/index.html">zcrud_chat_syncfusion</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Coquille Syncfusion AI AssistView et normalisation de flux texte, derrière ZChatRenderer.</p>
+</li>
+</ul>
+</section>
+<section class="category">
+<h2>Champs spécialisés</h2>
+<ul class="pkg-list">
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_geo/index.html">zcrud_geo</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Champs géo (point/aire/cercle/tracé) avec adaptateur carte OpenStreetMap optionnel.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_geo_location/index.html">zcrud_geo_location</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Résolveur de position courante (geolocator) pour zcrud_geo, sans fuite de type SDK.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_intl/index.html">zcrud_intl</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Champs téléphone/pays/adresse avec métadonnées embarquées hors-ligne.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_media/index.html">zcrud_media</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Champ média (dépôt/aperçu/vignette vidéo) au-dessus du port ZFilePicker du cœur.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_field_extras/index.html">zcrud_field_extras</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Champs spécialisés PIN / autocomplétion / tableau éditable / icône.</p>
+</li>
+</ul>
+</section>
+<section class="category">
+<h2>Export</h2>
+<ul class="pkg-list">
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_export/index.html">zcrud_export</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Export tabulaire Excel/PDF (Syncfusion) derrière une API neutre en octets.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_export_pdf/index.html">zcrud_export_pdf</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Export PDF (gabarits de flashcards et documents tabulaires), sans dépendance tableur.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_export_ui/index.html">zcrud_export_ui</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Destinations d'export plateforme : aperçu/impression/partage PDF et rastérisation LaTeX.</p>
+</li>
+</ul>
+</section>
+<section class="category">
+<h2>UI &amp; navigation</h2>
+<ul class="pkg-list">
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_ui_kit/index.html">zcrud_ui_kit</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Widgets d'état de contenu (vide/chargement/erreur) et boîte de dialogue de confirmation thémée.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_responsive/index.html">zcrud_responsive</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Classes de largeur de fenêtre (Material 3) et valeurs par point de rupture.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_menu/index.html">zcrud_menu</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Menus contextuels découplés derrière un seam neutre, avec repli Material sans dépendance tierce.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_navigation/index.html">zcrud_navigation</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Politique de présentation d'édition (page/feuille/dialogue) dérivée du point de rupture.</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_dnd/index.html">zcrud_dnd</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Glisser-déposer natif opt-in (dépôts fichiers OS, échange inter-applications).</p>
+</li>
+<li class="pkg-card">
+<div class="row">
+<a class="pkg-name" href="./zcrud_reorder/index.html">zcrud_reorder</a>
+<span class="badge ok">documenté</span>
+</div>
+<p class="role">Backend de réordonnancement opt-in, avec repli zéro-dépendance si non installé.</p>
+</li>
+</ul>
+</section>
+<footer>
+<p>Généré par <code>melos run doc:api</code> (<code>scripts/doc/build_api_docs.dart</code>) — régénéré avant chaque publication, non versionné.</p>
+</footer>
+</main>
+</body>
+</html>

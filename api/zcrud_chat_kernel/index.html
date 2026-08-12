@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_chat_kernel API docs, for the Dart programming language.">
+  <title>zcrud_chat_kernel - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_chat_kernel package</a></li>
+  </ol>
+  <div class="self-name">zcrud_chat_kernel</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_chat_kernel">zcrud_chat_kernel</h1>
+<p>Noyau Dart pur de conversation IA de zcrud — modèle neutre de chat et contrat
+d'action de message, borné par l'invariant AD-1 (aucune dépendance lourde,
+une seule arête sortante vers <code>zcrud_core</code>).</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_chat_kernel</code> est le paquet <strong>kernel</strong> de la capacité chat, au sens du
+patron <a href="../../docs/site/concepts/architecture-hexagonale.md#le-patron-kernel-satellite">kernel/satellite</a> :
+il porte les entités et les règles métier, sans aucune dépendance <code>flutter:</code>.
+Le rendu Flutter et les intégrations riches vivent dans des paquets
+<strong>satellites</strong> qui dépendent de ce kernel — <code>zcrud_chat</code> (contrôleur
+Flutter-natif), <code>zcrud_chat_markdown</code> (rendu Markdown/LaTeX),
+<code>zcrud_chat_material</code> (composeur Material), <code>zcrud_chat_study</code> (pont vers les
+flashcards) et <code>zcrud_chat_syncfusion</code> (coquille Syncfusion AI AssistView).</p>
+<p>Ce paquet fournit :</p>
+<ul>
+<li>le modèle neutre — <code>ZChatConversation</code>, <code>ZChatMessage</code>, la famille ouverte
+<code>ZContentBlock</code>, les sources, suggestions, quotas et métadonnées de
+réponse ;</li>
+<li>le contrat d'<strong>action</strong> de message — intentions scellées (<code>ZChatAction</code>),
+plan d'impact (<code>ZChatActionPlan</code>) et répartiteur unique
+(<code>ZChatActionDispatcher</code>) ;</li>
+<li>les <strong>ports</strong> que l'hôte implémente pour brancher un backend réel :
+génération (one-shot et streaming), gestion de conversation, saisie
+assistée (dictée/OCR), diffusion vocale.</li>
+</ul>
+<p><strong>Utilisez ce paquet</strong> si vous devez traiter des conversations IA hors
+Flutter (migration de données, traitement serveur, test unitaire), ou si vous
+écrivez un nouveau satellite de rendu qui a seulement besoin du modèle et des
+contrats. <strong>N'utilisez pas ce paquet directement</strong> pour construire une
+interface de chat : passez par <code>zcrud_chat</code>, qui assemble ce kernel avec un
+contrôleur <code>ChangeNotifier</code> réactif (invariant AD-2) et les rendus riches.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
+
+void main() {
+  final conversation = ZChatConversation(
+    title: 'Discussion tarifaire',
+    lastMessageAt: DateTime.now(),
+  );
+
+  final message = ZChatMessage(
+    conversationId: conversation.id ?? '',
+    role: ZChatRole.assistant,
+    contentBlocks: const &lt;ZContentBlock&gt;[ZTextBlock(text: 'Bonjour !')],
+    createdAt: DateTime.now(),
+  );
+
+  // Round-trip sans perte, tel que le fera un store d'hôte.
+  final Map&lt;String, dynamic&gt; persisted = message.toMap();
+  final ZChatMessage relu = ZChatMessage.fromMap(persisted);
+  assert(relu.content == 'Bonjour !');
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Kernel Dart pur</strong> — ce paquet n'importe ni <code>flutter:</code>, ni <code>dart:ui</code>, ni
+aucun autre paquet <code>zcrud_*</code> que <code>zcrud_core</code> (surface pur-Dart
+<code>package:zcrud_core/domain.dart</code>). Sa suite tourne sous <code>dart test</code>. Voir
+<a href="../../docs/site/concepts/architecture-hexagonale.md">Architecture hexagonale</a>.</li>
+<li><strong>Modèle ouvert par composition (invariant AD-4)</strong> — <code>ZContentBlock</code> et
+<code>ZChatAction</code> sont des unions <code>sealed</code> <strong>en interne</strong> avec un variant ouvert
+(<code>ZCustomContentBlock</code>, <code>ZChatCustomAction</code>) : un hôte étend le vocabulaire
+sans forker le kernel, via <code>ZTypeRegistry</code>. Aucun héritage inter-paquet.
+Voir <a href="../../docs/site/concepts/invariants.md#ad-4">Invariants d'architecture — AD-4</a>.</li>
+<li><strong>Un verbe, un seul site d'appel</strong> — <code>ZChatActionDispatcher</code> n'expose que
+<code>prepare</code>/<code>execute</code> ; les membres d'effet de <code>ZChatActionExecutor</code> ne sont
+invocables que depuis ce répartiteur. Une action détruisant du contenu
+(<code>isDestructive</code>) impose une confirmation avant que l'exécuteur soit touché.</li>
+<li><strong>Ports plutôt qu'implémentations</strong> — la génération (<code>ZChatGenerationPort</code>,
+<code>ZChatStreamPort</code>), la gestion de conversation
+(<code>ZChatConversationSearchPort</code> et consorts), la capture assistée
+(<code>ZChatDictationPort</code>, <code>ZChatOcrPort</code>) et la diffusion vocale
+(<code>ZChatSpeechPort</code>) sont des <code>abstract interface class</code> : le kernel ne
+connaît aucun fournisseur concret, conformément à l'invariant AD-5.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZChatConversation</code></td>
+<td>Entité conversation — titre, récence (<code>lastMessageAt</code>), épinglage, extension versionnée.</td>
+</tr>
+<tr>
+<td><code>ZChatMessage</code></td>
+<td>Entité message — rôle, blocs de contenu, sources, feedback, confiance, extension versionnée.</td>
+</tr>
+<tr>
+<td><code>ZContentBlock</code></td>
+<td>Famille ouverte de blocs (<code>ZTextBlock</code>, <code>ZSuggestionsBlock</code>, <code>ZCustomContentBlock</code>…).</td>
+</tr>
+<tr>
+<td><code>ZChatSource</code> / <code>ZChatSourceFreshness</code></td>
+<td>Source citée et fiche de fraîcheur d'un dataset cité.</td>
+</tr>
+<tr>
+<td><code>ZChatResponseConfidence</code></td>
+<td>Palier de confiance dérivé, fail-safe, jamais fabriqué sans signal.</td>
+</tr>
+<tr>
+<td><code>ZChatAction</code> / <code>ZChatActionPlan</code> / <code>ZChatActionDispatcher</code></td>
+<td>Intentions scellées, plan d'impact chiffré, répartiteur unique.</td>
+</tr>
+<tr>
+<td><code>ZChatGenerationPort</code> / <code>ZChatStreamPort</code></td>
+<td>Ports de génération one-shot et de streaming, paramétrés par <code>ZChatGenerationStyle</code>.</td>
+</tr>
+<tr>
+<td><code>ZChatStreamEvent</code></td>
+<td>Union scellée des événements de flux (<code>token</code>, <code>thinking</code>, <code>done</code>…), variant ouvert <code>ZChatCustomStreamEvent</code>.</td>
+</tr>
+<tr>
+<td><code>ZChatConversationSearchPort</code>, etc.</td>
+<td>Ports de gestion de conversation — recherche, épinglage, partage, retrait soft.</td>
+</tr>
+<tr>
+<td><code>ZChatCaptureRejection</code> / <code>ZUnreviewedText</code></td>
+<td>Saisie assistée avec relecture obligatoire rendue structurelle.</td>
+</tr>
+<tr>
+<td><code>ZChatSpeechPort</code> / <code>ZChatSpeechChain</code></td>
+<td>Diffusion vocale avec chaîne de repli explicite.</td>
+</tr>
+<tr>
+<td><code>ZChatQuotaSnapshot</code> / <code>ZChatQuotaMetadata</code></td>
+<td>Instantané de quota observationnel et métadonnées associées.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Désérialisation totale, jamais levée</strong> (invariant AD-10) — chaque
+<code>fromJson</code>/<code>fromMap</code> de ce paquet rend un résultat même sur une entrée
+vide, corrompue ou de mauvais type : un rôle inconnu retombe sur
+<code>ZChatRole.unknown</code>, un bloc de type inconnu devient
+<code>ZCustomContentBlock</code>, une date illisible devient <code>null</code>. Un champ
+corrompu ne fait jamais échouer le parent.</li>
+<li><strong><code>updated_at</code> / <code>is_deleted</code> n'existent pas sur les entités</strong> (invariant
+AD-9) — ces clés appartiennent à <code>ZSyncMeta</code>, hors-entité. <code>ZChatConversation</code>
+expose <code>lastMessageAt</code> (persisté <code>last_message_at</code>) comme champ métier
+distinct, précisément pour ne pas entrer en collision avec l'autorité de
+synchronisation du store.</li>
+<li><strong>Aucune valeur fabriquée sans signal</strong> — <code>ZChatResponseConfidence</code> rend
+<code>null</code> plutôt qu'un palier « à vérifier » quand le serveur n'a rien émis ;
+un instantané de quota absent n'est jamais interprété comme « épuisé ».
+C'est le même principe qui gouverne <code>ZChatCapabilityAudit</code> : une capacité
+demandée sans écho de l'exécuteur est <strong>non honorée</strong>, jamais présumée
+honorée.</li>
+<li><strong>Retrait de message = soft-delete uniquement</strong> (invariant AD-9) —
+<code>ZChatDeleteAction</code> ne modélise aucune suppression matérielle ; c'est
+<code>ZSyncMeta</code> qui porte l'état de suppression, pour que le merge
+offline-first propage le retrait entre appareils.</li>
+<li><strong>Aucun secret, aucun format de prompt</strong> (invariant AD-12) — les ports de
+génération ne portent ni endpoint, ni clé API, ni instruction système
+assemblée. <code>instructions</code> est une consigne neutre transmise verbatim.</li>
+<li><strong>Zéro présentation dans le domaine</strong> (invariant AD-13) — aucun libellé,
+icône ou couleur n'est déclaré ici ; les enums exposent des discriminants
+techniques (<code>jsonValue</code>), jamais des chaînes traduisibles.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_chat_kernel.md"><code>docs/site/paquets/zcrud_chat_kernel.md</code></a></li>
+<li><a href="../../docs/site/concepts/architecture-hexagonale.md">Architecture hexagonale</a> — couches, ports et patron kernel/satellite.</li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_chat</code> — contrôleur Flutter-natif qui assemble ce kernel avec une réactivité granulaire (invariant AD-2).</li>
+<li><code>zcrud_core</code> — seule dépendance <code>zcrud_*</code> de ce paquet (surface pur-Dart).</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_chat_kernel">
+  <span class="name"><a href="zcrud_chat_kernel/">zcrud_chat_kernel</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_chat_kernel</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_chat_kernel package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_chat_kernel</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_chat_kernel/">zcrud_chat_kernel</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_kernel
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

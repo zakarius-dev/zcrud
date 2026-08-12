@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_riverpod API docs, for the Dart programming language.">
+  <title>zcrud_riverpod - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_riverpod package</a></li>
+  </ol>
+  <div class="self-name">zcrud_riverpod</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_riverpod">zcrud_riverpod</h1>
+<p>Binding optionnel état/injection Riverpod pour zcrud — un manager parmi
+d'autres derrière le même cœur réactif (invariant AD-15).</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_riverpod</code> branche l'injection et le cycle de vie du cœur zcrud sur
+Riverpod, sans jamais réimplémenter la réactivité : <code>ZFormController</code> reste
+un <code>ChangeNotifier</code> pur Flutter (invariant AD-2), ce paquet se contente de
+l'exposer via un <code>Provider.autoDispose</code> et de fournir un resolver Riverpod
+pour le seam <code>ZDependencyResolver</code> du cœur. Le cœur <code>zcrud_core</code> ignore
+totalement Riverpod — aucun <code>WidgetRef</code> ni <code>ref.watch</code> n'y entre jamais.</p>
+<p>Ce paquet fournit aussi des providers génériques pour le domaine study
+(<code>zcrud_study_kernel</code>) : seam de repository, flux de liste nu, et sélection
+de session dédupliquée par égalité profonde.</p>
+<p><strong>Utilisez ce paquet</strong> si votre application est déjà organisée autour de
+Riverpod et que vous voulez que l'injection zcrud (resolver, ACL, seams
+study) suive le même idiome. <strong>N'utilisez pas ce paquet</strong> si votre
+application n'utilise pas Riverpod : <code>ZcrudScope</code> (le binding par défaut,
+zéro dépendance, dans <code>zcrud_core</code>) ou <code>zcrud_get</code>/<code>zcrud_provider</code>
+conviennent alors mieux.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:flutter/widgets.dart';
+import 'package:zcrud_riverpod/zcrud_riverpod.dart';
+
+/// Enveloppe un sous-arbre applicatif dans le binding Riverpod : monte un
+/// ProviderContainer, expose le ZFormController en auto-dispose et câble le
+/// resolver du cœur.
+Widget wrap(Widget child) =&gt; ZcrudRiverpodScope(child: child);
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Réutiliser, jamais réimplémenter (invariant <a href="../../docs/site/concepts/invariants.md#ad-2">AD-2</a>)</strong> —
+<code>zFormControllerProvider</code> expose le même <code>ZFormController</code> à tranches
+<code>ValueListenable</code> que le binding par défaut ; ce paquet n'ajoute aucune
+couche de state management par-dessus.</li>
+<li><strong>Seams qui échouent explicitement (invariant <a href="../../docs/site/concepts/invariants.md#ad-6">AD-6</a>)</strong> —
+<code>ZRiverpodResolver.resolve&lt;T&gt;()</code> lève un <code>ZScopeError</code> actionnable quand
+aucun provider n'est enregistré pour <code>T</code> dans <code>seams</code>, plutôt que de
+résoudre silencieusement vers une valeur par défaut inattendue. Même
+principe pour <code>zStudyRepositoryProvider&lt;T&gt;()</code>, dont la lecture <em>throw</em> tant
+qu'il n'est pas surchargé (<code>overrideWith</code>).</li>
+<li><strong>L'égalité de clé de cache vit dans le binding (invariant <a href="../../docs/site/concepts/invariants.md#ad-24">AD-24</a>)</strong> —
+<code>ZSessionConfigKey</code> réimplémente sa propre égalité profonde par valeur sur
+une <code>ZStudySessionConfig</code>, pour que la garantie « pas de rebuild si la
+configuration est structurellement inchangée » se prouve dans ce paquet,
+indépendamment de ce que le kernel décide de son propre <code>==</code>.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZcrudRiverpodScope</code></td>
+<td>Widget de scope : monte un <code>ProviderContainer</code>, expose le <code>ZFormController</code> en auto-dispose, enveloppe l'enfant dans un <code>ZcrudScope</code>.</td>
+</tr>
+<tr>
+<td><code>zFormControllerProvider</code></td>
+<td>Provider auto-dispose exposant un <code>ZFormController</code> neuf, disposé avec le container.</td>
+</tr>
+<tr>
+<td><code>ZRiverpodResolver</code></td>
+<td>Implémentation Riverpod du seam <code>ZDependencyResolver</code> du cœur — résout par registre <code>Type → provider</code>.</td>
+</tr>
+<tr>
+<td><code>ZRiverpodApi</code></td>
+<td>Marqueur de version de l'API publique du paquet.</td>
+</tr>
+<tr>
+<td><code>zStudyRepositoryProvider&lt;T&gt;</code></td>
+<td>Fabrique le seam d'un <code>ZStudyRepository&lt;T&gt;</code> — <em>throw</em> tant qu'il n'est pas surchargé.</td>
+</tr>
+<tr>
+<td><code>zStudyWatchAllProvider&lt;T&gt;</code></td>
+<td><code>StreamProvider.autoDispose</code> exposant le flux nu <code>watchAll()</code> du repository résolu.</td>
+</tr>
+<tr>
+<td><code>zStudySessionSelectorProvider</code></td>
+<td>Family Riverpod de sélection de session, clée par <a href="zcrud_riverpod/ZSessionConfigKey-class.html">ZSessionConfigKey</a>.</td>
+</tr>
+<tr>
+<td><code>ZSessionConfigKey</code></td>
+<td>Clé de family à égalité profonde par valeur, enveloppant une <code>ZStudySessionConfig</code>.</td>
+</tr>
+<tr>
+<td><code>ZScopeError</code></td>
+<td>Ré-exporté depuis <code>zcrud_core</code> — le type d'erreur levé par tout seam non surchargé.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Auto-dispose partout, pas de fuite</strong> — le <code>ZFormController</code> du scope et
+les flux <code>watchAll()</code> sont libérés dès que plus personne ne les écoute (ou
+que le <code>ProviderContainer</code> du scope est disposé) : aucun abonnement ne
+survit à son écran.</li>
+<li><strong>Riverpod 3 : auto-dispose par défaut</strong> — le type de retour de
+<code>zStudyWatchAllProvider</code> est <code>StreamProvider&lt;List&lt;T&gt;&gt;</code> (le type
+<code>AutoDisposeStreamProvider</code> a disparu de l'API Riverpod 3) ; la sémantique
+d'annulation à la disparition du dernier auditeur reste inchangée.</li>
+<li><strong><code>ZSessionConfigKey</code> compare TOUS les champs de la config</strong>, y compris les
+listes (<code>tagIds</code>, <code>types</code>, comparaison profonde) et <code>extra</code> (JSON imbriqué,
+comparaison structurelle) — une différence sur un seul champ produit une
+clé différente, donc un rebuild.</li>
+<li><strong>Providers typés concrets non fournis ici</strong> — ce paquet reste générique
+(dépendance minimale à <code>zcrud_study_kernel</code> seul) ; les providers adossés à
+une entité applicative concrète (ex. <code>zStudyWatchAllProvider&lt;MonDocument&gt;</code>)
+s'instancient côté application.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_riverpod.md"><code>docs/site/paquets/zcrud_riverpod.md</code></a></li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_core</code> — <code>ZcrudScope</code> (binding par défaut), <code>ZFormController</code>, <code>ZDependencyResolver</code>.</li>
+<li><code>zcrud_get</code> / <code>zcrud_provider</code> — les bindings équivalents pour GetX et provider.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_riverpod">
+  <span class="name"><a href="zcrud_riverpod/">zcrud_riverpod</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_riverpod</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_riverpod package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_riverpod</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_riverpod/">zcrud_riverpod</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_riverpod
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

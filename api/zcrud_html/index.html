@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_html API docs, for the Dart programming language.">
+  <title>zcrud_html - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_html package</a></li>
+  </ol>
+  <div class="self-name">zcrud_html</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_html">zcrud_html</h1>
+<p>Champ HTML WYSIWYG pour zcrud — édition via une WebView à controller isolé,
+lecture native, format persisté en <code>String</code> HTML.</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_html</code> est le satellite <strong>HTML WYSIWYG</strong> de zcrud : une <strong>2ᵉ voie</strong>
+rich-text, exclusive de celle de <code>zcrud_markdown</code>. Là où <code>zcrud_markdown</code>
+édite en Delta interne avec un <code>ZCodec</code> pluggable, <code>zcrud_html</code> édite
+<strong>directement en HTML</strong> via une WebView (<code>html_editor_enhanced</code>) et lit avec
+un rendu HTML natif (<code>flutter_html</code>) — sans jamais passer par un document
+Delta. C'est le choix pertinent quand le format persisté doit rester du HTML
+<code>String</code> sans intermédiaire de conversion.</p>
+<p>Ce paquet fournit :</p>
+<ul>
+<li><code>ZHtmlEditorField</code> — le champ d'édition WYSIWYG, au controller WebView
+<strong>isolé</strong> (créé une seule fois, jamais recréé au rebuild) ;</li>
+<li><code>ZHtmlView</code> — le rendu de lecture, natif et défensif ;</li>
+<li><code>registerZHtmlFields</code> — l'enrôlement des <code>kind</code> <code>html</code>/<code>inlineHtml</code> dans un
+<code>ZWidgetRegistry</code> injecté.</li>
+</ul>
+<p><strong>Utilisez ce paquet</strong> quand votre application doit éditer du HTML <code>String</code>
+en WYSIWYG (par exemple pour interopérer avec un système existant qui attend
+du HTML). <strong>N'utilisez pas ce paquet</strong> si un round-trip Markdown ou Delta
+suffit, ou si l'accessibilité fine de l'édition est prioritaire : préférez
+alors <code>zcrud_markdown</code>, dont l'éditeur Quill est nativement accessible — la
+WebView de ce paquet reste hors du contrôle <code>Semantics</code> du socle côté
+édition.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_html/zcrud_html.dart';
+
+/// Enregistre les `kind` `html` (mode bloc) et `inlineHtml` (mode inline)
+/// dans le registre de widgets du cœur, une fois au bootstrap de l'app.
+void bootstrap(ZWidgetRegistry registry) {
+  registerZHtmlFields(registry);
+}
+</code></pre>
+<p>Une fois enregistré, un <code>ZFieldSpec</code> de <code>kind: 'html'</code> (ou <code>'inlineHtml'</code>) est
+rendu automatiquement par <code>ZHtmlEditorField</code> en édition et <code>ZHtmlView</code> en
+lecture, au travers du dispatcher de champs du cœur — aucun câblage widget par
+widget n'est nécessaire.</p>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Exclusivité avec <code>zcrud_markdown</code></strong> — les <code>kind</code> <code>html</code>/<code>inlineHtml</code> sont
+<strong>mutuellement exclusifs</strong> entre les deux paquets : une application choisit
+une seule voie au bootstrap. La collision est détectée par le contrat cœur
+<code>ZWidgetRegistry.register</code> (<code>throw</code>), jamais par une dépendance directe
+entre les deux paquets — interdite par l'invariant <a href="../../docs/site/concepts/invariants.md#ad-1">AD-1</a>.</li>
+<li><strong>Controller isolé et commit débouncé (invariant <a href="../../docs/site/concepts/invariants.md#ad-2">AD-2</a>)</strong> —
+le <code>HtmlEditorController</code> est créé une seule fois ; toute la mécanique
+temporelle de débounce vit dans <code>ZHtmlCommitDebouncer</code>, une classe pur-Dart
+testable indépendamment de la WebView.</li>
+<li><strong>Isolation des dépendances lourdes (invariant <a href="../../docs/site/concepts/invariants.md#ad-1">AD-1</a>)</strong> —
+<code>html_editor_enhanced</code> et <code>flutter_html</code> sont confinées à <code>lib/src/</code> :
+aucun de leurs types n'apparaît dans le barrel public.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZHtmlEditorField</code></td>
+<td>Champ d'édition HTML WYSIWYG à controller WebView isolé.</td>
+</tr>
+<tr>
+<td><code>ZHtmlView</code></td>
+<td>Rendu de lecture HTML natif, défensif sur un contenu malformé.</td>
+</tr>
+<tr>
+<td><code>registerZHtmlFields</code></td>
+<td>Enregistre les <code>kind</code> <code>html</code>/<code>inlineHtml</code> dans un <code>ZWidgetRegistry</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Décodage défensif (invariant <a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>)</strong> —
+un contenu initial non-<code>String</code>/<code>null</code> rend un éditeur vide ; un HTML
+malformé se rend en best-effort, jamais un <code>throw</code>.</li>
+<li><strong>Re-sync guardée hors focus</strong> — une valeur externe n'est réinjectée dans
+l'éditeur que si le champ n'a pas le focus, pour ne jamais écraser une
+saisie en cours.</li>
+<li><strong>Pertes de round-trip bornées</strong> — code inline, <code>&lt;div&gt;</code>/CSS inline exotiques
+et embeds spécifiques à un éditeur tiers dégradent proprement plutôt que de
+faire échouer la conversion.</li>
+<li><strong>Accessibilité limitée côté édition</strong> — la WebView embarque son propre DOM :
+les <code>Semantics</code> fines y échappent au contrôle du paquet. Le rendu de lecture
+<code>ZHtmlView</code>, lui, expose un <code>Semantics</code> de conteneur complet et hérite du
+thème ambiant.</li>
+<li><strong>Aucune dépendance réseau (invariant <a href="../../docs/site/concepts/invariants.md#ad-12">AD-12</a>)</strong> —
+ni CDN, ni endpoint en dur : un rendu de formule mathématique par CDN
+externe est hors périmètre offline de zcrud et n'est jamais réintroduit ici.</li>
+<li><strong>WebView non montable sous <code>flutter_test</code></strong> — la mécanique de débounce est
+prouvée par <code>ZHtmlCommitDebouncer</code> en isolation, pas par un test qui monte
+la WebView (indisponible en VM).</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_html.md"><code>docs/site/paquets/zcrud_html.md</code></a></li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_markdown</code> — voie d'édition Delta/Markdown alternative, exclusive de ce paquet.</li>
+<li><code>zcrud_core</code> — <code>ZWidgetRegistry</code>, <code>ZFieldSpec</code>, dispatcher de champs.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_html">
+  <span class="name"><a href="zcrud_html/">zcrud_html</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_html</code> — satellite HTML WYSIWYG (fp-4-3, AD-50).
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_html package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_html</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_html/">zcrud_html</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_html
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the execute method from the ZChatActionDispatcher class, for the Dart programming language.">
+  <title>execute method - ZChatActionDispatcher class - zcrud_chat_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/">zcrud_chat_kernel.dart</a></li>
+    <li><a href="../../zcrud_chat_kernel/ZChatActionDispatcher-class.html">ZChatActionDispatcher</a></li>
+    <li class="self-crumb">execute method</li>
+  </ol>
+  <div class="self-name">execute</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat_kernel&#47;ZChatActionDispatcher-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">execute</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_chat_kernel/ZChatActionOutcome-class.html">ZChatActionOutcome</a></span>&gt;</span></span>&gt;</span></span>
+<span class="name ">execute</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="execute-param-confirmed"><span class="type-annotation"><a href="../../zcrud_chat_kernel/ZChatConfirmedAction-class.html">ZChatConfirmedAction</a></span> <span class="parameter-name">confirmed</span></span></li>
+</ol>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Exécute une action <strong>confirmée</strong>.</p>
+<p>Le refus précède l'effet : un plan exigeant confirmation dont le jeton
+n'est pas confirmé rend <code>Left(ZChatActionNotConfirmedFailure)</code> <strong>sans
+toucher l'executor</strong>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;ZResult&lt;ZChatActionOutcome&gt;&gt; execute(
+  ZChatConfirmedAction confirmed,
+) async {
+  if (confirmed.plan.requiresConfirmation &amp;&amp; !confirmed.userConfirmed) {
+    return Left&lt;ZFailure, ZChatActionOutcome&gt;(
+      ZChatActionNotConfirmedFailure(verb: confirmed.plan.action.verb),
+    );
+  }
+  switch (confirmed.plan.action) {
+    case final ZChatEditAction a:
+      final ZResult&lt;List&lt;String&gt;&gt; r = await _guard&lt;List&lt;String&gt;&gt;(
+        () =&gt; executor.editAndResend(
+          messageId: a.messageId,
+          newText: a.newText,
+        ),
+        &#39;editAndResend&#39;,
+      );
+      return r.map(
+        (List&lt;String&gt; ids) =&gt; ZChatActionOutcome(
+          verb: a.verb,
+          affectedMessageIds: ids,
+          preservedDraft: a.draft,
+        ),
+      );
+    case final ZChatRegenerateAction a:
+      &#47;&#47; Les réglages d&#39;une régénération DOIVENT atteindre l&#39;hôte, ou être
+      &#47;&#47; REFUSÉS ; jamais tomber en silence. Un réglage transmis à l&#39;appel
+      &#47;&#47; puis jeté par la couche d&#39;accès aux données, sans qu&#39;aucun
+      &#47;&#47; appelant puisse s&#39;en apercevoir, est exactement le repli muet que
+      &#47;&#47; ce chemin ferme.
+      &#47;&#47;
+      &#47;&#47; Le port historique reste INTOUCHÉ : ajouter un paramètre, même
+      &#47;&#47; optionnel, à une méthode existante invaliderait tout override
+      &#47;&#47; hôte (un override Dart doit accepter tous les paramètres nommés
+      &#47;&#47; de la déclaration qu&#39;il redéfinit). L&#39;hôte opte pour la forme
+      &#47;&#47; riche en implémentant `ZChatSettingsAwareActionExecutor` EN PLUS.
+      final ZChatActionExecutor ex = executor;
+      if (a.overridesRequest &amp;&amp; ex is! ZChatSettingsAwareActionExecutor) {
+        return Left&lt;ZFailure, ZChatActionOutcome&gt;(
+          const ZUnsupportedOperationFailure(
+            &#39;this executor cannot honour regeneration settings or corpus &#39;
+            &#39;scope&#39;,
+            operation: &#39;regenerateWithSettings&#39;,
+          ),
+        );
+      }
+      final ZResult&lt;List&lt;String&gt;&gt; r;
+      if (a.overridesRequest) {
+        &#47;&#47; Le `as` ne peut pas échouer : le refus ci-dessus l&#39;a garanti. Les
+        &#47;&#47; deux interfaces sont SŒURS (aucune n&#39;étend l&#39;autre), d&#39;où la
+        &#47;&#47; conversion explicite plutôt qu&#39;une promotion de type.
+        final ZChatSettingsAwareActionExecutor aware =
+            ex as ZChatSettingsAwareActionExecutor;
+        r = await _guard&lt;List&lt;String&gt;&gt;(
+          () =&gt; aware.regenerateWithSettings(a),
+          &#39;regenerateWithSettings&#39;,
+        );
+      } else {
+        r = await _guard&lt;List&lt;String&gt;&gt;(
+          () =&gt; executor.regenerate(messageId: a.messageId),
+          &#39;regenerate&#39;,
+        );
+      }
+      return r.map(
+        (List&lt;String&gt; ids) =&gt;
+            ZChatActionOutcome(verb: a.verb, affectedMessageIds: ids),
+      );
+    case final ZChatDeleteAction a:
+      final ZResult&lt;List&lt;String&gt;&gt; r = await _guard&lt;List&lt;String&gt;&gt;(
+        () =&gt; executor.softDeleteMessages(
+          messageId: a.messageId,
+          cascadeToPair: a.cascadeToPair,
+        ),
+        &#39;softDeleteMessages&#39;,
+      );
+      return r.map(
+        (List&lt;String&gt; ids) =&gt; ZChatActionOutcome(
+          verb: a.verb,
+          affectedMessageIds: ids,
+          softDeleted: true,
+        ),
+      );
+    case final ZChatCancelAction a:
+      &#47;&#47; UNIQUEMENT `cancelRequest`. Aucun retrait, aucune reprise : faire
+      &#47;&#47; suivre l&#39;arrêt d&#39;un `delete` effacerait la question tapée. Le
+      &#47;&#47; brouillon est rendu INTACT, y compris quand l&#39;annulation échoue
+      &#47;&#47; (il n&#39;est jamais remis à l&#39;executor).
+      final ZResult&lt;Unit&gt; r = await _guard&lt;Unit&gt;(
+        () =&gt; executor.cancelRequest(a.requestId),
+        &#39;cancelRequest&#39;,
+      );
+      return r.map(
+        (Unit _) =&gt;
+            ZChatActionOutcome(verb: a.verb, preservedDraft: a.draft),
+      );
+    case final ZChatCopyAction a:
+      final ZResult&lt;String&gt; r = await _guard&lt;String&gt;(
+        () =&gt; executor.renderForCopy(
+          messageId: a.messageId,
+          format: a.format,
+        ),
+        &#39;renderForCopy&#39;,
+      );
+      return r.map(
+        (String text) =&gt; ZChatActionOutcome(
+          verb: a.verb,
+          affectedMessageIds: &lt;String&gt;[a.messageId],
+          copyPayload: text,
+        ),
+      );
+    case final ZChatCustomAction a:
+      final ZResult&lt;List&lt;String&gt;&gt; r = await _guard&lt;List&lt;String&gt;&gt;(
+        () =&gt; executor.executeCustom(a),
+        &#39;executeCustom&#39;,
+      );
+      return r.map(
+        (List&lt;String&gt; ids) =&gt;
+            ZChatActionOutcome(verb: a.verb, affectedMessageIds: ids),
+      );
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/ZChatActionDispatcher-class.html">ZChatActionDispatcher</a></li>
+    <li class="self-crumb">execute method</li>
+</ol>
+
+    <h5>ZChatActionDispatcher class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_kernel
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

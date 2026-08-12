@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the extension property from the ZSmartNote class, for the Dart programming language.">
+  <title>extension property - ZSmartNote class - zcrud_note library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_note</a></li>
+    <li><a href="../../zcrud_note/">zcrud_note.dart</a></li>
+    <li><a href="../../zcrud_note/ZSmartNote-class.html">ZSmartNote</a></li>
+    <li class="self-crumb">extension property</li>
+  </ol>
+  <div class="self-name">extension</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_note&#47;ZSmartNote-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">extension</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+        ZExtension?
+        <span class="name ">extension</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p>Slot type additif <strong>versionné</strong> (AD-4 pt.1) — hors-codegen.</p>
+<p>Trois états possibles (<strong>et un seul rend <code>null</code></strong>) :</p>
+<ul>
+<li><strong><code>null</code></strong> ⇒ la clé <code>extension</code> est <strong>absente</strong> du store, ou son payload
+n'est <strong>pas une <code>Map</code></strong> (rien de structuré à préserver) ;</li>
+<li><strong><code>ZNoteAudio</code></strong> ⇒ un <code>extensionParser</code> a été <strong>injecté</strong> dans
+<a href="../../zcrud_note/ZSmartNote/ZSmartNote.fromMap.html">fromMap</a> <strong>et</strong> a su typer le payload ;</li>
+<li><strong><a href="../../zcrud_note/ZOpaqueNoteExtension-class.html">ZOpaqueNoteExtension</a></strong> ⇒ le payload est une <code>Map</code> que <strong>rien n'a su
+typer</strong> : aucun parser injecté (<strong>voie du REGISTRE</strong>) ou
+<strong>version future/non gérée</strong> . Le payload est <strong>PORTÉ VERBATIM</strong>
+et <strong>RÉÉMIS À L'IDENTIQUE</strong> par <a href="../../zcrud_note/ZSmartNote/toMap.html">toMap</a> — il n'est <strong>PLUS DÉTRUIT</strong>.</li>
+</ul>
+<h2 id="--ce-que-le-store-ne-sait-toujours-pas-faire">⛔ — CE QUE LE STORE NE SAIT TOUJOURS PAS FAIRE</h2>
+<p><code>ZcrudRegistry</code>/<code>FirebaseZRepositoryImpl.fromRegistry</code> appellent
+<code>ZSmartNote.fromMap(map)</code> <strong>TOUT COURT</strong> : <strong>aucun slot d'injection</strong> de
+parser n'existe (le correctif reste dans <code>zcrud_core</code>, hors périmètre
+ici). ⇒ Sur cette voie, <code>extension</code> est <strong>TOUJOURS</strong> une
+<a href="../../zcrud_note/ZOpaqueNoteExtension-class.html">ZOpaqueNoteExtension</a>, <strong>jamais</strong> un <code>ZNoteAudio</code> : <strong>la donnée survit, le
+TYPE ne revient pas</strong> — l'app <strong>ne peut pas s'en servir</strong>.</p>
+<p>⇒ Pour <strong>utiliser</strong> l'audio, câbler l'entité par le <strong>constructeur nominal</strong>
+avec <code>extensionParser: ZNoteAudio.fromJsonSafe</code>. La perte fonctionnelle est
+<strong>épinglée en machine</strong> (<code>z_smart_note_test.dart</code>) : <strong><code>ZNoteAudio</code>
+FALSIFIE la clause d'échappement</strong> (<em>« l'entité n'utilise pas
+le slot <code>extension</code> »</em>) qui, sinon, garde la voie registre utilisable.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+final ZExtension? extension;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_note</a></li>
+    <li><a href="../../zcrud_note/">zcrud_note</a></li>
+    <li><a href="../../zcrud_note/ZSmartNote-class.html">ZSmartNote</a></li>
+    <li class="self-crumb">extension property</li>
+</ol>
+
+  <h5>ZSmartNote class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_note
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

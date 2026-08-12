@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the softDeleteSelected method from the ZListSelectionController class, for the Dart programming language.">
+  <title>softDeleteSelected method - ZListSelectionController class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core.dart</a></li>
+    <li><a href="../../zcrud_core/ZListSelectionController-class.html">ZListSelectionController</a></li>
+    <li class="self-crumb"><span class="deprecated">softDeleteSelected&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span> method</li>
+  </ol>
+  <div class="self-name">softDeleteSelected</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;ZListSelectionController-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">softDeleteSelected&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/Deprecated/Deprecated.html">Deprecated</a>(&#39;Voie best-effort SANS rapport au grain de la racine (AD-39). Utiliser &#39; &#39;batchDelete({deleteRoot}) qui await par racine et retourne un &#39; &#39;ZBatchDeletionReport (racines réussies + Map&lt;rootId, ZFailure&gt;). &#39; &#39;Conservée pour rétro-compat E4-4.&#39;)</li>
+    </ol>
+  </div>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+<span class="name deprecated">softDeleteSelected</span>&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;(<wbr><ol class="parameter-list"> <li><span class="parameter" id="softDeleteSelected-param-repository"><span class="type-annotation"><a href="../../zcrud_core/ZRepository-class.html">ZRepository</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">repository</span>, {</span></li>
+<li><span class="parameter" id="softDeleteSelected-param-onFailure"><span class="type-annotation">void</span> <span class="parameter-name">onFailure</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-failure"><span class="type-annotation"><a href="../../zcrud_core/ZFailure-class.html">ZFailure</a></span> <span class="parameter-name">failure</span></span></li>
+</ol>)?, </span></li>
+<li><span class="parameter" id="softDeleteSelected-param-onSuccess"><span class="type-annotation">void</span> <span class="parameter-name">onSuccess</span>()?, </span></li>
+</ol>})
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Supprime en <strong>lot</strong> (best-effort) les éléments sélectionnés via
+<code>repository.softDelete</code> (AD-9/AD-11). Chaque <code>Left(ZFailure)</code> est remonté à
+<code>onFailure</code> <strong>sans throw</strong> ; les id supprimés avec succès sont <strong>retirés</strong>
+de la sélection (les échecs y restent). <code>onSuccess</code> est appelé si <strong>tous</strong>
+les soft-delete ont réussi.</p>
+<p><strong>Atomicité</strong> : best-effort — une transaction atomique multi-document est
+backend-spécifique, non garantie ici.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(
+  &#39;Voie best-effort SANS rapport au grain de la racine (AD-39). Utiliser &#39;
+  &#39;batchDelete({deleteRoot}) qui await par racine et retourne un &#39;
+  &#39;ZBatchDeletionReport (racines réussies + Map&lt;rootId, ZFailure&gt;). &#39;
+  &#39;Conservée pour rétro-compat E4-4.&#39;,
+)
+Future&lt;void&gt; softDeleteSelected&lt;T extends ZEntity&gt;(
+  ZRepository&lt;T&gt; repository, {
+  void Function(ZFailure failure)? onFailure,
+  void Function()? onSuccess,
+}) async {
+  if (_disposed) return;
+  final ids = _selected.value.toList(growable: false);
+  final succeeded = &lt;String&gt;{};
+  var allOk = true;
+  for (final id in ids) {
+    final result = await repository.softDelete(id);
+    result.fold(
+      (failure) {
+        allOk = false;
+        onFailure?.call(failure);
+      },
+      (_) =&gt; succeeded.add(id),
+    );
+  }
+  if (_disposed) return;
+  if (succeeded.isNotEmpty) {
+    _commit(&lt;String&gt;{..._selected.value}..removeAll(succeeded));
+  }
+  if (allOk) onSuccess?.call();
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/ZListSelectionController-class.html">ZListSelectionController</a></li>
+    <li class="self-crumb"><span class="deprecated">softDeleteSelected&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span> method</li>
+</ol>
+
+    <h5>ZListSelectionController class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_exam API docs, for the Dart programming language.">
+  <title>zcrud_exam - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_exam package</a></li>
+  </ol>
+  <div class="self-name">zcrud_exam</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_exam">zcrud_exam</h1>
+<p>Domaine d'un examen daté rattaché à un dossier, avec rappels — pur-Dart, sans
+horloge implicite (invariant AD-9 sur la synchronisation, AD-10 sur la
+désérialisation défensive).</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_exam</code> fournit l'entité canonique <code>ZExam</code> — un examen avec une date, des
+seuils de rappel en jours, une récurrence hebdomadaire optionnelle et une
+heure de rappel typée — et le value-object <code>ZReminderTime</code>. C'est un paquet
+<strong>pur-Dart</strong> : aucune dépendance Flutter, aucun gestionnaire d'état, aucun
+SDK Firebase. Il ne dépend que de <code>zcrud_core</code> (surface pur-Dart
+<code>domain.dart</code>) et de <code>zcrud_annotations</code>.</p>
+<p>Toute la logique de proximité d'un examen (<code>daysUntil</code>, <code>isPast</code>,
+<code>isApproaching</code>) est <strong>pure et déterministe</strong> : l'horloge courante est un
+paramètre explicite, jamais un <code>DateTime.now()</code> implicite — deux appels avec
+la même horloge rendent toujours le même résultat.</p>
+<p><strong>Utilisez ce paquet</strong> pour représenter un examen daté avec ses rappels dans
+un domaine d'étude — modèle, persistance, calcul de proximité — sans
+réimplémenter la logique de seuils ou de récurrence. <strong>N'utilisez pas ce
+paquet</strong> pour de la planification générale hors du domaine d'étude : <code>ZExam</code>
+est spécifiquement une échéance rattachée à un dossier, pas un événement de
+calendrier générique.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:zcrud_exam/zcrud_exam.dart';
+
+void main() {
+  // Un examen dans 5 jours, avec un rappel à J-7 et J-1.
+  final exam = ZExam(
+    folderId: 'droit-douanier',
+    title: 'Partiel de droit douanier',
+    date: DateTime(2026, 8, 18),
+    reminderEnabled: true,
+    reminderDaysBefore: const [7, 1],
+    reminderTime: const ZReminderTime(hour: 8, minute: 30),
+  );
+
+  // L'horloge est un paramètre : le calcul est déterministe et testable.
+  final now = DateTime(2026, 8, 12);
+  print(exam.daysUntil(now)); // 6
+  print(exam.isApproaching(now)); // true (dans la fenêtre du seuil 7)
+
+  // Round-trip sans perte vers la forme persistée.
+  final map = exam.toMap();
+  final reloaded = ZExam.fromMap(map);
+  assert(reloaded == exam);
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Horloge injectée</strong> — <code>daysUntil</code>, <code>isPast</code> et <code>isApproaching</code> prennent
+toutes <code>now</code> en paramètre. Aucune méthode de ce paquet n'appelle
+<code>DateTime.now()</code> en interne : un appelant contrôle entièrement le temps de
+référence, ce qui rend ces calculs reproductibles en test.</li>
+<li><strong>Deux modèles de récurrence, jamais fusionnés</strong> — <code>ZReminderRecurrence</code>
+exprime soit des seuils relatifs (« N jours avant »), soit des jours de
+semaine absolus, soit les deux combinés en logique <strong>ou</strong>. Quand
+<code>reminderRecurrence</code> est renseigné, il fait seul autorité sur
+<code>reminderDaysBefore</code> dans le calcul de proximité — les deux sources ne
+s'additionnent jamais.</li>
+<li><strong><code>reminderTime</code> est typé</strong> — <code>ZReminderTime</code> porte le format <code>'HH:mm'</code>
+dans son type plutôt que de laisser circuler une chaîne ambiguë ; son
+analyse (<code>ZReminderTime.parse</code>) ne lève jamais, une entrée invalide rend
+<code>null</code>.</li>
+<li><strong>Désérialisation défensive (invariant <a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>)</strong> —
+<code>ZExam.fromMap</code> ne lève jamais, y compris sur une map vide ou une date
+illisible ; chaque champ retombe sur un défaut sûr.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZExam</code></td>
+<td>Entité canonique — dossier, intitulé, date, rappels, calcul de proximité.</td>
+</tr>
+<tr>
+<td><code>ZReminderRecurrence</code></td>
+<td>Récurrence de rappel combinant seuils relatifs et jours de semaine absolus.</td>
+</tr>
+<tr>
+<td><code>ZReminderTime</code></td>
+<td>Value-object d'heure <code>'HH:mm'</code>, défensif et total.</td>
+</tr>
+<tr>
+<td><code>ZExamExtensionParser</code></td>
+<td>Signature du décodeur d'extension fourni par l'application appelante.</td>
+</tr>
+<tr>
+<td><code>kReminderTimeKey</code></td>
+<td>Clé persistée du canal hors schéma <code>reminder_time</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Aucun horodatage de synchronisation inline</strong> — <code>ZExam</code> ne déclare ni
+<code>updatedAt</code> ni <code>isDeleted</code> : l'autorité Last-Write-Wins et la suppression
+logique vivent hors de l'entité, conformément à l'invariant
+<a href="../../docs/site/concepts/invariants.md#ad-9">AD-9</a>. La date d'examen
+(<code>date</code>) est une clé métier, distincte de toute clé de synchronisation.</li>
+<li><strong>Récurrence corrompue ⇒ emplacement absent, jamais une exception</strong> — une
+valeur de récurrence illisible dans la map persistée rend <code>null</code> plutôt que
+de faire échouer tout l'examen ; les valeurs valides d'une même map
+survivent à côté des valeurs corrompues.</li>
+<li><strong><code>isApproaching</code> sans échéance</strong> — la famille hebdomadaire d'une
+récurrence reste évaluable même quand <code>date</code> est <code>null</code> ; la famille
+relative, elle, reste inévaluable sans échéance.</li>
+<li><strong><code>ZExamZcrud</code>, l'extension générée par le codegen, n'est pas exportée</strong> —
+son <code>copyWith</code> ignore <code>extra</code>, <code>extension</code> et le canal <code>reminderTime</code> et
+les remet à leurs défauts. Utilisez toujours <code>ZExam.copyWith</code>, jamais
+l'extension générée.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li><a href="../../docs/site/paquets/zcrud_exam.md">Fiche du paquet</a> — rôle, quand
+l'utiliser.</li>
+<li><a href="../zcrud_flashcard/README.md"><code>zcrud_flashcard</code></a> — domaine voisin de
+répétition espacée, même patron de séparation entre entité et état dérivé.</li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> —
+définitions canoniques AD-1 à AD-16.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_exam">
+  <span class="name"><a href="zcrud_exam/">zcrud_exam</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_exam</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_exam package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_exam</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_exam/">zcrud_exam</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_exam
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

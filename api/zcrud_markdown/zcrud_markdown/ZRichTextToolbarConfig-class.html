@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZRichTextToolbarConfig class from the zcrud_markdown library, for the Dart programming language.">
+  <title>ZRichTextToolbarConfig class - zcrud_markdown library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_markdown</a></li>
+    <li><a href="../zcrud_markdown/">zcrud_markdown.dart</a></li>
+    <li class="self-crumb">ZRichTextToolbarConfig class</li>
+  </ol>
+  <div class="self-name">ZRichTextToolbarConfig</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_markdown&#47;zcrud_markdown-library-sidebar.html"
+    data-below-sidebar="zcrud_markdown&#47;ZRichTextToolbarConfig-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZRichTextToolbarConfig</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Configuration granulaire (par bouton) de la toolbar rich-text.</p>
+<p>Chaque drapeau active/désactive UN groupe de boutons de la barre. Les présets
+<a href="../zcrud_markdown/ZRichTextToolbarConfig/full-constant.html">full</a>/<a href="../zcrud_markdown/ZRichTextToolbarConfig/minimal-constant.html">minimal</a>/<a href="../zcrud_markdown/ZRichTextToolbarConfig/markdown-constant.html">markdown</a> couvrent les cas parité legacy ; <a href="../zcrud_markdown/ZRichTextToolbarConfig/copyWith.html">copyWith</a> permet
+une personnalisation fine par field.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://api.flutter.dev/flutter/meta/immutable-constant.html">immutable</a></li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZRichTextToolbarConfig.new" class="callable">
+          <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/ZRichTextToolbarConfig.html">ZRichTextToolbarConfig</a></span><span class="signature">({<span class="parameter" id="param-showUndoRedo"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showUndoRedo</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showFontFamily"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showFontFamily</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showFontSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showFontSize</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showBold"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showBold</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showItalic"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showItalic</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showUnderline"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showUnderline</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showStrikethrough"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showStrikethrough</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-showInlineCode"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showInlineCode</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showColor</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showBackgroundColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showBackgroundColor</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showClearFormat"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showClearFormat</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showHeaderStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showHeaderStyle</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showAlignment"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showAlignment</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showList"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showList</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showIndent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showIndent</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showBlockQuote"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showBlockQuote</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showCodeBlock"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showCodeBlock</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showLink"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showLink</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showSearch"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showSearch</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showSubscript"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showSubscript</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showSuperscript"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showSuperscript</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showClipboardCopy"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showClipboardCopy</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showClipboardPaste"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showClipboardPaste</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showLatexButton"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showLatexButton</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showTableButton"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showTableButton</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showImageButton"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showImageButton</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showVideoButton"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showVideoButton</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-roundedIcons"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">roundedIcons</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-multiRow"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">multiRow</span>, </span><span class="parameter" id="param-themedBarBackground"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">themedBarBackground</span> = <span class="default-value">false</span></span>})</span>
+        </dt>
+        <dd>
+          Construit une config granulaire. Tous les groupes sont activés par DÉFAUT
+(équivaut au préset <a href="../zcrud_markdown/ZRichTextToolbarConfig/full-constant.html">full</a>) — SAUF <code>showStrikethrough</code> (cf. son
+doc) et les options d'HABILLAGE de barre (<code>roundedIcons</code>,
+<code>themedBarBackground</code>) qui sont opt-in; passez <code>false</code> pour
+masquer un groupe. <code>multiRow</code> est TRI-ÉTAT : <code>null</code> (défaut) = AUTO par
+surface (cf. son doc).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="multiRow" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/multiRow.html">multiRow</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span>
+  
+
+</dt>
+<dd>
+  Barre <strong>multi-rangées</strong> (<code>multiRowsDisplay</code> Quill, parité <code>qmew:229</code>) —
+TRI-ÉTAT (CR toolbar multi-rangées par surface, 2026-08-11).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="roundedIcons" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/roundedIcons.html">roundedIcons</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  (opt-in) : icônes <strong><code>*_rounded</code></strong> sur les boutons de la barre
+(jeu MESURÉ du legacy, <code>qmew:118-208</code> + boutons custom). Seule
+l'icône (<code>iconData</code>) est remplacée — les <strong>tooltips restent ceux de
+Quill, déjà localisés</strong> (aucun libellé posé ici,l10n). Défaut
+<code>false</code> ⇒ icônes Quill historiques inchangées (AD-4).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="showAlignment" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showAlignment.html">showAlignment</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Boutons d'alignement (gauche/centre/droite/justifié).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showBackgroundColor" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showBackgroundColor.html">showBackgroundColor</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton couleur de fond (surlignage).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showBlockQuote" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showBlockQuote.html">showBlockQuote</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton citation (blockquote).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showBold" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showBold.html">showBold</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton <strong>gras</strong>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showClearFormat" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showClearFormat.html">showClearFormat</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton effacer le format.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showClipboardCopy" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showClipboardCopy.html">showClipboardCopy</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton <strong>Copier</strong> (presse-papier), CR parité 2026-08-11.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showClipboardPaste" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showClipboardPaste.html">showClipboardPaste</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton <strong>Coller</strong> (presse-papier). Défaut <code>true</code> (cf.
+<a href="../zcrud_markdown/ZRichTextToolbarConfig/showClipboardCopy.html">showClipboardCopy</a> ; legacy <code>showClipboardPaste: true</code>, <code>qmew:228</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showCodeBlock" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showCodeBlock.html">showCodeBlock</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton bloc de code.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showColor" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showColor.html">showColor</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton couleur de texte.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showFontFamily" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showFontFamily.html">showFontFamily</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Sélecteur de police.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showFontSize" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showFontSize.html">showFontSize</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Sélecteur de taille de police.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showHeaderStyle" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showHeaderStyle.html">showHeaderStyle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Sélecteur de style de titre (H1..H6 / normal).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showImageButton" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showImageButton.html">showImageButton</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton custom « Insérer une image » (embed image).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showIndent" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showIndent.html">showIndent</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Boutons d'indentation (+/−).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showInlineCode" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showInlineCode.html">showInlineCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton code inline.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showItalic" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showItalic.html">showItalic</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton <em>italique</em>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showLatexButton" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showLatexButton.html">showLatexButton</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton custom « Insérer une formule » (embed LaTeX).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showLink" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showLink.html">showLink</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton lien.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showList" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showList.html">showList</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Boutons de liste (numérotée / à puces / cases à cocher).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showSearch" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showSearch.html">showSearch</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton recherche.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showStrikethrough" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showStrikethrough.html">showStrikethrough</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton barré.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showSubscript" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showSubscript.html">showSubscript</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton indice (subscript).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showSuperscript" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showSuperscript.html">showSuperscript</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton exposant (superscript).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showTableButton" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showTableButton.html">showTableButton</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton custom « Insérer un tableau » (embed table).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showUnderline" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showUnderline.html">showUnderline</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton souligné.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showUndoRedo" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showUndoRedo.html">showUndoRedo</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Boutons Annuler/Rétablir.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="showVideoButton" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/showVideoButton.html">showVideoButton</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Bouton custom « Insérer une vidéo » (embed vidéo).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="themedBarBackground" class="property">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/themedBarBackground.html">themedBarBackground</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Opt-in : <strong>fond de barre thémé</strong> — surface + liseré bas dérivés
+des RÔLES du thème (<code>surfaceContainerLow</code>/<code>outlineVariant</code>) :
+zéro couleur en dur ; le legacy posait des gris figés, non repris.
+Défaut <code>false</code> ⇒ aucune décoration (rendu historique).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="copyWith" class="callable">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-showUndoRedo"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showUndoRedo</span>, </span><span class="parameter" id="copyWith-param-showFontFamily"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showFontFamily</span>, </span><span class="parameter" id="copyWith-param-showFontSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showFontSize</span>, </span><span class="parameter" id="copyWith-param-showBold"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showBold</span>, </span><span class="parameter" id="copyWith-param-showItalic"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showItalic</span>, </span><span class="parameter" id="copyWith-param-showUnderline"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showUnderline</span>, </span><span class="parameter" id="copyWith-param-showStrikethrough"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showStrikethrough</span>, </span><span class="parameter" id="copyWith-param-showInlineCode"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showInlineCode</span>, </span><span class="parameter" id="copyWith-param-showColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showColor</span>, </span><span class="parameter" id="copyWith-param-showBackgroundColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showBackgroundColor</span>, </span><span class="parameter" id="copyWith-param-showClearFormat"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showClearFormat</span>, </span><span class="parameter" id="copyWith-param-showHeaderStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showHeaderStyle</span>, </span><span class="parameter" id="copyWith-param-showAlignment"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showAlignment</span>, </span><span class="parameter" id="copyWith-param-showList"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showList</span>, </span><span class="parameter" id="copyWith-param-showIndent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showIndent</span>, </span><span class="parameter" id="copyWith-param-showBlockQuote"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showBlockQuote</span>, </span><span class="parameter" id="copyWith-param-showCodeBlock"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showCodeBlock</span>, </span><span class="parameter" id="copyWith-param-showLink"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showLink</span>, </span><span class="parameter" id="copyWith-param-showSearch"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showSearch</span>, </span><span class="parameter" id="copyWith-param-showSubscript"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showSubscript</span>, </span><span class="parameter" id="copyWith-param-showSuperscript"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showSuperscript</span>, </span><span class="parameter" id="copyWith-param-showClipboardCopy"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showClipboardCopy</span>, </span><span class="parameter" id="copyWith-param-showClipboardPaste"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showClipboardPaste</span>, </span><span class="parameter" id="copyWith-param-showLatexButton"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showLatexButton</span>, </span><span class="parameter" id="copyWith-param-showTableButton"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showTableButton</span>, </span><span class="parameter" id="copyWith-param-showImageButton"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showImageButton</span>, </span><span class="parameter" id="copyWith-param-showVideoButton"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showVideoButton</span>, </span><span class="parameter" id="copyWith-param-roundedIcons"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">roundedIcons</span>, </span><span class="parameter" id="copyWith-param-multiRow"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">multiRow</span> = <span class="default-value">_zMultiRowUnset</span>, </span><span class="parameter" id="copyWith-param-themedBarBackground"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">themedBarBackground</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_markdown/ZRichTextToolbarConfig-class.html">ZRichTextToolbarConfig</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Retourne une copie avec les drapeaux fournis remplacés (personnalisation
+par field à partir d'un préset).
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_markdown/ZRichTextToolbarConfig/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  <section class="summary offset-anchor" id="constants">
+    <h2>Constants</h2>
+    <dl class="properties">
+        <dt id="full" class="constant">
+    <span class="name "><a href="../zcrud_markdown/ZRichTextToolbarConfig/full-constant.html">full</a></span>
+  <span class="signature">&#8594; const <a href="../zcrud_markdown/ZRichTextToolbarConfig-class.html">ZRichTextToolbarConfig</a></span>
+  
+
+</dt>
+<dd>
+  Préset <strong>complet</strong> : tous les boutons (défaut de la voie <code>controller</code>),
+SAUF le barré (cf. <a href="../zcrud_markdown/ZRichTextToolbarConfig/showStrikethrough.html">showStrikethrough</a>) ; l'habillage reste opt-in.
+  
+
+</dd>
+
+        <dt id="markdown" class="constant">
+    <span class="name "><a href="../zcrud_markdown/ZRichTextToolbarConfig/markdown-constant.html">markdown</a></span>
+  <span class="signature">&#8594; const <a href="../zcrud_markdown/ZRichTextToolbarConfig-class.html">ZRichTextToolbarConfig</a></span>
+  
+
+</dt>
+<dd>
+  Préset <strong>markdown</strong> (parité legacy <code>markdown</code>) : style + listes + insertions
+(embeds), SANS police/couleur/alignement — pensé pour un rendu Markdown.
+  
+
+</dd>
+
+        <dt id="minimal" class="constant">
+    <span class="name "><a href="../zcrud_markdown/ZRichTextToolbarConfig/minimal-constant.html">minimal</a></span>
+  <span class="signature">&#8594; const <a href="../zcrud_markdown/ZRichTextToolbarConfig-class.html">ZRichTextToolbarConfig</a></span>
+  
+
+</dt>
+<dd>
+  Préset <strong>minimal</strong> (parité legacy <code>minimal</code>) : style inline de base + listes,
+SANS police/couleur/alignement/embeds — pour un champ compact. C'est le
+préset appliqué par défaut au mode <code>inline</code>.
+  
+
+</dd>
+
+    </dl>
+  </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_markdown</a></li>
+    <li><a href="../zcrud_markdown/">zcrud_markdown</a></li>
+    <li class="self-crumb">ZRichTextToolbarConfig class</li>
+</ol>
+
+    <h5>zcrud_markdown library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_markdown
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

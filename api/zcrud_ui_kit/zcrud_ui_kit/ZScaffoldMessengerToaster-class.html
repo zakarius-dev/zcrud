@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZScaffoldMessengerToaster class from the zcrud_ui_kit library, for the Dart programming language.">
+  <title>ZScaffoldMessengerToaster class - zcrud_ui_kit library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_ui_kit</a></li>
+    <li><a href="../zcrud_ui_kit/">zcrud_ui_kit.dart</a></li>
+    <li class="self-crumb">ZScaffoldMessengerToaster class</li>
+  </ol>
+  <div class="self-name">ZScaffoldMessengerToaster</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_ui_kit&#47;zcrud_ui_kit-library-sidebar.html"
+    data-below-sidebar="zcrud_ui_kit&#47;ZScaffoldMessengerToaster-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZScaffoldMessengerToaster</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Toaster par défaut: mappe une <a href="../zcrud_ui_kit/ZToastSeverity.html">ZToastSeverity</a> sur une <code>SnackBar</code> colorée.</p>
+<p><strong>Couleur toujours dérivée du <code>ColorScheme</code> courant, JAMAIS de hex</strong>
+(dark-mode-aware — s'adapte au <code>Brightness</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Sévérité</th>
+<th>Fond (rôle <code>ColorScheme</code>)</th>
+<th>Texte/icône</th>
+<th>Icône</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>error</code></td>
+<td><code>ZcrudTheme.errorColor</code> → <code>scheme.error</code></td>
+<td><code>scheme.onError</code></td>
+<td><code>error_outline</code></td>
+</tr>
+<tr>
+<td><code>info</code></td>
+<td><code>scheme.primary</code></td>
+<td><code>scheme.onPrimary</code></td>
+<td><code>info_outline</code></td>
+</tr>
+<tr>
+<td><code>success</code></td>
+<td><code>scheme.tertiary</code></td>
+<td><code>scheme.onTertiary</code></td>
+<td><code>check_circle_outline</code></td>
+</tr>
+<tr>
+<td><code>warning</code></td>
+<td><code>scheme.secondary</code></td>
+<td><code>scheme.onSecondary</code></td>
+<td><code>warning_amber_outlined</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>ZcrudTheme</code>/M3 n'exposent pas de slot <code>success</code>/<code>warning</code>/<code>info</code>: le mapping
+<strong>dérive</strong> ces sévérités de rôles <code>ColorScheme</code> <strong>existants</strong> (déterministe,
+documenté) — aucun littéral introduit. La sévérité est portée par **une icône</p>
+<ul>
+<li>le texte** (couleur jamais seul canal, invariant AD-13).</li>
+</ul>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+  <dt>Implemented types</dt>
+  <dd>
+    <ul class="comma-separated clazz-relationships">
+        <li><a href="../zcrud_ui_kit/ZToaster-class.html">ZToaster</a></li>
+    </ul>
+  </dd>
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZScaffoldMessengerToaster.new" class="callable">
+          <span class="name"><a href="../zcrud_ui_kit/ZScaffoldMessengerToaster/ZScaffoldMessengerToaster.html">ZScaffoldMessengerToaster</a></span><span class="signature">()</span>
+        </dt>
+        <dd>
+          Construit le toaster par défaut (immuable — AD-13).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="show" class="callable">
+  <span class="name"><a href="../zcrud_ui_kit/ZScaffoldMessengerToaster/show.html">show</a></span><span class="signature">(<wbr><span class="parameter" id="show-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="show-param-message"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span>, </span><span class="parameter" id="show-param-severity"><span class="type-annotation"><a href="../zcrud_ui_kit/ZToastSeverity.html">ZToastSeverity</a></span> <span class="parameter-name">severity</span> = <span class="default-value">ZToastSeverity.info</span>, </span><span class="parameter" id="show-param-duration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a>?</span> <span class="parameter-name">duration</span>, </span><span class="parameter" id="show-param-actionLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">actionLabel</span>, </span><span class="parameter" id="show-param-onAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onAction</span></span>})
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Affiche un toast portant <code>message</code>, qualifié par <code>severity</code>.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_ui_kit</a></li>
+    <li><a href="../zcrud_ui_kit/">zcrud_ui_kit</a></li>
+    <li class="self-crumb">ZScaffoldMessengerToaster class</li>
+</ol>
+
+    <h5>zcrud_ui_kit library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_ui_kit
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

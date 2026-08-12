@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zPartitionFieldsIntoSteps function from the zcrud_core library, for the Dart programming language.">
+  <title>zPartitionFieldsIntoSteps function - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">zPartitionFieldsIntoSteps function</li>
+  </ol>
+  <div class="self-name">zPartitionFieldsIntoSteps</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zPartitionFieldsIntoSteps</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="../zcrud_core/ZStepPartition-class.html">ZStepPartition</a></span>
+<span class="name ">zPartitionFieldsIntoSteps</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="zPartitionFieldsIntoSteps-param-fields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">fields</span>, {</span></li>
+<li><span class="parameter" id="zPartitionFieldsIntoSteps-param-stepOf"><span class="type-annotation"><a href="../zcrud_core/ZStepOf.html">ZStepOf</a>?</span> <span class="parameter-name">stepOf</span>, </span></li>
+<li><span class="parameter" id="zPartitionFieldsIntoSteps-param-titleFallback"><span class="type-annotation"><a href="../zcrud_core/ZStepTitleFallback.html">ZStepTitleFallback</a>?</span> <span class="parameter-name">titleFallback</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Regroupe une <strong>liste plate</strong> de <code>fields</code> en étapes, d'après l'annotation
+<a href="../zcrud_core/ZStepFieldConfig-class.html">ZStepFieldConfig</a> portée par chaque champ (ou d'après <code>stepOf</code> si l'hôte
+fournit son propre canal).</p>
+<h2 id="rgles--toutes-assertes-par-z_step_partition_testdart">Règles — toutes assertées par <code>z_step_partition_test.dart</code></h2>
+<ol>
+<li><strong>Une étape par clé distincte</strong>, ordonnée par clé <strong>croissante</strong>. Les
+clés sont des clés d'ordre : <code>0, 2, 5</code> donne trois étapes ; un index
+<strong>négatif</strong> se place naturellement avant <code>0</code> (aucune entrée n'est
+rejetée — invariant AD-10).</li>
+<li><strong>À l'intérieur d'une étape, l'ordre de DÉCLARATION est préservé</strong>, et
+lui seul. Il ne suit ni les clés, ni l'ordre alphabétique. C'est ce qui
+rend le portage 1:1 : l'auteur lit son formulaire dans l'ordre où il
+l'a écrit. (Le tri des étapes n'y touche pas : les clés étant uniques,
+aucune comparaison n'est ambiguë — l'instabilité de <code>List.sort</code> ne peut
+pas se manifester.)</li>
+<li><strong>Titre/sous-titre/icône : le PREMIER non-<code>null</code> de l'étape gagne</strong>, dans
+l'ordre de déclaration. Un champ qui ne les porte pas n'efface donc rien,
+et il suffit de les écrire une fois.</li>
+<li><strong>Aucun champ annoté ⇒ <a href="../zcrud_core/ZStepPartition/empty-constant.html">ZStepPartition.empty</a></strong> (pas d'étape fabriquée).
+L'hôte rend son formulaire tel quel.</li>
+<li><strong>Aucun titre nulle part ⇒ <code>titleFallback</code>, à défaut la chaîne vide.</strong>
+Un repli littéral (« Étape N ») codé en dur n'est <strong>PAS</strong> produit : ce
+serait un littéral français codé en dur dans le cœur (l10n). Une étape
+sans titre reste lisible — l'indicateur <code>numbered</code> affiche « k/N » quoi
+qu'il arrive.</li>
+<li><strong>Totalité</strong> : si <code>stepOf</code> ou <code>titleFallback</code> — code de l'hôte — lève,
+l'exception est absorbée et l'on retombe respectivement sur « champ non
+annoté » et sur la chaîne vide. Un libellé ne fait pas échouer un rendu
+(invariant AD-10).</li>
+</ol>
+<pre class="language-dart"><code class="language-dart">// Déclaration PLATE — le regroupement est dérivé :
+const fields = &lt;ZFieldSpec&gt;[
+  ZFieldSpec(name: 'nom', type: EditionFieldType.text,
+      config: ZStepFieldConfig(index: 0, title: 'identity')),
+  ZFieldSpec(name: 'matricule', type: EditionFieldType.text,
+      config: ZStepFieldConfig(index: 0)),
+  ZFieldSpec(name: 'poste', type: EditionFieldType.text,
+      config: ZStepFieldConfig(index: 1, title: 'affectation')),
+];
+final partition = zPartitionFieldsIntoSteps(fields);
+// → ZStepperEdition(controller: c, fields: fields, steps: partition.steps)
+</code></pre>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZStepPartition zPartitionFieldsIntoSteps(
+  List&lt;ZFieldSpec&gt; fields, {
+  ZStepOf? stepOf,
+  ZStepTitleFallback? titleFallback,
+}) {
+  &#47;&#47; Insertion-ordonné par PREMIÈRE apparition de la clé : l&#39;ordre interne des
+  &#47;&#47; champs est donc l&#39;ordre de déclaration, sans dépendre d&#39;un tri.
+  final Map&lt;int, _StepDraft&gt; drafts = &lt;int, _StepDraft&gt;{};
+  final List&lt;String&gt; unassigned = &lt;String&gt;[];
+
+  for (final ZFieldSpec field in fields) {
+    final ZStepFieldConfig? membership = _membershipOf(field, stepOf);
+    if (membership == null) {
+      unassigned.add(field.name);
+      continue;
+    }
+    (drafts[membership.index] ??= _StepDraft(membership.index))
+        .absorb(field.name, membership);
+  }
+
+  if (drafts.isEmpty) {
+    return ZStepPartition(
+      steps: const &lt;ZEditionStep&gt;[],
+      unassigned: List&lt;String&gt;.unmodifiable(unassigned),
+    );
+  }
+
+  final List&lt;int&gt; keys = drafts.keys.toList()..sort();
+  final List&lt;ZEditionStep&gt; steps = &lt;ZEditionStep&gt;[];
+  for (int position = 0; position &lt; keys.length; position++) {
+    steps.add(drafts[keys[position]]!.build(position, titleFallback));
+  }
+
+  return ZStepPartition(
+    steps: List&lt;ZEditionStep&gt;.unmodifiable(steps),
+    unassigned: List&lt;String&gt;.unmodifiable(unassigned),
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">zPartitionFieldsIntoSteps function</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

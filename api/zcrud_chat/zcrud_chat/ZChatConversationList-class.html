@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZChatConversationList class from the zcrud_chat library, for the Dart programming language.">
+  <title>ZChatConversationList class - zcrud_chat library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat.dart</a></li>
+    <li class="self-crumb">ZChatConversationList class</li>
+  </ol>
+  <div class="self-name">ZChatConversationList</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat&#47;zcrud_chat-library-sidebar.html"
+    data-below-sidebar="zcrud_chat&#47;ZChatConversationList-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZChatConversationList</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Liste neutre de conversations — <code>ListView.builder</code>, trois états, groupes
+repliables, sélection multiple, pagination par curseur.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree-class.html">DiagnosticableTree</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/StatelessWidget-class.html">StatelessWidget</a></li>
+      <li>ZChatConversationList</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZChatConversationList.new" class="callable">
+          <span class="name"><a href="../zcrud_chat/ZChatConversationList/ZChatConversationList.html">ZChatConversationList</a></span><span class="signature">({<span class="parameter" id="param-items"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatConversation</span>&gt;</span></span> <span class="parameter-name">items</span>, </span><span class="parameter" id="param-status"><span class="type-annotation"><a href="../zcrud_chat/ZChatConversationListStatus.html">ZChatConversationListStatus</a></span> <span class="parameter-name">status</span> = <span class="default-value">ZChatConversationListStatus.ready</span>, </span><span class="parameter" id="param-failure"><span class="type-annotation">ZFailure?</span> <span class="parameter-name">failure</span>, </span><span class="parameter" id="param-onRetry"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onRetry</span>, </span><span class="parameter" id="param-sort"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">sort</span>(<span class="parameter" id="param-a"><span class="type-annotation">ZChatConversation</span> <span class="parameter-name">a</span>, </span><span class="parameter" id="param-b"><span class="type-annotation">ZChatConversation</span> <span class="parameter-name">b</span></span>)?, </span><span class="parameter" id="param-matcher"><span class="type-annotation"><a href="../zcrud_chat/ZChatConversationMatcher.html">ZChatConversationMatcher</a>?</span> <span class="parameter-name">matcher</span>, </span><span class="parameter" id="param-searchTerm"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">searchTerm</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="param-header"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">header</span>, </span><span class="parameter" id="param-itemWrapper"><span class="type-annotation"><a href="../zcrud_chat/ZChatConversationItemWrapper.html">ZChatConversationItemWrapper</a>?</span> <span class="parameter-name">itemWrapper</span>, </span><span class="parameter" id="param-tileBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">tileBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-conversation"><span class="type-annotation">ZChatConversation</span> <span class="parameter-name">conversation</span></span>)?, </span><span class="parameter" id="param-groupKeyOf"><span class="type-annotation"><a href="../zcrud_chat/ZChatGroupKey.html">ZChatGroupKey</a>?</span> <span class="parameter-name">groupKeyOf</span>, </span><span class="parameter" id="param-groupHeaderBuilder"><span class="type-annotation"><a href="../zcrud_chat/ZChatGroupHeaderBuilder.html">ZChatGroupHeaderBuilder</a>?</span> <span class="parameter-name">groupHeaderBuilder</span>, </span><span class="parameter" id="param-groupExpansion"><span class="type-annotation"><a href="../zcrud_chat/ZChatGroupExpansion-class.html">ZChatGroupExpansion</a>?</span> <span class="parameter-name">groupExpansion</span>, </span><span class="parameter" id="param-selection"><span class="type-annotation"><a href="../zcrud_chat/ZChatConversationSelection-class.html">ZChatConversationSelection</a>?</span> <span class="parameter-name">selection</span>, </span><span class="parameter" id="param-onRetireSelected"><span class="type-annotation">void</span> <span class="parameter-name">onRetireSelected</span>(<span class="parameter" id="param-ids"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">ids</span></span>)?, </span><span class="parameter" id="param-onOpen"><span class="type-annotation">void</span> <span class="parameter-name">onOpen</span>(<span class="parameter" id="param-conversation"><span class="type-annotation">ZChatConversation</span> <span class="parameter-name">conversation</span></span>)?, </span><span class="parameter" id="param-onCreate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onCreate</span>, </span><span class="parameter" id="param-onLoadMore"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onLoadMore</span>, </span><span class="parameter" id="param-hasMore"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">hasMore</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-autoLoadMore"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">autoLoadMore</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-emptyBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">emptyBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-searching"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">searching</span></span>)?, </span><span class="parameter" id="param-errorBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">errorBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-failure"><span class="type-annotation">ZFailure</span> <span class="parameter-name">failure</span></span>)?, </span><span class="parameter" id="param-loadingBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">loadingBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span>)?, </span><span class="parameter" id="param-skeletonRowCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">skeletonRowCount</span> = <span class="default-value">6</span>, </span><span class="parameter" id="param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span> <span class="parameter-name">padding</span>, </span><span class="parameter" id="param-tileConfig"><span class="type-annotation"><a href="../zcrud_chat/ZChatConversationTileConfig-class.html">ZChatConversationTileConfig</a></span> <span class="parameter-name">tileConfig</span> = <span class="default-value">const ZChatConversationTileConfig()</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+        </dt>
+        <dd>
+          Construit la liste.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="autoLoadMore" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/autoLoadMore.html">autoLoadMore</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> ⇒ <a href="../zcrud_chat/ZChatConversationList/onLoadMore.html">onLoadMore</a> est déclenché dès que la ligne de fin est <strong>montée</strong>
+(défilement infini) ; <code>false</code> ⇒ seulement à l'appui.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="emptyBuilder" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/emptyBuilder.html">emptyBuilder</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-searching"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">searching</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  Rendu de l'état vide, ou <code>null</code> (défaut du socle). Le second argument dit
+si une recherche est en cours.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="errorBuilder" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/errorBuilder.html">errorBuilder</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-failure"><span class="type-annotation">ZFailure</span> <span class="parameter-name">failure</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  Rendu de l'état d'erreur, ou <code>null</code> (défaut du socle).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="failure" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/failure.html">failure</a></span>
+  <span class="signature">&#8594; ZFailure?</span>
+  
+
+</dt>
+<dd>
+  Échec courant, ou <code>null</code>. Testé <strong>AVANT</strong> <a href="../zcrud_chat/ZChatConversationList/status.html">status</a> (cf. §3 de l'en-tête).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="groupExpansion" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/groupExpansion.html">groupExpansion</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat/ZChatGroupExpansion-class.html">ZChatGroupExpansion</a>?</span>
+  
+
+</dt>
+<dd>
+  Contrôleur de repliement externe. <code>null</code> signifie groupes toujours
+dépliés. Le socle n'en crée jamais : un contrôleur créé dans <code>build</code>
+perdrait son état à chaque rebuild, et ses listeners fuiraient.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="groupHeaderBuilder" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/groupHeaderBuilder.html">groupHeaderBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat/ZChatGroupHeaderBuilder.html">ZChatGroupHeaderBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  En-tête de groupe, ou <code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="groupKeyOf" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/groupKeyOf.html">groupKeyOf</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat/ZChatGroupKey.html">ZChatGroupKey</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé de groupe opaque, ou <code>null</code> (liste plate).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="hasMore" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/hasMore.html">hasMore</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> s'il reste une page (le curseur est détenu par l'hôte).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="header" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/header.html">header</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  
+
+</dt>
+<dd>
+  Slot d'en-tête de liste (bandeau, filtres, compteur…).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="items" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/items.html">items</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatConversation</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Les conversations, telles que l'hôte les fournit.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="itemWrapper" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/itemWrapper.html">itemWrapper</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat/ZChatConversationItemWrapper.html">ZChatConversationItemWrapper</a>?</span>
+  
+
+</dt>
+<dd>
+  Enveloppe de ligne (cf. <a href="../zcrud_chat/ZChatConversationItemWrapper.html">ZChatConversationItemWrapper</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="key" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/key.html">key</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span>
+  
+
+</dt>
+<dd class="inherited">
+  Controls how one widget replaces another widget in the tree.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="loadingBuilder" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/loadingBuilder.html">loadingBuilder</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  Rendu de l'état de chargement, ou <code>null</code> (squelette du socle).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="matcher" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/matcher.html">matcher</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat/ZChatConversationMatcher.html">ZChatConversationMatcher</a>?</span>
+  
+
+</dt>
+<dd>
+  Prédicat de recherche local, ou <code>null</code> (l'hôte a déjà filtré, cas d'un
+backend qui répond à <code>searchConversations</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onCreate" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/onCreate.html">onCreate</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span>
+  
+
+</dt>
+<dd>
+  Création — <strong>masquée en recherche</strong> : « créer » ne répond pas à « votre
+recherche ne rend rien ».
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onLoadMore" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/onLoadMore.html">onLoadMore</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span>
+  
+
+</dt>
+<dd>
+  Chargement de la page suivante. <code>null</code> ⇒ aucune pagination.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onOpen" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/onOpen.html">onOpen</a></span>
+  <span class="signature">&#8594; void Function<span class="signature">(<span class="parameter" id="param-conversation"><span class="type-annotation">ZChatConversation</span> <span class="parameter-name">conversation</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  Ouverture d'une conversation (appui simple hors sélection).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onRetireSelected" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/onRetireSelected.html">onRetireSelected</a></span>
+  <span class="signature">&#8594; void Function<span class="signature">(<span class="parameter" id="param-ids"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">ids</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  Retrait par <strong>lot</strong> — pendant de <code>retireAll</code>. <code>null</code> ⇒ action absente.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onRetry" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/onRetry.html">onRetry</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span>
+  
+
+</dt>
+<dd>
+  Relance après un échec, ou <code>null</code> (aucun bouton).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="padding" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/padding.html">padding</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span>
+  
+
+</dt>
+<dd>
+  Marge <strong>directionnelle</strong> de la liste (AD-13).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="renderedItems" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/renderedItems.html">renderedItems</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatConversation</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  La liste réellement rendue : filtrée, puis triée.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="searchTerm" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/searchTerm.html">searchTerm</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Terme cherché — pilote le surlignage <strong>et</strong> la variante d'état vide.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="selection" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/selection.html">selection</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat/ZChatConversationSelection-class.html">ZChatConversationSelection</a>?</span>
+  
+
+</dt>
+<dd>
+  Sélection multiple <strong>externe</strong>, ou <code>null</code> (aucune sélection multiple).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="skeletonRowCount" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/skeletonRowCount.html">skeletonRowCount</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre de lignes du squelette.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="sort" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/sort.html">sort</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a> Function<span class="signature">(<span class="parameter" id="param-a"><span class="type-annotation">ZChatConversation</span> <span class="parameter-name">a</span>, </span><span class="parameter" id="param-b"><span class="type-annotation">ZChatConversation</span> <span class="parameter-name">b</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  Comparateur de tri <strong>exposé</strong>, appliqué à la liste RENDUE, ou <code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="status" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/status.html">status</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat/ZChatConversationListStatus.html">ZChatConversationListStatus</a></span>
+  
+
+</dt>
+<dd>
+  Chargement ou prêt — <strong>jamais</strong> confondu avec « vide ».
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="tileBuilder" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/tileBuilder.html">tileBuilder</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-conversation"><span class="type-annotation">ZChatConversation</span> <span class="parameter-name">conversation</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  Remplace la tuile par défaut, ou <code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="tileConfig" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/tileConfig.html">tileConfig</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat/ZChatConversationTileConfig-class.html">ZChatConversationTileConfig</a></span>
+  
+
+</dt>
+<dd>
+  Configuration passée à chaque tuile par défaut.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="build" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatConversationList/build.html">build</a></span><span class="signature">(<wbr><span class="parameter" id="build-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Describes the part of the user interface represented by this widget.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="createElement" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/StatelessWidget/createElement.html">createElement</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/StatelessElement-class.html">StatelessElement</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Creates a <a href="https://api.flutter.dev/flutter/widgets/StatelessElement-class.html">StatelessElement</a> to manage this widget's location in the tree.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="debugDescribeChildren" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/debugDescribeChildren.html">debugDescribeChildren</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a list of <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a> objects describing this node's
+children.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="debugFillProperties" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/debugFillProperties.html">debugFillProperties</a></span><span class="signature">(<wbr><span class="parameter" id="debugFillProperties-param-properties"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticPropertiesBuilder-class.html">DiagnosticPropertiesBuilder</a></span> <span class="parameter-name">properties</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Add additional properties associated with the node.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toDiagnosticsNode" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toDiagnosticsNode.html">toDiagnosticsNode</a></span><span class="signature">(<wbr>{<span class="parameter" id="toDiagnosticsNode-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span><span class="parameter" id="toDiagnosticsNode-param-style"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsTreeStyle.html">DiagnosticsTreeStyle</a>?</span> <span class="parameter-name">style</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a debug representation of the object that is used by debugging
+tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode/toStringDeep.html">DiagnosticsNode.toStringDeep</a>.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/Diagnosticable/toString.html">toString</a></span><span class="signature">(<wbr>{<span class="parameter" id="toString-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.info</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringDeep" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringDeep.html">toStringDeep</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringDeep-param-prefixLineOne"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">prefixLineOne</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="toStringDeep-param-prefixOtherLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">prefixOtherLines</span>, </span><span class="parameter" id="toStringDeep-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span>, </span><span class="parameter" id="toStringDeep-param-wrapWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">wrapWidth</span> = <span class="default-value">65</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a string representation of this node and its descendants.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShallow" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringShallow.html">toStringShallow</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringShallow-param-joiner"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">joiner</span> = <span class="default-value">&#39;, &#39;</span>, </span><span class="parameter" id="toStringShallow-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a one-line detailed description of the object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShort" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/toStringShort.html">toStringShort</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A short, textual description of this widget.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat</a></li>
+    <li class="self-crumb">ZChatConversationList class</li>
+</ol>
+
+    <h5>zcrud_chat library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

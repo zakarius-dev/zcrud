@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zNormalizeTypesDistribution function from the zcrud_study library, for the Dart programming language.">
+  <title>zNormalizeTypesDistribution function - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study.dart</a></li>
+    <li class="self-crumb">zNormalizeTypesDistribution function</li>
+  </ol>
+  <div class="self-name">zNormalizeTypesDistribution</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_study&#47;zcrud_study-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zNormalizeTypesDistribution</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcardType</span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>
+<span class="name ">zNormalizeTypesDistribution</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="zNormalizeTypesDistribution-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcardType</span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">raw</span>, {</span></li>
+<li><span class="parameter" id="zNormalizeTypesDistribution-param-types"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcardType</span>&gt;</span></span> <span class="parameter-name">types</span>, </span></li>
+<li><span class="parameter" id="zNormalizeTypesDistribution-param-countIfNull"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">countIfNull</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Normalise une répartition <code>raw</code> éventuellement incohérente (invariant
+AD-10 : jamais de throw).</p>
+<p>La distribution fournie fait foi : le <code>count</code> effectif devient la somme
+(bornée) des valeurs retenues — aucune divergence silencieuse. Règles :</p>
+<ul>
+<li>une valeur négative est ramenée à <code>0</code> ;</li>
+<li>un type hors des <code>types</code> admis est écarté (entrée retirée) ;</li>
+<li>une entrée à <code>0</code> est conservée (un type explicitement à zéro reste une
+information, elle n'est pas réinventée) ;</li>
+<li><code>raw</code> <code>null</code> retombe sur <a href="../zcrud_study/zEvenTypesDistribution.html">zEvenTypesDistribution</a> du <code>countIfNull</code>
+borné.</li>
+</ul>
+<p>La somme finale est bornée par <a href="../zcrud_study/zGenerationCountBounds-constant.html">zGenerationCountBounds</a> : un dépassement
+est résorbé en tronquant déterministement les valeurs de tête, ce qui
+garantit que le <code>count</code> effectif reste dans <code>[1, 50]</code> si au moins une
+carte est demandée. Une somme nulle est laissée telle quelle — c'est à
+l'application de décider qu'aucune carte n'est demandée.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Map&lt;ZFlashcardType, int&gt; zNormalizeTypesDistribution(
+  Map&lt;ZFlashcardType, int&gt;? raw, {
+  required List&lt;ZFlashcardType&gt; types,
+  int? countIfNull,
+}) {
+  if (raw == null) {
+    return zEvenTypesDistribution(
+      zClampGenerationCount(countIfNull),
+      types,
+    );
+  }
+  final allowed = types.toSet();
+  final cleaned = &lt;ZFlashcardType, int&gt;{};
+  for (final entry in raw.entries) {
+    if (!allowed.contains(entry.key)) continue; &#47;&#47; type inconnu → écarté.
+    cleaned[entry.key] = entry.value &lt; 0 ? 0 : entry.value; &#47;&#47; négatif → 0.
+  }
+
+  &#47;&#47; Borne le TOTAL à `max` sans jamais lever : tronque déterministement les
+  &#47;&#47; valeurs (ordre d&#39;entrée) jusqu&#39;à ce que la somme retombe sous le plafond.
+  var total = cleaned.values.fold&lt;int&gt;(0, (a, b) =&gt; a + b);
+  if (total &gt; zGenerationCountBounds.max) {
+    var overflow = total - zGenerationCountBounds.max;
+    final keys = cleaned.keys.toList();
+    for (final key in keys) {
+      if (overflow &lt;= 0) break;
+      final v = cleaned[key]!;
+      final cut = v &lt; overflow ? v : overflow;
+      cleaned[key] = v - cut;
+      overflow -= cut;
+    }
+    total = zGenerationCountBounds.max;
+  }
+  return cleaned;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study</a></li>
+    <li class="self-crumb">zNormalizeTypesDistribution function</li>
+</ol>
+
+    <h5>zcrud_study library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

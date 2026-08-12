@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the belowSubtitle property from the ZFolderCard class, for the Dart programming language.">
+  <title>belowSubtitle property - ZFolderCard class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study.dart</a></li>
+    <li><a href="../../zcrud_study/ZFolderCard-class.html">ZFolderCard</a></li>
+    <li class="self-crumb">belowSubtitle property</li>
+  </ol>
+  <div class="self-name">belowSubtitle</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;ZFolderCard-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">belowSubtitle</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?
+        <span class="name ">belowSubtitle</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p>Contenu secondaire rendu <strong>directement sous le <a href="../../zcrud_study/ZFolderCard/title.html">title</a></strong>, dans la même
+colonne : classement du dossier (matière, cours, catégorie, client,
+projet), puce d'état, méta-information.</p>
+<p><strong>Contrat IDENTIQUE</strong> à <code>ZStudyToolsItemCard.belowSubtitle</code> et
+<code>ZStudyNoteCard.belowSubtitle</code> — même nom, même type, même
+espacement (<code>gapS</code>), même traitement sémantique. C'est délibérément une
+EXTENSION du slot existant et <strong>pas une variante</strong> : l'incohérence entre
+cartes sœurs d'une même famille était précisément le défaut signalé.</p>
+<p><strong>Pourquoi <a href="../../zcrud_study/ZFolderCard/counts.html">counts</a> ne pouvait pas en tenir lieu</strong> : composer un
+sous-titre dans le slot compteur trahit la sémantique du slot — le jour
+où <a href="../../zcrud_study/ZFolderCard/counts.html">counts</a> recevra un traitement propre (alignement, <code>Semantics</code> de
+comptage), le sous-titre le subirait. Ce slot-ci est ancré au titre, pas
+au pied de carte.</p>
+<p>♿ <strong>Sa sémantique est PRÉSERVÉE</strong>, comme sur les deux cartes sœurs : son
+contenu vient de l'hôte et n'est <strong>pas</strong> repris dans le <code>label</code> de la
+carte, donc l'exclure ne préviendrait aucune double annonce — cela le
+rendrait seulement muet. Il n'est donc PAS traité comme <a href="../../zcrud_study/ZFolderCard/topAccent.html">topAccent</a> /
+<a href="../../zcrud_study/ZFolderCard/footer.html">footer</a>, qui sont, eux, des décors.</p>
+<p>📐 <strong>Coût vertical NUL en cellule contrainte</strong> : le slot
+<strong>participe</strong> à la hauteur allouée au lieu de s'y <strong>ajouter</strong>. Livré, il
+était correct… et inutilisable à densité réelle — une grille en
+<code>childAspectRatio: itemWidth / 210</code> débordait sur <em>chaque</em> carte, quand le
+même texte tenait dans <a href="../../zcrud_study/ZFolderCard/counts.html">counts</a> (qui, lui, vit dans une zone déjà bornée).
+Désormais, toute hauteur où la carte tient <strong>sans</strong> le slot est une hauteur
+où elle tient <strong>avec</strong>. À l'extrême, c'est le sous-titre qui se borne au
+reliquat (le titre reste prioritaire) — jamais la carte qui déborde.</p>
+<p><code>null</code> ⇒ <strong>rendu strictement inchangé</strong> (aucun nœud, aucun espacement).</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final Widget? belowSubtitle;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/ZFolderCard-class.html">ZFolderCard</a></li>
+    <li class="self-crumb">belowSubtitle property</li>
+</ol>
+
+  <h5>ZFolderCard class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

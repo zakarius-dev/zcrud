@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZGeoShapeStyle class from the zcrud_geo library, for the Dart programming language.">
+  <title>ZGeoShapeStyle class - zcrud_geo library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_geo</a></li>
+    <li><a href="../zcrud_geo/">zcrud_geo.dart</a></li>
+    <li class="self-crumb">ZGeoShapeStyle class</li>
+  </ol>
+  <div class="self-name">ZGeoShapeStyle</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_geo&#47;zcrud_geo-library-sidebar.html"
+    data-below-sidebar="zcrud_geo&#47;ZGeoShapeStyle-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZGeoShapeStyle</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Style de rendu neutre d'une <a href="../zcrud_geo/ZGeoShape-class.html">ZGeoShape</a> : couleurs ARGB, contour, opacité,
+icône de marqueur, draggable, info-window. Aucun type SDK/<code>Color</code> exposé.</p>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZGeoShapeStyle.new" class="callable">
+          <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/ZGeoShapeStyle.html">ZGeoShapeStyle</a></span><span class="signature">({<span class="parameter" id="param-fillColorArgb"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">fillColorArgb</span>, </span><span class="parameter" id="param-strokeColorArgb"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">strokeColorArgb</span>, </span><span class="parameter" id="param-strokeWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">strokeWidth</span> = <span class="default-value">3</span>, </span><span class="parameter" id="param-visible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">visible</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-zIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">zIndex</span> = <span class="default-value">0</span>, </span><span class="parameter" id="param-geodesic"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">geodesic</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-opacity"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">opacity</span> = <span class="default-value">1.0</span>, </span><span class="parameter" id="param-draggable"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">draggable</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-consumeTapEvents"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">consumeTapEvents</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-iconAsset"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">iconAsset</span>, </span><span class="parameter" id="param-iconColorArgb"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">iconColorArgb</span>, </span><span class="parameter" id="param-iconSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">iconSize</span>, </span><span class="parameter" id="param-iconAnchor"><span class="type-annotation"><a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a>?</span> <span class="parameter-name">iconAnchor</span>, </span><span class="parameter" id="param-iconRotation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">iconRotation</span> = <span class="default-value">0.0</span>, </span><span class="parameter" id="param-showInfoWindow"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showInfoWindow</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-infoWindowTitle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">infoWindowTitle</span>, </span><span class="parameter" id="param-infoWindowSnippet"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">infoWindowSnippet</span></span>})</span>
+        </dt>
+        <dd>
+          Construit un style <code>const</code>. Tous les paramètres ont un <strong>défaut neutre</strong>
+(rétro-compat : un style « vide » = <code>ZGeoShapeStyle()</code> n'impose rien de
+visuel de plus que le comportement d'origine côté adaptateur).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="consumeTapEvents" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/consumeTapEvents.html">consumeTapEvents</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  La forme consomme les évènements de tap (défaut <code>true</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="draggable" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/draggable.html">draggable</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Forme déplaçable par l'utilisateur (défaut <code>false</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="fillColorArgb" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/fillColorArgb.html">fillColorArgb</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Couleur de remplissage <strong>ARGB 32 bits</strong> (<code>0xAARRGGBB</code>) — polygone/cercle.
+<code>null</code> → l'adaptateur choisit un défaut neutre (thème injecté).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="geodesic" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/geodesic.html">geodesic</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Segments géodésiques (grand cercle) pour les tracés (défaut <code>false</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="iconAnchor" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/iconAnchor.html">iconAnchor</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a>?</span>
+  
+
+</dt>
+<dd>
+  Marqueur : point d'ancrage normalisé <code>(0.0-1.0, 0.0-1.0)</code>, exprimé en
+<a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a> (<code>lat</code>/<code>lng</code> réutilisés comme composantes normalisées) ;
+<code>null</code> → défaut adaptateur.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="iconAsset" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/iconAsset.html">iconAsset</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Marqueur : chemin d'asset/URL d'icône (<code>null</code> → icône par défaut adaptateur).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="iconColorArgb" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/iconColorArgb.html">iconColorArgb</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Marqueur : teinte d'icône <strong>ARGB 32 bits</strong> (<code>null</code> → aucune teinte imposée).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="iconRotation" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/iconRotation.html">iconRotation</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Marqueur : rotation en degrés (défaut <code>0.0</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="iconSize" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/iconSize.html">iconSize</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Marqueur : taille d'icône en dp (<code>null</code> → défaut adaptateur).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="infoWindowSnippet" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/infoWindowSnippet.html">infoWindowSnippet</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Marqueur : texte secondaire d'info-window (<code>null</code> → aucun).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="infoWindowTitle" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/infoWindowTitle.html">infoWindowTitle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Marqueur : titre d'info-window (<code>null</code> → aucun).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="opacity" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/opacity.html">opacity</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Opacité <code>[0.0, 1.0]</code> (défaut <code>1.0</code>). Bornée défensivement au parse.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="showInfoWindow" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/showInfoWindow.html">showInfoWindow</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Marqueur : afficher l'info-window (défaut <code>false</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="strokeColorArgb" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/strokeColorArgb.html">strokeColorArgb</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Couleur de contour/trait <strong>ARGB 32 bits</strong> — polygone/cercle/polyligne.
+<code>null</code> → défaut neutre côté adaptateur (thème injecté).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="strokeWidth" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/strokeWidth.html">strokeWidth</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Épaisseur du trait en pixels (≥0 ; défaut <code>3</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="visible" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/visible.html">visible</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Visibilité de la forme (défaut <code>true</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="zIndex" class="property">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/zIndex.html">zIndex</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Index de superposition — plus grand = au-dessus (défaut <code>0</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="copyWith" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-fillColorArgb"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">fillColorArgb</span>, </span><span class="parameter" id="copyWith-param-strokeColorArgb"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">strokeColorArgb</span>, </span><span class="parameter" id="copyWith-param-strokeWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">strokeWidth</span>, </span><span class="parameter" id="copyWith-param-visible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">visible</span>, </span><span class="parameter" id="copyWith-param-zIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">zIndex</span>, </span><span class="parameter" id="copyWith-param-geodesic"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">geodesic</span>, </span><span class="parameter" id="copyWith-param-opacity"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">opacity</span>, </span><span class="parameter" id="copyWith-param-draggable"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">draggable</span>, </span><span class="parameter" id="copyWith-param-consumeTapEvents"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">consumeTapEvents</span>, </span><span class="parameter" id="copyWith-param-iconAsset"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">iconAsset</span>, </span><span class="parameter" id="copyWith-param-iconColorArgb"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">iconColorArgb</span>, </span><span class="parameter" id="copyWith-param-iconSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">iconSize</span>, </span><span class="parameter" id="copyWith-param-iconAnchor"><span class="type-annotation"><a href="../zcrud_geo/ZGeoPoint-class.html">ZGeoPoint</a>?</span> <span class="parameter-name">iconAnchor</span>, </span><span class="parameter" id="copyWith-param-iconRotation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">iconRotation</span>, </span><span class="parameter" id="copyWith-param-showInfoWindow"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showInfoWindow</span>, </span><span class="parameter" id="copyWith-param-infoWindowTitle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">infoWindowTitle</span>, </span><span class="parameter" id="copyWith-param-infoWindowSnippet"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">infoWindowSnippet</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Copie avec substitutions. Les couleurs/libellés ne peuvent pas être remis
+à <code>null</code> via cette API (sémantique de copie partielle).
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toMap" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/toMap.html">toMap</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Sérialise en <code>Map</code> neutre. Les scalaires sont toujours émis ; les couleurs
+ARGB et les libellés d'info-window <code>null</code> sont <strong>omis</strong> (schéma additif).
+  
+
+</dd>
+
+        <dt id="toString" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A string representation of this object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="fromMap" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/fromMap.html">fromMap</a></span><span class="signature">(<wbr><span class="parameter" id="fromMap-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Alias défensif de <a href="../zcrud_geo/ZGeoShapeStyle/fromMapSafe.html">fromMapSafe</a> (nullable) — cohérence <code>toMap</code>/<code>fromMap</code>.
+  
+
+</dd>
+
+        <dt id="fromMapSafe" class="callable">
+  <span class="name"><a href="../zcrud_geo/ZGeoShapeStyle/fromMapSafe.html">fromMapSafe</a></span><span class="signature">(<wbr><span class="parameter" id="fromMapSafe-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Parse <strong>défensif</strong> : <code>null</code> si <code>raw</code> n'est pas une <code>Map</code>. Chaque clé
+absente/corrompue retombe sur son défaut neutre ; l'opacité est bornée
+à <code>[0,1]</code> (non finie → défaut). Ne throw <strong>jamais</strong>.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+
+  <section class="summary offset-anchor" id="constants">
+    <h2>Constants</h2>
+    <dl class="properties">
+        <dt id="defaultCircle" class="constant">
+    <span class="name "><a href="../zcrud_geo/ZGeoShapeStyle/defaultCircle-constant.html">defaultCircle</a></span>
+  <span class="signature">&#8594; const <a href="../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a></span>
+  
+
+</dt>
+<dd>
+  Preset cercle de référence (audité — opt-in).
+  
+
+</dd>
+
+        <dt id="defaultPoint" class="constant">
+    <span class="name "><a href="../zcrud_geo/ZGeoShapeStyle/defaultPoint-constant.html">defaultPoint</a></span>
+  <span class="signature">&#8594; const <a href="../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a></span>
+  
+
+</dt>
+<dd>
+  Preset point/marqueur de référence (audité — opt-in).
+  
+
+</dd>
+
+        <dt id="defaultPolygon" class="constant">
+    <span class="name "><a href="../zcrud_geo/ZGeoShapeStyle/defaultPolygon-constant.html">defaultPolygon</a></span>
+  <span class="signature">&#8594; const <a href="../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a></span>
+  
+
+</dt>
+<dd>
+  Preset polygone de référence (audité — opt-in).
+  
+
+</dd>
+
+        <dt id="defaultPolyline" class="constant">
+    <span class="name "><a href="../zcrud_geo/ZGeoShapeStyle/defaultPolyline-constant.html">defaultPolyline</a></span>
+  <span class="signature">&#8594; const <a href="../zcrud_geo/ZGeoShapeStyle-class.html">ZGeoShapeStyle</a></span>
+  
+
+</dt>
+<dd>
+  Preset polyligne de référence (audité — opt-in).
+  
+
+</dd>
+
+        <dt id="maxOpacity" class="constant">
+    <span class="name "><a href="../zcrud_geo/ZGeoShapeStyle/maxOpacity-constant.html">maxOpacity</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Borne supérieure d'opacité.
+  
+
+</dd>
+
+        <dt id="minOpacity" class="constant">
+    <span class="name "><a href="../zcrud_geo/ZGeoShapeStyle/minOpacity-constant.html">minOpacity</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Borne inférieure d'opacité.
+  
+
+</dd>
+
+    </dl>
+  </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_geo</a></li>
+    <li><a href="../zcrud_geo/">zcrud_geo</a></li>
+    <li class="self-crumb">ZGeoShapeStyle class</li>
+</ol>
+
+    <h5>zcrud_geo library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_geo
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

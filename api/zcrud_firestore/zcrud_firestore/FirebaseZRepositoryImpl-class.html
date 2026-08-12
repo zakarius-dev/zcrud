@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the FirebaseZRepositoryImpl class from the zcrud_firestore library, for the Dart programming language.">
+  <title>FirebaseZRepositoryImpl class - zcrud_firestore library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_firestore</a></li>
+    <li><a href="../zcrud_firestore/">zcrud_firestore.dart</a></li>
+    <li class="self-crumb">FirebaseZRepositoryImpl<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span> class</li>
+  </ol>
+  <div class="self-name">FirebaseZRepositoryImpl</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_firestore&#47;zcrud_firestore-library-sidebar.html"
+    data-below-sidebar="zcrud_firestore&#47;FirebaseZRepositoryImpl-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">FirebaseZRepositoryImpl&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Adaptateur Firestore de <code>ZRepository</code> pour l'agrégat <code>T</code>.</p>
+<p><strong>Injection</strong> (pas de singleton statique — testabilité) : une instance
+<a href="https://pub.dev/documentation/cloud_firestore/6.7.1/cloud_firestore/FirebaseFirestore-class.html">FirebaseFirestore</a>, le <code>collectionPath</code>, le <code>kind</code> + le couple
+(dé)sérialisation typé (<code>fromMap</code>/<code>toMap</code>, ou la fabrique <a href="../zcrud_firestore/FirebaseZRepositoryImpl/FirebaseZRepositoryImpl.fromRegistry.html">fromRegistry</a>),
+un <a href="../zcrud_firestore/ZFirestoreLog.html">ZFirestoreLog</a> optionnel, et une voie de décodage <strong>défensive</strong>
+optionnelle (<code>fromMapSafe</code>).</p>
+<p><strong>Décodage DÉFENSIF (AD-10)</strong> : la lecture route chaque document par une voie
+tolérante — <code>fromMapSafe</code> s'il est fourni (ex. <code>ZModelAdapter.fromMapSafe</code>),
+sinon une enveloppe locale de <code>fromMap</code>. Un document corrompu est <strong>écarté +
+loggé</strong>, jamais propagé en <code>throw</code> : une page de N documents dont 1 est
+corrompu retourne N-1 entités.</p>
+<p><strong>Métadonnées de sync hors-entité</strong> (AD-9/AD-16) : les clés <code>is_deleted</code> et
+<code>updated_at</code> (<code>ZSyncMeta</code>, snake_case, ISO-8601) sont <strong>fusionnées</strong> dans le
+document mais restent séparées côté modèle (aucun champ métier touché par
+<a href="../zcrud_firestore/FirebaseZRepositoryImpl/softDelete.html">softDelete</a>/<a href="../zcrud_firestore/FirebaseZRepositoryImpl/restore.html">restore</a>).</p>
+<p><strong>Recherche accent-insensible — limite documentée</strong> : Firestore n'a ni
+<code>LIKE</code>, ni full-text, ni pliage diacritique natif. <code>ZDataRequest.search</code>
+n'est donc <strong>pas</strong> servi ici (préfixe/égalité ou champ normalisé pré-calculé
+requis côté application). Aucune normalisation NFD n'est appliquée.</p>
+<p><strong>PRÉCONDITION — collection « zcrud-native »</strong> : cet adaptateur suppose
+une collection gérée <strong>exclusivement</strong> par zcrud, où <strong>tout</strong> document
+écrit par <a href="../zcrud_firestore/FirebaseZRepositoryImpl/save.html">save</a> porte SYSTÉMATIQUEMENT (invariant <strong>exécutoire</strong>, garanti
+par <code>_encode</code> + <a href="../zcrud_firestore/FirebaseZRepositoryImpl/save.html">save</a>) :</p>
+<ul>
+<li>un champ de <strong>corps</strong> <code>id</code> (= identité du document) — <strong>clé de
+départage</strong> du tri/curseur. En <strong>prod</strong>, <code>orderBy('id')</code> <strong>exclut</strong>
+silencieusement tout document DÉPOURVU de ce champ (sémantique Firestore) :
+un document hérité/non-zcrud sans corps <code>id</code> disparaît des lectures
+<strong>triées/paginées</strong>. Choix de la clé de corps <code>id</code> (option (b)) plutôt que
+<code>FieldPath.documentId</code> (option (a)) : voir la justification PROUVÉE dans
+<code>_buildQuery</code> (le backend de test rejette <code>startAfter</code> sur <code>documentId</code>).</li>
+<li>un champ <code>is_deleted:false</code> (<code>ZSyncMeta</code>, hors-entité) — le filtre serveur
+<code>where('is_deleted', isEqualTo:false)</code> <strong>exige la présence</strong> du champ : un
+document sans <code>is_deleted</code> est <strong>exclu de TOUS</strong> les chemins de lecture
+(getById / getAll / watch) de façon <strong>COHÉRENTE</strong> (aucune divergence, cf.
+<code>_matchesScope</code>).</li>
+</ul>
+<p>Brancher l'adaptateur sur une collection <strong>préexistante</strong> impose donc un
+<strong>backfill d'onboarding</strong> (<code>id</code> de corps + <code>is_deleted:false</code> sur chaque
+document) — sans quoi les documents non conformes sont exclus des lectures
+triées/paginées et filtrées, silencieusement, EN PROD. <strong>OU</strong> — le mode
+opt-in <a href="../zcrud_firestore/ZDeletionSemantics.html">ZDeletionSemantics.absentMeansAlive</a> (« absent = vivant », zéro
+migration de données), qui lève cette précondition pour le drapeau
+<code>is_deleted</code> (celle du corps <code>id</code> demeure pour les lectures
+<strong>triées/paginées</strong>).</p>
+<p><strong>Corbeille</strong> : <code>ZDataRequest.deletedScope</code>
+(<code>aliveOnly</code>/<code>includeDeleted</code>/<code>deletedOnly</code>) est honoré sur
+<a href="../zcrud_firestore/FirebaseZRepositoryImpl/getAll.html">getAll</a>/<a href="../zcrud_firestore/FirebaseZRepositoryImpl/watch.html">watch</a>/<a href="../zcrud_firestore/FirebaseZRepositoryImpl/count.html">count</a> dans les DEUX sémantiques — clauses <code>where</code> en
+<a href="../zcrud_firestore/ZDeletionSemantics.html">ZDeletionSemantics.strict</a>, filtrage client en
+<a href="../zcrud_firestore/ZDeletionSemantics.html">ZDeletionSemantics.absentMeansAlive</a> (<code>deletedOnly</code> y inclut
+<code>legacyDeletedKey == true</code>).</p>
+<p><strong>Contrat <code>fromMap</code></strong> : votre <code>fromMap</code> doit accepter les dates
+<strong>ISO-8601</strong> — le décodage normalise tout horodatage (<code>Timestamp</code> natif,
+<code>DateTime</code>, <code>{_seconds,_nanoseconds}</code>) en <code>String</code> ISO <strong>avant</strong> d'appeler
+le <code>fromMap</code> injecté (cf. <code>_normalizeTemporalDeep</code>) : un cast dur
+<code>as Timestamp?</code> y jette systématiquement.</p>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="FirebaseZRepositoryImpl.new" class="callable">
+          <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/FirebaseZRepositoryImpl.html">FirebaseZRepositoryImpl</a></span><span class="signature">({<span class="parameter" id="param-firestore"><span>required</span> <span class="type-annotation"><a href="https://pub.dev/documentation/cloud_firestore/6.7.1/cloud_firestore/FirebaseFirestore-class.html">FirebaseFirestore</a></span> <span class="parameter-name">firestore</span>, </span><span class="parameter" id="param-collectionPath"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">collectionPath</span>, </span><span class="parameter" id="param-kind"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">kind</span>, </span><span class="parameter" id="param-fromMap"><span>required</span> <span class="type-annotation">T</span> <span class="parameter-name">fromMap</span>(<span class="parameter" id="param-map"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">map</span></span>), </span><span class="parameter" id="param-toMap"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">toMap</span>(<span class="parameter" id="param-value"><span class="type-annotation">T</span> <span class="parameter-name">value</span></span>), </span><span class="parameter" id="param-fromMapSafe"><span class="type-annotation">T?</span> <span class="parameter-name">fromMapSafe</span>(<span class="parameter" id="param-map"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">map</span></span>)?, </span><span class="parameter" id="param-logger"><span class="type-annotation"><a href="../zcrud_firestore/ZFirestoreLog.html">ZFirestoreLog</a>?</span> <span class="parameter-name">logger</span>, </span><span class="parameter" id="param-timestampFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">timestampFields</span> = <span class="default-value">const &lt;String&gt;{}</span>, </span><span class="parameter" id="param-deletionSemantics"><span class="type-annotation"><a href="../zcrud_firestore/ZDeletionSemantics.html">ZDeletionSemantics</a></span> <span class="parameter-name">deletionSemantics</span> = <span class="default-value">ZDeletionSemantics.strict</span>, </span><span class="parameter" id="param-legacyDeletedKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">legacyDeletedKey</span></span>})</span>
+        </dt>
+        <dd>
+          Construit l'adaptateur à partir du couple (dé)sérialisation typé.
+        </dd>
+        <dt id="FirebaseZRepositoryImpl.fromRegistry" class="callable">
+          <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/FirebaseZRepositoryImpl.fromRegistry.html">FirebaseZRepositoryImpl.fromRegistry</a></span><span class="signature">({<span class="parameter" id="fromRegistry-param-firestore"><span>required</span> <span class="type-annotation"><a href="https://pub.dev/documentation/cloud_firestore/6.7.1/cloud_firestore/FirebaseFirestore-class.html">FirebaseFirestore</a></span> <span class="parameter-name">firestore</span>, </span><span class="parameter" id="fromRegistry-param-collectionPath"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">collectionPath</span>, </span><span class="parameter" id="fromRegistry-param-kind"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">kind</span>, </span><span class="parameter" id="fromRegistry-param-registry"><span>required</span> <span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span>, </span><span class="parameter" id="fromRegistry-param-fromMapSafe"><span class="type-annotation">T?</span> <span class="parameter-name">fromMapSafe</span>(<span class="parameter" id="param-map"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">map</span></span>)?, </span><span class="parameter" id="fromRegistry-param-logger"><span class="type-annotation"><a href="../zcrud_firestore/ZFirestoreLog.html">ZFirestoreLog</a>?</span> <span class="parameter-name">logger</span>, </span><span class="parameter" id="fromRegistry-param-timestampFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">timestampFields</span> = <span class="default-value">const &lt;String&gt;{}</span>, </span><span class="parameter" id="fromRegistry-param-deletionSemantics"><span class="type-annotation"><a href="../zcrud_firestore/ZDeletionSemantics.html">ZDeletionSemantics</a></span> <span class="parameter-name">deletionSemantics</span> = <span class="default-value">ZDeletionSemantics.strict</span>, </span><span class="parameter" id="fromRegistry-param-legacyDeletedKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">legacyDeletedKey</span></span>})</span>
+        </dt>
+        <dd>
+          Construit l'adaptateur en dérivant <code>fromMap</code>/<code>toMap</code> d'un <code>ZcrudRegistry</code>
+(voie stricte <code>decode</code>/<code>encode</code>). Le décodage reste <strong>défensif</strong> : la voie
+stricte est enveloppée localement (sans aucune
+modification du contrat gelé <code>ZcrudRegistry</code>). Un <code>fromMapSafe</code> explicite
+(ex. <code>ZModelAdapter.fromMapSafe</code>) peut être fourni pour une tolérance
+portée par le modèle.
+            <div class="constructor-modifier features">factory</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="applyMergedAll" class="callable">
+  <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/applyMergedAll.html">applyMergedAll</a></span><span class="signature">(<wbr><span class="parameter" id="applyMergedAll-param-entries"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSyncEntry<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">entries</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/dartz/0.10.1/dartz/Unit-class.html">Unit</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Propagation PAR LOT BORNÉE</strong> (AD-9) d'un changeset d'<code>entries</code>,
+chacune écrite <strong>verbatim</strong> (méta préservée, jamais <code>now()</code>). Le changeset
+est <strong>découpé</strong> en lots de ≤ <a href="../zcrud_firestore/FirebaseZRepositoryImpl/kMaxBatchWrites-constant.html">kMaxBatchWrites</a> (<strong>450</strong>), chaque lot étant un
+<code>WriteBatch</code> <strong>committé atomiquement</strong> (aucune écriture partielle non-commit).
+Liste vide → <code>Right(unit)</code>. <code>FirebaseException</code> → <code>Left(ZServerFailure)</code>.
+  
+
+</dd>
+
+        <dt id="count" class="callable">
+  <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/count.html">count</a></span><span class="signature">(<wbr>{<span class="parameter" id="count-param-request"><span class="type-annotation">ZDataRequest?</span> <span class="parameter-name">request</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Compte les éléments correspondant à <code>request</code> (exclut les soft-deleted).
+  
+
+</dd>
+
+        <dt id="dispose" class="callable">
+  <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/dispose.html">dispose</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Libère les ressources (abonnements, contrôleurs de flux).
+  
+
+</dd>
+
+        <dt id="getAll" class="callable">
+  <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/getAll.html">getAll</a></span><span class="signature">(<wbr>{<span class="parameter" id="getAll-param-request"><span class="type-annotation">ZDataRequest?</span> <span class="parameter-name">request</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Lit tous les éléments correspondant à <code>request</code> (exclut les soft-deleted).
+  
+
+</dd>
+
+        <dt id="getById" class="callable">
+  <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/getById.html">getById</a></span><span class="signature">(<wbr><span class="parameter" id="getById-param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Lit l'élément d'identité <code>id</code>. <code>Left(ZNotFoundFailure)</code> s'il est absent ou
+soft-deleted.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="restore" class="callable">
+  <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/restore.html">restore</a></span><span class="signature">(<wbr><span class="parameter" id="restore-param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/dartz/0.10.1/dartz/Unit-class.html">Unit</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Restaure l'élément <code>id</code> soft-deleted (corbeille).
+  
+
+</dd>
+
+        <dt id="save" class="callable">
+  <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/save.html">save</a></span><span class="signature">(<wbr><span class="parameter" id="save-param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span>, {</span><span class="parameter" id="save-param-collectionId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">collectionId</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Persiste <code>item</code> en <strong>écrasement TOTAL</strong> (<code>batch.set</code>, JAMAIS un merge) puis
+relit l'entité persistée (round-trip).
+  
+
+</dd>
+
+        <dt id="softDelete" class="callable">
+  <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/softDelete.html">softDelete</a></span><span class="signature">(<wbr><span class="parameter" id="softDelete-param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/dartz/0.10.1/dartz/Unit-class.html">Unit</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Soft-delete l'élément <code>id</code> (<code>is_deleted = true</code>, hors-entité <code>ZSyncMeta</code>).
+  
+
+</dd>
+
+        <dt id="syncEntriesAll" class="callable">
+  <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/syncEntriesAll.html">syncEntriesAll</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSyncEntry<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Voie de lecture de SYNCHRONISATION</strong> : lit <strong>TOUS</strong> les documents
+<strong>SANS</strong> le filtre serveur <code>is_deleted == false</code> (tombstones <strong>inclus</strong>),
+chacun apparié à son <code>ZSyncMeta</code> (lu depuis le corps). Contraste voulu avec
+<a href="../zcrud_firestore/FirebaseZRepositoryImpl/getAll.html">getAll</a> (qui exclut les tombstones) — indispensable au merge LWW. Décodage
+<strong>défensif</strong> (AD-10) : un document corrompu est <strong>écarté + loggé</strong>, jamais un
+<code>throw</code>. <code>FirebaseException</code> → <code>Left(ZServerFailure)</code> (best-effort).
+  
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="watch" class="callable">
+  <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/watch.html">watch</a></span><span class="signature">(<wbr><span class="parameter" id="watch-param-request"><span class="type-annotation">ZDataRequest</span> <span class="parameter-name">request</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Flux temps réel <strong>nu</strong> filtré/trié/paginé selon <code>request</code>.
+  
+
+</dd>
+
+        <dt id="watchAll" class="callable">
+  <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/watchAll.html">watchAll</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Flux temps réel <strong>nu</strong> de tous les éléments non soft-deleted.
+  
+
+</dd>
+
+        <dt id="writeMerged" class="callable">
+  <span class="name"><a href="../zcrud_firestore/FirebaseZRepositoryImpl/writeMerged.html">writeMerged</a></span><span class="signature">(<wbr><span class="parameter" id="writeMerged-param-entry"><span class="type-annotation">ZSyncEntry<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">entry</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/dartz/0.10.1/dartz/Unit-class.html">Unit</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Écriture PRÉSERVANT la méta</strong> d'une <strong>seule</strong> <code>entry</code> : <code>batch.set</code>
+committé (jamais partiel) écrivant le corps + <code>updated_at</code>/<code>is_deleted</code>
+<strong>verbatim</strong> (jamais <code>now()</code>, contrairement à <a href="../zcrud_firestore/FirebaseZRepositoryImpl/save.html">save</a>). Réservé au merge.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  <section class="summary offset-anchor" id="constants">
+    <h2>Constants</h2>
+    <dl class="properties">
+        <dt id="kMaxBatchWrites" class="constant">
+    <span class="name "><a href="../zcrud_firestore/FirebaseZRepositoryImpl/kMaxBatchWrites-constant.html">kMaxBatchWrites</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Borne SÛRE d'écritures par <code>WriteBatch</code> (AD-9) : la limite Firestore
+est <strong>500</strong> ; la borne canonique retenue est <strong>450</strong> (marge de sécurité).
+Cette constante est <strong>backend-spécifique</strong> et vit donc <strong>exclusivement</strong> ici
+(<code>zcrud_firestore</code>), <strong>jamais</strong> dans <code>zcrud_core</code> (AD-5).
+  
+
+</dd>
+
+    </dl>
+  </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_firestore</a></li>
+    <li><a href="../zcrud_firestore/">zcrud_firestore</a></li>
+    <li class="self-crumb">FirebaseZRepositoryImpl<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span> class</li>
+</ol>
+
+    <h5>zcrud_firestore library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_firestore
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

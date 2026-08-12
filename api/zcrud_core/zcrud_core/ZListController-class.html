@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZListController class from the zcrud_core library, for the Dart programming language.">
+  <title>ZListController class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZListController<span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span> class</li>
+  </ol>
+  <div class="self-name">ZListController</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZListController-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZListController&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Contrôleur réactif d'une liste dérivée du schéma, exposant une tranche
+<code>ValueListenable&lt;ZListViewState&gt;</code>.</p>
+<p>Réactivité <strong>Flutter-native</strong> (AD-2/AD-15) : <code>ChangeNotifier</code> + <code>ValueNotifier</code>
+interne, aucune dépendance à un gestionnaire d'état. Un widget d'app écoute la
+SEULE tranche <a href="../zcrud_core/ZListController/state.html">state</a> via <code>ValueListenableBuilder</code> et rend <code>DynamicList(state: value)</code> (réutilise les vues d'états <code>ZListViewState</code>).</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier-class.html">ChangeNotifier</a></li>
+      <li>ZListController</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZListController.new" class="callable">
+          <span class="name"><a href="../zcrud_core/ZListController/ZListController.html">ZListController</a></span><span class="signature">({<span class="parameter" id="param-repository"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZRepository-class.html">ZRepository</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">repository</span>, </span><span class="parameter" id="param-toRow"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">toRow</span>(<span class="parameter" id="param-"><span class="type-annotation">T</span></span>), </span><span class="parameter" id="param-schema"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">schema</span>, </span><span class="parameter" id="param-pageSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">pageSize</span>, </span><span class="parameter" id="param-mode"><span class="type-annotation"><a href="../zcrud_core/ZListPaginationMode.html">ZListPaginationMode</a></span> <span class="parameter-name">mode</span> = <span class="default-value">ZListPaginationMode.backendCursor</span>, </span><span class="parameter" id="param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">baseFilters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span><span class="parameter" id="param-watchMutations"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">watchMutations</span> = <span class="default-value">false</span></span>})</span>
+        </dt>
+        <dd>
+          Construit le contrôleur et <strong>lance immédiatement</strong> la première requête
+(état initial <code>ZListLoading</code>).
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="baseFilters" class="property">
+  <span class="name"><a href="../zcrud_core/ZListController/baseFilters.html">baseFilters</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Socle de filtres <strong>persistant</strong> (relation parent / catégorie d'onglet),
+<strong>toujours ANDé en tête</strong> des filtres utilisateur dans chaque requête ; jamais
+écrasé par <code>setFilters</code>. Défaut <code>const []</code> ⇒ rétro-compatible.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="hasListeners" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier/hasListeners.html">hasListeners</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  Whether any listeners are currently registered.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="mode" class="property">
+  <span class="name"><a href="../zcrud_core/ZListController/mode.html">mode</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZListPaginationMode.html">ZListPaginationMode</a></span>
+  
+
+</dt>
+<dd>
+  Stratégie de pagination.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="pageSize" class="property">
+  <span class="name"><a href="../zcrud_core/ZListController/pageSize.html">pageSize</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Taille de page (curseur), ou <code>null</code> (non paginé).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="repository" class="property">
+  <span class="name"><a href="../zcrud_core/ZListController/repository.html">repository</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZRepository-class.html">ZRepository</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Source des données (port neutre, backend-agnostique).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="schema" class="property">
+  <span class="name"><a href="../zcrud_core/ZListController/schema.html">schema</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma des champs (source de <code>searchable</code> + moteur in-memory).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="state" class="property">
+  <span class="name"><a href="../zcrud_core/ZListController/state.html">state</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListViewState-class.html">ZListViewState</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Tranche réactive de l'état de vue (unique surface observée par l'UI).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="toRow" class="property">
+  <span class="name"><a href="../zcrud_core/ZListController/toRow.html">toRow</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZListRow-class.html">ZListRow</a> Function<span class="signature">(<span class="parameter" id="param-"><span class="type-annotation">T</span></span>)</span></span>
+  
+
+</dt>
+<dd>
+  Projection <code>T → ZListRow</code> fournie par l'appelant (via <code>toMap</code>/<code>ZFieldSpec</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="addListener" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier/addListener.html">addListener</a></span><span class="signature">(<wbr><span class="parameter" id="addListener-param-listener"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a></span> <span class="parameter-name">listener</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Register a closure to be called when the object changes.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="dispose" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListController/dispose.html">dispose</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Discards any resources used by the object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="loadMore" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListController/loadMore.html">loadMore</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Charge la page suivante (si <a href="../zcrud_core/ZListController/state.html">state</a> indique <code>hasMore</code>), en <strong>accumulant</strong>
+les lignes. No-op s'il n'y a pas de page suivante ou si une requête est en
+cours.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="notifyListeners" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier/notifyListeners.html">notifyListeners</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Call all the registered listeners.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="refresh" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListController/refresh.html">refresh</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Relance la requête courante depuis la première page.
+  
+
+</dd>
+
+        <dt id="removeListener" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier/removeListener.html">removeListener</a></span><span class="signature">(<wbr><span class="parameter" id="removeListener-param-listener"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a></span> <span class="parameter-name">listener</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Remove a previously registered closure from the list of closures that are
+notified when the object changes.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="setFilters" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListController/setFilters.html">setFilters</a></span><span class="signature">(<wbr><span class="parameter" id="setFilters-param-filters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">filters</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Remplace les filtres, réinitialise la pagination et re-interroge.
+  
+
+</dd>
+
+        <dt id="setSearch" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListController/setSearch.html">setSearch</a></span><span class="signature">(<wbr><span class="parameter" id="setSearch-param-term"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">term</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Remplace le terme de recherche, réinitialise la pagination et re-interroge.
+  
+
+</dd>
+
+        <dt id="setSort" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListController/setSort.html">setSort</a></span><span class="signature">(<wbr><span class="parameter" id="setSort-param-sorts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSort-class.html">ZSort</a></span>&gt;</span></span> <span class="parameter-name">sorts</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Remplace les clés de tri, réinitialise la pagination et re-interroge.
+  
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZListController<span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span> class</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

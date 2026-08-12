@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the noteJsonEquals function from the zcrud_note library, for the Dart programming language.">
+  <title>noteJsonEquals function - zcrud_note library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_note</a></li>
+    <li><a href="../zcrud_note/">zcrud_note.dart</a></li>
+    <li class="self-crumb">noteJsonEquals function</li>
+  </ol>
+  <div class="self-name">noteJsonEquals</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_note&#47;zcrud_note-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">noteJsonEquals</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+<span class="name ">noteJsonEquals</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="noteJsonEquals-param-a"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">a</span>, </span></li>
+<li><span class="parameter" id="noteJsonEquals-param-b"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">b</span></span></li>
+</ol>)
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Égalité <strong>PROFONDE</strong> de deux valeurs JSON quelconques (<code>Map</code>/<code>List</code>/scalaire).</p>
+<p>🟡 <strong>MEDIUM-1 (code-review)</strong> — l'argument écrit pour <a href="../zcrud_note/noteContentEquals.html">noteContentEquals</a>
+(« sans profondeur, l'<code>==</code> entre une note en mémoire et la même relue du store
+casse ») <strong>s'applique MOT POUR MOT à <code>extra</code></strong>, dont la raison d'être (AD-4
+pt.2) est de porter du <strong>JSON ARBITRAIRE, donc IMBRIQUÉ</strong> (maps/listes legacy
+un consommateur legacy). Il n'y avait <strong>pas</strong> été appliqué : <code>_mapEquals</code> était <strong>superficiel</strong> ⇒
+<strong>MESURÉ</strong> : deux décodages du <strong>même</strong> document portant <code>"legacy_meta":{"a":1}</code>
+donnaient <code>a == b ⇒ false</code> et <code>Set{a, b}.length ⇒ 2</code>. Toute déduplication, tout
+cache mémoïsé, tout <code>expect(relu, original)</code> était <strong>cassé</strong>.</p>
+<p><strong>Le défaut était SYSTÉMIQUE</strong> : le même <code>_mapEquals</code>/<code>_mapHash</code>
+<strong>superficiel</strong> était copié dans <code>zcrud_document</code>, <code>zcrud_flashcard</code> et
+<code>zcrud_study_kernel</code> ⇒ dette, <strong>SOLDÉE par</strong>.</p>
+<h2 id="cette-fonction-est-dsormais-un-alias-dlgant">cette fonction est désormais un <strong>ALIAS DÉLÉGANT</strong></h2>
+<p>L'implémentation <strong>UNIQUE</strong> du repo est <code>zJsonEquals</code> (<code>zcrud_core</code>). Les six
+entités des trois autres satellites <strong>ne pouvaient pas</strong> réutiliser celle-ci :
+<code>zcrud_study_kernel → zcrud_note</code> serait une <strong>arête entre satellites</strong>
+⇒ <strong>violation AD-1</strong>. La primitive a donc été <strong>hissée dans le cœur</strong>.</p>
+<p><strong><code>noteJsonEquals</code>/<code>noteJsonHash</code> sont EXPORTÉES</strong> (<code>zcrud_note.dart</code>) : elles
+sont <strong>CONSERVÉES</strong>, jamais supprimées — une suppression de surface publique
+casserait un consommateur en dépendance git <strong>sans</strong> que <code>melos analyze</code> du
+repo ne le voie (leçon <strong><code>ZExportApi</code></strong>, E11a-3).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">bool noteJsonEquals(Object? a, Object? b) =&gt; zJsonEquals(a, b);</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_note</a></li>
+    <li><a href="../zcrud_note/">zcrud_note</a></li>
+    <li class="self-crumb">noteJsonEquals function</li>
+</ol>
+
+    <h5>zcrud_note library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_note
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the level property from the ZChatResponseConfidence class, for the Dart programming language.">
+  <title>level property - ZChatResponseConfidence class - zcrud_chat_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/">zcrud_chat_kernel.dart</a></li>
+    <li><a href="../../zcrud_chat_kernel/ZChatResponseConfidence-class.html">ZChatResponseConfidence</a></li>
+    <li class="self-crumb">level property</li>
+  </ol>
+  <div class="self-name">level</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat_kernel&#47;ZChatResponseConfidence-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">level</span> property 
+</h1></div>
+
+    
+
+    
+        
+  <section id="getter">
+    <section class="multi-line-signature">
+      
+      <span class="returntype"><a href="../../zcrud_chat_kernel/ZChatConfidenceLevel.html">ZChatConfidenceLevel</a></span>
+      get
+      <span class="name ">level</span>
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Palier de confiance <strong>dérivé</strong> — règle déterministe <strong>fail-safe</strong>.</p>
+<p><strong>Dégradations dures ⇒ <a href="../../zcrud_chat_kernel/ZChatConfidenceLevel.html">ZChatConfidenceLevel.toVerify</a></strong> :</p>
+<ol>
+<li>garde-citations <code>degraded</code> / <code>all_rejected</code> / <code>error</code> ;</li>
+<li>couverture <code>unavailable</code> / <code>partial</code> / <code>error</code> ;</li>
+<li>des sources étaient attendues (<code>totalSourceCount &gt; 0</code>) mais <strong>aucune</strong>
+n'est vérifiée ;</li>
+<li>les deux scores sont <code>null</code> <strong>et</strong> aucune source vérifiée ;</li>
+<li>aucun signal du tout (<a href="../../zcrud_chat_kernel/ZChatResponseConfidence/hasNoSignal.html">hasNoSignal</a>).</li>
+</ol>
+<p><strong><a href="../../zcrud_chat_kernel/ZChatConfidenceLevel.html">ZChatConfidenceLevel.high</a> UNIQUEMENT si</strong> garde <code>ok</code> <strong>et</strong>
+<code>verifiedSourceCount &gt;= </code><a href="../../zcrud_chat_kernel/ZChatConfidenceThresholds/minVerifiedForHigh-constant.html">ZChatConfidenceThresholds.minVerifiedForHigh</a>
+<strong>et</strong> fidélité ≥ <a href="../../zcrud_chat_kernel/ZChatConfidenceThresholds/faithfulnessHigh-constant.html">ZChatConfidenceThresholds.faithfulnessHigh</a> <strong>et</strong>
+complétude ≥ <a href="../../zcrud_chat_kernel/ZChatConfidenceThresholds/completenessOk-constant.html">ZChatConfidenceThresholds.completenessOk</a>.</p>
+<p><strong><a href="../../zcrud_chat_kernel/ZChatConfidenceLevel.html">ZChatConfidenceLevel.moderate</a> sinon.</strong> Retirer l'une des
+dégradations dures ferait passer une réponse non ancrée pour fiable —
+c'est exactement la régression que cette règle empêche.</p>
+</section>
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZChatConfidenceLevel get level {
+  final String? guard = citationGuardStatus;
+  final String? coverage = coverageStatus;
+
+  if (guard == &#39;degraded&#39; || guard == &#39;all_rejected&#39; || guard == &#39;error&#39;) {
+    return ZChatConfidenceLevel.toVerify;
+  }
+  if (coverage == &#39;unavailable&#39; ||
+      coverage == &#39;partial&#39; ||
+      coverage == &#39;error&#39;) {
+    return ZChatConfidenceLevel.toVerify;
+  }
+  if (totalSourceCount &gt; 0 &amp;&amp; verifiedSourceCount == 0) {
+    return ZChatConfidenceLevel.toVerify;
+  }
+
+  final double? f = faithfulnessScore;
+  final double? c = completenessScore;
+
+  final bool guardOk = guard == &#39;ok&#39;;
+  final bool enoughVerified =
+      verifiedSourceCount &gt;= ZChatConfidenceThresholds.minVerifiedForHigh;
+  final bool scoresHigh = f != null &amp;&amp;
+      c != null &amp;&amp;
+      f &gt;= ZChatConfidenceThresholds.faithfulnessHigh &amp;&amp;
+      c &gt;= ZChatConfidenceThresholds.completenessOk;
+  if (guardOk &amp;&amp; enoughVerified &amp;&amp; scoresHigh) {
+    return ZChatConfidenceLevel.high;
+  }
+
+  if (f == null &amp;&amp; c == null &amp;&amp; verifiedSourceCount &lt; 1) {
+    return ZChatConfidenceLevel.toVerify;
+  }
+  if (hasNoSignal) return ZChatConfidenceLevel.toVerify;
+
+  return ZChatConfidenceLevel.moderate;
+}</code></pre>
+</section>
+
+  </section>
+
+
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/ZChatResponseConfidence-class.html">ZChatResponseConfidence</a></li>
+    <li class="self-crumb">level property</li>
+</ol>
+
+  <h5>ZChatResponseConfidence class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_kernel
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the familyOf function from the zcrud_core library, for the Dart programming language.">
+  <title>familyOf function - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">familyOf function</li>
+  </ol>
+  <div class="self-name">familyOf</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">familyOf</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="../zcrud_core/EditionFamily.html">EditionFamily</a></span>
+<span class="name ">familyOf</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="familyOf-param-type"><span class="type-annotation"><a href="../zcrud_core/EditionFieldType.html">EditionFieldType</a></span> <span class="parameter-name">type</span></span></li>
+</ol>)
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Classe <code>type</code> dans sa <a href="../zcrud_core/EditionFamily.html">EditionFamily</a> de rendu.</p>
+<p><code>switch</code> <strong>exhaustif SANS <code>default:</code></strong> : toutes les valeurs sont énumérées ;
+ajouter un <code>EditionFieldType</code> sans le classer ici <strong>casse la compilation</strong>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">EditionFamily familyOf(EditionFieldType type) {
+  switch (type) {
+    &#47;&#47; ── Familles de base (widget dédié) ─────────────────────────────────────
+    case EditionFieldType.text:
+    case EditionFieldType.multiline:
+    case EditionFieldType.password:
+      return EditionFamily.text;
+
+    case EditionFieldType.number:
+    case EditionFieldType.integer:
+    case EditionFieldType.float:
+      return EditionFamily.number;
+
+    case EditionFieldType.dateTime:
+    case EditionFieldType.time:
+      return EditionFamily.date;
+
+    case EditionFieldType.dateRange:
+      return EditionFamily.dateRange;
+
+    case EditionFieldType.boolean:
+      return EditionFamily.boolean;
+
+    case EditionFieldType.select:
+    case EditionFieldType.radio:
+    case EditionFieldType.checkbox:
+      return EditionFamily.select;
+
+    case EditionFieldType.relation:
+      return EditionFamily.relation;
+
+    &#47;&#47; ── Familles-feuilles avancées (widget dédié value-in-slice) ────────────
+    case EditionFieldType.tags:
+      return EditionFamily.tags;
+
+    case EditionFieldType.rowChips:
+      return EditionFamily.rowChips;
+
+    case EditionFieldType.rating:
+      return EditionFamily.rating;
+
+    case EditionFieldType.slider:
+      return EditionFamily.slider;
+
+    case EditionFieldType.color:
+      return EditionFamily.color;
+
+    &#47;&#47; ── Familles-feuilles imbriquées (mini-CRUD, canal structurel) ───────────
+    case EditionFieldType.subItems:
+      return EditionFamily.subList;
+
+    case EditionFieldType.dynamicItem:
+      return EditionFamily.dynamicItem;
+
+    &#47;&#47; ── Rendu custom ─────────────────────────────────────────────────────────
+    &#47;&#47; `signature` = capture gestuelle (widget dédié, value-in-slice) ;
+    &#47;&#47; `widget` = widget libre host-fourni via `ZWidgetRegistry` (même seam que
+    &#47;&#47; `registryOrFallback`, repli si non enregistré).
+    case EditionFieldType.signature:
+      return EditionFamily.signature;
+
+    case EditionFieldType.widget:
+      return EditionFamily.freeWidget;
+
+    &#47;&#47; ── Point d&#39;extension : widget servi AILLEURS via `ZWidgetRegistry` ──────
+    &#47;&#47; markdown&#47;HTML&#47;richText, géo&#47;tél&#47;pays&#47;adresse, `icon` hors-parité MVP,
+    &#47;&#47; `custom` → app hôte (invariant AD-4). Le dispatcher tente le registre
+    &#47;&#47; injecté, sinon repli contrôlé. Le cœur n&#39;importe AUCUN de ces packages
+    &#47;&#47; (graphe OUT=0 inchangé).
+    case EditionFieldType.markdown:
+    case EditionFieldType.inlineMarkdown:
+    case EditionFieldType.html:
+    case EditionFieldType.inlineHtml:
+    case EditionFieldType.richText:
+    case EditionFieldType.location:
+    case EditionFieldType.geoArea:
+    case EditionFieldType.phoneNumber:
+    case EditionFieldType.country:
+    case EditionFieldType.address:
+    case EditionFieldType.icon:
+    &#47;&#47; `pin`&#47;`autocomplete`&#47;`editableTable` = types NOMMÉS au cœur, valeurs
+    &#47;&#47; NEUTRES (String&#47;String&#47;List&lt;Map&gt;), widget riche servi par un package
+    &#47;&#47; satellite via `ZWidgetRegistry`. Aucune nouvelle `EditionFamily`, aucun
+    &#47;&#47; widget natif : repli `ZUnsupportedFieldWidget` tant que le `kind`
+    &#47;&#47; n&#39;est pas enregistré. Cœur OUT=0 préservé.
+    case EditionFieldType.pin:
+    case EditionFieldType.autocomplete:
+    case EditionFieldType.editableTable:
+    &#47;&#47; `mediaImage`&#47;`mediaFile`&#47;`mediaVideo` = types NOMMÉS au cœur, valeurs
+    &#47;&#47; NEUTRES (`AppFile`&#47;liste), widget riche (drop-zone&#47;ouverture&#47;vignette)
+    &#47;&#47; servi par un package satellite (`registerZMediaFieldWidgets`) via
+    &#47;&#47; `ZWidgetRegistry` sous `kind == type.name`. Repli
+    &#47;&#47; `ZUnsupportedFieldWidget` tant que non enregistré (invariant AD-10).
+    &#47;&#47; Aucune dépendance média dans le cœur (invariant AD-1, CORE OUT=0).
+    &#47;&#47; Distincts des types natifs `image`&#47;`file`&#47;`document` (famille `file`,
+    &#47;&#47; `ZAppFileField`).
+    case EditionFieldType.mediaImage:
+    case EditionFieldType.mediaFile:
+    case EditionFieldType.mediaVideo:
+    case EditionFieldType.custom:
+      return EditionFamily.registryOrFallback;
+
+    &#47;&#47; ── Famille fichier (widget dédié value-in-slice) ────────────────────────
+    &#47;&#47; `file`&#47;`image`&#47;`document` → `ZAppFileField` (picker&#47;storage injectés).
+    case EditionFieldType.file:
+    case EditionFieldType.image:
+    case EditionFieldType.document:
+      return EditionFamily.file;
+
+    &#47;&#47; ── Non rendu ───────────────────────────────────────────────────────────
+    case EditionFieldType.hidden:
+      return EditionFamily.hidden;
+
+    &#47;&#47; ── Repli contrôlé ───────────────────────────────────────────────────────
+    &#47;&#47; `stepper` (regroupement multi-étapes, PAS un champ-feuille) reste le
+    &#47;&#47; SEUL type en repli accessible.
+    case EditionFieldType.stepper:
+      return EditionFamily.unsupported;
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">familyOf function</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

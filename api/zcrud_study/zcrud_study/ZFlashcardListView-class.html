@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZFlashcardListView class from the zcrud_study library, for the Dart programming language.">
+  <title>ZFlashcardListView class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study.dart</a></li>
+    <li class="self-crumb">ZFlashcardListView class</li>
+  </ol>
+  <div class="self-name">ZFlashcardListView</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;zcrud_study-library-sidebar.html"
+    data-below-sidebar="zcrud_study&#47;ZFlashcardListView-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZFlashcardListView</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Liste de flashcards : recherche, filtres, tris, ordre manuel, duplication.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree-class.html">DiagnosticableTree</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/StatefulWidget-class.html">StatefulWidget</a></li>
+      <li>ZFlashcardListView</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZFlashcardListView.new" class="callable">
+          <span class="name"><a href="../zcrud_study/ZFlashcardListView/ZFlashcardListView.html">ZFlashcardListView</a></span><span class="signature">({<span class="parameter" id="param-cards"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span></span> <span class="parameter-name">cards</span>, </span><span class="parameter" id="param-labels"><span>required</span> <span class="type-annotation"><a href="../zcrud_study/ZFlashcardListLabels-class.html">ZFlashcardListLabels</a></span> <span class="parameter-name">labels</span>, </span><span class="parameter" id="param-selector"><span class="type-annotation">ZStudySessionSelector</span> <span class="parameter-name">selector</span> = <span class="default-value">const ZStudySessionSelector(ZStudySessionConfig())</span>, </span><span class="parameter" id="param-filters"><span class="type-annotation">ZFlashcardBrowseFilters</span> <span class="parameter-name">filters</span> = <span class="default-value">const ZFlashcardBrowseFilters()</span>, </span><span class="parameter" id="param-sortMode"><span class="type-annotation">ZFlashcardSortMode</span> <span class="parameter-name">sortMode</span> = <span class="default-value">ZFlashcardSortMode.dateDesc</span>, </span><span class="parameter" id="param-order"><span class="type-annotation">ZFolderContentsOrder?</span> <span class="parameter-name">order</span>, </span><span class="parameter" id="param-subfolderId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">subfolderId</span>, </span><span class="parameter" id="param-onOrderChanged"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFolderContentsOrder</span>&gt;</span>?</span> <span class="parameter-name">onOrderChanged</span>, </span><span class="parameter" id="param-onOpen"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span>?</span> <span class="parameter-name">onOpen</span>, </span><span class="parameter" id="param-onEdit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span>?</span> <span class="parameter-name">onEdit</span>, </span><span class="parameter" id="param-onDelete"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span>?</span> <span class="parameter-name">onDelete</span>, </span><span class="parameter" id="param-onDuplicate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span>?</span> <span class="parameter-name">onDuplicate</span>, </span><span class="parameter" id="param-onGenerateWithAi"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onGenerateWithAi</span>, </span><span class="parameter" id="param-aiAvailability"><span class="type-annotation"><a href="../zcrud_study/ZFeatureAvailability-class.html">ZFeatureAvailability</a>?</span> <span class="parameter-name">aiAvailability</span>, </span><span class="parameter" id="param-tagLabels"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">tagLabels</span>, </span><span class="parameter" id="param-typeLabels"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">typeLabels</span>, </span><span class="parameter" id="param-sourceLabels"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">sourceLabels</span>, </span><span class="parameter" id="param-contentBuilder"><span class="type-annotation"><a href="../zcrud_study/ZFlashcardTileContentBuilder.html">ZFlashcardTileContentBuilder</a>?</span> <span class="parameter-name">contentBuilder</span>, </span><span class="parameter" id="param-itemStyle"><span class="type-annotation"><a href="../zcrud_study/ZFlashcardListItemStyle.html">ZFlashcardListItemStyle</a>?</span> <span class="parameter-name">itemStyle</span>, </span><span class="parameter" id="param-typeColors"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">ZGradientSpec</span>&gt;</span>?</span> <span class="parameter-name">typeColors</span>, </span><span class="parameter" id="param-answerLabels"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">answerLabels</span>, </span><span class="parameter" id="param-selection"><span class="type-annotation"><a href="../zcrud_study/ZFlashcardListSelection-class.html">ZFlashcardListSelection</a>?</span> <span class="parameter-name">selection</span>, </span><span class="parameter" id="param-searchDebounce"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">searchDebounce</span> = <span class="default-value">_kSearchDebounce</span>, </span><span class="parameter" id="param-crossAxisMaxColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">crossAxisMaxColumns</span>, </span><span class="parameter" id="param-crossAxisItemHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">crossAxisItemHeight</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+        </dt>
+        <dd>
+          Construit la liste.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="aiAvailability" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/aiAvailability.html">aiAvailability</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_study/ZFeatureAvailability-class.html">ZFeatureAvailability</a>?</span>
+  
+
+</dt>
+<dd>
+  Disponibilité de la fonctionnalité IA (<code>null</code> ⇒ scope ambiant, fail-open).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="answerLabels" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/answerLabels.html">answerLabels</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Libellés LOCALISÉS du tampon Vrai/Faux de l'<strong>aperçu de réponse</strong>
+(patron <code>ZDefaultFlashcardCard.answerLabels</code>, clés opaques
+<code>'true'</code>/<code>'false'</code>, repli sur la clé). En mode
+<a href="../zcrud_study/ZFlashcardListItemStyle.html">ZFlashcardListItemStyle.card</a>, l'aperçu est ACTIF (« une carte, toutes
+les surfaces » — la liste est une surface de consultation, comme la
+grille en mode surface). Sans effet en mode tuile (la tuile porte son
+propre aperçu historique).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="cards" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/cards.html">cards</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Cartes du dossier — <strong>non filtrées</strong> (la vue applique filtres et tri).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="contentBuilder" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/contentBuilder.html">contentBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_study/ZFlashcardTileContentBuilder.html">ZFlashcardTileContentBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Slot de rendu de contenu <strong>opt-in</strong> — <code>null</code> ⇒ texte brut thématisé.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="crossAxisItemHeight" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/crossAxisItemHeight.html">crossAxisItemHeight</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Hauteur fixe d'une cellule de grille, pendant de
+<a href="../zcrud_study/ZFlashcardListView/crossAxisMaxColumns.html">crossAxisMaxColumns</a> — MÊME nom et MÊME type que sur
+<code>ZStudyToolsSectionSpec</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="crossAxisMaxColumns" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/crossAxisMaxColumns.html">crossAxisMaxColumns</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Plafond</strong> du nombre de colonnes de la grille.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="filters" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/filters.html">filters</a></span>
+  <span class="signature">&#8594; ZFlashcardBrowseFilters</span>
+  
+
+</dt>
+<dd>
+  Recherche + <code>kind</code> de source. La <strong>requête texte</strong> de la vue (débouncée)
+<strong>prime</strong> sur <code>ZFlashcardBrowseFilters.query</code> dès que l'utilisateur tape.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="itemStyle" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/itemStyle.html">itemStyle</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_study/ZFlashcardListItemStyle.html">ZFlashcardListItemStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Forme des items. <code>null</code> (défaut) ⇒ <a href="../zcrud_study/ZFlashcardListItemStyle.html">ZFlashcardListItemStyle.card</a>
+(« une carte, toutes les surfaces »), SAUF si <a href="../zcrud_study/ZFlashcardListView/contentBuilder.html">contentBuilder</a> est
+fourni — la tuile est alors conservée (neutralité stricte : le slot
+reste le point d'extension). Explicite ⇒ la valeur gouverne (assert :
+<code>card</code> + <a href="../zcrud_study/ZFlashcardListView/contentBuilder.html">contentBuilder</a> est refusé — jamais un slot silencieusement
+inerte, invariant AD-4).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="key" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/key.html">key</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span>
+  
+
+</dt>
+<dd class="inherited">
+  Controls how one widget replaces another widget in the tree.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="labels" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/labels.html">labels</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_study/ZFlashcardListLabels-class.html">ZFlashcardListLabels</a></span>
+  
+
+</dt>
+<dd>
+  Libellés <strong>INJECTÉS</strong> (jamais codés en dur).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onDelete" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/onDelete.html">onDelete</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Supprimer une carte — <code>null</code> ⇒ absente. <strong>Jamais</strong> sur <code>isReadOnly</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onDuplicate" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/onDuplicate.html">onDuplicate</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Dupliquer une carte (FR-SU21) — reçoit la <strong>copie éphémère</strong> produite par
+<code>zDuplicateFlashcardForEditing</code> (<code>id: null</code>). <code>null</code> ⇒ action absente.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onEdit" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/onEdit.html">onEdit</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Modifier une carte — <code>null</code> ⇒ absente. <strong>Jamais</strong> proposée sur une carte
+<code>isReadOnly</code> (AD-45).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onGenerateWithAi" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/onGenerateWithAi.html">onGenerateWithAi</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span>
+  
+
+</dt>
+<dd>
+  Générer avec l'IA — <code>null</code> ⇒ <strong>ABSENTE</strong> (AC16). su-8 ne livre aucun flux.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onOpen" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/onOpen.html">onOpen</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcard</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Ouvrir une carte — <code>null</code> ⇒ action absente.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onOrderChanged" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/onOrderChanged.html">onOrderChanged</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFolderContentsOrder</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Notification sortante de l'ordre réordonné (AD-2 : la vue ne persiste pas).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="order" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/order.html">order</a></span>
+  <span class="signature">&#8594; ZFolderContentsOrder?</span>
+  
+
+</dt>
+<dd>
+  Ordre personnel du dossier (AD-38) — <code>null</code> ⇒ aucun ordre manuel.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="searchDebounce" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/searchDebounce.html">searchDebounce</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span>
+  
+
+</dt>
+<dd>
+  Délai de débounce de la recherche (injectable pour les tests).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="selection" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/selection.html">selection</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_study/ZFlashcardListSelection-class.html">ZFlashcardListSelection</a>?</span>
+  
+
+</dt>
+<dd>
+  Sélection multiple <strong>opt-in</strong>. <code>null</code> ⇒ la liste est <strong>exactement</strong> le
+rendu historique (zéro case, zéro barre — non-régression garantie).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="selector" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/selector.html">selector</a></span>
+  <span class="signature">&#8594; ZStudySessionSelector</span>
+  
+
+</dt>
+<dd>
+  Filtres dossier ∧ tags ∧ types — <strong>DÉLÉGUÉS</strong> à <code>matches</code> (jamais
+<code>selectFrom</code>, dont le plafond <code>count</code> tronquerait la liste).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="sortMode" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/sortMode.html">sortMode</a></span>
+  <span class="signature">&#8594; ZFlashcardSortMode</span>
+  
+
+</dt>
+<dd>
+  Mode de tri (AC8).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="sourceLabels" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/sourceLabels.html">sourceLabels</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Résolution <code>source.kind → libellé</code> (D2/AC20). Même patron/repli que
+<a href="../zcrud_study/ZFlashcardListView/typeLabels.html">typeLabels</a> : <code>null</code> ⇒ la clé brute (<code>'pdf'</code>, <code>'book'</code>…) est affichée.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="subfolderId" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/subfolderId.html">subfolderId</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Sous-dossier de la section (<code>null</code> ⇒ section racine).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="tagLabels" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/tagLabels.html">tagLabels</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Résolution <code>tagId → libellé</code> (recherche + affichage).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="typeColors" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/typeColors.html">typeColors</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">ZGradientSpec</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Dégradés par type relayés à la carte par défaut (patron
+<code>ZDefaultFlashcardCard.typeColors</code>, même chaîne de priorité). Sans
+effet en mode <a href="../zcrud_study/ZFlashcardListItemStyle.html">ZFlashcardListItemStyle.tile</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="typeLabels" class="property">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/typeLabels.html">typeLabels</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Résolution <code>type.name → libellé</code> du badge de type (D2/AC20). <code>null</code> ou clé
+absente ⇒ <strong>repli sur la clé opaque</strong> (patron <a href="../zcrud_study/ZFlashcardListView/tagLabels.html">tagLabels</a>) : la vue ne
+traduit <strong>jamais</strong> en dur, mais l'app <strong>peut</strong> injecter un libellé localisé.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="createElement" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/StatefulWidget/createElement.html">createElement</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/StatefulElement-class.html">StatefulElement</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Creates a <a href="https://api.flutter.dev/flutter/widgets/StatefulElement-class.html">StatefulElement</a> to manage this widget's location in the tree.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="createState" class="callable">
+  <span class="name"><a href="../zcrud_study/ZFlashcardListView/createState.html">createState</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_study/ZFlashcardListView-class.html">ZFlashcardListView</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Creates the mutable state for this widget at a given location in the tree.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="debugDescribeChildren" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/debugDescribeChildren.html">debugDescribeChildren</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a list of <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a> objects describing this node's
+children.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="debugFillProperties" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/debugFillProperties.html">debugFillProperties</a></span><span class="signature">(<wbr><span class="parameter" id="debugFillProperties-param-properties"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticPropertiesBuilder-class.html">DiagnosticPropertiesBuilder</a></span> <span class="parameter-name">properties</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Add additional properties associated with the node.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toDiagnosticsNode" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toDiagnosticsNode.html">toDiagnosticsNode</a></span><span class="signature">(<wbr>{<span class="parameter" id="toDiagnosticsNode-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span><span class="parameter" id="toDiagnosticsNode-param-style"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsTreeStyle.html">DiagnosticsTreeStyle</a>?</span> <span class="parameter-name">style</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a debug representation of the object that is used by debugging
+tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode/toStringDeep.html">DiagnosticsNode.toStringDeep</a>.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/Diagnosticable/toString.html">toString</a></span><span class="signature">(<wbr>{<span class="parameter" id="toString-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.info</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringDeep" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringDeep.html">toStringDeep</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringDeep-param-prefixLineOne"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">prefixLineOne</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="toStringDeep-param-prefixOtherLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">prefixOtherLines</span>, </span><span class="parameter" id="toStringDeep-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span>, </span><span class="parameter" id="toStringDeep-param-wrapWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">wrapWidth</span> = <span class="default-value">65</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a string representation of this node and its descendants.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShallow" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringShallow.html">toStringShallow</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringShallow-param-joiner"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">joiner</span> = <span class="default-value">&#39;, &#39;</span>, </span><span class="parameter" id="toStringShallow-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a one-line detailed description of the object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShort" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/toStringShort.html">toStringShort</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A short, textual description of this widget.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  <section class="summary offset-anchor" id="constants">
+    <h2>Constants</h2>
+    <dl class="properties">
+        <dt id="batchBarKey" class="constant">
+    <span class="name "><a href="../zcrud_study/ZFlashcardListView/batchBarKey-constant.html">batchBarKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/foundation/ValueKey-class.html">ValueKey</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clé de la barre d'actions de lot (mode sélection — me-3).
+  
+
+</dd>
+
+        <dt id="emptyStateKey" class="constant">
+    <span class="name "><a href="../zcrud_study/ZFlashcardListView/emptyStateKey-constant.html">emptyStateKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/foundation/ValueKey-class.html">ValueKey</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clé de l'état vide / sans résultat.
+  
+
+</dd>
+
+        <dt id="gridKey" class="constant">
+    <span class="name "><a href="../zcrud_study/ZFlashcardListView/gridKey-constant.html">gridKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/foundation/ValueKey-class.html">ValueKey</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clé de la grille (testabilité).
+  
+
+</dd>
+
+        <dt id="reorderableKey" class="constant">
+    <span class="name "><a href="../zcrud_study/ZFlashcardListView/reorderableKey-constant.html">reorderableKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/foundation/ValueKey-class.html">ValueKey</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clé de la liste réordonnable (mode manuel).
+  
+
+</dd>
+
+        <dt id="searchFieldKey" class="constant">
+    <span class="name "><a href="../zcrud_study/ZFlashcardListView/searchFieldKey-constant.html">searchFieldKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/foundation/ValueKey-class.html">ValueKey</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clé du champ de recherche (testabilité).
+  
+
+</dd>
+
+    </dl>
+  </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study</a></li>
+    <li class="self-crumb">ZFlashcardListView class</li>
+</ol>
+
+    <h5>zcrud_study library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

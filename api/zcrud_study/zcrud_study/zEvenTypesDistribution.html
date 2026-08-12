@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zEvenTypesDistribution function from the zcrud_study library, for the Dart programming language.">
+  <title>zEvenTypesDistribution function - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study.dart</a></li>
+    <li class="self-crumb">zEvenTypesDistribution function</li>
+  </ol>
+  <div class="self-name">zEvenTypesDistribution</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_study&#47;zcrud_study-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zEvenTypesDistribution</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcardType</span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>
+<span class="name ">zEvenTypesDistribution</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="zEvenTypesDistribution-param-count"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">count</span>, </span></li>
+<li><span class="parameter" id="zEvenTypesDistribution-param-types"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFlashcardType</span>&gt;</span></span> <span class="parameter-name">types</span></span></li>
+</ol>)
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Répartition équitable de <code>count</code> cartes sur <code>types</code>.</p>
+<p>Chaque type reçoit <code>count ~/ n</code>, et le reste (<code>count % n</code>) est distribué
+de façon déterministe sur les premiers types de la liste (ordre
+d'entrée) : la somme des valeurs égale exactement le <code>count</code> borné.</p>
+<p><code>count</code> est d'abord borné par <a href="../zcrud_study/zClampGenerationCount.html">zClampGenerationCount</a> (une valeur
+aberrante ne produit jamais une répartition aberrante). <code>types</code> vide
+retourne une map vide (invariant AD-10 : jamais de division par zéro).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Map&lt;ZFlashcardType, int&gt; zEvenTypesDistribution(
+  int count,
+  List&lt;ZFlashcardType&gt; types,
+) {
+  final bounded = zClampGenerationCount(count);
+  &#47;&#47; Déduplique en préservant l&#39;ordre (un type répété ne fausse pas le partage).
+  final ordered = &lt;ZFlashcardType&gt;[];
+  for (final t in types) {
+    if (!ordered.contains(t)) ordered.add(t);
+  }
+  final n = ordered.length;
+  if (n == 0) return &lt;ZFlashcardType, int&gt;{};
+
+  final base = bounded ~&#47; n;
+  var remainder = bounded % n;
+  final result = &lt;ZFlashcardType, int&gt;{};
+  for (final type in ordered) {
+    &#47;&#47; Le reste est donné 1-à-1 aux premiers types ⇒ somme == bounded (déterministe).
+    final extra = remainder &gt; 0 ? 1 : 0;
+    if (remainder &gt; 0) remainder--;
+    result[type] = base + extra;
+  }
+  return result;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study</a></li>
+    <li class="self-crumb">zEvenTypesDistribution function</li>
+</ol>
+
+    <h5>zcrud_study library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

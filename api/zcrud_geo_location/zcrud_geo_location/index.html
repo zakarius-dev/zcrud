@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_geo_location library API docs, for the Dart programming language.">
+  <title>zcrud_geo_location library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_geo_location</a></li>
+    <li class="self-crumb">zcrud_geo_location.dart</li>
+  </ol>
+  <div class="self-name">zcrud_geo_location</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_geo_location&#47;zcrud_geo_location-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_geo_location</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_geo_location</code>.</p>
+<p>Satellite « ma position » clé en main : fournit un
+<code>ZGeoLocationResolver</code> (port de <code>zcrud_geo</code>) adossé à <code>geolocator</code> —
+<code>zcrudGeolocatorResolver()</code> suffit côté hôte, avec des causes d'échec
+distinctes (<code>ZGeoLocationFailureCause</code>) via <code>onFailure</code>.</p>
+<p><strong>Invariant AD-1 (isolation)</strong> : ce barrel n'exporte aucun symbole
+<code>geolocator</code> — le plugin est confiné à <code>src/geolocator_gateway_impl.dart</code>
+(jamais exporté). L'API publique ne parle que les types de <code>zcrud_geo</code>
+(<code>ZGeoPoint</code>, <code>ZGeoLocationResolver</code>) et les types neutres de ce paquet.</p>
+<p><strong>Permissions plateforme</strong> : aucune n'est déclarée par ce paquet —
+l'application hôte déclare AndroidManifest/Info.plist (voir le README).</p>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/</code>.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZGeoLocationGateway">
+  <span class="name "><a href="../zcrud_geo_location/ZGeoLocationGateway-class.html">ZGeoLocationGateway</a></span> 
+
+</dt>
+<dd>
+  Port d'accès à la plateforme de localisation. Chaque méthode peut throw
+(plugin, canal natif, timeout) : c'est le resolver qui confine tout throw
+en cause <code>error</code> (invariant AD-10) — le port n'a pas à être défensif
+lui-même.
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="ZGeoLocationFailureCause">
+  <span class="name "><a href="../zcrud_geo_location/ZGeoLocationFailureCause.html">ZGeoLocationFailureCause</a></span> 
+
+</dt>
+<dd>
+  Cause d'échec d'une résolution de position. Une cause est notifiée <strong>au
+plus une fois par appel</strong> du resolver, toujours avant que le <code>Future</code>
+complète <code>null</code>.
+</dd>
+
+          <dt id="ZGeoLocationPermission">
+  <span class="name "><a href="../zcrud_geo_location/ZGeoLocationPermission.html">ZGeoLocationPermission</a></span> 
+
+</dt>
+<dd>
+  État de permission <strong>neutre</strong> (projection des cinq valeurs de
+<code>LocationPermission</code> du plugin — mapping documenté sur l'implémentation).
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="zcrudGeolocatorResolver" class="callable">
+  <span class="name"><a href="../zcrud_geo_location/zcrudGeolocatorResolver.html">zcrudGeolocatorResolver</a></span><span class="signature">(<wbr>{<span class="parameter" id="zcrudGeolocatorResolver-param-onFailure"><span class="type-annotation"><a href="../zcrud_geo_location/ZGeoLocationFailureListener.html">ZGeoLocationFailureListener</a>?</span> <span class="parameter-name">onFailure</span>, </span><span class="parameter" id="zcrudGeolocatorResolver-param-gateway"><span class="type-annotation"><a href="../zcrud_geo_location/ZGeoLocationGateway-class.html">ZGeoLocationGateway</a>?</span> <span class="parameter-name">gateway</span></span>})
+    <span class="returntype parameter">&#8594; ZGeoLocationResolver</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Construit un <code>ZGeoLocationResolver</code> adossé à <code>geolocator</code>.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZGeoLocationFailureListener" class="callable">
+    <span class="name"><a href="../zcrud_geo_location/ZGeoLocationFailureListener.html">ZGeoLocationFailureListener</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-cause"><span class="type-annotation"><a href="../zcrud_geo_location/ZGeoLocationFailureCause.html">ZGeoLocationFailureCause</a></span> <span class="parameter-name">cause</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Écouteur d'échec optionnel : reçoit la <a href="../zcrud_geo_location/ZGeoLocationFailureCause.html">ZGeoLocationFailureCause</a> quand le
+resolver va rendre <code>null</code>. Jamais invoqué sur un succès. Un throw dans ce
+callback est avalé (invariant AD-10 : aucune exception ne s'échappe du
+resolver).
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_geo_location</a></li>
+    <li class="self-crumb">zcrud_geo_location.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_geo_location</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_geo_location/">zcrud_geo_location</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_geo_location library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_geo_location
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

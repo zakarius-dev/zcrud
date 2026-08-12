@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the fromJsonSafe method from the ZReminderRecurrence class, for the Dart programming language.">
+  <title>fromJsonSafe method - ZReminderRecurrence class - zcrud_exam library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_exam</a></li>
+    <li><a href="../../zcrud_exam/">zcrud_exam.dart</a></li>
+    <li><a href="../../zcrud_exam/ZReminderRecurrence-class.html">ZReminderRecurrence</a></li>
+    <li class="self-crumb">fromJsonSafe static method</li>
+  </ol>
+  <div class="self-name">fromJsonSafe</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_exam&#47;ZReminderRecurrence-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">fromJsonSafe</span> static method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="../../zcrud_exam/ZReminderRecurrence-class.html">ZReminderRecurrence</a>?</span>
+<span class="name ">fromJsonSafe</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="fromJsonSafe-param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">json</span></span></li>
+</ol>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Reconstruit défensivement une récurrence depuis une valeur persistée
+(invariant AD-10) — ne lève jamais, quelle que soit la corruption.</p>
+<p>Rend <code>null</code> si rien d'exploitable n'est présent : c'est un emplacement
+<em>absent</em>, pas une récurrence vide — la distinction compte pour le
+round-trip (<a href="../../zcrud_exam/ZReminderRecurrence/toJson.html">toJson</a> omet un emplacement <code>null</code>).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">static ZReminderRecurrence? fromJsonSafe(Object? json) {
+  if (json is! Map) return null;
+  final days = &lt;int&gt;[];
+  final raw = json[&#39;days_before&#39;];
+  if (raw is List) {
+    for (final e in raw) {
+      &#47;&#47; Un `num` non-int (le JSON rend parfois `7.0`) est accepté, une
+      &#47;&#47; chaîne numérique aussi. Tout le reste est écarté sans faire
+      &#47;&#47; échouer l&#39;ensemble — un seuil corrompu ne doit pas effacer les
+      &#47;&#47; autres.
+      final v = e is int
+          ? e
+          : e is num
+              ? e.toInt()
+              : e is String
+                  ? int.tryParse(e)
+                  : null;
+      if (v != null &amp;&amp; v &gt;= 0) days.add(v);
+    }
+  }
+  final wd = &lt;int&gt;{};
+  final rawW = json[&#39;weekdays&#39;];
+  if (rawW is List) {
+    for (final e in rawW) {
+      final v = e is int
+          ? e
+          : e is num
+              ? e.toInt()
+              : e is String
+                  ? int.tryParse(e)
+                  : null;
+      &#47;&#47; Hors [1,7] ⇒ écarté : `DateTime.weekday` ne rend jamais autre
+      &#47;&#47; chose, donc une telle valeur ne pourrait jamais correspondre.
+      if (v != null &amp;&amp; v &gt;= 1 &amp;&amp; v &lt;= 7) wd.add(v);
+    }
+  }
+  if (days.isEmpty &amp;&amp; wd.isEmpty) return null;
+  return ZReminderRecurrence(daysBefore: days, weekdays: wd);
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_exam</a></li>
+    <li><a href="../../zcrud_exam/">zcrud_exam</a></li>
+    <li><a href="../../zcrud_exam/ZReminderRecurrence-class.html">ZReminderRecurrence</a></li>
+    <li class="self-crumb">fromJsonSafe static method</li>
+</ol>
+
+    <h5>ZReminderRecurrence class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_exam
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

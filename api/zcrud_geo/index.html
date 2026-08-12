@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_geo API docs, for the Dart programming language.">
+  <title>zcrud_geo - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_geo package</a></li>
+  </ol>
+  <div class="self-name">zcrud_geo</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_geo">zcrud_geo</h1>
+<p>Champ géo riche pour zcrud : un modèle de valeur neutre (point/cercle/aire),
+des adaptateurs carte pluggables (OSM sans clé, Google Maps optionnel), et un
+widget de champ complet servi via <code>ZWidgetRegistry</code>.</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_geo</code> porte les types de champ <code>location</code> (point) et <code>geoArea</code>
+(polygone), ainsi qu'une géométrie <code>circle</code> additive. Le domaine
+(<code>ZGeoPoint</code>/<code>ZGeoCircle</code>/<code>ZGeoShape</code>) est <strong>pur-Dart</strong> : aucun type SDK carte
+n'y apparaît, invariant <a href="../../docs/site/concepts/invariants.md#ad-1">AD-1</a>.
+Le rendu carte passe par le port <a href="lib/src/presentation/z_map_adapter.dart"><code>ZMapAdapter</code></a>,
+que deux adaptateurs concrets implémentent — OSM (<code>flutter_map</code>, sans clé
+API) et Google Maps — chacun confiné à sa propre entrée d'import dédiée
+(<code>lib/adapters/osm.dart</code>, <code>lib/adapters/google.dart</code>), jamais exposée par le
+barrel principal. Le widget de champ (<code>ZGeoFieldWidget</code>) suit le patron
+réactif granulaire du cœur (invariant AD-2) : contrôleurs et focus créés une
+fois, jamais recréés au fil de la frappe.</p>
+<p><strong>Utilisez ce paquet</strong> pour un champ de formulaire saisissant une position,
+un cercle ou une zone géographique — avec édition sur carte, barre d'outils,
+plein écran, style de forme et métriques (aire/périmètre), le tout opt-in.
+<strong>N'utilisez pas ce paquet</strong> pour une simple résolution « ma position » côté
+hôte sans champ de formulaire (voir <code>zcrud_geo_location</code> pour un resolver
+clé en main), ni pour du rendu de carte hors du moteur de formulaire zcrud —
+<code>ZGeoMapView</code> couvre ce dernier cas si vous restez dans le paquet.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_geo/zcrud_geo.dart';
+// Adaptateur OSM : entrée dédiée, hors barrel principal (invariant AD-1).
+import 'package:zcrud_geo/adapters/osm.dart';
+
+/// Enregistre le champ géo pour les types `location` (point) et `geoArea`
+/// (polygone), rendus via l'adaptateur OSM (aucune clé API requise).
+void registerGeoField(ZWidgetRegistry registry) {
+  registry
+    ..register('location', ZGeoFieldWidget.builder(adapterFactory: ZOsmMapAdapter.new))
+    ..register('geoArea', ZGeoFieldWidget.builder(adapterFactory: ZOsmMapAdapter.new));
+}
+
+/// Un point neutre, valable sans aucun adaptateur carte injecté.
+const point = ZGeoPoint(lat: 13.5, lng: 2.1);
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Modèle de valeur neutre</strong> — <code>ZGeoPoint</code>, <code>ZGeoCircle</code>, <code>ZGeoShape</code> sont
+trois types <strong>disjoints, sans ancêtre commun</strong> ; la géométrie du champ
+(<code>ZGeoFieldConfig.geometry</code>) détermine lequel est produit. <code>ZGeoValue.fromMapSafe</code>
+route une valeur brute (legacy ou zcrud) sur le bon type, jamais de throw
+(invariant <a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>).</li>
+<li><strong>Adaptateurs carte pluggables</strong> — le port <code>ZMapAdapter</code> ne parle que de
+types neutres ; <code>ZOsmMapAdapter</code>/<code>ZGoogleMapAdapter</code> traduisent vers leur
+SDK respectif dans un fichier confiné, atteint par une entrée d'import
+dédiée. Sans adaptateur injecté, le champ dégrade proprement en saisie
+coordonnées seule.</li>
+<li><strong>Présentations et plein écran</strong> — <code>ZGeoFieldConfig.presentation</code> bascule
+entre édition complète en flux et aperçu inerte + édition en plein écran
+(<code>ZGeoFieldConfig.allowFullscreen</code>) ; la route immersive rend toujours le
+champ avec toutes ses capacités.</li>
+<li><strong>Capacités opt-in</strong> — barre d'outils d'éditeur, picker de style, chip de
+métriques (aire/périmètre), chrome de carte (encart/en-tête) sont tous
+additifs et désactivés par défaut sauf la barre d'outils (<code>standard</code>) ;
+voir <a href="lib/src/domain/z_geo_field_config.dart"><code>ZGeoFieldConfig</code></a>.</li>
+<li><strong>Compatibilité de lecture avec un format hérité</strong> — les modèles de valeur
+lisent nativement un format JSON historique polymorphe (voir
+<a href="doc/migration-legacy-dodlp-geo.md">doc/migration-legacy-dodlp-geo.md</a>) ;
+l'écriture (<code>toMap</code>) produit toujours le format zcrud.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Modèle de valeur</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZGeoPoint</code> / <code>ZGeoCircle</code> / <code>ZGeoShape</code></td>
+<td>Point, cercle, aire ou tracé — modèles pur-Dart, sérialisation défensive.</td>
+</tr>
+<tr>
+<td><code>ZGeoValue</code></td>
+<td>Routeur de lecture discriminé (legacy ou zcrud) vers le bon type de valeur.</td>
+</tr>
+<tr>
+<td><code>ZGeoJson</code> / <code>ZGeoPointGeoJson</code> / <code>ZGeoShapeGeoJson</code> / <code>ZGeoCircleGeoJson</code></td>
+<td>Import/export GeoJSON (RFC 7946) des valeurs neutres.</td>
+</tr>
+<tr>
+<td><code>ZGeoShapeStyle</code></td>
+<td>Style de rendu neutre (couleurs ARGB, épaisseur, icône, info-window).</td>
+</tr>
+<tr>
+<td><code>ZGeoShapeMetrics</code> / <code>ZGeoCircleMetrics</code> / <code>ZGeoBounds</code></td>
+<td>Extensions de métriques pures : aire, périmètre, centroïde, boîte englobante, appartenance.</td>
+</tr>
+<tr>
+<td><strong>Configuration du champ</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZGeoFieldConfig</code> / <code>ZGeoGeometry</code> / <code>ZGeoPresentation</code></td>
+<td>Config additive du champ : géométrie, défauts de carte, présentation, capacités opt-in.</td>
+</tr>
+<tr>
+<td><code>ZGeoEditorToolbarConfig</code></td>
+<td>Config de la barre d'outils d'éditeur (18 toggles + 5 presets).</td>
+</tr>
+<tr>
+<td><code>ZGeoMapOptions</code> / <code>ZGeoMapType</code></td>
+<td>État neutre des options de carte (type, trafic, gestes…).</td>
+</tr>
+<tr>
+<td><code>ZGeoTileReference</code> / <code>ZGeoStyleReference</code> / <code>ZGeoChromeReference</code></td>
+<td>Valeurs de référence auditées (tuiles OSM, presets de style, chrome).</td>
+</tr>
+<tr>
+<td><strong>Widgets</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZGeoFieldWidget</code></td>
+<td>Champ d'édition géo complet, servi via <code>ZWidgetRegistry</code>.</td>
+</tr>
+<tr>
+<td><code>ZGeoMapView</code></td>
+<td>Vue de lecture multi-formes hors formulaire.</td>
+</tr>
+<tr>
+<td><code>ZGeoShapeStylePicker</code></td>
+<td>Toolbar de style fill/stroke d'une forme.</td>
+</tr>
+<tr>
+<td><strong>Port carte et adaptateurs</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZMapAdapter</code> / <code>ZMapAdapterFactory</code></td>
+<td>Port de rendu carte en types neutres, et sa fabrique.</td>
+</tr>
+<tr>
+<td><code>ZMapCameraCapable</code> / <code>ZMapGesturesCapable</code></td>
+<td>Capacités optionnelles opt-in (caméra pilotable, gestes d'édition).</td>
+</tr>
+<tr>
+<td><code>ZGeoLocationResolver</code></td>
+<td>Seam neutre « ma position » (voir <code>zcrud_geo_location</code> pour une implémentation clé en main).</td>
+</tr>
+<tr>
+<td><code>ZOsmMapAdapter</code> (<code>adapters/osm.dart</code>)</td>
+<td>Adaptateur OSM via <code>flutter_map</code>, sans clé API.</td>
+</tr>
+<tr>
+<td><code>ZGoogleMapAdapter</code> (<code>adapters/google.dart</code>)</td>
+<td>Adaptateur Google Maps ; clé API fournie par la config plateforme de l'hôte.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Désérialisation défensive partout</strong> — un point/cercle/forme corrompu,
+hors-bornes ou d'un format inattendu ne fait jamais throw : <code>fromMapSafe</code>
+rend <code>null</code> (ou une forme vide) plutôt qu'une exception (invariant AD-10).</li>
+<li><strong>Aucun type SDK carte ne fuit</strong> — ni dans la valeur de tranche, ni dans une
+signature publique du barrel principal ; les deux adaptateurs concrets
+vivent derrière des entrées d'import dédiées (invariant AD-1).</li>
+<li><strong>Zéro secret</strong> — l'adaptateur OSM ne requiert aucune clé ; l'adaptateur
+Google lit sa clé depuis la config plateforme de l'application hôte,
+jamais depuis ce paquet (invariant AD-12).</li>
+<li><strong>Une instance d'adaptateur par montage de champ</strong> — la fabrique
+(<a href="lib/src/presentation/z_map_adapter.dart"><code>ZMapAdapterFactory</code></a>) est
+appelée une fois en <code>initState</code> ; l'instance n'est jamais partagée entre
+deux champs ni réutilisée après <code>dispose</code>.</li>
+<li><strong>RTL et accessibilité</strong> (<a href="../../docs/site/concepts/invariants.md#ad-13">AD-13</a>)
+— variantes directionnelles, cibles tactiles ≥ 48 dp, <code>Semantics</code> explicites
+sur les boutons de la barre d'outils et du picker de style.</li>
+<li><strong>Formes de valeur inertes</strong> — sans adaptateur carte injecté, le champ
+dégrade en saisie coordonnées seule sans jamais crasher.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_geo.md"><code>docs/site/paquets/zcrud_geo.md</code></a></li>
+<li><a href="../zcrud_geo_location/README.md"><code>zcrud_geo_location</code></a> — resolver « ma position » clé en main pour ce paquet.</li>
+<li><a href="doc/migration-legacy-dodlp-geo.md">Migration des valeurs legacy DODLP</a> — correspondance champ à champ du format historique.</li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_core</code> — <code>ZFieldConfig</code>, <code>ZWidgetRegistry</code>, <code>ZFieldWidgetContext</code>, <code>ZcrudTheme</code>.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="google">
+  <span class="name"><a href="adapters_google/">adapters/google</a></span> 
+
+</dt>
+<dd>Entrée d'import <strong>dédiée</strong> de l'adaptateur carte Google (<code>google_maps_flutter</code>).
+</dd>
+
+          <dt id="osm">
+  <span class="name"><a href="adapters_osm/">adapters/osm</a></span> 
+
+</dt>
+<dd>Entrée d'import <strong>dédiée</strong> de l'adaptateur carte OSM (<code>flutter_map</code>).
+</dd>
+
+          <dt id="zcrud_geo">
+  <span class="name"><a href="zcrud_geo/">zcrud_geo</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_geo</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_geo package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_geo</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="adapters_google/">adapters/google</a></li>
+      <li><a href="adapters_osm/">adapters/osm</a></li>
+      <li><a href="zcrud_geo/">zcrud_geo</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_geo
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

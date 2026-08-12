@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the progressionBuilder property from the ZStudyFolderDetail class, for the Dart programming language.">
+  <title>progressionBuilder property - ZStudyFolderDetail class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study.dart</a></li>
+    <li><a href="../../zcrud_study/ZStudyFolderDetail-class.html">ZStudyFolderDetail</a></li>
+    <li class="self-crumb">progressionBuilder property</li>
+  </ol>
+  <div class="self-name">progressionBuilder</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;ZStudyFolderDetail-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">progressionBuilder</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a>?
+        <span class="name ">progressionBuilder</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p>Constructeur LIBRE du corps de l'onglet Progression, <strong>au même
+contrat que <a href="../../zcrud_study/ZStudyFolderDetail/notebookBuilder.html">notebookBuilder</a></strong> : un <code>WidgetBuilder</code> branché directement
+sur <code>ZPageTab.contentBuilder</code>, qui possède donc tout l'onglet.</p>
+<p><code>null</code> (défaut) ⇒ comportement HISTORIQUE <strong>strictement</strong> conservé :
+<code>ZStudyProgressRings</code> + <a href="../../zcrud_study/ZStudyFolderDetail/progressStatCards.html">progressStatCards</a> quand <a href="../../zcrud_study/ZStudyFolderDetail/progressData.html">progressData</a> est
+fourni, <a href="../../zcrud_study/ZStudyFolderDetail/progressEmptyState.html">progressEmptyState</a> sinon. Aucune rupture pour un hôte existant.</p>
+<p>Fourni ⇒ il <strong>prime</strong> sur l'anneau : une progression n'a pas
+nécessairement la forme d'un ratio global (des barres linéaires par
+catégorie, par exemple, ne se réduisent pas à un anneau).</p>
+<p><strong>Pourquoi pas <a href="../../zcrud_study/ZStudyFolderDetail/progressEmptyState.html">progressEmptyState</a></strong> : ce slot signifie « aucune
+donnée » ; y injecter un onglet PLEIN inverserait le sens du paramètre et
+piégerait le prochain lecteur. <a href="../../zcrud_study/ZStudyFolderDetail/progressEmptyState.html">progressEmptyState</a> conserve donc son sens
+exact — il n'est rendu que lorsque <a href="../../zcrud_study/ZStudyFolderDetail/progressData.html">progressData</a> est <code>null</code> <strong>et</strong> qu'aucun
+<a href="../../zcrud_study/ZStudyFolderDetail/progressionBuilder.html">progressionBuilder</a> n'est fourni.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final WidgetBuilder? progressionBuilder;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/ZStudyFolderDetail-class.html">ZStudyFolderDetail</a></li>
+    <li class="self-crumb">progressionBuilder property</li>
+</ol>
+
+  <h5>ZStudyFolderDetail class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

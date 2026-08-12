@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_annotations API docs, for the Dart programming language.">
+  <title>zcrud_annotations - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_annotations package</a></li>
+  </ol>
+  <div class="self-name">zcrud_annotations</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_annotations">zcrud_annotations</h1>
+<p>Annotations déclaratives consommées par <code>zcrud_generator</code> — le modèle annoté
+est la source unique de vérité du schéma (invariant AD-3).</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_annotations</code> ne contient <strong>aucun comportement</strong> : trois annotations
+<code>const</code> pur-données (<code>@ZcrudModel</code>, <code>@ZcrudField</code>, <code>@ZcrudId</code>) et l'enum
+<code>ZPersistAs</code>. <code>zcrud_generator</code> les lit <strong>statiquement</strong> au moment du
+<code>build_runner</code> (<code>ConstantReader</code>, jamais d'exécution ni de réflexion) pour
+émettre <code>toMap</code>/<code>fromMap</code>/<code>copyWith</code>, le <code>ZFieldSpec[]</code> du champ et
+l'enregistrement au <code>ZcrudRegistry</code>.</p>
+<p>Ce paquet ne dépend que de <code>zcrud_core</code> (invariant AD-1 : graphe acyclique,
+zéro dépendance lourde) — l'annoter dans un modèle ne tire ni Flutter, ni
+Firebase, ni aucun gestionnaire d'état.</p>
+<p><strong>Utilisez ce paquet</strong> pour annoter vos modèles de domaine consommés par le
+schéma <code>zcrud</code> (édition <strong>et</strong> liste, depuis la même déclaration).
+<strong>N'utilisez pas ce paquet</strong> seul : sans <code>zcrud_generator</code> dans vos
+<code>dev_dependencies</code>, les annotations n'ont aucun effet — elles ne sont lues
+qu'au moment du codegen.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>. Ajoutez aussi <code>zcrud_generator</code> en
+<code>dev_dependency</code> : sans lui, ces annotations ne produisent rien.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+@ZcrudModel(kind: 'note')
+class Note {
+  const Note({required this.id, required this.title});
+
+  /// Décodeur de domaine exigé par le contrat de [ZcrudModel] — voir
+  /// « Cas limites et invariants » plus bas.
+  factory Note.fromMap(Map&lt;String, dynamic&gt; map) =&gt; _$NoteFromMap(map);
+
+  @ZcrudId()
+  final String? id;
+
+  @ZcrudField(label: 'Titre', searchable: true)
+  final String title;
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Le modèle est la source unique de vérité (invariant <a href="../../docs/site/concepts/invariants.md#ad-3">AD-3</a>)</strong> —
+une seule déclaration <code>@ZcrudModel</code>/<code>@ZcrudField</code> pilote à la fois le
+formulaire d'édition et la colonne de liste ; aucune double définition de
+schéma à maintenir en synchronisation.</li>
+<li><strong>Lecture statique, jamais de réflexion</strong> — <code>zcrud_generator</code> lit ces
+annotations via <code>ConstantReader</code> à la compilation. <code>reflectable</code> est banni
+du moteur : un modèle mal annoté échoue au <strong>build</strong>, jamais silencieusement
+à l'exécution.</li>
+<li><strong><code>persistAs</code> et le confinement du backend (invariant <a href="../../docs/site/concepts/invariants.md#ad-5">AD-5</a>)</strong> —
+<code>ZPersistAs.timestamp</code> fait collecter par le générateur un artefact neutre
+(<code>Set&lt;String&gt;</code> de clés) ; c'est <code>zcrud_firestore</code>, seul, qui traduit ce hint
+en <code>Timestamp</code> natif. Ce paquet ne référence jamais <code>cloud_firestore</code>.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZcrudModel</code></td>
+<td>Annotation de classe : déclare un modèle sérialisable et enregistrable, porte le contrat <code>fromMap</code> obligatoire.</td>
+</tr>
+<tr>
+<td><code>ZcrudField</code></td>
+<td>Annotation de champ : projette chaque paramètre dans le <code>ZFieldSpec</code> correspondant (label, type, validateurs, condition, ornements…).</td>
+</tr>
+<tr>
+<td><code>ZcrudId</code></td>
+<td>Marqueur du champ identifiant (<code>id</code>) d'un modèle.</td>
+</tr>
+<tr>
+<td><code>ZPersistAs</code></td>
+<td>Hint de format de persistance d'un champ date (<code>iso8601</code> par défaut, ou <code>timestamp</code> pour Firestore natif).</td>
+</tr>
+<tr>
+<td><code>ZAnnotationsApi</code></td>
+<td>Marqueur de version de l'API publique du paquet.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong><code>fromMap</code> est obligatoire, sans exception</strong> — toute classe <code>@ZcrudModel</code>
+doit déclarer une factory ou méthode statique <code>fromMap</code>. Son absence est un
+<strong>échec de build</strong>, jamais un repli silencieux : voir la dartdoc de
+<a href="zcrud_annotations/ZcrudModel-class.html">ZcrudModel</a> pour le détail des trois filets de vérification.</li>
+<li><strong>Une classe <code>ZExtensible</code> ne peut pas déléguer nuement</strong> — si le modèle
+porte un slot <code>extra</code> (invariant <a href="../../docs/site/concepts/invariants.md#ad-4">AD-4</a>),
+son <code>fromMap</code> doit peupler <code>extra</code> et son <code>toMap()</code> d'instance doit le
+réémettre ; déléguer directement au décodeur généré effacerait toute clé
+métier hors schéma à chaque cycle lecture/écriture.</li>
+<li><strong><code>type</code> non déclaré ⇒ inféré, jamais absent</strong> — un <code>@ZcrudField</code> sans
+<code>type</code> explicite se voit attribuer un type déduit du type Dart statique du
+champ (<code>String</code>→<code>text</code>, <code>bool</code>→<code>boolean</code>, <code>enum</code>→<code>select</code>…).</li>
+<li><strong>Rien ici n'accepte de closure</strong> — un builder de widget libre, un
+validateur dépendant de l'état ou une relation dynamique ne s'expriment pas
+dans l'annotation (illisible par <code>ConstantReader</code>) : ils se câblent au
+runtime via <code>ZTypeRegistry</code> ou <code>ZFormController</code>.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_annotations.md"><code>docs/site/paquets/zcrud_annotations.md</code></a></li>
+<li><code>zcrud_generator</code> — le générateur <code>build_runner</code> qui lit ces annotations.</li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_annotations">
+  <span class="name"><a href="zcrud_annotations/">zcrud_annotations</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_annotations</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_annotations package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_annotations</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_annotations/">zcrud_annotations</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_annotations
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

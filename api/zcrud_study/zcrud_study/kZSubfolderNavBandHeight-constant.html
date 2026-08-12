@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the kZSubfolderNavBandHeight constant from the zcrud_study library, for the Dart programming language.">
+  <title>kZSubfolderNavBandHeight constant - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study.dart</a></li>
+    <li class="self-crumb">kZSubfolderNavBandHeight constant</li>
+  </ol>
+  <div class="self-name">kZSubfolderNavBandHeight</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_study&#47;zcrud_study-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-top-level-property">kZSubfolderNavBandHeight</span> top-level constant 
+ 
+</h1></div>
+
+        <section class="multi-line-signature">
+          
+          <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>
+          const <span class="name ">kZSubfolderNavBandHeight</span>
+          
+
+        </section>
+        
+<section class="desc markdown">
+  <p>Hauteur <strong>mesurée</strong> de la bande <code>ZSubfolderNarrowNav</code> du socle.</p>
+<p>Ce n'est pas un littéral choisi : c'est le résultat d'une mesure sur
+disque des <strong>deux</strong> variantes, à 360 / 500 / 800 dp de large et avec le
+bouton d'ajout présent :</p>
+<table>
+<thead>
+<tr>
+<th>surface</th>
+<th>hauteur rendue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZSubfolderSelectorBar</code> (défaut)</td>
+<td>48 dp</td>
+</tr>
+<tr>
+<td><code>ZSubfolderCompactSelector</code> (<code>compact</code>)</td>
+<td>48 dp</td>
+</tr>
+</tbody>
+</table>
+<p>Les deux convergent parce qu'elles sont toutes deux gouvernées par la
+<strong>cible tactile minimale AD-13</strong> (<code>ConstrainedBox(minHeight: 48)</code> autour de
+la rangée), et par rien d'autre : une constante unique convient donc aux
+deux, et il n'y a <strong>pas</strong> à tronquer l'une pour servir l'autre.</p>
+<p>Ce qui peut la dépasser, et qui se déclare alors explicitement via
+<a href="../zcrud_study/ZStudyFolderDetail/subfolderNavBandHeight.html">ZStudyFolderDetail.subfolderNavBandHeight</a> : une coquille d'hôte
+(<code>ZSubfolderNavRendererScope</code>), un <code>itemBuilder</code> plus haut que 48 dp, un
+facteur d'échelle de texte élevé. La marge de thème
+<code>ZcrudTheme.subfolderBarPadding</code>, elle, est ajoutée <strong>automatiquement</strong>
+(cf. <code>_navBandHeight</code>) : c'est un token de ce socle, il serait absurde de
+demander à l'hôte de refaire l'addition.</p>
+</section>
+
+        
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">const double kZSubfolderNavBandHeight = 48.0;</code></pre>
+</section>
+
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study</a></li>
+    <li class="self-crumb">kZSubfolderNavBandHeight constant</li>
+</ol>
+
+    <h5>zcrud_study library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

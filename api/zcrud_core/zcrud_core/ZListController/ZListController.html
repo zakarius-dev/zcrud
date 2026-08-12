@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZListController.new constructor from Class ZListController from the zcrud_core library, for the Dart programming language.">
+  <title>ZListController.new constructor - ZListController - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core.dart</a></li>
+    <li><a href="../../zcrud_core/ZListController-class.html">ZListController<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></a></li>
+    <li class="self-crumb">ZListController.new constructor</li>
+  </ol>
+  <div class="self-name">ZListController.new</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_core&#47;ZListController-class-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-constructor">ZListController&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span> constructor 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+      <span class="name ">ZListController&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-repository"><span>required</span> <span class="type-annotation"><a href="../../zcrud_core/ZRepository-class.html">ZRepository</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">repository</span>, </span></li>
+<li><span class="parameter" id="param-toRow"><span>required</span> <span class="type-annotation"><a href="../../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">toRow</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-"><span class="type-annotation">T</span></span></li>
+</ol>), </span></li>
+<li><span class="parameter" id="param-schema"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">schema</span>, </span></li>
+<li><span class="parameter" id="param-pageSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">pageSize</span>, </span></li>
+<li><span class="parameter" id="param-mode"><span class="type-annotation"><a href="../../zcrud_core/ZListPaginationMode.html">ZListPaginationMode</a></span> <span class="parameter-name">mode</span> = <span class="default-value">ZListPaginationMode.backendCursor</span>, </span></li>
+<li><span class="parameter" id="param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">baseFilters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span></li>
+<li><span class="parameter" id="param-watchMutations"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">watchMutations</span> = <span class="default-value">false</span>, </span></li>
+</ol>})
+    </section>
+    
+<section class="desc markdown">
+  <p>Construit le contrôleur et <strong>lance immédiatement</strong> la première requête
+(état initial <code>ZListLoading</code>).</p>
+<p><code>repository</code> source des données (port neutre) ; <code>toRow</code> projette une entité
+<code>T</code> en <code>ZListRow</code> neutre ; <code>schema</code> porte les champs <code>searchable</code> (recherche)
+et sert le moteur in-memory ; <code>pageSize</code> fixe la taille de page (curseur ;
+<code>null</code> = non paginé) ; <code>mode</code> choisit la stratégie de pagination ; si
+<code>watchMutations</code> est <code>true</code>, s'abonne à <code>repository.watchAll()</code> pour
+relancer la requête courante à chaque mutation.</p>
+<p><code>baseFilters</code> est un <strong>socle de filtres PERSISTANT</strong> (défaut <code>const []</code>,
+<strong>additif et rétro-compatible</strong>) : ces filtres sont <strong>toujours ANDés
+EN TÊTE</strong> des filtres utilisateur dans CHAQUE requête émise (première page,
+<code>loadMore</code>, chemin backend ET repli in-memory). Ils expriment une <strong>relation
+parent→enfants</strong> (<code>ZSubListScreen</code>, <code>ZFilter(parentField, eq, parentId)</code>) ou
+un <strong>filtre de catégorie d'onglet</strong> (<code>ZTabbedList</code>) : <code>setFilters</code>/<code>setSearch</code>
+/<code>setSort</code> <strong>ne peuvent JAMAIS</strong> les écraser (là où <code>setFilters</code> remplace les
+SEULS filtres utilisateur). <code>baseFilters</code> vide ⇒ comportement strictement
+inchangé (mêmes <code>ZDataRequest</code>, mêmes tests).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZListController({
+  required this.repository,
+  required this.toRow,
+  required this.schema,
+  this.pageSize,
+  this.mode = ZListPaginationMode.backendCursor,
+  this.baseFilters = const &lt;ZFilter&gt;[],
+  bool watchMutations = false,
+}) {
+  if (watchMutations) {
+    _subscription = repository.watchAll().listen((_) {
+      &#47;&#47; Une mutation externe réinitialise la pagination et relance la requête.
+      _resetPagination();
+      unawaited(_runQuery());
+    });
+  }
+  unawaited(_runQuery());
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/ZListController-class.html">ZListController<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></a></li>
+    <li class="self-crumb">ZListController.new constructor</li>
+</ol>
+
+    <h5>ZListController class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

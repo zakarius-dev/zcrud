@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the present method from the ZAdaptivePresenter class, for the Dart programming language.">
+  <title>present method - ZAdaptivePresenter class - zcrud_navigation library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_navigation</a></li>
+    <li><a href="../../zcrud_navigation/">zcrud_navigation.dart</a></li>
+    <li><a href="../../zcrud_navigation/ZAdaptivePresenter-class.html">ZAdaptivePresenter</a></li>
+    <li class="self-crumb">present&lt;<wbr><span class="type-parameter">T</span>&gt; method</li>
+  </ol>
+  <div class="self-name">present</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_navigation&#47;ZAdaptivePresenter-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">present&lt;<wbr><span class="type-parameter">T</span>&gt;</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">T?</span>&gt;</span></span>
+<span class="name ">present</span>&lt;<wbr><span class="type-parameter">T</span>&gt;(<wbr><ol class="parameter-list"> <li><span class="parameter" id="present-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span></li>
+<li><span class="parameter" id="present-param-builder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a></span> <span class="parameter-name">builder</span>, </span></li>
+<li><span class="parameter" id="present-param-mode"><span>required</span> <span class="type-annotation"><a href="../../zcrud_navigation/ZEditionPresentation.html">ZEditionPresentation</a></span> <span class="parameter-name">mode</span>, </span></li>
+<li><span class="parameter" id="present-param-maxWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">maxWidth</span>, </span></li>
+<li><span class="parameter" id="present-param-maxHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">maxHeight</span>, </span></li>
+<li><span class="parameter" id="present-param-useSafeArea"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">useSafeArea</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="present-param-barrierDismissible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">barrierDismissible</span> = <span class="default-value">true</span>, </span></li>
+</ol>})
+
+      <div class="features"><span class="feature">override</span></div>
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Présente le formulaire construit par <code>builder</code> sur la surface dictée par
+<code>mode</code> (page / sheet / dialog), et complète le <code>Future</code> avec la valeur
+éventuellement remontée par <code>Navigator.pop(value)</code> / la fermeture de la
+modale.</p>
+<ul>
+<li><code>context</code> : contexte de présentation (mesure via <code>MediaQuery.sizeOf</code>,
+<strong>jamais</strong> <code>Get.context!</code>/<code>Get.width</code>).</li>
+<li><code>builder</code> : contenu <strong>opaque</strong> (form-agnostique) — le port ne l'inspecte
+pas.</li>
+<li><code>mode</code> : <strong>toujours</strong> l'<code>enum</code> <a href="../../zcrud_navigation/ZEditionPresentation.html">ZEditionPresentation</a> — <strong>aucun</strong>
+<code>bool fullscreenDialog</code>/<code>dialog</code>.</li>
+<li><code>maxWidth</code> / <code>maxHeight</code> : tailles max <strong>explicites</strong> (dp) pour <code>sheet</code>
+et <code>dialog</code> ; <code>null</code> ⇒ défaut dérivé de <code>MediaQuery.sizeOf(context)</code>. En
+mode <code>page</code> (route pleine) elles sont <strong>ignorées</strong>.</li>
+<li><code>useSafeArea</code> : encapsule la surface dans une <code>SafeArea</code> (a11y) pour
+<code>sheet</code> et <code>dialog</code>. En mode <code>page</code> (route pleine) il est <strong>ignoré</strong>
+— cf. « inertie déclarée » ci-dessous.</li>
+<li><code>barrierDismissible</code> : autorise la fermeture au tap sur la barrière
+(mode <code>dialog</code>). En <code>sheet</code>, la barrière se règle par <code>isDismissible</code>
+(port <code>ZImplicitDismissControl</code>) ; en <code>page</code> il n'y a pas de barrière.</li>
+</ul>
+<h2 id="inertie-dclare">Inertie DÉCLARÉE</h2>
+<p><strong>Règle du port : tout paramètre est soit honoré sur une surface, soit
+déclaré inerte sur elle.</strong> Jamais « passé, jamais lu, jamais dit ».</p>
+<p>La table complète — paramètre × mode — n'est pas recopiée ici : elle est
+<strong>mesurée</strong>, implémentation par implémentation, par une garde qui présente
+deux fois la même surface avec deux valeurs contraires et compare
+l'empreinte rendue. Un paramètre n'y est « honoré » que si les deux
+empreintes <strong>diffèrent</strong> ; il n'existe nulle part où écrire un statut.</p>
+<ul>
+<li><code>ZAdaptivePresenter</code> → <code>doc/parameter-matrix-z-adaptive-presenter.md</code>
+(garde : <code>test/z_presenter_parameter_matrix_test.dart</code>) ;</li>
+<li><code>ZGetFormPresenter</code> (<code>zcrud_get</code>) →
+<code>packages/zcrud_get/doc/parameter-matrix-z-get-form-presenter.md</code>.</li>
+</ul>
+<p>Une implémentation <strong>tierce</strong> du port n'est tenue par aucune de ces deux
+gardes : elle doit publier sa propre matrice si elle veut la même
+garantie.</p>
+<p><code>useSafeArea</code> en mode <code>page</code> : l'inertie est <strong>mesurée</strong>, pas supposée.
+Une route pleine n'insère aujourd'hui <strong>aucune</strong> <code>SafeArea</code> — ni avec
+<code>true</code> (le défaut) ni avec <code>false</code> : le contenu brut peint sous l'encoche
+dans les deux cas. Honorer la promesse déplacerait donc l'arbre <strong>par
+défaut</strong> de tout hôte passif ; la promesse est retirée à la place. Un hôte
+qui veut l'encart en <code>page</code> place sa propre <code>SafeArea</code> (ou fournit un
+<code>ZEditionChrome</code> : la voie chrome monte un <code>Scaffold</code> + <code>SliverAppBar</code>,
+qui consomme l'encart haut, et une <code>SafeArea(top: false)</code> sous les
+actions).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+Future&lt;T?&gt; present&lt;T&gt;(
+  BuildContext context, {
+  required WidgetBuilder builder,
+  required ZEditionPresentation mode,
+  double? maxWidth,
+  double? maxHeight,
+  bool useSafeArea = true,
+  bool barrierDismissible = true,
+}) =&gt;
+    &#47;&#47; Voie HISTORIQUE : délègue avec `allowImplicitDismiss: true`, qui rend
+    &#47;&#47; l&#39;arbre et les paramètres EXACTEMENT d&#39;avant (`enableDrag` laissé à
+    &#47;&#47; `null` ⇒ défaut SDK). Garde d&#39;identité d&#39;arbre : cf.
+    &#47;&#47; `z_edition_chrome_identity_test.dart`.
+    presentWithDismissControl&lt;T&gt;(
+      context,
+      builder: builder,
+      mode: mode,
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
+      useSafeArea: useSafeArea,
+      barrierDismissible: barrierDismissible,
+    );</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_navigation</a></li>
+    <li><a href="../../zcrud_navigation/">zcrud_navigation</a></li>
+    <li><a href="../../zcrud_navigation/ZAdaptivePresenter-class.html">ZAdaptivePresenter</a></li>
+    <li class="self-crumb">present&lt;<wbr><span class="type-parameter">T</span>&gt; method</li>
+</ol>
+
+    <h5>ZAdaptivePresenter class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_navigation
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

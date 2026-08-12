@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the build method from the ZSwipeEmotionIndicator class, for the Dart programming language.">
+  <title>build method - ZSwipeEmotionIndicator class - zcrud_session library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_session</a></li>
+    <li><a href="../../zcrud_session/">zcrud_session.dart</a></li>
+    <li><a href="../../zcrud_session/ZSwipeEmotionIndicator-class.html">ZSwipeEmotionIndicator</a></li>
+    <li class="self-crumb">build method</li>
+  </ol>
+  <div class="self-name">build</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_session&#47;ZSwipeEmotionIndicator-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">build</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>
+<span class="name ">build</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="build-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span></li>
+</ol>)
+
+      <div class="features"><span class="feature">override</span></div>
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Describes the part of the user interface represented by this widget.</p>
+<p>The framework calls this method when this widget is inserted into the tree
+in a given <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a> and when the dependencies of this widget change
+(e.g., an <a href="https://api.flutter.dev/flutter/widgets/InheritedWidget-class.html">InheritedWidget</a> referenced by this widget changes). This
+method can potentially be called in every frame and should not have any side
+effects beyond building a widget.</p>
+<p>The framework replaces the subtree below this widget with the widget
+returned by this method, either by updating the existing subtree or by
+removing the subtree and inflating a new subtree, depending on whether the
+widget returned by this method can update the root of the existing
+subtree, as determined by calling <a href="https://api.flutter.dev/flutter/widgets/Widget/canUpdate.html">Widget.canUpdate</a>.</p>
+<p>Typically implementations return a newly created constellation of widgets
+that are configured with information from this widget's constructor and
+from the given <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a>.</p>
+<p>The given <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a> contains information about the location in the
+tree at which this widget is being built. For example, the context
+provides the set of inherited widgets for this location in the tree. A
+given widget might be built with multiple different <a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a>
+arguments over time if the widget is moved around the tree or if the
+widget is inserted into the tree in multiple places at once.</p>
+<p>The implementation of this method must only depend on:</p>
+<ul>
+<li>the fields of the widget, which themselves must not change over time,
+and</li>
+<li>any ambient state obtained from the <code>context</code> using
+<a href="https://api.flutter.dev/flutter/widgets/BuildContext/dependOnInheritedWidgetOfExactType.html">BuildContext.dependOnInheritedWidgetOfExactType</a>.</li>
+</ul>
+<p>If a widget's <a href="../../zcrud_session/ZSwipeEmotionIndicator/build.html">build</a> method is to depend on anything else, use a
+<a href="https://api.flutter.dev/flutter/widgets/StatefulWidget-class.html">StatefulWidget</a> instead.</p>
+<p>See also:</p>
+<ul>
+<li><a href="https://api.flutter.dev/flutter/widgets/StatelessWidget-class.html">StatelessWidget</a>, which contains the discussion on performance considerations.</li>
+</ul>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+Widget build(BuildContext context) {
+  final emotion = _emotion;
+  if (emotion == null) return const SizedBox.shrink();
+
+  &#47;&#47; Rôle Material 3 résolu par le cœur — jamais un `Colors.*`&#47;`Color(0x…)`.
+  &#47;&#47; Les deux sens sont neutres quant à la note : on distingue le sens du
+  &#47;&#47; geste, pas une réussite. D&#39;où deux rôles décoratifs, pas `primary`&#47;`error`.
+  final pair = zResolveColorKeyOrSlot(
+    context,
+    switch (emotion) {
+      ZSwipeEmotion.towardsEnd =&gt; &#39;secondary&#39;,
+      ZSwipeEmotion.towardsStart =&gt; &#39;tertiary&#39;,
+    },
+    slotIndex: emotion.index,
+  );
+  final theme = ZcrudTheme.of(context);
+
+  return IgnorePointer(
+    &#47;&#47; L&#39;overlay ne doit rien voler à l&#39;arène de gestes : il est purement
+    &#47;&#47; décoratif et vit au-dessus de la carte.
+    child: Align(
+      &#47;&#47; Directionnel (invariant AD-13) — jamais `Alignment.centerLeft&#47;Right`.
+      &#47;&#47; L&#39;icône est placée du côté où va le doigt (ce que la dartdoc de
+      &#47;&#47; [ZSwipeEmotion] annonce).
+      alignment: switch (emotion) {
+        ZSwipeEmotion.towardsEnd =&gt; AlignmentDirectional.topEnd,
+        ZSwipeEmotion.towardsStart =&gt; AlignmentDirectional.topStart,
+      },
+      child: Padding(
+        padding: EdgeInsetsDirectional.all(theme.gapL),
+        child: Opacity(
+          key: opacityKey,
+          opacity: resolvedOpacity,
+          child: Transform.scale(
+            scale: resolvedScale,
+            &#47;&#47; Glyphe neutre et directionnel — jamais un visage. Un visage
+            &#47;&#47; souriant ou mécontent serait une évaluation, un signal
+            &#47;&#47; strictement plus fort que les couleurs `primary`&#47;`error` déjà
+            &#47;&#47; écartées ci-dessus pour cette même raison : le swipe navigue
+            &#47;&#47; et n&#39;écrit aucune note, donc rien ne doit laisser croire à
+            &#47;&#47; l&#39;apprenant qu&#39;il vient de noter la carte. Une flèche ne dit
+            &#47;&#47; que où va le doigt, ce qui est exactement — et seulement — ce
+            &#47;&#47; que cet enum décrit.
+            &#47;&#47;
+            &#47;&#47; RTL (invariant AD-13) : `arrow_back`&#47;`arrow_forward` portent
+            &#47;&#47; `matchTextDirection: true`, donc le glyphe se retourne avec la
+            &#47;&#47; direction du texte. `towardsEnd` pointe ainsi vers la fin
+            &#47;&#47; dans les deux directions — un émoji, lui, n&#39;aurait rien
+            &#47;&#47; retourné du tout.
+            child: Icon(
+              switch (emotion) {
+                ZSwipeEmotion.towardsEnd =&gt; Icons.arrow_forward,
+                ZSwipeEmotion.towardsStart =&gt; Icons.arrow_back,
+              },
+              color: pair.color,
+              size: theme.gapL * 2,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_session</a></li>
+    <li><a href="../../zcrud_session/">zcrud_session</a></li>
+    <li><a href="../../zcrud_session/ZSwipeEmotionIndicator-class.html">ZSwipeEmotionIndicator</a></li>
+    <li class="self-crumb">build method</li>
+</ol>
+
+    <h5>ZSwipeEmotionIndicator class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_session
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

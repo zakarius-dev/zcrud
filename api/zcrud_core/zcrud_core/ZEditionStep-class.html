@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZEditionStep class from the zcrud_core library, for the Dart programming language.">
+  <title>ZEditionStep class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZEditionStep class</li>
+  </ol>
+  <div class="self-name">ZEditionStep</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZEditionStep-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZEditionStep</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Descripteur <strong>présentation</strong> d'une étape : un titre + le sous-ensemble de
+<strong>noms de champs</strong> du catalogue qu'elle regroupe (aligné sur <a href="../zcrud_core/ZEditionSection-class.html">ZEditionSection</a>
+— titre + noms, PAS une nouvelle donnée de formulaire). Additif, <code>const</code>.</p>
+<p><a href="../zcrud_core/ZEditionStep/icon.html">icon</a> et <a href="../zcrud_core/ZEditionStep/subtitle.html">subtitle</a> portent les métadonnées d'affichage par étape ;
+<a href="../zcrud_core/ZEditionStep/nestedSteps.html">nestedSteps</a>/<a href="../zcrud_core/ZEditionStep/nestedConfig.html">nestedConfig</a> portent un sous-stepper imbriqué rendu sur le
+MÊME controller. Tous ces paramètres sont additifs : les sites existants
+sans eux compilent inchangés.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://api.flutter.dev/flutter/meta/immutable-constant.html">immutable</a></li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZEditionStep.new" class="callable">
+          <span class="name"><a href="../zcrud_core/ZEditionStep/ZEditionStep.html">ZEditionStep</a></span><span class="signature">({<span class="parameter" id="param-title"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span>, </span><span class="parameter" id="param-fields"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">fields</span>, </span><span class="parameter" id="param-sections"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZEditionSection-class.html">ZEditionSection</a></span>&gt;</span></span> <span class="parameter-name">sections</span> = <span class="default-value">const &lt;ZEditionSection&gt;[]</span>, </span><span class="parameter" id="param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="param-subtitle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">subtitle</span>, </span><span class="parameter" id="param-subtitleWidget"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">subtitleWidget</span>, </span><span class="parameter" id="param-nestedSteps"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZEditionStep-class.html">ZEditionStep</a></span>&gt;</span>?</span> <span class="parameter-name">nestedSteps</span>, </span><span class="parameter" id="param-nestedConfig"><span class="type-annotation"><a href="../zcrud_core/ZStepperConfig-class.html">ZStepperConfig</a>?</span> <span class="parameter-name">nestedConfig</span>, </span><span class="parameter" id="param-condition"><span class="type-annotation"><a href="../zcrud_core/ZCondition-class.html">ZCondition</a>?</span> <span class="parameter-name">condition</span>, </span><span class="parameter" id="param-optional"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">optional</span> = <span class="default-value">false</span></span>})</span>
+        </dt>
+        <dd>
+          Construit une étape de titre <code>title</code> regroupant les champs <code>fields</code> (par
+nom, dans l'ordre indicatif ; l'ordre effectif de rendu suit l'ordre
+canonique du catalogue via <a href="../zcrud_core/DynamicEdition-class.html">DynamicEdition</a>).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="condition" class="property">
+  <span class="name"><a href="../zcrud_core/ZEditionStep/condition.html">condition</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZCondition-class.html">ZCondition</a>?</span>
+  
+
+</dt>
+<dd>
+  Condition d'<strong>EXISTENCE</strong> de l'étape. <code>null</code> (défaut) ⇒ l'étape est
+toujours là — comportement historique <strong>strictement inchangé</strong>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="fields" class="property">
+  <span class="name"><a href="../zcrud_core/ZEditionStep/fields.html">fields</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Noms de champs appartenant à l'étape (sous-ensemble du catalogue).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_core/ZEditionStep/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="icon" class="property">
+  <span class="name"><a href="../zcrud_core/ZEditionStep/icon.html">icon</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span>
+  
+
+</dt>
+<dd>
+  Icône d'étape — consommée en style <a href="../zcrud_core/ZStepStyle.html">ZStepStyle.icons</a> (repli sur le
+numéro si <code>null</code>). Défaut <code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="nestedConfig" class="property">
+  <span class="name"><a href="../zcrud_core/ZEditionStep/nestedConfig.html">nestedConfig</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZStepperConfig-class.html">ZStepperConfig</a>?</span>
+  
+
+</dt>
+<dd>
+  Configuration du sous-stepper imbriqué (défaut <code>null</code> ⇒ <code>ZStepperConfig()</code>).
+Son <code>validateOnNext</code> est <strong>indépendant</strong> de celui du parent.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="nestedSteps" class="property">
+  <span class="name"><a href="../zcrud_core/ZEditionStep/nestedSteps.html">nestedSteps</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZEditionStep-class.html">ZEditionStep</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Sous-étapes d'un <strong>stepper imbriqué</strong>. Quand non <code>null</code>, l'étape rend,
+dans son contenu, un <a href="../zcrud_core/ZStepperEdition-class.html">ZStepperEdition</a> imbriqué partageant le <strong>MÊME</strong>
+controller (jamais un controller par niveau). Défaut <code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="optional" class="property">
+  <span class="name"><a href="../zcrud_core/ZEditionStep/optional.html">optional</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Étape <strong>OPTIONNELLE</strong> : le gate <code>validateOnNext</code> ne s'y applique pas.
+Défaut <code>false</code> ⇒ comportement historique inchangé.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="sections" class="property">
+  <span class="name"><a href="../zcrud_core/ZEditionStep/sections.html">sections</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZEditionSection-class.html">ZEditionSection</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Sections <strong>visuelles</strong> internes à l'étape, restreintes à ses champs.
+Vide = liste plate. Orthogonal au partitionnement en étapes.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="subtitle" class="property">
+  <span class="name"><a href="../zcrud_core/ZEditionStep/subtitle.html">subtitle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Sous-titre d'étape — clé l10n ou littéral, affiché ssi
+<code>config.showSubtitles</code> (via <code>label(context, …)</code>). Défaut <code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="subtitleWidget" class="property">
+  <span class="name"><a href="../zcrud_core/ZEditionStep/subtitleWidget.html">subtitleWidget</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  
+
+</dt>
+<dd>
+  Sous-titre d'étape <strong>déjà construit</strong> par l'hôte. Défaut <code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="title" class="property">
+  <span class="name"><a href="../zcrud_core/ZEditionStep/title.html">title</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Titre affiché de l'étape (clé l10n ou littéral — résolu côté hôte).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable">
+  <span class="name"><a href="../zcrud_core/ZEditionStep/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A string representation of this object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_core/ZEditionStep/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZEditionStep class</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

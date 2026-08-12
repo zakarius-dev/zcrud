@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_ui_kit library API docs, for the Dart programming language.">
+  <title>zcrud_ui_kit library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_ui_kit</a></li>
+    <li class="self-crumb">zcrud_ui_kit.dart</li>
+  </ol>
+  <div class="self-name">zcrud_ui_kit</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_ui_kit&#47;zcrud_ui_kit-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_ui_kit</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_ui_kit</code>.</p>
+<p>Kit de widgets UI <strong>transverses</strong> — patterns génériques d'état de
+contenu, de confirmation, de notification, de garde de saisie et de
+page-shell, communs à des applications CRUD Flutter :</p>
+<ul>
+<li><a href="../zcrud_ui_kit/ZContentState.html">ZContentState</a> : l'état d'un contenu asynchrone en <strong>enum</strong>
+(<code>idle</code>/<code>loading</code>/<code>empty</code>/<code>error</code>/<code>success</code>) — remplace les
+combinaisons de <code>bool</code> (<code>isLoading</code>/<code>hasError</code>/<code>isEmpty</code>) ;</li>
+<li><a href="../zcrud_ui_kit/ZEmptyState-class.html">ZEmptyState</a> / <a href="../zcrud_ui_kit/ZLoadingState-class.html">ZLoadingState</a> / <a href="../zcrud_ui_kit/ZErrorState-class.html">ZErrorState</a> : widgets d'état
+<code>const</code>, thème/couleurs <strong>dérivés</strong> du <code>ColorScheme</code> (jamais de hex),
+textes injectés (l10n), <code>Semantics</code>, cibles ≥ 48 dp, directionnels
+(RTL-safe) ;</li>
+<li><a href="../zcrud_ui_kit/ZContentStateView-class.html">ZContentStateView</a> : aiguilleur <code>switch</code> exhaustif de l'enum vers
+le bon widget, avec replis sûrs (jamais de throw, invariant AD-10) ;</li>
+<li><a href="../zcrud_ui_kit/ZConfirmTone.html">ZConfirmTone</a> : tonalité de confirmation en <strong>enum</strong>
+(<code>neutral</code>/<code>destructive</code>) — remplace un <code>bool isDestructive</code> ;</li>
+<li><a href="../zcrud_ui_kit/ZConfirmDialog-class.html">ZConfirmDialog</a> + <a href="../zcrud_ui_kit/showZConfirmDialog.html">showZConfirmDialog</a> : dialog de confirmation
+dark-mode-aware (couleurs dérivées du <code>ColorScheme</code>, labels via
+<code>MaterialLocalizations</code>), retournant <code>Future&lt;bool&gt;</code>, <strong>sans</strong>
+gestionnaire d'état (<code>showDialog</code> + <code>Navigator.pop</code>).</li>
+</ul>
+<p>La <strong>notification (toast) par port</strong> :</p>
+<ul>
+<li><a href="../zcrud_ui_kit/ZToastSeverity.html">ZToastSeverity</a> : sévérité d'un toast en <strong>enum</strong>
+(<code>info</code>/<code>success</code>/<code>warning</code>/<code>error</code>) — remplace un <code>bool isError</code> ou un
+<code>String</code> libre, et les méthodes ad hoc <code>showError</code>/<code>showSuccess</code>/
+<code>showInfo</code> ;</li>
+<li><a href="../zcrud_ui_kit/ZToaster-class.html">ZToaster</a> : <strong>port</strong> de notification <code>abstract interface class</code>
+(jamais <code>sealed</code>, invariant AD-4) — les impls concrètes (GetX/
+<code>toastification</code>) vivent dans les bindings/app ;</li>
+<li><a href="../zcrud_ui_kit/ZScaffoldMessengerToaster-class.html">ZScaffoldMessengerToaster</a> : impl <strong>par défaut</strong> pur-Flutter
+(<code>ScaffoldMessenger.showSnackBar</code>), couleur <strong>dérivée</strong> du
+<code>ColorScheme</code> selon la sévérité (jamais de hex, dark-mode-aware),
+icône + texte (couleur jamais seul canal), <code>SnackBarAction</code> a11y,
+directionnel, <strong>sans</strong> gestionnaire d'état ;</li>
+<li><a href="../zcrud_ui_kit/ZToasterScope-class.html">ZToasterScope</a> + <a href="../zcrud_ui_kit/zToast.html">zToast</a> : <strong>seam</strong> (<code>InheritedWidget</code> local)
+permettant à l'app de substituer son toaster (invariant AD-6), avec
+repli sûr sur <a href="../zcrud_ui_kit/ZScaffoldMessengerToaster-class.html">ZScaffoldMessengerToaster</a> (jamais de throw, invariant
+AD-10).</li>
+</ul>
+<p>La <strong>garde anti-perte de saisie</strong> :</p>
+<ul>
+<li><a href="../zcrud_ui_kit/ZDiscardChangesGuard-class.html">ZDiscardChangesGuard</a> : <code>StatelessWidget</code> enveloppant un
+<code>PopScope</code> qui <strong>intercepte toute sortie</strong> tant que le formulaire est
+<em>dirty</em>. L'état <em>dirty</em> est <strong>consommé en lecture seule</strong> via un
+<code>ValueListenable&lt;bool&gt;</code> (canoniquement <code>ZFormController.isDirty</code> de
+<code>zcrud_core</code>) — <strong>aucun</strong> gestionnaire d'état, <strong>aucune</strong> mutation du
+contrôleur. La confirmation réutilise <a href="../zcrud_ui_kit/showZConfirmDialog.html">showZConfirmDialog</a>
+(<code>ZConfirmTone.destructive</code>), jamais un <code>AlertDialog</code> réinventé.
+Rebuild <strong>ciblé</strong> : seul le <code>PopScope</code> est reconstruit au flip
+<em>dirty</em>, le sous-arbre protégé (<code>child</code>) ne l'est jamais.</li>
+</ul>
+<p>L'<strong>index alphabétique</strong> et les <strong>transitions de route RTL-aware</strong>
+(invariant AD-13) :</p>
+<ul>
+<li><a href="../zcrud_ui_kit/ZAlphabetIndexBar-class.html">ZAlphabetIndexBar</a> : index vertical A→Z <strong>cliquable</strong>
+(<code>StatelessWidget</code> pur <code>const</code>) — jeu de lettres injectable
+(<a href="../zcrud_ui_kit/kZDefaultAlphabet.html">kZDefaultAlphabet</a> par défaut), distinction actif/inerte/courant
+<strong>multi-canal</strong> (couleur dérivée du <code>ColorScheme</code> <strong>jamais</strong> seul
+canal : a11y <code>enabled</code>/<code>selected</code> + geste inactif), cibles ≥ 48 dp,
+<code>Semantics</code>, directionnel. Le widget <strong>émet</strong> la lettre via
+<code>onLetter</code> (tap/scrub) ; l'appelant scrolle (aucun <code>ScrollController</code>
+interne, aucun routeur, aucun manager) ;</li>
+<li><a href="../zcrud_ui_kit/ZRouteTransition.html">ZRouteTransition</a> : type de transition en <strong>enum</strong>
+(<code>slide</code>/<code>fade</code>) — jamais un <code>bool isSlide</code>/<code>fade</code>, valeur d'UI
+runtime non persistée ;</li>
+<li><a href="../zcrud_ui_kit/zSlideBeginOffset.html">zSlideBeginOffset</a> : <strong>fonction pure</strong> (testable sans
+<code>BuildContext</code>) — offset de début du slide selon la <code>TextDirection</code>,
+le signe <strong>s'inverse</strong> en RTL (invariant AD-13) ;</li>
+<li><a href="../zcrud_ui_kit/zPageRoute.html">zPageRoute</a> + <a href="../zcrud_ui_kit/ZPageTransitionsBuilder-class.html">ZPageTransitionsBuilder</a> : primitives de
+transition <strong>neutres</strong> (<code>PageRouteBuilder</code>/<code>PageTransitionsBuilder</code>
+<code>package:flutter</code>) — <strong>découplées de tout routeur</strong>, durées/courbes
+<strong>injectées</strong>, sens du slide dérivé de <code>Directionality.of(context)</code>.</li>
+</ul>
+<p>Le <strong>page-shell déclaratif</strong> (invariants AD-2, AD-13) :</p>
+<ul>
+<li><a href="../zcrud_ui_kit/ZAppBarAction-class.html">ZAppBarAction</a> : action d'app-bar <strong>en données</strong> (icône +
+<code>semanticLabel</code> + <code>onPressed</code> + <code>tooltip?</code> + <code>isOverflow?</code>) — une
+action non déclarée est structurellement absente (aucun bouton
+fantôme) ;</li>
+<li><a href="../zcrud_ui_kit/ZAppBarSearchConfig-class.html">ZAppBarSearchConfig</a> : config <strong>déclarative</strong> de la recherche
+intégrée — le shell <strong>détient</strong> l'état (<code>isSearching</code>/<code>query</code>), la
+config n'expose qu'un callback d'émission <code>onQueryChanged</code> (invariants
+AD-2, AD-15) ;</li>
+<li><a href="../zcrud_ui_kit/ZPageTab-class.html">ZPageTab</a> : onglet déclaratif (<code>label</code>/<code>icon?</code>/<code>contentBuilder</code>)
+pilotant <code>TabBar</code>/<code>TabBarView</code> (<code>isScrollable</code>) ;</li>
+<li><a href="../zcrud_ui_kit/ZPageAppBarMode.html">ZPageAppBarMode</a> : mode d'app-bar en <strong>enum</strong>
+(<code>fixed</code>/<code>floating</code>/<code>pinned</code>/<code>floatingPinned</code>) — jamais un couple de
+<code>bool</code> ;</li>
+<li><a href="../zcrud_ui_kit/ZSearchableAppBar-class.html">ZSearchableAppBar</a> : app-bar recherchable <code>PreferredSizeWidget</code>,
+état de recherche <strong>détenu</strong> (aucun contrôleur externe), rebuild
+<strong>granulaire</strong> (la frappe ne rebâtit que la tranche app-bar), titre
+qui morphe en champ (autofocus, <code>Échap</code> ⇒ fermeture), couleurs
+dérivées du <code>ColorScheme</code>, libellés/hints via l10n injectée (repli
+<code>MaterialLocalizations</code>), directionnelle (RTL) et a11y (<code>Semantics</code>,
+cibles ≥ 48 dp) ;</li>
+<li><a href="../zcrud_ui_kit/ZPageScaffold-class.html">ZPageScaffold</a> : assemblage titre/leading/actions/recherche/
+onglets + <a href="../zcrud_ui_kit/ZPageAppBarMode.html">ZPageAppBarMode</a> (app-bar fixe <strong>ou</strong> <code>SliverAppBar</code>
+repliable), factorisant le rendu app-bar entre les deux modes. Il
+<strong>construit</strong> le <code>Scaffold</code> : il en expose donc les slots en
+<strong>pass-through</strong> — <code>floatingActionButton</code> (+ <code>Location</code>),
+<code>drawer</code>/<code>endDrawer</code>, <code>bottomNavigationBar</code>, <code>bottomSheet</code>,
+<code>persistentFooterButtons</code>, <code>backgroundColor</code>,
+<code>resizeToAvoidBottomInset</code>, <code>extendBody</code>/<code>extendBodyBehindAppBar</code>.
+Tous <strong>optionnels</strong>, défauts <code>Scaffold</code> : un slot non fourni est
+<strong>structurellement absent</strong> et le rendu par défaut est inchangé. <strong>Un
+seul <code>Scaffold</code></strong> est construit quel que soit le mode ⇒ aucun slot
+dupliqué ;</li>
+<li><a href="../zcrud_ui_kit/ZPageShellBody-class.html">ZPageShellBody</a> : la même valeur (app-bar morphante repliable +
+onglets) <strong>sans posséder de <code>Scaffold</code></strong> — à poser dans le <code>Scaffold</code>
+de l'hôte, qui garde ainsi <strong>tous</strong> ses slots, présents et futurs. À
+préférer dès que l'hôte enveloppe son <code>Scaffold</code> (<code>PopScope</code>…) ou en
+aiguille plusieurs selon l'état. Pour un app-bar <strong>fixe</strong>, la brique
+équivalente est <a href="../zcrud_ui_kit/ZSearchableAppBar-class.html">ZSearchableAppBar</a> dans <code>Scaffold(appBar:)</code>.</li>
+</ul>
+<p><strong>La typographie de l'en-tête est atteignable sans réécrire le thème.</strong>
+Quatre créneaux (<code>titleTextStyle</code>, <code>subtitleTextStyle</code>, <code>tabLabelStyle</code>,
+<code>tabUnselectedLabelStyle</code>) sur <a href="../zcrud_ui_kit/ZPageScaffold-class.html">ZPageScaffold</a> / <a href="../zcrud_ui_kit/ZPageShellBody-class.html">ZPageShellBody</a> (les
+deux premiers aussi sur <a href="../zcrud_ui_kit/ZSearchableAppBar-class.html">ZSearchableAppBar</a>), doublés de quatre jetons
+de <code>ZcrudTheme</code> (<code>pageHeaderTitleStyle</code>, <code>pageHeaderSubtitleStyle</code>,
+<code>pageHeaderTabSelectedLabelStyle</code>, <code>pageHeaderTabUnselectedLabelStyle</code>).
+Priorité stricte <strong>paramètre &gt; jeton &gt; défaut</strong>. Un hôte n'a donc plus à
+envelopper sa page dans un <code>Theme</code> réécrivant <code>AppBarTheme</code>/<code>TabBarTheme</code>
+pour atteindre deux textes.</p>
+<p><strong>Défaut strictement inchangé</strong> : sans paramètre ni jeton, <strong>aucune</strong>
+enveloppe de style n'entre dans l'arbre et le rendu est celui d'une
+app-bar Material nue. <strong>Métriques seules</strong> : la couleur d'un style
+fourni est délibérément <strong>ignorée</strong> — pour le titre parce qu'elle doit
+rester héritée du <code>foregroundColor</code> (lisibilité sous dégradé
+d'identité), pour les onglets parce que <code>TabBar</code> dérive sa couleur de
+sélection de <code>labelStyle?.color</code> et qu'un style coloré <strong>supprimerait</strong>
+la distinction sélectionné/non-sélectionné.</p>
+<p><strong>Dépendance</strong> : ce package <strong>dépend de <code>zcrud_core</code></strong> et <strong>consomme</strong>
+ses seams (<code>ZcrudScope</code> / <code>ZcrudTheme</code> / <code>ZcrudLocalizations</code>) en
+lecture, avec repli systématique sur <code>Theme.of(context)</code> /
+<code>MaterialLocalizations.of(context)</code> quand le scope n'est pas monté.
+Aucun symbole de <code>zcrud_core</code> n'est redéclaré ni ré-exporté (le
+consommateur importe <code>zcrud_core</code> directement au besoin). Aucun
+gestionnaire d'état / routeur / tiers UI (invariants AD-2, AD-15).</p>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/{domain,presentation}</code>.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZAlphabetIndexBar">
+  <span class="name "><a href="../zcrud_ui_kit/ZAlphabetIndexBar-class.html">ZAlphabetIndexBar</a></span> 
+
+</dt>
+<dd>
+  Index alphabétique vertical cliquable qui <strong>notifie</strong> la lettre choisie.
+</dd>
+
+          <dt id="ZAppBarAction">
+  <span class="name "><a href="../zcrud_ui_kit/ZAppBarAction-class.html">ZAppBarAction</a></span> 
+
+</dt>
+<dd>
+  Action déclarative d'app-bar (donnée, pas widget).
+</dd>
+
+          <dt id="ZAppBarSearchConfig">
+  <span class="name "><a href="../zcrud_ui_kit/ZAppBarSearchConfig-class.html">ZAppBarSearchConfig</a></span> 
+
+</dt>
+<dd>
+  Configuration immuable de la recherche d'app-bar.
+</dd>
+
+          <dt id="ZConfirmDialog">
+  <span class="name "><a href="../zcrud_ui_kit/ZConfirmDialog-class.html">ZConfirmDialog</a></span> 
+
+</dt>
+<dd>
+  Dialog de confirmation (<code>AlertDialog</code>) à thème injecté, dark-mode-aware.
+</dd>
+
+          <dt id="ZContentStateView">
+  <span class="name "><a href="../zcrud_ui_kit/ZContentStateView-class.html">ZContentStateView</a></span> 
+
+</dt>
+<dd>
+  Aiguilleur : rend le widget d'état correspondant à un <a href="../zcrud_ui_kit/ZContentState.html">ZContentState</a>.
+</dd>
+
+          <dt id="ZDiscardChangesGuard">
+  <span class="name "><a href="../zcrud_ui_kit/ZDiscardChangesGuard-class.html">ZDiscardChangesGuard</a></span> 
+
+</dt>
+<dd>
+  Intercepte toute tentative de sortie tant que <a href="../zcrud_ui_kit/ZDiscardChangesGuard/isDirty.html">isDirty</a> est <code>true</code> et propose
+une confirmation (via <a href="../zcrud_ui_kit/showZConfirmDialog.html">showZConfirmDialog</a>) avant de perdre la saisie.
+</dd>
+
+          <dt id="ZEmptyState">
+  <span class="name "><a href="../zcrud_ui_kit/ZEmptyState-class.html">ZEmptyState</a></span> 
+
+</dt>
+<dd>
+  État <strong>vide</strong> générique : contenu chargé mais aucune donnée à afficher.
+</dd>
+
+          <dt id="ZErrorState">
+  <span class="name "><a href="../zcrud_ui_kit/ZErrorState-class.html">ZErrorState</a></span> 
+
+</dt>
+<dd>
+  État <strong>erreur</strong> générique: icône + message + CTA « réessayer » optionnel.
+</dd>
+
+          <dt id="ZLoadingState">
+  <span class="name "><a href="../zcrud_ui_kit/ZLoadingState-class.html">ZLoadingState</a></span> 
+
+</dt>
+<dd>
+  État <strong>chargement</strong> générique: indicateur de progression + message optionnel.
+</dd>
+
+          <dt id="ZPageScaffold">
+  <span class="name "><a href="../zcrud_ui_kit/ZPageScaffold-class.html">ZPageScaffold</a></span> 
+
+</dt>
+<dd>
+  Page-shell déclaratif complet: assemble titre, leading,
+actions, recherche, onglets et un <a href="../zcrud_ui_kit/ZPageScaffold/mode.html">mode</a> d'app-bar (fixe vs sliver
+repliable).
+</dd>
+
+          <dt id="ZPageShellBody">
+  <span class="name "><a href="../zcrud_ui_kit/ZPageShellBody-class.html">ZPageShellBody</a></span> 
+
+</dt>
+<dd>
+  Corps de page-shell <strong>sans <code>Scaffold</code></strong> : app-bar repliable
+(<code>SliverAppBar</code>) recherchable + onglets + contenu, à poser <strong>dans le
+<code>Scaffold</code> de l'hôte</strong>.
+</dd>
+
+          <dt id="ZPageTab">
+  <span class="name "><a href="../zcrud_ui_kit/ZPageTab-class.html">ZPageTab</a></span> 
+
+</dt>
+<dd>
+  Onglet déclaratif (label + contenu construit à la demande).
+</dd>
+
+          <dt id="ZPageTransitionsBuilder">
+  <span class="name "><a href="../zcrud_ui_kit/ZPageTransitionsBuilder-class.html">ZPageTransitionsBuilder</a></span> 
+
+</dt>
+<dd>
+  <code>PageTransitionsBuilder</code> natif RTL-aware, enregistrable dans un
+<code>PageTransitionsTheme</code> (<code>builders: {TargetPlatform.x: ZPageTransitionsBuilder()}</code>).
+</dd>
+
+          <dt id="ZScaffoldMessengerToaster">
+  <span class="name "><a href="../zcrud_ui_kit/ZScaffoldMessengerToaster-class.html">ZScaffoldMessengerToaster</a></span> 
+
+</dt>
+<dd>
+  Toaster par défaut: mappe une <a href="../zcrud_ui_kit/ZToastSeverity.html">ZToastSeverity</a> sur une <code>SnackBar</code> colorée.
+</dd>
+
+          <dt id="ZSearchableAppBar">
+  <span class="name "><a href="../zcrud_ui_kit/ZSearchableAppBar-class.html">ZSearchableAppBar</a></span> 
+
+</dt>
+<dd>
+  App-bar <strong>recherchable</strong> déclarative et thémable.
+</dd>
+
+          <dt id="ZSearchableAppBarState">
+  <span class="name "><a href="../zcrud_ui_kit/ZSearchableAppBarState-class.html">ZSearchableAppBarState</a></span> 
+
+</dt>
+<dd>
+  État de <a href="../zcrud_ui_kit/ZSearchableAppBar-class.html">ZSearchableAppBar</a>. Public pour servir de <strong>seam de test</strong> (R3):
+<a href="../zcrud_ui_kit/ZSearchableAppBarState/queryListenable.html">queryListenable</a> expose la query détenue par le widget. N'expose
+aucune mutation — l'état reste propriété exclusive du widget.
+</dd>
+
+          <dt id="ZToaster">
+  <span class="name "><a href="../zcrud_ui_kit/ZToaster-class.html">ZToaster</a></span> 
+
+</dt>
+<dd>
+  Contrat d'affichage d'un toast.
+</dd>
+
+          <dt id="ZToasterScope">
+  <span class="name "><a href="../zcrud_ui_kit/ZToasterScope-class.html">ZToasterScope</a></span> 
+
+</dt>
+<dd>
+  Fournit un <a href="../zcrud_ui_kit/ZToaster-class.html">ZToaster</a> aux descendants (seam de substitution, AD-6).
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="ZConfirmTone">
+  <span class="name "><a href="../zcrud_ui_kit/ZConfirmTone.html">ZConfirmTone</a></span> 
+
+</dt>
+<dd>
+  Tonalité d'une confirmation, modélisée par un <strong>enum</strong>.
+</dd>
+
+          <dt id="ZContentState">
+  <span class="name "><a href="../zcrud_ui_kit/ZContentState.html">ZContentState</a></span> 
+
+</dt>
+<dd>
+  État d'un contenu asynchrone, modélisé par un <strong>enum</strong>.
+</dd>
+
+          <dt id="ZPageAppBarMode">
+  <span class="name "><a href="../zcrud_ui_kit/ZPageAppBarMode.html">ZPageAppBarMode</a></span> 
+
+</dt>
+<dd>
+  Mode déclaratif de l'app-bar (fixe vs sliver repliable).
+</dd>
+
+          <dt id="ZRouteTransition">
+  <span class="name "><a href="../zcrud_ui_kit/ZRouteTransition.html">ZRouteTransition</a></span> 
+
+</dt>
+<dd>
+  Type de transition appliqué par <a href="../zcrud_ui_kit/zPageRoute.html">zPageRoute</a>.
+</dd>
+
+          <dt id="ZToastSeverity">
+  <span class="name "><a href="../zcrud_ui_kit/ZToastSeverity.html">ZToastSeverity</a></span> 
+
+</dt>
+<dd>
+  Sévérité d'un toast, modélisée par un <strong>enum</strong>.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+
+    <section class="summary offset-anchor" id="properties">
+      <h2>Properties</h2>
+      <dl class="properties">
+          <dt id="kZDefaultAlphabet" class="property">
+  <span class="name"><a href="../zcrud_ui_kit/kZDefaultAlphabet.html">kZDefaultAlphabet</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Alphabet latin <strong>A→Z</strong> par défaut (26 lettres, <code>String.fromCharCode(65 + i)</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="showZConfirmDialog" class="callable">
+  <span class="name"><a href="../zcrud_ui_kit/showZConfirmDialog.html">showZConfirmDialog</a></span><span class="signature">(<wbr><span class="parameter" id="showZConfirmDialog-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="showZConfirmDialog-param-title"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span>, </span><span class="parameter" id="showZConfirmDialog-param-message"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span>, </span><span class="parameter" id="showZConfirmDialog-param-confirmLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">confirmLabel</span>, </span><span class="parameter" id="showZConfirmDialog-param-cancelLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">cancelLabel</span>, </span><span class="parameter" id="showZConfirmDialog-param-tone"><span class="type-annotation"><a href="../zcrud_ui_kit/ZConfirmTone.html">ZConfirmTone</a></span> <span class="parameter-name">tone</span> = <span class="default-value">ZConfirmTone.neutral</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Affiche un <a href="../zcrud_ui_kit/ZConfirmDialog-class.html">ZConfirmDialog</a> et retourne la décision de l'utilisateur.
+  
+
+</dd>
+
+          <dt id="zPageRoute" class="callable">
+  <span class="name"><a href="../zcrud_ui_kit/zPageRoute.html">zPageRoute</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span><span class="signature">(<wbr>{<span class="parameter" id="zPageRoute-param-builder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a></span> <span class="parameter-name">builder</span>, </span><span class="parameter" id="zPageRoute-param-transition"><span class="type-annotation"><a href="../zcrud_ui_kit/ZRouteTransition.html">ZRouteTransition</a></span> <span class="parameter-name">transition</span> = <span class="default-value">ZRouteTransition.slide</span>, </span><span class="parameter" id="zPageRoute-param-duration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">duration</span> = <span class="default-value">const Duration(milliseconds: 300)</span>, </span><span class="parameter" id="zPageRoute-param-curve"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/animation/Curve-class.html">Curve</a></span> <span class="parameter-name">curve</span> = <span class="default-value">Curves.easeInOut</span>, </span><span class="parameter" id="zPageRoute-param-settings"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/RouteSettings-class.html">RouteSettings</a>?</span> <span class="parameter-name">settings</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/PageRouteBuilder-class.html">PageRouteBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Route de page <strong>neutre</strong> (aucun routeur) appliquant une transition RTL-aware.
+  
+
+</dd>
+
+          <dt id="zSlideBeginOffset" class="callable">
+  <span class="name"><a href="../zcrud_ui_kit/zSlideBeginOffset.html">zSlideBeginOffset</a></span><span class="signature">(<wbr><span class="parameter" id="zSlideBeginOffset-param-direction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/TextDirection.html">TextDirection</a></span> <span class="parameter-name">direction</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Offset-class.html">Offset</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Offset de <strong>DÉBUT</strong> du slide entrant, selon la direction de lecture.
+  
+
+</dd>
+
+          <dt id="zToast" class="callable">
+  <span class="name"><a href="../zcrud_ui_kit/zToast.html">zToast</a></span><span class="signature">(<wbr><span class="parameter" id="zToast-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zToast-param-message"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span>, {</span><span class="parameter" id="zToast-param-severity"><span class="type-annotation"><a href="../zcrud_ui_kit/ZToastSeverity.html">ZToastSeverity</a></span> <span class="parameter-name">severity</span> = <span class="default-value">ZToastSeverity.info</span>, </span><span class="parameter" id="zToast-param-duration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a>?</span> <span class="parameter-name">duration</span>, </span><span class="parameter" id="zToast-param-actionLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">actionLabel</span>, </span><span class="parameter" id="zToast-param-onAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onAction</span></span>})
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Affiche un toast via le <a href="../zcrud_ui_kit/ZToaster-class.html">ZToaster</a> résolu par <a href="../zcrud_ui_kit/ZToasterScope/of.html">ZToasterScope.of</a>.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_ui_kit</a></li>
+    <li class="self-crumb">zcrud_ui_kit.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_ui_kit</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_ui_kit/">zcrud_ui_kit</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_ui_kit library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_ui_kit
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

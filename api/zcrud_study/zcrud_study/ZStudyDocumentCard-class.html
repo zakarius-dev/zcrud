@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZStudyDocumentCard class from the zcrud_study library, for the Dart programming language.">
+  <title>ZStudyDocumentCard class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study.dart</a></li>
+    <li class="self-crumb">ZStudyDocumentCard class</li>
+  </ol>
+  <div class="self-name">ZStudyDocumentCard</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;zcrud_study-library-sidebar.html"
+    data-below-sidebar="zcrud_study&#47;ZStudyDocumentCard-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZStudyDocumentCard</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Représentation compacte d'un document dans les outils d'étude.</p>
+<p>Les données métier, les icônes, les libellés localisés et les droits restent
+chez l'hôte. Cette façade délègue intégralement le chrome et son accessibilité
+à <a href="../zcrud_study/ZStudyToolsItemCard-class.html">ZStudyToolsItemCard</a>.</p>
+<h2 id="cest-un-passe-plat-et-rien-dautre">C'est un passe-plat, et rien d'autre</h2>
+<p>Chaque paramètre est transmis tel quel à <a href="../zcrud_study/ZStudyToolsItemCard-class.html">ZStudyToolsItemCard</a> : aucune
+logique, aucune valeur par défaut inventée ici. La seule valeur ajoutée est
+le repli de <a href="../zcrud_study/ZStudyDocumentCard/semanticLabel.html">semanticLabel</a> (<a href="../zcrud_study/ZStudyDocumentCard/title.html">title</a>, complété de <a href="../zcrud_study/ZStudyDocumentCard/subtitle.html">subtitle</a> quand il est
+fourni). Les défauts de <a href="../zcrud_study/ZStudyDocumentCard/progressMaxWidth.html">progressMaxWidth</a>, <a href="../zcrud_study/ZStudyDocumentCard/hidesTrailingWhileBusy.html">hidesTrailingWhileBusy</a> et
+<a href="../zcrud_study/ZStudyDocumentCard/titleMaxLines.html">titleMaxLines</a> sont recopiés à l'identique de ceux du socle, pour que
+passer par la façade et passer par la voie directe rendent la même chose.</p>
+<p>Tout nouveau slot ajouté à <a href="../zcrud_study/ZStudyToolsItemCard-class.html">ZStudyToolsItemCard</a> doit être répercuté
+ici — sinon la façade redevient plus pauvre que la voie directe, et
+l'hôte qui l'adopte perd silencieusement une capacité. Une garde de
+source compare la surface des deux façades à celle du socle et rougit au
+premier slot oublié : ne la contourne pas, complète la façade.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree-class.html">DiagnosticableTree</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/StatelessWidget-class.html">StatelessWidget</a></li>
+      <li>ZStudyDocumentCard</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZStudyDocumentCard.new" class="callable">
+          <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/ZStudyDocumentCard.html">ZStudyDocumentCard</a></span><span class="signature">({<span class="parameter" id="param-title"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span>, </span><span class="parameter" id="param-leading"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">leading</span>, </span><span class="parameter" id="param-aboveTitle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">aboveTitle</span>, </span><span class="parameter" id="param-subtitle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">subtitle</span>, </span><span class="parameter" id="param-belowSubtitle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">belowSubtitle</span>, </span><span class="parameter" id="param-metadata"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">metadata</span>, </span><span class="parameter" id="param-actions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">actions</span>, </span><span class="parameter" id="param-progress"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">progress</span>, </span><span class="parameter" id="param-progressMaxWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">progressMaxWidth</span> = <span class="default-value">120</span>, </span><span class="parameter" id="param-hidesTrailingWhileBusy"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">hidesTrailingWhileBusy</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-onTap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onTap</span>, </span><span class="parameter" id="param-onLongPress"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onLongPress</span>, </span><span class="parameter" id="param-borderSide"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/BorderSide-class.html">BorderSide</a>?</span> <span class="parameter-name">borderSide</span>, </span><span class="parameter" id="param-borderRadius"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span> <span class="parameter-name">borderRadius</span>, </span><span class="parameter" id="param-color"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">color</span>, </span><span class="parameter" id="param-defaultShadow"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/BoxDecoration-class.html">BoxDecoration</a>?</span> <span class="parameter-name">defaultShadow</span>, </span><span class="parameter" id="param-accent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">accent</span>, </span><span class="parameter" id="param-semanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">semanticLabel</span>, </span><span class="parameter" id="param-contentPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">contentPadding</span>, </span><span class="parameter" id="param-margin"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">margin</span>, </span><span class="parameter" id="param-titleWidget"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">titleWidget</span>, </span><span class="parameter" id="param-titleStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">titleStyle</span>, </span><span class="parameter" id="param-subtitleStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">subtitleStyle</span>, </span><span class="parameter" id="param-titleMaxLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">titleMaxLines</span> = <span class="default-value">1</span>, </span><span class="parameter" id="param-leadingGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">leadingGap</span>, </span><span class="parameter" id="param-elevation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">elevation</span>, </span><span class="parameter" id="param-contentAlignment"><span class="type-annotation">ZStudyCardContentAlignment?</span> <span class="parameter-name">contentAlignment</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+        </dt>
+        <dd>
+          Construit une carte de document ; seul <code>title</code> est requis.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="aboveTitle" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/aboveTitle.html">aboveTitle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  
+
+</dt>
+<dd>
+  Contenu au-dessus du titre. Voir
+<a href="../zcrud_study/ZStudyToolsItemCard/aboveTitle.html">ZStudyToolsItemCard.aboveTitle</a> — passe-plat, aucun défaut local.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="accent" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/accent.html">accent</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  
+
+</dt>
+<dd>
+  Décor d'accent superposé. Voir <a href="../zcrud_study/ZStudyToolsItemCard/accent.html">ZStudyToolsItemCard.accent</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="actions" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/actions.html">actions</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  
+
+</dt>
+<dd>
+  Zone d'actions, transmise à <a href="../zcrud_study/ZStudyToolsItemCard/trailing.html">ZStudyToolsItemCard.trailing</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="belowSubtitle" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/belowSubtitle.html">belowSubtitle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  
+
+</dt>
+<dd>
+  Contenu rendu sous <a href="../zcrud_study/ZStudyDocumentCard/subtitle.html">subtitle</a>. Voir <a href="../zcrud_study/ZStudyToolsItemCard/belowSubtitle.html">ZStudyToolsItemCard.belowSubtitle</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="borderRadius" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/borderRadius.html">borderRadius</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span>
+  
+
+</dt>
+<dd>
+  Rayon d'angle explicite. Voir
+<a href="../zcrud_study/ZStudyToolsItemCard/borderRadius.html">ZStudyToolsItemCard.borderRadius</a> — passe-plat, aucun défaut local.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="borderSide" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/borderSide.html">borderSide</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/BorderSide-class.html">BorderSide</a>?</span>
+  
+
+</dt>
+<dd>
+  Contour explicite. Voir <a href="../zcrud_study/ZStudyToolsItemCard/borderSide.html">ZStudyToolsItemCard.borderSide</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="color" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/color.html">color</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span>
+  
+
+</dt>
+<dd>
+  Passe-plat du fond explicite du socle.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="contentAlignment" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/contentAlignment.html">contentAlignment</a></span>
+  <span class="signature">&#8594; ZStudyCardContentAlignment?</span>
+  
+
+</dt>
+<dd>
+  <a href="../zcrud_study/ZStudyToolsItemCard/contentAlignment.html">ZStudyToolsItemCard.contentAlignment</a> — passe-plat, aucun défaut local.
+<code>null</code> ⇒ rendu strictement inchangé ; sans hauteur
+imposée, ce slot n'a de toute façon aucun effet.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="contentPadding" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/contentPadding.html">contentPadding</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span>
+  
+
+</dt>
+<dd>
+  Marge intérieure. Voir <a href="../zcrud_study/ZStudyToolsItemCard/contentPadding.html">ZStudyToolsItemCard.contentPadding</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="defaultShadow" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/defaultShadow.html">defaultShadow</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/BoxDecoration-class.html">BoxDecoration</a>?</span>
+  
+
+</dt>
+<dd>
+  Passe-plat de l'ombre de repli du socle.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="elevation" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/elevation.html">elevation</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Élévation Material. Voir
+<a href="../zcrud_study/ZStudyToolsItemCard/elevation.html">ZStudyToolsItemCard.elevation</a> — passe-plat, aucun défaut local.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="hidesTrailingWhileBusy" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/hidesTrailingWhileBusy.html">hidesTrailingWhileBusy</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Politique d'éviction de <a href="../zcrud_study/ZStudyDocumentCard/actions.html">actions</a> pendant un traitement. Voir
+<a href="../zcrud_study/ZStudyToolsItemCard/hidesTrailingWhileBusy.html">ZStudyToolsItemCard.hidesTrailingWhileBusy</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="key" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/key.html">key</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span>
+  
+
+</dt>
+<dd class="inherited">
+  Controls how one widget replaces another widget in the tree.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="leading" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/leading.html">leading</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  
+
+</dt>
+<dd>
+  Icône ou vignette de tête. Voir <a href="../zcrud_study/ZStudyToolsItemCard/leading.html">ZStudyToolsItemCard.leading</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="leadingGap" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/leadingGap.html">leadingGap</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Écart tuile→titre. Voir
+<a href="../zcrud_study/ZStudyToolsItemCard/leadingGap.html">ZStudyToolsItemCard.leadingGap</a> — passe-plat, aucun défaut local.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="margin" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/margin.html">margin</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span>
+  
+
+</dt>
+<dd>
+  Marge extérieure. Voir <a href="../zcrud_study/ZStudyToolsItemCard/margin.html">ZStudyToolsItemCard.margin</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="metadata" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/metadata.html">metadata</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  
+
+</dt>
+<dd>
+  Qualificatif court, transmis à <a href="../zcrud_study/ZStudyToolsItemCard/badge.html">ZStudyToolsItemCard.badge</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onLongPress" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/onLongPress.html">onLongPress</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span>
+  
+
+</dt>
+<dd>
+  Appui long. Voir <a href="../zcrud_study/ZStudyToolsItemCard/onLongPress.html">ZStudyToolsItemCard.onLongPress</a> —
+passe-plat, aucun défaut local.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onTap" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/onTap.html">onTap</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span>
+  
+
+</dt>
+<dd>
+  Activation de la carte. Voir <a href="../zcrud_study/ZStudyToolsItemCard/onTap.html">ZStudyToolsItemCard.onTap</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="progress" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/progress.html">progress</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  
+
+</dt>
+<dd>
+  Indicateur de traitement. Voir <a href="../zcrud_study/ZStudyToolsItemCard/progress.html">ZStudyToolsItemCard.progress</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="progressMaxWidth" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/progressMaxWidth.html">progressMaxWidth</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Largeur maximale du slot <a href="../zcrud_study/ZStudyDocumentCard/progress.html">progress</a>. Voir
+<a href="../zcrud_study/ZStudyToolsItemCard/progressMaxWidth.html">ZStudyToolsItemCard.progressMaxWidth</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="semanticLabel" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/semanticLabel.html">semanticLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé sémantique de la carte entière. <code>null</code> ⇒ <a href="../zcrud_study/ZStudyDocumentCard/title.html">title</a>, complété de
+<a href="../zcrud_study/ZStudyDocumentCard/subtitle.html">subtitle</a> quand il est fourni.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="subtitle" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/subtitle.html">subtitle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé secondaire. Voir <a href="../zcrud_study/ZStudyToolsItemCard/subtitle.html">ZStudyToolsItemCard.subtitle</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="subtitleStyle" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/subtitleStyle.html">subtitleStyle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Style du sous-titre. Voir <a href="../zcrud_study/ZStudyToolsItemCard/subtitleStyle.html">ZStudyToolsItemCard.subtitleStyle</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="title" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/title.html">title</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Titre du document. Voir <a href="../zcrud_study/ZStudyToolsItemCard/title.html">ZStudyToolsItemCard.title</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="titleMaxLines" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/titleMaxLines.html">titleMaxLines</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre maximal de lignes du titre. Voir
+<a href="../zcrud_study/ZStudyToolsItemCard/titleMaxLines.html">ZStudyToolsItemCard.titleMaxLines</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="titleStyle" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/titleStyle.html">titleStyle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Style du titre. Voir <a href="../zcrud_study/ZStudyToolsItemCard/titleStyle.html">ZStudyToolsItemCard.titleStyle</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="titleWidget" class="property">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/titleWidget.html">titleWidget</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  
+
+</dt>
+<dd>
+  Rendu riche du titre (passe-plat <code>ZStudyToolsItemCard.titleWidget</code>)
+— <code>title</code> reste la source sémantique.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="build" class="callable">
+  <span class="name"><a href="../zcrud_study/ZStudyDocumentCard/build.html">build</a></span><span class="signature">(<wbr><span class="parameter" id="build-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Describes the part of the user interface represented by this widget.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="createElement" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/StatelessWidget/createElement.html">createElement</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/StatelessElement-class.html">StatelessElement</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Creates a <a href="https://api.flutter.dev/flutter/widgets/StatelessElement-class.html">StatelessElement</a> to manage this widget's location in the tree.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="debugDescribeChildren" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/debugDescribeChildren.html">debugDescribeChildren</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a list of <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a> objects describing this node's
+children.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="debugFillProperties" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/debugFillProperties.html">debugFillProperties</a></span><span class="signature">(<wbr><span class="parameter" id="debugFillProperties-param-properties"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticPropertiesBuilder-class.html">DiagnosticPropertiesBuilder</a></span> <span class="parameter-name">properties</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Add additional properties associated with the node.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toDiagnosticsNode" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toDiagnosticsNode.html">toDiagnosticsNode</a></span><span class="signature">(<wbr>{<span class="parameter" id="toDiagnosticsNode-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span><span class="parameter" id="toDiagnosticsNode-param-style"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsTreeStyle.html">DiagnosticsTreeStyle</a>?</span> <span class="parameter-name">style</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a debug representation of the object that is used by debugging
+tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode/toStringDeep.html">DiagnosticsNode.toStringDeep</a>.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/Diagnosticable/toString.html">toString</a></span><span class="signature">(<wbr>{<span class="parameter" id="toString-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.info</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringDeep" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringDeep.html">toStringDeep</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringDeep-param-prefixLineOne"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">prefixLineOne</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="toStringDeep-param-prefixOtherLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">prefixOtherLines</span>, </span><span class="parameter" id="toStringDeep-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span>, </span><span class="parameter" id="toStringDeep-param-wrapWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">wrapWidth</span> = <span class="default-value">65</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a string representation of this node and its descendants.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShallow" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringShallow.html">toStringShallow</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringShallow-param-joiner"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">joiner</span> = <span class="default-value">&#39;, &#39;</span>, </span><span class="parameter" id="toStringShallow-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a one-line detailed description of the object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShort" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/toStringShort.html">toStringShort</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A short, textual description of this widget.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study</a></li>
+    <li class="self-crumb">ZStudyDocumentCard class</li>
+</ol>
+
+    <h5>zcrud_study library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

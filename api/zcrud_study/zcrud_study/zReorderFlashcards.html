@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zReorderFlashcards function from the zcrud_study library, for the Dart programming language.">
+  <title>zReorderFlashcards function - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study.dart</a></li>
+    <li class="self-crumb">zReorderFlashcards function</li>
+  </ol>
+  <div class="self-name">zReorderFlashcards</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_study&#47;zcrud_study-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zReorderFlashcards</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype">ZFolderContentsOrder</span>
+<span class="name ">zReorderFlashcards</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="zReorderFlashcards-param-order"><span class="type-annotation">ZFolderContentsOrder</span> <span class="parameter-name">order</span>, {</span></li>
+<li><span class="parameter" id="zReorderFlashcards-param-visibleIds"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">visibleIds</span>, </span></li>
+<li><span class="parameter" id="zReorderFlashcards-param-oldIndex"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">oldIndex</span>, </span></li>
+<li><span class="parameter" id="zReorderFlashcards-param-newIndex"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">newIndex</span>, </span></li>
+<li><span class="parameter" id="zReorderFlashcards-param-subfolderId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">subfolderId</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Déplace la carte de <code>oldIndex</code> vers <code>newIndex</code> et rend l'ordre
+<strong>persistable</strong> — <strong>UNIQUE</strong> voie de réordonnancement.</p>
+<ul>
+<li><code>order</code> : ordre personnel actuel du dossier (<strong>jamais muté</strong>) ;</li>
+<li><code>visibleIds</code> : ids des cartes <strong>telles qu'affichées</strong> (ordre courant à
+l'écran, déjà filtré/trié). C'est sur <strong>cette</strong> liste que les indices
+portent — jamais sur l'ordre persisté, qui peut contenir des orphelins ou
+ignorer des cartes neuves ;</li>
+<li><code>subfolderId</code> : sous-dossier de la section (<code>null</code> ⇒ section racine) ;</li>
+<li><code>oldIndex</code>/<code>newIndex</code> : convention <strong><code>removeAt</code> puis <code>insert</code></strong> (celle de
+<a href="../zcrud_study/zReorderIds.html">zReorderIds</a> ; l'ajustement <code>newIndex -= 1</code> propre à <code>ReorderableListView</code>
+est déjà appliqué en amont par le SDK via <code>onReorderItem</code>).</li>
+</ul>
+<h2 id="pourquoi-lordre-persist-est-recalcul-depuis-visibleids">Pourquoi l'ordre persisté est RECALCULÉ depuis <code>visibleIds</code></h2>
+<p>L'ordre persisté peut être <strong>périmé</strong> (cartes supprimées depuis, cartes neuves
+jamais ordonnées). Appliquer le déplacement à l'ordre <strong>persisté</strong> placerait la
+carte à un index qui ne correspond à <strong>rien</strong> de ce que l'utilisateur voit.
+On réordonne donc ce qui est <strong>à l'écran</strong>, puis on persiste ce résultat : le
+geste et son effet coïncident toujours, et l'ordre se <strong>répare</strong> de lui-même
+(les orphelins disparaissent, les nouvelles cartes prennent leur place).</p>
+<p><strong>Total</strong> (AD-10) : indices hors bornes <strong>clampés</strong> par <a href="../zcrud_study/zReorderIds.html">zReorderIds</a>, liste
+vide ⇒ ordre inchangé, jamais de throw.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZFolderContentsOrder zReorderFlashcards(
+  ZFolderContentsOrder order, {
+  required List&lt;String&gt; visibleIds,
+  required int oldIndex,
+  required int newIndex,
+  String? subfolderId,
+}) {
+  &#47;&#47; Déplacement DÉLÉGUÉ (pur, total, indices clampés) — jamais réimplémenté.
+  final reordered = zReorderIds(visibleIds, oldIndex, newIndex);
+
+  &#47;&#47; Clé composée par l&#39;UNIQUE constructeur canonique.
+  final key = zFlashcardsSectionKey(subfolderId: subfolderId);
+
+  &#47;&#47; Écriture via `copyWith` : l&#39;ordre d&#39;entrée n&#39;est jamais muté, et la map
+  &#47;&#47; rendue est non modifiable EN PROFONDEUR (garde du kernel).
+  return order.copyWith(
+    sectionOrders: &lt;String, List&lt;String&gt;&gt;{
+      ...order.sectionOrders,
+      key: reordered,
+    },
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_study</a></li>
+    <li><a href="../zcrud_study/">zcrud_study</a></li>
+    <li class="self-crumb">zReorderFlashcards function</li>
+</ol>
+
+    <h5>zcrud_study library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

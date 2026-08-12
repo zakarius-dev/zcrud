@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the submit method from the ZEditionSubmitController class, for the Dart programming language.">
+  <title>submit method - ZEditionSubmitController class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core.dart</a></li>
+    <li><a href="../../zcrud_core/ZEditionSubmitController-class.html">ZEditionSubmitController<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></a></li>
+    <li class="self-crumb">submit method</li>
+  </ol>
+  <div class="self-name">submit</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;ZEditionSubmitController-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">submit</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZSubmissionOutcome-class.html">ZSubmissionOutcome</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span></span>
+<span class="name ">submit</span>(<wbr>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Valide <strong>tous les champs visibles</strong> (conditionnels honorés) puis, si valide,
+délègue à <a href="../../zcrud_core/ZEditionSubmitController/onSubmit.html">onSubmit</a> avec un snapshot immuable des valeurs.</p>
+<ul>
+<li>Invalide ⇒ <code>controller.revealErrors</code> (révèle TOUTES les familles),
+état <code>failure(ZValidationFailure)</code>, <code>onSubmit</code> <strong>NON</strong> appelé.</li>
+<li>Valide ⇒ <code>inProgress</code> (bouton désactivé), snapshot, <code>await onSubmit</code> ;
+<code>Right</code> ⇒ <code>success</code> (+ <code>controller.markPristine</code>), <code>Left</code> ⇒ <code>failure</code>.</li>
+<li>Exception jetée par <code>onSubmit</code> ⇒ <strong>enveloppée</strong> en <code>ZServerFailure</code>
+(invariant AD-11).</li>
+<li>Ré-entrance pendant <code>inProgress</code> ⇒ <strong>ignorée</strong> (pas de double soumission).</li>
+</ul>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;ZSubmissionOutcome&lt;T&gt;&gt; submit() async {
+  if (_state.value.status == ZSubmissionStatus.inProgress) {
+    return ZSubmissionOutcome&lt;T&gt;.ignored();
+  }
+
+  final errors = _aggregateValidate();
+  if (errors.isNotEmpty) {
+    controller.revealErrors();
+    final failure = ZValidationFailure(errors);
+    _state.value = ZSubmissionState.failure(failure);
+    return ZSubmissionOutcome&lt;T&gt;.validationFailure(failure);
+  }
+
+  _state.value = const ZSubmissionState.inProgress();
+  final values = controller.values; &#47;&#47; snapshot PUR (jamais Widget&#47;callback).
+  ZResult&lt;T&gt; either;
+  try {
+    either = await onSubmit(values);
+  } catch (e) {
+    &#47;&#47; Invariant AD-11 : jamais de remontée non typée — on enveloppe en ZFailure.
+    final failure = ZServerFailure(&#39;Échec de soumission : $e&#39;);
+    _state.value = ZSubmissionState.failure(failure);
+    return ZSubmissionOutcome&lt;T&gt;.failure(failure);
+  }
+
+  return either.fold(
+    (f) {
+      _state.value = ZSubmissionState.failure(f);
+      return ZSubmissionOutcome&lt;T&gt;.failure(f);
+    },
+    (value) {
+      controller.markPristine();
+      _state.value = const ZSubmissionState.success();
+      return ZSubmissionOutcome&lt;T&gt;.success(value);
+    },
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/ZEditionSubmitController-class.html">ZEditionSubmitController<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></a></li>
+    <li class="self-crumb">submit method</li>
+</ol>
+
+    <h5>ZEditionSubmitController class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

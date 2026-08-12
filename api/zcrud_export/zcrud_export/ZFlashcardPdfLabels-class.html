@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZFlashcardPdfLabels class from the zcrud_export library, for the Dart programming language.">
+  <title>ZFlashcardPdfLabels class - zcrud_export library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_export</a></li>
+    <li><a href="../zcrud_export/">zcrud_export.dart</a></li>
+    <li class="self-crumb">ZFlashcardPdfLabels class</li>
+  </ol>
+  <div class="self-name">ZFlashcardPdfLabels</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_export&#47;zcrud_export-library-sidebar.html"
+    data-below-sidebar="zcrud_export&#47;ZFlashcardPdfLabels-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZFlashcardPdfLabels</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Libellés <strong>injectés</strong> du gabarit (défauts FR documentés). Aucun texte figé
+dans le rendu : l'appelant peut fournir des libellés localisés (invariant
+AD-13).</p>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZFlashcardPdfLabels.new" class="callable">
+          <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/ZFlashcardPdfLabels.html">ZFlashcardPdfLabels</a></span><span class="signature">({<span class="parameter" id="param-multipleChoice"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">multipleChoice</span> = <span class="default-value">&#39;QCM — cochez la ou les bonne(s) réponse(s)&#39;</span>, </span><span class="parameter" id="param-trueOrFalse"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">trueOrFalse</span> = <span class="default-value">&#39;Vrai ou faux ?&#39;</span>, </span><span class="parameter" id="param-openQuestion"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">openQuestion</span> = <span class="default-value">&#39;Question ouverte&#39;</span>, </span><span class="parameter" id="param-exercise"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">exercise</span> = <span class="default-value">&#39;Exercice&#39;</span>, </span><span class="parameter" id="param-fillBlank"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">fillBlank</span> = <span class="default-value">&#39;Texte à trous — complétez&#39;</span>, </span><span class="parameter" id="param-shortAnswer"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">shortAnswer</span> = <span class="default-value">&#39;Réponse courte&#39;</span>, </span><span class="parameter" id="param-hintLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">hintLabel</span> = <span class="default-value">&#39;Indice&#39;</span>, </span><span class="parameter" id="param-answerLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">answerLabel</span> = <span class="default-value">&#39;Réponse&#39;</span>, </span><span class="parameter" id="param-explanationLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">explanationLabel</span> = <span class="default-value">&#39;Explication&#39;</span>, </span><span class="parameter" id="param-trueLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">trueLabel</span> = <span class="default-value">&#39;Vrai&#39;</span>, </span><span class="parameter" id="param-falseLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">falseLabel</span> = <span class="default-value">&#39;Faux&#39;</span>, </span><span class="parameter" id="param-cardNumberPattern"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">cardNumberPattern</span> = <span class="default-value">&#39;Carte {index} &#47; {total}&#39;</span>, </span><span class="parameter" id="param-untitledLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">untitledLabel</span> = <span class="default-value">&#39;Flashcards&#39;</span></span>})</span>
+        </dt>
+        <dd>
+          Construit un jeu de libellés (défauts FR).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="answerLabel" class="property">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/answerLabel.html">answerLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Préfixe de la réponse distinguée.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="cardNumberPattern" class="property">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/cardNumberPattern.html">cardNumberPattern</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Patron de <strong>numérotation de carte</strong>, défaut FR
+<code>'Carte {index} / {total}'</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="exercise" class="property">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/exercise.html">exercise</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Badge du type exercice.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="explanationLabel" class="property">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/explanationLabel.html">explanationLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Préfixe de l'explication.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="falseLabel" class="property">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/falseLabel.html">falseLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Libellé « faux » (V/F).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="fillBlank" class="property">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/fillBlank.html">fillBlank</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Badge du type texte à trous.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="hintLabel" class="property">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/hintLabel.html">hintLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Libellé de l'indice, défaut FR « Indice ».
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="multipleChoice" class="property">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/multipleChoice.html">multipleChoice</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Badge du type QCM.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="openQuestion" class="property">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/openQuestion.html">openQuestion</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Badge du type question ouverte (aussi utilisé comme <strong>repli</strong> défensif).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="shortAnswer" class="property">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/shortAnswer.html">shortAnswer</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Badge du type réponse courte.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="trueLabel" class="property">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/trueLabel.html">trueLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Libellé « vrai » (V/F).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="trueOrFalse" class="property">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/trueOrFalse.html">trueOrFalse</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Badge du type Vrai/Faux.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="untitledLabel" class="property">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/untitledLabel.html">untitledLabel</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Titre de repli quand <code>ZFlashcardPdfInput.title</code> est vide, défaut FR
+<code>'Flashcards'</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="badgeFor" class="callable">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/badgeFor.html">badgeFor</a></span><span class="signature">(<wbr><span class="parameter" id="badgeFor-param-typeKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">typeKey</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Badge pour une <code>typeKey</code> neutre — repli défensif sur <a href="../zcrud_export/ZFlashcardPdfLabels/openQuestion.html">openQuestion</a>
+(AD-10 : clé inconnue/absente jamais fatale). <strong>Table unique</strong> de décision.
+  
+
+</dd>
+
+        <dt id="cardNumberFor" class="callable">
+  <span class="name"><a href="../zcrud_export/ZFlashcardPdfLabels/cardNumberFor.html">cardNumberFor</a></span><span class="signature">(<wbr><span class="parameter" id="cardNumberFor-param-index"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">index</span>, </span><span class="parameter" id="cardNumberFor-param-total"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">total</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Rend la numérotation de la carte <code>index</code> sur <code>total</code> via
+<a href="../zcrud_export/ZFlashcardPdfLabels/cardNumberPattern.html">cardNumberPattern</a>. Substitution littérale, sans regex : <code>{index}</code> et
+<code>{total}</code>. Ne lève jamais (invariant AD-10).
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_export</a></li>
+    <li><a href="../zcrud_export/">zcrud_export</a></li>
+    <li class="self-crumb">ZFlashcardPdfLabels class</li>
+</ol>
+
+    <h5>zcrud_export library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_export
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

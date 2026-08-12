@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the expandController property from the ZStudyToolsSectionSpec class, for the Dart programming language.">
+  <title>expandController property - ZStudyToolsSectionSpec class - zcrud_study library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study.dart</a></li>
+    <li><a href="../../zcrud_study/ZStudyToolsSectionSpec-class.html">ZStudyToolsSectionSpec</a></li>
+    <li class="self-crumb">expandController property</li>
+  </ol>
+  <div class="self-name">expandController</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_study&#47;ZStudyToolsSectionSpec-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">expandController</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        ZToggleController?
+        <span class="name ">expandController</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p>Pilote <strong>optionnel</strong> du déplié/replié de CETTE section (patron
+<code>ZDisplayState</code> de <code>zcrud_core</code>).</p>
+<ul>
+<li><code>null</code> (défaut) ⇒ l'état de repli vit <strong>localement</strong> dans la section,
+initialisé par <a href="../../zcrud_study/ZStudyToolsSectionSpec/initiallyExpanded.html">initiallyExpanded</a> : rendu et comportement <strong>strictement
+inchangés</strong> pour tout hôte qui ne renseigne pas ce slot ;</li>
+<li>non-null ⇒ <strong>le contrôleur EST la source de vérité</strong>. Le repli devient
+commandable depuis un <strong>second chemin</strong> (un en-tête cliquable, un
+sommaire externe, un « tout replier ») <strong>et</strong> depuis le chevron de la
+section — sans jamais deux états à synchroniser : la section ne garde
+aucun miroir. <a href="../../zcrud_study/ZStudyToolsSectionSpec/initiallyExpanded.html">initiallyExpanded</a> est alors <strong>ignoré</strong> (la valeur
+initiale appartient au contrôleur, seul propriétaire de l'état).</li>
+</ul>
+<p><strong>POSSESSION — qui crée le contrôleur quand il y a N sections.</strong>
+L'hôte, <strong>jamais</strong> ce package. Une section est un <strong>élément de liste</strong> :
+c'est le <code>State</code> qui construit la liste de specs qui possède les N
+contrôleurs (un champ, une <code>Map&lt;String, ZToggleController&gt;</code> indexée par
+<a href="../../zcrud_study/ZStudyToolsSectionSpec/id.html">id</a>, ou <code>initState</code>), avec <code>ZDisplayStateOwnerMixin</code> qui les libère et
+<strong>refuse</strong> une création dans <code>build</code>. Faire créer les contrôleurs par le
+layout aurait exigé de les créer là où les specs sont lues — c'est-à-dire
+<strong>dans <code>build</code></strong> : chaque rebuild aurait remplacé les instances, et la
+commande de l'hôte serait devenue silencieusement inerte. C'est
+exactement le défaut mesuré chez l'hôte, et le patron existe pour le
+rendre impossible, pas pour l'industrialiser.</p>
+<p>Un contrôleur déclaré et <strong>jamais passé</strong> dans une spec rendue reste
+détectable (<code>wasEverConsumed</code> — assert au <code>dispose</code> du mixin) : un
+« tout replier » câblé sur un contrôleur orphelin ne peut pas passer pour
+branché.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final ZToggleController? expandController;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/">zcrud_study</a></li>
+    <li><a href="../../zcrud_study/ZStudyToolsSectionSpec-class.html">ZStudyToolsSectionSpec</a></li>
+    <li class="self-crumb">expandController property</li>
+</ol>
+
+  <h5>ZStudyToolsSectionSpec class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_study
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

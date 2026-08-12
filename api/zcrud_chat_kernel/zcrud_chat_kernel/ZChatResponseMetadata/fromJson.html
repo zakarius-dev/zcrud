@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the fromJson method from the ZChatResponseMetadata class, for the Dart programming language.">
+  <title>fromJson method - ZChatResponseMetadata class - zcrud_chat_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/">zcrud_chat_kernel.dart</a></li>
+    <li><a href="../../zcrud_chat_kernel/ZChatResponseMetadata-class.html">ZChatResponseMetadata</a></li>
+    <li class="self-crumb">fromJson static method</li>
+  </ol>
+  <div class="self-name">fromJson</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat_kernel&#47;ZChatResponseMetadata-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">fromJson</span> static method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="../../zcrud_chat_kernel/ZChatResponseMetadata-class.html">ZChatResponseMetadata</a></span>
+<span class="name ">fromJson</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="fromJson-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span>, {</span></li>
+<li><span class="parameter" id="fromJson-param-verifiedSourceCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">verifiedSourceCount</span>, </span></li>
+<li><span class="parameter" id="fromJson-param-totalSourceCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">totalSourceCount</span>, </span></li>
+</ol>})
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Décode <strong>défensivement</strong> (AD-10) — <strong>ne lève jamais</strong>.</p>
+<ul>
+<li><code>raw</code> non-<code>Map</code> (ou absent) ⇒ <a href="../../zcrud_chat_kernel/ZChatResponseMetadata/empty-constant.html">empty</a> ;</li>
+<li>un champ au <strong>mauvais type</strong> est traité comme absent : il n'emporte
+jamais le parent (un <code>duration_ms: "beaucoup"</code> laisse le reste de la
+carte intact) ;</li>
+<li>une <strong>note inconnue</strong> est conservée dans <a href="../../zcrud_chat_kernel/ZChatResponseMetadata/extra.html">extra</a>.</li>
+</ul>
+<p><code>verifiedSourceCount</code>/<code>totalSourceCount</code> sont fournis par l'appelant, qui
+seul connaît les sources du message (le serveur ne les émet pas dans
+l'événement terminal : ils se dérivent des drapeaux de vérification
+côté client). Laissés à <code>null</code>, ils sont relus de la carte (forme
+persistée), ce qui rend l'aller-retour sans perte.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">static ZChatResponseMetadata fromJson(
+  Object? raw, {
+  int? verifiedSourceCount,
+  int? totalSourceCount,
+}) {
+  final Map&lt;String, dynamic&gt;? map = zJsonMap(raw);
+  if (map == null) return empty;
+
+  final int verified =
+      verifiedSourceCount ?? zJsonInt(map[&#39;verified_source_count&#39;], 0);
+  final int total = totalSourceCount ?? zJsonInt(map[&#39;total_source_count&#39;], 0);
+
+  &#47;&#47; CÂBLAGE, pas redéclaration : `ZChatResponseConfidence.fromJson` lit
+  &#47;&#47; déjà EXACTEMENT les clés snake_case attendues de l&#39;événement terminal.
+  &#47;&#47; On lui passe la carte telle quelle, augmentée des seuls comptes de
+  &#47;&#47; sources.
+  final ZChatResponseConfidence? candidate = ZChatResponseConfidence.fromJson(
+    &lt;String, dynamic&gt;{
+      ...map,
+      &#39;verified_source_count&#39;: verified,
+      &#39;total_source_count&#39;: total,
+    },
+  );
+  &#47;&#47; Aucun signal ⇒ AUCUN agrégat : `level` vaudrait `toVerify`, qui est un
+  &#47;&#47; verdict, et le socle n&#39;en invente pas.
+  final ZChatResponseConfidence? confidence =
+      (candidate == null || candidate.hasNoSignal) ? null : candidate;
+
+  return ZChatResponseMetadata(
+    durationMs: zJsonIntOrNull(map[&#39;duration_ms&#39;]),
+    agentsCalled:
+        zJsonStringList(map[&#39;agents_called&#39;]) ?? const &lt;String&gt;[],
+    costTotalUsd: zJsonDoubleOrNull(map[&#39;cost_total_usd&#39;]),
+    tokensTotal: zJsonIntOrNull(map[&#39;tokens_total&#39;]),
+    confidence: confidence,
+    sourceFreshness:
+        zJsonDecodeList&lt;ZChatSourceFreshness&gt;(
+          map[&#39;source_freshness&#39;],
+          ZChatSourceFreshness.fromJson,
+        ) ??
+        const &lt;ZChatSourceFreshness&gt;[],
+    &#47;&#47; NORMALISATION **EAGER** à l&#39;ENTRÉE (invariant AD-9) : `extra` ne porte
+    &#47;&#47; jamais les clés de sync réservées — elles relèvent du store, pas de
+    &#47;&#47; l&#39;entité. Même patron que `ZChatConversation.fromJson`.
+    extra: zSanitizeExtra(map, _reservedKeys),
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/ZChatResponseMetadata-class.html">ZChatResponseMetadata</a></li>
+    <li class="self-crumb">fromJson static method</li>
+</ol>
+
+    <h5>ZChatResponseMetadata class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_kernel
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZResponsiveGrid.new constructor from Class ZResponsiveGrid from the zcrud_core library, for the Dart programming language.">
+  <title>ZResponsiveGrid.new constructor - ZResponsiveGrid - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core.dart</a></li>
+    <li><a href="../../zcrud_core/ZResponsiveGrid-class.html">ZResponsiveGrid</a></li>
+    <li class="self-crumb">ZResponsiveGrid.new const constructor</li>
+  </ol>
+  <div class="self-name">ZResponsiveGrid.new</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_core&#47;ZResponsiveGrid-class-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-constructor">ZResponsiveGrid</span> constructor 
+</h1></div>
+
+    <section class="multi-line-signature">
+      const
+      <span class="name ">ZResponsiveGrid</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-children"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>&gt;</span></span> <span class="parameter-name">children</span>, </span></li>
+<li><span class="parameter" id="param-spans"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZResponsiveSpan-class.html">ZResponsiveSpan</a></span>&gt;</span></span> <span class="parameter-name">spans</span>, </span></li>
+<li><span class="parameter" id="param-keys"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span>&gt;</span></span> <span class="parameter-name">keys</span> = <span class="default-value">const &lt;Key?&gt;[]</span>, </span></li>
+<li><span class="parameter" id="param-gutter"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">gutter</span> = <span class="default-value">8</span>, </span></li>
+<li><span class="parameter" id="param-runGutter"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">runGutter</span>, </span></li>
+<li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
+</ol>})
+    </section>
+    
+<section class="desc markdown">
+  <p>Construit la grille pour <code>children</code>, espacés de <code>gutter</code> (défaut 8 dp).</p>
+<p><code>keys</code> (optionnel, aligné par index sur <code>children</code>) porte la <code>ValueKey(name)</code>
+de place stable <strong>sur la cellule</strong> (l'enfant direct du <code>Wrap</code>) — voir
+invariant <em>Place stable</em>. À défaut (<code>keys</code> vide), la clé lue est celle
+portée par <code>children[i]</code> (compat ascendante) : dans ce cas, pour ne pas
+dupliquer la clé, l'appelant fournit des enfants NON keyés au niveau racine.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">const ZResponsiveGrid({
+  required this.children,
+  required this.spans,
+  this.keys = const &lt;Key?&gt;[],
+  this.gutter = 8,
+  this.runGutter,
+  super.key,
+})  : assert(children.length == spans.length,
+          &#39;children et spans doivent être alignés (même longueur)&#39;),
+      assert(keys.length == 0 || keys.length == children.length,
+          &#39;keys, si fourni, doit être aligné sur children (même longueur)&#39;);</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/ZResponsiveGrid-class.html">ZResponsiveGrid</a></li>
+    <li class="self-crumb">ZResponsiveGrid.new const constructor</li>
+</ol>
+
+    <h5>ZResponsiveGrid class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

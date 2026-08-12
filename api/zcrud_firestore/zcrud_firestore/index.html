@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_firestore library API docs, for the Dart programming language.">
+  <title>zcrud_firestore library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_firestore</a></li>
+    <li class="self-crumb">zcrud_firestore.dart</li>
+  </ol>
+  <div class="self-name">zcrud_firestore</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_firestore&#47;zcrud_firestore-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_firestore</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_firestore</code>.</p>
+<p>Adaptateurs Firestore + Hive, offline-first.</p>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/</code>.</p>
+<p><strong>Isolation (invariant AD-5)</strong> : ce barrel n'exporte AUCUN type
+<code>cloud_firestore</code> ni <code>hive</code>. Les signatures publiques de
+<a href="../zcrud_firestore/FirebaseZRepositoryImpl-class.html">FirebaseZRepositoryImpl</a> / <a href="../zcrud_firestore/HiveZLocalStore-class.html">HiveZLocalStore</a> / <a href="../zcrud_firestore/FirestoreZRemoteStore-class.html">FirestoreZRemoteStore</a>
+restent <code>ZResult&lt;…&gt;</code> / <code>Stream&lt;List&lt;T&gt;&gt;</code> <strong>nues</strong> ; l'injection d'une
+instance <code>FirebaseFirestore</code> (repo/remote) ou d'une <code>Box</code> Hive (local) est
+la SEULE couture (voulue) vers le backend.</p>
+<p>Ce barrel réunit les DEUX stores offline-first — <a href="../zcrud_firestore/HiveZLocalStore-class.html">HiveZLocalStore</a> (local,
+source de vérité) et <a href="../zcrud_firestore/FirestoreZRemoteStore-class.html">FirestoreZRemoteStore</a> (distant, fire-and-forget) —
+ainsi que le dépôt composite qui les fusionne
+(<a href="../zcrud_firestore/ZOfflineFirstRepository-class.html">ZOfflineFirstRepository</a>/<a href="../zcrud_firestore/ZOfflineFirstBoxRepository-class.html">ZOfflineFirstBoxRepository</a>), un batcher de
+cascade borné, un résolveur de chemins bi-topologie, et les fabriques
+study (résolveur, codec legacy, migrateur, orchestrateur de sync).</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="FirebaseZRepositoryImpl">
+  <span class="name "><a href="../zcrud_firestore/FirebaseZRepositoryImpl-class.html">FirebaseZRepositoryImpl</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Adaptateur Firestore de <code>ZRepository</code> pour l'agrégat <code>T</code>.
+</dd>
+
+          <dt id="FirestoreZRemoteStore">
+  <span class="name "><a href="../zcrud_firestore/FirestoreZRemoteStore-class.html">FirestoreZRemoteStore</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Adaptateur Firestore de <code>ZRemoteStore</code> pour l'agrégat <code>T</code>, par
+<strong>composition</strong> sur un <a href="../zcrud_firestore/FirebaseZRepositoryImpl-class.html">FirebaseZRepositoryImpl</a>.
+</dd>
+
+          <dt id="HiveZLocalStore">
+  <span class="name "><a href="../zcrud_firestore/HiveZLocalStore-class.html">HiveZLocalStore</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Adaptateur Hive de <code>ZLocalStore</code> pour l'agrégat <code>T</code>.
+</dd>
+
+          <dt id="ZAppFileFieldAliases">
+  <span class="name "><a href="../zcrud_firestore/ZAppFileFieldAliases-class.html">ZAppFileFieldAliases</a></span> 
+
+</dt>
+<dd>
+  Alias de noms de champs consultés par le mapper <strong>par défaut</strong>, dans
+l'ordre : le <strong>premier</strong> alias présent avec une valeur exploitable gagne.
+</dd>
+
+          <dt id="ZAppFileRefLocation">
+  <span class="name "><a href="../zcrud_firestore/ZAppFileRefLocation-class.html">ZAppFileRefLocation</a></span> 
+
+</dt>
+<dd>
+  <strong>Où</strong> vit la référence dans le document Firestore.
+</dd>
+
+          <dt id="ZCascadeReport">
+  <span class="name "><a href="../zcrud_firestore/ZCascadeReport-class.html">ZCascadeReport</a></span> 
+
+</dt>
+<dd>
+  Rapport <strong>observable</strong> d'une cascade : preuve structurelle du bornage.
+</dd>
+
+          <dt id="ZDocumentMigrationOutcome">
+  <span class="name "><a href="../zcrud_firestore/ZDocumentMigrationOutcome-class.html">ZDocumentMigrationOutcome</a></span> 
+
+</dt>
+<dd>
+  Issue de migration d'<strong>un</strong> document legacy → canonique (immuable).
+</dd>
+
+          <dt id="ZFirestoreApi">
+  <span class="name "><a href="../zcrud_firestore/ZFirestoreApi-class.html">ZFirestoreApi</a></span> 
+
+</dt>
+<dd>
+  Marqueur d'API publique de <code>zcrud_firestore</code> (placeholder).
+</dd>
+
+          <dt id="ZFirestoreAppFileResolver">
+  <span class="name "><a href="../zcrud_firestore/ZFirestoreAppFileResolver-class.html">ZFirestoreAppFileResolver</a></span> 
+
+</dt>
+<dd>
+  Résolveur Firestore de références opaques de fichiers.
+</dd>
+
+          <dt id="ZFirestoreCascadeBatcher">
+  <span class="name "><a href="../zcrud_firestore/ZFirestoreCascadeBatcher-class.html">ZFirestoreCascadeBatcher</a></span> 
+
+</dt>
+<dd>
+  Exécuteur borné de la cascade de suppression (adapter <code>zcrud_firestore</code>).
+</dd>
+
+          <dt id="ZFirestorePathResolver">
+  <span class="name "><a href="../zcrud_firestore/ZFirestorePathResolver-class.html">ZFirestorePathResolver</a></span> 
+
+</dt>
+<dd>
+  Résolveur <strong>immuable</strong> de chemins Firestore par <code>kind</code>, à partir d'une <strong>table
+de topologie littérale</strong> injectée à la construction.
+</dd>
+
+          <dt id="ZFirestorePathRule">
+  <span class="name "><a href="../zcrud_firestore/ZFirestorePathRule-class.html">ZFirestorePathRule</a></span> 
+
+</dt>
+<dd>
+  Règle de résolution <strong>littérale et immuable</strong> d'un <code>kind</code> de collection.
+</dd>
+
+          <dt id="ZLegacyMigrationReport">
+  <span class="name "><a href="../zcrud_firestore/ZLegacyMigrationReport-class.html">ZLegacyMigrationReport</a></span> 
+
+</dt>
+<dd>
+  Rapport <strong>auditable</strong> et immuable d'une migration de corpus (<code>migrateCorpus</code>).
+</dd>
+
+          <dt id="ZLegacyStudyMigrator">
+  <span class="name "><a href="../zcrud_firestore/ZLegacyStudyMigrator-class.html">ZLegacyStudyMigrator</a></span> 
+
+</dt>
+<dd>
+  Migrateur de corpus <strong>PUR, DÉFENSIF, IDEMPOTENT</strong>, confiné à l'adaptateur
+(<code>zcrud_firestore</code>). Sans état (<code>const</code>-constructible) : opère
+uniquement sur <code>Map&lt;String, dynamic&gt;</code>.
+</dd>
+
+          <dt id="ZOfflineFirstBoxRepository">
+  <span class="name "><a href="../zcrud_firestore/ZOfflineFirstBoxRepository-class.html">ZOfflineFirstBoxRepository</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Base offline-first bi-topologie pour l'agrégat <code>T</code>.
+</dd>
+
+          <dt id="ZOfflineFirstRepository">
+  <span class="name "><a href="../zcrud_firestore/ZOfflineFirstRepository-class.html">ZOfflineFirstRepository</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Dépôt <strong>offline-first</strong> synchronisable pour l'agrégat <code>T</code>.
+</dd>
+
+          <dt id="ZStudyLegacyCodec">
+  <span class="name "><a href="../zcrud_firestore/ZStudyLegacyCodec-class.html">ZStudyLegacyCodec</a></span> 
+
+</dt>
+<dd>
+  Normaliseur PUR de <code>Map</code>, bidirectionnel, DÉFENSIF, confiné à l'adaptateur.
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="ZDeletionSemantics">
+  <span class="name "><a href="../zcrud_firestore/ZDeletionSemantics.html">ZDeletionSemantics</a></span> 
+
+</dt>
+<dd>
+  Sémantique de <strong>lecture</strong> du drapeau de soft-delete <code>is_deleted</code>, pour
+intégrer un parc documentaire existant sans backfill. Opt-in au
+constructeur de <a href="../zcrud_firestore/FirebaseZRepositoryImpl-class.html">FirebaseZRepositoryImpl</a> — le défaut <a href="../zcrud_firestore/ZDeletionSemantics.html">strict</a> est le
+comportement historique, <strong>inchangé</strong>.
+</dd>
+
+          <dt id="ZFirestoreTopology">
+  <span class="name "><a href="../zcrud_firestore/ZFirestoreTopology.html">ZFirestoreTopology</a></span> 
+
+</dt>
+<dd>
+  Forme topologique d'un <code>kind</code> de collection.
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+    <section class="summary offset-anchor" id="constants">
+      <h2>Constants</h2>
+      <dl class="properties">
+          <dt id="kZFirestoreWhereInLimit" class="constant">
+    <span class="name "><a href="../zcrud_firestore/kZFirestoreWhereInLimit-constant.html">kZFirestoreWhereInLimit</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre <strong>maximal</strong> de valeurs acceptées par un filtre <code>whereIn</code> / <code>in</code>,
+<strong>MESURÉ dans la version épinglée</strong> (pas supposé) :
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="assembleZStudySyncOrchestrator" class="callable">
+  <span class="name"><a href="../zcrud_firestore/assembleZStudySyncOrchestrator.html">assembleZStudySyncOrchestrator</a></span><span class="signature">(<wbr>{<span class="parameter" id="assembleZStudySyncOrchestrator-param-repositories"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSyncableRepository</span>&gt;</span></span> <span class="parameter-name">repositories</span>, </span><span class="parameter" id="assembleZStudySyncOrchestrator-param-debounce"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">debounce</span> = <span class="default-value">kZSyncDefaultDebounce</span>, </span><span class="parameter" id="assembleZStudySyncOrchestrator-param-timerFactory"><span class="type-annotation">ZSyncTimerFactory?</span> <span class="parameter-name">timerFactory</span>, </span><span class="parameter" id="assembleZStudySyncOrchestrator-param-isConnected"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>&gt;</span></span> <span class="parameter-name">isConnected</span>()?, </span><span class="parameter" id="assembleZStudySyncOrchestrator-param-enabled"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enabled</span> = <span class="default-value">true</span>, </span><span class="parameter" id="assembleZStudySyncOrchestrator-param-logger"><span class="type-annotation">ZSyncOrchestratorLog?</span> <span class="parameter-name">logger</span></span>})
+    <span class="returntype parameter">&#8594; ZSyncOrchestrator</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Assemble un <code>ZSyncOrchestrator</code> à partir d'une <strong>liste injectée</strong> de
+dépôts synchronisables — best-effort, débouncé ~400 ms — sans coder en dur
+aucun repo.
+  
+
+</dd>
+
+          <dt id="buildFolderScopedStudyRepository" class="callable">
+  <span class="name"><a href="../zcrud_firestore/buildFolderScopedStudyRepository.html">buildFolderScopedStudyRepository</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span><span class="signature">(<wbr>{<span class="parameter" id="buildFolderScopedStudyRepository-param-firestore"><span>required</span> <span class="type-annotation"><a href="https://pub.dev/documentation/cloud_firestore/6.7.1/cloud_firestore/FirebaseFirestore-class.html">FirebaseFirestore</a></span> <span class="parameter-name">firestore</span>, </span><span class="parameter" id="buildFolderScopedStudyRepository-param-local"><span>required</span> <span class="type-annotation">ZLocalStore<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">local</span>, </span><span class="parameter" id="buildFolderScopedStudyRepository-param-kind"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">kind</span>, </span><span class="parameter" id="buildFolderScopedStudyRepository-param-collection"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">collection</span>, </span><span class="parameter" id="buildFolderScopedStudyRepository-param-parentCollection"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">parentCollection</span>, </span><span class="parameter" id="buildFolderScopedStudyRepository-param-decode"><span>required</span> <span class="type-annotation">T</span> <span class="parameter-name">decode</span>(<span class="parameter" id="param-map"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">map</span></span>), </span><span class="parameter" id="buildFolderScopedStudyRepository-param-encode"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">encode</span>(<span class="parameter" id="param-value"><span class="type-annotation">T</span> <span class="parameter-name">value</span></span>), </span><span class="parameter" id="buildFolderScopedStudyRepository-param-folderId"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">folderId</span>, </span><span class="parameter" id="buildFolderScopedStudyRepository-param-userId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">userId</span>, </span><span class="parameter" id="buildFolderScopedStudyRepository-param-userScoped"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">userScoped</span> = <span class="default-value">true</span>, </span><span class="parameter" id="buildFolderScopedStudyRepository-param-isConnected"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>&gt;</span></span> <span class="parameter-name">isConnected</span>()?, </span><span class="parameter" id="buildFolderScopedStudyRepository-param-logger"><span class="type-annotation"><a href="../zcrud_firestore/ZOfflineFirstBoxLog.html">ZOfflineFirstBoxLog</a>?</span> <span class="parameter-name">logger</span>, </span><span class="parameter" id="buildFolderScopedStudyRepository-param-autoListen"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">autoListen</span> = <span class="default-value">true</span></span>})
+    <span class="returntype parameter">&#8594; ZStudyRepository<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Assemble un dépôt d'étude <strong>folder-scopé concret</strong> (offline-first) pour la
+topologie imbriquée <code>users/{userId}/{parentCollection}/{folderId}/{collection}</code>.
+  
+
+</dd>
+
+          <dt id="buildUserScopedStudyRepository" class="callable">
+  <span class="name"><a href="../zcrud_firestore/buildUserScopedStudyRepository.html">buildUserScopedStudyRepository</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span><span class="signature">(<wbr>{<span class="parameter" id="buildUserScopedStudyRepository-param-firestore"><span>required</span> <span class="type-annotation"><a href="https://pub.dev/documentation/cloud_firestore/6.7.1/cloud_firestore/FirebaseFirestore-class.html">FirebaseFirestore</a></span> <span class="parameter-name">firestore</span>, </span><span class="parameter" id="buildUserScopedStudyRepository-param-local"><span>required</span> <span class="type-annotation">ZLocalStore<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">local</span>, </span><span class="parameter" id="buildUserScopedStudyRepository-param-kind"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">kind</span>, </span><span class="parameter" id="buildUserScopedStudyRepository-param-collection"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">collection</span>, </span><span class="parameter" id="buildUserScopedStudyRepository-param-decode"><span>required</span> <span class="type-annotation">T</span> <span class="parameter-name">decode</span>(<span class="parameter" id="param-map"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">map</span></span>), </span><span class="parameter" id="buildUserScopedStudyRepository-param-encode"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">encode</span>(<span class="parameter" id="param-value"><span class="type-annotation">T</span> <span class="parameter-name">value</span></span>), </span><span class="parameter" id="buildUserScopedStudyRepository-param-userScoped"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">userScoped</span>, </span><span class="parameter" id="buildUserScopedStudyRepository-param-userId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">userId</span>, </span><span class="parameter" id="buildUserScopedStudyRepository-param-isConnected"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>&gt;</span></span> <span class="parameter-name">isConnected</span>()?, </span><span class="parameter" id="buildUserScopedStudyRepository-param-logger"><span class="type-annotation"><a href="../zcrud_firestore/ZOfflineFirstBoxLog.html">ZOfflineFirstBoxLog</a>?</span> <span class="parameter-name">logger</span>, </span><span class="parameter" id="buildUserScopedStudyRepository-param-clock"><span class="type-annotation">ZClock?</span> <span class="parameter-name">clock</span>, </span><span class="parameter" id="buildUserScopedStudyRepository-param-autoListen"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">autoListen</span> = <span class="default-value">true</span></span>})
+    <span class="returntype parameter">&#8594; ZStudyRepository<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Fabrique d'adapter <strong>user-scopé concret</strong> pour une collection <strong>RACINE</strong>
+(topologie <code>flatTopLevel</code>) — jumelle exacte de
+<a href="../zcrud_firestore/buildFolderScopedStudyRepository.html">buildFolderScopedStudyRepository</a>.
+  
+
+</dd>
+
+          <dt id="zChunkAppFileRefs" class="callable">
+  <span class="name"><a href="../zcrud_firestore/zChunkAppFileRefs.html">zChunkAppFileRefs</a></span><span class="signature">(<wbr><span class="parameter" id="zChunkAppFileRefs-param-refs"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">refs</span>, </span><span class="parameter" id="zChunkAppFileRefs-param-size"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">size</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Découpe <code>refs</code> en paquets d'au plus <code>size</code> éléments.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZAppFileDocumentMapper" class="callable">
+    <span class="name"><a href="../zcrud_firestore/ZAppFileDocumentMapper.html">ZAppFileDocumentMapper</a></span><span class="signature">
+      <span class="returntype parameter">= AppFile? Function<span class="signature">(<span class="parameter" id="param-ref"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">ref</span>, </span><span class="parameter" id="param-data"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">data</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Traduit un document brut en <code>AppFile</code>, ou <code>null</code> pour déclarer la référence
+<strong>introuvable</strong>.
+    
+
+  </dd>
+
+          
+  <dt id="ZAppFileResolverLog" class="callable">
+    <span class="name"><a href="../zcrud_firestore/ZAppFileResolverLog.html">ZAppFileResolverLog</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-message"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span>, {</span><span class="parameter" id="param-error"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">error</span>, </span><span class="parameter" id="param-stackTrace"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/StackTrace-class.html">StackTrace</a>?</span> <span class="parameter-name">stackTrace</span></span>})</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Journal optionnel du résolveur (diagnostic ; jamais de libellé d'interface).
+    
+
+  </dd>
+
+          
+  <dt id="ZCascadeLog" class="callable">
+    <span class="name"><a href="../zcrud_firestore/ZCascadeLog.html">ZCascadeLog</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-message"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span>, {</span><span class="parameter" id="param-error"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">error</span>, </span><span class="parameter" id="param-stackTrace"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/StackTrace-class.html">StackTrace</a>?</span> <span class="parameter-name">stackTrace</span></span>})</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Journal minimal <strong>neutre</strong> de l'exécuteur (aucun type Firestore). Défaut no-op.
+    
+
+  </dd>
+
+          
+  <dt id="ZFirestoreLog" class="callable">
+    <span class="name"><a href="../zcrud_firestore/ZFirestoreLog.html">ZFirestoreLog</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-message"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span>, {</span><span class="parameter" id="param-error"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">error</span>, </span><span class="parameter" id="param-stackTrace"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/StackTrace-class.html">StackTrace</a>?</span> <span class="parameter-name">stackTrace</span></span>})</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Journal minimal <strong>neutre</strong> de l'adaptateur (type public sans dépendance
+Firestore). Un document non décodable ou une erreur de flux est <strong>loggé</strong> ici
+puis écarté (AD-10) — jamais avalé silencieusement.
+    
+
+  </dd>
+
+          
+  <dt id="ZLegacyValueMapper" class="callable">
+    <span class="name"><a href="../zcrud_firestore/ZLegacyValueMapper.html">ZLegacyValueMapper</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-legacyValue"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">legacyValue</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Fonction de mapping de <strong>valeur</strong> d'un champ legacy → valeur canonique
+(<code>String</code>). Toujours <strong>totale et défensive</strong> (jamais de throw) — cf.
+<a href="../zcrud_firestore/ZStudyLegacyCodec/mapDocumentStatus.html">ZStudyLegacyCodec.mapDocumentStatus</a>.
+    
+
+  </dd>
+
+          
+  <dt id="ZLocalStoreLog" class="callable">
+    <span class="name"><a href="../zcrud_firestore/ZLocalStoreLog.html">ZLocalStoreLog</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-message"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span>, {</span><span class="parameter" id="param-error"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">error</span>, </span><span class="parameter" id="param-stackTrace"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/StackTrace-class.html">StackTrace</a>?</span> <span class="parameter-name">stackTrace</span></span>})</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Journal minimal <strong>neutre</strong> de l'adaptateur (type public sans dépendance
+Hive). Une entrée non décodable ou une erreur de flux est <strong>loggée</strong> ici puis
+écartée (invariant AD-10) — jamais avalée silencieusement. Miroir de
+<code>ZFirestoreLog</code> (aucun port <code>ZLogger</code> n'existe dans <code>zcrud_core</code> — hors
+périmètre).
+    
+
+  </dd>
+
+          
+  <dt id="ZOfflineFirstBoxLog" class="callable">
+    <span class="name"><a href="../zcrud_firestore/ZOfflineFirstBoxLog.html">ZOfflineFirstBoxLog</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-message"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span>, {</span><span class="parameter" id="param-error"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">error</span>, </span><span class="parameter" id="param-stackTrace"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/StackTrace-class.html">StackTrace</a>?</span> <span class="parameter-name">stackTrace</span></span>})</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Journal minimal <strong>neutre</strong> (aucune dépendance backend). Un échec distant
+best-effort, un document corrompu ou une erreur de listener est <strong>loggé</strong> ici
+avant d'être avalé/écarté — jamais silencieux (AD-10/AD-11). Même convention
+de journalisation que les autres dépôts offline-first du package.
+    
+
+  </dd>
+
+          
+  <dt id="ZOfflineFirstLog" class="callable">
+    <span class="name"><a href="../zcrud_firestore/ZOfflineFirstLog.html">ZOfflineFirstLog</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-message"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span>, {</span><span class="parameter" id="param-error"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">error</span>, </span><span class="parameter" id="param-stackTrace"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/StackTrace-class.html">StackTrace</a>?</span> <span class="parameter-name">stackTrace</span></span>})</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Journal minimal <strong>neutre</strong> du dépôt offline-first (aucune dépendance backend).
+Un échec distant <strong>best-effort</strong> (assimilé à « offline ») est <strong>loggé</strong> ici
+avant d'être avalé en <code>Right(unit)</code> — jamais silencieux (invariant AD-11).
+Miroir de <code>ZLocalStoreLog</code>/<code>ZFirestoreLog</code>.
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="exceptions">
+      <h2>Exceptions / Errors</h2>
+      <dl>
+          <dt id="ZAppFileResolveException">
+  <span class="name "><a href="../zcrud_firestore/ZAppFileResolveException-class.html">ZAppFileResolveException</a></span> 
+
+</dt>
+<dd>
+  Exception portant l'échec <strong>typé</strong> d'une résolution (AD-5 ↔ port).
+</dd>
+
+      </dl>
+    </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_firestore</a></li>
+    <li class="self-crumb">zcrud_firestore.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_firestore</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_firestore/">zcrud_firestore</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_firestore library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_firestore
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

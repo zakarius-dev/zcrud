@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the fromJson method from the ZChatStreamEvent class, for the Dart programming language.">
+  <title>fromJson method - ZChatStreamEvent class - zcrud_chat_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/">zcrud_chat_kernel.dart</a></li>
+    <li><a href="../../zcrud_chat_kernel/ZChatStreamEvent-class.html">ZChatStreamEvent</a></li>
+    <li class="self-crumb">fromJson static method</li>
+  </ol>
+  <div class="self-name">fromJson</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat_kernel&#47;ZChatStreamEvent-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">fromJson</span> static method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="../../zcrud_chat_kernel/ZChatStreamEvent-class.html">ZChatStreamEvent</a>?</span>
+<span class="name ">fromJson</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="fromJson-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span>, {</span></li>
+<li><span class="parameter" id="fromJson-param-typeRegistry"><span class="type-annotation">ZTypeRegistry?</span> <span class="parameter-name">typeRegistry</span>, </span></li>
+<li><span class="parameter" id="fromJson-param-sourceRegistry"><span class="type-annotation">ZSourceRegistry?</span> <span class="parameter-name">sourceRegistry</span>, </span></li>
+</ol>})
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Décode <strong>défensivement</strong> un événement (AD-10) — <strong>ne lève jamais</strong>.</p>
+<ul>
+<li><code>raw</code> non-<code>Map</code>, ou <code>type</code> absent/vide ⇒ <code>null</code> (aucun événement
+synthétique n'est fabriqué : l'appelant décide de sauter la trame) ;</li>
+<li><code>type</code> inconnu ⇒ <a href="../../zcrud_chat_kernel/ZChatCustomStreamEvent-class.html">ZChatCustomStreamEvent</a>, <strong>payload verbatim</strong> —
+jamais une erreur : transformer un discriminant inconnu en événement
+d'erreur ferait passer une extension backend légitime pour une panne.</li>
+</ul>
+<p>Des alias de lecture <strong>snake_case</strong> courants (<code>retrieval_progress</code>,
+<code>sources_preview</code>, <code>content_block</code>) sont acceptés ; jamais réémis.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">static ZChatStreamEvent? fromJson(
+  Object? raw, {
+  ZTypeRegistry? typeRegistry,
+  ZSourceRegistry? sourceRegistry,
+}) {
+  final Map&lt;String, dynamic&gt;? map = zJsonMap(raw);
+  if (map == null) return null;
+  final String rawType = zJsonString(map[kZChatStreamEventTypeKey]);
+  if (rawType.isEmpty) return null;
+  final String kind = kZChatStreamEventReadAliases[rawType] ?? rawType;
+  &#47;&#47; Position de reprise : `sequence_id` (forme canonique) ou `id` (champ SSE
+  &#47;&#47; brut, tel qu&#39;un transport Server-Sent Events peut l&#39;exposer). Absente
+  &#47;&#47; ⇒ `null`, jamais 0.
+  final String? seq =
+      zJsonStringOrNull(map[&#39;sequence_id&#39;]) ?? zJsonStringOrNull(map[&#39;id&#39;]);
+  switch (kind) {
+    case &#39;thinking&#39;:
+      return ZChatThinkingEvent(
+        step: ZChatThinkingStep.fromJson(map) ?? const ZChatThinkingStep(),
+        sequenceId: seq,
+      );
+    case &#39;retrievalProgress&#39;:
+      return ZChatRetrievalProgressEvent(
+        agent: zJsonString(map[&#39;agent&#39;]),
+        sourcesFound: zJsonInt(map[&#39;sources_found&#39;], 0),
+        sequenceId: seq,
+      );
+    case &#39;sourcesPreview&#39;:
+      return ZChatSourcesPreviewEvent(
+        sources:
+            zJsonDecodeList&lt;ZChatSource&gt;(
+              map[&#39;sources&#39;],
+              (Object? e) =&gt;
+                  ZChatSource.fromJson(e, registry: sourceRegistry),
+            ) ??
+            const &lt;ZChatSource&gt;[],
+        sequenceId: seq,
+      );
+    case &#39;token&#39;:
+      return ZChatTokenEvent(
+        content: zJsonString(map[&#39;content&#39;]),
+        sequenceId: seq,
+      );
+    case &#39;contentBlock&#39;:
+      final ZContentBlock? block = ZContentBlock.fromJson(
+        &lt;String, dynamic&gt;{
+          kZContentBlockTypeKey: map[&#39;block_type&#39;],
+          kZContentBlockDataKey: map[&#39;data&#39;],
+        },
+        typeRegistry: typeRegistry,
+        sourceRegistry: sourceRegistry,
+      );
+      return block == null
+          ? null
+          : ZChatContentBlockEvent(block: block, sequenceId: seq);
+    case &#39;suggestions&#39;:
+      return ZChatSuggestionsEvent(
+        suggestions:
+            zJsonDecodeList&lt;ZChatSuggestion&gt;(
+              map[&#39;suggestions&#39;],
+              ZChatSuggestion.fromJson,
+            ) ??
+            const &lt;ZChatSuggestion&gt;[],
+        sequenceId: seq,
+      );
+    case &#39;quota&#39;:
+      final ZChatQuotaSnapshot? snapshot = ZChatQuotaSnapshot.fromJson(
+        map[&#39;snapshot&#39;],
+      );
+      return snapshot == null
+          ? null
+          : ZChatQuotaEvent(snapshot: snapshot, sequenceId: seq);
+    case &#39;done&#39;:
+      return ZChatDoneEvent(
+        messageId: zJsonString(map[&#39;message_id&#39;]),
+        conversationId: zJsonString(map[&#39;conversation_id&#39;]),
+        metadata: zJsonMap(map[&#39;metadata&#39;]) ?? const &lt;String, dynamic&gt;{},
+        sequenceId: seq,
+      );
+    default:
+      final Map&lt;String, dynamic&gt; verbatim = &lt;String, dynamic&gt;{
+        for (final MapEntry&lt;String, dynamic&gt; e in map.entries)
+          if (e.key != kZChatStreamEventTypeKey &amp;&amp;
+              e.key != &#39;sequence_id&#39; &amp;&amp;
+              e.key != &#39;id&#39;)
+            e.key: e.value,
+      };
+      final ZValueCodec? codec = typeRegistry?.tryCodecFor(kind);
+      return ZChatCustomStreamEvent(
+        kind,
+        codec == null
+            ? verbatim
+            : (zJsonMap(zJsonGuard(() =&gt; codec.fromJson(verbatim))) ??
+                  verbatim),
+        sequenceId: seq,
+      );
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/ZChatStreamEvent-class.html">ZChatStreamEvent</a></li>
+    <li class="self-crumb">fromJson static method</li>
+</ol>
+
+    <h5>ZChatStreamEvent class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_kernel
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_export_pdf API docs, for the Dart programming language.">
+  <title>zcrud_export_pdf - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_export_pdf package</a></li>
+  </ol>
+  <div class="self-name">zcrud_export_pdf</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_export_pdf">zcrud_export_pdf</h1>
+<p>Export PDF neutre pour zcrud (gabarits flashcards, documents tabulaires,
+assemblage d'images) — sans aucune dépendance tableur.</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p><code>zcrud_export_pdf</code> isole tout ce qui produit un PDF depuis
+<code>zcrud_export</code>, pour qu'un hôte n'exportant que du PDF n'ait pas à tirer
+<code>syncfusion_flutter_xlsio</code> (et ses transitifs <code>syncfusion_officecore</code>,
+<code>jiffy</code>). <code>zcrud_export</code> réexporte intégralement ce paquet en y ajoutant
+l'Excel : aucun consommateur existant n'est affecté par cette séparation.</p>
+<p>Le paquet fournit trois familles de capacités, toutes derrière une API
+100 % neutre (bytes en entrée/sortie, jamais un type Syncfusion) :</p>
+<ul>
+<li><strong>Export tabulaire</strong> — <code>buildPdfBytes</code> transforme une <code>ZExportTable</code>
+neutre en document PDF, avec anti-rognage horizontal et en-tête riche
+optionnel (logo, hiérarchie organisationnelle, sous-titre).</li>
+<li><strong>Gabarit flashcards</strong> — <code>ZFlashcardPdfTemplate</code> compose texte et LaTeX
+<strong>inline</strong> dans le flux du document, avec repli robuste sur le texte
+brut pour toute formule non rasterisée, et une chaîne de polices pour
+couvrir plusieurs écritures dans un même document.</li>
+<li><strong>Assemblage d'images</strong> — <code>ZPdfCreationService</code>/<code>buildImagesPdf</code>
+transforment une liste de bytes d'images en un document PDF multi-pages,
+et <code>ZFileSaver</code> sauvegarde n'importe quel export sur disque ou déclenche
+un téléchargement navigateur, selon la plateforme.</li>
+</ul>
+<p><strong>Utilisez ce paquet</strong> pour tout export PDF — tabulaire, flashcards, ou
+assemblage d'images — sans dépendance tableur. <strong>N'utilisez pas ce paquet</strong>
+si vous avez aussi besoin d'Excel : dépendez alors de <code>zcrud_export</code>, qui
+réexporte celui-ci intégralement.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'dart:typed_data';
+import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_export_pdf/zcrud_export_pdf.dart';
+
+Uint8List exportTablePdf() {
+  final request = ZListRenderRequest.fromSchema(
+    const [ZFieldSpec(name: 'name', type: EditionFieldType.text, label: 'Name')],
+    const [ZListRow(id: '1', cells: {'name': 'Ada'})],
+  );
+  final table = ZExportTable.fromRequest(request);
+  return buildPdfBytes(
+    table,
+    options: const ZPdfExportOptions(
+      header: ZPdfHeaderSpec(organizationLines: ['Ma structure']),
+    ),
+  );
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Isolation Syncfusion (invariants <a href="../../docs/site/concepts/invariants.md#ad-1">AD-1</a>/<a href="../../docs/site/concepts/invariants.md#ad-8">AD-8</a>)</strong> —
+<code>syncfusion_flutter_pdf</code> est confiné aux implémentations concrètes ; aucune
+signature publique ne porte un type <code>PdfDocument</code>/<code>PdfGrid</code>/<code>PdfBitmap</code>.</li>
+<li><strong>En-tête riche rétrocompatible</strong> — <code>ZPdfExportOptions.header</code> (voir
+<code>ZPdfHeaderSpec</code>) est un ajout purement additif : <code>options == null</code> ou
+<code>options.header == null</code> reproduit bit pour bit le rendu historique
+(titre seul, sans logo).</li>
+<li><strong>Chaîne de polices pour l'Unicode</strong> — sans <code>fontProvider</code>, seule la
+police WinAnsi standard est utilisée (latin-1 seulement, tout autre
+caractère devient <code>?</code>, visible plutôt qu'un <code>.notdef</code> silencieux). Une
+chaîne de <code>ZPdfFontProvider</code> (<code>fontProvider</code> + <code>fallbackFontProviders</code>)
+couvre plusieurs écritures dans un même document, chaque suite de
+caractères étant peinte avec la première police qui la porte.</li>
+<li><strong>Aucune perte silencieuse de contenu</strong> — la composition inline
+texte/LaTeX réémet toujours les délimiteurs <code>$</code> en repli, et un saut de
+ligne dans un mot produit un véritable retour à la ligne plutôt que de
+faire disparaître le texte hors du rectangle de dessin.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>buildPdfBytes</code> / <code>ZExportTable</code></td>
+<td>Export tabulaire neutre : table de chaînes → bytes PDF.</td>
+</tr>
+<tr>
+<td><code>ZPdfExportOptions</code> / <code>ZPdfHeaderSpec</code> / <code>ZPdfOrientation</code></td>
+<td>Options de mise en page (orientation, titre, en-tête riche).</td>
+</tr>
+<tr>
+<td><code>ZFlashcardPdfTemplate</code></td>
+<td>Gabarit PDF flashcards, composition inline texte + LaTeX.</td>
+</tr>
+<tr>
+<td><code>ZFlashcardPdfInput</code> / <code>ZFlashcardPdfCard</code> / <code>ZFlashcardPdfChoice</code> / <code>ZFlashcardPdfLabels</code></td>
+<td>Entrée neutre et libellés injectés du gabarit flashcards.</td>
+</tr>
+<tr>
+<td><code>ZAnswerVisibility</code></td>
+<td>Mode d'affichage des réponses (<code>withAnswers</code> / <code>withoutAnswers</code>).</td>
+</tr>
+<tr>
+<td><code>ZLatexRasterizer</code></td>
+<td>Port pur de rastérisation LaTeX, implémenté dans <code>zcrud_export_ui</code>.</td>
+</tr>
+<tr>
+<td><code>ZPdfFontProvider</code></td>
+<td>Port de fourniture d'une police TrueType, pour dépasser le latin-1.</td>
+</tr>
+<tr>
+<td><code>ZFontCoverage</code></td>
+<td>Lecture de la couverture réelle d'une police via sa table <code>cmap</code>.</td>
+</tr>
+<tr>
+<td><code>ZPdfCreationService</code> / <code>buildImagesPdf</code></td>
+<td>Assemblage d'une liste d'images en document PDF multi-pages.</td>
+</tr>
+<tr>
+<td><code>ZExportedFile</code></td>
+<td>Triplet neutre <code>{bytes, fileName, mimeType}</code> produit par un export.</td>
+</tr>
+<tr>
+<td><code>ZFileSaver</code> / <code>ZFileSaveResult</code></td>
+<td>Sauvegarde cross-plateforme (disque ou téléchargement navigateur).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li>Une table ou un dossier vide produit toujours un document PDF <strong>valide</strong>
+d'au moins une page — jamais un fichier vide ni une exception.</li>
+<li>Une carte flashcard malformée, un LaTeX invalide, ou un logo d'en-tête non
+décodable dégradent proprement (repli texte brut ou omission) sans faire
+échouer l'export entier (invariant AD-10).</li>
+<li><code>PdfDocument.dispose()</code> est toujours appelé en <code>finally</code>, sur tous les
+chemins, y compris les chemins vides ou en exception — aucune fuite de
+ressource native.</li>
+<li><code>ZFileSaver</code> ne fait fuir aucun symbole <code>dart:io</code>/<code>package:web</code> dans sa
+signature ; la sélection d'implémentation se fait par import conditionnel
+à la compilation.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li><a href="../zcrud_export/README.md">zcrud_export</a> — façade combinée Excel + PDF
+qui réexporte intégralement ce paquet.</li>
+<li><a href="../zcrud_export_ui/README.md">zcrud_export_ui</a> — implémentation concrète
+du port <code>ZLatexRasterizer</code>, et l'aperçu/impression/partage des bytes PDF.</li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> —
+définitions canoniques AD-1 à AD-16.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_export_pdf">
+  <span class="name"><a href="zcrud_export_pdf/">zcrud_export_pdf</a></span> 
+
+</dt>
+<dd>API publique d'export <strong>PDF</strong> de zcrud — sans aucune dépendance tableur.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_export_pdf package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_export_pdf</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_export_pdf/">zcrud_export_pdf</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_export_pdf
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the withFolder method from the ZRepetitionInfo class, for the Dart programming language.">
+  <title>withFolder method - ZRepetitionInfo class - zcrud_flashcard library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_flashcard</a></li>
+    <li><a href="../../zcrud_flashcard/">zcrud_flashcard.dart</a></li>
+    <li><a href="../../zcrud_flashcard/ZRepetitionInfo-class.html">ZRepetitionInfo</a></li>
+    <li class="self-crumb">withFolder method</li>
+  </ol>
+  <div class="self-name">withFolder</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_flashcard&#47;ZRepetitionInfo-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">withFolder</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="../../zcrud_flashcard/ZRepetitionInfo-class.html">ZRepetitionInfo</a></span>
+<span class="name ">withFolder</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="withFolder-param-folderId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">folderId</span></span></li>
+</ol>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Copie relocalisant uniquement le <code>folderId</code> dénormalisé (routage de
+session) en préservant à l'identique tous les champs d'ordonnancement
+SRS (intervalle, répétitions, facteur de facilité, prochaine échéance,
+date d'apprentissage, dernière qualité) ainsi que les canaux hors
+schéma (extension/extra).</p>
+<p>Cette copie ne peut pas faire progresser l'état — elle n'expose aucun
+paramètre d'ordonnancement et n'invoque aucun scheduler. Ce n'est donc
+pas une voie d'avancement concurrente de <code>ZSrsScheduler.apply</code>
+(invariant AD-9) : c'est une pure relocalisation de routage (par
+exemple le déplacement d'une carte entre dossiers, voir
+<code>ZFlashcardRepository.moveCard</code>). Additif minimal au modèle SRS, elle
+ne réintroduit aucun <code>copyWith</code> d'avancement.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZRepetitionInfo withFolder(String folderId) =&gt; ZRepetitionInfo(
+      flashcardId: flashcardId,
+      folderId: folderId,
+      interval: interval,
+      repetitions: repetitions,
+      easeFactor: easeFactor,
+      nextReviewDate: nextReviewDate,
+      learnedAt: learnedAt,
+      lastQuality: lastQuality,
+      extension: extension,
+      extra: extra,
+    );</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_flashcard</a></li>
+    <li><a href="../../zcrud_flashcard/">zcrud_flashcard</a></li>
+    <li><a href="../../zcrud_flashcard/ZRepetitionInfo-class.html">ZRepetitionInfo</a></li>
+    <li class="self-crumb">withFolder method</li>
+</ol>
+
+    <h5>ZRepetitionInfo class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_flashcard
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

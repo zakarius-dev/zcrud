@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_chat_material API docs, for the Dart programming language.">
+  <title>zcrud_chat_material - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_chat_material package</a></li>
+  </ol>
+  <div class="self-name">zcrud_chat_material</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_chat_material">zcrud_chat_material</h1>
+<p>Skin Material pixel-perfect pour le composer du chat zcrud — satellite
+opt-in qui n'ajoute aucune dépendance tierce (invariant AD-1).</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p>Le composer par défaut de <code>zcrud_chat</code> est chromatiquement nu par
+construction : pas de rôle <code>ColorScheme</code>, pas d'icône Material, pour que le
+socle reste utilisable sous n'importe quel design system. Ce paquet fournit
+les builders Material qui habillent ce composer — bouton d'envoi animé,
+chips d'effort, badges de compteur, chips de pièces jointes, slider de
+budget de calcul — sans jamais dupliquer sa logique.</p>
+<p>Chaque widget se branche sur un créneau déjà exposé par le socle
+(<code>ZChatComposer.trailing</code>/<code>tools</code>/<code>leading</code>, ou
+<code>ZChatSettingsSheet.computeBudgetBuilder</code>) : ce paquet ne construit ni
+composer ni feuille de réglages parallèles. L'envoi passe toujours par
+<code>ZChatComposerSlot.submit</code>, le site d'envoi unique du socle.</p>
+<p><strong>Utilisez ce paquet</strong> si votre application est en Material Design et que
+vous voulez un composer de chat entièrement stylé sans écrire vous-même les
+rôles <code>ColorScheme</code>, glyphes et dimensions conformes à l'accessibilité.</p>
+<p><strong>N'utilisez pas ce paquet</strong> si votre application suit un autre design
+system (Cupertino, un thème maison) : composez directement sur les créneaux
+de <code>zcrud_chat</code>, qui restent nus et remplaçables.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:flutter/widgets.dart';
+import 'package:zcrud_chat/zcrud_chat.dart';
+import 'package:zcrud_chat_material/zcrud_chat_material.dart';
+
+/// Le composer complet, stylé Material, prêt à monter.
+Widget buildMaterialComposer(
+  ZChatController controller,
+  ZChatSettingsController settings,
+) {
+  return ZChatMaterialComposer(controller: controller, settings: settings);
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Des builders sur les créneaux du socle, jamais une vue parallèle</strong> —
+chaque widget de ce paquet remplit un créneau que <code>zcrud_chat</code> expose déjà
+(bouton d'envoi, bascules, badges) ; aucun composer ni feuille de réglages
+n'est réécrit.</li>
+<li><strong>La chaîne de résolution du chrome</strong> — dimensions, couleurs d'identité et
+durées ne sont jamais codées en dur : elles sont résolues via
+<code>zChatComposerChromeOf</code> avec la priorité paramètre explicite &gt; jeton de
+thème &gt; référence Material intégrée à ce paquet.</li>
+<li><strong>Accessibilité et RTL (<a href="../../docs/site/concepts/invariants.md#ad-13">AD-13</a>)</strong> —
+toute cible tactile est tenue ≥ 48 dp en géométrie rendue (pas seulement
+promise par le thème), tout est directionnel, et un état n'est jamais porté
+par la seule couleur (un canal non chromatique — coche, icône — coexiste
+toujours avec la teinte).</li>
+<li><strong>Composabilité par créneaux nullables (<a href="../../docs/site/concepts/invariants.md#ad-4">AD-4</a>)</strong> —
+chaque builder est indépendant : l'hôte en monte un, plusieurs ou aucun ; un
+réglage absent fait rendre <code>null</code>, jamais une affordance inerte.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZChatMaterialComposer</code></td>
+<td>Le composer complet assemblé — glyphes, rôles Material et FAB d'envoi sur <code>ZDefaultChatComposer</code>.</td>
+</tr>
+<tr>
+<td><code>zChatMaterialSendFab</code> / <code>ZChatMaterialSendFab</code></td>
+<td>Le bouton d'envoi animé, à brancher sur le créneau <code>trailing</code>.</td>
+</tr>
+<tr>
+<td><code>zChatMaterialEffortChips</code> / <code>ZChatMaterialEffortChips</code></td>
+<td>Les chips de palier de longueur de réponse, à brancher sur le créneau <code>tools</code>.</td>
+</tr>
+<tr>
+<td><code>ZChatMaterialBadge</code> / <code>ZChatMaterialToolsBadge</code></td>
+<td>Le badge compteur statique, et sa variante liée au nombre de réglages actifs.</td>
+</tr>
+<tr>
+<td><code>zChatMaterialAttachmentChips</code> / <code>ZChatMaterialAttachmentChips</code></td>
+<td>La rangée de chips de pièces jointes en attente.</td>
+</tr>
+<tr>
+<td><code>zChatMaterialBudgetSlider</code> / <code>ZChatMaterialBudgetSlider</code></td>
+<td>Le slider labellisé de budget de calcul, alternative aux chips par défaut.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Aucun second site d'envoi</strong> — le tap du bouton d'envoi appartient à la
+primitive du socle (<code>ZChatComposerSendTarget</code>), jamais à un <code>onPressed</code>
+propre à ce paquet : il n'existe qu'un seul chemin d'envoi.</li>
+<li><strong><code>borderColor</code> du composer assemblé</strong> — un hôte qui obtenait déjà un filet
+autour du composer en l'enveloppant d'un second conteneur doit retirer
+cette compensation en migrant vers ce paramètre ; sinon les deux filets se
+superposent à des rayons différents.</li>
+<li><strong>La teinte n'est jamais le seul canal d'un état</strong> — sélection, activation
+et compteurs restent lisibles sans couleur (coche, icône, <code>Semantics</code>
+explicite).</li>
+<li><strong>Aucune animation propre à ce paquet</strong> — les transitions viennent des
+primitives du socle, qui respectent déjà le réglage de réduction des
+animations de la plateforme.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_chat_material.md"><code>docs/site/paquets/zcrud_chat_material.md</code></a></li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_chat</code> — le socle Flutter dont ce paquet habille le composer.</li>
+<li><code>zcrud_chat_kernel</code> — le domaine pur de conversation, dont dépend <code>zcrud_chat</code>.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_chat_material">
+  <span class="name"><a href="zcrud_chat_material/">zcrud_chat_material</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_chat_material</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_chat_material package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_chat_material</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_chat_material/">zcrud_chat_material</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_material
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

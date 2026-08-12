@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zSanitizeExtra function from the zcrud_core library, for the Dart programming language.">
+  <title>zSanitizeExtra function - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">zSanitizeExtra function</li>
+  </ol>
+  <div class="self-name">zSanitizeExtra</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zSanitizeExtra</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+<span class="name ">zSanitizeExtra</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="zSanitizeExtra-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">raw</span>, </span></li>
+<li><span class="parameter" id="zSanitizeExtra-param-reserved"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">reserved</span></span></li>
+</ol>)
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p><strong>LA GARDE PARTAGÉE DU SLOT <code>extra</code></strong> — dépouille
+<code>raw</code> de <strong>toutes</strong> les clés <code>reserved</code> et rend une <code>Map</code> <strong>non modifiable</strong>.</p>
+<h2 id="un-invariant-de-valeur-a-deux-frontires--pas-une">Un invariant de valeur a DEUX frontières — pas une</h2>
+<p>La <strong>désérialisation</strong> (une clé réservée qui ENTRE, via un store qui écrit
+<code>updated_at</code>/<code>is_deleted</code> <strong>dans le corps</strong> du document) <strong>ET</strong> la <strong>mutation
+applicative</strong> (une clé réservée qu'on ÉCRIT : <code>copyWith(extra:)</code>, ou — pour
+les entités qui n'ont <strong>aucun</strong> <code>copyWith</code> — le <strong>constructeur nominal</strong>).</p>
+<p>Ne fermer que la première laisse la garde <strong>ROUVRABLE</strong> : un
+<code>updated_at</code>/<code>is_deleted</code> <strong>métier</strong> logé dans le corps entre alors en
+collision avec l'autorité de sync — le store écrit <code>ZSyncMeta</code> <strong>APRÈS</strong>
+le corps ⇒ <strong>le merge Last-Write-Wins est faussé, silencieusement, sans un
+seul test rouge</strong> (AD-9).</p>
+<h2 id="o-lappeler--normalisation-eager">Où l'appeler — NORMALISATION <strong>EAGER</strong></h2>
+<p>Aux voies <strong>capables</strong> de filtrer : <code>fromMap</code> (frontière d'ENTRÉE) et
+<code>copyWith(extra:)</code>, <strong>plus</strong> l'initializer d'un constructeur <strong>non-<code>const</code></strong>.
+Elle y garde le slot STOCKÉ <strong>déjà propre</strong> ⇒ la lecture d'<code>extra</code> est
+<strong>SANS COPIE</strong> (<a href="../zcrud_core/zNormalizeExtra.html">zNormalizeExtra</a> rend le slot lui-même).</p>
+<p><strong>Elle NE SUFFIT PAS</strong> : le <strong>constructeur <code>const</code></strong> d'une entité codegen
+<strong>ne peut appeler AUCUNE fonction</strong> dans son initializer, et <strong>AD-10 INTERDIT</strong>
+d'y mettre un <code>assert</code> (le décodeur généré l'appelle avec des valeurs
+<strong>BRUTES</strong> : un <code>assert</code> ferait <strong>throw la désérialisation d'une donnée
+corrompue</strong>). C'est <a href="../zcrud_core/zNormalizeExtra.html">zNormalizeExtra</a>, <strong>posée sur l'ACCESSEUR <code>extra</code></strong>, qui
+ferme cette voie — et c'est <strong>le seul point que TOUTES les voies traversent</strong>.</p>
+<p><strong>Ce que cette garde ne fait PAS</strong> : elle n'est <strong>pas</strong> appelée par
+<code>toMap()</code>/<code>toJson()</code>. <code>toMap()</code> étale <strong>l'ACCESSEUR</strong> (<code>...extra</code>), déjà
+normalisé — appeler la garde une seconde fois à l'encodage serait une
+vérification décorative, sans effet observable, puisque l'accesseur a déjà
+fait le travail.</p>
+<p><code>reserved</code> est l'ensemble réservé <strong>de l'entité</strong> : champs du schéma
+(<code>$ZXxxFieldSpecs</code>) + <code>extension</code> + canaux hors-codegen (<code>source</code>, <code>learning</code>,
+<code>content</code>…) + <strong><code>...ZSyncMeta.reservedKeys</code></strong>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Map&lt;String, dynamic&gt; zSanitizeExtra(
+  Map&lt;String, dynamic&gt; raw,
+  Set&lt;String&gt; reserved,
+) =&gt;
+    Map&lt;String, dynamic&gt;.unmodifiable(&lt;String, dynamic&gt;{
+      for (final e in raw.entries)
+        if (!reserved.contains(e.key)) e.key: e.value,
+    });</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">zSanitizeExtra function</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

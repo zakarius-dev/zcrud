@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_exam library API docs, for the Dart programming language.">
+  <title>zcrud_exam library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_exam</a></li>
+    <li class="self-crumb">zcrud_exam.dart</li>
+  </ol>
+  <div class="self-name">zcrud_exam</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="zcrud_exam&#47;zcrud_exam-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">zcrud_exam</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+<section class="desc markdown">
+  <p>Barrel d'API publique de <code>zcrud_exam</code>.</p>
+<p>Domaine d'un examen daté rattaché à un dossier, avec rappels :</p>
+<ul>
+<li><code>ZExam</code> : l'entité (<code>ZEntity</code> + <code>ZExtensible</code>) — dossier, intitulé,
+<code>date</code> ISO-8601, seuils de rappel <code>reminderDaysBefore</code>, et
+<code>reminderTime</code> <strong>typé</strong> (canal hors schéma <code>'HH:mm'</code>). Ses méthodes de
+proximité (<code>daysUntil</code> / <code>isPast</code> / <code>isApproaching</code>) prennent l'horloge
+<code>now</code> en <strong>paramètre</strong> — pures, totales, déterministes, jamais
+<code>DateTime.now()</code> ;</li>
+<li><code>ZReminderTime</code> : le value-object d'heure <code>'HH:mm'</code> (défensif, total) —
+le type porte le format, jamais une <code>String</code> ambiguë ;</li>
+<li><code>kReminderTimeKey</code> : la clé persistée du canal hors schéma
+<code>reminder_time</code>.</li>
+</ul>
+<p><code>ZExam</code> ne déclare <strong>ni <code>updated_at</code> ni <code>is_deleted</code></strong> — l'autorité
+Last-Write-Wins et la suppression logique vivent hors de l'entité
+(invariant AD-9). La date d'examen (<code>date</code>) est une clé métier distincte
+de toute clé de synchronisation.</p>
+<p>Dépend uniquement de <code>zcrud_core</code> (surface pur-Dart <code>domain.dart</code>) et de
+<code>zcrud_annotations</code> (invariant AD-1) — aucune dépendance lourde, aucun
+gestionnaire d'état, aucun <code>cloud_firestore</code>, aucun SDK Flutter. Tests
+exécutés sous <code>dart test</code> (et <code>dart test -p node</code>, ce paquet étant
+pur-Dart).</p>
+<h2 id="extension-gnre-masque">Extension générée masquée</h2>
+<p><code>ZExamZcrud</code> porte un <code>copyWith</code> <strong>généré</strong> qui ne connaît que les champs
+annotés : il ignore <code>extra</code>, <code>extension</code> <strong>et le canal hors schéma
+<code>reminderTime</code></strong>, et les remet à leurs <strong>défauts</strong> — perte silencieuse. La
+politique est donc uniforme : aucune extension générée n'est exportée. La
+(dé)sérialisation et la copie passent par l'API d'instance (<code>fromMap</code> /
+<code>toMap</code> / <code>copyWith</code> à sentinelle).</p>
+<p>API publique = ce barrel ; implémentation sous <code>lib/src/domain/</code>.</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="ZExam">
+  <span class="name "><a href="../zcrud_exam/ZExam-class.html">ZExam</a></span> 
+
+</dt>
+<dd>
+  Examen daté rattaché à un dossier, avec rappels — contenu personnel à
+identité propre (invariant AD-14).
+</dd>
+
+          <dt id="ZReminderRecurrence">
+  <span class="name "><a href="../zcrud_exam/ZReminderRecurrence-class.html">ZReminderRecurrence</a></span> 
+
+</dt>
+<dd>
+  Récurrence de rappel couvrant les deux familles temporelles.
+</dd>
+
+          <dt id="ZReminderTime">
+  <span class="name "><a href="../zcrud_exam/ZReminderTime-class.html">ZReminderTime</a></span> 
+
+</dt>
+<dd>
+  Heure de rappel <code>{hour, minute}</code> — immuable, persistée <code>'HH:mm'</code> (24 h).
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+
+    <section class="summary offset-anchor" id="constants">
+      <h2>Constants</h2>
+      <dl class="properties">
+          <dt id="$ZExamFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_exam/$ZExamFieldSpecs-constant.html">$ZExamFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+  
+
+</dd>
+
+          <dt id="$ZExamPersistedKeys" class="constant">
+    <span class="name "><a href="../zcrud_exam/$ZExamPersistedKeys-constant.html">$ZExamPersistedKeys</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que <code>ZExam.toMap()</code> PEUT produire (CR-LEX-28) — surensemble
+stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+  
+
+</dd>
+
+          <dt id="$ZExamTimestampFields" class="constant">
+    <span class="name "><a href="../zcrud_exam/$ZExamTimestampFields-constant.html">$ZExamTimestampFields</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés persistées à encoder en <code>Timestamp</code> Firestore natif (gap B14, AD-5).
+  
+
+</dd>
+
+          <dt id="kReminderRecurrenceKey" class="constant">
+    <span class="name "><a href="../zcrud_exam/kReminderRecurrenceKey-constant.html">kReminderRecurrenceKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé persistée du canal hors schéma <a href="../zcrud_exam/ZExam/reminderRecurrence.html">ZExam.reminderRecurrence</a>.
+  
+
+</dd>
+
+          <dt id="kReminderTimeKey" class="constant">
+    <span class="name "><a href="../zcrud_exam/kReminderTimeKey-constant.html">kReminderTimeKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé persistée du canal hors schéma <a href="../zcrud_exam/ZExam/reminderTime.html">ZExam.reminderTime</a>.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="registerZExam" class="callable">
+  <span class="name"><a href="../zcrud_exam/registerZExam.html">registerZExam</a></span><span class="signature">(<wbr><span class="parameter" id="registerZExam-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre <code>ZExam</code> (kind "exam") sur <code>registry</code> : (dé)sérialisation + schéma.
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+      <dl>
+          
+  <dt id="ZExamExtensionParser" class="callable">
+    <span class="name"><a href="../zcrud_exam/ZExamExtensionParser.html">ZExamExtensionParser</a></span><span class="signature">
+      <span class="returntype parameter">= ZExtension? Function<span class="signature">(<span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Reconstruit une <code>ZExtension</code> concrète depuis sa map JSON, ou rend <code>null</code>
+(invariant AD-4).
+    
+
+  </dd>
+
+      </dl>
+    </section>
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_exam</a></li>
+    <li class="self-crumb">zcrud_exam.dart</li>
+</ol>
+
+    <h5><span class="package-name">zcrud_exam</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../zcrud_exam/">zcrud_exam</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>zcrud_exam library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_exam
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

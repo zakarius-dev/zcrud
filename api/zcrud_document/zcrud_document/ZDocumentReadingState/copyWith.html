@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the copyWith method from the ZDocumentReadingState class, for the Dart programming language.">
+  <title>copyWith method - ZDocumentReadingState class - zcrud_document library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_document</a></li>
+    <li><a href="../../zcrud_document/">zcrud_document.dart</a></li>
+    <li><a href="../../zcrud_document/ZDocumentReadingState-class.html">ZDocumentReadingState</a></li>
+    <li class="self-crumb">copyWith method</li>
+  </ol>
+  <div class="self-name">copyWith</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_document&#47;ZDocumentReadingState-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">copyWith</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="../../zcrud_document/ZDocumentReadingState-class.html">ZDocumentReadingState</a></span>
+<span class="name ">copyWith</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="copyWith-param-docId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">docId</span> = <span class="default-value">_$undefined</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-currentPage"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">currentPage</span> = <span class="default-value">_$undefined</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-pageCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">pageCount</span> = <span class="default-value">_$undefined</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-prefs"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">prefs</span> = <span class="default-value">_$undefined</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-learning"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">learning</span> = <span class="default-value">_$undefined</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-extension"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">extension</span> = <span class="default-value">_$undefined</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-extra"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">extra</span> = <span class="default-value">_$undefined</span>, </span></li>
+</ol>})
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Copie à sentinelle — couvre tous les champs, y compris <code>learning</code>,
+<code>extension</code> et <code>extra</code> (que le <code>copyWith</code> généré ignore ou remettrait
+à leurs défauts : perte silencieuse évitée ici). Masque le <code>copyWith</code>
+de l'extension.</p>
+<p><code>currentPage</code> et <code>pageCount</code> sont sanitisés comme au décodage (une
+mutation applicative ne doit pas rouvrir l'invariant que <code>fromMap</code>
+ferme).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZDocumentReadingState copyWith({
+  Object? docId = _$undefined,
+  Object? currentPage = _$undefined,
+  Object? pageCount = _$undefined,
+  Object? prefs = _$undefined,
+  Object? learning = _$undefined,
+  Object? extension = _$undefined,
+  Object? extra = _$undefined,
+}) {
+  final nextPage = identical(currentPage, _$undefined)
+      ? this.currentPage
+      : currentPage as int;
+  final nextCount = identical(pageCount, _$undefined)
+      ? this.pageCount
+      : pageCount as int?;
+  return ZDocumentReadingState(
+    docId: identical(docId, _$undefined) ? this.docId : docId as String,
+    currentPage: nextPage &lt; 1 ? 1 : nextPage,
+    pageCount: nextCount == null || nextCount &lt;= 0 ? null : nextCount,
+    prefs: identical(prefs, _$undefined)
+        ? this.prefs
+        : prefs as ZDocumentViewerPrefs,
+    learning: identical(learning, _$undefined)
+        ? this.learning
+        : learning as ZDocumentLearningInfo,
+    extension: identical(extension, _$undefined)
+        ? this.extension
+        : extension as ZExtension?,
+    &#47;&#47; Même fonction nommée qu&#39;en `fromMap` — `copyWith` ne peut pas
+    &#47;&#47; rouvrir le filtre des clés réservées.
+    extra: identical(extra, _$undefined)
+        ? this.extra
+        : _sanitizeExtra(extra as Map&lt;String, dynamic&gt;),
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_document</a></li>
+    <li><a href="../../zcrud_document/">zcrud_document</a></li>
+    <li><a href="../../zcrud_document/ZDocumentReadingState-class.html">ZDocumentReadingState</a></li>
+    <li class="self-crumb">copyWith method</li>
+</ol>
+
+    <h5>ZDocumentReadingState class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_document
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

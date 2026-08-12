@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the assembleZStudySyncOrchestrator function from the zcrud_firestore library, for the Dart programming language.">
+  <title>assembleZStudySyncOrchestrator function - zcrud_firestore library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_firestore</a></li>
+    <li><a href="../zcrud_firestore/">zcrud_firestore.dart</a></li>
+    <li class="self-crumb">assembleZStudySyncOrchestrator function</li>
+  </ol>
+  <div class="self-name">assembleZStudySyncOrchestrator</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_firestore&#47;zcrud_firestore-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">assembleZStudySyncOrchestrator</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype">ZSyncOrchestrator</span>
+<span class="name ">assembleZStudySyncOrchestrator</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="assembleZStudySyncOrchestrator-param-repositories"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSyncableRepository</span>&gt;</span></span> <span class="parameter-name">repositories</span>, </span></li>
+<li><span class="parameter" id="assembleZStudySyncOrchestrator-param-debounce"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">debounce</span> = <span class="default-value">kZSyncDefaultDebounce</span>, </span></li>
+<li><span class="parameter" id="assembleZStudySyncOrchestrator-param-timerFactory"><span class="type-annotation">ZSyncTimerFactory?</span> <span class="parameter-name">timerFactory</span>, </span></li>
+<li><span class="parameter" id="assembleZStudySyncOrchestrator-param-isConnected"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>&gt;</span></span> <span class="parameter-name">isConnected</span>()?, </span></li>
+<li><span class="parameter" id="assembleZStudySyncOrchestrator-param-enabled"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enabled</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="assembleZStudySyncOrchestrator-param-logger"><span class="type-annotation">ZSyncOrchestratorLog?</span> <span class="parameter-name">logger</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Assemble un <code>ZSyncOrchestrator</code> à partir d'une <strong>liste injectée</strong> de
+dépôts synchronisables — best-effort, débouncé ~400 ms — sans coder en dur
+aucun repo.</p>
+<ul>
+<li><code>repositories</code> : <strong>LISTE INJECTÉE</strong> par l'app (ses <code>ZOfflineFirstBoxRepository</code>
+flat <em>et</em> nested, transitivement des <code>ZSyncableRepository</code>). C'est la
+<strong>seule</strong> source de dépôts — aucun n'est importé/construit ici.</li>
+<li><code>debounce</code> : fenêtre de coalescence (défaut <code>kZSyncDefaultDebounce</code> = 400 ms).</li>
+<li><code>timerFactory</code> : couture de fabrique de timer (test → fake clock).</li>
+<li><code>isConnected</code> : couture de connectivité de l'app (défaut <code>null</code>).</li>
+<li><code>enabled</code> : gate d'activation (défaut <code>true</code>).</li>
+<li><code>logger</code> : journal neutre (défaut no-op côté cœur).</li>
+</ul>
+<p>L'app câble ensuite ses transitions login/réseau sur
+<code>ZSyncOrchestrator.onLogin</code> / <code>ZSyncOrchestrator.onReconnected</code> et <strong>possède</strong>
+le cycle de vie des dépôts injectés (l'orchestrateur ne les <code>dispose</code> pas).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZSyncOrchestrator assembleZStudySyncOrchestrator({
+  required Iterable&lt;ZSyncableRepository&lt;dynamic&gt;&gt; repositories,
+  Duration debounce = kZSyncDefaultDebounce,
+  ZSyncTimerFactory? timerFactory,
+  Future&lt;bool&gt; Function()? isConnected,
+  bool enabled = true,
+  ZSyncOrchestratorLog? logger,
+}) {
+  final orchestrator = ZSyncOrchestrator(
+    debounce: debounce,
+    timerFactory: timerFactory,
+    isConnected: isConnected,
+    enabled: enabled,
+    logger: logger,
+  );
+  orchestrator.registerAll(repositories);
+  return orchestrator;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_firestore</a></li>
+    <li><a href="../zcrud_firestore/">zcrud_firestore</a></li>
+    <li class="self-crumb">assembleZStudySyncOrchestrator function</li>
+</ol>
+
+    <h5>zcrud_firestore library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_firestore
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

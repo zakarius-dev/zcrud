@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_chat_markdown API docs, for the Dart programming language.">
+  <title>zcrud_chat_markdown - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_chat_markdown package</a></li>
+  </ol>
+  <div class="self-name">zcrud_chat_markdown</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_chat_markdown">zcrud_chat_markdown</h1>
+<p>Backend de rendu riche Markdown/LaTeX pour le chat zcrud — satellite opt-in
+qui ne coûte rien à qui ne le monte pas (invariant AD-1).</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p>Le rendu neutre de <code>zcrud_chat</code> affiche volontairement le Markdown, le LaTeX
+et les diagrammes Mermaid comme du texte source : c'est un choix délibéré,
+pas un défaut, pour que le socle du chat reste sans dépendance riche. Ce
+paquet fournit l'implémentation branchée au bout du port <code>ZChatRenderer</code> —
+le point d'extension que <code>zcrud_chat</code> expose précisément pour ce cas —
+adossée à <code>zcrud_markdown</code> (Quill en interne, isolé derrière son propre
+codec neutre).</p>
+<p><strong>Utilisez ce paquet</strong> si votre conversation affiche des réponses de modèle
+formatées (gras, listes, tableaux, formules LaTeX) et que vous voulez les
+rendre plutôt que les afficher en texte source.</p>
+<p><strong>N'utilisez pas ce paquet</strong> si vos messages sont du texte brut sans mise en
+forme, ou si vous préférez composer votre propre <code>ZChatRenderer</code> : rien dans
+<code>zcrud_chat</code> n'impose ce satellite, et son absence ne change strictement
+rien au comportement du socle.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<pre class="language-dart"><code class="language-dart">import 'package:flutter/widgets.dart';
+import 'package:zcrud_chat/zcrud_chat.dart';
+import 'package:zcrud_chat_markdown/zcrud_chat_markdown.dart';
+
+/// Branche le rendu riche sur une conversation existante : les blocs de
+/// texte de rôle assistant/system passent désormais par le Markdown, le
+/// reste (pièces jointes, réglages…) est inchangé.
+Widget buildRichConversation(ZChatController controller) {
+  return ZChatRendererScope(
+    renderer: const ZChatMarkdownRenderer(),
+    child: ZChatConversationView(controller: controller),
+  );
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Rendu au bout d'un port (<a href="../../docs/site/concepts/invariants.md#ad-8">AD-8</a>)</strong> —
+<code>ZChatMarkdownRenderer</code> implémente <code>ZChatRenderer</code>, exactement comme
+<code>ZSfDataGridRenderer</code> implémente <code>ZListRenderer</code> pour les listes : le
+cœur du chat n'a jamais besoin de connaître Markdown ou LaTeX pour définir
+le port.</li>
+<li><strong>Streaming : neutre pendant, riche à la complétion</strong> — un Markdown reçu
+fragment par fragment est incomplet à chaque étape (un <code>**</code> peut ne pas
+être encore fermé). Reconstruire le rendu riche à chaque jeton reçu
+provoquerait un clignotement visuel et un coût croissant avec la longueur
+du message ; <code>ZChatMarkdownRenderer</code> décline donc par défaut pendant le
+flux et laisse le rendu neutre — déjà granulaire — afficher le texte en
+cours, avant de rendre le résultat riche une seule fois à la fin. Voir
+<code>ZChatMarkdownStreamingMode</code> pour le mode alternatif.</li>
+<li><strong>Périmètre limité aux blocs de texte</strong> — seul <code>ZTextBlock</code> est rendu en
+Markdown ; les autres variantes de bloc (tableau, diagramme, sources…)
+portent une donnée déjà structurée qu'un passage Markdown pourrait
+corrompre. Le renderer décline sur tout ce qui n'est pas du texte, et le
+rendu neutre du socle prend le relais.</li>
+<li><strong>Confinement de la dépendance riche (<a href="../../docs/site/concepts/invariants.md#ad-1">AD-1</a>)</strong> —
+ce paquet n'atteint Quill qu'à travers l'API neutre de <code>zcrud_markdown</code>
+(<code>ZMarkdownReader</code>/<code>ZCodec</code>) ; aucun type de l'éditeur riche ne fuit dans
+ce paquet ni dans son barrel.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZChatMarkdownRenderer</code></td>
+<td>Le backend de rendu, à injecter via <code>ZChatRendererScope</code>. Paramètres : politique de streaming, LaTeX, rôles couverts, style de texte.</td>
+</tr>
+<tr>
+<td><code>ZChatMarkdownStreamingMode</code></td>
+<td>Politique de rendu pendant un flux en cours (<code>neutralWhileStreaming</code> par défaut, <code>richWhileStreaming</code>).</td>
+</tr>
+<tr>
+<td><code>kZChatMarkdownDefaultRoles</code></td>
+<td>Les rôles dont le texte est interprété comme du Markdown par défaut — tout sauf <code>user</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Aucun <code>throw</code>, quel que soit le fragment reçu (invariant <a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>)</strong> —
+un Markdown tronqué à un endroit délicat (<code>**</code> non fermé, tableau à une
+ligne, bloc de code non refermé, lien coupé, <code>$$</code> ouvert) est toujours
+rendu comme du texte littéral plutôt que de lever une exception.</li>
+<li><strong>Le texte de l'utilisateur reste littéral par défaut</strong> — <code>roles</code> exclut
+<code>user</code> de <code>kZChatMarkdownDefaultRoles</code> : ce que l'utilisateur a tapé
+(astérisques compris) doit rester visible tel quel, pas interprété comme
+de la mise en forme.</li>
+<li><strong>LaTeX est une décision d'affichage, jamais d'écriture</strong> — ce paquet ne
+fait que décoder du texte déjà persisté ; activer ou désactiver le pont
+LaTeX (<code>latex: true/false</code>) ne modifie ni ne risque aucune donnée stockée.</li>
+<li><strong>Un bloc vide ne rend rien</strong> — aucun texte de repli n'est inventé pour un
+contenu vide ; le renderer décline et laisse le rendu neutre décider.</li>
+<li><strong><code>const ZChatMarkdownRenderer()</code> est comparé par identité</strong> — le garder
+<code>const</code>, ou le mémoïser hors de <code>build</code>, évite de reconstruire toute la
+conversation à chaque frame.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche paquet : <a href="../../docs/site/paquets/zcrud_chat_markdown.md"><code>docs/site/paquets/zcrud_chat_markdown.md</code></a></li>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_chat</code> — le socle Flutter dont ce paquet implémente le port de rendu (<code>ZChatRenderer</code>).</li>
+<li><code>zcrud_chat_kernel</code> — le domaine pur de conversation, dont dépend <code>zcrud_chat</code>.</li>
+<li><code>zcrud_markdown</code> — l'éditeur/lecteur Markdown neutre sur lequel ce paquet s'appuie.</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_chat_markdown">
+  <span class="name"><a href="zcrud_chat_markdown/">zcrud_chat_markdown</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_chat_markdown</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_chat_markdown package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_chat_markdown</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_chat_markdown/">zcrud_chat_markdown</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_markdown
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

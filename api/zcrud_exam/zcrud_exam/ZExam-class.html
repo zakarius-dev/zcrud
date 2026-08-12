@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZExam class from the zcrud_exam library, for the Dart programming language.">
+  <title>ZExam class - zcrud_exam library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_exam</a></li>
+    <li><a href="../zcrud_exam/">zcrud_exam.dart</a></li>
+    <li class="self-crumb">ZExam class</li>
+  </ol>
+  <div class="self-name">ZExam</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_exam&#47;zcrud_exam-library-sidebar.html"
+    data-below-sidebar="zcrud_exam&#47;ZExam-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZExam</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Examen daté rattaché à un dossier, avec rappels — contenu personnel à
+identité propre (invariant AD-14).</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@ZcrudModel.new(kind: &#39;exam&#39;, fieldRename: ZFieldRename.snake)</li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZExam.new" class="callable">
+          <span class="name"><a href="../zcrud_exam/ZExam/ZExam.html">ZExam</a></span><span class="signature">({<span class="parameter" id="param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">id</span>, </span><span class="parameter" id="param-folderId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">folderId</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="param-title"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="param-date"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span> <span class="parameter-name">date</span>, </span><span class="parameter" id="param-reminderEnabled"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">reminderEnabled</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-reminderDaysBefore"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">reminderDaysBefore</span> = <span class="default-value">const &lt;int&gt;[]</span>, </span><span class="parameter" id="param-reminderTime"><span class="type-annotation"><a href="../zcrud_exam/ZReminderTime-class.html">ZReminderTime</a>?</span> <span class="parameter-name">reminderTime</span>, </span><span class="parameter" id="param-reminderRecurrence"><span class="type-annotation"><a href="../zcrud_exam/ZReminderRecurrence-class.html">ZReminderRecurrence</a>?</span> <span class="parameter-name">reminderRecurrence</span>, </span><span class="parameter" id="param-extension"><span class="type-annotation">ZExtension?</span> <span class="parameter-name">extension</span>, </span><span class="parameter" id="param-extra"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">extra</span> = <span class="default-value">const &lt;String, dynamic&gt;{}</span></span>})</span>
+        </dt>
+        <dd>
+          Construit un examen.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZExam.fromMap" class="callable">
+          <span class="name"><a href="../zcrud_exam/ZExam/ZExam.fromMap.html">ZExam.fromMap</a></span><span class="signature">(<span class="parameter" id="fromMap-param-map"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">map</span>, {</span><span class="parameter" id="fromMap-param-extensionParser"><span class="type-annotation"><a href="../zcrud_exam/ZExamExtensionParser.html">ZExamExtensionParser</a>?</span> <span class="parameter-name">extensionParser</span></span>})</span>
+        </dt>
+        <dd>
+          Reconstruit défensivement un examen depuis une map persistée (invariant
+AD-10) — aucun cas ne lève, pas même <code>ZExam.fromMap(const {})</code>.
+            <div class="constructor-modifier features">factory</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="date" class="property">
+  <span class="name"><a href="../zcrud_exam/ZExam/date.html">date</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span>
+  
+
+</dt>
+<dd>
+  Date de l'examen — clé métier <code>date</code>, persistée en ISO-8601, nullable
+(défaut <code>null</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="effectiveReminderRecurrence" class="property">
+  <span class="name"><a href="../zcrud_exam/ZExam/effectiveReminderRecurrence.html">effectiveReminderRecurrence</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_exam/ZReminderRecurrence-class.html">ZReminderRecurrence</a></span>
+  
+
+</dt>
+<dd>
+  Récurrence réellement appliquée : <a href="../zcrud_exam/ZExam/reminderRecurrence.html">reminderRecurrence</a> si renseignée,
+sinon la forme relative dérivée de <a href="../zcrud_exam/ZExam/reminderDaysBefore.html">reminderDaysBefore</a>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="extension" class="property">
+  <span class="name"><a href="../zcrud_exam/ZExam/extension.html">extension</a></span>
+  <span class="signature">&#8594; ZExtension?</span>
+  
+
+</dt>
+<dd>
+  Emplacement d'extension typée et versionnée (invariant AD-4), <code>null</code> si
+absente. Hors schéma généré.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="extra" class="property">
+  <span class="name"><a href="../zcrud_exam/ZExam/extra.html">extra</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Échappatoire non typée (invariant AD-4), défaut <code>const {}</code> (jamais
+<code>null</code>), qui préserve au round-trip les clés inconnues du domaine. Hors
+schéma généré.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="folderId" class="property">
+  <span class="name"><a href="../zcrud_exam/ZExam/folderId.html">folderId</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Dossier d'appartenance — clé neutre <code>String</code> (défaut <code>''</code>), qui ne
+référence aucun symbole d'un paquet d'organisation d'étude : l'arête de
+dépendance vers un tel paquet, si nécessaire un jour, ne doit pas passer
+par un import ici.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_exam/ZExam/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="id" class="property">
+  <span class="name"><a href="../zcrud_exam/ZExam/id.html">id</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Identité opaque (<code>null</code> pour l'éphémère — jamais attribuée par
+l'entité elle-même ; matérialisée au repository). Invariant AD-14.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="isEphemeral" class="property inherited">
+  <span class="name"><a href="../zcrud_exam/ZExam/isEphemeral.html">isEphemeral</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  <code>true</code> tant que l'entité n'a pas reçu d'identité (éphémère).
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="reminderDaysBefore" class="property">
+  <span class="name"><a href="../zcrud_exam/ZExam/reminderDaysBefore.html">reminderDaysBefore</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Seuils de rappel en nombre de jours avant l'échéance (persisté
+<code>reminder_days_before</code>, défaut <code>const &lt;int&gt;[]</code>, ordre préservé).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="reminderEnabled" class="property">
+  <span class="name"><a href="../zcrud_exam/ZExam/reminderEnabled.html">reminderEnabled</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Les rappels sont-ils activés pour cet examen ? (persisté
+<code>reminder_enabled</code>, défaut <code>false</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="reminderRecurrence" class="property">
+  <span class="name"><a href="../zcrud_exam/ZExam/reminderRecurrence.html">reminderRecurrence</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_exam/ZReminderRecurrence-class.html">ZReminderRecurrence</a>?</span>
+  
+
+</dt>
+<dd>
+  Clés persistées réservées (champs générés, <code>extension</code>,
+<a href="../zcrud_exam/kReminderTimeKey-constant.html">kReminderTimeKey</a>, <a href="../zcrud_exam/kReminderRecurrenceKey-constant.html">kReminderRecurrenceKey</a> et les clés de
+synchronisation) — dérivées des spécifications de champs générées pour
+rester synchrones avec le codegen.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="reminderTime" class="property">
+  <span class="name"><a href="../zcrud_exam/ZExam/reminderTime.html">reminderTime</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_exam/ZReminderTime-class.html">ZReminderTime</a>?</span>
+  
+
+</dt>
+<dd>
+  Heure de rappel typée (<a href="../zcrud_exam/ZReminderTime-class.html">ZReminderTime</a><code>?</code>), canal hors schéma, persistée
+<code>reminder_time</code> au format <code>'HH:mm'</code>, défaut <code>null</code>, sans annotation de
+champ.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="title" class="property">
+  <span class="name"><a href="../zcrud_exam/ZExam/title.html">title</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Intitulé de l'examen (défaut <code>''</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="copyWith" class="callable">
+  <span class="name"><a href="../zcrud_exam/ZExam/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">id</span> = <span class="default-value">_$undefined</span>, </span><span class="parameter" id="copyWith-param-folderId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">folderId</span> = <span class="default-value">_$undefined</span>, </span><span class="parameter" id="copyWith-param-title"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">title</span> = <span class="default-value">_$undefined</span>, </span><span class="parameter" id="copyWith-param-date"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">date</span> = <span class="default-value">_$undefined</span>, </span><span class="parameter" id="copyWith-param-reminderEnabled"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">reminderEnabled</span> = <span class="default-value">_$undefined</span>, </span><span class="parameter" id="copyWith-param-reminderDaysBefore"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">reminderDaysBefore</span> = <span class="default-value">_$undefined</span>, </span><span class="parameter" id="copyWith-param-reminderTime"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">reminderTime</span> = <span class="default-value">_$undefined</span>, </span><span class="parameter" id="copyWith-param-reminderRecurrence"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">reminderRecurrence</span> = <span class="default-value">_$undefined</span>, </span><span class="parameter" id="copyWith-param-extension"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">extension</span> = <span class="default-value">_$undefined</span>, </span><span class="parameter" id="copyWith-param-extra"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">extra</span> = <span class="default-value">_$undefined</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_exam/ZExam-class.html">ZExam</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Copie à sentinelle (un argument omis préserve la valeur, <code>null</code>
+explicite la remet à <code>null</code>) — couvre tous les champs, y compris
+<code>reminderTime</code>, <code>extension</code> et <code>extra</code>, que le <code>copyWith</code> généré par le
+codegen remettrait à leurs défauts (perte silencieuse). Masque le
+<code>copyWith</code> de l'extension générée.
+  
+
+</dd>
+
+        <dt id="daysUntil" class="callable">
+  <span class="name"><a href="../zcrud_exam/ZExam/daysUntil.html">daysUntil</a></span><span class="signature">(<wbr><span class="parameter" id="daysUntil-param-now"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">now</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Nombre de jours calendaires de <code>now</code> jusqu'à <a href="../zcrud_exam/ZExam/date.html">date</a>, ou <code>null</code> si <a href="../zcrud_exam/ZExam/date.html">date</a>
+est <code>null</code> (méthode totale, invariant AD-10).
+  
+
+</dd>
+
+        <dt id="isApproaching" class="callable">
+  <span class="name"><a href="../zcrud_exam/ZExam/isApproaching.html">isApproaching</a></span><span class="signature">(<wbr><span class="parameter" id="isApproaching-param-now"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">now</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si un rappel est dû au regard de <code>now</code> : les rappels sont
+activés (<a href="../zcrud_exam/ZExam/reminderEnabled.html">reminderEnabled</a>), l'examen a une <a href="../zcrud_exam/ZExam/date.html">date</a>, il n'est pas passé,
+et l'échéance approche sous au moins un des seuils
+<a href="../zcrud_exam/ZExam/reminderDaysBefore.html">reminderDaysBefore</a> (<code>daysUntil(now) &lt;= seuil</code>).
+  
+
+</dd>
+
+        <dt id="isPast" class="callable">
+  <span class="name"><a href="../zcrud_exam/ZExam/isPast.html">isPast</a></span><span class="signature">(<wbr><span class="parameter" id="isPast-param-now"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">now</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si l'examen est strictement passé au regard de <code>now</code> : il a une
+<a href="../zcrud_exam/ZExam/date.html">date</a> et son jour calendaire est antérieur à celui de <code>now</code>.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toMap" class="callable">
+  <span class="name"><a href="../zcrud_exam/ZExam/toMap.html">toMap</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Sérialise vers la map persistée complète (snake_case), sans perte.
+  
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_exam/ZExam/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_exam</a></li>
+    <li><a href="../zcrud_exam/">zcrud_exam</a></li>
+    <li class="self-crumb">ZExam class</li>
+</ol>
+
+    <h5>zcrud_exam library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_exam
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

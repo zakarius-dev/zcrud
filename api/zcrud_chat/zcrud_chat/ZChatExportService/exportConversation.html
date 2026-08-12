@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the exportConversation method from the ZChatExportService class, for the Dart programming language.">
+  <title>exportConversation method - ZChatExportService class - zcrud_chat library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_chat</a></li>
+    <li><a href="../../zcrud_chat/">zcrud_chat.dart</a></li>
+    <li><a href="../../zcrud_chat/ZChatExportService-class.html">ZChatExportService</a></li>
+    <li class="self-crumb">exportConversation method</li>
+  </ol>
+  <div class="self-name">exportConversation</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat&#47;ZChatExportService-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">exportConversation</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_chat/ZChatExportResult-class.html">ZChatExportResult</a></span>&gt;</span></span>&gt;</span></span>
+<span class="name ">exportConversation</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="exportConversation-param-title"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span>, </span></li>
+<li><span class="parameter" id="exportConversation-param-messages"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatMessage</span>&gt;</span></span> <span class="parameter-name">messages</span>, </span></li>
+<li><span class="parameter" id="exportConversation-param-format"><span>required</span> <span class="type-annotation"><a href="../../zcrud_chat/ZChatExportFormat.html">ZChatExportFormat</a></span> <span class="parameter-name">format</span>, </span></li>
+<li><span class="parameter" id="exportConversation-param-selection"><span class="type-annotation"><a href="../../zcrud_chat/ZChatExportSelection-class.html">ZChatExportSelection</a></span> <span class="parameter-name">selection</span> = <span class="default-value">ZChatExportSelection.all</span>, </span></li>
+<li><span class="parameter" id="exportConversation-param-exportDate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span> <span class="parameter-name">exportDate</span>, </span></li>
+</ol>})
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Exporte l'<strong>agrégat</strong> de <code>messages</code> dans <code>format</code>.</p>
+<p><code>selection</code> par défaut : <strong>toute</strong> la conversation.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;ZResult&lt;ZChatExportResult&gt;&gt; exportConversation({
+  required String title,
+  required List&lt;ZChatMessage&gt; messages,
+  required ZChatExportFormat format,
+  ZChatExportSelection selection = ZChatExportSelection.all,
+  DateTime? exportDate,
+}) async {
+  try {
+    final List&lt;ZChatMessage&gt; kept = _aggregate(messages, selection);
+    final String fileName = suggestedFileName(title, format);
+    final DateTime date = exportDate ?? DateTime.now();
+
+    if (format == ZChatExportFormat.pdf) {
+      final ZChatPdfComposer? composer = pdfComposer;
+      if (composer == null) {
+        return const Left&lt;ZFailure, ZChatExportResult&gt;(
+          ZUnsupportedOperationFailure(
+            &#39;no ZChatPdfComposer wired&#39;,
+            operation: &#39;exportConversation(pdf)&#39;,
+          ),
+        );
+      }
+      &#47;&#47; Le socle produit le document NEUTRE (Markdown) ; la mise en page est
+      &#47;&#47; à la couture. Aucun moteur PDF n&#39;entre ici.
+      final ZChatTextExport source = ZChatTextExport(
+        text: _renderMarkdown(title, kept, date),
+        format: ZChatExportFormat.markdown,
+        suggestedFileName: suggestedFileName(
+          title,
+          ZChatExportFormat.markdown,
+        ),
+      );
+      final ZResult&lt;Uint8List&gt; bytes = await composer.compose(source);
+      return bytes.fold(
+        Left&lt;ZFailure, ZChatExportResult&gt;.new,
+        (Uint8List b) =&gt; Right&lt;ZFailure, ZChatExportResult&gt;(
+          ZChatBinaryExport(
+            bytes: b,
+            format: format,
+            suggestedFileName: fileName,
+          ),
+        ),
+      );
+    }
+
+    final String text = switch (format) {
+      ZChatExportFormat.markdown =&gt; _renderMarkdown(title, kept, date),
+      ZChatExportFormat.plainText =&gt; _renderPlainText(title, kept, date),
+      ZChatExportFormat.html =&gt; _renderHtml(title, kept, date),
+      ZChatExportFormat.references =&gt; _uniqueReferences(kept).join(&#39;\n&#39;),
+      &#47;&#47; Traité plus haut ; la branche existe pour l&#39;exhaustivité du `switch`.
+      ZChatExportFormat.pdf =&gt; &#39;&#39;,
+    };
+    return Right&lt;ZFailure, ZChatExportResult&gt;(
+      ZChatTextExport(
+        text: text,
+        format: format,
+        suggestedFileName: fileName,
+      ),
+    );
+  } catch (error) {
+    &#47;&#47; Invariant AD-10 : un bloc malformé n&#39;emporte jamais la conversation.
+    return Left&lt;ZFailure, ZChatExportResult&gt;(ZDomainFailure(&#39;$error&#39;));
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_chat</a></li>
+    <li><a href="../../zcrud_chat/">zcrud_chat</a></li>
+    <li><a href="../../zcrud_chat/ZChatExportService-class.html">ZChatExportService</a></li>
+    <li class="self-crumb">exportConversation method</li>
+</ol>
+
+    <h5>ZChatExportService class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat
+      0.87.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+
