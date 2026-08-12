@@ -88,6 +88,66 @@ import 'package:zcrud_core/edition.dart';
 ///   ...
 /// }
 /// ```
+///
+/// ---
+///
+/// # Quels champs sont sérialisés
+///
+/// **Seuls les champs annotés** `@ZcrudField` (ou `@ZcrudId`) entrent dans le
+/// code émis. Un champ sans annotation n'apparaît ni dans `toMap()`, ni dans le
+/// décodeur, ni dans le `ZFieldSpec[]` : c'est ainsi qu'un modèle garde des
+/// champs d'exécution hors persistance.
+///
+/// Cette omission est **refusée par le build** dans le seul cas où elle coûte
+/// des données : un champ non annoté dont le **type n'est pas sérialisable**
+/// (ni scalaire supporté, ni `enum`, ni classe `@ZcrudModel`). Le type désigne
+/// alors un sous-objet métier, qu'une sérialisation écrite à la main émettait
+/// presque toujours ; le remplacer par le code émis l'effacerait du document à
+/// la première écriture, sans erreur de build ni d'analyse. Trois remèdes, tous
+/// explicites : annoter le champ, annoter son type `@ZcrudModel`, ou déclarer
+/// l'exclusion avec `@ZcrudIgnore` (voir `ZcrudIgnore`).
+///
+/// ---
+///
+/// # Clés de synchronisation : pourquoi `updated_at` peut manquer
+///
+/// Les clés `updated_at` et `is_deleted` appartiennent à la **couche de
+/// synchronisation**, hors-entité (`ZSyncMeta`) : c'est elle qui les écrit et
+/// les fait autorité. Un modèle peut néanmoins en porter un **miroir** (un champ
+/// dont la clé persistée tombe sur l'une d'elles).
+///
+/// Pour ces clés-là, et pour elles seules, `toMap()` **omet la clé quand la
+/// valeur est nulle** :
+///
+/// ```dart
+/// 'created_at': this.createdAt?.toIso8601String(),                   // toujours émise
+/// if (this.updatedAt != null) 'updated_at': ...,                     // clé réservée
+/// ```
+///
+/// L'asymétrie n'a rien à voir avec le type `DateTime?` : `created_at` est une
+/// clé métier ordinaire, `updated_at` une clé réservée. Émettre `updated_at:
+/// null` inconditionnellement ferait signaler une collision avec la couche de
+/// sync à **chaque** écriture de **chaque** entité concernée, sans qu'aucun de
+/// ces cas ne porte de signal. La clé **non nulle**, elle, reste émise : le
+/// round-trip `fromMap(toMap(x))` doit rester fidèle pour un miroir renseigné.
+///
+/// Sur un backend où « clé absente » et « clé à `null` » ne sont pas
+/// équivalents (requêtes sur nullité, sémantique d'absence), c'est cette
+/// distinction qu'il faut avoir en tête : ne pas dériver l'état de
+/// synchronisation d'un miroir, mais des métadonnées `ZSyncMeta`.
+///
+/// ---
+///
+/// # Le `toMap()` généré n'est pas destiné à une écriture directe
+///
+/// Le code émis sérialise **toute** date en `String` ISO-8601. Le format natif
+/// d'un backend (par exemple `Timestamp` côté Firestore) est appliqué par le
+/// **repository**, à partir de la métadonnée neutre `$XxxTimestampFields` — le
+/// type natif reste confiné à son adaptateur (invariant AD-5). Un moteur de
+/// persistance qui appellerait `toMap()` directement, sans passer par le
+/// repository, écrirait donc des `String` là où le parc attend le type natif :
+/// point d'attention réel en migration progressive, quand un chemin d'écriture
+/// hérité cohabite avec le chemin zcrud.
 class ZcrudModel {
   /// Construit l'annotation `const` avec des défauts sûrs.
   const ZcrudModel({this.kind, this.fieldRename = ZFieldRename.snake});

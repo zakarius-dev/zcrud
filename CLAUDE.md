@@ -27,6 +27,26 @@ Si à la fin d'une étape je propose au user de continuer (ex. « Continue vers 
 - ✅ Les **findings** de code-review (HIGH/MAJEUR/MEDIUM/LOW + statut corrigé/justifié).
 - ✅ La **transition de statut** appliquée (édition ciblée du sprint-status).
 
+## Traitement d'un CR ≠ cycle BMAD (consigne owner, 2026-08-12)
+
+Un **CR d'application hôte** (`iffd`/`lex_douane`/`dodlp-otr`/`dlcfti-otr`, ou `zcrud/docs/cr-*`) se
+traite par **sous-agents lancés directement** (tool `Agent`), **sans** passer par le cycle BMAD
+d'implémentation (`create-story` → `dev-story` → `code-review` → sprint-status). Pas de fichier de
+story, pas de transition de statut, pas de Workflow multi-agent à lentilles : le CR **est** la
+spécification, et il porte déjà ses constats mesurés côté hôte.
+
+Ce qui **reste** obligatoire, sans exception :
+- ✅ **Vérifier chaque constat du CR sur disque** avant de déléguer — un CR est un signalement, pas
+  une preuve (les causes supposées par le pilote se sont déjà révélées justes *et* incomplètes).
+- ✅ **Discipline R3** sur toute garde ajoutée (rouge par assertion, restauration par copie, sha
+  avant/après, résidus par grep négatif montré).
+- ✅ **Vérif verte rejouée par l'orchestrateur** (`generate` → `analyze` → `flutter test` depuis le
+  dossier de chaque paquet) avant tout commit/tag.
+- ✅ **Handoff** distinguant hôte **passif** et hôte ayant **compensé** le défaut corrigé.
+- ✅ Scratchpads **distincts** par sous-agent, paquets **disjoints**, health-check des agents en vol.
+
+Le cycle BMAD complet reste la règle pour les **stories du sprint-status**, jamais pour un CR.
+
 ## Délégation des étapes BMAD via Workflow + effort par étape (NON-NÉGOCIABLE)
 
 Chaque étape BMAD est exécutée via le tool **`Workflow`** — pour régler le niveau d'**effort par étape** (impossible via le tool `Agent`). **`create-story` / `dev-story` / `retrospective`** utilisent un **script à agent unique** (un seul `agent()` invoquant le vrai skill `bmad-*`). **`code-review` est l'exception : il est MULTI-AGENT** (cf. section dédiée ci-dessous).

@@ -103,6 +103,13 @@ void main() {
     });
   });
 
+  group('@ZcrudIgnore', () {
+    test('marqueur const sans paramètre, exporté par le barrel', () {
+      const ignored = ZcrudIgnore();
+      expect(ignored, isA<ZcrudIgnore>());
+    });
+  });
+
   test('marqueur de version conservé (décision dev)', () {
     expect(ZAnnotationsApi.version, isNotEmpty);
     expect(ZAnnotationsApi.coreApiVersion, isNotEmpty);

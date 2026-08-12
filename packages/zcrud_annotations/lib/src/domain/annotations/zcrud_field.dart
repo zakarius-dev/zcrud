@@ -117,6 +117,21 @@ class ZcrudField {
   /// (`Set<String>`) que `zcrud_firestore` consomme pour encoder le champ en
   /// `Timestamp` natif (invariant AD-5 préservé). Sans effet hors du chemin
   /// Firestore distant.
+  ///
+  /// ## Le `toMap()` généré n'est pas destiné à une écriture directe
+  ///
+  /// Ce hint **ne change pas** ce que `toMap()` produit : le code émis écrit une
+  /// `String` ISO-8601 pour **tout** champ date, quel que soit [persistAs].
+  /// C'est le **repository** qui applique le format natif, en relisant
+  /// `$XxxTimestampFields` — le type `Timestamp` reste confiné à l'adaptateur
+  /// Firestore (invariant AD-5), il ne peut donc pas apparaître dans une
+  /// métadonnée pur-Dart.
+  ///
+  /// Conséquence à connaître en **migration progressive** : un moteur de
+  /// persistance qui appelle `toMap()` **directement**, sans passer par le
+  /// repository, écrira des `String` ISO là où le parc documentaire attend des
+  /// `Timestamp`. Faire transiter les écritures par le repository, ou appliquer
+  /// soi-même `$XxxTimestampFields` avant d'écrire.
   final ZPersistAs persistAs;
 
   /// Ornement de **tête** du champ — projeté dans `ZFieldSpec.leading`.

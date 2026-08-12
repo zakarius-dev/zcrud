@@ -18,6 +18,7 @@ const _modelChecker =
 // donc pas les prendre pour de vrais modèles réclamant un `.g.dart`.
 const _model = '@ZcrudModel';
 const _field = '@ZcrudField';
+const _ignore = '@ZcrudIgnore';
 
 /// Résout [source] et émet le premier modèle `@ZcrudModel` via le générateur
 /// (lève si le type de champ / la clé est invalide).
@@ -89,6 +90,448 @@ class DupKey {
       () => _emitFirstModel(src),
       throwsA(isA<InvalidGenerationSourceError>()),
     );
+  });
+
+  // =========================================================================
+  // Champs NON ANNOTÉS — le silence est refusé quand il coûte des données.
+  //
+  // Seuls les champs annotés sont sérialisés. Un champ non annoté dont le type
+  // n'est PAS sérialisable désigne un sous-objet métier : le laisser passer
+  // l'effacerait du document à la première écriture, sans erreur de build ni
+  // d'analyse. Le build le REFUSE et nomme les trois remèdes.
+  //
+  // Fixtures ISOLÉES : chacune est verte sur toutes les autres règles (décodeur
+  // de domaine présent, signature compatible) ; seule la règle visée peut la
+  // faire rougir. Le contre-témoin prouve que la règle DISCRIMINE.
+  // =========================================================================
+  group('champ non annoté de type non sérialisable → BUILD ROUGE', () {
+    // Un sous-objet métier NON annoté `@ZcrudModel` : exactement le cas où une
+    // sérialisation écrite à la main émettait le champ, et où le code généré
+    // cesserait de l'émettre.
+    const shape = '''
+class GeoShape {
+  const GeoShape({required this.wkt});
+  final String wkt;
+}
+''';
+
+    test('MORD : le champ est nommé, avec son type et les trois remèdes',
+        () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$shape
+$_model(kind: 'berth')
+class Berth {
+  const Berth({required this.title, this.location});
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  $_field()
+  final String title;
+
+  final GeoShape? location;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) =>
+    Berth(title: map['title'] is String ? map['title'] as String : '');
+''';
+      await expectLater(
+        _emitFirstModel(src),
+        throwsA(
+          isA<InvalidGenerationSourceError>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('NON ANNOTÉ'),
+              contains('location'),
+              contains('GeoShape?'),
+              contains('Berth'),
+              contains('@ZcrudField'),
+              contains('@ZcrudModel'),
+              contains('@ZcrudIgnore'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('tous les champs fautifs du modèle sont signalés en UNE passe',
+        () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$shape
+class Audit {
+  const Audit();
+}
+
+$_model(kind: 'berth')
+class Berth {
+  const Berth({required this.title, this.location, this.audit});
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  $_field()
+  final String title;
+
+  final GeoShape? location;
+  final Audit? audit;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) =>
+    Berth(title: map['title'] is String ? map['title'] as String : '');
+''';
+      await expectLater(
+        _emitFirstModel(src),
+        throwsA(
+          isA<InvalidGenerationSourceError>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('2 champs NON ANNOTÉS'),
+              contains('location'),
+              contains('audit'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('$_ignore : build VERT, et le champ reste ABSENT du code émis',
+        () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$shape
+$_model(kind: 'berth')
+class Berth {
+  const Berth({required this.title, this.location});
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  $_field()
+  final String title;
+
+  $_ignore()
+  final GeoShape? location;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) =>
+    Berth(title: map['title'] is String ? map['title'] as String : '');
+''';
+      final out = await _emitFirstModelText(src);
+      // Le modèle est bien émis (la règle a été LEVÉE, pas contournée)…
+      expect(out, contains('fromMap: Berth.fromMap,'));
+      expect(out, contains("'title': this.title,"));
+      // …et le champ exclu n'apparaît NULLE PART : ni `toMap`, ni décodeur, ni
+      // schéma déclaratif, ni inventaire des clés persistées, ni `copyWith`.
+      expect(out, isNot(contains('location')));
+      expect(out, isNot(contains('GeoShape')));
+    });
+
+    test('CONTRE-TÉMOIN : un champ non annoté de type SÉRIALISABLE reste '
+        'ignoré en silence (contrat inchangé)', () async {
+      const src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$_model(kind: 'berth')
+class Berth {
+  const Berth({required this.title, this.draft = 0});
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  $_field()
+  final String title;
+
+  final int draft;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) =>
+    Berth(title: map['title'] is String ? map['title'] as String : '');
+''';
+      final out = await _emitFirstModelText(src);
+      expect(out, contains("'title': this.title,"));
+      expect(out, isNot(contains('draft')));
+    });
+
+    test('un champ STATIQUE non annoté n\'a jamais été concerné', () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$shape
+$_model(kind: 'berth')
+class Berth {
+  const Berth({required this.title});
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  static const GeoShape origin = GeoShape(wkt: 'POINT(0 0)');
+
+  $_field()
+  final String title;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) =>
+    Berth(title: map['title'] is String ? map['title'] as String : '');
+''';
+      expect(await _emitFirstModelText(src), contains('fromMap: Berth.fromMap,'));
+    });
+
+    test('EXEMPTION : un champ PRIVÉ non sérialisable ne rougit pas (bruit '
+        'par construction : jamais persistable sous son propre nom)', () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$shape
+$_model(kind: 'berth')
+class Berth {
+  const Berth({required this.title, GeoShape? cache}) : _cache = cache;
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  $_field()
+  final String title;
+
+  final GeoShape? _cache;
+
+  GeoShape? get cache => _cache;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) =>
+    Berth(title: map['title'] is String ? map['title'] as String : '');
+''';
+      final out = await _emitFirstModelText(src);
+      expect(out, contains('fromMap: Berth.fromMap,'));
+      expect(out, isNot(contains('_cache')));
+    });
+
+    test('EXEMPTION AD-4 : `extension` / `extra` / backing privé d\'une classe '
+        '`ZExtensible` ne réclament AUCUN marqueur', () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+import 'package:zcrud_core/domain.dart';
+
+$_model(kind: 'slots')
+class Slots with ZExtensible {
+  const Slots({
+    required this.title,
+    this.extension,
+    Map<String, dynamic> extra = const <String, dynamic>{},
+  }) : _extra = extra;
+
+  factory Slots.fromMap(Map<String, dynamic> map) {
+    final base = _\$SlotsFromMap(map);
+    return Slots(title: base.title, extra: map);
+  }
+
+  $_field()
+  final String title;
+
+  @override
+  final ZExtension? extension;
+
+  final Map<String, dynamic> _extra;
+
+  @override
+  Map<String, dynamic> get extra => _extra;
+}
+
+Slots _\$SlotsFromMap(Map<String, dynamic> map) =>
+    Slots(title: map['title'] is String ? map['title'] as String : '');
+''';
+      final out = await _emitFirstModelText(src);
+      // Build VERT : les slots AD-4 sont portés par le contrat d'architecture
+      // (factory de domaine + garde d'extensibilité), pas par @ZcrudIgnore.
+      expect(out, contains('fromMap: Slots.fromMap,'));
+      // …et restent hors du schéma persisté : `title` est la SEULE clé émise.
+      expect(
+        out,
+        contains("\$SlotsPersistedKeys = <String>{\n  'title',\n};"),
+      );
+      expect(out, isNot(contains("'extension'")));
+      expect(out, isNot(contains("map['_extra']")));
+    });
+
+    test('CONTRE-TÉMOIN de l\'exemption AD-4 : un champ PUBLIC ordinaire d\'une '
+        'classe `ZExtensible` rougit toujours', () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+import 'package:zcrud_core/domain.dart';
+
+$shape
+$_model(kind: 'slots')
+class Slots with ZExtensible {
+  const Slots({
+    required this.title,
+    this.location,
+    Map<String, dynamic> extra = const <String, dynamic>{},
+  }) : _extra = extra;
+
+  factory Slots.fromMap(Map<String, dynamic> map) {
+    final base = _\$SlotsFromMap(map);
+    return Slots(title: base.title, extra: map);
+  }
+
+  $_field()
+  final String title;
+
+  final GeoShape? location;
+
+  @override
+  ZExtension? get extension => null;
+
+  final Map<String, dynamic> _extra;
+
+  @override
+  Map<String, dynamic> get extra => _extra;
+}
+
+Slots _\$SlotsFromMap(Map<String, dynamic> map) =>
+    Slots(title: map['title'] is String ? map['title'] as String : '');
+''';
+      await expectLater(
+        _emitFirstModel(src),
+        throwsA(
+          isA<InvalidGenerationSourceError>().having(
+            (e) => e.message,
+            'message',
+            allOf(contains('NON ANNOTÉ'), contains('location')),
+          ),
+        ),
+      );
+    });
+
+    test('HÉRITAGE : un champ concret non sérialisable d\'une super-classe ou '
+        'd\'un mixin rougit ; un champ privé hérité reste exempté', () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$shape
+class BaseBerth {
+  BaseBerth({this.location, GeoShape? cached}) : _cached = cached;
+
+  final GeoShape? location;
+
+  final GeoShape? _cached;
+
+  GeoShape? get cached => _cached;
+}
+
+mixin Audited {
+  GeoShape? auditShape;
+}
+
+$_model(kind: 'berth')
+class Berth extends BaseBerth with Audited {
+  Berth({required this.title, super.location});
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  $_field()
+  final String title;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) =>
+    Berth(title: map['title'] is String ? map['title'] as String : '');
+''';
+      await expectLater(
+        _emitFirstModel(src),
+        throwsA(
+          isA<InvalidGenerationSourceError>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('NON ANNOTÉ'),
+              contains('location'),
+              contains('auditShape'),
+              isNot(contains('_cached')),
+            ),
+          ),
+        ),
+      );
+    });
+  });
+
+  // =========================================================================
+  // `@ZcrudIgnore` combiné à une annotation de sérialisation : les deux
+  // déclarations se CONTREDISENT — l'une exclut le champ de la persistance,
+  // l'autre l'y inscrit. Résoudre en silence (dans un sens comme dans l'autre)
+  // écrirait ou perdrait une donnée à l'insu de l'auteur : échec de build
+  // explicite (AD-3), au même niveau que la collision de clé persistée.
+  // =========================================================================
+  group('$_ignore + annotation de sérialisation → BUILD ROUGE', () {
+    test('$_ignore + $_field sur le même champ → InvalidGenerationSourceError',
+        () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$_model(kind: 'berth')
+class Berth {
+  const Berth({required this.title, this.note});
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  $_field()
+  final String title;
+
+  $_field()
+  $_ignore()
+  final String? note;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) =>
+    Berth(title: map['title'] is String ? map['title'] as String : '');
+''';
+      await expectLater(
+        _emitFirstModel(src),
+        throwsA(
+          isA<InvalidGenerationSourceError>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('note'),
+              contains('@ZcrudIgnore'),
+              contains('CONTREDISENT'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('$_ignore + @ZcrudId sur le même champ → InvalidGenerationSourceError',
+        () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$_model(kind: 'berth')
+class Berth {
+  const Berth({this.id, required this.title});
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  @ZcrudId()
+  $_ignore()
+  final String? id;
+
+  $_field()
+  final String title;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) =>
+    Berth(title: map['title'] is String ? map['title'] as String : '');
+''';
+      await expectLater(
+        _emitFirstModel(src),
+        throwsA(
+          isA<InvalidGenerationSourceError>().having(
+            (e) => e.message,
+            'message',
+            allOf(contains('id'), contains('CONTREDISENT')),
+          ),
+        ),
+      );
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -393,6 +836,9 @@ class ExtensibleOk extends BaseStudy {
   $_field()
   final String title;
 
+  // Slot AD-4 d'une classe `ZExtensible` : EXEMPTÉ du contrôle de perte
+  // silencieuse (le contrat de factory de domaine et le garde d'extensibilité
+  // couvrent déjà ce canal) — aucun marqueur requis.
   @override
   final Map<String, dynamic> extra;
 }

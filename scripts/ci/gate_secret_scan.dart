@@ -53,6 +53,13 @@ bool _excludedDir(String norm) {
       norm.contains('/.dart_tool/') ||
       norm.contains('/.pub-cache/') ||
       norm.contains('/build/') ||
+      // Artefacts gitignorés de la toolchain du site (`website/`) : code tiers
+      // (node_modules, dont des fixtures de test portant des clés PEM
+      // volontaires) et caches de build — jamais committés, hors du périmètre
+      // AD-12 qui vise les secrets COMMITTÉS.
+      norm.contains('/node_modules/') ||
+      norm.contains('/.docusaurus/') ||
+      norm.contains('/.cache-loader/') ||
       norm.startsWith('.git/') ||
       norm.startsWith('.dart_tool/') ||
       norm.startsWith('build/');

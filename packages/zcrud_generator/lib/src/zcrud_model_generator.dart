@@ -18,7 +18,44 @@
 ///
 /// **Échec de build EXPLICITE** (`InvalidGenerationSourceError`, jamais un cast
 /// `null` silencieux — invariant AD-3) : type de champ non (dé)sérialisable,
-/// cible non classe, collision de clé persistée.
+/// cible non classe, collision de clé persistée, valeur d'énumération
+/// d'annotation non reconnue, `@ZcrudIgnore` combiné à `@ZcrudField`/`@ZcrudId`
+/// sur le même champ, **champ non annoté dont le type n'est pas sérialisable**
+/// (le seul silence qui coûterait des données).
+///
+/// ## Ce que le `toMap()` émis met dans la map — et ce qu'il n'y met pas
+///
+/// **Champs.** Seuls les champs annotés `@ZcrudField`/`@ZcrudId` sont émis. Un
+/// champ non annoté **de type sérialisable** est ignoré en silence (contrat
+/// assumé : c'est ainsi qu'un modèle garde des champs d'exécution hors
+/// persistance). Un champ non annoté dont le type n'est **pas** sérialisable est
+/// au contraire un **échec de build** : `@ZcrudIgnore` est la façon d'assumer
+/// l'exclusion. Le contrôle couvre les champs déclarés dans la classe annotée
+/// **et** les champs concrets hérités d'une super-classe ou d'un mixin hors SDK.
+/// En sont exemptés — parce qu'un autre signal couvre déjà leur cas — les champs
+/// **privés** (jamais persistables sous leur propre nom) et, sur une classe
+/// `ZExtensible`, les slots du contrat AD-4 (`extension`, `extra`), déjà gardés
+/// par le contrat de factory de domaine et le garde d'extensibilité émis.
+///
+/// **Clés de synchronisation.** `updated_at` et `is_deleted`
+/// (`_kReservedSyncKeys`, miroir de `ZSyncMeta.reservedKeys`) appartiennent à la
+/// couche de synchronisation, **hors-entité**. Un modèle qui en porte un miroir
+/// nullable voit sa clé **omise quand la valeur est nulle**, et émise sinon.
+/// L'asymétrie visible entre `created_at` (toujours émis, `null` compris) et
+/// `updated_at` ne tient donc pas au type du champ mais au **statut de la clé** :
+/// l'émettre à `null` inconditionnellement signalerait une collision avec la
+/// couche de sync à chaque écriture de chaque entité concernée, sans qu'aucun de
+/// ces cas ne porte de signal ; ne pas émettre la valeur **non nulle** casserait
+/// la fidélité du round-trip `fromMap(toMap(x))`.
+///
+/// **Dates.** Toute date est émise en **`String` ISO-8601**, y compris sous
+/// `@ZcrudField(persistAs: ZPersistAs.timestamp)`. Ce hint n'agit pas sur le
+/// `toMap()` : il alimente la métadonnée neutre `$XxxTimestampFields`, que le
+/// **repository** applique pour écrire le format natif du backend (le type natif
+/// reste confiné à son adaptateur — invariant AD-5). Conséquence en migration
+/// progressive : un moteur hérité qui appelle `toMap()` **directement**, sans
+/// passer par le repository, écrit des `String` là où le parc attend le type
+/// natif.
 library;
 
 import 'package:analyzer/dart/analysis/results.dart';
@@ -42,6 +79,8 @@ const _idChecker =
     TypeChecker.typeNamed(ZcrudId, inPackage: 'zcrud_annotations');
 const _modelChecker =
     TypeChecker.typeNamed(ZcrudModel, inPackage: 'zcrud_annotations');
+const _ignoreChecker =
+    TypeChecker.typeNamed(ZcrudIgnore, inPackage: 'zcrud_annotations');
 
 /// `TypeChecker` du mixin `ZExtensible` (AD-4).
 ///
@@ -117,7 +156,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       );
     }
 
-    final rename = _renameOf(annotation.read('fieldRename'));
+    final rename = _renameOf(annotation.read('fieldRename'), element);
     final kind = annotation.read('kind').isNull
         ? className
         : annotation.read('kind').stringValue;
@@ -424,6 +463,11 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   List<_Field> _collectFields(ClassElement element, ZFieldRename rename) {
     final fields = <_Field>[];
     final seenKeys = <String>{};
+    final silentlyLost = <FieldElement>[];
+    // (AD-4) Une classe `ZExtensible` porte par CONTRAT les slots hors-codegen
+    // `extension`/`extra` : ils sont exemptés du contrôle de perte silencieuse
+    // (cf. [_isSilentlyLost]).
+    final extensible = _extensibleChecker.isAssignableFrom(element);
     for (final field in element.fields) {
       // analyzer 12 : `Element.isSynthetic` a été retiré de l'API publique. Le
       // remplaçant sémantique sur `PropertyInducingElement` est
@@ -434,7 +478,13 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       if (field.isStatic || !field.isOriginDeclaration) continue;
       final fieldAnno = _fieldChecker.firstAnnotationOf(field);
       final isId = _idChecker.hasAnnotationOf(field);
-      if (fieldAnno == null && !isId) continue;
+      _rejectContradictoryIgnore(field, serialized: fieldAnno != null || isId);
+      if (fieldAnno == null && !isId) {
+        if (_isSilentlyLost(field, extensible: extensible)) {
+          silentlyLost.add(field);
+        }
+        continue;
+      }
 
       final reader = fieldAnno == null ? null : ConstantReader(fieldAnno);
       final dartName = field.name;
@@ -454,7 +504,171 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
 
       fields.add(_resolveField(field, dartName, key, reader, isId));
     }
+    _collectInheritedSilentlyLost(element, extensible, silentlyLost);
+    if (silentlyLost.isNotEmpty) {
+      _rejectSilentlyLostFields(element, silentlyLost);
+    }
     return fields;
+  }
+
+  /// `@ZcrudIgnore` combiné à `@ZcrudField` **ou** `@ZcrudId` sur le même champ
+  /// est une contradiction : une déclaration exclut le champ de la persistance,
+  /// l'autre l'y inscrit. La résoudre en silence — quel que soit le sens retenu —
+  /// écrirait ou n'écrirait pas une donnée à l'insu de l'auteur : **échec de
+  /// build explicite** (AD-3), au même titre que la collision de clé persistée.
+  void _rejectContradictoryIgnore(
+    FieldElement field, {
+    required bool serialized,
+  }) {
+    if (!serialized || !_ignoreChecker.hasAnnotationOf(field)) return;
+    throw InvalidGenerationSourceError(
+      'Le champ ${field.name} porte `@ZcrudIgnore` ET une annotation de '
+      'sérialisation (`@ZcrudField` ou `@ZcrudId`). Ces déclarations se '
+      'CONTREDISENT : l\'une exclut le champ de la persistance, l\'autre l\'y '
+      'inscrit. Aucune résolution silencieuse n\'est appliquée — retirer l\'une '
+      'des deux annotations selon l\'intention réelle.',
+      element: field,
+    );
+  }
+
+  /// `true` si [field] — non annoté — serait **perdu en silence** : son type
+  /// n'est pas sérialisable et rien ne déclare l'exclusion.
+  ///
+  /// ## Exemptions — les cas où un autre signal existe déjà
+  ///
+  /// - **Champ privé** (`_xxx`) : jamais persistable sous son propre nom par une
+  ///   sérialisation manuelle ; c'est par construction un détail de stockage
+  ///   (backing d'un accesseur), le signaler serait du bruit.
+  /// - **Slots AD-4 d'une classe `ZExtensible`** ([extensible] vrai) :
+  ///   `extension` et `extra` sont des canaux hors-codegen **par contrat**
+  ///   d'architecture, déjà gardés par le contrat de factory de domaine
+  ///   ([_requireDomainFromMap]) et le garde exécutoire émis dans le registrar.
+  ///
+  /// Le jugement de sérialisabilité n'est **pas** réimplémenté ici : il délègue à
+  /// [_classify], seule autorité du générateur sur la question. Un type que
+  /// [_classify] accepte ne peut donc jamais faire échouer ce contrôle, et
+  /// réciproquement — les deux verdicts ne peuvent pas diverger.
+  ///
+  /// Sous résolution dégradée, ce contrôle échoue **fermé** : une annotation
+  /// `@ZcrudIgnore` non résolue n'exempte plus, un type non résolu fait lever
+  /// [_classify] — dans les deux cas le build **rougit**, il ne se tait pas.
+  bool _isSilentlyLost(FieldElement field, {required bool extensible}) {
+    final name = field.name;
+    if (name == null || name.startsWith('_')) return false;
+    if (extensible && (name == 'extension' || name == 'extra')) return false;
+    if (_ignoreChecker.hasAnnotationOf(field)) return false;
+    try {
+      _classify(field, field.type);
+      return false; // Type sérialisable : omission assumée, contrat inchangé.
+    } on InvalidGenerationSourceError {
+      return true;
+    }
+  }
+
+  /// Applique le contrôle de perte silencieuse aux champs concrets **hérités**
+  /// (chaîne des super-classes et mixins appliqués, hors SDK).
+  ///
+  /// Un champ déclaré dans une classe de base n'est pas collecté par le
+  /// générateur : non annoté et de type non sérialisable, il serait perdu
+  /// exactement comme un champ local — la garde le couvre donc avec les mêmes
+  /// exemptions ([_isSilentlyLost]). Les interfaces (`implements`) ne sont pas
+  /// parcourues : elles n'apportent aucun stockage concret. Un champ masqué par
+  /// une déclaration locale du même nom n'est pas re-signalé.
+  void _collectInheritedSilentlyLost(
+    ClassElement element,
+    bool extensible,
+    List<FieldElement> lost,
+  ) {
+    final seen = <String>{
+      for (final f in element.fields)
+        if (f.name != null) f.name!,
+    };
+    final bases = <InterfaceElement>[];
+    InterfaceElement? cursor = element;
+    while (cursor != null) {
+      for (final mixin in cursor.mixins) {
+        bases.add(mixin.element);
+      }
+      final superElement = cursor.supertype?.element;
+      if (superElement != null) bases.add(superElement);
+      cursor = superElement;
+    }
+    for (final base in bases) {
+      if (base.library.uri.isScheme('dart')) continue;
+      for (final field in base.fields) {
+        final name = field.name;
+        if (name == null || seen.contains(name)) continue;
+        if (field.isStatic || field.isAbstract || !field.isOriginDeclaration) {
+          continue;
+        }
+        seen.add(name);
+        if (_fieldChecker.hasAnnotationOf(field) ||
+            _idChecker.hasAnnotationOf(field)) {
+          continue;
+        }
+        if (_isSilentlyLost(field, extensible: extensible)) lost.add(field);
+      }
+    }
+  }
+
+  /// Refuse le build sur les champs d'instance **non annotés** dont le type n'est
+  /// pas sérialisable — la seule forme d'omission qui perde des données sans
+  /// qu'aucun signal ne la désigne.
+  ///
+  /// ## Pourquoi ce refus, et pourquoi seulement là
+  ///
+  /// Seuls les champs annotés `@ZcrudField`/`@ZcrudId` sont sérialisés : c'est le
+  /// contrat, et des modèles s'appuient dessus pour garder des champs d'exécution
+  /// hors persistance. Un champ non annoté **de type sérialisable** reste donc
+  /// ignoré en silence, sans changement. Les champs **exemptés** (privés, slots
+  /// AD-4 d'une classe `ZExtensible` — cf. [_isSilentlyLost]) n'atteignent
+  /// jamais ce message : ce qui y arrive disparaîtrait réellement **sans aucun
+  /// signal**, par construction.
+  ///
+  /// Un champ non annoté dont le type n'est **pas** sérialisable est un cas tout
+  /// autre : le type désigne un sous-objet métier (un modèle voisin, une valeur
+  /// structurée), qu'une sérialisation écrite à la main émettait presque toujours.
+  /// Remplacer cette sérialisation par le code émis effacerait le champ du
+  /// document à la première écriture, sans erreur de build ni d'analyse — la
+  /// classe d'échec qu'un générateur doit refuser (invariant AD-3 : échec de
+  /// build explicite, jamais de dégradation muette).
+  ///
+  /// Tous les champs fautifs d'un même modèle sont signalés **en un seul
+  /// message** : un modèle qui en porte plusieurs se corrige en une passe, pas en
+  /// autant de builds rouges successifs.
+  Never _rejectSilentlyLostFields(
+    ClassElement element,
+    List<FieldElement> lost,
+  ) {
+    final inventory = lost
+        .map((f) => '  - ${f.name} : ${f.type.getDisplayString()}')
+        .join('\n');
+    final plural = lost.length > 1;
+    throw InvalidGenerationSourceError(
+      '${lost.length} champ${plural ? 's' : ''} NON ANNOTÉ${plural ? 'S' : ''} '
+      'de type non sérialisable sur ${element.name} :\n$inventory\n'
+      'Le générateur ne sérialise que les champs annotés, et ${plural ? 'ces '
+          'types ne sont' : 'ce type n\'est'} ni scalaire supporté, ni enum, ni '
+      'classe @ZcrudModel. Laissé${plural ? 's' : ''} tel${plural ? 's' : ''} '
+      'quel${plural ? 's' : ''}, ${plural ? 'ces champs seraient absents' : 'ce '
+          'champ serait absent'} de `toMap()` comme du décodeur — '
+      '${plural ? 'leurs valeurs disparaîtraient' : 'sa valeur disparaîtrait'} '
+      'du document persisté à la première écriture, sans aucun signal.\n'
+      'TROIS REMÈDES, par champ :\n'
+      '  1. donner au champ un type sérialisable (scalaire supporté, enum, '
+      '`List<T>` de ceux-ci) et l\'annoter `@ZcrudField()` ;\n'
+      '  2. si le sous-objet doit être persisté : annoter son TYPE avec '
+      '`@ZcrudModel` ET annoter le champ `@ZcrudField()` — les DEUX gestes sont '
+      'nécessaires, annoter le type seul laisse le champ hors du code émis. '
+      'Impossible pour un type du SDK (`Map`, `Set`, fonction…) : seuls les '
+      'remèdes 1 et 3 s\'appliquent alors ;\n'
+      '  3. annoter le champ `@ZcrudIgnore()` s\'il est hors persistance. '
+      'ATTENTION : `@ZcrudIgnore` signifie « cette donnée N\'EST PAS écrite par '
+      'le codegen ». Si elle doit vivre dans le document, c\'est à l\'auteur de '
+      'l\'écrire par un canal manuel (`fromMap`/`toMap` de domaine, slot '
+      '`extra`) — sinon elle est abandonnée, cette fois explicitement.',
+      element: lost.length == 1 ? lost.first : element,
+    );
   }
 
   _Field _resolveField(
@@ -479,13 +693,13 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     final annoMultiple =
         reader != null && reader.read('multiple').boolValue;
 
-    // Lecture STATIQUE de `persistAs` (revive accessor == 'timestamp')
-    // — jamais d'exécution/`reflectable`. Absent/`iso8601` ⇒ `false` (aucun champ
-    // collecté dans `$XxxTimestampFields`).
+    // Lecture STATIQUE de `persistAs` — jamais d'exécution/`reflectable`.
+    // Le nom de la constante passe par `_enumConstantName` (lecture unique du
+    // dépôt, insensible aux alias `const` et aux préfixes d'import).
+    // Absent/`iso8601` ⇒ `false` (aucun champ collecté dans
+    // `$XxxTimestampFields`).
     final persistAsTimestamp = reader != null &&
-        !reader.read('persistAs').isNull &&
-        reader.read('persistAs').revive().accessor.split('.').last ==
-            'timestamp';
+        _enumConstantName(reader.read('persistAs')) == 'timestamp';
 
     return _Field(
       dartName: dartName,
@@ -958,9 +1172,20 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     final DartObject? obj = r.isLiteral ? null : r.objectValue;
     final el = obj?.type?.element;
     if (el is EnumElement) {
-      // `revive().accessor` peut être `Enum.value` OU `value` selon le cas :
-      // on ne garde que le dernier segment et on préfixe par le type.
-      final valueName = r.revive().accessor.split('.').last;
+      // Lecture unique du dépôt ([_enumConstantName]) : le dernier segment de
+      // l'accesseur QUALIFIÉ que `revive()` rend pour toute constante d'enum —
+      // y compris derrière un alias `const` ou un préfixe d'import (mesuré).
+      final valueName = _enumConstantName(r);
+      if (valueName == null) {
+        // Jamais observé sur une source valide (l'accesseur d'une constante
+        // d'enum n'est jamais vide) : refus explicite plutôt qu'une émission
+        // corrompue si une résolution dégradée y menait.
+        throw InvalidGenerationSourceError(
+          'Constante d\'enum `${el.name}` illisible dans une annotation : '
+          'accesseur vide. Passer une constante d\'enum écrite littéralement '
+          '(`${el.name}.valeur`).',
+        );
+      }
       return '${el.name}.$valueName';
     }
     // Objet à constructeur `const`.
@@ -988,14 +1213,69 @@ String _quote(String s) {
   return "'$escaped'";
 }
 
-ZFieldRename _renameOf(ConstantReader r) {
-  if (r.isNull) return ZFieldRename.snake;
-  return switch (r.revive().accessor) {
-    'none' => ZFieldRename.none,
-    'kebab' => ZFieldRename.kebab,
-    'pascal' => ZFieldRename.pascal,
-    _ => ZFieldRename.snake,
-  };
+/// Nom de la **constante d'enum** portée par [r], ou `null` si [r] n'est pas une
+/// valeur d'enum (ou si l'accesseur est vide — jamais observé sur une source
+/// valide, cf. le refus explicite dans [ZcrudModelGenerator._emitConst]).
+///
+/// Source unique de lecture des enums d'annotation du générateur
+/// (`fieldRename`, `persistAs`, tout enum re-émis dans un `ZFieldSpec`). Toute
+/// autre façon de lire un enum d'annotation est fragile :
+///
+/// - comparer `revive().accessor` à un nom nu ne réussit jamais : pour une
+///   constante d'enum, l'accesseur est **toujours qualifié** (`Type.constante`) —
+///   `reviveInstance` résout l'`InterfaceElement` de l'enum avant toute variable
+///   porteuse, y compris derrière un alias `const` ou un préfixe d'import.
+///   C'était le bug d'origine de `fieldRename` (comparaison à `'none'`,
+///   retombée muette sur `snake`) ;
+/// - `objectValue.variable?.name` rend le nom de la **variable** qui porte la
+///   valeur, pas celui de la constante : sur `const alias = ZFieldRename.kebab;`
+///   puis `@ZcrudModel(fieldRename: alias)`, il rend `alias`. Mesuré.
+///
+/// La lecture retenue est le **dernier segment de l'accesseur qualifié**.
+/// Mesuré exhaustivement sur la suite du paquet (quatre stratégies de
+/// `fieldRename`, `persistAs`, chacun écrit littéralement **et** derrière un
+/// alias `const`) : l'accesseur couvre tous les cas. Une projection redondante
+/// par l'index du modèle d'élément a été retirée — aucun test ne pouvait la
+/// distinguer de cette lecture-ci.
+String? _enumConstantName(ConstantReader r) {
+  if (r.isNull) return null;
+  if (r.objectValue.type?.element is! EnumElement) return null;
+  final accessor = r.revive().accessor;
+  return accessor.isEmpty ? null : accessor.split('.').last;
+}
+
+/// Stratégie de renommage déclarée par `@ZcrudModel.fieldRename`.
+///
+/// Une constante inconnue est un **échec de build explicite**, jamais un repli
+/// muet sur `snake` : un repli renommerait toutes les clés persistées d'un modèle
+/// à l'insu de son auteur, rendant illisibles les documents déjà écrits.
+ZFieldRename _renameOf(ConstantReader r, Element element) {
+  if (r.isNull) {
+    // En résolution SAINE cette branche est inatteignable : `fieldRename` porte
+    // un défaut non nul (`ZFieldRename.snake`) que l'analyzer matérialise même
+    // quand l'argument est omis. L'atteindre signifie que la lecture de
+    // l'annotation a échoué — un repli muet reproduirait exactement la
+    // corruption de clés que ce point d'échec existe pour interdire.
+    throw InvalidGenerationSourceError(
+      'Lecture de `@ZcrudModel.fieldRename` impossible : constante nulle alors '
+      'que l\'annotation porte un défaut non nul. La résolution de '
+      'l\'annotation a échoué (imports, versions de `zcrud_annotations`) — '
+      'aucun repli n\'est appliqué, il renommerait les clés persistées à '
+      'l\'insu de l\'auteur.',
+      element: element,
+    );
+  }
+  final name = _enumConstantName(r);
+  for (final value in ZFieldRename.values) {
+    if (value.name == name) return value;
+  }
+  throw InvalidGenerationSourceError(
+    'Valeur de `@ZcrudModel.fieldRename` non reconnue : "$name". Attendu l\'une '
+    'de ${ZFieldRename.values.map((v) => v.name).join(', ')}. Aucun repli n\'est '
+    'appliqué : il renommerait toutes les clés persistées du modèle, rendant '
+    'illisibles les documents déjà écrits.',
+    element: element,
+  );
 }
 
 String _rename(String dartName, ZFieldRename rename) {

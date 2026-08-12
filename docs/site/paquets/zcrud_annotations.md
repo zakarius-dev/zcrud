@@ -1,14 +1,14 @@
 ---
 title: zcrud_annotations
-description: Annotations déclaratives (@ZcrudModel, @ZcrudField, @ZcrudId) consommées par le générateur zcrud.
+description: Annotations déclaratives (@ZcrudModel, @ZcrudField, @ZcrudId, @ZcrudIgnore) consommées par le générateur zcrud.
 ---
 
 # zcrud_annotations
 
 ## Rôle
 
-`zcrud_annotations` porte trois annotations `const` pur-données —
-`@ZcrudModel`, `@ZcrudField`, `@ZcrudId` — et l'enum `ZPersistAs`. Aucun
+`zcrud_annotations` porte quatre annotations `const` pur-données —
+`@ZcrudModel`, `@ZcrudField`, `@ZcrudId`, `@ZcrudIgnore` — et l'enum `ZPersistAs`. Aucun
 comportement : `zcrud_generator` les lit **statiquement** au `build_runner`
 pour émettre la (dé)sérialisation, le `ZFieldSpec[]` et l'enregistrement au
 `ZcrudRegistry`. Le modèle annoté est la source unique de vérité du schéma
@@ -20,6 +20,10 @@ pour émettre la (dé)sérialisation, le `ZFieldSpec[]` et l'enregistrement au
   formulaire d'édition et une colonne de liste, depuis une seule définition.
 - Pour marquer un champ date comme persisté en `Timestamp` Firestore natif
   plutôt qu'en chaîne ISO-8601 (`@ZcrudField(persistAs: ZPersistAs.timestamp)`).
+- Pour exclure explicitement un champ de la persistance générée
+  (`@ZcrudIgnore()`) : un champ non annoté dont le type n'est pas sérialisable
+  est refusé au build plutôt que perdu en silence — le marqueur assume
+  l'exclusion, au point de déclaration.
 
 ## Quand ne pas l'utiliser
 
@@ -35,6 +39,7 @@ pour émettre la (dé)sérialisation, le `ZFieldSpec[]` et l'enregistrement au
 | `ZcrudModel` | Annotation de classe : modèle sérialisable et enregistrable, porte le contrat `fromMap` obligatoire. |
 | `ZcrudField` | Annotation de champ : projette chaque paramètre dans le `ZFieldSpec` correspondant. |
 | `ZcrudId` | Marqueur du champ identifiant (`id`) d'un modèle. |
+| `ZcrudIgnore` | Marqueur d'exclusion : le champ n'est pas écrit par le codegen (canal manuel, collaborateur d'exécution, valeur dérivée). |
 | `ZPersistAs` | Hint de format de persistance d'un champ date (`iso8601` / `timestamp`). |
 
 ## Voir aussi

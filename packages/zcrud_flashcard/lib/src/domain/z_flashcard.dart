@@ -210,6 +210,7 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
   ///
   /// Hors schéma généré : (dé)sérialisée explicitement via
   /// [ZFlashcardSource].
+  @ZcrudIgnore()
   final ZFlashcardSource? source;
 
   /// Emplacement d'extension typée et versionnée (invariant AD-4), `null` si

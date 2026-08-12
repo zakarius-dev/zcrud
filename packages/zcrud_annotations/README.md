@@ -5,9 +5,9 @@ est la source unique de vérité du schéma (invariant AD-3).
 
 ## Aperçu {#apercu}
 
-`zcrud_annotations` ne contient **aucun comportement** : trois annotations
-`const` pur-données (`@ZcrudModel`, `@ZcrudField`, `@ZcrudId`) et l'enum
-`ZPersistAs`. `zcrud_generator` les lit **statiquement** au moment du
+`zcrud_annotations` ne contient **aucun comportement** : quatre annotations
+`const` pur-données (`@ZcrudModel`, `@ZcrudField`, `@ZcrudId`, `@ZcrudIgnore`)
+et l'enum `ZPersistAs`. `zcrud_generator` les lit **statiquement** au moment du
 `build_runner` (`ConstantReader`, jamais d'exécution ni de réflexion) pour
 émettre `toMap`/`fromMap`/`copyWith`, le `ZFieldSpec[]` du champ et
 l'enregistrement au `ZcrudRegistry`.
@@ -73,6 +73,7 @@ class Note {
 | `ZcrudModel` | Annotation de classe : déclare un modèle sérialisable et enregistrable, porte le contrat `fromMap` obligatoire. |
 | `ZcrudField` | Annotation de champ : projette chaque paramètre dans le `ZFieldSpec` correspondant (label, type, validateurs, condition, ornements…). |
 | `ZcrudId` | Marqueur du champ identifiant (`id`) d'un modèle. |
+| `ZcrudIgnore` | Marqueur d'exclusion : le champ n'est **pas** écrit par le codegen. Requis sur un champ non annoté dont le type n'est pas sérialisable (sinon échec de build) ; la donnée qu'il porte relève alors d'un canal manuel (`fromMap`/`toMap` de domaine, slot `extra`). |
 | `ZPersistAs` | Hint de format de persistance d'un champ date (`iso8601` par défaut, ou `timestamp` pour Firestore natif). |
 | `ZAnnotationsApi` | Marqueur de version de l'API publique du paquet. |
 
@@ -90,6 +91,13 @@ class Note {
 - **`type` non déclaré ⇒ inféré, jamais absent** — un `@ZcrudField` sans
   `type` explicite se voit attribuer un type déduit du type Dart statique du
   champ (`String`→`text`, `bool`→`boolean`, `enum`→`select`…).
+- **Un champ non annoté n'est pas sérialisé — et le build refuse le silence
+  qui coûterait des données** — un champ non annoté de type sérialisable reste
+  ignoré (contrat assumé) ; un champ non annoté dont le type n'est **pas**
+  sérialisable est un échec de build, à lever par `@ZcrudField`, `@ZcrudModel`
+  sur le type **et** `@ZcrudField` sur le champ, ou `@ZcrudIgnore`. Sont
+  exemptés : les champs privés et, sur une classe `ZExtensible`, les slots
+  AD-4 (`extension`, `extra`).
 - **Rien ici n'accepte de closure** — un builder de widget libre, un
   validateur dépendant de l'état ou une relation dynamique ne s'expriment pas
   dans l'annotation (illisible par `ConstantReader`) : ils se câblent au

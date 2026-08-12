@@ -188,6 +188,7 @@ class ZExam extends ZEntity with ZExtensible {
   /// champ ⇒ `reminderTime` n'apparaît pas dans un formulaire généré
   /// automatiquement ; un éditeur d'examen ajoute son champ heure
   /// explicitement.
+  @ZcrudIgnore()
   final ZReminderTime? reminderTime;
 
   /// Emplacement d'extension typée et versionnée (invariant AD-4), `null` si
@@ -387,6 +388,7 @@ class ZExam extends ZEntity with ZExtensible {
   /// délibéré : additionner les deux sources ferait déclencher des rappels
   /// que l'hôte n'a pas demandés dès qu'il migre — la récurrence peut
   /// d'ailleurs porter elle-même ses propres seuils.
+  @ZcrudIgnore()
   final ZReminderRecurrence? reminderRecurrence;
 
   /// Récurrence réellement appliquée : [reminderRecurrence] si renseignée,

@@ -145,6 +145,7 @@ class ZDocumentReadingState with ZExtensible {
   /// État d'apprentissage par page — canal hors-codegen : sa clé
   /// [kLearningKey] est réservée, il est décodé et réémis à la main. Défaut
   /// [ZDocumentLearningInfo.empty].
+  @ZcrudIgnore()
   final ZDocumentLearningInfo learning;
 
   /// Slot type additif versionné (invariant AD-4), `null` si absent.
