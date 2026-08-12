@@ -13,6 +13,10 @@
 /// (bascule `is_deleted` **hors-entité** `ZSyncMeta`, jamais de suppression
 /// dure) ; le `ZResult<Unit>` est **déplié** (AD-11) : `Right` → succès (hook
 /// `onSuccess`), `Left(ZFailure)` → `onFailure` **non fatal** (aucun throw).
+/// Les fabriques jumelles [ZRowAction.softDeleteWith] / [ZRowAction.restoreWith]
+/// offrent la MÊME corbeille (mêmes permissions, même filtrage `ZAcl`) sur un
+/// **handler fourni par l'app** — sans `ZRepository` (migration progressive,
+/// listes encore alimentées par les flux de l'hôte).
 ///
 /// **Neutre** : imports limités à `dart:async` (`FutureOr`) +
 /// `package:flutter/widgets.dart` (`IconData`/`BuildContext`/`VoidCallback`) +
@@ -165,6 +169,57 @@ class ZRowAction<T extends ZEntity> {
           (_) => onSuccess?.call(),
         );
       },
+    );
+  }
+
+  /// Fabrique **corbeille à callback** : soft-delete dont l'écriture est
+  /// entièrement déléguée au handler [onInvoke] fourni par l'app — **aucun
+  /// `ZRepository` requis**. Même permission ([ZCrudAction.delete]), même
+  /// filtrage `ZAcl` et même style destructif que [ZRowAction.softDelete],
+  /// qui reste le **raccourci** du cas nominal (repository disponible).
+  ///
+  /// Cas d'usage : migration progressive où la liste est encore alimentée par
+  /// les flux de l'app hôte (pas de `ZRepository` à fournir) — la corbeille
+  /// reste disponible, l'ACL reste appliquée.
+  ///
+  /// Contrairement à [ZRowAction.softDelete], l'entité **éphémère**
+  /// (`id == null`) est **transmise au handler** : l'app, propriétaire du
+  /// chemin de données, décide (par exemple retirer un brouillon non persisté
+  /// de sa liste locale). Le handler porte aussi ses propres suites
+  /// succès/échec (pas de `ZResult` à déplier ici).
+  factory ZRowAction.softDeleteWith(
+    FutureOr<void> Function(BuildContext context, T entity) onInvoke, {
+    String labelKey = 'delete',
+    IconData? icon,
+    String id = 'delete',
+  }) {
+    return ZRowAction<T>(
+      id: id,
+      labelKey: labelKey,
+      icon: icon,
+      requiredPermission: ZCrudAction.delete,
+      destructive: true,
+      onInvoke: onInvoke,
+    );
+  }
+
+  /// Fabrique **corbeille à callback** : restore délégué au handler [onInvoke]
+  /// fourni par l'app — **aucun `ZRepository` requis**. Même permission
+  /// ([ZCrudAction.restore]) et même filtrage `ZAcl` que [ZRowAction.restore],
+  /// qui reste le raccourci du cas nominal. Pendant symétrique de
+  /// [ZRowAction.softDeleteWith] (mêmes motivations, mêmes différences).
+  factory ZRowAction.restoreWith(
+    FutureOr<void> Function(BuildContext context, T entity) onInvoke, {
+    String labelKey = 'restore',
+    IconData? icon,
+    String id = 'restore',
+  }) {
+    return ZRowAction<T>(
+      id: id,
+      labelKey: labelKey,
+      icon: icon,
+      requiredPermission: ZCrudAction.restore,
+      onInvoke: onInvoke,
     );
   }
 

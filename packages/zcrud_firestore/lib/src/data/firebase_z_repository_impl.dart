@@ -153,6 +153,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     T? Function(Map<String, dynamic> map)? fromMapSafe,
     ZFirestoreLog? logger,
     Set<String> timestampFields = const <String>{},
+    bool omitNullFields = false,
     ZDeletionSemantics deletionSemantics = ZDeletionSemantics.strict,
     String? legacyDeletedKey,
   })  : assert(
@@ -184,6 +185,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         _toMap = toMap,
         _fromMapSafe = fromMapSafe,
         _log = logger ?? _noopLog,
+        _omitNullFields = omitNullFields,
         _deletionSemantics = deletionSemantics,
         _legacyDeletedKey = legacyDeletedKey,
         // Garde EXÉCUTOIRE (pas seulement en debug) : les clés réservées sont
@@ -252,6 +254,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     T? Function(Map<String, dynamic> map)? fromMapSafe,
     ZFirestoreLog? logger,
     Set<String> timestampFields = const <String>{},
+    bool omitNullFields = false,
     ZDeletionSemantics deletionSemantics = ZDeletionSemantics.strict,
     String? legacyDeletedKey,
   }) {
@@ -264,6 +267,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
       fromMapSafe: fromMapSafe,
       logger: logger,
       timestampFields: timestampFields,
+      omitNullFields: omitNullFields,
       deletionSemantics: deletionSemantics,
       legacyDeletedKey: legacyDeletedKey,
     );
@@ -308,6 +312,34 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// local gagne toujours » (perte d'écritures distantes, sans aucun test rouge).
   /// La clé LWW reste donc **toujours** comparée en ISO-8601 (AD-9).
   final Set<String> _timestampFields;
+
+  /// Retrait des clés nulles du **corps** de l'entité avant chaque écriture
+  /// (`omitNullFields`, hint symétrique de `timestampFields` : une propriété du
+  /// **support de persistance**, pas du domaine). Défaut `false` ⇒ comportement
+  /// historique **inchangé** (les clés nulles sont écrites telles quelles).
+  ///
+  /// **Pourquoi** : en écriture fusionnée Firestore (`SetOptions(merge: true)`),
+  /// une clé **absente** laisse la valeur distante **intacte**, mais une clé
+  /// présente à **`null` l'EFFACE**. Un moteur qui encode ses entités nulls
+  /// compris et écrit en fusion transforme donc chaque enregistrement partiel
+  /// en effacement de champs — sans erreur, sans exception. Cet adaptateur
+  /// écrit en écrasement total (`set` sans merge, cf. [save]) : le retrait y
+  /// est **sans effet sémantique** (clé absente ≡ clé nulle sur un `set`
+  /// plein), mais il garantit qu'aucune clé nulle n'atteint le disque —
+  /// aligné sur les moteurs legacy à `compact(true)` et sûr pour tout
+  /// co-écrivain du même parc opérant, lui, en `merge: true`.
+  ///
+  /// **Récursif** (aligné sur le `compact(true)` legacy) : le retrait descend
+  /// dans les sous-maps (et dans les maps portées par des listes) ; les
+  /// **éléments** nuls d'une liste sont conservés (retirer un élément
+  /// changerait les index — seule l'entrée de map nulle est une « clé »).
+  ///
+  /// **Jamais appliqué aux métadonnées de sync** (`ZSyncMeta`) : le retrait ne
+  /// porte que sur le **corps** issu de `toMap` — `is_deleted` et `updated_at`
+  /// sont fusionnées **après** compactage, y compris un `updated_at` verbatim
+  /// `null` sur la voie merge ([writeMerged]/[applyMergedAll]), écrit
+  /// délibérément.
+  final bool _omitNullFields;
 
   /// Clé snake_case du drapeau de soft-delete (`ZSyncMeta`, hors-entité).
   /// Alias de la définition machine unique.
@@ -443,18 +475,56 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     return value;
   }
 
-  /// Encode [value] + fusionne les métadonnées `ZSyncMeta` (updated_at ISO-8601,
-  /// is_deleted=false — jamais de `Timestamp`, AD-9) puis applique le hint B14 :
-  /// chaque clé de [_timestampFields] portant une String ISO-8601 parsable est
-  /// remplacée par un `Timestamp` natif (confiné ici, AD-5).
+  /// Encode [value] (corps compacté d'abord si [_omitNullFields] — la méta
+  /// n'est **jamais** compactée) + fusionne les métadonnées `ZSyncMeta`
+  /// (updated_at ISO-8601, is_deleted=false — jamais de `Timestamp`, AD-9)
+  /// puis applique le hint B14 : chaque clé de [_timestampFields] portant une
+  /// String ISO-8601 parsable est remplacée par un `Timestamp` natif (confiné
+  /// ici, AD-5).
   Map<String, dynamic> _encode(T value) {
-    final map = Map<String, dynamic>.of(_toMap(value));
+    final map = _body(value);
     final meta = ZSyncMeta(updatedAt: DateTime.now().toUtc(), isDeleted: false)
         .toJson();
     map[_kUpdatedAt] = meta[_kUpdatedAt];
     map[_kIsDeleted] = false;
     _applyTimestampHints(map);
     return map;
+  }
+
+  /// Corps d'entité prêt à l'écriture : copie de `toMap`, **compactée
+  /// récursivement** si [_omitNullFields]. Point unique par lequel passent
+  /// TOUTES les voies d'écriture ([_encode] pour [save], [_mergedMap] pour
+  /// [writeMerged]/[applyMergedAll]) — le format disque reste uniforme quel
+  /// que soit le chemin, et la méta de sync (fusionnée en aval) reste hors du
+  /// périmètre du retrait.
+  Map<String, dynamic> _body(T value) {
+    final map = Map<String, dynamic>.of(_toMap(value));
+    return _omitNullFields ? _compactNulls(map) : map;
+  }
+
+  /// Retire **récursivement** les entrées de map à valeur `null` (équivalent
+  /// du `compact(true)` legacy) : sous-maps compactées, maps portées par des
+  /// listes compactées aussi ; les **éléments** nuls de liste sont conservés
+  /// (jamais de retrait positionnel). Toute autre valeur est rendue inchangée.
+  Map<String, dynamic> _compactNulls(Map<dynamic, dynamic> map) {
+    final out = <String, dynamic>{};
+    for (final entry in map.entries) {
+      final Object? value = entry.value;
+      if (value == null) continue;
+      out['${entry.key}'] = _compactValue(value);
+    }
+    return out;
+  }
+
+  /// Descente récursive de [_compactNulls] dans les valeurs composées.
+  Object _compactValue(Object value) {
+    if (value is Map) return _compactNulls(value);
+    if (value is List) {
+      return value
+          .map<Object?>((Object? e) => e == null ? null : _compactValue(e))
+          .toList();
+    }
+    return value;
   }
 
   /// Remplace, pour chaque clé de [_timestampFields] (jamais `ZSyncMeta`), une
@@ -1054,8 +1124,12 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// les save en ligne, String ISO pour les save resync) → `orderBy`/plage
   /// Firestore silencieusement incorrects. `_applyTimestampHints` est idempotent
   /// et n'affecte JAMAIS `ZSyncMeta` (`updated_at`/`is_deleted` ∉ `_timestampFields`).
+  ///
+  /// Le corps passe par [_body] (compactage [_omitNullFields] si configuré)
+  /// **avant** la fusion de la méta : un `updated_at` verbatim `null` reste
+  /// écrit délibérément, jamais retiré.
   Map<String, dynamic> _mergedMap(ZSyncEntry<T> entry, String id) {
-    final map = Map<String, dynamic>.of(_toMap(entry.entity));
+    final map = _body(entry.entity);
     map[_kId] = id;
     final meta = entry.meta.toJson();
     map[_kUpdatedAt] = meta[_kUpdatedAt]; // verbatim (peut être null)

@@ -179,13 +179,38 @@ class ZcrudRegistry {
   /// `T` doit être le type **exact** passé à [register] (celui émis par le
   /// registrar généré) : la résolution se fait sur le paramètre de type
   /// statique, pas sur le type dynamique d'une instance.
-  String? kindOf<T extends Object>() {
-    final kinds = _kindsByType[T];
+  ///
+  /// Délègue à [kindOfType] (`kindOfType(T)`) — les trois variantes de
+  /// résolution ([kindOf], [kindOfType], [kindOfInstance]) partagent la même
+  /// table et le même contrat, sans divergence possible.
+  String? kindOf<T extends Object>() => kindOfType(T);
+
+  /// Le `kind` sous lequel le [type] **réifié** a été enregistré, si
+  /// l'association est **univoque**. Variante de [kindOf] pour l'appelant qui
+  /// tient un `Type` plutôt qu'un paramètre de type utilisable : typiquement un
+  /// moteur générique **non borné** (`toMap<T>(T? item)`, où `T` est
+  /// implicitement `Object?`), pour lequel `kindOf<T>()` ne compile pas
+  /// (borne `T extends Object`). L'appelant passe alors `T` directement — ou
+  /// `item.runtimeType` via [kindOfInstance].
+  ///
+  /// Contrat **identique** à [kindOf] (trois cas, exhaustif) :
+  /// - [type] enregistré sous **exactement un** `kind` → retourne ce `kind` ;
+  /// - [type] **jamais enregistré** sur cette instance → retourne `null`
+  ///   (variante défensive, AD-10 — parallèle à [tryCodecFor]) ;
+  /// - [type] enregistré sous **plusieurs** `kind` (modèle partagé par
+  ///   plusieurs collections) → **`throw` [StateError]** au message nommant
+  ///   le type et les `kind` en jeu — jamais un choix silencieux : passez par
+  ///   la voie **par-kind** ([encode]/[decode] avec le `kind` explicite).
+  ///
+  /// [type] doit être le type **exact** passé à [register] : la table ne
+  /// connaît ni les sous-types, ni les instanciations génériques distinctes.
+  String? kindOfType(Type type) {
+    final kinds = _kindsByType[type];
     if (kinds == null || kinds.isEmpty) return null;
     if (kinds.length > 1) {
       throw StateError(
-        'ZcrudRegistry.kindOf<$T>() : le type "$T" est enregistré sous '
-        '${kinds.length} kinds distincts '
+        'ZcrudRegistry.kindOfType($type) : le type "$type" est enregistré '
+        'sous ${kinds.length} kinds distincts '
         '(${kinds.map((String k) => '"$k"').join(', ')}). '
         'L\'association Type → kind n\'est pas univoque : passez par la voie '
         'par-kind — encode("<kind>", valeur) / decode("<kind>", map) — pour '
@@ -194,6 +219,26 @@ class ZcrudRegistry {
     }
     return kinds.first;
   }
+
+  /// Le `kind` sous lequel le type **dynamique** de [value] a été enregistré,
+  /// si l'association est univoque — strictement équivalent à
+  /// `kindOfType(value.runtimeType)`, mêmes trois cas de contrat que [kindOf]
+  /// (`null` si absent, [StateError] si ambigu).
+  ///
+  /// **Cas d'usage** : le point d'entrée de sérialisation d'un moteur
+  /// générique non borné — `Map<String, dynamic> toMap<T>(T? item)` — ne peut
+  /// appeler ni `kindOf<T>()` (la borne `T extends Object` ne couvre pas un
+  /// `T` implicitement `Object?`), ni fournir un `Type` utile quand seul
+  /// l'`item` est en main. Résoudre depuis l'**instance** est alors la voie
+  /// naturelle : `registry.kindOfInstance(item)` puis `encode(kind, item)`.
+  ///
+  /// **Limite `runtimeType` vs types génériques** : la résolution se fait sur
+  /// le type dynamique **exact** de [value], qui peut différer du type
+  /// statique enregistré — un sous-type non enregistré rend `null`, et deux
+  /// instanciations génériques distinctes (`Foo<A>` vs `Foo<B>`) sont deux
+  /// types distincts pour la table. Pour les modèles concrets émis par le
+  /// codegen (le cas nominal), type statique et `runtimeType` coïncident.
+  String? kindOfInstance(Object value) => kindOfType(value.runtimeType);
 
   /// Résolution **stricte** de `T` vers son `kind` pour [encodeOf]/[decodeOf] :
   /// type non enregistré → [StateError] actionnable ; ambigu → [StateError]
@@ -224,6 +269,11 @@ class ZcrudRegistry {
   /// Le contexte ([ZDecodeContext]) est threadé exactement comme par
   /// [encode]. `T` doit être le type exact passé à [register] (résolution
   /// statique — voir [kindOf]).
+  ///
+  /// **Clés nulles émises** — même contrat que [encode] : en écriture
+  /// fusionnée Firestore (`merge: true`), une clé nulle **efface** la valeur
+  /// distante ; voir `omitNullFields` de `FirebaseZRepositoryImpl`
+  /// (`zcrud_firestore`).
   Map<String, dynamic> encodeOf<T extends Object>(T value) =>
       encode(_kindOfStrict<T>('encodeOf'), value);
 
@@ -296,6 +346,13 @@ class ZcrudRegistry {
   ///
   /// Symétrique de [decode] — le contexte (provenance `source`) est
   /// threadé si le codec porte une variante `toMapWithContext`.
+  ///
+  /// **Clés nulles émises telles quelles** : la map rendue est celle du
+  /// `toMap` du modèle, nulls compris — aucun retrait n'est appliqué ici. En
+  /// écriture fusionnée Firestore (`merge: true`), une clé **absente** laisse
+  /// la valeur distante intacte, mais une clé présente à **`null` l'EFFACE** ;
+  /// un consommateur qui écrit en fusion doit retirer les nulls en aval — voir
+  /// `omitNullFields` de `FirebaseZRepositoryImpl` (`zcrud_firestore`).
   Map<String, dynamic> encode(String kind, Object value) {
     final codec = codecFor(kind);
     final withContext = codec.toMapWithContext;

@@ -351,6 +351,83 @@ void main() {
           equals(other));
     });
   });
+
+  group('ZcrudRegistry — kindOfType/kindOfInstance (CR moteur générique '
+      'non borné)', () {
+    test('kindOfType : association univoque → retourne le kind', () {
+      final r = ZcrudRegistry()..let(registerFakeModel);
+      expect(r.kindOfType(FakeModel), 'fakeModel');
+    });
+
+    test('kindOfType : type jamais enregistré → null (jamais throw)', () {
+      final r = ZcrudRegistry()..let(registerFakeModel);
+      expect(r.kindOfType(OtherModel), isNull);
+      expect(ZcrudRegistry().kindOfType(FakeModel), isNull);
+    });
+
+    test('kindOfType : type ambigu (deux kinds) → StateError nommant le type '
+        'et les kinds', () {
+      final r = ZcrudRegistry()
+        ..let(registerFakeModel)
+        ..register<FakeModel>(
+          'fakeModelBis',
+          fromMap: FakeModel.fromMap,
+          toMap: (FakeModel m) => m.toMap(),
+        );
+      try {
+        r.kindOfType(FakeModel);
+        fail('devait throw StateError (association non univoque)');
+      } on StateError catch (e) {
+        final msg = e.message;
+        expect(msg, contains('FakeModel'));
+        expect(msg, contains('"fakeModel"'));
+        expect(msg, contains('"fakeModelBis"'));
+        expect(msg, contains('par-kind')); // message actionnable
+      }
+    });
+
+    test('kindOfInstance : nominal — résout depuis l\'instance '
+        '(cas toMap<T>(T? item) d\'un moteur générique non borné)', () {
+      final r = ZcrudRegistry()..let(registerFakeModel);
+      // Simule le point d'entrée d'un moteur legacy : `T` implicitement
+      // `Object?` — `kindOf<T>()` ne compile pas là (borne T extends Object),
+      // la résolution depuis l'instance est la voie de secours demandée.
+      String? kindFor<T>(T? item) =>
+          item == null ? null : r.kindOfInstance(item);
+      expect(kindFor(const FakeModel(id: 'x', label: 'y')), 'fakeModel');
+      expect(kindFor<FakeModel>(null), isNull);
+    });
+
+    test('cohérence : kindOf<T>() == kindOfType(T) == kindOfInstance(inst) '
+        '(une seule source de vérité)', () {
+      final r = ZcrudRegistry()..let(registerFakeModel);
+      const inst = FakeModel(id: 'a', label: 'b');
+      expect(r.kindOf<FakeModel>(), r.kindOfType(FakeModel));
+      expect(r.kindOfType(FakeModel), r.kindOfInstance(inst));
+      // Type non enregistré : cohérence sur la voie null aussi.
+      expect(r.kindOf<OtherModel>(), isNull);
+      expect(r.kindOfInstance(const OtherModel(code: 1)), isNull);
+    });
+
+    test('kindOfInstance : ambiguïté → même StateError que kindOfType '
+        '(jamais un choix silencieux)', () {
+      final r = ZcrudRegistry()
+        ..let(registerFakeModel)
+        ..register<FakeModel>(
+          'fakeModelBis',
+          fromMap: FakeModel.fromMap,
+          toMap: (FakeModel m) => m.toMap(),
+        );
+      expect(
+        () => r.kindOfInstance(const FakeModel(id: 'x', label: 'y')),
+        throwsA(isA<StateError>().having(
+          (e) => e.message,
+          'message',
+          allOf(contains('FakeModel'), contains('"fakeModelBis"')),
+        )),
+      );
+    });
+  });
 }
 
 /// Petit helper de test : applique [fn] à `this` et le retourne (cascade lisible).

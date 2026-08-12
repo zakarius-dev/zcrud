@@ -268,6 +268,14 @@ class ZListColumn {
 /// 2. il est dans `policy.forceInclude` **OU** (`!field.isId` ET son `type` est
 ///    dans [_tabularTypes]).
 ///
+/// ⚠️ **Escamotage silencieux** : un champ dont le type n'est PAS dans la liste
+/// blanche tabulaire (ou qui est `isId`) est **omis sans erreur ni log** — un
+/// consommateur qui déclare une colonne et ne la voit pas apparaître doit
+/// chercher ici. Pour le **constater**, comparer le résultat au schéma
+/// (`columns.length` vs `schema.length`, ou l'absence du `name` attendu) ;
+/// pour l'**inclure malgré tout**, passer
+/// `ZColumnPolicy(forceInclude: {'monChamp'})`.
+///
 /// L'**ordre** suit l'ordre du schéma (l'`order` = index d'origine dans `schema`,
 /// stable, indépendant du filtrage). Le [header] = `field.label ?? field.name`
 /// (clé non résolue). Le [ZListColumn.format] est dérivé PUR du `type`.

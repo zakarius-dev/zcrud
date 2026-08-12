@@ -51,7 +51,8 @@ import 'z_row_action.dart';
 ///   - `dataGrid` (défaut) → délègue au [renderer] injecté (paramètre) ou au seam
 ///     `ZcrudScope.listRenderer` ; si AUCUN → [ZScopeError] actionnable orientée
 ///     `zcrud_list` (chemin `dataGrid` **uniquement**) ;
-///   - `builder`/`custom` → rendu **dans le cœur**, aucun renderer requis.
+///   - `builder`/`grid`/`custom` → rendu **dans le cœur**, aucun renderer
+///     requis (`grid` = grille de cartes responsive, sans Syncfusion).
 /// - En présence d'une [selection] et/ou de [rowActions], un
 ///   [ZListInteraction] neutre est construit (sélection keyée par `id`, actions
 ///   filtrées par `ZcrudScope.acl`) et passé au renderer / rendu dans le cœur.
@@ -273,6 +274,19 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
               actionsFor: interaction?.actionsFor,
             )
           : _ZListBuilderView(request: request, itemBuilder: itemBuilder),
+      final ZListGridLayout grid => _ZListGridView(
+          request: request,
+          layout: grid,
+          mode: selection?.mode ?? ZListSelectionMode.none,
+          selectedIds: selectedIds,
+          onToggle: selection == null
+              ? null
+              : (id) {
+                  selection!.toggle(id);
+                  onSelectionChanged?.call(selection!.selectedIds.value);
+                },
+          actionsFor: interaction?.actionsFor,
+        ),
       ZListCustomLayout(:final customView) => customView(context, request),
     };
   }
@@ -459,6 +473,81 @@ class _ZListInteractiveBuilderView extends StatelessWidget {
               ),
             Expanded(child: itemBuilder(context, row, columns)),
             for (final action in actions) _RowActionButton(action: action),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Vue **grille** (layout `grid`) : `GridView.builder` **dans le cœur**,
+/// virtualisée, colonnes responsives (`SliverGridDelegateWithMaxCrossAxisExtent`
+/// — directionnel, RTL natif), une carte par ligne via `itemBuilder`. Aucune
+/// couleur ici : la carte est l'affaire de l'app (thème via
+/// `ZcrudScope`/`Theme.of`). En présence d'une sélection et/ou d'actions, la
+/// tuile porte un pied accessible (case ≥ 48 dp + boutons d'actions résolues,
+/// mêmes briques que la vue `builder`). Aucun renderer requis.
+class _ZListGridView extends StatelessWidget {
+  const _ZListGridView({
+    required this.request,
+    required this.layout,
+    required this.mode,
+    required this.selectedIds,
+    required this.onToggle,
+    required this.actionsFor,
+  });
+
+  final ZListRenderRequest request;
+  final ZListGridLayout layout;
+  final ZListSelectionMode mode;
+  final Set<String> selectedIds;
+  final void Function(String id)? onToggle;
+  final List<ZResolvedRowAction> Function(ZListRow row)? actionsFor;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = request.rows;
+    final columns = request.columns;
+    return GridView.builder(
+      key: const ValueKey('zListGrid'),
+      padding: layout.padding,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: layout.maxCrossAxisExtent,
+        mainAxisSpacing: layout.mainAxisSpacing,
+        crossAxisSpacing: layout.crossAxisSpacing,
+        childAspectRatio: layout.childAspectRatio,
+        mainAxisExtent: layout.mainAxisExtent,
+      ),
+      itemCount: rows.length,
+      itemBuilder: (context, index) {
+        final row = rows[index];
+        final tile = layout.itemBuilder(context, row, columns);
+        final actions = actionsFor?.call(row) ?? const <ZResolvedRowAction>[];
+        final selectable = mode != ZListSelectionMode.none;
+        if (!selectable && actions.isEmpty) {
+          return KeyedSubtree(
+            key: ValueKey('zListGridTile_${row.id}'),
+            child: tile,
+          );
+        }
+        // Tuile interactive : carte + pied (case de sélection / actions),
+        // mêmes briques accessibles que la vue `builder` (≥ 48 dp, Semantics).
+        return Column(
+          key: ValueKey('zListGridTile_${row.id}'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Expanded(child: tile),
+            Row(
+              children: <Widget>[
+                if (selectable)
+                  _SelectionCheckbox(
+                    selected: selectedIds.contains(row.id),
+                    onToggle: onToggle == null ? null : () => onToggle!(row.id),
+                  ),
+                const Spacer(),
+                for (final action in actions) _RowActionButton(action: action),
+              ],
+            ),
           ],
         );
       },

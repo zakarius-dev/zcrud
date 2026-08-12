@@ -40,12 +40,33 @@ class ZListRow {
   /// une ligne de liste a besoin d'une clé stable (sélection, actions,
   /// virtualisation), là où une entité **éphémère** (`ZEntity.id == null`,
   /// pas encore persistée) n'a pas de clé naturelle. Dans ce cas, c'est au
-  /// projecteur `T → ZListRow` de **fabriquer** une clé stable — recommandé :
-  /// une clé positionnelle stable (par exemple préfixée, dérivée de l'index
-  /// d'insertion) ou une identité locale générée à la création de l'objet —
-  /// et de la conserver jusqu'à ce que la persistance attribue l'identité
-  /// réelle.
+  /// projecteur `T → ZListRow` de **fabriquer** une clé stable — utiliser la
+  /// fabrique standard [ZListRow.ephemeralKey] (clé positionnelle préfixée,
+  /// dérivée de l'index d'insertion) ou une identité locale générée à la
+  /// création de l'objet — et de la conserver jusqu'à ce que la persistance
+  /// attribue l'identité réelle.
   final String id;
+
+  /// Préfixe réservé des clés éphémères fabriquées par [ephemeralKey].
+  static const String _ephemeralKeyPrefix = '__ephemeral_';
+
+  /// Fabrique la **clé standard** d'une ligne dont l'entité est **éphémère**
+  /// (`ZEntity.id == null`, pas encore persistée) : une clé positionnelle
+  /// stable dérivée de l'[index] d'insertion — `'__ephemeral_<index>'`.
+  ///
+  /// **Déterministe** : même [index] → même clé (la sélection et les actions,
+  /// keyées par `id`, survivent aux rebuilds tant que la position ne change
+  /// pas). À n'utiliser que le temps de la persistance : dès que l'entité
+  /// reçoit son identité réelle, c'est elle qui devient la clé.
+  ///
+  /// Centralisé ici pour que chaque projecteur `T → ZListRow` n'invente pas
+  /// son propre format ; [isEphemeralKey] reconnaît les clés ainsi fabriquées
+  /// (par exemple pour désactiver la corbeille sur une ligne non persistée).
+  static String ephemeralKey(int index) => '$_ephemeralKeyPrefix$index';
+
+  /// `true` si [id] est une clé **éphémère** fabriquée par [ephemeralKey]
+  /// (préfixe réservé `'__ephemeral_'`).
+  static bool isEphemeralKey(String id) => id.startsWith(_ephemeralKeyPrefix);
 
   /// Valeurs brutes de la ligne indexées par `field.name` (opaques).
   final Map<String, Object?> cells;

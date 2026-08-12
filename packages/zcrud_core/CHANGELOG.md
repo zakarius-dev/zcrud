@@ -3,6 +3,45 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.91.0 — 2026-08-12
+
+### Ajouté
+
+#### `ZcrudRegistry` — résolution depuis les génériques non bornés
+
+- Nouvelles résolutions `kindOfType(Type)` et `kindOfInstance(Object)` pour les
+  moteurs génériques non bornés (`toMap<T>(T? item)`) que la borne de
+  `kindOf<T>()` excluait — contrat identique (`null` si absent, `StateError`
+  actionnable si ambigu) ; `kindOf<T>()` délègue à `kindOfType(T)` (source de
+  vérité unique).
+- Dartdoc `encode`/`encodeOf` : les clés nulles sont émises ; en écriture
+  fusionnée Firestore (`merge: true`), une clé nulle **efface** la valeur
+  distante — voir `omitNullFields` de `FirebaseZRepositoryImpl`.
+
+#### `DynamicList` — parité écrans segmentés
+
+- **Onglets** : `ZListTab` (et sa fabrique `.category`) porte un **contexte de
+  création par onglet** optionnel — `Object? Function()? defaultItemBuilder` —
+  pour le motif « liste segmentée par statut, la création hérite du segment
+  courant ». Rappel : le filtre par onglet et le chrome à état préservé
+  existaient déjà (`ZTabbedList`/`ZListTab.category`).
+- **Corbeille sans repository** : fabriques `ZRowAction.softDeleteWith(handler)`
+  / `ZRowAction.restoreWith(handler)` — l'écriture est déléguée à l'app
+  (migration progressive, listes alimentées par des flux legacy), l'ACL reste
+  appliquée exactement comme pour `softDelete(repository)`/`restore(repository)`,
+  qui restent le raccourci nominal. L'entité éphémère (`id == null`) est
+  transmise au handler.
+- **Clé éphémère standard** : `ZListRow.ephemeralKey(index)`
+  (`'__ephemeral_<index>'`) et `ZListRow.isEphemeralKey(id)` — la clé
+  positionnelle des entités non persistées est fabriquée par le cœur, plus par
+  chaque consommateur.
+- **Grille neutre** : `ZListGridLayout` — grille de cartes **responsive** rendue
+  `GridView.builder` **dans le cœur** (virtualisée, directionnelle RTL, sans
+  Syncfusion ni renderer) ; sélection et actions de ligne supportées (pied de
+  tuile accessible, ≥ 48 dp).
+- **Doc** : `deriveColumns` documente l'escamotage silencieux des champs hors
+  liste blanche tabulaire et son contournement (`ZColumnPolicy.forceInclude`).
+
 ## 0.90.0 — 2026-08-12
 
 ### Ajouté
