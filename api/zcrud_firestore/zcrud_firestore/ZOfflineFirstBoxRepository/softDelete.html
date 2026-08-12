@@ -69,6 +69,8 @@
     
 <section class="desc markdown">
   <p>Soft-delete l'élément <code>id</code> (<code>is_deleted = true</code>, hors-entité <code>ZSyncMeta</code>).</p>
+<p>L'élément reste lisible en portée <code>ZDeletedScope.deletedOnly</code> (corbeille)
+via <a href="../../zcrud_firestore/ZOfflineFirstBoxRepository/watch.html">watch</a>/<a href="../../zcrud_firestore/ZOfflineFirstBoxRepository/getAll.html">getAll</a>/<a href="../../zcrud_firestore/ZOfflineFirstBoxRepository/count.html">count</a>.</p>
 </section>
 
 
@@ -111,7 +113,7 @@ Future&lt;ZResult&lt;Unit&gt;&gt; softDelete(String id) async {
 <footer>
   <span class="no-break">
     zcrud_firestore
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

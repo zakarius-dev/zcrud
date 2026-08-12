@@ -70,7 +70,11 @@ implémentés) :</p>
 se voit attribuer une identité opaque à l'écriture ; l'absence de cible
 requise est rejetée par un <code>Left(ZDomainFailure)</code>.</li>
 <li><code>softDelete</code>/<code>restore</code> basculent le drapeau <code>is_deleted</code> <strong>hors-entité</strong>
-(<code>ZSyncMeta</code>, AD-16) ; les lectures excluent les soft-deleted.
+(<code>ZSyncMeta</code>, AD-16). La <strong>portée de suppression</strong> des lectures est
+choisie par l'appelant via <a href="../zcrud_core/ZDataRequest/deletedScope.html">ZDataRequest.deletedScope</a> (voir
+<a href="../zcrud_core/ZDeletedScope.html">ZDeletedScope</a>) : par défaut <code>aliveOnly</code> — les soft-deleted sont exclus,
+comportement historique — mais la corbeille reste lisible en
+<code>deletedOnly</code> sur les chemins porteurs d'un <code>ZDataRequest</code>.
 Surface <strong>LECTURE SEULE</strong> d'un dépôt.</li>
 </ul>
 <h2 id="pourquoi-elle-existe">Pourquoi elle existe</h2>
@@ -168,7 +172,7 @@ tout dépôt se passe déjà là où une lecture seule est attendue.</p>
 
 </dt>
 <dd>
-  Compte les éléments correspondant à <code>request</code> (exclut les soft-deleted).
+  Compte les éléments correspondant à <code>request</code>.
   
 
 </dd>
@@ -181,7 +185,7 @@ tout dépôt se passe déjà là où une lecture seule est attendue.</p>
 
 </dt>
 <dd>
-  Lit tous les éléments correspondant à <code>request</code> (exclut les soft-deleted).
+  Lit tous les éléments correspondant à <code>request</code>.
   
 
 </dd>
@@ -247,7 +251,7 @@ soft-deleted.
 
 </dt>
 <dd>
-  Flux temps réel <strong>nu</strong> de tous les éléments non soft-deleted.
+  Flux temps réel <strong>nu</strong> de tous les éléments <strong>vivants</strong>.
   
 
 </dd>
@@ -302,7 +306,7 @@ soft-deleted.
 <footer>
   <span class="no-break">
     zcrud_core
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

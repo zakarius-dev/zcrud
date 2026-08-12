@@ -84,16 +84,18 @@
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZListTab.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZListTab/ZListTab.html">ZListTab</a></span><span class="signature">({<span class="parameter" id="param-labelKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span>, </span><span class="parameter" id="param-builder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a></span> <span class="parameter-name">builder</span>, </span><span class="parameter" id="param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="param-defaultItemBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">defaultItemBuilder</span>()?</span>})</span>
+          <span class="name"><a href="../zcrud_core/ZListTab/ZListTab.html">ZListTab</a></span><span class="signature">({<span class="parameter" id="param-labelKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span>, </span><span class="parameter" id="param-builder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a></span> <span class="parameter-name">builder</span>, </span><span class="parameter" id="param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="param-defaultItemBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">defaultItemBuilder</span>()?, </span><span class="parameter" id="param-pageKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">pageKey</span>, </span><span class="parameter" id="param-canCreate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">canCreate</span> = <span class="default-value">true</span></span>})</span>
         </dt>
         <dd>
           Construit un onglet : <code>labelKey</code> (clé l10n résolue via <code>label</code>), <code>builder</code>
 (construit la vue de l'onglet), <code>icon</code> optionnelle,
-<code>defaultItemBuilder</code> optionnel (contexte de création de l'onglet).
+<code>defaultItemBuilder</code> optionnel (contexte de création de l'onglet),
+<code>pageKey</code> optionnelle (identité technique découplée du libellé),
+<code>canCreate</code> (autorisation de création de l'onglet, défaut <code>true</code>).
             <div class="constructor-modifier features">const</div>
         </dd>
         <dt id="ZListTab.category" class="callable">
-          <span class="name"><a href="../zcrud_core/ZListTab/ZListTab.category.html">ZListTab.category</a></span><span class="signature">({<span class="parameter" id="category-param-labelKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span>, </span><span class="parameter" id="category-param-filters"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">filters</span>, </span><span class="parameter" id="category-param-buildList"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">buildList</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-categoryFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">categoryFilters</span></span>), </span><span class="parameter" id="category-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="category-param-defaultItemBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">defaultItemBuilder</span>()?</span>})</span>
+          <span class="name"><a href="../zcrud_core/ZListTab/ZListTab.category.html">ZListTab.category</a></span><span class="signature">({<span class="parameter" id="category-param-labelKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span>, </span><span class="parameter" id="category-param-filters"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">filters</span>, </span><span class="parameter" id="category-param-buildList"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">buildList</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-categoryFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">categoryFilters</span></span>), </span><span class="parameter" id="category-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="category-param-defaultItemBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">defaultItemBuilder</span>()?, </span><span class="parameter" id="category-param-pageKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">pageKey</span>, </span><span class="parameter" id="category-param-canCreate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">canCreate</span> = <span class="default-value">true</span></span>})</span>
         </dt>
         <dd>
           Fabrique <strong>catégorie</strong> (cas courant) : les <code>filters</code> de catégorie sont
@@ -118,6 +120,22 @@ JAMAIS être écrasée par une recherche/un filtre utilisateur.
 </dt>
 <dd>
   Construit la vue de l'onglet (une <code>DynamicList</code>/<code>ZSubListScreen</code>, etc.).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="canCreate" class="property">
+  <span class="name"><a href="../zcrud_core/ZListTab/canCreate.html">canCreate</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <strong>Autorisation de création</strong> de l'onglet (défaut <code>true</code>) — le pendant de
+<a href="../zcrud_core/ZListTab/defaultItemBuilder.html">defaultItemBuilder</a> : si l'onglet porte le <strong>contexte</strong> de création, il
+porte aussi son <strong>autorisation</strong>. <code>false</code> = onglet en lecture seule pour
+la création (le geste de création de l'app — FAB, bouton de barre… — se
+masque ou se désactive quand l'onglet actif ne l'autorise pas).
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -171,6 +189,32 @@ naît dans le statut/type de l'onglet actif).
 <dd>
   Clé l10n du libellé (résolue au rendu via <code>label(context, labelKey)</code>).
   <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="pageKey" class="property">
+  <span class="name"><a href="../zcrud_core/ZListTab/pageKey.html">pageKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Identité technique</strong> optionnelle de l'onglet, découplée du libellé.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="resolvedPageKey" class="property">
+  <span class="name"><a href="../zcrud_core/ZListTab/resolvedPageKey.html">resolvedPageKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de page <strong>effective</strong> de l'onglet : <a href="../zcrud_core/ZListTab/pageKey.html">pageKey</a> si fournie, sinon
+<a href="../zcrud_core/ZListTab/labelKey.html">labelKey</a>. C'est cette valeur que <code>ZTabbedList</code> utilise comme clé de
+page keep-alive et qui doit être <strong>unique</strong> parmi les onglets.
+  <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
@@ -271,7 +315,7 @@ naît dans le statut/type de l'onglet actif).
 <footer>
   <span class="no-break">
     zcrud_core
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

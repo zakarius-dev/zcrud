@@ -65,6 +65,11 @@
 <section class="desc markdown">
   <p>Lit l'élément d'identité <code>id</code>. <code>Left(ZNotFoundFailure)</code> s'il est absent ou
 soft-deleted.</p>
+<p>Chemin <strong>sans</strong> <code>ZDataRequest</code> : la portée est <strong>figée</strong> à
+<a href="../../zcrud_core/ZDeletedScope.html">ZDeletedScope.aliveOnly</a> — un élément en corbeille rend un
+<code>Left(ZNotFoundFailure)</code> explicite. Son <code>id</code> se retrouve via
+<a href="../../zcrud_core/ZReadOnlyRepository/getAll.html">getAll</a> en portée <code>deletedOnly</code>, et <a href="../../zcrud_core/ZRepository/restore.html">ZRepository.restore</a> opère sur
+cet <code>id</code>.</p>
 </section>
 
 
@@ -99,7 +104,7 @@ soft-deleted.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

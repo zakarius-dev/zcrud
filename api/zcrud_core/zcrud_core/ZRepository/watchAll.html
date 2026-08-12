@@ -67,10 +67,13 @@
     </section>
     
 <section class="desc markdown">
-  <p>Flux temps réel <strong>nu</strong> de tous les éléments non soft-deleted.</p>
+  <p>Flux temps réel <strong>nu</strong> de tous les éléments <strong>vivants</strong>.</p>
 <p>Équivalent du <code>dataChanges</code> canonique : seed immédiat puis diffusion des
 mutations (sémantique broadcast portée par l'implémentation). Jamais enveloppé
 dans un <code>Either</code> (invariant AD-11).</p>
+<p>Chemin <strong>sans</strong> <code>ZDataRequest</code> : portée <strong>figée</strong> à
+<a href="../../zcrud_core/ZDeletedScope.html">ZDeletedScope.aliveOnly</a> — pour la corbeille, passer par <a href="../../zcrud_core/ZRepository/watch.html">watch</a> avec un
+<a href="../../zcrud_core/ZDataRequest/deletedScope.html">ZDataRequest.deletedScope</a> explicite.</p>
 </section>
 
 
@@ -106,7 +109,7 @@ Stream&lt;List&lt;T&gt;&gt; watchAll();</code></pre>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

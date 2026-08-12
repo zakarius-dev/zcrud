@@ -62,7 +62,10 @@
       </section>
       
 <section class="desc markdown">
-  <p>Notifié à chaque changement d'onglet (nouvel index).</p>
+  <p>Notifié à chaque changement d'onglet (nouvel index). N'est <strong>pas</strong>
+notifié à la construction (l'onglet initial est connu de l'appelant via
+<a href="../../zcrud_core/ZTabbedList/initialIndex.html">initialIndex</a>) — pour suivre l'onglet actif y compris à l'initialisation,
+utiliser <a href="../../zcrud_core/ZTabbedList/activeIndexNotifier.html">activeIndexNotifier</a>.</p>
 </section>
 
       
@@ -97,7 +100,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

@@ -62,7 +62,11 @@
     </section>
     
 <section class="desc markdown">
-  <p>Flux temps réel <strong>nu</strong> de tous les éléments non soft-deleted.</p>
+  <p>Flux temps réel <strong>nu</strong> de tous les éléments <strong>vivants</strong>.</p>
+<p>Chemin <strong>sans</strong> <code>ZDataRequest</code> : la portée est <strong>figée</strong> à
+<a href="../../zcrud_core/ZDeletedScope.html">ZDeletedScope.aliveOnly</a> (les soft-deleted n'apparaissent jamais ici).
+Pour lire la corbeille ou tout le parc, passer par <a href="../../zcrud_core/ZReadOnlyRepository/watch.html">watch</a> avec un
+<a href="../../zcrud_core/ZDataRequest/deletedScope.html">ZDataRequest.deletedScope</a> explicite.</p>
 </section>
 
 
@@ -97,7 +101,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

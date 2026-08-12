@@ -60,6 +60,11 @@
 suppression). Toute méthode d'écriture retourne <code>Either&lt;ZFailure, T&gt;</code> (ou
 <code>Unit</code> pour les opérations sans valeur de retour) — invariant AD-11 : jamais
 d'exception non capturée à travers la frontière du repository.</p>
+<p><strong>Corbeille</strong> : le soft-delete (<a href="../zcrud_core/ZRepository/softDelete.html">softDelete</a>/<a href="../zcrud_core/ZRepository/restore.html">restore</a>) n'est pas une
+impasse de lecture — les chemins porteurs d'un <code>ZDataRequest</code> (<a href="../zcrud_core/ZRepository/watch.html">watch</a>,
+<a href="../zcrud_core/ZRepository/getAll.html">getAll</a>, <a href="../zcrud_core/ZRepository/count.html">count</a>) honorent <a href="../zcrud_core/ZDataRequest/deletedScope.html">ZDataRequest.deletedScope</a> (voir
+<a href="../zcrud_core/ZDeletedScope.html">ZDeletedScope</a>) pour lister les éléments supprimés (<code>deletedOnly</code>) ou
+tout le parc (<code>includeDeleted</code>).</p>
 </section>
 
 
@@ -147,7 +152,7 @@ d'exception non capturée à travers la frontière du repository.</p>
 
 </dt>
 <dd>
-  Compte les éléments correspondant à <code>request</code> (exclut les soft-deleted).
+  Compte les éléments correspondant à <code>request</code>.
   <div class="features"><span class="feature">override</span></div>
 
 </dd>
@@ -173,7 +178,7 @@ d'exception non capturée à travers la frontière du repository.</p>
 
 </dt>
 <dd>
-  Lit tous les éléments correspondant à <code>request</code> (exclut les soft-deleted).
+  Lit tous les éléments correspondant à <code>request</code>.
   <div class="features"><span class="feature">override</span></div>
 
 </dd>
@@ -213,7 +218,8 @@ soft-deleted.
 
 </dt>
 <dd>
-  Restaure l'élément <code>id</code> soft-deleted (corbeille).
+  Restaure l'élément <code>id</code> soft-deleted (corbeille). Son <code>id</code> se retrouve
+via <a href="../zcrud_core/ZRepository/getAll.html">getAll</a> en portée <a href="../zcrud_core/ZDeletedScope.html">ZDeletedScope.deletedOnly</a>.
   
 
 </dd>
@@ -280,7 +286,7 @@ localise le conteneur si nécessaire.
 
 </dt>
 <dd>
-  Flux temps réel <strong>nu</strong> de tous les éléments non soft-deleted.
+  Flux temps réel <strong>nu</strong> de tous les éléments <strong>vivants</strong>.
   <div class="features"><span class="feature">override</span></div>
 
 </dd>
@@ -335,7 +341,7 @@ localise le conteneur si nécessaire.
 <footer>
   <span class="no-break">
     zcrud_core
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

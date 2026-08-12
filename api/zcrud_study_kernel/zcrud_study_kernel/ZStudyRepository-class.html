@@ -127,7 +127,7 @@ supplémentaire (invariant AD-1).</p>
 
 </dt>
 <dd class="inherited">
-  Compte les éléments correspondant à <code>request</code> (exclut les soft-deleted).
+  Compte les éléments correspondant à <code>request</code>.
   <div class="features"><span class="feature">inherited</span></div>
 
 </dd>
@@ -153,7 +153,7 @@ supplémentaire (invariant AD-1).</p>
 
 </dt>
 <dd class="inherited">
-  Lit tous les éléments correspondant à <code>request</code> (exclut les soft-deleted).
+  Lit tous les éléments correspondant à <code>request</code>.
   <div class="features"><span class="feature">inherited</span></div>
 
 </dd>
@@ -266,7 +266,8 @@ suppression se synchronise).
 
 </dt>
 <dd class="inherited">
-  Restaure l'élément <code>id</code> soft-deleted (corbeille).
+  Restaure l'élément <code>id</code> soft-deleted (corbeille). Son <code>id</code> se retrouve
+via <code>getAll</code> en portée <code>ZDeletedScope.deletedOnly</code>.
   <div class="features"><span class="feature">inherited</span></div>
 
 </dd>
@@ -383,7 +384,7 @@ requise, matérialisation de l'éphémère — invariant AD-14).
 
 </dt>
 <dd class="inherited">
-  Flux temps réel <strong>nu</strong> de tous les éléments non soft-deleted.
+  Flux temps réel <strong>nu</strong> de tous les éléments <strong>vivants</strong>.
   <div class="features"><span class="feature">inherited</span></div>
 
 </dd>
@@ -438,7 +439,7 @@ requise, matérialisation de l'éphémère — invariant AD-14).
 <footer>
   <span class="no-break">
     zcrud_study_kernel
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

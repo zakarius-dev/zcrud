@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the activeIndexNotifier property from the ZTabbedList class, for the Dart programming language.">
+  <title>activeIndexNotifier property - ZTabbedList class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core.dart</a></li>
+    <li><a href="../../zcrud_core/ZTabbedList-class.html">ZTabbedList</a></li>
+    <li class="self-crumb">activeIndexNotifier property</li>
+  </ol>
+  <div class="self-name">activeIndexNotifier</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;ZTabbedList-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">activeIndexNotifier</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="https://api.flutter.dev/flutter/foundation/ValueNotifier-class.html">ValueNotifier</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?
+        <span class="name ">activeIndexNotifier</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p>Notifieur <strong>possédé par l'appelant</strong> (create/dispose côté hôte), tenu
+synchronisé par le widget avec l'<strong>index de l'onglet actif</strong> : positionné
+à l'index initial effectif dès le montage, puis à chaque changement
+d'onglet (tap <strong>ou</strong> swipe), <strong>avant</strong> l'appel de <a href="../../zcrud_core/ZTabbedList/onTabChanged.html">onTabChanged</a>.</p>
+<p>Lu comme <code>ValueListenable&lt;int&gt;</code>, il évite à l'hôte de dupliquer un
+<code>_activeIndex</code> maintenu à la main : un geste de création lit par exemple
+<code>tabs[notifier.value].defaultItemBuilder</code> / <code>tabs[notifier.value].canCreate</code>
+pour hériter du contexte (et de l'autorisation) du segment courant.</p>
+<p>Le flux est à <strong>sens unique</strong> (widget → hôte) : écrire dans ce notifieur
+côté hôte ne change <strong>pas</strong> l'onglet actif (la valeur serait écrasée à la
+prochaine synchronisation) — l'onglet initial se pilote par
+<a href="../../zcrud_core/ZTabbedList/initialIndex.html">initialIndex</a>, le changement par le geste de l'usager.</p>
+<p><code>null</code> (défaut) = aucun suivi, comportement antérieur inchangé.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final ValueNotifier&lt;int&gt;? activeIndexNotifier;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/ZTabbedList-class.html">ZTabbedList</a></li>
+    <li class="self-crumb">activeIndexNotifier property</li>
+</ol>
+
+  <h5>ZTabbedList class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.92.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

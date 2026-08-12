@@ -64,6 +64,10 @@
     
 <section class="desc markdown">
   <p>Flux temps réel <strong>nu</strong> filtré/trié/paginé selon <code>request</code>.</p>
+<p>La portée de suppression est choisie par <a href="../../zcrud_core/ZDataRequest/deletedScope.html">ZDataRequest.deletedScope</a>
+(défaut <a href="../../zcrud_core/ZDeletedScope.html">ZDeletedScope.aliveOnly</a> — comportement historique). Flux
+corbeille en une ligne :
+<code>watch(request.copyWith(deletedScope: ZDeletedScope.deletedOnly))</code>.</p>
 </section>
 
 
@@ -98,7 +102,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

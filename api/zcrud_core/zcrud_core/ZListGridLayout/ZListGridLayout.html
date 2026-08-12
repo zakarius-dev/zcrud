@@ -64,6 +64,7 @@
 <li><span class="parameter" id="param-childAspectRatio"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">childAspectRatio</span> = <span class="default-value">1.0</span>, </span></li>
 <li><span class="parameter" id="param-mainAxisExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">mainAxisExtent</span>, </span></li>
 <li><span class="parameter" id="param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">padding</span>, </span></li>
+<li><span class="parameter" id="param-maxColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">maxColumns</span>, </span></li>
 </ol>})
     </section>
     
@@ -83,7 +84,11 @@
   this.childAspectRatio = 1.0,
   this.mainAxisExtent,
   this.padding,
-});</code></pre>
+  this.maxColumns,
+}) : assert(
+        maxColumns == null || maxColumns &gt;= 1,
+        &#39;ZListGridLayout.maxColumns doit être &gt;= 1.&#39;,
+      );</code></pre>
 </section>
 
 
@@ -111,7 +116,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

@@ -58,6 +58,8 @@
 <li><span class="parameter" id="param-initialIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">initialIndex</span> = <span class="default-value">0</span>, </span></li>
 <li><span class="parameter" id="param-onTabChanged"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">onTabChanged</span>, </span></li>
 <li><span class="parameter" id="param-isScrollable"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isScrollable</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-header"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">header</span>, </span></li>
+<li><span class="parameter" id="param-activeIndexNotifier"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueNotifier-class.html">ValueNotifier</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">activeIndexNotifier</span>, </span></li>
 <li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
 </ol>})
     </section>
@@ -65,7 +67,9 @@
 <section class="desc markdown">
   <p>Construit les onglets à partir de <code>tabs</code>. <code>initialIndex</code> fixe l'onglet actif
 initial ; <code>onTabChanged</code> est notifié à chaque changement d'onglet ;
-<code>isScrollable</code> rend la barre défilante (nombreux onglets).</p>
+<code>isScrollable</code> rend la barre défilante (nombreux onglets) ; <code>header</code>
+pose un widget partagé au-dessus de la barre d'onglets ;
+<code>activeIndexNotifier</code> suit l'index de l'onglet actif.</p>
 </section>
 
 
@@ -77,6 +81,8 @@ initial ; <code>onTabChanged</code> est notifié à chaque changement d'onglet ;
   this.initialIndex = 0,
   this.onTabChanged,
   this.isScrollable = false,
+  this.header,
+  this.activeIndexNotifier,
   super.key,
 });</code></pre>
 </section>
@@ -106,7 +112,7 @@ initial ; <code>onTabChanged</code> est notifié à chaque changement d'onglet ;
 <footer>
   <span class="no-break">
     zcrud_core
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

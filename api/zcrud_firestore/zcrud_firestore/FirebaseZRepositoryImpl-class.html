@@ -202,7 +202,7 @@ Liste vide → <code>Right(unit)</code>. <code>FirebaseException</code> → <cod
 
 </dt>
 <dd>
-  Compte les éléments correspondant à <code>request</code> (exclut les soft-deleted).
+  Compte les éléments correspondant à <code>request</code>.
   
 
 </dd>
@@ -228,7 +228,7 @@ Liste vide → <code>Right(unit)</code>. <code>FirebaseException</code> → <cod
 
 </dt>
 <dd>
-  Lit tous les éléments correspondant à <code>request</code> (exclut les soft-deleted).
+  Lit tous les éléments correspondant à <code>request</code>.
   
 
 </dd>
@@ -268,7 +268,8 @@ soft-deleted.
 
 </dt>
 <dd>
-  Restaure l'élément <code>id</code> soft-deleted (corbeille).
+  Restaure l'élément <code>id</code> soft-deleted (corbeille). Son <code>id</code> se retrouve
+via <a href="../zcrud_firestore/FirebaseZRepositoryImpl/getAll.html">getAll</a> en portée <code>ZDeletedScope.deletedOnly</code>.
   
 
 </dd>
@@ -352,7 +353,7 @@ chacun apparié à son <code>ZSyncMeta</code> (lu depuis le corps). Contraste vo
 
 </dt>
 <dd>
-  Flux temps réel <strong>nu</strong> de tous les éléments non soft-deleted.
+  Flux temps réel <strong>nu</strong> de tous les éléments <strong>vivants</strong>.
   
 
 </dd>
@@ -442,7 +443,7 @@ Cette constante est <strong>backend-spécifique</strong> et vit donc <strong>exc
 <footer>
   <span class="no-break">
     zcrud_firestore
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

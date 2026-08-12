@@ -89,12 +89,14 @@ indépendante par onglet, état préservé au switch).</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZTabbedList.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZTabbedList/ZTabbedList.html">ZTabbedList</a></span><span class="signature">({<span class="parameter" id="param-tabs"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListTab-class.html">ZListTab</a></span>&gt;</span></span> <span class="parameter-name">tabs</span>, </span><span class="parameter" id="param-initialIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">initialIndex</span> = <span class="default-value">0</span>, </span><span class="parameter" id="param-onTabChanged"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">onTabChanged</span>, </span><span class="parameter" id="param-isScrollable"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isScrollable</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZTabbedList/ZTabbedList.html">ZTabbedList</a></span><span class="signature">({<span class="parameter" id="param-tabs"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListTab-class.html">ZListTab</a></span>&gt;</span></span> <span class="parameter-name">tabs</span>, </span><span class="parameter" id="param-initialIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">initialIndex</span> = <span class="default-value">0</span>, </span><span class="parameter" id="param-onTabChanged"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">onTabChanged</span>, </span><span class="parameter" id="param-isScrollable"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isScrollable</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-header"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">header</span>, </span><span class="parameter" id="param-activeIndexNotifier"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueNotifier-class.html">ValueNotifier</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">activeIndexNotifier</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
         </dt>
         <dd>
           Construit les onglets à partir de <code>tabs</code>. <code>initialIndex</code> fixe l'onglet actif
 initial ; <code>onTabChanged</code> est notifié à chaque changement d'onglet ;
-<code>isScrollable</code> rend la barre défilante (nombreux onglets).
+<code>isScrollable</code> rend la barre défilante (nombreux onglets) ; <code>header</code>
+pose un widget partagé au-dessus de la barre d'onglets ;
+<code>activeIndexNotifier</code> suit l'index de l'onglet actif.
             <div class="constructor-modifier features">const</div>
         </dd>
     </dl>
@@ -105,6 +107,21 @@ initial ; <code>onTabChanged</code> est notifié à chaque changement d'onglet ;
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
+        <dt id="activeIndexNotifier" class="property">
+  <span class="name"><a href="../zcrud_core/ZTabbedList/activeIndexNotifier.html">activeIndexNotifier</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueNotifier-class.html">ValueNotifier</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Notifieur <strong>possédé par l'appelant</strong> (create/dispose côté hôte), tenu
+synchronisé par le widget avec l'<strong>index de l'onglet actif</strong> : positionné
+à l'index initial effectif dès le montage, puis à chaque changement
+d'onglet (tap <strong>ou</strong> swipe), <strong>avant</strong> l'appel de <a href="../zcrud_core/ZTabbedList/onTabChanged.html">onTabChanged</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="hashCode" class="property inherited">
   <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/hashCode.html">hashCode</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
@@ -114,6 +131,20 @@ initial ; <code>onTabChanged</code> est notifié à chaque changement d'onglet ;
 <dd class="inherited">
   The hash code for this object.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="header" class="property">
+  <span class="name"><a href="../zcrud_core/ZTabbedList/header.html">header</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  
+
+</dt>
+<dd>
+  Widget <strong>partagé</strong> optionnel posé <strong>au-dessus de la barre d'onglets</strong>,
+dans le même arbre (typiquement une barre de recherche commune aux
+onglets). <code>null</code> (défaut) = aucun en-tête, rendu inchangé.
+  <div class="features"><span class="feature">final</span></div>
 
 </dd>
 
@@ -160,7 +191,10 @@ initial ; <code>onTabChanged</code> est notifié à chaque changement d'onglet ;
 
 </dt>
 <dd>
-  Notifié à chaque changement d'onglet (nouvel index).
+  Notifié à chaque changement d'onglet (nouvel index). N'est <strong>pas</strong>
+notifié à la construction (l'onglet initial est connu de l'appelant via
+<a href="../zcrud_core/ZTabbedList/initialIndex.html">initialIndex</a>) — pour suivre l'onglet actif y compris à l'initialisation,
+utiliser <a href="../zcrud_core/ZTabbedList/activeIndexNotifier.html">activeIndexNotifier</a>.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -380,7 +414,7 @@ tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode
 <footer>
   <span class="no-break">
     zcrud_core
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

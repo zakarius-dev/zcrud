@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_screen API docs, for the Dart programming language.">
+  <title>zcrud_screen - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_screen package</a></li>
+  </ol>
+  <div class="self-name">zcrud_screen</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_screen">zcrud_screen</h1>
+<p>Écran CRUD <strong>assemblé et déclaratif</strong> : <code>ZCrudScreen&lt;T&gt;</code> est à <code>DynamicList</code> ce
+que <code>DynamicEdition</code> est aux champs — la pièce qui prend une déclaration et rend
+un écran fonctionnel (liste, recherche, création, édition, sauvegarde,
+corbeille), sans que l'assemblage ne monte jamais dans le cœur (invariant AD-1).</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p>zcrud fournit d'excellentes briques — <code>DynamicList</code>/<code>ZTabbedList</code> (rendu),
+<code>ZRowAction</code> (actions de ligne gouvernées <code>ZAcl</code>), <code>presentEdition</code> +
+<code>ZPresentationPolicy</code> (présentation dérivée du breakpoint), <code>DynamicEdition</code>/
+<code>ZFormController</code> (formulaire), <code>ZRepository</code>/<code>ZDataRequest.deletedScope</code>
+(données et corbeille). Ce paquet fournit <strong>la pièce qui les assemble</strong>, pour
+que chaque application n'ait plus à recoudre le cycle complet écran par écran.</p>
+<p>Dépendances internes (arêtes sortantes uniquement, graphe acyclique) :</p>
+<pre class="language-dart"><code>zcrud_screen ──&gt; zcrud_core
+             └─&gt; zcrud_navigation ──&gt; zcrud_responsive ──&gt; zcrud_core
+</code></pre>
+<p><strong>Quand l'utiliser</strong> : « une liste dont on crée, édite et met à la corbeille
+les éléments » — le cas d'usage nominal d'un écran CRUD, y compris ses
+variantes en lecture seule (déclarées, jamais contournées).</p>
+<p><strong>Quand ne pas l'utiliser</strong> : une vue qui n'est pas une liste (carte
+géographique, organigramme) — descendez d'un cran et composez directement
+<code>DynamicList</code>/<code>ZListController</code>/<code>presentEdition</code> : l'assemblage est mince,
+rien n'est perdu.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Dépendance git (paquet non publié sur pub.dev) :</p>
+<pre class="language-yaml"><code class="language-yaml">dependencies:
+  zcrud_screen:
+    git:
+      url: git@github.com:zakarius-dev/zcrud.git
+      ref: &lt;tag&gt;
+      path: packages/zcrud_screen
+</code></pre>
+<p>Les arêtes internes (<code>zcrud_core</code>, <code>zcrud_navigation</code>…) exigent des
+<code>dependency_overrides</code> à la racine du consommateur : suivez la recette
+complète de <code>docs/private-git-consumption.md</code> (dépôt zcrud).</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<p>Déclaration <strong>minimale</strong> — le type est enregistré au <code>ZcrudRegistry</code>
+(annotation <code>@ZcrudModel</code>, registrar généré appelé au bootstrap) : champs de
+liste et de formulaire, projection en cellules et reconstruction d'entité sont
+<strong>dérivés</strong> du schéma généré, l'ACL vient du <code>ZcrudScope</code> ambiant, le mode de
+présentation du breakpoint.</p>
+<pre class="language-dart"><code class="language-dart">import 'package:flutter/widgets.dart';
+import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_screen/zcrud_screen.dart';
+
+/// Modèle d'exemple — en pratique un `@ZcrudModel` dont le registrar généré
+/// enregistre schéma et codec au bootstrap.
+class Consignee extends ZEntity {
+  const Consignee({this.id, required this.name, this.code = ''});
+
+  @override
+  final String? id;
+  final String name;
+  final String code;
+}
+
+Widget buildConsigneesScreen(
+  ZRepository&lt;Consignee&gt; repo,
+  ZcrudRegistry registry,
+) {
+  return ZCrudScreen&lt;Consignee&gt;(
+    title: 'Consignataires',
+    source: ZCrudSource&lt;Consignee&gt;.repository(repo),
+    registry: registry,
+  );
+}
+</code></pre>
+<p>Exemple <strong>complet</strong> (celui du CR d'origine) — chaque dérivation surchargée par
+un paramètre :</p>
+<pre class="language-dart"><code class="language-dart">import 'package:flutter/material.dart';
+import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_navigation/zcrud_navigation.dart';
+import 'package:zcrud_screen/zcrud_screen.dart';
+
+// `Consignee` : voir le modèle d'exemple du bloc précédent.
+
+Widget buildConsigneesScreenComplet({
+  required ZRepository&lt;Consignee&gt; repo,
+  required ZcrudRegistry registry,
+  required ZAcl acl,
+  required List&lt;ZFieldSpec&gt; listFields,
+  required List&lt;ZFieldSpec&gt; formFields,
+}) {
+  return ZCrudScreen&lt;Consignee&gt;(
+    title: 'Consignataires',
+    source: ZCrudSource&lt;Consignee&gt;.repository(repo),
+    registry: registry,
+    listFields: listFields,          // ce qui s'affiche
+    formFields: formFields,          // ce qui s'édite
+    cellsOf: (c) =&gt; &lt;String, Object?&gt;{'name': c.name, 'code': c.code},
+    acl: acl,
+    policy: const ZPresentationPolicy(),
+    layout: ZListGridLayout(
+      maxCrossAxisExtent: 350,
+      itemBuilder: (context, row, columns) =&gt; Card(
+        child: Center(child: Text('${row.cells['name']}')),
+      ),
+    ),
+  );
+}
+</code></pre>
+<p>Cohabitation (les données arrivent des flux de l'hôte, écritures par
+callbacks) :</p>
+<pre class="language-dart"><code class="language-dart">Widget buildCohabitationScreen({
+  required List&lt;Consignee&gt; consignees,
+  required ZcrudRegistry registry,
+  required Future&lt;void&gt; Function(Consignee c) upsert,
+  required Future&lt;void&gt; Function(Consignee c) softDelete,
+  required Future&lt;void&gt; Function(Consignee c) restore,
+  required bool Function(Consignee c) isDeleted,
+}) {
+  return ZCrudScreen&lt;Consignee&gt;(
+    title: 'Consignataires',
+    source: ZCrudSource&lt;Consignee&gt;.items(
+      consignees,
+      onSave: upsert,
+      onSoftDelete: softDelete,
+      onRestore: restore,
+      isDeleted: isDeleted,
+    ),
+    registry: registry,
+  );
+}
+</code></pre>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<h3 id="drivation-depuis-le-registre">Dérivation depuis le registre</h3>
+<p>Tout ce qui est dérivable d'une déclaration existante ne se redemande jamais :
+<code>registry.kindOf&lt;T&gt;()</code> résout le <code>kind</code>, <code>fieldSpecsFor</code> fournit le schéma
+(colonnes de liste, champs de formulaire — champs <code>isId</code> exclus du
+formulaire), <code>encode</code> projette l'entité en cellules <strong>et</strong> en valeurs
+initiales du formulaire, <code>decode</code> reconstruit l'entité depuis les valeurs
+fusionnées (l'identité et les champs non édités sont conservés). Chaque
+dérivation est remplaçable : <code>listFields</code>, <code>formFields</code>, <code>cellsOf</code>,
+<code>editionBuilder</code>. Un type enregistré sous <strong>plusieurs</strong> kinds exige le
+paramètre <code>kind</code> explicite (le registre refuse le choix silencieux).</p>
+<h3 id="source-dclarative">Source déclarative</h3>
+<p><code>ZCrudSource.repository(repo)</code> est la voie nominale (lecture, recherche,
+sauvegarde et corbeille par les ports neutres) ; <code>ZCrudSource.items(rows, …)</code>
+la voie de cohabitation (callbacks optionnels). Les capacités de l'écran se
+<strong>dérivent</strong> de la source : sans voie d'écriture, ni création ni édition ; sans
+support de corbeille, ni bascule ni actions.</p>
+<h3 id="corbeille">Corbeille</h3>
+<p>Voie repository : le listing corbeille interroge le backend en portée
+<code>ZDeletedScope.deletedOnly</code> (recherche et pagination inchangées) ; les actions
+sont <code>ZRowAction.softDelete</code>/<code>.restore</code>. Voie items : partition par le
+prédicat <code>isDeleted</code> déclaré, actions <code>softDeleteWith</code>/<code>restoreWith</code> — mêmes
+permissions (<code>ZCrudAction.delete</code>/<code>.restore</code>), même filtrage <code>ZAcl</code>.</p>
+<h3 id="prsentation-de-ldition">Présentation de l'édition</h3>
+<p>Le formulaire est présenté via <code>presentEdition</code> : le mode (<code>page</code>/<code>sheet</code>/
+<code>dialog</code>) se dérive du breakpoint par la <code>ZPresentationPolicy</code> déclarée
+(<code>policy</code>, <code>formWeight</code>). <code>editionBuilder</code> remplace le formulaire dérivé par
+un formulaire applicatif complet — la présentation et la voie de sauvegarde
+restent assemblées.</p>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZCrudScreen&lt;T&gt;</code></td>
+<td>Écran CRUD assemblé : liste + recherche + création + édition + sauvegarde + corbeille, depuis une déclaration.</td>
+</tr>
+<tr>
+<td><code>ZCrudSource&lt;T&gt;</code></td>
+<td>Source déclarative : <code>.repository(ZRepository&lt;T&gt;)</code> ou <code>.items(List&lt;T&gt;, callbacks…)</code>.</td>
+</tr>
+<tr>
+<td><code>ZTrashMode</code></td>
+<td>Activation de la corbeille : <code>auto</code> (dès que la source la supporte) / <code>none</code>.</td>
+</tr>
+<tr>
+<td><code>ZCrudSave&lt;T&gt;</code></td>
+<td>Persistance (upsert) d'une entité — <code>onSave</code> de l'écran et de la source.</td>
+</tr>
+<tr>
+<td><code>ZCrudTrashWrite&lt;T&gt;</code></td>
+<td>Écriture de corbeille déléguée (voie items).</td>
+</tr>
+<tr>
+<td><code>ZCrudEditionBuilder&lt;T&gt;</code></td>
+<td>Fabrique du formulaire applicatif — voie d'échappement de l'édition dérivée.</td>
+</tr>
+<tr>
+<td><code>ZCrudItemBuilder&lt;T&gt;</code></td>
+<td>Rendu d'une tuile (reçoit l'entité <code>T</code>) — voie d'échappement de la tuile générique.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Lecture seule par déclaration</strong> : <code>readOnly: true</code>, <code>canCreate: false</code>,
+<code>trash: ZTrashMode.none</code>, ou <code>ZCrudSource.items(rows)</code> sans callbacks — un
+journal immuable ou un référentiel distant en lecture seule s'écrivent sans
+contournement.</li>
+<li><strong>ACL partout</strong> (invariant AD-16) : bouton de création (<code>ZCrudAction.create</code>),
+actions de ligne (<code>update</code>/<code>delete</code>/<code>restore</code> — masquées par défaut,
+grisables via <code>actionAclMode</code>), bascule corbeille. <code>acl</code> non fourni ⇒ l'ACL
+du <code>ZcrudScope</code> ambiant s'applique.</li>
+<li><strong>Jamais d'exception de persistance</strong> (invariants AD-10/AD-11) : un échec de
+<code>repository.save</code> (ou un callback hôte qui lève) est replié en <code>ZFailure</code>
+et <strong>affiché dans la surface d'édition</strong> (zone annoncée, <code>liveRegion</code>), qui
+reste ouverte. Exception : la voie <code>editionBuilder</code> reçoit un <code>save</code> qui
+lève un <code>StateError</code> sur échec — le formulaire applicatif reste maître de
+son affichage.</li>
+<li><strong>Déclaration incomplète = erreur actionnable</strong> : sans registre ni
+<code>listFields</code>/<code>cellsOf</code>, l'écran lève une <code>ZScopeError</code> nommant le paramètre
+manquant — jamais un écran vide silencieux.</li>
+<li><strong>Réactivité granulaire</strong> (invariant AD-2) : contrôleurs possédés par des
+<code>State</code> (create/dispose), liste écoutée sur sa seule tranche
+<code>ValueListenable&lt;ZListViewState&gt;</code>, formulaire réactif par tranche
+(<code>ZFormController</code>), bouton de création re-évalué par <code>ValueListenable</code>
+(onglets).</li>
+<li><strong>Onglets</strong> : <code>tabs</code> non-<code>null</code> ⇒ le corps est un <code>ZTabbedList</code> (chaque
+onglet possède sa vue) ; la création lit <code>canCreate</code> et <code>defaultItemBuilder</code>
+de l'onglet <strong>actif</strong> (<code>Map</code> de valeurs ou entité <code>T</code>). La recherche et la
+corbeille de l'écran ne s'appliquent pas au contenu des onglets.</li>
+<li><strong>Purge définitive absente</strong> : <code>ZRepository</code> n'expose pas de suppression
+dure ; l'action « vider » se branche via <code>rowActions</code> (action custom) le cas
+échéant.</li>
+<li><strong>RTL / a11y</strong> (invariant AD-13) : primitives directionnelles, <code>Semantics</code>
+explicites, cibles ≥ 48 dp. Aucune couleur codée en dur (rôles du thème).</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li>Fiche du paquet : <code>docs/site/paquets/zcrud_screen.md</code> (dépôt zcrud).</li>
+<li><code>zcrud_core</code> — <code>DynamicList</code>, <code>ZListController</code>, <code>ZRowAction</code>,
+<code>DynamicEdition</code>, <code>ZcrudRegistry</code> : les briques assemblées ici.</li>
+<li><code>zcrud_navigation</code> — <code>presentEdition</code>, <code>ZPresentationPolicy</code>, <code>ZFormWeight</code>.</li>
+<li><code>zcrud_list</code> — backend de <strong>rendu</strong> Syncfusion du port <code>ZListRenderer</code>
+(à injecter si vous utilisez le layout <code>dataGrid</code>).</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_screen">
+  <span class="name"><a href="zcrud_screen/">zcrud_screen</a></span> 
+
+</dt>
+<dd>Barrel d'API publique de <code>zcrud_screen</code>.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_screen package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_screen</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_screen/">zcrud_screen</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_screen
+      0.92.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

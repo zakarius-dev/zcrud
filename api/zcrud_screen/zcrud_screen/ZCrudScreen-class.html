@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZCrudScreen class from the zcrud_screen library, for the Dart programming language.">
+  <title>ZCrudScreen class - zcrud_screen library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_screen</a></li>
+    <li><a href="../zcrud_screen/">zcrud_screen.dart</a></li>
+    <li class="self-crumb">ZCrudScreen<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span> class</li>
+  </ol>
+  <div class="self-name">ZCrudScreen</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_screen&#47;zcrud_screen-library-sidebar.html"
+    data-below-sidebar="zcrud_screen&#47;ZCrudScreen-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZCrudScreen&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Écran CRUD assemblé : liste + recherche + création + édition + sauvegarde</p>
+<ul>
+<li>corbeille, à partir d'une déclaration.</li>
+</ul>
+<p>Déclaration <strong>minimale</strong> (le type <code>T</code> est enregistré au <code>ZcrudRegistry</code>,
+champs et cellules sont dérivés du schéma généré) :</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Consignee&gt;(
+  title: 'Consignataires',
+  source: ZCrudSource.repository(repo),
+  registry: registry,
+)
+</code></pre>
+<p>Tout est ensuite surchargeable : <a href="../zcrud_screen/ZCrudScreen/listFields.html">listFields</a>/<a href="../zcrud_screen/ZCrudScreen/formFields.html">formFields</a> (schémas),
+<a href="../zcrud_screen/ZCrudScreen/cellsOf.html">cellsOf</a> (projection), <a href="../zcrud_screen/ZCrudScreen/acl.html">acl</a> (sinon <code>ZcrudScope.acl</code> ambiant), <a href="../zcrud_screen/ZCrudScreen/policy.html">policy</a>
+(présentation), <a href="../zcrud_screen/ZCrudScreen/layout.html">layout</a>/<a href="../zcrud_screen/ZCrudScreen/itemBuilder.html">itemBuilder</a> (rendu), <a href="../zcrud_screen/ZCrudScreen/tabs.html">tabs</a> (onglets),
+<a href="../zcrud_screen/ZCrudScreen/editionBuilder.html">editionBuilder</a> (formulaire complet), <a href="../zcrud_screen/ZCrudScreen/onSave.html">onSave</a> (persistance).</p>
+<h2 id="cas-exprimables-par-dclaration">Cas exprimables par déclaration</h2>
+<ul>
+<li><code>canCreate: false</code> — aucun bouton de création ;</li>
+<li><code>trash: ZTrashMode.none</code> — aucune corbeille ;</li>
+<li><code>readOnly: true</code> — consultation pure (ni création, ni édition, ni
+corbeille) ;</li>
+<li><code>ZCrudSource.items(rows)</code> <strong>sans callbacks</strong> — lecture seule effective.</li>
+</ul>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree-class.html">DiagnosticableTree</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></li>
+        <li><a href="https://api.flutter.dev/flutter/widgets/StatefulWidget-class.html">StatefulWidget</a></li>
+      <li>ZCrudScreen</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZCrudScreen.new" class="callable">
+          <span class="name"><a href="../zcrud_screen/ZCrudScreen/ZCrudScreen.html">ZCrudScreen</a></span><span class="signature">({<span class="parameter" id="param-title"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span>, </span><span class="parameter" id="param-source"><span>required</span> <span class="type-annotation"><a href="../zcrud_screen/ZCrudSource-class.html">ZCrudSource</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">source</span>, </span><span class="parameter" id="param-registry"><span class="type-annotation">ZcrudRegistry?</span> <span class="parameter-name">registry</span>, </span><span class="parameter" id="param-kind"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">kind</span>, </span><span class="parameter" id="param-listFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span>?</span> <span class="parameter-name">listFields</span>, </span><span class="parameter" id="param-formFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span>?</span> <span class="parameter-name">formFields</span>, </span><span class="parameter" id="param-cellsOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">cellsOf</span>(<span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span></span>)?, </span><span class="parameter" id="param-acl"><span class="type-annotation">ZAcl?</span> <span class="parameter-name">acl</span>, </span><span class="parameter" id="param-policy"><span class="type-annotation">ZPresentationPolicy</span> <span class="parameter-name">policy</span> = <span class="default-value">const ZPresentationPolicy()</span>, </span><span class="parameter" id="param-formWeight"><span class="type-annotation">ZFormWeight</span> <span class="parameter-name">formWeight</span> = <span class="default-value">ZFormWeight.light</span>, </span><span class="parameter" id="param-layout"><span class="type-annotation">ZListLayout?</span> <span class="parameter-name">layout</span>, </span><span class="parameter" id="param-itemBuilder"><span class="type-annotation"><a href="../zcrud_screen/ZCrudItemBuilder.html">ZCrudItemBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">itemBuilder</span>, </span><span class="parameter" id="param-tabs"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZListTab</span>&gt;</span>?</span> <span class="parameter-name">tabs</span>, </span><span class="parameter" id="param-header"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">header</span>, </span><span class="parameter" id="param-canCreate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">canCreate</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-trash"><span class="type-annotation"><a href="../zcrud_screen/ZTrashMode.html">ZTrashMode</a></span> <span class="parameter-name">trash</span> = <span class="default-value">ZTrashMode.auto</span>, </span><span class="parameter" id="param-readOnly"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readOnly</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-searchEnabled"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">searchEnabled</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-onSave"><span class="type-annotation"><a href="../zcrud_screen/ZCrudSave.html">ZCrudSave</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onSave</span>, </span><span class="parameter" id="param-editionBuilder"><span class="type-annotation"><a href="../zcrud_screen/ZCrudEditionBuilder.html">ZCrudEditionBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">editionBuilder</span>, </span><span class="parameter" id="param-defaultItemBuilder"><span class="type-annotation">T</span> <span class="parameter-name">defaultItemBuilder</span>()?, </span><span class="parameter" id="param-rowActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZRowAction<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">rowActions</span>, </span><span class="parameter" id="param-columnPolicy"><span class="type-annotation">ZColumnPolicy?</span> <span class="parameter-name">columnPolicy</span>, </span><span class="parameter" id="param-collectionId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">collectionId</span>, </span><span class="parameter" id="param-appBarActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>&gt;</span></span> <span class="parameter-name">appBarActions</span> = <span class="default-value">const &lt;Widget&gt;[]</span>, </span><span class="parameter" id="param-leading"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">leading</span>, </span><span class="parameter" id="param-actionAclMode"><span class="type-annotation">ZActionAclMode</span> <span class="parameter-name">actionAclMode</span> = <span class="default-value">ZActionAclMode.hide</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+        </dt>
+        <dd>
+          Construit l'écran assemblé — seuls <code>title</code> et <code>source</code> sont requis.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="acl" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/acl.html">acl</a></span>
+  <span class="signature">&#8594; ZAcl?</span>
+  
+
+</dt>
+<dd>
+  ACL de l'écran. <code>null</code> ⇒ l'ACL du <code>ZcrudScope</code> ambiant s'applique telle
+quelle ; non-<code>null</code> ⇒ posée par <code>ZcrudScope.derive</code> autour de la liste.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="actionAclMode" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/actionAclMode.html">actionAclMode</a></span>
+  <span class="signature">&#8594; ZActionAclMode</span>
+  
+
+</dt>
+<dd>
+  Mode de filtrage ACL des actions de ligne (défaut : masquer).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="appBarActions" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/appBarActions.html">appBarActions</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Boutons additionnels de l'<code>AppBar</code> (avant les boutons assemblés).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="canCreate" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/canCreate.html">canCreate</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Autorise la création (défaut <code>true</code>). <code>false</code> ⇒ aucun bouton « + »,
+quelle que soit l'ACL.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="cellsOf" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/cellsOf.html">cellsOf</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  Projection <code>T → cellules</code> (indexées par <code>field.name</code>). <code>null</code> ⇒ dérivée
+du registre (<code>encode</code>, clés persistées = noms de specs générées).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="collectionId" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/collectionId.html">collectionId</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Identifiant de collection passé à <code>ZAcl.can</code> et <code>repository.save</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="columnPolicy" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/columnPolicy.html">columnPolicy</a></span>
+  <span class="signature">&#8594; ZColumnPolicy?</span>
+  
+
+</dt>
+<dd>
+  Politique de colonnes (force include/exclude par nom).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="defaultItemBuilder" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/defaultItemBuilder.html">defaultItemBuilder</a></span>
+  <span class="signature">&#8594; T Function<span class="signature">()</span>?</span>
+  
+
+</dt>
+<dd>
+  Fabrique de l'entité initiale d'une <strong>création</strong> (écran sans onglets, ou
+repli quand l'onglet actif n'en porte pas). <code>null</code> ⇒ le formulaire
+dérivé part de valeurs vides.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="editionBuilder" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/editionBuilder.html">editionBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZCrudEditionBuilder.html">ZCrudEditionBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Formulaire d'édition complet fourni par l'app — voie d'échappement de
+l'édition dérivée (<code>DynamicEdition</code> sur <a href="../zcrud_screen/ZCrudScreen/formFields.html">formFields</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="formFields" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/formFields.html">formFields</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Schéma des champs du formulaire dérivé. <code>null</code> ⇒ dérivé du registre
+(champs <code>isId</code> exclus). Ignoré si <a href="../zcrud_screen/ZCrudScreen/editionBuilder.html">editionBuilder</a> est fourni.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="formWeight" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/formWeight.html">formWeight</a></span>
+  <span class="signature">&#8594; ZFormWeight</span>
+  
+
+</dt>
+<dd>
+  Poids du formulaire, critère de la politique de présentation.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="header" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/header.html">header</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  
+
+</dt>
+<dd>
+  Widget partagé posé au-dessus du corps (au-dessus de la barre d'onglets
+en mode <a href="../zcrud_screen/ZCrudScreen/tabs.html">tabs</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="itemBuilder" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/itemBuilder.html">itemBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZCrudItemBuilder.html">ZCrudItemBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Rendu d'une tuile (reçoit l'entité <code>T</code>). Ignoré si <a href="../zcrud_screen/ZCrudScreen/layout.html">layout</a> est fourni.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="key" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/key.html">key</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span>
+  
+
+</dt>
+<dd class="inherited">
+  Controls how one widget replaces another widget in the tree.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="kind" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/kind.html">kind</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  <code>kind</code> explicite du modèle — requis seulement quand <code>T</code> est enregistré
+sous <strong>plusieurs</strong> kinds (sinon <code>registry.kindOf&lt;T&gt;()</code> le résout seul).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="layout" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/layout.html">layout</a></span>
+  <span class="signature">&#8594; ZListLayout?</span>
+  
+
+</dt>
+<dd>
+  Variante de vue de la liste. <code>null</code> ⇒ <code>ZListBuilderLayout</code> avec la tuile
+générique du paquet (ou <a href="../zcrud_screen/ZCrudScreen/itemBuilder.html">itemBuilder</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="leading" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/leading.html">leading</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
+  
+
+</dt>
+<dd>
+  Widget de tête de l'<code>AppBar</code> (remplacé par le bouton de sortie en vue
+corbeille).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="listFields" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/listFields.html">listFields</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Schéma des colonnes de liste. <code>null</code> ⇒ dérivé du registre.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onSave" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/onSave.html">onSave</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZCrudSave.html">ZCrudSave</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Persistance de la sauvegarde, prioritaire sur <code>source.onSave</code> puis
+<code>repository.save</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="policy" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/policy.html">policy</a></span>
+  <span class="signature">&#8594; ZPresentationPolicy</span>
+  
+
+</dt>
+<dd>
+  Politique de présentation du formulaire (breakpoint → page/sheet/dialog).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="readOnly" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/readOnly.html">readOnly</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Consultation pure (défaut <code>false</code>) : ni création, ni édition, ni
+corbeille — les actions de ligne fournies via <a href="../zcrud_screen/ZCrudScreen/rowActions.html">rowActions</a> restent
+rendues (elles appartiennent à l'app).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="registry" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/registry.html">registry</a></span>
+  <span class="signature">&#8594; ZcrudRegistry?</span>
+  
+
+</dt>
+<dd>
+  Registre de modèles servant la <strong>dérivation</strong> : champs
+(<code>fieldSpecsFor</code>), cellules (<code>encode</code>) et reconstruction d'entité
+(<code>decode</code>). <code>null</code> ⇒ <a href="../zcrud_screen/ZCrudScreen/listFields.html">listFields</a> + <a href="../zcrud_screen/ZCrudScreen/cellsOf.html">cellsOf</a> deviennent requis, et
+l'édition exige <a href="../zcrud_screen/ZCrudScreen/editionBuilder.html">editionBuilder</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="rowActions" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/rowActions.html">rowActions</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZRowAction<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Actions de ligne <strong>supplémentaires</strong> de l'app, ajoutées après les
+actions assemblées (édition, corbeille), filtrées par la même ACL.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="searchEnabled" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/searchEnabled.html">searchEnabled</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Affiche la barre de recherche (défaut <code>true</code>). Sans effet en mode
+<a href="../zcrud_screen/ZCrudScreen/tabs.html">tabs</a> (chaque onglet possède sa propre vue).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="source" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/source.html">source</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZCrudSource-class.html">ZCrudSource</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Source de données déclarative (repository ou items + callbacks).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="tabs" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/tabs.html">tabs</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZListTab</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Onglets de catégorisation. Non-<code>null</code> ⇒ le corps est un <code>ZTabbedList</code>
+(chaque onglet possède sa vue) ; le bouton de création lit <code>canCreate</code>
+et <code>defaultItemBuilder</code> de l'<strong>onglet actif</strong>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="title" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/title.html">title</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Titre de l'écran — clé l10n ou littéral (résolu via <code>label(context, …)</code>,
+repli sur le littéral lui-même).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="trash" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/trash.html">trash</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZTrashMode.html">ZTrashMode</a></span>
+  
+
+</dt>
+<dd>
+  Activation de la corbeille (défaut <a href="../zcrud_screen/ZTrashMode.html">ZTrashMode.auto</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="createElement" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/StatefulWidget/createElement.html">createElement</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/StatefulElement-class.html">StatefulElement</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Creates a <a href="https://api.flutter.dev/flutter/widgets/StatefulElement-class.html">StatefulElement</a> to manage this widget's location in the tree.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="createState" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/createState.html">createState</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_screen/ZCrudScreen-class.html">ZCrudScreen</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Creates the mutable state for this widget at a given location in the tree.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="debugDescribeChildren" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/debugDescribeChildren.html">debugDescribeChildren</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a list of <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a> objects describing this node's
+children.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="debugFillProperties" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/debugFillProperties.html">debugFillProperties</a></span><span class="signature">(<wbr><span class="parameter" id="debugFillProperties-param-properties"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticPropertiesBuilder-class.html">DiagnosticPropertiesBuilder</a></span> <span class="parameter-name">properties</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Add additional properties associated with the node.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toDiagnosticsNode" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toDiagnosticsNode.html">toDiagnosticsNode</a></span><span class="signature">(<wbr>{<span class="parameter" id="toDiagnosticsNode-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span><span class="parameter" id="toDiagnosticsNode-param-style"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticsTreeStyle.html">DiagnosticsTreeStyle</a>?</span> <span class="parameter-name">style</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode-class.html">DiagnosticsNode</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a debug representation of the object that is used by debugging
+tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode/toStringDeep.html">DiagnosticsNode.toStringDeep</a>.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/Diagnosticable/toString.html">toString</a></span><span class="signature">(<wbr>{<span class="parameter" id="toString-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.info</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringDeep" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringDeep.html">toStringDeep</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringDeep-param-prefixLineOne"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">prefixLineOne</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="toStringDeep-param-prefixOtherLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">prefixOtherLines</span>, </span><span class="parameter" id="toStringDeep-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span>, </span><span class="parameter" id="toStringDeep-param-wrapWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">wrapWidth</span> = <span class="default-value">65</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a string representation of this node and its descendants.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShallow" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticableTree/toStringShallow.html">toStringShallow</a></span><span class="signature">(<wbr>{<span class="parameter" id="toStringShallow-param-joiner"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">joiner</span> = <span class="default-value">&#39;, &#39;</span>, </span><span class="parameter" id="toStringShallow-param-minLevel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/DiagnosticLevel.html">DiagnosticLevel</a></span> <span class="parameter-name">minLevel</span> = <span class="default-value">DiagnosticLevel.debug</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a one-line detailed description of the object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toStringShort" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/toStringShort.html">toStringShort</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A short, textual description of this widget.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/widgets/Widget/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_screen</a></li>
+    <li><a href="../zcrud_screen/">zcrud_screen</a></li>
+    <li class="self-crumb">ZCrudScreen<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span> class</li>
+</ol>
+
+    <h5>zcrud_screen library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_screen
+      0.92.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

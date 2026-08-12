@@ -98,7 +98,7 @@ prioritaire) ou <a href="../zcrud_core/ZListGridLayout/childAspectRatio.html">ch
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZListGridLayout.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZListGridLayout/ZListGridLayout.html">ZListGridLayout</a></span><span class="signature">({<span class="parameter" id="param-itemBuilder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">itemBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-row"><span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span>, </span><span class="parameter" id="param-columns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span></span>), </span><span class="parameter" id="param-maxCrossAxisExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">maxCrossAxisExtent</span> = <span class="default-value">360</span>, </span><span class="parameter" id="param-mainAxisSpacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">mainAxisSpacing</span> = <span class="default-value">8</span>, </span><span class="parameter" id="param-crossAxisSpacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">crossAxisSpacing</span> = <span class="default-value">8</span>, </span><span class="parameter" id="param-childAspectRatio"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">childAspectRatio</span> = <span class="default-value">1.0</span>, </span><span class="parameter" id="param-mainAxisExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">mainAxisExtent</span>, </span><span class="parameter" id="param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">padding</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZListGridLayout/ZListGridLayout.html">ZListGridLayout</a></span><span class="signature">({<span class="parameter" id="param-itemBuilder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">itemBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-row"><span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span>, </span><span class="parameter" id="param-columns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span></span>), </span><span class="parameter" id="param-maxCrossAxisExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">maxCrossAxisExtent</span> = <span class="default-value">360</span>, </span><span class="parameter" id="param-mainAxisSpacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">mainAxisSpacing</span> = <span class="default-value">8</span>, </span><span class="parameter" id="param-crossAxisSpacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">crossAxisSpacing</span> = <span class="default-value">8</span>, </span><span class="parameter" id="param-childAspectRatio"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">childAspectRatio</span> = <span class="default-value">1.0</span>, </span><span class="parameter" id="param-mainAxisExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">mainAxisExtent</span>, </span><span class="parameter" id="param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">padding</span>, </span><span class="parameter" id="param-maxColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">maxColumns</span></span>})</span>
         </dt>
         <dd>
           Construit la vue grille avec son <code>itemBuilder</code>.
@@ -183,6 +183,22 @@ et des colonnes dérivées (<code>List&lt;ZListColumn&gt;</code>).
 </dt>
 <dd>
   Espacement vertical entre tuiles (défaut <code>8</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="maxColumns" class="property">
+  <span class="name"><a href="../zcrud_core/ZListGridLayout/maxColumns.html">maxColumns</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Plafond</strong> optionnel du nombre de colonnes dérivé de
+<a href="../zcrud_core/ZListGridLayout/maxCrossAxisExtent.html">maxCrossAxisExtent</a> : sur un écran très large, la grille cesse
+d'ajouter des colonnes au-delà de <a href="../zcrud_core/ZListGridLayout/maxColumns.html">maxColumns</a> — les tuiles s'élargissent
+alors au-delà de <a href="../zcrud_core/ZListGridLayout/maxCrossAxisExtent.html">maxCrossAxisExtent</a> pour occuper la largeur
+(équivalent du motif legacy <code>(largeur / extent).clamp(1, N)</code>).
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -311,7 +327,7 @@ supérieur (défaut <code>360</code>).
 <footer>
   <span class="no-break">
     zcrud_core
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

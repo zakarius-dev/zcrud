@@ -68,7 +68,10 @@
     </section>
     
 <section class="desc markdown">
-  <p>Compte les éléments correspondant à <code>request</code> (exclut les soft-deleted).</p>
+  <p>Compte les éléments correspondant à <code>request</code>.</p>
+<p>La portée de suppression est choisie par <a href="../../zcrud_core/ZDataRequest/deletedScope.html">ZDataRequest.deletedScope</a>
+(défaut <a href="../../zcrud_core/ZDeletedScope.html">ZDeletedScope.aliveOnly</a> — les soft-deleted sont exclus, y
+compris quand <code>request</code> est omis).</p>
 </section>
 
 
@@ -104,7 +107,7 @@ Future&lt;ZResult&lt;int&gt;&gt; count({ZDataRequest? request});</code></pre>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

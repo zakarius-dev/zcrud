@@ -68,7 +68,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Restaure l'élément <code>id</code> soft-deleted (corbeille).</p>
+  <p>Restaure l'élément <code>id</code> soft-deleted (corbeille). Son <code>id</code> se retrouve
+via <a href="../../zcrud_firestore/FirebaseZRepositoryImpl/getAll.html">getAll</a> en portée <code>ZDeletedScope.deletedOnly</code>.</p>
 </section>
 
 
@@ -105,7 +106,7 @@ Future&lt;ZResult&lt;Unit&gt;&gt; restore(String id) =&gt;
 <footer>
   <span class="no-break">
     zcrud_firestore
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

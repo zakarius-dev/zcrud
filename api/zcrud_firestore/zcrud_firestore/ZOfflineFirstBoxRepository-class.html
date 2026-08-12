@@ -150,7 +150,7 @@ snapshot <strong>confirmé</strong> déclenche le merge LWW. Erreur locale de me
 
 </dt>
 <dd>
-  Compte les éléments correspondant à <code>request</code> (exclut les soft-deleted).
+  Compte les éléments correspondant à <code>request</code>.
   
 
 </dd>
@@ -176,7 +176,7 @@ snapshot <strong>confirmé</strong> déclenche le merge LWW. Erreur locale de me
 
 </dt>
 <dd>
-  Lit tous les éléments correspondant à <code>request</code> (exclut les soft-deleted).
+  Lit tous les éléments correspondant à <code>request</code>.
   
 
 </dd>
@@ -304,7 +304,8 @@ distant reste inchangé — il pousse l'entité fusionnée relue localement.
 
 </dt>
 <dd>
-  Restaure l'élément <code>id</code> soft-deleted (corbeille).
+  Restaure l'élément <code>id</code> soft-deleted (corbeille). Son <code>id</code> se retrouve
+via <a href="../zcrud_firestore/ZOfflineFirstBoxRepository/getAll.html">getAll</a> en portée <code>ZDeletedScope.deletedOnly</code>.
   
 
 </dd>
@@ -422,7 +423,7 @@ offline-first du package). Le flux nu complet est renvoyé — jamais un
 
 </dt>
 <dd>
-  Flux temps réel <strong>nu</strong> de tous les éléments non soft-deleted.
+  Flux temps réel <strong>nu</strong> de tous les éléments <strong>vivants</strong>.
   
 
 </dd>
@@ -477,7 +478,7 @@ offline-first du package). Le flux nu complet est renvoyé — jamais un
 <footer>
   <span class="no-break">
     zcrud_firestore
-      0.91.0
+      0.92.0
   </span>
   
 </footer>

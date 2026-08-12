@@ -68,7 +68,10 @@
     </section>
     
 <section class="desc markdown">
-  <p>Lit tous les éléments correspondant à <code>request</code> (exclut les soft-deleted).</p>
+  <p>Lit tous les éléments correspondant à <code>request</code>.</p>
+<p>La portée de suppression est choisie par <code>ZDataRequest.deletedScope</code>
+(défaut <code>ZDeletedScope.aliveOnly</code> — les soft-deleted sont exclus, y
+compris quand <code>request</code> est omis).</p>
 </section>
 
 
@@ -104,7 +107,7 @@ Future&lt;ZResult&lt;List&lt;T&gt;&gt;&gt; getAll({ZDataRequest? request});</cod
 <footer>
   <span class="no-break">
     zcrud_study_kernel
-      0.91.0
+      0.92.0
   </span>
   
 </footer>
