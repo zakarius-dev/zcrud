@@ -8,6 +8,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Objectif produit n°1** : corriger par conception le bug historique de **rafraîchissement global du formulaire** à chaque frappe (jank, perte de focus) → **rebuilds réactifs granulaires**.
 
+**Objectif produit n°2 (owner, 2026-08-12)** : **minimiser le code consommateur, maximiser les
+fonctionnalités livrées** — la déclarativité doit aller jusqu'au bout. Tout ce qui est dérivable
+d'une déclaration existante (`@ZcrudModel` → `ZFieldSpec[]` → formulaire **et** liste **et**
+cellules via le registre) ne doit **jamais** être re-demandé au consommateur ; les assemblages
+(écran CRUD complet) sont fournis par zcrud comme **couches minces au-dessus des briques
+publiques** (satellites, AD-1 respecté), avec échappatoire : descendre d'un cran vers les briques
+sans rien perdre. Toute CR révélant du code dupliqué chez un hôte est un signal d'assemblage
+manquant.
+
 **Consommateurs cibles** : **DODLP** (prioritaire, GetX) puis **lex_douane** (Riverpod). Le schéma canonique est porté des modèles les plus avancés de lex_douane (module « Étude »).
 
 **Communication et documentation en français.**

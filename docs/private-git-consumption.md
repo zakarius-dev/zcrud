@@ -198,6 +198,8 @@ dependency_overrides:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_responsive }
   zcrud_riverpod:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_riverpod }
+  zcrud_screen:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_screen }
   zcrud_select:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_select }
   zcrud_session:

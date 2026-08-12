@@ -506,18 +506,55 @@ class _ZListGridView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final maxColumns = layout.maxColumns;
+    if (maxColumns == null) {
+      // Sans plafond : délégué responsive natif, comportement inchangé.
+      return _buildGrid(
+        SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: layout.maxCrossAxisExtent,
+          mainAxisSpacing: layout.mainAxisSpacing,
+          crossAxisSpacing: layout.crossAxisSpacing,
+          childAspectRatio: layout.childAspectRatio,
+          mainAxisExtent: layout.mainAxisExtent,
+        ),
+      );
+    }
+    // Plafond de colonnes : reproduit la dérivation de
+    // `SliverGridDelegateWithMaxCrossAxisExtent` (colonnes = largeur ÷
+    // (extent + espacement), arrondi au supérieur, ≥ 1) puis la plafonne à
+    // `maxColumns` via un délégué à nombre de colonnes fixe.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width =
+            constraints.maxWidth - (layout.padding?.horizontal ?? 0.0);
+        var count = width <= 0
+            ? 1
+            : (width / (layout.maxCrossAxisExtent + layout.crossAxisSpacing))
+                .ceil();
+        if (count < 1) count = 1;
+        if (count > maxColumns) count = maxColumns;
+        return _buildGrid(
+          SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: count,
+            mainAxisSpacing: layout.mainAxisSpacing,
+            crossAxisSpacing: layout.crossAxisSpacing,
+            childAspectRatio: layout.childAspectRatio,
+            mainAxisExtent: layout.mainAxisExtent,
+          ),
+        );
+      },
+    );
+  }
+
+  /// Rend la grille virtualisée avec le [gridDelegate] résolu (plafonné ou
+  /// non) — corps commun aux deux chemins de [build].
+  Widget _buildGrid(SliverGridDelegate gridDelegate) {
     final rows = request.rows;
     final columns = request.columns;
     return GridView.builder(
       key: const ValueKey('zListGrid'),
       padding: layout.padding,
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: layout.maxCrossAxisExtent,
-        mainAxisSpacing: layout.mainAxisSpacing,
-        crossAxisSpacing: layout.crossAxisSpacing,
-        childAspectRatio: layout.childAspectRatio,
-        mainAxisExtent: layout.mainAxisExtent,
-      ),
+      gridDelegate: gridDelegate,
       itemCount: rows.length,
       itemBuilder: (context, index) {
         final row = rows[index];

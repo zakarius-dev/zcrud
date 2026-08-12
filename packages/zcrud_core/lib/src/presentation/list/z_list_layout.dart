@@ -73,7 +73,11 @@ final class ZListGridLayout extends ZListLayout {
     this.childAspectRatio = 1.0,
     this.mainAxisExtent,
     this.padding,
-  });
+    this.maxColumns,
+  }) : assert(
+          maxColumns == null || maxColumns >= 1,
+          'ZListGridLayout.maxColumns doit être >= 1.',
+        );
 
   /// Construit le widget (la **carte**) d'une ligne à partir de la [ZListRow]
   /// et des colonnes dérivées (`List<ZListColumn>`).
@@ -102,6 +106,16 @@ final class ZListGridLayout extends ZListLayout {
   /// Marge intérieure de la grille (`EdgeInsetsGeometry` — préférer
   /// `EdgeInsetsDirectional`, AD-13) ; `null` = aucune.
   final EdgeInsetsGeometry? padding;
+
+  /// **Plafond** optionnel du nombre de colonnes dérivé de
+  /// [maxCrossAxisExtent] : sur un écran très large, la grille cesse
+  /// d'ajouter des colonnes au-delà de [maxColumns] — les tuiles s'élargissent
+  /// alors au-delà de [maxCrossAxisExtent] pour occuper la largeur
+  /// (équivalent du motif legacy `(largeur / extent).clamp(1, N)`).
+  ///
+  /// `null` (défaut) = aucun plafond, comportement antérieur inchangé
+  /// (colonnes illimitées, dérivées de la seule largeur disponible).
+  final int? maxColumns;
 }
 
 /// Vue **personnalisée** : rend un widget **arbitraire** fourni par l'app à

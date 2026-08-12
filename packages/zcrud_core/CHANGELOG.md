@@ -3,6 +3,44 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.92.0 — 2026-08-12
+
+### Ajouté
+
+#### `ZTabbedList` / `ZListTab` / `ZListGridLayout` — ergonomie des écrans à onglets
+
+- `ZTabbedList.header` : emplacement optionnel pour un widget partagé
+  (barre de recherche…) rendu au-dessus de la barre d'onglets, dans le même
+  arbre. `null` (défaut) = rendu inchangé.
+- `ZListTab.pageKey` : identité technique de l'onglet découplée du libellé
+  (repli sur `labelKey` si omise). Deux onglets homonymes deviennent valides
+  avec des `pageKey` distinctes ; renommer un libellé ne casse plus l'identité
+  keep-alive de la page. L'assert d'unicité porte désormais sur la clé
+  effective (`pageKey ?? labelKey`).
+- `ZTabbedList.activeIndexNotifier` : `ValueNotifier<int>` fourni (et possédé)
+  par l'hôte, tenu synchronisé avec l'onglet actif — positionné dès le montage
+  à l'index initial effectif, puis à chaque changement (tap ou swipe), avant
+  `onTabChanged`. Flux à sens unique (widget → hôte). Supprime le `_activeIndex`
+  dupliqué côté hôte (bouton « + » : `tabs[notifier.value].defaultItemBuilder`).
+- `ZListTab.canCreate` : autorisation de création par onglet (défaut `true`),
+  transportée comme `defaultItemBuilder` — le geste de création de l'app la lit
+  sur l'onglet actif ; `false` = onglet en lecture seule pour la création.
+- `ZListGridLayout.maxColumns` : plafond optionnel du nombre de colonnes dérivé
+  de `maxCrossAxisExtent` (équivalent du motif legacy
+  `(largeur / extent).clamp(1, N)`). Plafonnée, la grille cesse d'ajouter des
+  colonnes et les tuiles s'élargissent au-delà de `maxCrossAxisExtent` ;
+  `null` (défaut) = comportement responsive antérieur strictement inchangé.
+
+### Documentation
+
+- La dartdoc du port `ZRepository` dit désormais, chemin par chemin, comment la
+  **portée de suppression** se choisit : `watch(request)`/`getAll`/`count`
+  honorent `ZDataRequest.deletedScope` (défaut `aliveOnly` — comportement
+  historique) ; `watchAll`/`getById` sont figés `aliveOnly` et renvoient vers la
+  voie à `request`. L'onglet Corbeille s'écrit
+  `watch(request.copyWith(deletedScope: ZDeletedScope.deletedOnly))` — la
+  capacité existait depuis la 0.86.0, la doc du port la cachait.
+
 ## 0.91.0 — 2026-08-12
 
 ### Ajouté

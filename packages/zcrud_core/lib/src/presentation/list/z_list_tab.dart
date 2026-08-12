@@ -33,12 +33,16 @@ import '../../domain/data/z_data_request.dart';
 class ZListTab {
   /// Construit un onglet : [labelKey] (clé l10n résolue via `label`), [builder]
   /// (construit la vue de l'onglet), [icon] optionnelle,
-  /// [defaultItemBuilder] optionnel (contexte de création de l'onglet).
+  /// [defaultItemBuilder] optionnel (contexte de création de l'onglet),
+  /// [pageKey] optionnelle (identité technique découplée du libellé),
+  /// [canCreate] (autorisation de création de l'onglet, défaut `true`).
   const ZListTab({
     required this.labelKey,
     required this.builder,
     this.icon,
     this.defaultItemBuilder,
+    this.pageKey,
+    this.canCreate = true,
   });
 
   /// Fabrique **catégorie** (cas courant) : les [filters] de catégorie sont
@@ -48,7 +52,8 @@ class ZListTab {
   ///
   /// [defaultItemBuilder] optionnel : contexte de création de la catégorie
   /// (l'entité pré-remplie quand l'usager crée depuis cet onglet) — voir
-  /// [ZListTab.defaultItemBuilder].
+  /// [ZListTab.defaultItemBuilder]. [pageKey] et [canCreate] : voir
+  /// [ZListTab.pageKey] et [ZListTab.canCreate].
   factory ZListTab.category({
     required String labelKey,
     required List<ZFilter> filters,
@@ -56,17 +61,50 @@ class ZListTab {
         buildList,
     IconData? icon,
     Object? Function()? defaultItemBuilder,
+    String? pageKey,
+    bool canCreate = true,
   }) {
     return ZListTab(
       labelKey: labelKey,
       icon: icon,
       defaultItemBuilder: defaultItemBuilder,
+      pageKey: pageKey,
+      canCreate: canCreate,
       builder: (context) => buildList(context, filters),
     );
   }
 
   /// Clé l10n du libellé (résolue au rendu via `label(context, labelKey)`).
   final String labelKey;
+
+  /// **Identité technique** optionnelle de l'onglet, découplée du libellé.
+  ///
+  /// `ZTabbedList` dérive la clé de page keep-alive (et son assert d'unicité)
+  /// de [resolvedPageKey] = `pageKey ?? labelKey`. Fournir une [pageKey]
+  /// permet : (1) **deux onglets homonymes** (même libellé métier, clés
+  /// distinctes) ; (2) de **renommer un libellé** sans changer l'identité de
+  /// la page (l'état keep-alive de l'onglet survit au renommage).
+  ///
+  /// `null` (défaut) = repli sur [labelKey] — strictement le comportement
+  /// antérieur, rien ne change pour les consommateurs existants.
+  final String? pageKey;
+
+  /// Clé de page **effective** de l'onglet : [pageKey] si fournie, sinon
+  /// [labelKey]. C'est cette valeur que `ZTabbedList` utilise comme clé de
+  /// page keep-alive et qui doit être **unique** parmi les onglets.
+  String get resolvedPageKey => pageKey ?? labelKey;
+
+  /// **Autorisation de création** de l'onglet (défaut `true`) — le pendant de
+  /// [defaultItemBuilder] : si l'onglet porte le **contexte** de création, il
+  /// porte aussi son **autorisation**. `false` = onglet en lecture seule pour
+  /// la création (le geste de création de l'app — FAB, bouton de barre… — se
+  /// masque ou se désactive quand l'onglet actif ne l'autorise pas).
+  ///
+  /// Comme [defaultItemBuilder], le cœur **transporte** cette autorisation
+  /// sans la consommer : c'est le geste de création de l'app qui la lit
+  /// (`tabs[index].canCreate`), typiquement via l'index actif exposé par
+  /// `ZTabbedList.activeIndexNotifier`.
+  final bool canCreate;
 
   /// Icône optionnelle de l'onglet.
   final IconData? icon;

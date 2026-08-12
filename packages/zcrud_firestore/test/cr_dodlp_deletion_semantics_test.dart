@@ -201,6 +201,31 @@ void main() {
       await sub.cancel();
     });
 
+    test(
+        'parcours corbeille complet : l\'id se retrouve via getAll(deletedOnly) '
+        'et restore(id) rend l\'élément aux vivants', () async {
+      // L'appelant ne connaît PAS l'id : il le retrouve par le listing
+      // corbeille (c'est le point du CR — restore suppose un id qu'une
+      // lecture doit pouvoir rendre).
+      final trash = (await repo.getAll(
+        request: const ZDataRequest(deletedScope: ZDeletedScope.deletedOnly),
+      ))
+          .fold((f) => fail('Left inattendu : $f'), (l) => l);
+      expect(trash.map((b) => b.name), <String>['corbeille-t']);
+      final id = trash.single.id;
+      expect(id, isNotNull, reason: 'le listing corbeille porte l\'identité');
+
+      expect((await repo.restore(id!)).isRight(), isTrue);
+
+      expect(_names(await repo.getAll()),
+          <String>['corbeille-t', 'vivant-a', 'vivant-b'],
+          reason: 'restauré : de retour dans aliveOnly');
+      final after = await repo.getAll(
+        request: const ZDataRequest(deletedScope: ZDeletedScope.deletedOnly),
+      );
+      expect(_names(after), isEmpty, reason: 'la corbeille se vide');
+    });
+
     test('count honore le scope (agrégat serveur)', () async {
       expect(
         (await repo.count(
@@ -313,6 +338,31 @@ void main() {
       expect(
         r.fold((f) => f.message, (b) => fail('Right inattendu : $b')),
         'Entité soft-deleted',
+      );
+    });
+
+    test(
+        'parcours corbeille (flag canonique) : id retrouvé via '
+        'getAll(deletedOnly), restore(id) rend l\'élément aux vivants',
+        () async {
+      final trash = (await repo.getAll(
+        request: const ZDataRequest(deletedScope: ZDeletedScope.deletedOnly),
+      ))
+          .fold((f) => fail('Left inattendu : $f'), (l) => l);
+      final t = trash.singleWhere((b) => b.name == 'corbeille-t');
+      expect(t.id, isNotNull);
+
+      expect((await repo.restore(t.id!)).isRight(), isTrue);
+
+      expect(
+        _names(await repo.getAll()),
+        <String>['corbeille-t', 'legacy-vivant', 'legacy-vivant-2', 'vivant-a'],
+        reason: 'restauré : de retour dans aliveOnly (getById redevient Right)',
+      );
+      expect(
+        (await repo.getById(t.id!)).isRight(),
+        isTrue,
+        reason: 'l\'élément restauré est de nouveau lisible par id',
       );
     });
 

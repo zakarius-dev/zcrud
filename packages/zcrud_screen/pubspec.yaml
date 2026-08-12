@@ -1,0 +1,45 @@
+# zcrud_screen — membre du workspace zcrud (resolution: workspace).
+# Écran CRUD ASSEMBLÉ et déclaratif (CR DODLP « écran CRUD assemblé »,
+# 2026-08-12) : `ZCrudScreen<T>` est à `DynamicList` ce que `DynamicEdition`
+# est aux champs — la pièce qui prend une DÉCLARATION (titre + source) et rend
+# un écran fonctionnel : liste + recherche + création + édition (via
+# `presentEdition`) + sauvegarde + corbeille (deletedScope / fabriques
+# `ZRowAction`), le tout gouverné par l'ACL du `ZcrudScope`.
+#
+# AD-1 : l'assemblage ne monte PAS dans le cœur — `presentEdition` et
+# `ZPresentationPolicy` vivent dans `zcrud_navigation`, donc l'écran assemblé
+# vit dans CE satellite. `zcrud_list` reste un satellite de RENDU (backend
+# Syncfusion du port `ZListRenderer`), jamais l'écran de liste.
+name: zcrud_screen
+description: "Assembled declarative CRUD screen for zcrud: ZCrudScreen wires DynamicList, presentEdition, ZRepository trash scopes and ZAcl into a single declaration."
+version: 0.92.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_screen
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - flutter
+  - crud
+  - list
+  - forms
+  - material3
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : UNIQUEMENT
+# zcrud_core et zcrud_navigation (arêtes SORTANTES ; aucune n'entre dans ce
+# package). `zcrud_responsive` n'est atteint que TRANSITIVEMENT via
+# zcrud_navigation (aucun import direct ici). ⛔ AUCUN autre `zcrud_*`, AUCUN
+# gestionnaire d'état, AUCUN routeur, AUCUN Syncfusion/Firebase/Quill.
+dependencies:
+  zcrud_core: ^0.92.0
+  zcrud_navigation: ^0.92.0
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

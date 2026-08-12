@@ -1,0 +1,6 @@
+# Hérite de la baseline de lint partagée du monorepo.
+include: ../../analysis_options.yaml
+
+linter:
+  rules:
+    public_member_api_docs: true

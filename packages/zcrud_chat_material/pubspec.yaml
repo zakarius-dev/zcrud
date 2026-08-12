@@ -32,7 +32,7 @@
 #    portent — ce paquet n'anime rien lui-même : garde de source).
 name: zcrud_chat_material
 description: "Pixel-perfect Material builders (lex_douane reference) for the zcrud chat composer and settings slots — send FAB, effort chips, badges, attachment chips, labelled budget slider."
-version: 0.91.0
+version: 0.92.0
 publish_to: none
 resolution: workspace
 
@@ -55,9 +55,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  zcrud_chat: ^0.91.0
-  zcrud_chat_kernel: ^0.91.0
-  zcrud_core: ^0.91.0
+  zcrud_chat: ^0.92.0
+  zcrud_chat_kernel: ^0.92.0
+  zcrud_core: ^0.92.0
 
 dev_dependencies:
   flutter_test:

@@ -98,6 +98,7 @@ rédaction.
 | [`zcrud_responsive`](./zcrud_responsive.md) | Classes de largeur de fenêtre (Material 3) et valeurs par point de rupture. |
 | [`zcrud_menu`](./zcrud_menu.md) | Menus contextuels découplés derrière un seam neutre, avec repli Material sans dépendance tierce. |
 | [`zcrud_navigation`](./zcrud_navigation.md) | Politique de présentation d'édition (page/feuille/dialogue) dérivée du point de rupture. |
+| [`zcrud_screen`](./zcrud_screen.md) | Écran CRUD assemblé et déclaratif : liste, création, édition, sauvegarde et corbeille depuis une déclaration. |
 | [`zcrud_dnd`](./zcrud_dnd.md) | Glisser-déposer natif opt-in (dépôts fichiers OS, échange inter-applications). |
 | [`zcrud_reorder`](./zcrud_reorder.md) | Backend de réordonnancement opt-in, avec repli zéro-dépendance si non installé. |
 

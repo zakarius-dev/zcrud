@@ -128,6 +128,13 @@ workspace:
   # non-sealed). Dépend de zcrud_core + zcrud_responsive (arêtes SORTANTES) :
   # CORE OUT=0 intact ; ACYCLIQUE. Le port ZFormPresenter/ZAdaptivePresenter = EX-UI.6.
   - packages/zcrud_navigation
+  # CR DODLP « écran CRUD assemblé » (2026-08-12) : écran déclaratif
+  # ZCrudScreen<T> (liste + création + édition + sauvegarde + corbeille) qui
+  # assemble les briques publiques (DynamicList/ZTabbedList, presentEdition,
+  # ZRepository/deletedScope, ZAcl) sans logique nouvelle. Dépend de
+  # zcrud_core + zcrud_navigation (arêtes SORTANTES) : CORE OUT=0 intact ;
+  # ACYCLIQUE ; PUITS du graphe (aucune arête entrante).
+  - packages/zcrud_screen
   # EX-UI.7 : kit de widgets UI transverses (AD-32). Tête de série du package —
   # pose ZContentState (enum { idle, loading, empty, error, success }) +
   # ZEmptyState/ZLoadingState/ZErrorState + aiguilleur ZContentStateView +
