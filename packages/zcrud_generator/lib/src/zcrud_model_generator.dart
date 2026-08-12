@@ -21,7 +21,9 @@
 /// cible non classe, collision de clé persistée, valeur d'énumération
 /// d'annotation non reconnue, `@ZcrudIgnore` combiné à `@ZcrudField`/`@ZcrudId`
 /// sur le même champ, **champ non annoté dont le type n'est pas sérialisable**
-/// (le seul silence qui coûterait des données).
+/// (le seul silence qui coûterait des données), **enum redéclarant `name`
+/// comme membre d'instance** (l'encodage `.name` émettrait le membre déclaré —
+/// un libellé d'affichage — au lieu du nom technique attendu par le décodeur).
 ///
 /// ## Ce que le `toMap()` émis met dans la map — et ce qu'il n'y met pas
 ///
@@ -464,6 +466,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     final fields = <_Field>[];
     final seenKeys = <String>{};
     final silentlyLost = <FieldElement>[];
+    final maskedEnums = <(FieldElement, EnumElement)>[];
     // (AD-4) Une classe `ZExtensible` porte par CONTRAT les slots hors-codegen
     // `extension`/`extra` : ils sont exemptés du contrôle de perte silencieuse
     // (cf. [_isSilentlyLost]).
@@ -502,13 +505,85 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         );
       }
 
-      fields.add(_resolveField(field, dartName, key, reader, isId));
+      final resolved = _resolveField(field, dartName, key, reader, isId);
+      if (resolved.category == _Cat.enumType ||
+          resolved.category == _Cat.listEnum) {
+        final masked = _maskedNameEnum(field.type);
+        if (masked != null) maskedEnums.add((field, masked));
+      }
+      fields.add(resolved);
+    }
+    if (maskedEnums.isNotEmpty) {
+      _rejectMaskedEnumName(element, maskedEnums);
     }
     _collectInheritedSilentlyLost(element, extensible, silentlyLost);
     if (silentlyLost.isNotEmpty) {
       _rejectSilentlyLostFields(element, silentlyLost);
     }
     return fields;
+  }
+
+  /// L'`EnumElement` du champ si son enum (élément de `List<T>` compris)
+  /// REDÉCLARE `name` comme membre d'instance — champ ou getter, local ou
+  /// hérité d'un mixin — masquant l'extension SDK `EnumName.name` ; `null`
+  /// sinon.
+  ///
+  /// Détection STATIQUE : sur un enum standard, `name` n'est PAS un membre
+  /// d'interface (c'est l'extension `EnumName` de `dart:core`, non masquable
+  /// derrière la borne générique `Enum` du décodeur émis). La présence d'un
+  /// champ d'instance `name` sur l'enum — déclaré (`final String name`) ou
+  /// induit par un getter explicite (`String get name`) — signe donc
+  /// exactement le masquage. Les mixins appliqués sont parcourus : un enum ne
+  /// pouvant pas hériter d'implémentation autrement, ils couvrent toute
+  /// implémentation non locale.
+  EnumElement? _maskedNameEnum(DartType type) {
+    var t = type;
+    if (t.isDartCoreList && t is InterfaceType && t.typeArguments.isNotEmpty) {
+      t = t.typeArguments.first;
+    }
+    final el = t.element;
+    if (el is! EnumElement) return null;
+    bool declaresInstanceName(InterfaceElement host) =>
+        host.fields.any((f) => !f.isStatic && f.name == 'name');
+    if (declaresInstanceName(el)) return el;
+    for (final mixin in el.mixins) {
+      if (declaresInstanceName(mixin.element)) return el;
+    }
+    return null;
+  }
+
+  /// Refuse le build sur les champs enum dont le type **redéclare `name`**.
+  ///
+  /// L'encodage émis passe par `.name` : sur un tel enum, l'appel résout sur le
+  /// membre déclaré (typiquement un libellé d'affichage) et la valeur écrite
+  /// diverge du nom technique. Le décodeur émis, lui, compare au nom technique
+  /// via l'extension SDK (borne générique `Enum`, non masquable) : toute valeur
+  /// écrite sous masquage serait définitivement illisible au décodage — sans
+  /// aucun signal, ni au build, ni à l'exécution. Échec de build explicite
+  /// (invariant AD-3), tous les champs fautifs du modèle nommés en une passe.
+  Never _rejectMaskedEnumName(
+    ClassElement element,
+    List<(FieldElement, EnumElement)> masked,
+  ) {
+    final inventory = masked
+        .map((m) => '  - ${m.$1.name} : ${m.$2.name}')
+        .join('\n');
+    final plural = masked.length > 1;
+    throw InvalidGenerationSourceError(
+      '${masked.length} champ${plural ? 's' : ''} enum sur ${element.name} '
+      'dont le type REDÉCLARE `name` comme membre d\'instance :\n$inventory\n'
+      'L\'encodage émis passe par `.name` : sur '
+      '${plural ? 'ces enums' : 'cet enum'}, le membre déclaré (libellé '
+      'd\'affichage ?) MASQUE l\'extension SDK `EnumName.name` — la valeur '
+      'écrite divergerait du nom technique, et le décodeur émis (qui compare '
+      'au nom technique, non masquable) ne la relirait JAMAIS.\n'
+      'DEUX REMÈDES, par champ :\n'
+      '  1. renommer le membre de l\'enum (ex. `label`) — `.name` redevient '
+      'le nom technique ;\n'
+      '  2. annoter le champ `@ZcrudIgnore()` et persister la valeur par un '
+      'canal manuel (`fromMap`/`toMap` de domaine).',
+      element: masked.length == 1 ? masked.first.$1 : element,
+    );
   }
 
   /// `@ZcrudIgnore` combiné à `@ZcrudField` **ou** `@ZcrudId` sur le même champ
@@ -923,6 +998,12 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     'is_deleted',
   };
 
+  /// Expression d'encodage d'un champ dans le `toMap()` émis.
+  ///
+  /// L'encodage enum passe par `.name` (nom technique, camelCase) : un enum
+  /// qui redéclarerait `name` comme membre d'instance changerait la valeur
+  /// émise — ce cas est **refusé au build** en amont ([_rejectMaskedEnumName]),
+  /// l'expression émise ici ne peut donc résoudre que sur `EnumName.name`.
   String _toMapExpr(_Field f) {
     final v = 'this.${f.dartName}';
     final q = f.nullable ? '?' : '';

@@ -3,6 +3,27 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.90.0 — 2026-08-12
+
+### Ajouté
+
+- `ZcrudRegistry.kindOf<T>()` : le registre **retient** l'association
+  `Type → kind` au moment de `register<T>(kind, …)` (elle était jetée avec
+  l'effacement de `T`) et l'expose. Contrat : `kind` si l'association est
+  univoque ; `null` si le type n'est pas enregistré ; `StateError` actionnable
+  (nommant le type et les `kind` en jeu) si le même type est enregistré sous
+  plusieurs `kind` — cet usage reste **permis** à l'enregistrement (modèle
+  partagé par plusieurs collections), l'ambiguïté est signalée à la lecture.
+  Un moteur générique sur `T` n'a plus à maintenir sa propre table
+  `Map<Type, String>` (demande du pilote DODLP, 48 entrées manuelles).
+- `ZcrudRegistry.encodeOf<T>(value)` / `ZcrudRegistry.decodeOf<T>(map)` :
+  variantes typées d'`encode`/`decode` qui résolvent le `kind` depuis `T`
+  via cette table. `decodeOf<T>` retourne directement un `T`. Type non
+  enregistré ou ambigu → `StateError` explicite, jamais un silence ; le
+  contexte de décodage est threadé comme par la voie par-`kind`.
+  Aucun changement du générateur : les registrars émis appellent déjà
+  `register<T>` typé.
+
 ## 0.89.0 — 2026-08-12
 
 ### Ajouté

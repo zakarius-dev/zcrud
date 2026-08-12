@@ -34,6 +34,12 @@ import 'z_persist_as.dart';
 /// ces champs en `Timestamp` natif (invariant AD-5 : `Timestamp` reste confiné
 /// à `zcrud_firestore`).
 ///
+/// **Encodage des enums** : la valeur persistée d'un champ enum est `.name`
+/// (le nom technique, en camelCase) ; un enum qui redéclare `name` comme
+/// membre d'instance (libellé d'affichage) changerait la valeur émise — ce
+/// cas est **refusé au build** ; renommer le membre (ex. `label`), ou
+/// `@ZcrudIgnore` + canal manuel.
+///
 /// **N'entre PAS dans l'annotation** (exige une closure/valeur runtime,
 /// illisible par `ConstantReader`) — attaché au runtime à la place :
 /// - builder `widget` libre → `EditionFieldType.widget` **nomme** le type ; la

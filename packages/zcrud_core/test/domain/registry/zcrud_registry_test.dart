@@ -28,6 +28,26 @@ class FakeModel {
   int get hashCode => Object.hash(id, label);
 }
 
+/// Second faux modèle, distinct de [FakeModel] — pour les scénarios
+/// multi-types de la table `Type → kind`.
+class OtherModel {
+  const OtherModel({required this.code});
+
+  factory OtherModel.fromMap(Map<String, dynamic> map) =>
+      OtherModel(code: map['code'] as int);
+
+  final int code;
+
+  Map<String, dynamic> toMap() => <String, dynamic>{'code': code};
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is OtherModel && code == other.code;
+
+  @override
+  int get hashCode => code.hashCode;
+}
+
 /// Simule le pattern d'enregistrement **généré** par E2-5 : une fonction prenant
 /// une **instance** de `ZcrudRegistry` (injection au bootstrap, cf. E7-2).
 void registerFakeModel(ZcrudRegistry r) {
@@ -187,6 +207,148 @@ void main() {
       expect(() => r.fieldSpecsFor('inconnu'),
           throwsA(isA<ZUnregisteredTypeError>()));
       expect(r.tryFieldSpecsFor('inconnu'), isNull);
+    });
+  });
+
+  group('ZcrudRegistry — kindOf<T>() (table Type → kind, CR registry)', () {
+    test('association univoque → retourne le kind', () {
+      final r = ZcrudRegistry()..let(registerFakeModel);
+      expect(r.kindOf<FakeModel>(), 'fakeModel');
+    });
+
+    test('type jamais enregistré → null (jamais throw)', () {
+      final r = ZcrudRegistry();
+      expect(r.kindOf<FakeModel>(), isNull);
+    });
+
+    test('type inconnu sur un registre non vide → null aussi', () {
+      final r = ZcrudRegistry()..let(registerFakeModel);
+      expect(r.kindOf<OtherModel>(), isNull);
+    });
+
+    test(
+        'même type sous DEUX kinds : register passe, kindOf lève un '
+        'StateError nommant le type et les kinds', () {
+      final r = ZcrudRegistry()..let(registerFakeModel);
+      // L'enregistrement du même type sous un second kind reste PERMIS
+      // (modèle partagé par deux collections) — aucune rupture rétroactive.
+      r.register<FakeModel>(
+        'fakeModelBis',
+        fromMap: FakeModel.fromMap,
+        toMap: (FakeModel m) => m.toMap(),
+      );
+      try {
+        r.kindOf<FakeModel>();
+        fail('devait throw StateError (association non univoque)');
+      } on StateError catch (e) {
+        final msg = e.message;
+        expect(msg, contains('FakeModel'));
+        expect(msg, contains('"fakeModel"'));
+        expect(msg, contains('"fakeModelBis"'));
+        // Le message oriente vers la voie par-kind (actionnable).
+        expect(msg, contains('par-kind'));
+      }
+    });
+
+    test('isolation instance : la table Type → kind ne fuit pas entre '
+        'deux registres', () {
+      final a = ZcrudRegistry()..let(registerFakeModel);
+      final b = ZcrudRegistry();
+      expect(a.kindOf<FakeModel>(), 'fakeModel');
+      expect(b.kindOf<FakeModel>(), isNull);
+    });
+
+    test('collision de kind (duplicate) → la table Type → kind reste '
+        'inchangée (cohérent avec _fieldSpecs)', () {
+      final r = ZcrudRegistry()..let(registerFakeModel);
+      // Ré-enregistrer le MÊME kind avec un AUTRE type doit throw AVANT
+      // toute écriture de table : OtherModel ne doit pas apparaître.
+      expect(
+        () => r.register<OtherModel>(
+          'fakeModel',
+          fromMap: OtherModel.fromMap,
+          toMap: (OtherModel m) => m.toMap(),
+        ),
+        throwsA(isA<ZDuplicateRegistrationError>()),
+      );
+      expect(r.kindOf<OtherModel>(), isNull);
+      expect(r.kindOf<FakeModel>(), 'fakeModel');
+    });
+  });
+
+  group('ZcrudRegistry — encodeOf/decodeOf typés (CR registry)', () {
+    test('nominal : encodeOf<T> == encode(kind) ; decodeOf<T> rend un T', () {
+      final r = ZcrudRegistry()..let(registerFakeModel);
+      const model = FakeModel(id: 'a1', label: 'Alpha');
+
+      final encoded = r.encodeOf<FakeModel>(model);
+      expect(encoded, equals(r.encode('fakeModel', model)));
+
+      final FakeModel decoded = r.decodeOf<FakeModel>(encoded);
+      expect(decoded, equals(model));
+    });
+
+    test('round-trip typé decodeOf(encodeOf()) == identité', () {
+      final r = ZcrudRegistry()..let(registerFakeModel);
+      const model = FakeModel(id: 'b2', label: 'Beta');
+      expect(r.decodeOf<FakeModel>(r.encodeOf<FakeModel>(model)),
+          equals(model));
+    });
+
+    test('type non enregistré → StateError actionnable (jamais un silence)',
+        () {
+      final r = ZcrudRegistry();
+      expect(
+        () => r.encodeOf<FakeModel>(const FakeModel(id: 'x', label: 'y')),
+        throwsA(isA<StateError>().having(
+          (e) => e.message,
+          'message',
+          allOf(contains('encodeOf'), contains('FakeModel'),
+              contains('bootstrap')),
+        )),
+      );
+      expect(
+        () => r.decodeOf<FakeModel>(<String, dynamic>{}),
+        throwsA(isA<StateError>().having(
+          (e) => e.message,
+          'message',
+          allOf(contains('decodeOf'), contains('FakeModel')),
+        )),
+      );
+    });
+
+    test('type ambigu (deux kinds) → StateError du contrat kindOf', () {
+      final r = ZcrudRegistry()
+        ..let(registerFakeModel)
+        ..register<FakeModel>(
+          'fakeModelBis',
+          fromMap: FakeModel.fromMap,
+          toMap: (FakeModel m) => m.toMap(),
+        );
+      expect(
+        () => r.encodeOf<FakeModel>(const FakeModel(id: 'x', label: 'y')),
+        throwsA(isA<StateError>().having(
+            (e) => e.message, 'message', contains('fakeModelBis'))),
+      );
+      expect(
+        () => r.decodeOf<FakeModel>(<String, dynamic>{}),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('deux types distincts sous deux kinds : chacun résout le sien', () {
+      final r = ZcrudRegistry()
+        ..let(registerFakeModel)
+        ..register<OtherModel>(
+          'otherModel',
+          fromMap: OtherModel.fromMap,
+          toMap: (OtherModel m) => m.toMap(),
+        );
+      expect(r.kindOf<FakeModel>(), 'fakeModel');
+      expect(r.kindOf<OtherModel>(), 'otherModel');
+      const other = OtherModel(code: 42);
+      expect(r.decodeOf<OtherModel>(r.encodeOf<OtherModel>(other)),
+          equals(other));
     });
   });
 }

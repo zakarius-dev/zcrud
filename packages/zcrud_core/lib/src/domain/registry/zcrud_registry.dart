@@ -1,7 +1,8 @@
 /// Registre de **modèles** `kind → (fromMap, toMap)` (AD-3, AD-4 pt.3).
 ///
-/// Chaque `@ZcrudModel` fait générer un appel `register<T>(kind, fromMap: …,
-/// toMap: …)` prenant une **instance** de [ZcrudRegistry] (injection au
+/// Chaque `@ZcrudModel` fait générer un appel
+/// `register<T>(kind, fromMap: …, toMap: …)` prenant une **instance** de
+/// [ZcrudRegistry] (injection au
 /// bootstrap de l'application) — le codegen n'a pas à lister les modèles à la
 /// main, et « type non enregistré → throw explicite ».
 library;
@@ -71,8 +72,9 @@ class ZModelCodec {
 /// instances injectées via `ZcrudScope`/binding, pour l'isolation inter-app
 /// et la testabilité).
 ///
-/// Porte `fromMap`/`toMap`, et — additivement — l'association `kind →
-/// List<ZFieldSpec>` (paramètre optionnel `fieldSpecs` sur [register]) sans
+/// Porte `fromMap`/`toMap`, et — additivement — l'association
+/// `kind → List<ZFieldSpec>` (paramètre optionnel `fieldSpecs` sur
+/// [register]) sans
 /// casser la signature de base (AD-10 additif). Aucun slot `Object?` non typé
 /// « en attendant » (fuite d'API évitée par construction).
 class ZcrudRegistry {
@@ -101,6 +103,15 @@ class ZcrudRegistry {
   /// un modèle peut être enregistré sans schéma (défaut `const []`).
   final Map<String, List<ZFieldSpec>> _fieldSpecs = <String, List<ZFieldSpec>>{};
 
+  /// Table interne `Type → {kind…}` alimentée par [register] au moment où
+  /// l'association est connue (avant que `T` ne soit effacé vers `Object`).
+  ///
+  /// Un `Set` (et non un `String` unique) : un même type **peut** être
+  /// enregistré sous plusieurs `kind` (modèle partagé par deux collections) —
+  /// cet usage reste permis à l'enregistrement, et l'ambiguïté est rendue
+  /// **explicite** à la lecture par [kindOf] (jamais un choix silencieux).
+  final Map<Type, Set<String>> _kindsByType = <Type, Set<String>>{};
+
   /// Enregistre le couple (dé)sérialisation typé de [kind] et, additivement,
   /// son schéma déclaratif [fieldSpecs] (projeté depuis `@ZcrudField`).
   ///
@@ -112,8 +123,14 @@ class ZcrudRegistry {
   /// [fieldSpecs] (défaut `const []`, **rétro-compatible** — AD-10 additif) est
   /// la projection `List<ZFieldSpec>` émise depuis `@ZcrudField` ; consommée
   /// par le moteur d'édition et le moteur de liste. Le codec est enregistré
-  /// **avant** le schéma : une collision de [kind] laisse `_fieldSpecs`
-  /// inchangé.
+  /// **avant** le schéma et la table `Type → kind` : une collision de [kind]
+  /// laisse `_fieldSpecs` et l'association de [kindOf] inchangés.
+  ///
+  /// L'association `T → kind` est **retenue** au passage (elle alimente
+  /// [kindOf], [encodeOf] et [decodeOf]). Enregistrer le **même type** sous
+  /// deux `kind` distincts reste permis (modèle partagé par deux
+  /// collections) : l'ambiguïté est alors signalée à la **lecture** par
+  /// [kindOf], jamais refusée ici.
   ///
   /// [fromMapWithContext]/[toMapWithContext] (**additifs**, `null` par
   /// défaut — AD-10) portent les variantes conscientes du contexte. Émis par le
@@ -143,7 +160,89 @@ class ZcrudRegistry {
       ),
     );
     _fieldSpecs[kind] = fieldSpecs;
+    _kindsByType.putIfAbsent(T, () => <String>{}).add(kind);
   }
+
+  /// Le `kind` sous lequel le type `T` a été enregistré, si l'association
+  /// est **univoque**.
+  ///
+  /// Contrat (trois cas, exhaustif) :
+  /// - `T` enregistré sous **exactement un** `kind` → retourne ce `kind` ;
+  /// - `T` **jamais enregistré** sur cette instance → retourne `null`
+  ///   (variante défensive, AD-10 — parallèle à [tryCodecFor]) ;
+  /// - `T` enregistré sous **plusieurs** `kind` (modèle partagé par
+  ///   plusieurs collections) → **`throw` [StateError]** au message nommant
+  ///   le type et les `kind` en jeu : l'association n'étant pas univoque,
+  ///   l'appelant doit passer par la voie **par-kind** ([encode]/[decode]
+  ///   avec le `kind` explicite) — jamais un choix silencieux.
+  ///
+  /// `T` doit être le type **exact** passé à [register] (celui émis par le
+  /// registrar généré) : la résolution se fait sur le paramètre de type
+  /// statique, pas sur le type dynamique d'une instance.
+  String? kindOf<T extends Object>() {
+    final kinds = _kindsByType[T];
+    if (kinds == null || kinds.isEmpty) return null;
+    if (kinds.length > 1) {
+      throw StateError(
+        'ZcrudRegistry.kindOf<$T>() : le type "$T" est enregistré sous '
+        '${kinds.length} kinds distincts '
+        '(${kinds.map((String k) => '"$k"').join(', ')}). '
+        'L\'association Type → kind n\'est pas univoque : passez par la voie '
+        'par-kind — encode("<kind>", valeur) / decode("<kind>", map) — pour '
+        'désigner explicitement la collection visée.',
+      );
+    }
+    return kinds.first;
+  }
+
+  /// Résolution **stricte** de `T` vers son `kind` pour [encodeOf]/[decodeOf] :
+  /// type non enregistré → [StateError] actionnable ; ambigu → [StateError]
+  /// de [kindOf].
+  String _kindOfStrict<T extends Object>(String operation) {
+    final kind = kindOf<T>();
+    if (kind == null) {
+      throw StateError(
+        'ZcrudRegistry.$operation<$T>() : aucun kind enregistré pour le type '
+        '"$T". Vérifiez que le registrar généré de ce modèle '
+        '(register<$T>("<kind>", …)) est bien appelé au bootstrap, avant '
+        'tout (dé)codage — ou passez par la voie par-kind '
+        '(encode/decode avec le kind explicite).',
+      );
+    }
+    return kind;
+  }
+
+  /// Encode [value] en map via le codec du `kind` **résolu depuis `T`**
+  /// (variante typée de [encode] pour un appelant générique sur `T`).
+  ///
+  /// Contrat d'erreur — jamais un silence :
+  /// - `T` non enregistré → **`throw` [StateError]** actionnable ;
+  /// - `T` enregistré sous plusieurs `kind` → **`throw` [StateError]**
+  ///   nommant le type et les `kind` (contrat de [kindOf]) : utilisez
+  ///   [encode] avec le `kind` explicite.
+  ///
+  /// Le contexte ([ZDecodeContext]) est threadé exactement comme par
+  /// [encode]. `T` doit être le type exact passé à [register] (résolution
+  /// statique — voir [kindOf]).
+  Map<String, dynamic> encodeOf<T extends Object>(T value) =>
+      encode(_kindOfStrict<T>('encodeOf'), value);
+
+  /// Décode [map] en `T` via le codec du `kind` **résolu depuis `T`**
+  /// (variante typée de [decode] pour un appelant générique sur `T`).
+  ///
+  /// Retourne directement un `T` (cast sûr : le codec enregistré sous ce
+  /// `kind` a été construit avec un `fromMap` produisant un `T`).
+  ///
+  /// Contrat d'erreur — jamais un silence :
+  /// - `T` non enregistré → **`throw` [StateError]** actionnable ;
+  /// - `T` enregistré sous plusieurs `kind` → **`throw` [StateError]**
+  ///   nommant le type et les `kind` (contrat de [kindOf]) : utilisez
+  ///   [decode] avec le `kind` explicite.
+  ///
+  /// Le contexte ([ZDecodeContext]) est threadé exactement comme par
+  /// [decode].
+  T decodeOf<T extends Object>(Map<String, dynamic> map) =>
+      decode(_kindOfStrict<T>('decodeOf'), map) as T;
 
   /// Schéma déclaratif [ZFieldSpec] enregistré pour [kind] (peut être vide si le
   /// modèle a été enregistré sans schéma), ou **`throw`**

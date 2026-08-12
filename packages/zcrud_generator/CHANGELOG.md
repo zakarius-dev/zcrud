@@ -2,6 +2,29 @@
 
 All notable changes to `zcrud_generator` are documented in this file.
 
+## 0.90.0 — 2026-08-12
+
+### Modifié — durcissement cassant
+
+- **Un champ enum dont le type redéclare `name` comme membre d'instance est
+  désormais un échec de build** (champ direct comme `List<T>`). L'encodage émis
+  passe par `.name` : sur un tel enum, l'appel résout sur le membre déclaré —
+  typiquement un libellé d'affichage — et la valeur écrite diverge du nom
+  technique ; le décodeur émis, qui compare au nom technique via l'extension
+  SDK non masquable, ne la relit jamais. Le piège était **silencieux** : ni le
+  build ni l'exécution ne signalaient rien, seuls des documents illisibles au
+  décodage le révélaient. Le build le refuse, nomme **tous** les champs fautifs
+  du modèle en une passe et cite les deux remèdes : renommer le membre de
+  l'enum (ex. `label`), ou annoter le champ `@ZcrudIgnore` et persister la
+  valeur par un canal manuel.
+
+  **Qui est concerné.** Tout modèle `@ZcrudModel` portant un champ enum
+  (annoté `@ZcrudField`) dont le type déclare un champ ou un getter d'instance
+  `name` — localement ou via un mixin. Les enhanced enums **sans** membre
+  `name` (constructeur, autres champs comme `label`) restent acceptés à
+  l'identique. Aucun changement du contrat d'émission : `.name` reste
+  l'encodage, et il désigne désormais toujours le nom technique.
+
 ## 0.88.0 — 2026-08-12
 
 ### Corrigé

@@ -2,6 +2,15 @@
 
 All notable changes to `zcrud_annotations` are documented in this file.
 
+## 0.90.0 — 2026-08-12
+
+### Documentation
+
+- La dartdoc de `@ZcrudField` documente l'**encodage des enums** : la valeur
+  persistée est `.name` (nom technique, camelCase) ; un enum qui redéclare
+  `name` comme membre d'instance changerait la valeur émise — ce cas est
+  refusé au build par `zcrud_generator`.
+
 ## 0.88.0 — 2026-08-12
 
 ### Ajouté

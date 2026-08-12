@@ -454,6 +454,210 @@ Berth _\$BerthFromMap(Map<String, dynamic> map) =>
   });
 
   // =========================================================================
+  // Enum redéclarant `name` comme membre d'instance : l'encodage émis passe
+  // par `.name`, qui résoudrait sur le membre déclaré (libellé d'affichage) —
+  // valeur écrite divergente du nom technique, illisible par le décodeur émis
+  // (qui compare au nom technique via l'extension SDK, non masquable). Piège
+  // SILENCIEUX à l'exécution → BUILD ROUGE explicite (AD-3).
+  //
+  // Fixtures ISOLÉES : vertes sur toutes les autres règles (décodeur de
+  // domaine présent, types sérialisables) ; seule la règle visée peut les
+  // faire rougir. Le contre-témoin (enhanced enum SANS masquage) prouve que la
+  // règle DISCRIMINE.
+  // =========================================================================
+  group('enum redéclarant `name` → BUILD ROUGE', () {
+    // Le motif exact du parc DODLP : libellé d'affichage porté par un CHAMP
+    // `final String name`, alimenté par le constructeur.
+    const maskedByField = '''
+enum Provenance {
+  dodlp('Agent DODLP'),
+  iffd('Agent IFFD');
+  const Provenance(this.name);
+  final String name;
+}
+''';
+
+    test('MORD (champ `final String name`) : champ et enum nommés, remèdes '
+        'cités', () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$maskedByField
+$_model(kind: 'berth')
+class Berth {
+  const Berth({required this.title, required this.provenance});
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  $_field()
+  final String title;
+
+  $_field()
+  final Provenance provenance;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) =>
+    Berth(title: '', provenance: Provenance.dodlp);
+''';
+      await expectLater(
+        _emitFirstModel(src),
+        throwsA(
+          isA<InvalidGenerationSourceError>().having(
+            (e) => e.message,
+            'message',
+            allOf([
+              contains('REDÉCLARE `name`'),
+              contains('provenance'),
+              contains('Provenance'),
+              contains('MASQUE'),
+              contains('EnumName.name'),
+              contains('nom technique'),
+              contains('label'),
+              contains('@ZcrudIgnore'),
+            ]),
+          ),
+        ),
+      );
+    });
+
+    test('MORD aussi sur un GETTER `String get name`', () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+enum Statut {
+  ouvert,
+  clos;
+  String get name => 'libellé';
+}
+
+$_model(kind: 'berth')
+class Berth {
+  const Berth({required this.statut});
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  $_field()
+  final Statut statut;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) =>
+    Berth(statut: Statut.ouvert);
+''';
+      await expectLater(
+        _emitFirstModel(src),
+        throwsA(
+          isA<InvalidGenerationSourceError>().having(
+            (e) => e.message,
+            'message',
+            allOf(contains('statut'), contains('Statut'), contains('MASQUE')),
+          ),
+        ),
+      );
+    });
+
+    test('MORD aussi en `List<EnumMasquant>`', () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$maskedByField
+$_model(kind: 'berth')
+class Berth {
+  const Berth({this.sources = const <Provenance>[]});
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  $_field()
+  final List<Provenance> sources;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) => const Berth();
+''';
+      await expectLater(
+        _emitFirstModel(src),
+        throwsA(
+          isA<InvalidGenerationSourceError>().having(
+            (e) => e.message,
+            'message',
+            allOf(contains('sources'), contains('Provenance')),
+          ),
+        ),
+      );
+    });
+
+    test('tous les champs fautifs du modèle sont signalés en UNE passe',
+        () async {
+      final src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$maskedByField
+$_model(kind: 'berth')
+class Berth {
+  const Berth({
+    required this.provenance,
+    this.sources = const <Provenance>[],
+  });
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  $_field()
+  final Provenance provenance;
+
+  $_field()
+  final List<Provenance> sources;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) =>
+    Berth(provenance: Provenance.dodlp);
+''';
+      await expectLater(
+        _emitFirstModel(src),
+        throwsA(
+          isA<InvalidGenerationSourceError>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('2 champs enum'),
+              contains('provenance'),
+              contains('sources'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('CONTRE-TÉMOIN : enhanced enum SANS masquage (constructeur + champ '
+        '`label`) → build VERT, `.name` technique émis', () async {
+      const src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+enum Grade {
+  bas('Grade bas'),
+  haut('Grade haut');
+  const Grade(this.label);
+  final String label;
+}
+
+$_model(kind: 'berth')
+class Berth {
+  const Berth({required this.grade});
+
+  factory Berth.fromMap(Map<String, dynamic> map) => _\$BerthFromMap(map);
+
+  $_field()
+  final Grade grade;
+}
+
+Berth _\$BerthFromMap(Map<String, dynamic> map) => Berth(grade: Grade.bas);
+''';
+      final out = await _emitFirstModelText(src);
+      // Encodage par `.name` : sans masquage, c'est le nom technique.
+      expect(out, contains("'grade': this.grade.name,"));
+      // Décodage symétrique par le nom technique.
+      expect(out, contains(r'_$enumFromName(Grade.values, ' "map['grade'])"));
+    });
+  });
+
+  // =========================================================================
   // `@ZcrudIgnore` combiné à une annotation de sérialisation : les deux
   // déclarations se CONTREDISENT — l'une exclut le champ de la persistance,
   // l'autre l'y inscrit. Résoudre en silence (dans un sens comme dans l'autre)
