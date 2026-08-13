@@ -24,6 +24,7 @@ library;
 import 'package:flutter/widgets.dart';
 
 import 'z_menu_request.dart';
+import 'z_menu_surface.dart';
 
 /// Abstraction de rendu d'un menu à partir d'une [ZMenuRequest] neutre.
 ///
@@ -46,4 +47,24 @@ abstract class ZMenuRenderer {
 
   /// Construit le DÉCLENCHEUR (et, par lui, la surface) de la [request].
   Widget build(BuildContext context, ZMenuRequest request);
+
+  /// Ouvre la MÊME surface **sans déclencheur visible**, à la position globale
+  /// [globalPosition] — c'est la voie du geste contextuel (clic droit sur
+  /// pointeur, appui long sur tactile), servie par `ZContextMenuRegion`.
+  ///
+  /// **Implémentation par défaut fournie** : la surface Material du repli
+  /// ([zShowZMenuAt]), composée des mêmes cellules que le déclencheur visible.
+  /// Un renderer n'a donc rien à écrire pour que le geste contextuel
+  /// fonctionne, et reste libre de le redéfinir (feuille modale, panneau
+  /// ancré, menu radial) sans que l'appelant change d'un caractère.
+  ///
+  /// Contrat inchangé : la sélection passe par [ZMenuRequest.select] — jamais
+  /// par `entry.onSelected` — et rien à montrer ⇒ **aucune surface** (invariant
+  /// AD-10), jamais une levée.
+  Future<void> openAt(
+    BuildContext context,
+    ZMenuRequest request,
+    Offset globalPosition,
+  ) =>
+      zShowZMenuAt(context, request, globalPosition);
 }

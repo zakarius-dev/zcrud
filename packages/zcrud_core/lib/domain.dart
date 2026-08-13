@@ -58,6 +58,7 @@ export 'src/domain/edition/z_field_config.dart';
 export 'src/domain/edition/z_field_rename.dart';
 export 'src/domain/edition/z_field_size.dart';
 export 'src/domain/edition/z_field_spec.dart';
+export 'src/domain/edition/z_path_values.dart';
 export 'src/domain/edition/z_sub_list_config.dart';
 export 'src/domain/edition/z_time_codec.dart';
 export 'src/domain/edition/z_validator_spec.dart';
@@ -104,6 +105,9 @@ export 'src/domain/ports/z_choices_source.dart';
 export 'src/domain/ports/z_date_display_formatter.dart';
 // Ports bas-niveau offline-first : `ZLocalStore`/`ZRemoteStore` neutres.
 export 'src/domain/ports/z_local_store.dart';
+// Capacité optionnelle de suppression DÉFINITIVE : mixin `ZPurgeable<T>`
+// (hors du port `ZRepository`, qu'un dépôt applique s'il sait la servir).
+export 'src/domain/ports/z_purgeable.dart';
 // Port neutre + registre du CRUD inline du champ `relation` (invariants
 // AD-1/AD-4/AD-5) : `ZRelationCrudHandler` (create/edit/copy →
 // `Future<ZFieldChoice?>`, impl hors cœur) + `ZRelationCrudRegistry`

@@ -20,7 +20,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
 Finder _key(String name) => find.byKey(ValueKey<String>(name));
-Finder get _next => find.widgetWithText(FilledButton, 'Suivant');
+Finder get _next => find.widgetWithText(FilledButton, 'Next');
 
 void _bigView(WidgetTester tester) {
   tester.view.physicalSize = const Size(1200, 3000);

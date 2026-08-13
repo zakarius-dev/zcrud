@@ -37,7 +37,6 @@ import '../../domain/edition/z_field_config.dart';
 import '../../domain/edition/z_field_size.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../../domain/edition/z_sub_list_config.dart';
-import '../../domain/ports/z_acl.dart';
 import '../l10n/z_localizations.dart';
 import '../z_field_listenable_builder.dart';
 import '../z_form_controller.dart';
@@ -207,6 +206,31 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
         _refListenables.add(widget.controller.fieldListenable(k));
       }
     }
+    // Choix DÉRIVÉS D'AUTRES CHAMPS (`ZFieldSpec.choicesResolver`) : abonnement
+    // CIBLÉ aux tranches que le résolveur LIT — découvertes par un premier
+    // appel TRAÇANT (le `valueOf` passé enregistre les noms lus). Un changement
+    // d'une tranche lue reconstruit UNIQUEMENT ce champ (jamais le formulaire —
+    // invariant AD-2/SM-1) ; une tranche jamais lue ne déclenche rien. Le jeu
+    // d'abonnements est FIGÉ au montage (première branche du résolveur) —
+    // les dépendances d'un résolveur doivent être STABLES, comme les `sources`
+    // d'une `ZDerivation`. Résolveur en erreur ⇒ aucun abonnement, le rendu
+    // repliera (invariant AD-10).
+    if ((_family == EditionFamily.select ||
+            _family == EditionFamily.rowChips) &&
+        widget.field.choicesResolver != null) {
+      final read = <String>{};
+      try {
+        widget.field.choicesResolver!((name) {
+          read.add(name);
+          return widget.controller.valueOf(name);
+        });
+      } catch (_) {
+        // Invariant AD-10 : les noms déjà lus avant l'erreur restent abonnés.
+      }
+      for (final name in read) {
+        _refListenables.add(widget.controller.fieldListenable(name));
+      }
+    }
     // Options DÉRIVÉES : le moteur publie dans une tranche dédiée
     // `ZDerivationChannels.optionsKey(name)`. SANS cet abonnement, la tranche
     // changerait sans que ce champ le voie. Abonnement CIBLÉ : seul ce champ
@@ -298,20 +322,17 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     if (_family == EditionFamily.subList) {
       return _withCollectionError(_reseedable((context) {
         widget.onBuild?.call();
-        // ACL de ligne : `ZSubListFieldWidget.acl` doit être alimenté par un
-        // site du cœur, sinon un `ZcrudScope(acl:)` ne filtrerait pas les
-        // lignes. Le câblage est **opt-in par la config** (`aclCollectionId`)
-        // et non inconditionnel, pour ne pas déplacer un hôte qui pose déjà
-        // une ACL restrictive au scope. `null` ⇒ défauts permissifs.
+        // ACL de ligne : l'ACL du `ZcrudScope` ambiant gouverne les actions
+        // d'item du mode compact, avec ou sans `aclCollectionId` déclaré (ce
+        // dernier ne fait que discriminer la collection interrogée). En
+        // l'absence de scope, le repli est **refusant** — le câblage est laissé
+        // à `ZSubListFieldWidget`, qui porte la même règle.
         final subCfg = widget.field.config;
         final aclCid =
             subCfg is ZSubListConfig ? subCfg.aclCollectionId : null;
         return ZSubListFieldWidget(
           field: widget.field,
           initialValue: widget.controller.valueOf(widget.field.name),
-          acl: aclCid == null
-              ? const ZAllowAllAcl()
-              : (ZcrudScope.maybeOf(context)?.acl ?? const ZAllowAllAcl()),
           collectionId: aclCid,
           onChanged: (list) =>
               widget.controller.setValue(widget.field.name, list),
@@ -796,18 +817,26 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       _tryRegistryWidget(context, field, value) ??
       ZUnsupportedFieldWidget(field: field);
 
-  /// Lookup **défensif** du seam de registre (invariant AD-10) : le widget hôte de
-  /// `field.type.name` s'il est enregistré, sinon `null` — **le** point unique
-  /// où la convention de `kind` et la construction du `ZFieldWidgetContext`
-  /// sont écrites. Deux appelants : [_dispatchRegistry] (repli
+  /// Lookup **défensif** du seam de registre (invariant AD-10) : le widget hôte
+  /// du champ s'il est enregistré, sinon `null` — **le** point unique où la
+  /// convention de `kind` et la construction du `ZFieldWidgetContext` sont
+  /// écrites. Deux appelants : [_dispatchRegistry] (repli
   /// `ZUnsupportedFieldWidget`) et la famille `boolean` (repli **natif**).
+  ///
+  /// Résolution du `kind` : le **discriminant déclaré** `field.widgetKind` est
+  /// consulté d'abord (deux champs `widget`/`custom` d'un même formulaire
+  /// peuvent porter deux builders distincts) ; s'il est absent — ou qu'aucun
+  /// builder n'est enregistré sous ce discriminant —, repli **inchangé** sur
+  /// `field.type.name` (défensif, invariant AD-10).
   Widget? _tryRegistryWidget(
     BuildContext context,
     ZFieldSpec field,
     Object? value,
   ) {
     final registry = ZcrudScope.maybeOf(context)?.widgetRegistry;
-    final builder = registry?.tryBuilderFor(field.type.name);
+    final wk = field.widgetKind;
+    final builder = (wk == null ? null : registry?.tryBuilderFor(wk)) ??
+        registry?.tryBuilderFor(field.type.name);
     if (builder == null) return null;
     return builder(
       context,

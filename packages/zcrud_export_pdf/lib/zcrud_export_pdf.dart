@@ -35,6 +35,7 @@ export 'src/data/z_pdf_creation_service.dart' show ZPdfCreationService;
 export 'src/data/z_pdf_export_options.dart'
     show ZPdfExportOptions, ZPdfHeaderSpec, ZPdfOrientation;
 export 'src/data/z_pdf_exporter.dart' show buildPdfBytes;
+export 'src/data/z_pdf_list_exporter.dart' show ZPdfListExporter;
 export 'src/domain/z_font_coverage.dart' show ZFontCoverage;
 export 'src/domain/z_latex_rasterizer.dart' show ZLatexRasterizer;
 // Port de police TrueType. Sans lui, tout Unicode hors WinAnsi (arabe, grec,

@@ -8,7 +8,9 @@
 /// Invariants (AD-2/AD-4/AD-13/AD-15) : AUCUN gestionnaire d'état ; labels/icônes
 /// INJECTÉS (i18n, jamais codés en dur) ; nature = **enum** extensible additif
 /// (jamais un booléen) ; `onSelected == null` ⇒ action ABSENTE (jamais un bouton
-/// grisé/no-op) ; cibles ≥ 48 dp ; `Semantics` explicites ; directionnel ; thème
+/// grisé par simple oubli de callback — l'inertie, elle, se DÉCLARE :
+/// `ZBatchAction.enabled: false`, et l'action garde alors sa place en annonçant
+/// son motif) ; cibles ≥ 48 dp ; `Semantics` explicites ; directionnel ; thème
 /// injecté (`ZcrudTheme.of`, repli `Theme.of`). La barre lit la SEULE tranche
 /// `selectedIds`/`selectedCount` du contrôleur **détenu par la liste**
 /// (propriétaire UNIQUE, AD-2) via `ValueListenableBuilder` (rebuild ciblé) —
@@ -36,14 +38,25 @@ const double _kActionSlot = _kMinTapTarget;
 
 /// Nature d'une action de **lot** — enum EXTENSIBLE additif (AD-4).
 ///
-/// [delete]/[move] sont les natures intégrées ; [custom] couvre toute action
-/// applicative hors nomenclature (l'appelant porte le [ZBatchAction.label]/[icon]
-/// et le callback). Un membre neuf est **non-breaking** : aucun `switch`
-/// exhaustif sur ce type n'existe dans le cœur (grep négatif — la barre filtre
-/// sur `onSelected`, elle ne branche pas par nature).
+/// [delete]/[restore]/[move] sont les natures intégrées ; [custom] couvre toute
+/// action applicative hors nomenclature (l'appelant porte le
+/// [ZBatchAction.label]/[icon] et le callback). Un membre neuf est
+/// **non-breaking** : aucun `switch` exhaustif sur ce type n'existe dans le cœur
+/// (grep négatif — la barre filtre sur `onSelected`, elle ne branche pas par
+/// nature).
 enum ZBatchActionKind {
   /// Supprimer les éléments sélectionnés (voie `batchDelete` — cascade injectée).
   delete,
+
+  /// **Restaurer** les éléments sélectionnés — le geste inverse de [delete],
+  /// celui d'un listing de corbeille.
+  ///
+  /// Sans ce membre, une barre de corbeille devait déclarer sa restauration en
+  /// [custom], c'est-à-dire annoncer « hors nomenclature » un geste qui est
+  /// exactement le pendant du plus intégré de tous. La nature d'une action de
+  /// lot sert à la reconnaître (journalisation, télémétrie, décoration d'un
+  /// hôte) : [custom] y perdait cette information.
+  restore,
 
   /// Déplacer les éléments sélectionnés (voie `batchMove` — destination injectée).
   move,
@@ -58,6 +71,18 @@ enum ZBatchActionKind {
 /// ⇒ action ABSENTE de la barre (AD-4). L'action s'exécute sur la sélection
 /// COURANTE : l'appelant (qui détient le contrôleur) lit la sélection dans
 /// son callback (ex. via `batchDelete`/`batchMove`/`applyCommonField`).
+///
+/// **Absente ou inerte, deux choses distinctes** — c'est le même partage que
+/// pour une action de ligne (`ZResolvedRowAction`) :
+///
+/// | Déclaration | Rendu |
+/// |---|---|
+/// | `onSelected == null` | l'action **n'existe pas** dans la barre |
+/// | [enabled] `== false` | l'action **garde sa place**, grisée, non actionnable, et annonce son motif |
+///
+/// La première forme sert au masquage ; la seconde à l'inertie — celle qu'un
+/// mode d'ACL « désactiver » attend, où l'utilisateur doit voir que le geste
+/// existe et apprendre pourquoi il lui est fermé.
 @immutable
 class ZBatchAction {
   /// Construit une action de lot.
@@ -66,6 +91,8 @@ class ZBatchAction {
     required this.label,
     required this.icon,
     this.onSelected,
+    this.enabled = true,
+    this.disabledReason,
   });
 
   /// Nature de l'action ([ZBatchActionKind]).
@@ -79,6 +106,19 @@ class ZBatchAction {
 
   /// Callback d'exécution. `null` ⇒ action ABSENTE de la barre (AD-4).
   final VoidCallback? onSelected;
+
+  /// `false` ⇒ l'action est rendue **inerte** : présente, grisée, non
+  /// actionnable, et annoncée comme désactivée (`Semantics(enabled: false)`).
+  /// [onSelected] n'est alors **jamais** invoqué — l'inertie porte sur
+  /// l'apparence *et* sur l'effet.
+  ///
+  /// Défaut `true` ⇒ comportement strictement inchangé.
+  final bool enabled;
+
+  /// Motif LOCALISÉ INJECTÉ du refus, annoncé en `Semantics.hint` quand
+  /// [enabled] est `false` (`null` ⇒ aucun motif annoncé). Ignoré tant que
+  /// l'action est active.
+  final String? disabledReason;
 }
 
 /// Barre d'actions de **lot** neutre.
@@ -200,6 +240,8 @@ class ZBatchActionBar extends StatelessWidget {
               icon: action.icon,
               label: action.label,
               onPressed: action.onSelected!,
+              enabled: action.enabled,
+              disabledReason: action.enabled ? null : action.disabledReason,
             ),
         ];
         return Semantics(
@@ -240,7 +282,8 @@ class ZBatchActionBar extends StatelessWidget {
                     _BarButton(
                       icon: entry.icon,
                       label: entry.label,
-                      onPressed: entry.onPressed,
+                      onPressed: entry.enabled ? entry.onPressed : null,
+                      disabledReason: entry.disabledReason,
                     ),
                   if (overflow.isNotEmpty)
                     _OverflowMenu(entries: overflow, label: overflowLabel),
@@ -262,11 +305,19 @@ class _BarEntry {
     required this.icon,
     required this.label,
     required this.onPressed,
+    this.enabled = true,
+    this.disabledReason,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onPressed;
+
+  /// `false` ⇒ entrée rendue INERTE (grisée, non actionnable) — jamais absente.
+  final bool enabled;
+
+  /// Motif du refus annoncé en `Semantics.hint` (entrée inerte seulement).
+  final String? disabledReason;
 }
 
 /// Menu de **dépassement** de la barre — présentation calquée sur un patron
@@ -316,6 +367,9 @@ class _OverflowMenu extends StatelessWidget {
           for (final entry in entries)
             PopupMenuItem<_BarEntry>(
               value: entry,
+              // Une entrée inerte reste LISTÉE et annoncée : elle ne se
+              // sélectionne pas, elle ne disparaît pas.
+              enabled: entry.enabled,
               child: Row(
                 children: [
                   Icon(entry.icon),
@@ -342,15 +396,23 @@ class _OverflowMenu extends StatelessWidget {
 /// celui du tooltip et l'action serait annoncée DEUX FOIS. Directionnel
 /// (IconButton neutre).
 class _BarButton extends StatelessWidget {
-  const _BarButton({required this.icon, this.label, this.onPressed});
+  const _BarButton({
+    required this.icon,
+    this.label,
+    this.onPressed,
+    this.disabledReason,
+  });
 
   final IconData icon;
   final String? label;
   final VoidCallback? onPressed;
 
+  /// Motif du refus, annoncé en `hint` quand le bouton est inerte.
+  final String? disabledReason;
+
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
+    final Widget button = ConstrainedBox(
       constraints: const BoxConstraints(
         minWidth: _kMinTapTarget,
         minHeight: _kMinTapTarget,
@@ -360,6 +422,17 @@ class _BarButton extends StatelessWidget {
         tooltip: label,
         onPressed: onPressed,
       ),
+    );
+    // Un `IconButton` sans callback est DÉJÀ annoncé désactivé par Material :
+    // on n'ajoute donc aucun `Semantics(enabled:)` qui doublerait l'annonce.
+    // Seul le MOTIF manque au socle — et seulement s'il a été déclaré.
+    final reason = disabledReason;
+    if (onPressed != null || reason == null) return button;
+    // `MergeSemantics` : le motif et le bouton forment UN SEUL nœud. Sans lui,
+    // le motif resterait sur un nœud parent — un lecteur d'écran posé sur le
+    // bouton annoncerait « désactivé » sans jamais dire pourquoi.
+    return MergeSemantics(
+      child: Semantics(enabled: false, hint: reason, child: button),
     );
   }
 }

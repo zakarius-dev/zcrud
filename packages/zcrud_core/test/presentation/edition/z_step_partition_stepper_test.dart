@@ -94,7 +94,7 @@ void main() {
     );
 
     // Navigation : l'étape 1 monte son champ, l'étape 0 démonte les siens.
-    await tester.tap(find.widgetWithText(FilledButton, 'Suivant'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Next'));
     await tester.pumpAndSettle();
     expect(find.text('Affectation'), findsOneWidget);
     expect(_key('poste'), findsOneWidget);
@@ -129,6 +129,6 @@ void main() {
     ));
     await tester.pumpAndSettle();
     expect(_key('a'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Suivant'), findsNothing);
+    expect(find.widgetWithText(FilledButton, 'Next'), findsNothing);
   });
 }

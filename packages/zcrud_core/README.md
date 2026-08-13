@@ -113,9 +113,14 @@ Widget buildForm() => DynamicEdition(
 | `ZEditionSubmitController` / `ZSubmitButton` | Soumission agrégée (`Either<ZFailure,T>`) et chrome accessible scellé sur l'état. |
 | **Liste** | |
 | `DynamicList` | Hôte de liste dispatché par `ZListLayout`, délègue le rendu grille à `ZListRenderer`. |
-| `ZListController` | Contrôleur réactif — pagination curseur, recherche/tri in-memory de repli. |
-| `ZRowAction<T>` / `ZBatchAction` | Actions de ligne et de lot (corbeille, déplacement…), filtrées par `ZAcl`. |
+| `ZListController` | Contrôleur réactif — pagination curseur, recherche/tri in-memory de repli. `initialSorts` le fait **naître trié** : la toute première requête part déjà ordonnée, au lieu d'en émettre une non triée puis de la remplacer. |
+| `ZListSelectionActivation` | Comment la sélection **s'ouvre** : en permanence (défaut) ou à l'**appui long**, les cases n'apparaissant qu'une fois la sélection non vide. « Ouverte » n'est pas un état à part — c'est « non vide ». |
+| `ZListOrdinal` | Colonne de numéro d'ordre. `continuousAcrossPages` rend la numérotation continue quand c'est le **rendu** qui pagine : la règle reste au cœur, seule la position vient du rendu. |
+| `ZRowAction<T>` / `ZBatchAction` | Actions de ligne et de lot (corbeille, restauration, déplacement…), filtrées par `ZAcl`. Absente et inerte sont distinctes : `onSelected == null` **retire** l'action, `enabled: false` la garde en place, grisée, motif annoncé. |
+| `ZListTab` | Onglet de catégorisation. `baseFilters` déclare son socle (ANDé en tête, hors d'atteinte d'une recherche), `filtersWith` compose sans remplacer, `copyWith` permet à un assembleur d'envelopper sa vue sans recopier ses déclarations. |
 | `ZSubListScreen<T>` / `ZTabbedList` | Sous-liste filtrée par relation ; liste à onglets indépendants. |
+| `ZListExporter` / `ZExportedBytes` | Port d'export d'une liste (format, extension, type MIME, production d'octets) et fichier produit. Les implémentations vivent dans `zcrud_export`/`zcrud_export_pdf` : un hôte qui n'exporte rien ne tire rien. `exportSafely` convertit tout jet en `ZFailure` (invariant AD-10). |
+| `zListFormatOf(context)` | Voie **unique** des seams d'affichage (libellé d'option orpheline, port de dates, locale) : liste et export la partagent, donc le fichier dit ce que l'écran montre. |
 | **Domaine & données** | |
 | `ZRepository<T>` / `ZReadOnlyRepository<T>` | Contrats repository backend-agnostiques (`Either<ZFailure,T>`, flux nus). |
 | `ZFailure` (+ sous-classes) | Hiérarchie d'erreurs maison (`DomainFailure`, `NotFoundFailure`, `CacheFailure`…). |

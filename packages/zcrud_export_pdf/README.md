@@ -84,7 +84,8 @@ Uint8List exportTablePdf() {
 
 | Type | Rôle |
 |---|---|
-| `buildPdfBytes` / `ZExportTable` | Export tabulaire neutre : table de chaînes → bytes PDF. |
+| `buildPdfBytes` / `ZExportTable` | Export tabulaire neutre : table de chaînes → bytes PDF. La cellule est lue **en connaissant toute la ligne** (`ZListColumn.formatRow`) : devise portée par la ligne et format composé sont honorés, comme à l'écran. |
+| `ZPdfListExporter` | Exporteur de liste au format PDF réalisant le port `ZListExporter` du socle — le déclarer sur `ZCrudScreen(export:)` suffit à offrir l'export PDF d'un écran. |
 | `ZPdfExportOptions` / `ZPdfHeaderSpec` / `ZPdfOrientation` | Options de mise en page (orientation, titre, en-tête riche). |
 | `ZFlashcardPdfTemplate` | Gabarit PDF flashcards, composition inline texte + LaTeX. |
 | `ZFlashcardPdfInput` / `ZFlashcardPdfCard` / `ZFlashcardPdfChoice` / `ZFlashcardPdfLabels` | Entrée neutre et libellés injectés du gabarit flashcards. |
@@ -95,6 +96,26 @@ Uint8List exportTablePdf() {
 | `ZPdfCreationService` / `buildImagesPdf` | Assemblage d'une liste d'images en document PDF multi-pages. |
 | `ZExportedFile` | Triplet neutre `{bytes, fileName, mimeType}` produit par un export. |
 | `ZFileSaver` / `ZFileSaveResult` | Sauvegarde cross-plateforme (disque ou téléchargement navigateur). |
+
+### Exporter la liste d'un écran assemblé
+
+```dart
+ZCrudScreen<Consignataire>(
+  title: 'Consignataires',
+  source: source,
+  export: ZExportPolicy(
+    exporters: const <ZListExporter>[ZPdfListExporter()],
+    onExported: (context, fichier) => monPartage(fichier),
+  ),
+)
+```
+
+Le titre de l'écran devient le titre du document — il **comble** un titre
+absent, il n'écrase jamais celui que des `ZPdfExportOptions` déclarent
+(`effectiveOptions` expose la règle). Ce qui part dans le fichier, c'est ce que
+l'écran affiche : lignes réellement listées (ou la seule sélection si elle
+porte), colonnes dérivées du schéma, valeurs formatées — jamais le numéro
+d'ordre, les cases à cocher ni les boutons d'action.
 
 ## Cas limites et invariants {#cas-limites}
 

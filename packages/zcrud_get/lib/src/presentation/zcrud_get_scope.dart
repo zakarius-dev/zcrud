@@ -49,7 +49,7 @@ class ZcrudGetScope extends StatefulWidget {
     required this.child,
     this.locator,
     this.createController,
-    this.acl = const ZAllowAllAcl(),
+    this.acl = const ZDenyAllAcl(),
     this.registerController = true,
     this.registerInGetX = false,
     super.key,
@@ -64,7 +64,12 @@ class ZcrudGetScope extends StatefulWidget {
   /// Fabrique du `ZFormController` possédé par le scope (défaut : vide).
   final ZFormController Function()? createController;
 
-  /// Port d'autorisation exposé au cœur (défaut : [ZAllowAllAcl]).
+  /// Port d'autorisation exposé au cœur (défaut **fail-closed** :
+  /// [ZDenyAllAcl]).
+  ///
+  /// Sans ACL déclarée, aucun geste n'est offert. Pour une ouverture totale
+  /// assumée (développement, prototype), déclarez-la explicitement :
+  /// `acl: const ZAllowAllAcl()`.
   final ZAcl acl;
 
   /// Enregistre le controller dans le locator `get_it` si vrai (défaut).

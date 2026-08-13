@@ -3,6 +3,26 @@
 Toutes les modifications notables de `zcrud_export_pdf` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.93.0 — 2026-08-13
+
+### Ajouté
+
+- **`ZPdfListExporter`** — exporteur de liste au format PDF branché sur le port
+  `ZListExporter` du cœur. Déclaré sur `ZCrudScreen(export:)`, il suffit à
+  offrir l'export PDF d'un écran, sans que l'assemblage connaisse le PDF.
+  Accepte les mêmes `ZPdfExportOptions` (orientation, en-tête riche, répétition
+  de la ligne d'en-tête) ; `effectiveOptions(titre)` expose la règle de
+  composition — le titre de l'écran **comble** un titre absent, il n'écrase
+  jamais un titre déclaré.
+
+### Corrigé
+
+- **Parité écran/fichier : la cellule exportée est la cellule affichée.**
+  `ZExportTable.fromRequest` lisait la valeur **brute** d'une cellule. Les
+  colonnes dont l'affichage dépend de la ligne — montant et sa devise, format
+  composé — étaient donc exportées **sans leur format**, sans erreur ni signe
+  visible. La ligne entière est désormais passée au formateur du cœur.
+
 ## [0.86.0] — Chantier documentation
 
 ### Ajouté

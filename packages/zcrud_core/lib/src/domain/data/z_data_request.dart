@@ -7,6 +7,7 @@
 library;
 
 import 'z_cursor.dart';
+import 'z_search_text.dart';
 
 /// Opérateur de comparaison d'un [ZFilter]. Valeurs en **camelCase** (canonique §5).
 enum ZFilterOp {
@@ -57,6 +58,28 @@ enum ZDeletedScope {
 
   /// Seuls les **soft-deleted** (listing corbeille : clear/restore).
   deletedOnly,
+}
+
+/// **Domaine de colonnes** interrogé par la recherche plein-texte d'une
+/// requête. Valeurs en **camelCase** (canonique §5).
+///
+/// Étend `ZDataRequest` de façon **additive** : le défaut [searchableFields]
+/// reproduit le comportement historique — aucune requête existante n'est
+/// affectée.
+enum ZSearchScope {
+  /// Seuls les champs déclarés `searchable: true` — défaut, comportement
+  /// historique inchangé.
+  ///
+  /// Domaine **choisi** : la recherche ne coûte que ce que le schéma a
+  /// désigné, et ne peut pas exposer un champ technique.
+  searchableFields,
+
+  /// **Toutes** les colonnes du schéma, `searchable` ou non.
+  ///
+  /// Domaine **large** : tout ce qui est déclaré est trouvable. C'est le
+  /// domaine des moteurs de liste historiques, et le réglage à poser quand une
+  /// application constate qu'une valeur affichée n'est pas cherchable.
+  allColumns,
 }
 
 /// Sens de tri d'un [ZSort]. Valeurs en **camelCase** (canonique §5).
@@ -148,6 +171,8 @@ class ZDataRequest {
     this.limit,
     this.startAfter,
     this.deletedScope = ZDeletedScope.aliveOnly,
+    this.searchScope = ZSearchScope.searchableFields,
+    this.searchFolding = ZSearchFolding.diacritics,
   });
 
   /// Prédicats de filtrage (conjonction). Par défaut : aucun.
@@ -170,6 +195,21 @@ class ZDataRequest {
   /// (exclusion des soft-deleted). Champ additif.
   final ZDeletedScope deletedScope;
 
+  /// **Domaine de colonnes** de la recherche [search]. Par défaut :
+  /// [ZSearchScope.searchableFields] — comportement historique **inchangé**
+  /// (seuls les champs déclarés `searchable`). Champ additif.
+  ///
+  /// Servi par le moteur in-memory (`zApplyListRequest`). Un adaptateur qui
+  /// exécute la recherche côté serveur reste libre de ne pas l'honorer : il
+  /// doit alors le dire dans sa documentation, comme il le fait déjà pour
+  /// [search].
+  final ZSearchScope searchScope;
+
+  /// **Profondeur de normalisation** de la recherche [search], appliquée au
+  /// terme comme aux valeurs. Par défaut : [ZSearchFolding.diacritics] —
+  /// comportement historique **inchangé**. Champ additif.
+  final ZSearchFolding searchFolding;
+
   /// Sentinelle interne : distingue « argument omis » de « mis explicitement à
   /// `null` » dans [copyWith].
   static const Object _unset = Object();
@@ -183,6 +223,8 @@ class ZDataRequest {
     Object? limit = _unset,
     Object? startAfter = _unset,
     ZDeletedScope? deletedScope,
+    ZSearchScope? searchScope,
+    ZSearchFolding? searchFolding,
   }) {
     return ZDataRequest(
       filters: filters ?? this.filters,
@@ -192,6 +234,8 @@ class ZDataRequest {
       startAfter:
           identical(startAfter, _unset) ? this.startAfter : startAfter as ZCursor?,
       deletedScope: deletedScope ?? this.deletedScope,
+      searchScope: searchScope ?? this.searchScope,
+      searchFolding: searchFolding ?? this.searchFolding,
     );
   }
 
@@ -204,6 +248,8 @@ class ZDataRequest {
           limit == other.limit &&
           startAfter == other.startAfter &&
           deletedScope == other.deletedScope &&
+          searchScope == other.searchScope &&
+          searchFolding == other.searchFolding &&
           _listEquals(filters, other.filters) &&
           _listEquals(sorts, other.sorts);
 
@@ -216,12 +262,15 @@ class ZDataRequest {
         limit,
         startAfter,
         deletedScope,
+        searchScope,
+        searchFolding,
       );
 
   @override
   String toString() =>
       'ZDataRequest(filters: $filters, sorts: $sorts, search: $search, '
-      'limit: $limit, startAfter: $startAfter, deletedScope: $deletedScope)';
+      'limit: $limit, startAfter: $startAfter, deletedScope: $deletedScope, '
+      'searchScope: $searchScope, searchFolding: $searchFolding)';
 }
 
 /// Égalité **profonde** de deux listes (élément par élément), en pur-Dart.

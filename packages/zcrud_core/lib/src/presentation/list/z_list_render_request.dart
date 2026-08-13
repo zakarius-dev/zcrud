@@ -20,6 +20,7 @@
 /// AD-1 out-degree 0).
 library;
 
+import '../../domain/contracts/z_entity.dart';
 import '../../domain/edition/z_field_spec.dart';
 import 'z_list_column.dart';
 
@@ -33,6 +34,23 @@ class ZListRow {
   /// Construit une ligne. [id] est l'identité opaque (clé stable) ; [cells]
   /// porte les valeurs brutes indexées par `field.name`.
   const ZListRow({required this.id, required this.cells});
+
+  /// Construit la ligne d'une **entité**, en lui attribuant la clé standard
+  /// [keyOf] : l'`id` réel, ou une clé éphémère stable si l'entité n'est pas
+  /// encore persistée.
+  ///
+  /// C'est la fabrique à utiliser dans un projecteur `T → ZListRow` : elle
+  /// évite de redéclarer la convention de clé au moment où l'on construit
+  /// aussi l'index qui servira à `DynamicList.entityFor`.
+  ///
+  /// ```dart
+  /// ZListRow rowOf(Consignee c) {
+  ///   index[ZListRow.keyOf(c)] = c;          // index ← même clé
+  ///   return ZListRow.ofEntity(c, cellsOf(c));
+  /// }
+  /// ```
+  ZListRow.ofEntity(ZEntity entity, Map<String, Object?> cells)
+      : this(id: keyOf(entity), cells: cells);
 
   /// Identité opaque de la ligne (clé stable, non affichée par défaut).
   ///
@@ -59,10 +77,26 @@ class ZListRow {
   /// pas). À n'utiliser que le temps de la persistance : dès que l'entité
   /// reçoit son identité réelle, c'est elle qui devient la clé.
   ///
+  /// La graine [index] est libre : index d'insertion, ou identité mémoire de
+  /// l'instance (`identityHashCode`) — c'est le choix de [keyOf].
+  ///
   /// Centralisé ici pour que chaque projecteur `T → ZListRow` n'invente pas
   /// son propre format ; [isEphemeralKey] reconnaît les clés ainsi fabriquées
   /// (par exemple pour désactiver la corbeille sur une ligne non persistée).
   static String ephemeralKey(int index) => '$_ephemeralKeyPrefix$index';
+
+  /// Clé de ligne **standard** d'une [entity] : son `id` s'il est attribué,
+  /// sinon une clé éphémère dérivée de l'identité mémoire de l'instance.
+  ///
+  /// C'est la convention **publique** de tout l'assemblage zcrud
+  /// (`ZCrudScreen` la suit) : un hôte qui doit reconstruire l'index
+  /// `ZListRow.id → entité` consommé par `DynamicList.entityFor` appelle cette
+  /// fonction au lieu de deviner la formule. La clé d'une entité éphémère est
+  /// stable **tant que l'instance vit** (mêmes lignes sélectionnées d'un
+  /// rebuild à l'autre) ; dès que la persistance attribue un `id`, c'est lui
+  /// qui devient la clé.
+  static String keyOf(ZEntity entity) =>
+      entity.id ?? ephemeralKey(identityHashCode(entity));
 
   /// `true` si [id] est une clé **éphémère** fabriquée par [ephemeralKey]
   /// (préfixe réservé `'__ephemeral_'`).
@@ -101,7 +135,11 @@ class ZListRenderRequest {
   /// Construit une requête de rendu à partir des [columns] **dérivées** et
   /// [rows]. Pour dériver les colonnes depuis un `ZFieldSpec[]`, préférer la
   /// fabrique [ZListRenderRequest.fromSchema].
-  const ZListRenderRequest({required this.columns, required this.rows});
+  const ZListRenderRequest({
+    required this.columns,
+    required this.rows,
+    this.ordinal = const ZListOrdinal(),
+  });
 
   /// Fabrique dérivant les [columns] d'un `ZFieldSpec[]` via `deriveColumns`
   /// (visibilité/format/ordre/largeur), en appliquant la [policy] optionnelle.
@@ -116,7 +154,8 @@ class ZListRenderRequest {
     this.rows, {
     ZColumnPolicy? policy,
     ZListFormat formatting = const ZListFormat(),
-  }) : columns = deriveColumns(fields, policy: policy, formatting: formatting);
+  })  : columns = deriveColumns(fields, policy: policy, formatting: formatting),
+        ordinal = policy?.ordinal ?? const ZListOrdinal();
 
   /// Colonnes **dérivées** du schéma (`ZListColumn` : en-tête non résolu, clé de
   /// mapping `name`, largeur indicative, format pur par type).
@@ -125,24 +164,57 @@ class ZListRenderRequest {
   /// Lignes à afficher (identité opaque + cellules brutes).
   final List<ZListRow> rows;
 
+  /// Déclaration de la colonne de **numéro d'ordre** (cf. [ZListOrdinal]).
+  ///
+  /// Désactivée par défaut. Le numéro n'est volontairement PAS rangé dans
+  /// `ZListRow.cells` : il se dérive de la position d'affichage
+  /// ([ZListOrdinal.textAt]) au moment du rendu, de sorte qu'un tri renumérote
+  /// l'écran au lieu de promener d'anciens numéros.
+  final ZListOrdinal ordinal;
+
+  /// Numéro affiché pour la ligne rendue en position [displayIndex]
+  /// (**0-based**, après tri et filtrage), ou `null` si la colonne d'ordre
+  /// n'est pas demandée.
+  ///
+  /// Raccourci vers [ZListOrdinal.textAt] : c'est ce que le backend appelle au
+  /// moment de peindre la ligne, pour ne pas réinventer sa propre
+  /// numérotation.
+  String? ordinalTextAt(int displayIndex) =>
+      ordinal.enabled ? ordinal.textAt(displayIndex) : null;
+
+  /// Numéros des lignes **telles qu'elles sont affichées**, dans cet ordre.
+  ///
+  /// [displayedRows] est la séquence effectivement peinte — après tri,
+  /// filtrage et pagination. Le résultat est toujours `['1', '2', '3', …]` :
+  /// la numérotation décrit l'écran, elle ne suit **pas** l'ordre d'origine des
+  /// lignes. Un backend qui trie n'a donc rien à recalculer ni à invalider.
+  ///
+  /// Liste vide si la colonne d'ordre n'est pas demandée.
+  List<String> ordinalTextsForDisplay(List<ZListRow> displayedRows) =>
+      ordinal.enabled
+          ? ordinal.textsFor(displayedRows.length)
+          : const <String>[];
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ZListRenderRequest &&
           runtimeType == other.runtimeType &&
           _listEquals(columns, other.columns) &&
-          _listEquals(rows, other.rows);
+          _listEquals(rows, other.rows) &&
+          ordinal == other.ordinal;
 
   @override
   int get hashCode => Object.hash(
         runtimeType,
         Object.hashAll(columns),
         Object.hashAll(rows),
+        ordinal,
       );
 
   @override
-  String toString() =>
-      'ZListRenderRequest(columns: ${columns.length}, rows: ${rows.length})';
+  String toString() => 'ZListRenderRequest(columns: ${columns.length}, '
+      'rows: ${rows.length}, ordinal: $ordinal)';
 }
 
 /// Égalité **profonde** de deux listes (élément par élément), pur-Dart

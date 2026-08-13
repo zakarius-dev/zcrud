@@ -28,7 +28,9 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../domain/ports/z_acl.dart';
 import '../l10n/z_localizations.dart';
+import '../zcrud_scope.dart';
 import 'z_list_tab.dart';
 
 /// Onglets de catégorisation : `TabBar` (N onglets) + `TabBarView` (une liste
@@ -171,6 +173,30 @@ class _ZTabbedListState extends State<ZTabbedList>
     super.dispose();
   }
 
+  /// Builder de page de [tab], **enrichi de sa restriction de droits**.
+  ///
+  /// Sans `ZListTab.acl`, c'est le builder de l'onglet tel quel : rien ne
+  /// s'interpose, l'arbre est identique à celui d'avant. Avec, la page est
+  /// enveloppée d'un scope dont l'ACL est la **conjonction** de celle qui
+  /// englobe les onglets et de celle de l'onglet — les listes construites par
+  /// le builder la lisent alors comme n'importe quelle ACL ambiante.
+  ///
+  /// Le niveau englobant est lu par le scope ambiant, et **retombe sur le
+  /// refus** quand aucun n'est monté : déclarer des droits sur un onglet ne
+  /// crée jamais un droit à partir de rien.
+  WidgetBuilder _pageBuilderFor(ZListTab tab) {
+    final tabAcl = tab.acl;
+    if (tabAcl == null) return tab.builder;
+    return (pageContext) => ZcrudScope.derive(
+          pageContext,
+          acl: ZRestrictedAcl(
+            ZcrudScope.maybeOf(pageContext)?.acl ?? const ZDenyAllAcl(),
+            tabAcl,
+          ),
+          child: Builder(builder: tab.builder),
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -188,10 +214,7 @@ class _ZTabbedListState extends State<ZTabbedList>
                 // Cible tactile ≥ 48 dp (AD-13).
                 height: 48,
                 icon: tab.icon == null ? null : Icon(tab.icon),
-                child: Text(
-                  label(context, tab.labelKey),
-                  textAlign: TextAlign.center,
-                ),
+                child: _ZTabLabel(tab: tab),
               ),
           ],
         ),
@@ -206,12 +229,78 @@ class _ZTabbedListState extends State<ZTabbedList>
                   // du parent — et survit au renommage d'un libellé si une
                   // `pageKey` est fournie.
                   key: ValueKey<String>('zTab_${tab.resolvedPageKey}'),
-                  builder: tab.builder,
+                  builder: _pageBuilderFor(tab),
                 ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Libellé d'un onglet, suivi de sa **pastille de comptage** quand l'onglet en
+/// déclare une (`ZListTab.countOf`).
+///
+/// La pastille est le **seul** sous-arbre abonné au compteur : sa mise à jour
+/// ne rebâtit ni la barre d'onglets ni la page (AD-2). Sans compteur déclaré,
+/// le libellé est rendu tel quel — aucune pastille, aucun abonnement.
+class _ZTabLabel extends StatelessWidget {
+  const _ZTabLabel({required this.tab});
+
+  final ZListTab tab;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Text(
+      label(context, tab.labelKey),
+      textAlign: TextAlign.center,
+    );
+    final counter = tab.countOf;
+    if (counter == null) return text;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Flexible(child: text),
+        const SizedBox(width: 6),
+        ValueListenableBuilder<int>(
+          valueListenable: counter,
+          builder: (context, count, _) => _ZTabCountChip(count: count),
+        ),
+      ],
+    );
+  }
+}
+
+/// Pastille de comptage d'un onglet : nombre lisible, couleurs **dérivées du
+/// `ColorScheme`** (jamais de littéral), rien d'affiché à zéro.
+///
+/// Volontairement minimale et privée : le cœur ne dépend d'aucun paquet d'UI
+/// (AD-1). La pastille réutilisable, avec ses variantes et son a11y complète,
+/// est `ZCountBadge` dans `zcrud_ui_kit` — c'est elle qu'un assemblage doit
+/// employer.
+class _ZTabCountChip extends StatelessWidget {
+  const _ZTabCountChip({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    if (count <= 0) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsetsDirectional.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        style: Theme.of(context)
+            .textTheme
+            .labelSmall
+            ?.copyWith(color: scheme.onSecondaryContainer),
+      ),
     );
   }
 }

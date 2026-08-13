@@ -51,7 +51,9 @@ const _enLabels = <String, String>{
   'selectDate': 'Select a date',
   'selectTime': 'Select a time',
   'selectDateTime': 'Select a date and time',
+  'selectDateRange': 'Select a date range',
   'close': 'Close',
+  'back': 'Back',
   'reset': 'Reset',
   // Croix d'effacement (date non requise).
   'clear': 'Clear',
@@ -117,10 +119,61 @@ const _enLabels = <String, String>{
   'copy': 'Copy',
   'copied': 'Value copied to clipboard',
   'emptyValue': '—',
+  // Assistant multi-étapes (`ZStepperEdition`) — navigation entre étapes.
+  'z.stepper.previous': 'Previous',
+  'z.stepper.next': 'Next',
+  'z.stepper.finish': 'Finish',
+  // Corbeille : bascule vivants ⇄ éléments mis à la corbeille.
+  'trash': 'Trash',
+  // Annonce du COMPTEUR de corbeille, lue par les lecteurs d'écran à la suite
+  // du nombre (« 3 items in trash ») : la pastille ne doit jamais être un
+  // nombre nu, dont l'objet resterait à deviner.
+  'trashCount': 'items in trash',
+  // Fiche de DÉTAIL : le formulaire entier ouvert en consultation (distinct de
+  // `edit`, qui annonce une modification, et de `viewItem`, qui désigne un
+  // élément de sous-liste).
+  'details': 'Details',
+  // Troisième geste de la corbeille : suppression DÉFINITIVE. Libellé et
+  // question distincts de `delete`/`confirmDeleteItem` — la mise à la corbeille
+  // se défait, celle-ci non, et le texte doit le dire.
+  'deleteForever': 'Delete permanently',
+  'confirmDeleteForeverItem':
+      'Delete this item permanently? This cannot be undone.',
+  // Refus d'accès : l'ACL de l'application interdit la consultation.
+  'accessDenied': 'Access denied',
+  'accessDeniedMessage':
+      'You are not allowed to view this content. Contact an administrator if '
+          'you think this is a mistake.',
   // Valeur SÉLECTIONNÉE mais absente des options du moment (cascade).
   // Même règle que `fileRefUnresolved` : une identité non résolue se montre par
   // un libellé, JAMAIS par sa clé technique. La valeur, elle, est conservée.
   'choiceUnresolved': 'Option unavailable',
+  // Actions de LIGNE présentées en menu : nom accessible du déclencheur de
+  // débordement, et motif annoncé quand l'ACL refuse l'action mais que
+  // l'application a choisi de la montrer inerte plutôt que de la masquer.
+  'moreActions': 'More actions',
+  'actionNotAllowed': 'You are not allowed to do this',
+  // Motif générique d'une action montrée INERTE non pas faute de droit, mais
+  // parce qu'elle ne s'applique pas à cette ligne-là (restaurer un élément
+  // vivant, valider une pièce déjà validée).
+  'actionNotApplicable': 'This action does not apply to this item',
+  // Export du listing : entrée d'action, et les deux issues qu'un utilisateur
+  // doit pouvoir distinguer — rien à exporter (la liste affichée est vide) et
+  // export en échec (le format n'a pas pu produire son fichier).
+  'export': 'Export',
+  'exportEmpty': 'Nothing to export',
+  'exportFailed': 'Export failed',
+  // Sélection multiple : compteur d'éléments cochés et bouton « tout
+  // sélectionner » de la barre d'actions de masse. Le compteur suit un nombre
+  // (« 3 selected ») — le mot seul, jamais la phrase.
+  'selectedCount': 'selected',
+  'selectAll': 'Select all',
+  // Compte rendu d'une action de masse : chaque terme suit son nombre
+  // (« 7 succeeded · 2 failed · 1 skipped »). « Skipped » désigne les éléments
+  // que la gouvernance a écartés du lot avant toute écriture.
+  'batchSucceeded': 'succeeded',
+  'batchFailed': 'failed',
+  'batchSkipped': 'skipped',
 };
 
 const _frLabels = <String, String>{
@@ -152,7 +205,9 @@ const _frLabels = <String, String>{
   'selectDate': 'Sélectionner une date',
   'selectTime': 'Sélectionner une heure',
   'selectDateTime': 'Sélectionner une date et une heure',
+  'selectDateRange': 'Sélectionner une période',
   'close': 'Fermer',
+  'back': 'Retour',
   'reset': 'Réinitialiser',
   // Croix d'effacement (date non requise).
   'clear': 'Effacer',
@@ -217,8 +272,43 @@ const _frLabels = <String, String>{
   'copy': 'Copier',
   'copied': 'Valeur copiée dans le presse-papier',
   'emptyValue': '—',
+  // Assistant multi-étapes (`ZStepperEdition`) — navigation entre étapes.
+  'z.stepper.previous': 'Précédent',
+  'z.stepper.next': 'Suivant',
+  'z.stepper.finish': 'Terminer',
+  // Corbeille : bascule vivants ⇄ éléments mis à la corbeille.
+  'trash': 'Corbeille',
+  // Cf. commentaire de la table `en`.
+  'trashCount': 'éléments dans la corbeille',
+  // Cf. commentaire de la table `en`.
+  'details': 'Détails',
+  // Cf. commentaire de la table `en`.
+  'deleteForever': 'Supprimer définitivement',
+  'confirmDeleteForeverItem':
+      'Supprimer définitivement cet élément ? Cette action est irréversible.',
+  // Refus d'accès : l'ACL de l'application interdit la consultation.
+  'accessDenied': 'Accès refusé',
+  'accessDeniedMessage':
+      'Vous n\'êtes pas autorisé à consulter ce contenu. Contactez un '
+          'administrateur si vous pensez qu\'il s\'agit d\'une erreur.',
   // Cf. commentaire de la table `en`.
   'choiceUnresolved': 'Option indisponible',
+  // Cf. commentaires de la table `en`.
+  'moreActions': 'Plus d\'actions',
+  'actionNotAllowed': 'Vous n\'êtes pas autorisé à effectuer cette action',
+  // Cf. commentaire de la table `en`.
+  'actionNotApplicable': 'Cette action ne s\'applique pas à cet élément',
+  // Cf. commentaires de la table `en`.
+  'export': 'Exporter',
+  'exportEmpty': 'Rien à exporter',
+  'exportFailed': 'L\'export a échoué',
+  // Cf. commentaires de la table `en`.
+  'selectedCount': 'sélectionné(s)',
+  'selectAll': 'Tout sélectionner',
+  // Cf. commentaires de la table `en`.
+  'batchSucceeded': 'réussi(s)',
+  'batchFailed': 'en échec',
+  'batchSkipped': 'écarté(s)',
 };
 
 /// Tables de libellés génériques par `languageCode` (baseline `en`/`fr`).

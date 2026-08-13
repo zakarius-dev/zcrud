@@ -26,9 +26,8 @@ void main() {
     );
     expect(find.text('Alpha'), findsOneWidget);
 
-    // Soft-delete d'Alpha (première ligne) : quitte les vivants.
-    await tester.tap(find.byIcon(Icons.delete_outline).first);
-    await tester.pumpAndSettle();
+    // Soft-delete d'Alpha (première ligne), CONFIRMÉ : quitte les vivants.
+    await softDeleteFirstRow(tester);
     expect(find.text('Alpha'), findsNothing);
     expect(find.text('Beta'), findsOneWidget);
 
@@ -69,19 +68,17 @@ void main() {
         registry: buildItemRegistry(),
       ),
     );
-    // Met les DEUX éléments à la corbeille.
-    await tester.tap(find.byIcon(Icons.delete_outline).first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.delete_outline).first);
-    await tester.pumpAndSettle();
+    // Met les DEUX éléments à la corbeille (chaque geste est confirmé).
+    await softDeleteFirstRow(tester);
+    await softDeleteFirstRow(tester);
     await tester.tap(find.byKey(const ValueKey('zCrudTrashToggle')));
     await tester.pumpAndSettle();
     expect(find.text('Alpha'), findsOneWidget);
     expect(find.text('Beta'), findsOneWidget);
 
-    // Recherche dans la corbeille : filtre in-scope (schema `searchable`).
-    await tester.enterText(find.byKey(const ValueKey('zCrudSearch')), 'bet');
-    await tester.pumpAndSettle();
+    // Recherche dans la corbeille, via l'app-bar RECHERCHABLE du socle
+    // (`ZSearchableAppBar`) : filtre in-scope (schema `searchable`).
+    await searchInAppBar(tester, 'bet');
     expect(find.text('Beta'), findsOneWidget);
     expect(find.text('Alpha'), findsNothing);
     repo.dispose();

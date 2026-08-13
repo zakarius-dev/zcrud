@@ -53,7 +53,10 @@ class _TplHostState extends State<_TplHost> {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        home: Scaffold(
+        // ACL permissive DÉCLARÉE : le socle refuse par défaut.
+        home: ZcrudScope(
+          acl: const ZAllowAllAcl(),
+          child: Scaffold(
           body: SingleChildScrollView(
             child: ZSubListFieldWidget(
               field: ZFieldSpec(
@@ -72,6 +75,7 @@ class _TplHostState extends State<_TplHost> {
               initialValue: null,
               onChanged: widget.onChanged,
             ),
+          ),
           ),
         ),
       );

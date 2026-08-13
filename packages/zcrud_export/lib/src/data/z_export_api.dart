@@ -14,12 +14,11 @@ abstract final class ZExportApi {
   /// Version de l'API publique (marqueur ; distincte de la version du package).
   ///
   /// Suit les évolutions **additives** de la surface publique (dernier ajout :
-  /// le gabarit PDF flashcards `ZFlashcardPdfTemplate`, le port pur
-  /// `ZLatexRasterizer`, `ZAnswerVisibility`, `ZFlashcardPdfInput`/
-  /// `ZFlashcardPdfCard`/`ZFlashcardPdfChoice`/`ZFlashcardPdfLabels` et
-  /// `ZExportedFile`). Le **nom** du champ reste `version` (consommé par
-  /// `zcrud_flashcard`) — jamais renommé, jamais de retrait.
-  static const String version = '0.2.0';
+  /// les exporteurs de liste `ZCsvListExporter`/`ZXlsxListExporter`, et
+  /// `ZPdfListExporter` côté `zcrud_export_pdf`, qui réalisent le port
+  /// `ZListExporter` du cœur). Le **nom** du champ reste `version` (consommé
+  /// par `zcrud_flashcard`) — jamais renommé, jamais de retrait.
+  static const String version = '0.3.0';
 
   /// Rattache l'arête AD-1 `zcrud_export -> zcrud_core`.
   static const String coreApiVersion = ZCoreApi.version;

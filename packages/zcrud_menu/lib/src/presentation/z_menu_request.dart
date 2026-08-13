@@ -32,6 +32,44 @@ typedef ZMenuContentBuilder = Widget Function(
   void Function(ZMenuEntry entry) select,
 );
 
+/// Fabrique la voie de sélection **UNIQUE** d'une liste d'entrées déjà
+/// filtrée — l'unique site d'invocation de l'effet, pour tous les renderers et
+/// pour tous les gestes (déclencheur visible comme menu contextuel).
+///
+/// Un renderer (y compris un adaptateur tiers) ne peut ni exécuter une entrée
+/// désactivée, ni imposer l'effet d'une entrée qu'il aurait fabriquée
+/// lui-même : l'entrée reçue est **résolue** dans la liste courante, puis c'est
+/// l'effet de CELLE-LÀ qui s'exécute.
+///
+/// Pourquoi pas un simple `visible.contains(entry)` : `ZMenuEntry.==` compare
+/// `onSelected`, donc une IDENTITÉ DE CLOSURE. Or une surface flottante capture
+/// la valeur de l'entrée à l'OUVERTURE et lit le callback de sélection à la
+/// SÉLECTION ; tout hôte déclarant `onSelected: () => faire(x)` — le patron
+/// normal — en refabrique une à chaque rebuild. Un simple rebuild pendant que
+/// le menu est ouvert rendrait donc l'entrée « non contenue » et AVALERAIT la
+/// sélection SANS AUCUNE TRACE : le no-op silencieux que l'invariant AD-4
+/// proscrit, entré par la porte de derrière du garde-fou censé le prévenir.
+void Function(ZMenuEntry entry) zMenuSelectFor(List<ZMenuEntry> visible) =>
+    (ZMenuEntry recue) => _resoudre(visible, recue)?.onSelected?.call();
+
+/// Retrouve dans [visible] l'entrée que désigne [recue], ou `null`.
+///
+/// Deux passes, dans cet ordre :
+/// 1. **identité** — le cas courant (aucun rebuild n'est survenu) ;
+/// 2. **`id` + `label`** — l'identité DÉCLARÉE de l'entrée, stable au rebuild
+///    là où la closure ne l'est pas. `id` seul ne suffirait pas : la liste des
+///    identités est OUVERTE et un hôte peut réutiliser `'custom'` sur
+///    plusieurs entrées.
+ZMenuEntry? _resoudre(List<ZMenuEntry> visible, ZMenuEntry recue) {
+  for (final e in visible) {
+    if (identical(e, recue)) return e;
+  }
+  for (final e in visible) {
+    if (e.id == recue.id && e.label == recue.label) return e;
+  }
+  return null;
+}
+
 /// Requête neutre transmise à un [ZMenuRenderer].
 @immutable
 class ZMenuRequest {

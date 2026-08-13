@@ -151,8 +151,9 @@ export 'src/presentation/l10n/z_localizations.dart';
 // noResults/error/ready, accessibles), modèles neutres
 // `ZListRenderRequest`/`ZListRow`.
 // Actions de LOT génériques (invariant AD-10) : modèle déclaré en
-// données `ZBatchAction`/`ZBatchActionKind` (delete/move/custom ; `onSelected
-// == null` ⇒ action absente), barre neutre `ZBatchActionBar` (tranche
+// données `ZBatchAction`/`ZBatchActionKind` (delete/restore/move/custom ;
+// `onSelected == null` ⇒ action absente ; `enabled: false` ⇒ action présente
+// mais INERTE, motif annoncé), barre neutre `ZBatchActionBar` (tranche
 // `selectedIds`, badge compteur, cible ≥ 48 dp, thème injecté) ; rapport au
 // grain de la racine `ZBatchReport`/`ZBatchDeletionReport` (racines réussies +
 // `Map<rootId, ZFailure>`). Voies `batchDelete`/`batchMove`/`applyCommonField`
@@ -176,6 +177,7 @@ export 'src/presentation/list/z_list_controller.dart';
 // `ZListSelectionController` (+ `ZListSelectionMode`) keyée par `id` stable ;
 // pont neutre `ZListInteraction` (hors `ZListRenderRequest` pour préserver
 // l'égalité de valeur). Aucun Syncfusion, backend ni gestionnaire d'état.
+export 'src/presentation/list/z_list_exporter.dart';
 export 'src/presentation/list/z_list_interaction.dart';
 export 'src/presentation/list/z_list_layout.dart';
 export 'src/presentation/list/z_list_query.dart';
@@ -185,6 +187,12 @@ export 'src/presentation/list/z_list_selection.dart';
 export 'src/presentation/list/z_list_tab.dart';
 export 'src/presentation/list/z_list_view_state.dart';
 export 'src/presentation/list/z_row_action.dart';
+// Gouvernance PAR LIGNE (invariants AD-13/AD-16) : `ZRowPermissions`
+// (vocabulaire de RESTRICTION — aucune autorisation n'y est exprimable),
+// résolveur unique `ZRowAclResolver<T>` et voie de résolution partagée
+// `zResolveRowActions`. La composition avec l'ACL de l'application est une
+// INTERSECTION : une ligne retire un droit, jamais elle n'en ouvre un.
+export 'src/presentation/list/z_row_governance.dart';
 
 // Composition de listes (invariants AD-2/AD-8/AD-15/AD-16) : `ZSubListScreen<T>`
 // (sous-liste d'entités RELIÉES filtrée par la relation neutre
@@ -198,6 +206,9 @@ export 'src/presentation/list/z_row_action.dart';
 // backend en dépendance directe.
 export 'src/presentation/list/z_sub_list_screen.dart';
 export 'src/presentation/list/z_tabbed_list.dart';
+// Politique de corbeille : quels gestes (mettre / restaurer / purger) une
+// liste offre, en conjonction avec l'ACL et les capacités de la source.
+export 'src/presentation/list/z_trash_policy.dart';
 // Port de rendu réordonnable : abstraction pure au cœur, implémentations hors
 // cœur (repli zéro-dépendance dans `zcrud_responsive`, ou impl fournie par un
 // satellite ou par l'hôte). Aucun type tiers en surface.
@@ -213,6 +224,7 @@ export 'src/presentation/theme/z_foreground_override.dart';
 export 'src/presentation/theme/z_gradient_resolver.dart';
 export 'src/presentation/theme/z_inverted_surface.dart';
 export 'src/presentation/theme/z_theme.dart';
+export 'src/presentation/z_crud_titles.dart';
 export 'src/presentation/z_dependency_resolver.dart';
 export 'src/presentation/z_field_listenable_builder.dart';
 export 'src/presentation/z_form_controller.dart';

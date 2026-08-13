@@ -98,6 +98,14 @@ Widget page() => const ZPageScaffold(
   [AD-4](../../docs/site/concepts/invariants.md#ad-4)) ; [ZScaffoldMessengerToaster] en est l'implémentation
   par défaut pur-Flutter, substituable par [ZToasterScope] sans que ce
   paquet importe de dépendance tierce.
+- **Une pastille de comptage dit *combien*, pas seulement « il y en a »** —
+  [ZCountBadge] traite les trois pièges que chaque recopie du motif retrouve :
+  le nombre laissé **muet** (un lecteur d'écran lit « 3 », sans dire trois
+  quoi — d'où `semanticsLabel`), la cible tactile **rétrécie** par la pastille
+  collée sur une icône (48 dp imposés dès qu'elle est cliquable), et la couleur
+  **écrite en dur** qui devient illisible en mode sombre (tout vient du
+  `ColorScheme`). Elle ne compte jamais elle-même : elle affiche le nombre
+  qu'on lui donne.
 - **Page-shell : deux formes pour une même valeur** — [ZPageScaffold]
   construit son propre `Scaffold` (slots exposés en pass-through) ;
   [ZPageShellBody] rend la même app-bar morphante repliable + onglets
@@ -121,6 +129,8 @@ Widget page() => const ZPageScaffold(
 | `ZScaffoldMessengerToaster` | Implémentation par défaut pur-Flutter du port `ZToaster`. |
 | **Garde de saisie** | |
 | `ZDiscardChangesGuard` | `PopScope` interceptant la sortie tant qu'un `ValueListenable<bool>` *dirty* est vrai. |
+| **Comptage** | |
+| `ZCountBadge` | Pastille de comptage : seule ou posée sur un contenu, nombre **annoncé**, cible ≥ 48 dp si cliquable, couleurs dérivées du `ColorScheme`, placement directionnel. |
 | **Index et transitions** | |
 | `ZAlphabetIndexBar` / `kZDefaultAlphabet` | Index vertical A→Z cliquable, jeu de lettres injectable. |
 | `ZRouteTransition` / `zSlideBeginOffset` / `zPageRoute` / `ZPageTransitionsBuilder` | Transitions de route RTL-aware, découplées de tout routeur. |

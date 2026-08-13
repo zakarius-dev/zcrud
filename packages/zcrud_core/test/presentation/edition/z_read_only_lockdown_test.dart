@@ -34,6 +34,9 @@ Widget _form({
 }) =>
     MaterialApp(
       home: ZcrudScope(
+        // ACL permissive DÉCLARÉE : le socle refuse par défaut, et ce fichier
+        // mesure le VERROU de la lecture seule, pas celui de l'ACL.
+        acl: const ZAllowAllAcl(),
         filePicker: picker,
         appFileResolver: resolver,
         child: Scaffold(

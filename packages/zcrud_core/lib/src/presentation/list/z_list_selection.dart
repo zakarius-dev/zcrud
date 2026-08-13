@@ -33,6 +33,40 @@ enum ZListSelectionMode {
   multiple,
 }
 
+/// **Comment la sélection s'ouvre** — à distinguer de [ZListSelectionMode], qui
+/// dit seulement combien d'éléments elle admet.
+///
+/// Une liste de consultation où chaque ligne porte en permanence une case à
+/// cocher paie ce geste rare par un encombrement constant. Le motif tactile
+/// usuel ouvre au contraire la sélection **à l'appui long**, puis la referme
+/// quand elle se vide.
+enum ZListSelectionActivation {
+  /// **Défaut, comportement inchangé** : la case est rendue dès qu'un
+  /// contrôleur de sélection est fourni.
+  always,
+
+  /// La sélection s'ouvre à l'**appui long** sur une ligne, et se referme
+  /// d'elle-même quand plus rien n'est sélectionné : les cases n'apparaissent
+  /// qu'une fois la sélection non vide.
+  ///
+  /// Aucun état supplémentaire n'est introduit — « la sélection est ouverte »
+  /// **est** « la sélection n'est pas vide ». Un mode conservé à part se
+  /// désynchroniserait du contenu au premier vidage venu d'ailleurs (une action
+  /// de lot, une bascule de vue).
+  ///
+  /// a11y (AD-13) : l'appui long est exposé comme action sémantique par le
+  /// détecteur de gestes — un lecteur d'écran l'annonce et peut le déclencher,
+  /// la sélection n'est donc pas réservée au doigt.
+  ///
+  /// ⚠️ **Un seul geste, un seul propriétaire** : l'appui long est aussi
+  /// réclamé par le menu contextuel d'une ligne et par la copie de cellule d'un
+  /// rendu de grille. L'arbitrage se **déclare** chez l'assembleur
+  /// (`ZRowLongPressOwner` de `zcrud_screen`) ; le cœur, lui, n'expose que le
+  /// geste demandé. Le chemin `dataGrid` n'est pas concerné : les gestes de
+  /// ligne y appartiennent au backend de grille.
+  longPress,
+}
+
 /// Contrôleur de **sélection multiple** neutre, exposant une tranche
 /// `ValueListenable<Set<String>>` d'`id` de ligne stables.
 ///

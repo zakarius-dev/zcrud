@@ -150,6 +150,7 @@ export 'src/domain/z_toast_severity.dart';
 export 'src/domain/z_toaster.dart';
 export 'src/presentation/z_alphabet_index_bar.dart';
 export 'src/presentation/z_confirm_dialog.dart';
+export 'src/presentation/z_count_badge.dart';
 export 'src/presentation/z_discard_changes_guard.dart';
 export 'src/presentation/z_page_shell.dart';
 export 'src/presentation/z_scaffold_messenger_toaster.dart';

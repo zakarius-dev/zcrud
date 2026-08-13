@@ -48,14 +48,14 @@ void main() {
     await tester.pumpAndSettle();
 
     // Semantics de bouton labellés Précédent/Suivant + indicateur d'étape.
-    expect(find.bySemanticsLabel('Précédent'), findsOneWidget);
-    expect(find.bySemanticsLabel('Suivant'), findsOneWidget);
+    expect(find.bySemanticsLabel('Previous'), findsOneWidget);
+    expect(find.bySemanticsLabel('Next'), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp(r'Étape 1 sur 2')), findsOneWidget);
 
     // Cibles tactiles ≥ 48 dp (contrainte de hauteur minimale).
-    final nextSize = tester.getSize(find.widgetWithText(FilledButton, 'Suivant'));
+    final nextSize = tester.getSize(find.widgetWithText(FilledButton, 'Next'));
     final prevSize =
-        tester.getSize(find.widgetWithText(OutlinedButton, 'Précédent'));
+        tester.getSize(find.widgetWithText(OutlinedButton, 'Previous'));
     expect(nextSize.height, greaterThanOrEqualTo(48));
     expect(prevSize.height, greaterThanOrEqualTo(48));
   });
@@ -70,16 +70,16 @@ void main() {
     // Étape 0 : Précédent désactivé (onPressed == null).
     expect(
         tester.widget<OutlinedButton>(
-            find.widgetWithText(OutlinedButton, 'Précédent')).onPressed,
+            find.widgetWithText(OutlinedButton, 'Previous')).onPressed,
         isNull);
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Suivant'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Next'));
     await tester.pumpAndSettle();
 
     // Étape 1 : Précédent activé.
     expect(
         tester.widget<OutlinedButton>(
-            find.widgetWithText(OutlinedButton, 'Précédent')).onPressed,
+            find.widgetWithText(OutlinedButton, 'Previous')).onPressed,
         isNotNull);
   });
 
@@ -93,9 +93,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     final prevLtr =
-        tester.getCenter(find.widgetWithText(OutlinedButton, 'Précédent')).dx;
+        tester.getCenter(find.widgetWithText(OutlinedButton, 'Previous')).dx;
     final nextLtr =
-        tester.getCenter(find.widgetWithText(FilledButton, 'Suivant')).dx;
+        tester.getCenter(find.widgetWithText(FilledButton, 'Next')).dx;
     expect(prevLtr < nextLtr, isTrue, reason: 'LTR : Précédent avant Suivant');
 
     // RTL : l'ordre visuel s'inverse (Row respecte la Directionality).
@@ -103,9 +103,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     final prevRtl =
-        tester.getCenter(find.widgetWithText(OutlinedButton, 'Précédent')).dx;
+        tester.getCenter(find.widgetWithText(OutlinedButton, 'Previous')).dx;
     final nextRtl =
-        tester.getCenter(find.widgetWithText(FilledButton, 'Suivant')).dx;
+        tester.getCenter(find.widgetWithText(FilledButton, 'Next')).dx;
     expect(prevRtl > nextRtl, isTrue, reason: 'RTL : Précédent après Suivant');
   });
 }

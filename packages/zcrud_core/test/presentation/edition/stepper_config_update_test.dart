@@ -168,7 +168,7 @@ void main() {
       expect(_editable('a'), findsOneWidget);
       expect(_editable('c'), findsNothing);
       // La pagination est bien revenue (barre de navigation).
-      expect(find.text('Suivant'), findsOneWidget);
+      expect(find.text('Next'), findsOneWidget);
     });
 
     testWidgets('les valeurs SAISIES survivent aux deux bascules',
@@ -348,7 +348,7 @@ void main() {
       final int fieldBuilds = h.builds['a'] ?? 0;
 
       // Gate strict : « Suivant » est refusé sur un champ requis vide.
-      await tester.tap(find.text('Suivant'));
+      await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
       expect(_editable('b'), findsNothing);
 
@@ -360,7 +360,7 @@ void main() {
       final int afterReveal = h.builds['a']!;
       expect(afterReveal, greaterThanOrEqualTo(fieldBuilds));
 
-      await tester.tap(find.text('Suivant'));
+      await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
       expect(_editable('b'), findsOneWidget);
     });
@@ -390,7 +390,7 @@ void main() {
       final _Host h = _Host();
       addTearDown(h.dispose);
       await tester.pumpWidget(h.build());
-      expect(find.text('Suivant'), findsOneWidget);
+      expect(find.text('Next'), findsOneWidget);
 
       // `allowStepTap`/`validateOnNext` restent `true` : incohérents avec un
       // mode sans étape courante ⇒ ignorés, jamais une exception.
@@ -398,8 +398,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Suivant'), findsNothing);
-      expect(find.text('Précédent'), findsNothing);
+      expect(find.text('Next'), findsNothing);
+      expect(find.text('Previous'), findsNothing);
       expect(_editable('c'), findsOneWidget);
     });
   });

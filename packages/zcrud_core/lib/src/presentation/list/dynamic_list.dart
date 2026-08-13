@@ -23,6 +23,7 @@
 /// de ce fichier (voir `ZSubListScreen`/`ZTabbedList`).
 library;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 import '../../domain/contracts/z_entity.dart';
@@ -40,6 +41,7 @@ import 'z_list_renderer.dart';
 import 'z_list_selection.dart';
 import 'z_list_view_state.dart';
 import 'z_row_action.dart';
+import 'z_row_governance.dart';
 
 /// Widget public affichant une liste, piloté par un [ZListViewState] et une
 /// variante de vue [ZListLayout].
@@ -65,8 +67,10 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
     this.renderer,
     this.columnPolicy,
     this.selection,
+    this.selectionActivation = ZListSelectionActivation.always,
     this.rowActions,
     this.entityFor,
+    this.rowAcl,
     this.actionAclMode = ZActionAclMode.hide,
     this.onSelectionChanged,
     this.collectionId,
@@ -83,8 +87,10 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
     this.renderer,
     this.columnPolicy,
     this.selection,
+    this.selectionActivation = ZListSelectionActivation.always,
     this.rowActions,
     this.entityFor,
+    this.rowAcl,
     this.actionAclMode = ZActionAclMode.hide,
     this.onSelectionChanged,
     this.collectionId,
@@ -112,17 +118,54 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
   /// par `id`), jamais dans le renderer — immunisé contre un rebuild/scroll.
   final ZListSelectionController? selection;
 
+  /// **Comment la sélection s'ouvre** (défaut
+  /// [ZListSelectionActivation.always], comportement inchangé).
+  ///
+  /// [ZListSelectionActivation.longPress] n'affiche les cases qu'une fois la
+  /// sélection non vide, et fait de l'appui long sur une ligne le geste qui
+  /// l'ouvre. Sans effet si [selection] est `null`, et sans effet sur le
+  /// chemin `dataGrid` (les gestes de ligne y appartiennent au backend de
+  /// grille) : le réglage porte sur les vues rendues **dans le cœur**
+  /// (`builder`, `grid`).
+  final ZListSelectionActivation selectionActivation;
+
   /// Actions de ligne **génériques**, filtrées par `ZAcl`. `null` = aucune
   /// action. **Requiert** [entityFor] (le handler et l'ACL row-level ont besoin
   /// de l'entité `T`).
   final List<ZRowAction<T>>? rowActions;
 
-  /// Résolveur `ZListRow → T?` fournissant l'entité d'une ligne (source du
-  /// filtrage ACL row-level et du binding `onInvoke`). Requis si [rowActions] est
-  /// non nul. Une ligne dont l'entité est `null` voit ses actions **omises**.
+  /// Résolveur `ZListRow → T?` fournissant l'entité d'une ligne.
+  ///
+  /// **Une seule déclaration, trois usages** : le filtrage ACL row-level, le
+  /// binding `onInvoke` des actions de ligne, et le rendu des **tuiles
+  /// typées** (`ZEntityTileBuilder`, cf. `ZListLayout.withEntityTiles`). Requis
+  /// si [rowActions] est non nul, et si le [layout] porte une tuile d'entité.
+  ///
+  /// Une ligne dont l'entité est `null` voit ses actions **omises** et sa
+  /// tuile retomber sur le builder de ligne du layout (s'il en porte un).
+  ///
+  /// L'index attendu est keyé par `ZListRow.id` ; pour produire cette clé
+  /// depuis une entité — `id` réel, ou clé éphémère si l'entité n'est pas
+  /// encore persistée — utiliser `ZListRow.keyOf(entity)` plutôt que de
+  /// réinventer la convention (`entityFor: (row) => index[row.id]`).
   final T? Function(ZListRow row)? entityFor;
 
+  /// Gouvernance **par ligne** : restrictions propres à chaque entité, en
+  /// **intersection** avec l'ACL ambiante (cf. [ZRowAclResolver]).
+  ///
+  /// `null` (défaut) = aucune restriction de ligne, comportement inchangé. Un
+  /// résolveur ne peut que **retirer** un droit : il n'existe aucune manière
+  /// d'y rouvrir un geste que l'ACL refuse.
+  final ZRowAclResolver<T>? rowAcl;
+
   /// Mode de filtrage ACL des actions (défaut `hide`, cf. [ZActionAclMode]).
+  ///
+  /// L'ACL consultée est celle du `ZcrudScope` ambiant. **En son absence, le
+  /// repli est refusant** (`ZDenyAllAcl`) : aucune action portant une
+  /// `requiredPermission` n'est offerte. Déclarez votre ACL —
+  /// `ZcrudScope(acl: MonAcl())` — ou, en développement,
+  /// `ZcrudScope(acl: const ZAllowAllAcl())`. Les actions sans
+  /// `requiredPermission` (custom) restent toujours offertes.
   final ZActionAclMode actionAclMode;
 
   /// Callback optionnel notifié à chaque changement de sélection (ensemble d'`id`).
@@ -151,9 +194,19 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
     };
   }
 
-  /// Rend l'état `ready` : dérive les colonnes puis dispatch sur [layout]. En
-  /// présence d'une sélection, écoute sa tranche `selectedIds` (rebuild ciblé,
-  /// AD-2) et reconstruit l'interaction ; sinon rendu direct.
+  /// Rend l'état `ready` : dérive les colonnes puis dispatch sur [layout].
+  ///
+  /// **Où la tranche de sélection est écoutée dépend de qui peint** (AD-2) :
+  ///
+  /// * vues rendues **dans le cœur** (`builder`, `grid`) — l'abonnement descend
+  ///   jusqu'à la **case** de chaque ligne. Cocher une case ne reconstruit donc
+  ///   que des cases : la tuile d'une ligne ne dépend pas de l'ensemble
+  ///   sélectionné, il n'y a aucune raison de la refaire. Mesuré avant ce
+  ///   partage : un `toggle` reconstruisait **toutes** les tuiles visibles ;
+  /// * chemin `dataGrid` — le backend reçoit un `ZListInteraction` **complet**
+  ///   (la sélection y est une donnée du modèle de rendu, pas un widget que
+  ///   l'on pourrait isoler) : l'abonnement reste au niveau de la liste, et la
+  ///   granularité fine relève du backend lui-même.
   Widget _buildReady(BuildContext context, List<ZListRow> rows) {
     final request = ZListRenderRequest.fromSchema(
       fields,
@@ -162,7 +215,7 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
       formatting: _formattingOf(context),
     );
     if (!_interactive) {
-      return _dispatch(context, request, null, const <String>{});
+      return _dispatch(context, request, null, null);
     }
     final sel = selection;
     if (sel == null) {
@@ -171,7 +224,15 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
         context,
         request,
         _buildInteraction(context, const <String>{}),
-        const <String>{},
+        null,
+      );
+    }
+    if (layout is! ZListDataGridLayout) {
+      return _dispatch(
+        context,
+        request,
+        _buildInteraction(context, sel.selectedIds.value),
+        sel.selectedIds,
       );
     }
     return ValueListenableBuilder<Set<String>>(
@@ -180,7 +241,7 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
         context,
         request,
         _buildInteraction(context, selectedIds),
-        selectedIds,
+        sel.selectedIds,
       ),
     );
   }
@@ -199,11 +260,7 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
   /// AD-2 : aucune allocation coûteuse (une `String` déjà en table + deux
   /// références) ; l'objet a une égalité de **valeur**, donc deux builds
   /// successifs produisent des requêtes égales et ne font rien reconstruire.
-  ZListFormat _formattingOf(BuildContext context) => ZListFormat(
-        orphanChoiceLabel: zOrphanChoiceLabel(context),
-        dateFormatter: ZcrudScope.maybeOf(context)?.dateDisplayFormatter,
-        localeTag: Localizations.maybeLocaleOf(context)?.toLanguageTag(),
-      );
+  ZListFormat _formattingOf(BuildContext context) => zListFormatOf(context);
 
   /// Construit le pont d'interaction **neutre** consommé par le renderer.
   ZListInteraction _buildInteraction(
@@ -237,33 +294,70 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
     if (actions == null) return const <ZResolvedRowAction>[];
     final entity = entityFor?.call(row);
     if (entity == null) return const <ZResolvedRowAction>[];
-    final ZAcl acl = ZcrudScope.maybeOf(context)?.acl ?? const ZAllowAllAcl();
-    final resolved = <ZResolvedRowAction>[];
-    for (final action in actions) {
-      final permission = action.requiredPermission;
-      final allowed = permission == null ||
-          acl.can(permission, target: entity, collectionId: collectionId);
-      if (!allowed && actionAclMode == ZActionAclMode.hide) continue;
-      resolved.add(action.resolve(context, entity, enabled: allowed));
-    }
-    return resolved;
+    // Refus par défaut (fail-closed) : sans `ZcrudScope` ambiant, aucune
+    // action de ligne gouvernée par une permission n'est offerte. Une
+    // application déclare son ACL — ou, en développement, déclare
+    // explicitement `ZcrudScope(acl: const ZAllowAllAcl())`.
+    final ZAcl acl = ZcrudScope.maybeOf(context)?.acl ?? const ZDenyAllAcl();
+    return zResolveRowActions<T>(
+      context,
+      actions: actions,
+      entity: entity,
+      acl: acl,
+      mode: actionAclMode,
+      rowAcl: rowAcl,
+      collectionId: collectionId,
+    );
+  }
+
+  /// Résout la tuile effective d'un layout à tuiles : la tuile **typée**
+  /// ([entityBuilder]) l'emporte dès que [entityFor] rend l'entité de la
+  /// ligne ; sinon on retombe sur la tuile de ligne ([rowBuilder]) ; sinon la
+  /// tuile est vide (aucun builder déclaré — cas d'un layout que l'application
+  /// destine à un assembleur, cf. `ZListLayout.withEntityTiles`).
+  ///
+  /// La résolution est faite **ici**, une fois par rendu de ligne, pour que le
+  /// seam `ZListRow → T?` déjà déclaré pour les actions de ligne serve aussi
+  /// au rendu des cartes : l'application ne redéclare jamais son index.
+  ///
+  /// Ni le résolveur ni les builders n'entrent dans la `ZListRenderRequest`
+  /// (value object à égalité de valeur) : ce sont des **closures**, dont
+  /// l'identité change à chaque build. Les y faire entrer casserait la
+  /// mémoïsation du rendu — même raison que l'exclusion de
+  /// `ZFieldSpec.derivedFrom`/`choicesResolver` de `==`/`hashCode`.
+  ZRowTileBuilder _tileBuilderOf(
+    ZRowTileBuilder? rowBuilder,
+    ZEntityTileBuilder<ZEntity>? entityBuilder,
+  ) {
+    return (BuildContext context, ZListRow row, List<ZListColumn> columns) {
+      if (entityBuilder != null) {
+        final entity = entityFor?.call(row);
+        if (entity != null) return entityBuilder(context, entity, columns);
+      }
+      if (rowBuilder != null) return rowBuilder(context, row, columns);
+      return const SizedBox.shrink();
+    };
   }
 
   /// Dispatch sur la variante de vue en propageant l'[interaction] neutre.
+  ///
+  /// [selectedIds] est la **tranche** de sélection elle-même (jamais sa valeur
+  /// figée) : les vues rendues dans le cœur s'y abonnent au grain de la ligne.
   Widget _dispatch(
     BuildContext context,
     ZListRenderRequest request,
     ZListInteraction? interaction,
-    Set<String> selectedIds,
+    ValueListenable<Set<String>>? selectedIds,
   ) {
     return switch (layout) {
       ZListDataGridLayout() =>
         _renderViaBackend(context, request, interaction),
-      ZListBuilderLayout(:final itemBuilder) => _interactive
+      final ZListBuilderLayout list => _interactive
           ? _ZListInteractiveBuilderView(
               request: request,
-              itemBuilder: itemBuilder,
+              itemBuilder: _tileBuilderOf(list.itemBuilder, list.entityBuilder),
               mode: selection?.mode ?? ZListSelectionMode.none,
+              activation: selectionActivation,
               selectedIds: selectedIds,
               onToggle: selection == null
                   ? null
@@ -273,11 +367,16 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
                     },
               actionsFor: interaction?.actionsFor,
             )
-          : _ZListBuilderView(request: request, itemBuilder: itemBuilder),
+          : _ZListBuilderView(
+              request: request,
+              itemBuilder: _tileBuilderOf(list.itemBuilder, list.entityBuilder),
+            ),
       final ZListGridLayout grid => _ZListGridView(
           request: request,
           layout: grid,
+          tileBuilder: _tileBuilderOf(grid.itemBuilder, grid.entityBuilder),
           mode: selection?.mode ?? ZListSelectionMode.none,
+          activation: selectionActivation,
           selectedIds: selectedIds,
           onToggle: selection == null
               ? null
@@ -440,6 +539,7 @@ class _ZListInteractiveBuilderView extends StatelessWidget {
     required this.request,
     required this.itemBuilder,
     required this.mode,
+    required this.activation,
     required this.selectedIds,
     required this.onToggle,
     required this.actionsFor,
@@ -448,7 +548,8 @@ class _ZListInteractiveBuilderView extends StatelessWidget {
   final ZListRenderRequest request;
   final Widget Function(BuildContext, ZListRow, List<ZListColumn>) itemBuilder;
   final ZListSelectionMode mode;
-  final Set<String> selectedIds;
+  final ZListSelectionActivation activation;
+  final ValueListenable<Set<String>>? selectedIds;
   final void Function(String id)? onToggle;
   final List<ZResolvedRowAction> Function(ZListRow row)? actionsFor;
 
@@ -456,24 +557,33 @@ class _ZListInteractiveBuilderView extends StatelessWidget {
   Widget build(BuildContext context) {
     final rows = request.rows;
     final columns = request.columns;
+    final selected = selectedIds;
     return ListView.builder(
       key: const ValueKey('zListBuilder'),
       itemCount: rows.length,
       itemBuilder: (context, index) {
         final row = rows[index];
-        final isSelected = selectedIds.contains(row.id);
         final actions = actionsFor?.call(row) ?? const <ZResolvedRowAction>[];
-        return Row(
+        final Widget line = Row(
           key: ValueKey('zListRow_${row.id}'),
           children: <Widget>[
-            if (mode != ZListSelectionMode.none)
-              _SelectionCheckbox(
-                selected: isSelected,
+            if (mode != ZListSelectionMode.none && selected != null)
+              _SelectionCheckboxSlot(
+                selectedIds: selected,
+                id: row.id,
+                activation: activation,
                 onToggle: onToggle == null ? null : () => onToggle!(row.id),
               ),
             Expanded(child: itemBuilder(context, row, columns)),
             for (final action in actions) _RowActionButton(action: action),
           ],
+        );
+        return _maybeLongPressToSelect(
+          line,
+          rowId: row.id,
+          mode: mode,
+          activation: activation,
+          onToggle: onToggle,
         );
       },
     );
@@ -491,7 +601,9 @@ class _ZListGridView extends StatelessWidget {
   const _ZListGridView({
     required this.request,
     required this.layout,
+    required this.tileBuilder,
     required this.mode,
+    required this.activation,
     required this.selectedIds,
     required this.onToggle,
     required this.actionsFor,
@@ -499,8 +611,13 @@ class _ZListGridView extends StatelessWidget {
 
   final ZListRenderRequest request;
   final ZListGridLayout layout;
+
+  /// Tuile effective de la grille (entité résolue si le layout en porte une,
+  /// sinon ligne neutre) — résolue par `DynamicList._tileBuilderOf`.
+  final ZRowTileBuilder tileBuilder;
   final ZListSelectionMode mode;
-  final Set<String> selectedIds;
+  final ZListSelectionActivation activation;
+  final ValueListenable<Set<String>>? selectedIds;
   final void Function(String id)? onToggle;
   final List<ZResolvedRowAction> Function(ZListRow row)? actionsFor;
 
@@ -558,34 +675,119 @@ class _ZListGridView extends StatelessWidget {
       itemCount: rows.length,
       itemBuilder: (context, index) {
         final row = rows[index];
-        final tile = layout.itemBuilder(context, row, columns);
+        final tile = tileBuilder(context, row, columns);
         final actions = actionsFor?.call(row) ?? const <ZResolvedRowAction>[];
-        final selectable = mode != ZListSelectionMode.none;
+        final selected = selectedIds;
+        final selectable = mode != ZListSelectionMode.none && selected != null;
         if (!selectable && actions.isEmpty) {
-          return KeyedSubtree(
-            key: ValueKey('zListGridTile_${row.id}'),
-            child: tile,
+          return _maybeLongPressToSelect(
+            KeyedSubtree(
+              key: ValueKey('zListGridTile_${row.id}'),
+              child: tile,
+            ),
+            rowId: row.id,
+            mode: mode,
+            activation: activation,
+            onToggle: onToggle,
           );
         }
         // Tuile interactive : carte + pied (case de sélection / actions),
         // mêmes briques accessibles que la vue `builder` (≥ 48 dp, Semantics).
-        return Column(
-          key: ValueKey('zListGridTile_${row.id}'),
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Expanded(child: tile),
-            Row(
-              children: <Widget>[
-                if (selectable)
-                  _SelectionCheckbox(
-                    selected: selectedIds.contains(row.id),
-                    onToggle: onToggle == null ? null : () => onToggle!(row.id),
-                  ),
-                const Spacer(),
-                for (final action in actions) _RowActionButton(action: action),
-              ],
-            ),
-          ],
+        return _maybeLongPressToSelect(
+          Column(
+            key: ValueKey('zListGridTile_${row.id}'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Expanded(child: tile),
+              Row(
+                children: <Widget>[
+                  if (selectable)
+                    _SelectionCheckboxSlot(
+                      selectedIds: selected,
+                      id: row.id,
+                      activation: activation,
+                      onToggle:
+                          onToggle == null ? null : () => onToggle!(row.id),
+                    ),
+                  const Spacer(),
+                  for (final action in actions)
+                    _RowActionButton(action: action),
+                ],
+              ),
+            ],
+          ),
+          rowId: row.id,
+          mode: mode,
+          activation: activation,
+          onToggle: onToggle,
+        );
+      },
+    );
+  }
+}
+
+/// Enveloppe [child] d'un appui long qui **ouvre la sélection**, quand c'est le
+/// geste déclaré ([ZListSelectionActivation.longPress]) et que la liste est
+/// sélectionnable. Rend [child] tel quel dans tous les autres cas — aucun
+/// détecteur de gestes n'est posé, l'arbre reste identique au précédent.
+///
+/// a11y (AD-13) : `GestureDetector.onLongPress` publie
+/// `SemanticsAction.longPress`, si bien que le geste est annoncé et
+/// déclenchable par un lecteur d'écran — l'ouverture de la sélection n'est pas
+/// réservée au doigt.
+Widget _maybeLongPressToSelect(
+  Widget child, {
+  required String rowId,
+  required ZListSelectionMode mode,
+  required ZListSelectionActivation activation,
+  required void Function(String id)? onToggle,
+}) {
+  if (activation != ZListSelectionActivation.longPress ||
+      mode == ZListSelectionMode.none ||
+      onToggle == null) {
+    return child;
+  }
+  return GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onLongPress: () => onToggle(rowId),
+    child: child,
+  );
+}
+
+/// Case de sélection **abonnée** à la tranche de sélection de la liste.
+///
+/// C'est le plus petit sous-arbre qui dépende réellement de l'ensemble
+/// sélectionné : en y logeant l'abonnement, un `toggle` ne reconstruit que des
+/// cases — la tuile de la ligne, elle, ne change pas parce qu'une autre ligne a
+/// été cochée, et n'a donc aucune raison d'être refaite (AD-2).
+class _SelectionCheckboxSlot extends StatelessWidget {
+  const _SelectionCheckboxSlot({
+    required this.selectedIds,
+    required this.id,
+    required this.activation,
+    required this.onToggle,
+  });
+
+  final ValueListenable<Set<String>> selectedIds;
+  final String id;
+  final ZListSelectionActivation activation;
+  final VoidCallback? onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<Set<String>>(
+      valueListenable: selectedIds,
+      builder: (context, ids, _) {
+        // Sélection ouverte à l'appui long : tant que rien n'est sélectionné,
+        // la sélection est FERMÉE et aucune case n'occupe la ligne. « Ouverte »
+        // n'est pas un état conservé à part — c'est « la sélection n'est pas
+        // vide », donc rien ne peut s'en désynchroniser.
+        if (activation == ZListSelectionActivation.longPress && ids.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return _SelectionCheckbox(
+          selected: ids.contains(id),
+          onToggle: onToggle,
         );
       },
     );
@@ -620,6 +822,10 @@ class _SelectionCheckbox extends StatelessWidget {
 /// Bouton d'action de ligne accessible : `Semantics(button:true,
 /// enabled:, label:)`, cible ≥ 48 dp, libellé l10n. Rend une icône si fournie,
 /// sinon le libellé textuel.
+///
+/// Une action fermée reste **rendue et inerte** : elle garde sa place, son
+/// libellé et annonce son motif (`Semantics.hint`) plutôt que de disparaître —
+/// masquer relève, lui, du mode d'ACL déclaré, décidé bien en amont.
 class _RowActionButton extends StatelessWidget {
   const _RowActionButton({required this.action});
 
@@ -629,6 +835,8 @@ class _RowActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = label(context, action.labelKey);
     final onPressed = action.enabled ? action.onInvoke : null;
+    final reasonKey = action.enabled ? null : action.disabledReasonKey;
+    final reason = reasonKey == null ? null : label(context, reasonKey);
     final Widget control = action.icon != null
         ? SizedBox(
             width: 48,
@@ -650,8 +858,33 @@ class _RowActionButton extends StatelessWidget {
       button: true,
       enabled: action.enabled,
       label: text,
+      hint: reason,
       container: true,
       child: control,
     );
   }
 }
+
+/// **Capture** les seams d'affichage que `ZListColumn.format` ne peut pas
+/// atteindre lui-même : le libellé d'une option orpheline, le port de formatage
+/// des dates du `ZcrudScope`, et l'étiquette de locale.
+///
+/// C'est la **voie unique** par laquelle un rendu de liste — la liste elle-même
+/// comme un export lancé depuis un écran — se procure son [ZListFormat]. Deux
+/// appelants qui la partagent produisent, par construction, les mêmes textes de
+/// cellule : ce que l'utilisateur lit à l'écran est ce que son fichier contient.
+/// Reconstruire cet objet à la main ailleurs rouvrirait l'écart, sans erreur ni
+/// signe visible.
+///
+/// L'appel exige un `BuildContext` — les seams ne vivent nulle part ailleurs.
+/// Un export *headless*, sans arbre de widgets, s'en passe et rend alors un
+/// texte locale-neutre.
+///
+/// **Pas cher (invariant AD-2)** : une `String` déjà en table et deux
+/// références ; l'objet a une égalité de **valeur**, donc deux builds successifs
+/// produisent des requêtes égales et ne reconstruisent rien.
+ZListFormat zListFormatOf(BuildContext context) => ZListFormat(
+      orphanChoiceLabel: zOrphanChoiceLabel(context),
+      dateFormatter: ZcrudScope.maybeOf(context)?.dateDisplayFormatter,
+      localeTag: Localizations.maybeLocaleOf(context)?.toLanguageTag(),
+    );

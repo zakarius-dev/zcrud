@@ -237,6 +237,19 @@ class ZEditionChrome {
   final ZConfirmDiscard? onConfirmDiscard;
 
   /// Actions supplémentaires placées **avant** l'action d'enregistrement.
+  ///
+  /// Elles sont rendues **exactement une fois**, dans **tous** les modes, dans
+  /// la rangée des actions positives — jamais en plus dans l'en-tête :
+  ///
+  /// | `mode`   | Emplacement à l'écran                                    |
+  /// |----------|----------------------------------------------------------|
+  /// | `page`   | `actions` de l'en-tête repliable, avant l'enregistrement  |
+  /// | `dialog` | barre d'actions **en pied**, avant l'enregistrement       |
+  /// | `sheet`  | barre d'actions **en pied** (`SafeArea`), avant l'enregistrement |
+  ///
+  /// Liste vide (le défaut) ⇒ **rien** dans l'arbre (invariant AD-4). Ces
+  /// widgets sont rendus tels quels : c'est à l'appelant de leur donner leur
+  /// cible tactile (≥ 48 dp) et leur `Semantics` (invariant AD-13).
   final List<Widget> extraActions;
 
   /// Affiche la poignée M3 en mode `sheet`. `false` ⇒ poignée **absente de

@@ -130,9 +130,15 @@ void main() {
     final repo = FakeItemRepo(const <Item>[Item(id: 'i1', name: 'Alpha')]);
     await tester.pumpWidget(
       MaterialApp(
-        home: ZCrudScreen<Item>(
-          title: 'Items',
-          source: ZCrudSource<Item>.repository(repo),
+        // ACL permissive DÉCLARÉE : sans elle, l'écran rendrait l'état « accès
+        // refusé » AVANT d'atteindre la dérivation de schéma — et cette garde
+        // mesure l'erreur de configuration, pas l'autorisation.
+        home: ZcrudScope(
+          acl: const ZAllowAllAcl(),
+          child: ZCrudScreen<Item>(
+            title: 'Items',
+            source: ZCrudSource<Item>.repository(repo),
+          ),
         ),
       ),
     );

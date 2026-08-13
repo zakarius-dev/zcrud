@@ -132,14 +132,14 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Suivant'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Next'));
     await tester.pumpAndSettle();
     expect(c.visibleFields.value, <String>['perms'],
         reason: 'une map requise VIDE ne doit pas franchir le gate');
 
     await tester.tap(find.byKey(const ValueKey<String>('composite')));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Suivant'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Next'));
     await tester.pumpAndSettle();
     expect(c.visibleFields.value, <String>['autre']);
   });

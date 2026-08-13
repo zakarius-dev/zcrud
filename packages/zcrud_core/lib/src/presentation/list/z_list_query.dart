@@ -62,23 +62,37 @@ class ZListPage {
       'nextCursor: $nextCursor)';
 }
 
-/// Prédicat de **recherche sans accents** sur les champs `searchable` du schéma.
+/// Prédicat de **recherche sans accents** sur le schéma d'une liste.
 ///
 /// (a) [term] vide/blanc → **match tous** (`true`) ; (b) sinon, replie le terme
-/// ([zFoldDiacritics]) et teste `contains` sur le texte replié de **chaque**
-/// champ `searchable == true` du [schema]. La valeur brute `row.cells[name]` est
-/// coercée en `String` de façon neutre (`null → ''`, `Iterable →` éléments
-/// joints). Un champ **non** `searchable` n'est **jamais** interrogé.
+/// ([zFoldDiacritics]) et teste `contains` sur le texte replié de chaque champ
+/// **du domaine** [scope]. La valeur brute `row.cells[name]` est coercée en
+/// `String` de façon neutre (`null → ''`, `Iterable →` éléments joints).
+///
+/// [scope] choisit le domaine : [ZSearchScope.searchableFields] (défaut) ne
+/// consulte que les champs déclarés `searchable: true` — un champ non
+/// `searchable` n'est alors **jamais** interrogé ; [ZSearchScope.allColumns]
+/// consulte **toutes** les colonnes du [schema].
+///
+/// [folding] choisit la normalisation appliquée **des deux côtés** (terme et
+/// valeur) : [ZSearchFolding.diacritics] par défaut,
+/// [ZSearchFolding.diacriticsAndSpaces] pour ignorer aussi les blancs.
 bool zMatchesSearch(
   ZListRow row,
   String term, {
   required List<ZFieldSpec> schema,
+  ZSearchScope scope = ZSearchScope.searchableFields,
+  ZSearchFolding folding = ZSearchFolding.diacritics,
 }) {
-  final folded = zFoldDiacritics(term.trim());
+  final folded = zFoldDiacritics(term.trim(), folding: folding);
   if (folded.isEmpty) return true;
+  final all = scope == ZSearchScope.allColumns;
   for (final field in schema) {
-    if (!field.searchable) continue;
-    final text = zFoldDiacritics(_coerceText(row.cells[field.name]));
+    if (!all && !field.searchable) continue;
+    final text = zFoldDiacritics(
+      _coerceText(row.cells[field.name]),
+      folding: folding,
+    );
     if (text.contains(folded)) return true;
   }
   return false;
@@ -108,12 +122,22 @@ ZListPage zApplyListRequest(
         if (_matchesFilter(row, filter)) row,
     ];
   }
-  // (2) Recherche sans accents sur les champs `searchable`.
+  // (2) Recherche sans accents sur le domaine déclaré par la requête
+  // (`searchable` par défaut) et avec la normalisation qu'elle déclare.
   final search = request.search;
-  if (search != null && zFoldDiacritics(search.trim()).isNotEmpty) {
+  final folding = request.searchFolding;
+  if (search != null &&
+      zFoldDiacritics(search.trim(), folding: folding).isNotEmpty) {
     result = <ZListRow>[
       for (final row in result)
-        if (zMatchesSearch(row, search, schema: schema)) row,
+        if (zMatchesSearch(
+          row,
+          search,
+          schema: schema,
+          scope: request.searchScope,
+          folding: folding,
+        ))
+          row,
     ];
   }
   // (3) Tri multi-clés STABLE (direction respectée ; `null` ordonné en dernier

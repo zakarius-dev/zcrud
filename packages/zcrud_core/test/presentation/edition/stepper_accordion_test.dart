@@ -194,7 +194,7 @@ void main() {
       expect(find.text('Historique'), findsNothing);
       expect(find.text('Autorisations'), findsNothing);
       // Et les boutons du paginé.
-      expect(find.text('Suivant'), findsOneWidget);
+      expect(find.text('Next'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
@@ -417,18 +417,18 @@ void main() {
       await tester.pump();
 
       // Exactement UNE barre (celle de l'étape active), pas une par étape.
-      expect(find.text('Suivant'), findsOneWidget);
-      expect(find.text('Précédent'), findsOneWidget);
+      expect(find.text('Next'), findsOneWidget);
+      expect(find.text('Previous'), findsOneWidget);
 
-      await tester.tap(find.text('Suivant'));
+      await tester.tap(find.text('Next'));
       await tester.pump();
       expect(_key('b'), findsOneWidget);
 
-      await tester.tap(find.text('Suivant'));
+      await tester.tap(find.text('Next'));
       await tester.pump();
       expect(_key('c'), findsOneWidget);
-      expect(find.text('Terminer'), findsOneWidget);
-      await tester.tap(find.text('Terminer'));
+      expect(find.text('Finish'), findsOneWidget);
+      await tester.tap(find.text('Finish'));
       await tester.pump();
       expect(completed, isTrue);
     });

@@ -489,16 +489,21 @@ void main() {
 
   testWidgets(
       'Lot5/§2 : DÉFAUTS strictement inchangés — headerRowHeight 48, '
-      'columnWidthMode fill, PAS de loadMoreViewBuilder, PAS de colonne '
+      'PAS de loadMoreViewBuilder, PAS de colonne '
       'd\'ordre, PAS de couleur de cellule', (tester) async {
     await tester.pumpWidget(frame(request));
     await tester.pumpAndSettle();
     final g = grid(tester);
     expect(g.headerRowHeight, equals(48.0));
-    expect(g.columnWidthMode, equals(ColumnWidthMode.fill));
     expect(g.loadMoreViewBuilder, isNull);
     expect(g.columns.length, equals(fields.length));
     expect(find.text('#'), findsNothing);
+    // ⚠️ `columnWidthMode` N'EST PLUS asserté ici : c'est le SEUL défaut que
+    // le lot « parité liste » change (dérivation responsive, cf. le groupe
+    // « largeur de colonnes » plus bas). Ce témoin a effectivement ROUGI au
+    // moment du changement — il a joué son rôle de tripwire ; l'assertion a
+    // été DÉPLACÉE (pas supprimée) vers les gardes dédiées, qui couvrent les
+    // DEUX configurations de la table legacy.
   });
 
   testWidgets(
@@ -575,7 +580,9 @@ void main() {
     await tester.pumpAndSettle();
     final g = grid(tester);
     expect(g.columns.length, equals(fields.length + 1));
-    expect(g.columns.first.columnName, equals('__zOrder'));
+    // Nom RÉSERVÉ emprunté au cœur : c'est lui qui permet de reconnaître (et,
+    // à l'export, d'exclure) la colonne technique.
+    expect(g.columns.first.columnName, equals(ZListOrdinal.columnName));
     expect(find.text('#'), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);

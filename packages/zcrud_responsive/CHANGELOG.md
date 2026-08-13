@@ -4,7 +4,7 @@ Format « Keep a Changelog » (sections Ajouté / Modifié / Corrigé, versions
 antéchronologiques). Toutes les modifications notables de `zcrud_responsive`
 sont documentées ici.
 
-## Non publié
+## 0.93.0 — 2026-08-13
 
 ### Modifié
 

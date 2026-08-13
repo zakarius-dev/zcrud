@@ -46,23 +46,25 @@ class _StoreRepo implements ZRepository<_FakeEntity> {
   }
 
   @override
-  dynamic noSuchMethod(Invocation invocation) =>
-      super.noSuchMethod(invocation);
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 Future<List<String>> _visibleIds(_StoreRepo repo) async {
   final result = await repo.getAll();
-  return result.getOrElse(() => const <_FakeEntity>[]).map((e) => e.id!).toList();
+  return result
+      .getOrElse(() => const <_FakeEntity>[])
+      .map((e) => e.id!)
+      .toList();
 }
 
 void main() {
   const fields = [ZFieldSpec(name: 'name', type: EditionFieldType.text)];
 
   Map<String, _FakeEntity> newStore() => <String, _FakeEntity>{
-        'a': const _FakeEntity('a', 'Alice'),
-        'b': const _FakeEntity('b', 'Bob'),
-        'c': const _FakeEntity('c', 'Chloé'),
-      };
+    'a': const _FakeEntity('a', 'Alice'),
+    'b': const _FakeEntity('b', 'Bob'),
+    'c': const _FakeEntity('c', 'Chloé'),
+  };
 
   test('AC6 : softDelete exclut de getAll SANS suppression dure', () async {
     final store = newStore();
@@ -85,8 +87,7 @@ void main() {
 
   test('AC6 : suppression EN LOT via softDeleteSelected (sélection)', () async {
     final repo = _StoreRepo(newStore());
-    final selection = ZListSelectionController()
-      ..selectAll(<String>['a', 'b']);
+    final selection = ZListSelectionController()..selectAll(<String>['a', 'b']);
     await selection.softDeleteSelected(repo);
     expect(repo.deleted, <String>{'a', 'b'});
     expect(await _visibleIds(repo), <String>['c']);
@@ -94,81 +95,97 @@ void main() {
     selection.dispose();
   });
 
-  testWidgets('AC6 : tap sur l\'action delete appelle repo.softDelete + refresh',
-      (tester) async {
-    final store = newStore();
-    final repo = _StoreRepo(store);
-    final rows = <ZListRow>[
-      for (final e in store.values) ZListRow(id: e.id!, cells: {'name': e.name}),
-    ];
-    var refreshed = 0;
+  testWidgets(
+    'AC6 : tap sur l\'action delete appelle repo.softDelete + refresh',
+    (tester) async {
+      final store = newStore();
+      final repo = _StoreRepo(store);
+      final rows = <ZListRow>[
+        for (final e in store.values)
+          ZListRow(id: e.id!, cells: {'name': e.name}),
+      ];
+      var refreshed = 0;
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: DynamicList<_FakeEntity>.rows(
-            fields,
-            rows,
-            layout: ZListBuilderLayout(
-              itemBuilder: (context, row, columns) =>
-                  Text('cell-${row.cells['name']}'),
-            ),
-            entityFor: (row) => store[row.id],
-            rowActions: <ZRowAction<_FakeEntity>>[
-              ZRowAction<_FakeEntity>.softDelete(
-                repo,
-                onSuccess: () => refreshed++,
+      await tester.pumpWidget(
+        MaterialApp(
+          // ACL permissive DÉCLARÉE : le socle refuse par défaut, et ce test
+          // mesure le geste de ligne, pas l'autorisation.
+          home: ZcrudScope(
+            acl: const ZAllowAllAcl(),
+            child: Scaffold(
+              body: DynamicList<_FakeEntity>.rows(
+                fields,
+                rows,
+                layout: ZListBuilderLayout(
+                  itemBuilder: (context, row, columns) =>
+                      Text('cell-${row.cells['name']}'),
+                ),
+                entityFor: (row) => store[row.id],
+                rowActions: <ZRowAction<_FakeEntity>>[
+                  ZRowAction<_FakeEntity>.softDelete(
+                    repo,
+                    onSuccess: () => refreshed++,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    // Tap le bouton delete de la 1ʳᵉ ligne ('a').
-    await tester.tap(find.widgetWithText(TextButton, 'Delete').first);
-    await tester.pump();
+      // Tap le bouton delete de la 1ʳᵉ ligne ('a').
+      await tester.tap(find.widgetWithText(TextButton, 'Delete').first);
+      await tester.pump();
 
-    expect(repo.deleted.contains('a'), isTrue);
-    expect(refreshed, 1);
-    expect(await _visibleIds(repo), <String>['b', 'c']);
-  });
+      expect(repo.deleted.contains('a'), isTrue);
+      expect(refreshed, 1);
+      expect(await _visibleIds(repo), <String>['b', 'c']);
+    },
+  );
 
-  testWidgets('AC8 : Left(ZServerFailure) sur softDelete → onFailure, 0 throw',
-      (tester) async {
-    final store = newStore();
-    final repo = _StoreRepo(store)..failWith = const ZServerFailure('nope');
-    final rows = <ZListRow>[
-      ZListRow(id: 'a', cells: {'name': 'Alice'}),
-    ];
-    ZFailure? captured;
+  testWidgets(
+    'AC8 : Left(ZServerFailure) sur softDelete → onFailure, 0 throw',
+    (tester) async {
+      final store = newStore();
+      final repo = _StoreRepo(store)..failWith = const ZServerFailure('nope');
+      final rows = <ZListRow>[
+        ZListRow(id: 'a', cells: {'name': 'Alice'}),
+      ];
+      ZFailure? captured;
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: DynamicList<_FakeEntity>.rows(
-            fields,
-            rows,
-            layout: ZListBuilderLayout(
-              itemBuilder: (context, row, columns) => Text('cell-${row.id}'),
-            ),
-            entityFor: (row) => store[row.id],
-            rowActions: <ZRowAction<_FakeEntity>>[
-              ZRowAction<_FakeEntity>.softDelete(
-                repo,
-                onFailure: (f) => captured = f,
+      await tester.pumpWidget(
+        MaterialApp(
+          // ACL permissive DÉCLARÉE : le socle refuse par défaut, et ce test
+          // mesure le geste de ligne, pas l'autorisation.
+          home: ZcrudScope(
+            acl: const ZAllowAllAcl(),
+            child: Scaffold(
+              body: DynamicList<_FakeEntity>.rows(
+                fields,
+                rows,
+                layout: ZListBuilderLayout(
+                  itemBuilder: (context, row, columns) =>
+                      Text('cell-${row.id}'),
+                ),
+                entityFor: (row) => store[row.id],
+                rowActions: <ZRowAction<_FakeEntity>>[
+                  ZRowAction<_FakeEntity>.softDelete(
+                    repo,
+                    onFailure: (f) => captured = f,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.widgetWithText(TextButton, 'Delete').first);
-    await tester.pump();
+      await tester.tap(find.widgetWithText(TextButton, 'Delete').first);
+      await tester.pump();
 
-    expect(captured, isA<ZServerFailure>());
-    expect(repo.deleted, isEmpty); // rien supprimé
-    expect(tester.takeException(), isNull); // 0 throw
-  });
+      expect(captured, isA<ZServerFailure>());
+      expect(repo.deleted, isEmpty); // rien supprimé
+      expect(tester.takeException(), isNull); // 0 throw
+    },
+  );
 }

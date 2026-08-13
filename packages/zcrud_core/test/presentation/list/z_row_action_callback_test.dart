@@ -74,23 +74,26 @@ Widget _harness({
 }
 
 void main() {
-  test('softDeleteWith : permission delete + destructif ; restoreWith : restore',
-      () {
-    final del = ZRowAction<_FakeEntity>.softDeleteWith((_, _) {});
-    expect(del.id, 'delete');
-    expect(del.labelKey, 'delete');
-    expect(del.requiredPermission, ZCrudAction.delete);
-    expect(del.destructive, isTrue);
+  test(
+    'softDeleteWith : permission delete + destructif ; restoreWith : restore',
+    () {
+      final del = ZRowAction<_FakeEntity>.softDeleteWith((_, _) {});
+      expect(del.id, 'delete');
+      expect(del.labelKey, 'delete');
+      expect(del.requiredPermission, ZCrudAction.delete);
+      expect(del.destructive, isTrue);
 
-    final res = ZRowAction<_FakeEntity>.restoreWith((_, _) {});
-    expect(res.id, 'restore');
-    expect(res.labelKey, 'restore');
-    expect(res.requiredPermission, ZCrudAction.restore);
-    expect(res.destructive, isFalse);
-  });
+      final res = ZRowAction<_FakeEntity>.restoreWith((_, _) {});
+      expect(res.id, 'restore');
+      expect(res.labelKey, 'restore');
+      expect(res.requiredPermission, ZCrudAction.restore);
+      expect(res.destructive, isFalse);
+    },
+  );
 
-  testWidgets('softDeleteWith invoque le handler avec l\'entité de la ligne',
-      (tester) async {
+  testWidgets('softDeleteWith invoque le handler avec l\'entité de la ligne', (
+    tester,
+  ) async {
     final deleted = <_FakeEntity>[];
     await tester.pumpWidget(
       _harness(
@@ -111,8 +114,9 @@ void main() {
     expect(deleted.map((e) => e.id), ['1']);
   });
 
-  testWidgets('restoreWith invoque le handler avec l\'entité de la ligne',
-      (tester) async {
+  testWidgets('restoreWith invoque le handler avec l\'entité de la ligne', (
+    tester,
+  ) async {
     final restored = <_FakeEntity>[];
     await tester.pumpWidget(
       _harness(
@@ -130,43 +134,51 @@ void main() {
   });
 
   testWidgets(
-      'ACL refusant delete/restore → actions à callback MASQUÉES, handler '
-      'jamais invoqué (aucune porte dérobée sans repository)', (tester) async {
-    var invoked = 0;
-    await tester.pumpWidget(
-      _harness(
-        acl: const _DenyAcl({ZCrudAction.delete, ZCrudAction.restore}),
-        actions: [
-          ZRowAction<_FakeEntity>.softDeleteWith((_, _) => invoked++),
-          ZRowAction<_FakeEntity>.restoreWith((_, _) => invoked++),
-        ],
-      ),
-    );
-    expect(find.text('Delete'), findsNothing);
-    expect(find.text('Restore'), findsNothing);
-    expect(invoked, 0);
-  });
+    'ACL refusant delete/restore → actions à callback MASQUÉES, handler '
+    'jamais invoqué (aucune porte dérobée sans repository)',
+    (tester) async {
+      var invoked = 0;
+      await tester.pumpWidget(
+        _harness(
+          acl: const _DenyAcl({ZCrudAction.delete, ZCrudAction.restore}),
+          actions: [
+            ZRowAction<_FakeEntity>.softDeleteWith((_, _) => invoked++),
+            ZRowAction<_FakeEntity>.restoreWith((_, _) => invoked++),
+          ],
+        ),
+      );
+      expect(find.text('Delete'), findsNothing);
+      expect(find.text('Restore'), findsNothing);
+      expect(invoked, 0);
+    },
+  );
 
-  testWidgets('entité éphémère (id == null) : TRANSMISE au handler',
-      (tester) async {
+  testWidgets('entité éphémère (id == null) : TRANSMISE au handler', (
+    tester,
+  ) async {
     const ephemeral = _FakeEntity(null, 'Brouillon');
     final rows = [ZListRow(id: ZListRow.ephemeralKey(0), cells: const {})];
     final received = <_FakeEntity>[];
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: DynamicList<_FakeEntity>.rows(
-            _fields,
-            rows,
-            layout: ZListBuilderLayout(
-              itemBuilder: (context, row, columns) => const Text('draft'),
-            ),
-            rowActions: [
-              ZRowAction<_FakeEntity>.softDeleteWith(
-                (context, entity) => received.add(entity),
+        // ACL permissive DÉCLARÉE : le socle refuse par défaut, et ce test
+        // mesure le geste de ligne, pas l'autorisation.
+        home: ZcrudScope(
+          acl: const ZAllowAllAcl(),
+          child: Scaffold(
+            body: DynamicList<_FakeEntity>.rows(
+              _fields,
+              rows,
+              layout: ZListBuilderLayout(
+                itemBuilder: (context, row, columns) => const Text('draft'),
               ),
-            ],
-            entityFor: (_) => ephemeral,
+              rowActions: [
+                ZRowAction<_FakeEntity>.softDeleteWith(
+                  (context, entity) => received.add(entity),
+                ),
+              ],
+              entityFor: (_) => ephemeral,
+            ),
           ),
         ),
       ),

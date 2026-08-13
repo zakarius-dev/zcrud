@@ -20,6 +20,7 @@ import 'package:flutter/foundation.dart';
 import '../../domain/contracts/z_entity.dart';
 import '../../domain/data/z_cursor.dart';
 import '../../domain/data/z_data_request.dart';
+import '../../domain/data/z_search_text.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../../domain/failures/z_failure.dart';
 import '../../domain/ports/z_repository.dart';
@@ -70,6 +71,21 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   /// /`setSort` **ne peuvent JAMAIS** les écraser (là où `setFilters` remplace les
   /// SEULS filtres utilisateur). `baseFilters` vide ⇒ comportement strictement
   /// inchangé (mêmes `ZDataRequest`, mêmes tests).
+  ///
+  /// [searchScope] et [searchFolding] portent la **sémantique de recherche**
+  /// dans chaque requête émise : domaine de colonnes interrogé et profondeur de
+  /// normalisation. Leurs défauts
+  /// ([ZSearchScope.searchableFields] / [ZSearchFolding.diacritics])
+  /// reproduisent le comportement historique **à l'identique**.
+  ///
+  /// [initialSorts] fait **naître le contrôleur trié** : ces clés de tri sont
+  /// portées par la **toute première** requête, celle que la construction émet.
+  /// Sans ce paramètre, la seule voie était `setSort` — appelé après coup, il
+  /// laissait partir une première requête non triée puis en émettait une
+  /// seconde, soit une lecture de la source pour rien, et un premier rendu dans
+  /// le mauvais ordre. Un `setSort` ultérieur **remplace** ce tri initial
+  /// (même règle que pour les filtres utilisateur : un tri demandé remplace le
+  /// tri par défaut). Défaut `const []` ⇒ comportement strictement inchangé.
   ZListController({
     required this.repository,
     required this.toRow,
@@ -77,8 +93,11 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
     this.pageSize,
     this.mode = ZListPaginationMode.backendCursor,
     this.baseFilters = const <ZFilter>[],
+    this.searchScope = ZSearchScope.searchableFields,
+    this.searchFolding = ZSearchFolding.diacritics,
+    List<ZSort> initialSorts = const <ZSort>[],
     bool watchMutations = false,
-  }) {
+  }) : _sorts = initialSorts {
     if (watchMutations) {
       _subscription = repository.watchAll().listen((_) {
         // Une mutation externe réinitialise la pagination et relance la requête.
@@ -109,6 +128,14 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   /// écrasé par `setFilters`. Défaut `const []` ⇒ rétro-compatible.
   final List<ZFilter> baseFilters;
 
+  /// **Domaine de colonnes** de la recherche, porté par chaque requête émise.
+  /// Défaut [ZSearchScope.searchableFields] ⇒ rétro-compatible.
+  final ZSearchScope searchScope;
+
+  /// **Profondeur de normalisation** de la recherche, portée par chaque requête
+  /// émise. Défaut [ZSearchFolding.diacritics] ⇒ rétro-compatible.
+  final ZSearchFolding searchFolding;
+
   final ValueNotifier<ZListViewState> _state =
       ValueNotifier<ZListViewState>(const ZListLoading());
 
@@ -116,7 +143,7 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   ValueListenable<ZListViewState> get state => _state;
 
   List<ZFilter> _filters = const <ZFilter>[];
-  List<ZSort> _sorts = const <ZSort>[];
+  List<ZSort> _sorts;
   String? _search;
 
   final List<ZListRow> _accumulated = <ZListRow>[];
@@ -197,6 +224,8 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
         search: _search,
         limit: pageSize,
         startAfter: startAfter,
+        searchScope: searchScope,
+        searchFolding: searchFolding,
       );
 
   Future<void> _runQuery({ZCursor? startAfter, bool append = false}) async {

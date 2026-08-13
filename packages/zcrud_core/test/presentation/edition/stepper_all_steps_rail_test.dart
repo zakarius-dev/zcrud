@@ -226,8 +226,8 @@ void main() {
             reason: 'le champ $n de son étape doit être monté d\'emblée');
       }
       // Pas de pagination à ce niveau : aucun bouton de navigation.
-      expect(find.widgetWithText(FilledButton, 'Suivant'), findsNothing);
-      expect(find.widgetWithText(OutlinedButton, 'Précédent'), findsNothing);
+      expect(find.widgetWithText(FilledButton, 'Next'), findsNothing);
+      expect(find.widgetWithText(OutlinedButton, 'Previous'), findsNothing);
     });
 
     testWidgets('badge NUMÉROTÉ + titre + sous-titre par étape', (tester) async {
@@ -343,14 +343,14 @@ void main() {
       addTearDown(without.dispose);
       await tester.pumpWidget(without.build());
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(FilledButton, 'Terminer'), findsNothing);
+      expect(find.widgetWithText(FilledButton, 'Finish'), findsNothing);
 
       int done = 0;
       final _Rail with_ = _Rail(onComplete: () => done++);
       addTearDown(with_.dispose);
       await tester.pumpWidget(with_.build());
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Terminer'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Finish'));
       expect(done, 1);
     });
   });
@@ -529,7 +529,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Deux boutons « Suivant » : un par sous-stepper paginé.
-      final Finder nexts = find.widgetWithText(FilledButton, 'Suivant');
+      final Finder nexts = find.widgetWithText(FilledButton, 'Next');
       expect(nexts, findsNWidgets(2));
 
       await tester.tap(nexts.first);
@@ -546,7 +546,7 @@ void main() {
       // rend par hasard la même valeur que la contribution manquante — et une
       // carte des contributions cassée resterait INVISIBLE. C'est seulement ici
       // que l'écrasement d'une contribution par une autre devient observable.
-      await tester.tap(find.widgetWithText(FilledButton, 'Suivant').last);
+      await tester.tap(find.widgetWithText(FilledButton, 'Next').last);
       await tester.pumpAndSettle();
 
       expect(

@@ -12,8 +12,15 @@ const _itemFields = <ZFieldSpec>[
   ZFieldSpec(name: 'f2', type: EditionFieldType.text, label: 'F2'),
 ];
 
-Widget _host(Widget child) =>
-    MaterialApp(home: Scaffold(body: SingleChildScrollView(child: child)));
+/// Hôte de test. L'ACL permissive est **DÉCLARÉE** au scope : le socle refuse
+/// par défaut, et déclarer l'ouverture totale est le geste qu'une application
+/// de développement doit poser.
+Widget _host(Widget child) => MaterialApp(
+      home: ZcrudScope(
+        acl: const ZAllowAllAcl(),
+        child: Scaffold(body: SingleChildScrollView(child: child)),
+      ),
+    );
 
 void main() {
   group('DP-19 M18 — soft-delete / restore (compact)', () {

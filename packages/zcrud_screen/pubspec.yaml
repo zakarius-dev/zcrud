@@ -12,7 +12,7 @@
 # Syncfusion du port `ZListRenderer`), jamais l'écran de liste.
 name: zcrud_screen
 description: "Assembled declarative CRUD screen for zcrud: ZCrudScreen wires DynamicList, presentEdition, ZRepository trash scopes and ZAcl into a single declaration."
-version: 0.92.0
+version: 0.93.0
 publish_to: none
 resolution: workspace
 
@@ -30,13 +30,24 @@ environment:
   sdk: ^3.12.2
 
 # Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : UNIQUEMENT
-# zcrud_core et zcrud_navigation (arêtes SORTANTES ; aucune n'entre dans ce
-# package). `zcrud_responsive` n'est atteint que TRANSITIVEMENT via
-# zcrud_navigation (aucun import direct ici). ⛔ AUCUN autre `zcrud_*`, AUCUN
+# zcrud_core, zcrud_menu, zcrud_navigation et zcrud_ui_kit (arêtes SORTANTES ;
+# aucune n'entre dans ce package). `zcrud_menu` ne dépend QUE de `zcrud_core`
+# (aucune dépendance tierce) : l'arête ajoutée reste saine (graphe ACYCLIQUE,
+# `CORE OUT = 0` inchangé) — c'est elle qui donne aux actions de ligne leur
+# présentation en MENU (déclencheur de débordement, menu contextuel) et son
+# point d'injection `ZMenuScope`, au lieu d'un menu codé en dur ici. `zcrud_responsive` n'est atteint que
+# TRANSITIVEMENT via zcrud_navigation (aucun import direct ici).
+# `zcrud_ui_kit` ne dépend QUE de `zcrud_core` : l'arête ajoutée reste saine
+# (graphe ACYCLIQUE, `CORE OUT = 0` inchangé) — c'est elle qui donne à
+# l'écran assemblé la COQUILLE de page (`ZPageScaffold`/`ZSearchableAppBar`),
+# la CONFIRMATION (`showZConfirmDialog`) et la NOTIFICATION (`ZToaster`) du
+# socle, au lieu de les réinventer. ⛔ AUCUN autre `zcrud_*`, AUCUN
 # gestionnaire d'état, AUCUN routeur, AUCUN Syncfusion/Firebase/Quill.
 dependencies:
-  zcrud_core: ^0.92.0
-  zcrud_navigation: ^0.92.0
+  zcrud_core: ^0.93.0
+  zcrud_menu: ^0.93.0
+  zcrud_navigation: ^0.93.0
+  zcrud_ui_kit: ^0.93.0
   flutter:
     sdk: flutter
 

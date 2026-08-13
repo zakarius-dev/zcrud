@@ -73,9 +73,9 @@ class _StepperForm {
 Finder _key(String name) => find.byKey(ValueKey<String>(name));
 Finder _editable(String name) =>
     find.descendant(of: _key(name), matching: find.byType(EditableText));
-Finder get _next => find.widgetWithText(FilledButton, 'Suivant');
-Finder get _finish => find.widgetWithText(FilledButton, 'Terminer');
-Finder get _previous => find.widgetWithText(OutlinedButton, 'Précédent');
+Finder get _next => find.widgetWithText(FilledButton, 'Next');
+Finder get _finish => find.widgetWithText(FilledButton, 'Finish');
+Finder get _previous => find.widgetWithText(OutlinedButton, 'Previous');
 
 void main() {
   testWidgets('AC1 — un seul controller partagé : setValue visible depuis '

@@ -37,7 +37,7 @@ class ZcrudProviderScope extends StatefulWidget {
     required this.child,
     this.createController,
     this.providers = const [],
-    this.acl = const ZAllowAllAcl(),
+    this.acl = const ZDenyAllAcl(),
     super.key,
   });
 
@@ -50,7 +50,12 @@ class ZcrudProviderScope extends StatefulWidget {
   /// Providers additionnels (seams applicatifs) montés au-dessus du scope.
   final List<SingleChildWidget> providers;
 
-  /// Port d'autorisation exposé au cœur (défaut : [ZAllowAllAcl]).
+  /// Port d'autorisation exposé au cœur (défaut **fail-closed** :
+  /// [ZDenyAllAcl]).
+  ///
+  /// Sans ACL déclarée, aucun geste n'est offert. Pour une ouverture totale
+  /// assumée (développement, prototype), déclarez-la explicitement :
+  /// `acl: const ZAllowAllAcl()`.
   final ZAcl acl;
 
   @override

@@ -6,7 +6,8 @@
 /// (recherche/tri/pagination), `ZRowAction` (actions de ligne gouvernées
 /// `ZAcl`), `presentEdition`/`ZPresentationPolicy` (présentation du
 /// formulaire), `DynamicEdition`/`ZFormController` (édition),
-/// `ZRepository`/`ZDataRequest.deletedScope` (données et corbeille).
+/// `ZRepository`/`ZDataRequest.deletedScope` (données et corbeille, plus le
+/// mixin optionnel `ZPurgeable` pour la suppression définitive).
 ///
 /// **Principe directeur** : tout ce qui est dérivable d'une déclaration
 /// existante ne se redemande jamais — les champs et la projection en cellules
@@ -17,16 +18,67 @@
 /// **Assemblage mince** : aucune logique qui n'existe pas déjà dans les
 /// briques ; un consommateur qui a un cas particulier descend d'un cran
 /// (utiliser `DynamicList` directement) sans rien perdre.
+///
+/// **La coquille de page vient de `zcrud_ui_kit`, elle n'est pas refaite
+/// ici** : `ZPageScaffold` (donc `ZSearchableAppBar`) porte le `Scaffold`,
+/// l'app-bar, les actions déclarées en données (`ZAppBarAction`, avec son
+/// menu de débordement) et la recherche intégrée (`ZAppBarSearchConfig`,
+/// titre qui morphe en champ, `Échap` ⇒ fermeture) ; `showZConfirmDialog`
+/// porte la confirmation des gestes destructifs ; `ZToaster`/`ZToasterScope`
+/// portent la notification d'échec des actions de ligne. Les états
+/// vide/chargement/erreur du listing restent rendus par `DynamicList`
+/// lui-même (aucun état n'est doublé ici).
 library;
 
 import 'dart:async';
+import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_navigation/zcrud_navigation.dart'
     show ZFormWeight, ZPresentationPolicy, presentEdition;
+import 'package:zcrud_ui_kit/zcrud_ui_kit.dart'
+    show
+        ZAppBarAction,
+        ZAppBarSearchConfig,
+        ZConfirmTone,
+        ZCountBadge,
+        ZErrorState,
+        ZPageScaffold,
+        ZToastSeverity,
+        ZToasterScope,
+        showZConfirmDialog,
+        zToast;
 
+import 'z_crud_edition_scope.dart';
+import 'z_crud_screen_actions.dart';
 import 'z_crud_source.dart';
+import 'z_export_policy.dart';
+import 'z_list_query_policy.dart';
+import 'z_row_action_menu.dart';
+import 'z_row_actions_presentation.dart';
+import 'z_screen_mode.dart';
+import 'z_selection_policy.dart';
+
+/// Mode d'ouverture de la surface d'édition — sélectionne le titre affiché
+/// ([ZCrudTitles]), distingue la **duplication** de la création nue et la
+/// **consultation** de l'édition.
+enum _ZCrudEditionMode {
+  /// Création (bouton « + ») — formulaire vide ou pré-semé.
+  create,
+
+  /// Duplication (geste « dupliquer ») — création pré-remplie d'une copie
+  /// **sans identité** de l'entité source.
+  duplicate,
+
+  /// Édition d'une entité existante (action de ligne).
+  update,
+
+  /// **Consultation** d'une entité existante : la même surface, le même
+  /// formulaire, rendu en lecture seule (fiche de détail).
+  read,
+}
 
 /// Activation de la **corbeille** d'un [ZCrudScreen].
 enum ZTrashMode {
@@ -85,8 +137,13 @@ typedef ZCrudItemBuilder<T> = Widget Function(
 ///
 /// * `canCreate: false` — aucun bouton de création ;
 /// * `trash: ZTrashMode.none` — aucune corbeille ;
-/// * `readOnly: true` — consultation pure (ni création, ni édition, ni
-///   corbeille) ;
+/// * `trashPolicy: ZTrashPolicy.withoutPurge` — corbeille dont rien ne
+///   disparaît, même si le dépôt sait supprimer définitivement ;
+/// * `mode: ZScreenMode.details` — **fiche de détail** : chaque ligne s'ouvre
+///   sur le formulaire entier en lecture seule, avec retour vers l'édition si
+///   `ZCrudAction.update` est autorisé ;
+/// * `mode: ZScreenMode.locked` — consultation verrouillée (ni création, ni
+///   fiche, ni édition, ni corbeille) ;
 /// * `ZCrudSource.items(rows)` **sans callbacks** — lecture seule effective.
 class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// Construit l'écran assemblé — seuls [title] et [source] sont requis.
@@ -104,20 +161,41 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
     this.layout,
     this.itemBuilder,
     this.tabs,
+    this.query = const ZListQueryPolicy(),
     this.header,
     this.canCreate = true,
+    this.canDuplicate = true,
+    this.titles,
     this.trash = ZTrashMode.auto,
+    this.trashPolicy = ZTrashPolicy.full,
+    this.trashCount,
+    this.mode = ZScreenMode.full,
+    @Deprecated(
+      'Utiliser `mode` : `readOnly: true` devient `mode: ZScreenMode.locked`, '
+      'et la fiche de détail (lecture seule AVEC retour vers l\'édition) '
+      'devient `mode: ZScreenMode.details`. Sera retiré en 1.0.',
+    )
     this.readOnly = false,
     this.searchEnabled = true,
     this.onSave,
     this.editionBuilder,
     this.defaultItemBuilder,
     this.rowActions,
+    this.trashRowActions,
     this.columnPolicy,
     this.collectionId,
+    this.actions = const <ZAppBarAction>[],
     this.appBarActions = const <Widget>[],
     this.leading,
+    this.rowAcl,
     this.actionAclMode = ZActionAclMode.hide,
+    this.rowActionsPresentation = ZRowActionsPresentation.inline,
+    this.inlineActionLimit = 2,
+    this.longPressOwner = ZRowLongPressOwner.contextMenu,
+    this.confirmDestructive = true,
+    this.selection,
+    this.batchActions,
+    this.export,
     super.key,
   });
 
@@ -151,6 +229,12 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
 
   /// ACL de l'écran. `null` ⇒ l'ACL du `ZcrudScope` ambiant s'applique telle
   /// quelle ; non-`null` ⇒ posée par `ZcrudScope.derive` autour de la liste.
+  ///
+  /// **Refus par défaut.** Sans ACL déclarée — ni ici, ni au scope — aucun
+  /// geste n'est offert, et `ZCrudAction.view` étant refusé, l'écran rend un
+  /// **état « accès refusé »** sans jamais interroger la source. Déclarez la
+  /// vôtre (`acl: MonAcl()`), ou, en développement, déclarez l'ouverture
+  /// totale : `acl: const ZAllowAllAcl()`.
   final ZAcl? acl;
 
   /// Politique de présentation du formulaire (breakpoint → page/sheet/dialog).
@@ -159,17 +243,73 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// Poids du formulaire, critère de la politique de présentation.
   final ZFormWeight formWeight;
 
-  /// Variante de vue de la liste. `null` ⇒ `ZListBuilderLayout` avec la tuile
-  /// générique du paquet (ou [itemBuilder]).
+  /// Variante de vue de la liste. `null` ⇒ liste verticale
+  /// (`ZListBuilderLayout`) rendant [itemBuilder], ou la tuile générique du
+  /// paquet à défaut.
+  ///
+  /// Le layout déclaré ici **reçoit** [itemBuilder] : une grille de cartes
+  /// métier se déclare `layout: const ZListGridLayout(mainAxisExtent: 180)` +
+  /// `itemBuilder: (context, entity, columns) => MaCarte(entity)`, sans que
+  /// l'application n'ait à reconstruire l'index `ligne → entité`.
   final ZListLayout? layout;
 
-  /// Rendu d'une tuile (reçoit l'entité `T`). Ignoré si [layout] est fourni.
+  /// Rendu d'une tuile — il **reçoit l'entité `T`**, pas la ligne neutre.
+  ///
+  /// Il alimente le [layout] déclaré (liste, grille de cartes) aussi bien que
+  /// le rendu par défaut. Un layout construit avec sa **propre** tuile
+  /// (`ZListGridLayout(itemBuilder: …)`, qui reçoit une `ZListRow`) garde la
+  /// sienne : l'explicite l'emporte sur l'injecté.
   final ZCrudItemBuilder<T>? itemBuilder;
 
   /// Onglets de catégorisation. Non-`null` ⇒ le corps est un `ZTabbedList`
   /// (chaque onglet possède sa vue) ; le bouton de création lit `canCreate`
   /// et `defaultItemBuilder` de l'**onglet actif**.
   final List<ZListTab>? tabs;
+
+  /// **Tri par défaut, filtres permanents, taille de page et sémantique de
+  /// recherche** du listing.
+  ///
+  /// Ces réglages existaient dans le socle sans qu'un écran assemblé les
+  /// expose : les déclarer ici évite de construire un `ZListController` à la
+  /// main — c'est-à-dire de quitter la déclaration — pour ouvrir une liste
+  /// triée, ne jamais montrer les archives, changer la taille de page, ou
+  /// élargir ce que la recherche interroge.
+  ///
+  /// ```dart
+  /// query: const ZListQueryPolicy(
+  ///   sort: <ZSort>[ZSort('updated_at', ZSortDirection.desc)],
+  ///   baseFilters: <ZFilter>[ZFilter('archive', ZFilterOp.eq, false)],
+  ///   pageSize: 50,
+  /// ),
+  /// ```
+  ///
+  /// **Rien de déclaré, rien de changé** (défaut) : les requêtes émises sont
+  /// exactement celles d'avant — aucun filtre, aucun tri, aucune limite, et une
+  /// recherche qui n'interroge que les champs `searchable` en tenant compte des
+  /// blancs.
+  ///
+  /// Pour retrouver le domaine de recherche des moteurs de liste historiques
+  /// (toutes les colonnes déclarées, blancs ignorés) :
+  ///
+  /// ```dart
+  /// query: const ZListQueryPolicy.legacySearch(),
+  /// ```
+  ///
+  /// Composition avec le reste de l'écran :
+  ///
+  /// * la **vue corbeille** garde sa portée de suppression ; le tri, les
+  ///   filtres permanents et la sémantique de recherche s'y appliquent
+  ///   **en plus** ;
+  /// * la **recherche** ne les efface pas (un terme n'est pas un filtre), et
+  ///   élargir son domaine ne lui fait pas franchir un filtre permanent ;
+  /// * un tri demandé ensuite (`ZCrudScreenActions.sortBy`) **remplace** le
+  ///   tri par défaut ; un filtre demandé ensuite
+  ///   (`ZCrudScreenActions.filterBy`) **s'ajoute** aux filtres permanents ;
+  /// * en mode [tabs], chaque onglet possède sa vue, donc sa requête : la
+  ///   politique est **offerte** à ses pages (`ZListQueryPolicy.of(context)`,
+  ///   composée par `filtersWith` avec les filtres de catégorie) et gouverne
+  ///   directement le listing dont l'écran est propriétaire — la corbeille.
+  final ZListQueryPolicy query;
 
   /// Widget partagé posé au-dessus du corps (au-dessus de la barre d'onglets
   /// en mode [tabs]).
@@ -179,12 +319,107 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// quelle que soit l'ACL.
   final bool canCreate;
 
+  /// Autorise le geste **« dupliquer »** (défaut `true`) : action de ligne
+  /// ouvrant la surface d'édition en mode duplication — une **copie sans
+  /// identité** de l'entité (produite par le canal du registre :
+  /// `encode` → retrait des champs `isId` → `decode`), que la sauvegarde
+  /// matérialise en **nouvelle** entité. Gouvernée par la même permission que
+  /// la création (`ZCrudAction.create`) et par [canCreate] ; absente si
+  /// [readOnly], si la source ne sait pas écrire, ou sans [registry] (le
+  /// canal de copie est la dérivation).
+  final bool canDuplicate;
+
+  /// Titres à trois états de la surface d'édition (création / duplication /
+  /// édition). `null` ⇒ replis l10n génériques (`create` / `copy` / `edit`),
+  /// résolus via `label(context, …)`.
+  final ZCrudTitles? titles;
+
   /// Activation de la corbeille (défaut [ZTrashMode.auto]).
   final ZTrashMode trash;
+
+  /// **Quels gestes** la corbeille offre : mettre, restaurer, supprimer
+  /// définitivement (défaut : les trois, `ZTrashPolicy.full`).
+  ///
+  /// À distinguer de [trash], qui décide seulement si la corbeille *existe*.
+  /// Un geste apparaît quand il est **voulu** (ici), **possible** (la source
+  /// sait le servir) et **autorisé** (`ZAcl` : `delete`, `restore`, `clear`).
+  /// Déclarer un geste ici n'accorde jamais un droit refusé par l'ACL.
+  ///
+  /// ```dart
+  /// // Corbeille consultable et restaurable, dont rien ne disparaît jamais :
+  /// trashPolicy: ZTrashPolicy.withoutPurge,
+  /// ```
+  final ZTrashPolicy trashPolicy;
+
+  /// **Nombre d'éléments en corbeille**, quand l'application le connaît
+  /// (`null` par défaut).
+  ///
+  /// Sert à deux choses : afficher le compte sur l'accès à la corbeille
+  /// (pastille `ZCountBadge`, si `ZTrashPolicy.showCount`) et **masquer** cet
+  /// accès quand la corbeille est vide (si `ZTrashPolicy.visibleWhenEmpty`
+  /// vaut `false`).
+  ///
+  /// ## Pourquoi une `ValueListenable`, et pourquoi l'écran ne compte pas
+  ///
+  /// Compter, c'est **lire la source**. Un `count(deletedOnly)` évalué au
+  /// rendu coûterait une lecture du dépôt à chaque image — et une lecture
+  /// asynchrone, donc un `FutureBuilder` par rendu : l'écran clignoterait
+  /// pour afficher un nombre. L'écran ne le fait donc jamais.
+  ///
+  /// La valeur vient de l'application, qui sait d'où elle sort et quand elle
+  /// change (un `ValueNotifier` alimenté après chaque mise à la corbeille,
+  /// une projection d'un flux). Le fait qu'elle soit **écoutable** est ce qui
+  /// permet à la pastille de se rafraîchir **sans reconstruire la liste** : le
+  /// corps de l'écran est rendu une fois et **transmis tel quel** au travers
+  /// des rafraîchissements de la coquille (AD-2).
+  ///
+  /// Le notifieur est **possédé par l'application** (create/dispose de son
+  /// côté) : l'écran s'y abonne, il ne le dispose pas.
+  ///
+  /// Sur la voie `items` (liste en mémoire + prédicat `isDeleted`), le compte
+  /// est **dérivé gratuitement** de la liste déjà parcourue : rien à déclarer,
+  /// ce paramètre reste alors inutile.
+  final ValueListenable<int>? trashCount;
+
+  /// Mode de l'écran (défaut [ZScreenMode.full]) : écran complet, **fiche de
+  /// détail** ([ZScreenMode.details]) ou consultation verrouillée
+  /// ([ZScreenMode.locked]).
+  ///
+  /// En [ZScreenMode.details], chaque ligne porte une action « détails » qui
+  /// ouvre **le formulaire entier** — ses [formFields], ou le formulaire de
+  /// l'application ([editionBuilder]) — rendu en lecture seule. Ce n'est pas
+  /// une fiche dérivée des colonnes de la liste : les colonnes affichent ce
+  /// qu'un tableau peut montrer, la fiche montre **tous** les champs.
+  ///
+  /// L'action « modifier » reste offerte en [ZScreenMode.details] si et
+  /// seulement si l'ACL autorise `ZCrudAction.update` — la consultation n'est
+  /// pas un cul-de-sac pour qui a le droit de modifier. La création, la
+  /// duplication et la corbeille, elles, sont absentes.
+  final ZScreenMode mode;
 
   /// Consultation pure (défaut `false`) : ni création, ni édition, ni
   /// corbeille — les actions de ligne fournies via [rowActions] restent
   /// rendues (elles appartiennent à l'app).
+  ///
+  /// ⚠️ **Déprécié — préférer [mode]**. Correspondance exacte :
+  ///
+  /// | Ancien | Nouveau |
+  /// |---|---|
+  /// | `readOnly: false` (défaut) | `mode: ZScreenMode.full` (défaut) |
+  /// | `readOnly: true` | `mode: ZScreenMode.locked` |
+  /// | *(inexprimable)* | `mode: ZScreenMode.details` |
+  ///
+  /// `readOnly: true` reste **strictement** équivalent à
+  /// [ZScreenMode.locked] : mêmes gestes retirés, même rendu. Le booléen ne
+  /// savait pas dire la troisième chose — consulter la fiche complète, puis
+  /// revenir à l'édition — d'où son remplacement par un mode à trois états.
+  ///
+  /// Quand les deux sont déclarés, [mode] l'emporte (le booléen n'est lu que
+  /// s'il vaut `mode: ZScreenMode.full`, c'est-à-dire le défaut).
+  @Deprecated(
+    'Utiliser `mode` : `readOnly: true` devient `mode: ZScreenMode.locked`. '
+    'Sera retiré en 1.0.',
+  )
   final bool readOnly;
 
   /// Affiche la barre de recherche (défaut `true`). Sans effet en mode
@@ -204,9 +439,23 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// dérivé part de valeurs vides.
   final T Function()? defaultItemBuilder;
 
-  /// Actions de ligne **supplémentaires** de l'app, ajoutées après les
-  /// actions assemblées (édition, corbeille), filtrées par la même ACL.
+  /// Actions de ligne **supplémentaires** de l'app pour la vue des éléments
+  /// **vivants**, ajoutées après les actions assemblées (édition, duplication,
+  /// mise à la corbeille) et filtrées par la même ACL.
+  ///
+  /// Elles ne sont **jamais** rendues en vue corbeille : les gestes qui s'y
+  /// appliquent se déclarent par [trashRowActions]. Les deux canaux sont
+  /// disjoints, précisément pour qu'une action destructive de corbeille ne
+  /// puisse pas apparaître au milieu des éléments vivants.
   final List<ZRowAction<T>>? rowActions;
+
+  /// Actions de ligne **supplémentaires** de l'app pour la vue **corbeille**,
+  /// ajoutées après les actions assemblées (restauration, suppression
+  /// définitive) et filtrées par la même ACL.
+  ///
+  /// Pendant symétrique de [rowActions] : ces actions ne sont jamais rendues
+  /// sur les éléments vivants.
+  final List<ZRowAction<T>>? trashRowActions;
 
   /// Politique de colonnes (force include/exclude par nom).
   final ZColumnPolicy? columnPolicy;
@@ -214,26 +463,229 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// Identifiant de collection passé à `ZAcl.can` et `repository.save`.
   final String? collectionId;
 
-  /// Boutons additionnels de l'`AppBar` (avant les boutons assemblés).
+  /// Actions additionnelles de l'app-bar, **déclarées en données**
+  /// ([ZAppBarAction] de `zcrud_ui_kit`), rendues **avant** les actions
+  /// assemblées (corbeille, création). Chaque action porte son
+  /// `semanticLabel` (a11y AD-13, jamais nul) et peut demander le **menu de
+  /// débordement** (`isOverflow: true`) — mécanisme du socle, pas une
+  /// réinvention locale.
+  final List<ZAppBarAction> actions;
+
+  /// Boutons additionnels de l'`AppBar` sous forme de **widgets déjà
+  /// construits** (avant les boutons assemblés).
+  ///
+  /// ⚠️ **Déprécié — préférer [actions]**. L'app-bar de l'écran est désormais
+  /// celle de `zcrud_ui_kit` (`ZSearchableAppBar`), dont les actions sont des
+  /// **données** ([ZAppBarAction]) : un widget déjà construit ne peut y être
+  /// transmis qu'emballé (`ZAppBarAction.widget`), ce qui a deux effets
+  /// **mesurés** :
+  /// * le tap reste fonctionnel (le bouton de l'hôte reçoit bien le geste —
+  ///   l'emballage est rendu `onPressed: null`, donc inerte) ;
+  /// * la sémantique **propre** du widget de l'hôte (tooltip, libellé) est
+  ///   masquée par l'`ExcludeSemantics` du socle et n'est **pas** remplacée
+  ///   (aucun `semanticLabel` n'est dérivable d'un widget opaque) ;
+  /// * la boîte du bouton passe de 48 dp à 64 dp de large (double rembourrage).
+  ///
+  /// Une action déclarée via [actions] n'a **aucun** de ces défauts.
+  @Deprecated(
+    'Utiliser `actions` (List<ZAppBarAction>) : une action déclarée en '
+    'données porte son semanticLabel et son débordement. Sera retiré en 1.0.',
+  )
   final List<Widget> appBarActions;
 
   /// Widget de tête de l'`AppBar` (remplacé par le bouton de sortie en vue
   /// corbeille).
   final Widget? leading;
 
+  /// **Gouvernance par ligne** : les droits propres à chaque entité, déclarés
+  /// une seule fois pour tout l'écran.
+  ///
+  /// Un dossier clôturé, une pièce déjà validée, une cargaison d'un exercice
+  /// fermé n'offrent pas les mêmes gestes que leurs voisines de liste, sans
+  /// que les droits de l'utilisateur aient changé. Ce résolveur porte cette
+  /// nuance — et lui seul : il gouverne les actions de la vue vivante comme
+  /// celles de la corbeille, qu'elles soient rendues en boutons ou en menu.
+  ///
+  /// ```dart
+  /// ZCrudScreen<Dossier>(
+  ///   rowAcl: (dossier) => dossier.cloture
+  ///       ? const ZRowPermissions.locked(reasonKey: 'dossierClosed')
+  ///       : const ZRowPermissions.unrestricted(),
+  ///   // …
+  /// );
+  /// ```
+  ///
+  /// 🔒 **Il restreint, il n'élargit jamais** : la composition avec l'ACL de
+  /// l'écran (ou du scope) est une **intersection**. Un résolveur ne peut pas
+  /// rouvrir un geste que l'ACL refuse — le vocabulaire de [ZRowPermissions]
+  /// ne permet même pas de l'exprimer.
+  ///
+  /// `null` (défaut) = aucune restriction de ligne, comportement inchangé.
+  final ZRowAclResolver<T>? rowAcl;
+
   /// Mode de filtrage ACL des actions de ligne (défaut : masquer).
+  ///
+  /// Il gouverne aussi la présentation en menu : une action masquée est
+  /// **absente** du menu ; une action `ZActionAclMode.disable` y figure
+  /// **inerte, avec son motif annoncé** (libellé `actionNotAllowed`), sans
+  /// jamais devenir invocable.
   final ZActionAclMode actionAclMode;
+
+  /// Comment les actions d'une ligne sont présentées (défaut
+  /// [ZRowActionsPresentation.inline] — boutons visibles, comportement
+  /// inchangé).
+  ///
+  /// ```dart
+  /// // Un déclencheur de menu par ligne, plus le clic droit / l'appui long :
+  /// rowActionsPresentation: ZRowActionsPresentation.contextMenu,
+  /// ```
+  ///
+  /// La **présentation** du menu (colonne, grille) appartient au `ZMenuScope`
+  /// ambiant : poser `ZMenuScope(renderer: const ZGridMenuRenderer())`
+  /// au-dessus de l'écran suffit à le rendre en grille, et brancher son propre
+  /// renderer suffit à le rendre autrement. L'écran n'en code aucun en dur.
+  ///
+  /// **Portée** : la présentation en menu s'applique aux tuiles dont l'écran
+  /// est propriétaire — le rendu dérivé, ou celui d'[itemBuilder]. Un [layout]
+  /// portant déjà sa **propre** tuile de ligne, ou le rendu délégué à un
+  /// backend de grille de données, garde ses actions **en ligne** : l'écran ne
+  /// s'insère jamais dans une tuile qu'il n'a pas construite.
+  final ZRowActionsPresentation rowActionsPresentation;
+
+  /// Seuil de la présentation adaptative ([ZRowActionsPresentation.auto], défaut
+  /// `2`) : jusqu'à ce nombre d'actions assemblées, la ligne garde ses boutons
+  /// visibles ; au-delà, elle passe au déclencheur de menu.
+  final int inlineActionLimit;
+
+  /// À qui appartient l'**appui long** sur une ligne (défaut
+  /// [ZRowLongPressOwner.contextMenu]).
+  ///
+  /// À passer [ZRowLongPressOwner.list] dès que le rendu de liste occupe
+  /// lui-même ce geste — la copie du contenu d'une cellule à l'appui long, par
+  /// exemple : le menu contextuel ne s'ouvre alors plus qu'au **clic droit**,
+  /// et le déclencheur visible reste offert (aucune action n'est perdue).
+  /// L'écran ne dépend pas du rendu de liste et ne peut donc pas lire sa
+  /// configuration : c'est l'application, qui possède les deux déclarations,
+  /// qui arbitre.
+  final ZRowLongPressOwner longPressOwner;
+
+  /// Demande une **confirmation** avant tout geste destructif de ligne — mise
+  /// à la corbeille **et** suppression définitive —, via `showZConfirmDialog`
+  /// de `zcrud_ui_kit`, en tonalité [ZConfirmTone.destructive] (défaut `true`).
+  ///
+  /// Les deux gestes ne posent pas la **même** question : la mise à la
+  /// corbeille se défait, la purge non. La confirmation de purge porte donc son
+  /// propre libellé (« supprimer définitivement ») et annonce l'irréversibilité.
+  ///
+  /// Annuler (bouton, barrière ou `pop` sans valeur) ⇒ **aucune écriture** :
+  /// ni `repository.softDelete`, ni `ZPurgeable.purge`, ni les rappels
+  /// `source.onSoftDelete`/`source.onPurge`.
+  ///
+  /// `false` ⇒ aucun dialogue : l'hôte qui possède son propre flux de
+  /// confirmation (feuille custom, annulation différée « Annuler » en toast)
+  /// le garde sans double demande. La **restauration** n'est jamais
+  /// confirmée : elle n'est pas destructive.
+  final bool confirmDestructive;
+
+  /// **Sélection multiple et actions de masse** — `null` (défaut) = aucune
+  /// sélection, écran strictement inchangé.
+  ///
+  /// Déclarer `selection: const ZSelectionPolicy()` suffit : chaque ligne
+  /// reçoit sa case à cocher, et une **barre d'actions de masse** apparaît dès
+  /// le premier élément coché, puis disparaît quand la sélection se vide.
+  ///
+  /// ```dart
+  /// ZCrudScreen<Dossier>(
+  ///   title: 'Dossiers',
+  ///   source: ZCrudSource.repository(repo),
+  ///   registry: registry,
+  ///   selection: const ZSelectionPolicy(),
+  /// )
+  /// ```
+  ///
+  /// Les actions offertes sont celles de la **vue courante**, et personne
+  /// d'autre ne les décide : mise à la corbeille sur les éléments vivants,
+  /// restauration et suppression définitive en corbeille — chacune présente
+  /// aux mêmes conditions que l'action de ligne homonyme (geste voulu par
+  /// [trashPolicy], servi par la source, autorisé par l'ACL).
+  ///
+  /// ## Ce qui est gouverné, et comment
+  ///
+  /// * **Droit refusé pour la collection** : l'action de masse est **absente**
+  ///   ([ZActionAclMode.hide], défaut) ou **inerte** ([ZActionAclMode.disable] :
+  ///   elle reste offerte, l'invoquer annonce le refus et **n'écrit rien**).
+  /// * **Ligne exclue** : une entité que [rowAcl] restreint, ou qu'un
+  ///   `ZRowAction.enabledFor` déclare inapplicable, est **retirée du lot**
+  ///   avant toute écriture — jamais traitée en silence. La résolution est
+  ///   celle des actions de ligne (`zResolveRowActions`), pas une seconde
+  ///   logique d'autorisation.
+  /// * **Confirmation** : un geste de masse destructif passe par la même
+  ///   confirmation que le geste unitaire ([confirmDestructive]), avec le
+  ///   **nombre d'éléments** dans la question. Annuler n'écrit rien.
+  ///
+  /// ## Le lot rend des comptes
+  ///
+  /// Une suppression de masse dont une partie échoue **le dit** : la
+  /// notification porte le nombre de succès, le nombre d'échecs, le nombre
+  /// d'éléments écartés, et nomme les éléments en échec. Le
+  /// `ZBatchReport` complet est offert à l'application par
+  /// `ZSelectionPolicy.onReport`, pour qui veut sa propre surface (liste
+  /// exhaustive, journal, réessai).
+  ///
+  /// ## Portée
+  ///
+  /// La sélection porte sur le listing **dont l'écran est propriétaire**. En
+  /// mode [tabs], chaque onglet possède sa vue : la sélection s'y applique donc
+  /// à la corbeille, et une page d'onglet qui veut la sienne déclare sa propre
+  /// `DynamicList(selection:)`. La sélection est **vidée** après chaque action
+  /// de masse, à la bascule vivants ⇄ corbeille et au changement d'onglet.
+  final ZSelectionPolicy? selection;
+
+  /// Actions de masse **supplémentaires** de l'application, ajoutées après les
+  /// actions assemblées. Elles reçoivent les entités sélectionnées et
+  /// appartiennent à l'application (l'écran ne les gouverne pas). Sans
+  /// [selection] déclarée, elles ne sont jamais rendues.
+  final ZCrudBatchActions<T>? batchActions;
+
+  /// Politique d'**export** du listing — les formats offerts et la remise du
+  /// fichier produit. `null` (défaut) : aucune entrée d'export, et aucune
+  /// dépendance d'export tirée par l'écran.
+  ///
+  /// L'export part de ce qui est **affiché** : lignes réellement listées (tri,
+  /// filtres, recherche et vue vivants/corbeille appliqués), colonnes dérivées
+  /// du schéma, valeurs formatées. Une **sélection** en cours restreint
+  /// l'export aux seuls éléments cochés. Les ornements d'écran — numéro
+  /// d'ordre, cases à cocher, boutons d'action — n'y figurent pas.
+  ///
+  /// Voir [ZExportPolicy].
+  final ZExportPolicy? export;
 
   @override
   State<ZCrudScreen<T>> createState() => _ZCrudScreenState<T>();
 }
 
-class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
+class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
+    implements ZCrudScreenActions {
   /// Vue corbeille active.
   bool _trashView = false;
 
-  /// Recherche courante (voie `items` uniquement — la voie repository passe
-  /// par `ZListController.setSearch`).
+  /// ACL résolue au dernier rendu.
+  ///
+  /// Les gestes exposés aux descendants ([ZCrudScreenScope]) sont interrogés
+  /// depuis le `build` d'une carte, pas depuis celui de l'écran : ils lisent
+  /// donc l'ACL **mémorisée** plutôt que d'en refaire la résolution par le
+  /// contexte. Le défaut est le refus (fail-closed) — un geste interrogé avant
+  /// tout rendu de l'écran n'est jamais offert.
+  ZAcl _resolvedAcl = const ZDenyAllAcl();
+
+  /// Recherche courante, **miroir** de la query détenue par l'app-bar de
+  /// `zcrud_ui_kit` (le shell est propriétaire de son état de saisie, AD-2).
+  ///
+  /// Elle **filtre** directement la voie `items` ; sur la voie repository elle
+  /// n'est qu'un miroir, l'application passant par `ZListController.setSearch`.
+  /// Le miroir sert alors à **réaligner** le contrôleur devenu actif lors
+  /// d'une bascule vivants ⇄ corbeille : sans lui, le texte resté visible dans
+  /// l'app-bar ne correspondrait plus au filtre réellement appliqué.
   String _search = '';
 
   /// Index de l'onglet actif (mode [ZCrudScreen.tabs]) — possédé ici,
@@ -244,24 +696,90 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
   /// ACL row-level et des handlers d'action).
   final Map<String, T> _entities = <String, T>{};
 
+  /// Tri **demandé** (par l'application, via [sortBy]) — vide tant que
+  /// personne n'en a demandé, auquel cas le tri par défaut de
+  /// [ZCrudScreen.query] s'applique.
+  List<ZSort> _userSort = const <ZSort>[];
+
+  /// Filtres **demandés** (par l'application, via [filterBy]) — ils s'ajoutent
+  /// aux filtres permanents de [ZCrudScreen.query], jamais à leur place.
+  List<ZFilter> _userFilters = const <ZFilter>[];
+
+  /// Contrôleur de **sélection multiple**, possédé par l'écran (create/dispose)
+  /// et créé seulement quand une politique de sélection est déclarée. `null`
+  /// (défaut) : aucune sélection n'existe, et rien de ce qui la sert n'est
+  /// construit.
+  ZListSelectionController? _selection;
+
+  /// Identités des lignes **actuellement listées** — la portée exacte de
+  /// « tout sélectionner ». Relevée au rendu du listing, jamais accumulée : le
+  /// bouton ne sélectionne pas ce qui a quitté la vue (autre page, autre
+  /// portée, résultat filtré).
+  List<String> _visibleIds = const <String>[];
+
+  /// Lignes **actuellement listées**, dans l'ordre où elles sont peintes — la
+  /// matière exacte d'un export.
+  ///
+  /// Relevées au même endroit et au même moment que [_visibleIds], sur l'état
+  /// réellement rendu : tri, filtres, recherche et portée (vivants ou
+  /// corbeille) y sont donc déjà appliqués. C'est ce qui garantit qu'un fichier
+  /// exporté dit ce que l'utilisateur a sous les yeux, et non ce que la source
+  /// contient.
+  List<ZListRow> _visibleRows = const <ZListRow>[];
+
   ZListController<T>? _liveController;
   ZListController<T>? _trashController;
+
+  // Le contrôleur des vivants est créé PARESSEUSEMENT, au premier rendu qui en
+  // a besoin (voir `_ensureLiveController`) — jamais dans `initState`. Sa
+  // construction déclenche une lecture de la source : la créer d'office
+  // interrogerait le dépôt même quand `ZCrudAction.view` est refusé, c'est-à-dire
+  // exactement ce que le refus doit empêcher.
 
   @override
   void initState() {
     super.initState();
-    final repo = widget.source.repository;
-    if (repo != null) _liveController = _createController(repo);
+    _syncSelectionController(null);
+    // Changer d'onglet change ce qui est listé : garder une sélection faite
+    // sur l'onglet précédent laisserait un lot invisible s'exécuter sur des
+    // éléments que l'utilisateur ne voit plus.
+    _activeTabIndex.addListener(_clearSelection);
   }
+
+  /// Aligne le contrôleur de sélection sur la politique déclarée : il n'existe
+  /// que si une politique l'est, et il est **recréé** quand le mode change (le
+  /// mode est fixe pour la durée de vie d'un contrôleur).
+  void _syncSelectionController(ZSelectionPolicy? previous) {
+    final policy = widget.selection;
+    if (policy == null) {
+      _selection?.dispose();
+      _selection = null;
+      return;
+    }
+    if (_selection != null && previous?.mode == policy.mode) return;
+    _selection?.dispose();
+    _selection = ZListSelectionController(mode: policy.mode);
+  }
+
+  /// Vide la sélection, s'il y en a une (no-op sinon).
+  void _clearSelection() => _selection?.clearSelection();
 
   @override
   void didUpdateWidget(covariant ZCrudScreen<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _syncSelectionController(oldWidget.selection);
     final repo = widget.source.repository;
-    if (!identical(oldWidget.source.repository, repo)) {
+    // Une politique de requête change la construction même des contrôleurs
+    // (taille de page, socle de filtres, tri par défaut) : la seule façon
+    // honnête de l'honorer est de les reconstruire, comme au changement de
+    // source.
+    if (!identical(oldWidget.source.repository, repo) ||
+        oldWidget.query != widget.query) {
       _liveController?.dispose();
       _trashController?.dispose();
-      _liveController = repo == null ? null : _createController(repo);
+      // Recréation PARESSEUSE : le prochain rendu autorisé reconstruit le
+      // contrôleur ; un rendu refusé n'interroge pas la nouvelle source.
+      _liveController = null;
       _trashController = null;
       _entities.clear();
     }
@@ -271,6 +789,8 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
   void dispose() {
     _liveController?.dispose();
     _trashController?.dispose();
+    _selection?.dispose();
+    _activeTabIndex.removeListener(_clearSelection);
     _activeTabIndex.dispose();
     super.dispose();
   }
@@ -339,23 +859,84 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
 
   // ── Capacités dérivées de la déclaration ──────────────────────────────────
 
+  /// Mode **effectif** de l'écran : [ZCrudScreen.mode] fait foi ; le booléen
+  /// déprécié `readOnly` n'est lu que s'il est resté au défaut
+  /// ([ZScreenMode.full]), auquel cas `true` vaut [ZScreenMode.locked].
+  ///
+  /// Cette table de correspondance est la seule lecture du booléen dans tout
+  /// l'écran : le reste du code raisonne en modes.
+  ZScreenMode get _mode {
+    if (widget.mode != ZScreenMode.full) return widget.mode;
+    // ignore: deprecated_member_use_from_same_package
+    return widget.readOnly ? ZScreenMode.locked : ZScreenMode.full;
+  }
+
   bool get _trashEnabled =>
       widget.trash == ZTrashMode.auto &&
-      !widget.readOnly &&
+      _mode == ZScreenMode.full &&
       widget.source.supportsTrash;
 
-  /// `true` si un chemin d'édition existe : formulaire fourni, ou dérivable
-  /// (registre + schéma de formulaire) avec une voie de sauvegarde.
-  bool get _editionAvailable {
-    if (widget.readOnly || !widget.source.canWrite) return false;
+  /// `true` si un **formulaire** existe pour cet écran : fourni par l'app
+  /// ([ZCrudScreen.editionBuilder]) ou dérivable du registre.
+  ///
+  /// Distinct de [_editionAvailable] : consulter une fiche ne demande aucune
+  /// voie d'écriture — un référentiel distant en lecture seule a bien un
+  /// formulaire à montrer, il n'a simplement rien à enregistrer.
+  bool get _formPathAvailable {
     if (widget.editionBuilder != null) return true;
     return widget.registry != null &&
         _registryKind != null &&
         _formFields != null;
   }
 
+  /// `true` si un chemin d'édition existe : formulaire fourni, ou dérivable
+  /// (registre + schéma de formulaire) avec une voie de sauvegarde.
+  bool get _editionAvailable =>
+      _mode != ZScreenMode.locked &&
+      widget.source.canWrite &&
+      _formPathAvailable;
+
+  /// `true` si la **fiche de détail** est offerte : mode [ZScreenMode.details]
+  /// et formulaire disponible. L'ACL tranche ensuite (`ZCrudAction.view`,
+  /// portée par l'action de ligne).
+  bool get _detailsAvailable =>
+      _mode == ZScreenMode.details && _formPathAvailable;
+
+  /// ACL effective : paramètre de l'écran > scope ambiant > **refus**.
+  ///
+  /// Le repli est fail-closed : un oubli de câblage retire tous les gestes au
+  /// lieu de tous les offrir.
   ZAcl _effectiveAcl(BuildContext context) =>
-      widget.acl ?? ZcrudScope.maybeOf(context)?.acl ?? const ZAllowAllAcl();
+      widget.acl ?? ZcrudScope.maybeOf(context)?.acl ?? const ZDenyAllAcl();
+
+  /// Onglet **actif**, ou `null` hors mode onglets (et en vue corbeille, qui
+  /// n'a pas d'onglets : c'est le listing assemblé de l'écran).
+  ZListTab? get _activeTab {
+    final tabs = widget.tabs;
+    if (tabs == null || tabs.isEmpty || _trashView) return null;
+    final index = _activeTabIndex.value;
+    if (index < 0 || index >= tabs.length) return null;
+    return tabs[index];
+  }
+
+  /// ACL de l'onglet [index], **restreinte** par celle de l'écran.
+  ///
+  /// La cascade complète est `onglet ∩ écran ∩ scope` : `_effectiveAcl` porte
+  /// déjà les deux niveaux hauts, `zRestrictAcl` y ajoute l'onglet en
+  /// **conjonction**. Un onglet ne peut donc que retirer — quelle que soit la
+  /// générosité de ce qu'il déclare, un geste refusé plus haut le reste.
+  ZAcl _tabScopedAcl(ZAcl acl, int index) {
+    final tabs = widget.tabs;
+    if (tabs == null || index < 0 || index >= tabs.length) return acl;
+    return zRestrictAcl(acl, tabs[index].acl);
+  }
+
+  /// `true` si la consultation de la collection est autorisée.
+  ///
+  /// `ZCrudAction.view` **gouverne l'écran entier** : refusé, aucune donnée
+  /// n'est lue ni rendue (voir [_buildAccessDenied]).
+  bool _viewAllowed(ZAcl acl) =>
+      acl.can(ZCrudAction.view, collectionId: widget.collectionId);
 
   // ── Persistance ───────────────────────────────────────────────────────────
 
@@ -400,19 +981,77 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
 
   // ── Édition ───────────────────────────────────────────────────────────────
 
+  /// Titre de la surface d'édition pour [mode] : titre déclaré
+  /// ([ZCrudScreen.titles], clé l10n ou littéral), sinon repli l10n générique
+  /// du mode — le mode duplication a son **propre** intitulé, distinct de la
+  /// création nue.
+  String _editionTitle(BuildContext context, _ZCrudEditionMode mode) {
+    final titles = widget.titles;
+    // Onglet actif d'abord : un écran segmenté par entité n'a pas un seul
+    // intitulé de formulaire. Un mode non renseigné par l'onglet retombe sur
+    // celui de l'écran, puis sur la clé l10n générique.
+    final tabTitles = _activeTab?.titles;
+    final declared = switch (mode) {
+      _ZCrudEditionMode.create => tabTitles?.create ?? titles?.create,
+      _ZCrudEditionMode.duplicate => tabTitles?.copy ?? titles?.copy,
+      _ZCrudEditionMode.update => tabTitles?.update ?? titles?.update,
+      _ZCrudEditionMode.read => tabTitles?.read ?? titles?.read,
+    };
+    if (declared != null) return label(context, declared);
+    return switch (mode) {
+      _ZCrudEditionMode.create => label(context, 'create'),
+      _ZCrudEditionMode.duplicate => label(context, 'copy'),
+      _ZCrudEditionMode.update => label(context, 'edit'),
+      _ZCrudEditionMode.read => label(context, 'details'),
+    };
+  }
+
+  /// Ouvre la **fiche de détail** d'[entity] : la même surface que l'édition,
+  /// le même formulaire — celui de l'application s'il en fournit un, sinon
+  /// celui dérivé des [ZCrudScreen.formFields] —, rendu en **lecture seule**.
+  ///
+  /// C'est le dernier maillon de la chaîne `liste → présentation →
+  /// formulaire` : la fiche montre **tous** les champs du formulaire, pas les
+  /// seules colonnes que la liste affiche.
+  Future<void> _openDetails(T entity) =>
+      _openEdition(initial: entity, mode: _ZCrudEditionMode.read);
+
   /// Ouvre le formulaire — création si [initial] est `null` ([seedValues]
   /// pré-remplit alors le formulaire dérivé : contexte d'onglet en `Map`).
-  Future<void> _openEdition({T? initial, Map<String, Object?>? seedValues}) {
+  /// [mode] explicite pour la création semée d'une entité, la duplication et
+  /// la consultation ; sinon dérivé de [initial] (`null` ⇒ création,
+  /// non-`null` ⇒ édition).
+  Future<void> _openEdition({
+    T? initial,
+    Map<String, Object?>? seedValues,
+    _ZCrudEditionMode? mode,
+  }) {
+    final effectiveMode = mode ??
+        (initial == null
+            ? _ZCrudEditionMode.create
+            : _ZCrudEditionMode.update);
+    // Transport du drapeau de lecture : posé une fois ici, il gouverne le
+    // formulaire DÉRIVÉ (via `DynamicEdition.readOnly`) comme le formulaire de
+    // l'application (via `ZCrudEditionScope`, lu depuis son `BuildContext`).
+    final readOnly = effectiveMode == _ZCrudEditionMode.read;
     final builder = widget.editionBuilder;
     if (builder != null) {
       return presentEdition<void>(
         context,
         policy: widget.policy,
         formWeight: widget.formWeight,
-        builder: (ctx) => builder(ctx, initial, (T entity) async {
-          final failure = await _persist(entity);
-          if (failure != null) throw StateError(failure.message);
-        }),
+        // Le `Builder` interposé n'est pas décoratif : sans lui, le contexte
+        // remis à l'application serait celui du dessus du scope, où
+        // `ZCrudEditionScope.readOnlyOf` ne trouverait rien.
+        builder: (ctx) => ZCrudEditionScope(
+          readOnly: readOnly,
+          child: Builder(
+            builder: (inner) => builder(inner, initial, (T entity) async {
+              final failure = await _persist(entity);
+              if (failure != null) throw StateError(failure.message);
+            }),
+          ),
+        ),
       );
     }
     final registry = widget.registry;
@@ -425,29 +1064,53 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
         '`fieldSpecs` (le formulaire est alors dérivé via DynamicEdition).',
       );
     }
+    // Champs « chemin » : les specs à nom POINTÉ (dérivées ou fournies) lisent
+    // et écrivent une valeur IMBRIQUÉE du modèle — l'ouverture aplatit
+    // (`zFlattenPaths`), la reconstruction regroupe (`zRegroupPaths`). Aucun
+    // nom pointé ⇒ chemin strictement inchangé.
+    final pointedNames = <String>[
+      for (final spec in fields)
+        if (spec.name.contains('.')) spec.name,
+    ];
+    final encodedInitial = initial == null
+        ? const <String, Object?>{}
+        : registry.encode(kind, initial);
     final baseValues = <String, Object?>{
-      if (initial != null) ...registry.encode(kind, initial),
+      ...encodedInitial,
+      if (pointedNames.isNotEmpty)
+        ...zFlattenPaths(
+          Map<String, dynamic>.of(encodedInitial),
+          paths: pointedNames,
+        ),
       ...?seedValues,
     };
     return presentEdition<void>(
       context,
       policy: widget.policy,
       formWeight: widget.formWeight,
-      builder: (_) => _ZCrudEditionForm(
-        fields: fields,
-        initialValues: baseValues,
-        onSubmit: (values) async {
-          final T entity;
-          try {
-            entity = registry.decode(kind, <String, dynamic>{
-              ...baseValues,
-              ...values,
-            }) as T;
-          } catch (error) {
-            return ZDomainFailure('$error');
-          }
-          return _persist(entity);
-        },
+      builder: (ctx) => ZCrudEditionScope(
+        readOnly: readOnly,
+        child: _ZCrudEditionForm(
+          title: _editionTitle(ctx, effectiveMode),
+          fields: fields,
+          readOnly: readOnly,
+          initialValues: baseValues,
+          onSubmit: (values) async {
+            final merged = <String, Object?>{...baseValues, ...values};
+            final T entity;
+            try {
+              entity = registry.decode(
+                kind,
+                pointedNames.isEmpty
+                    ? Map<String, dynamic>.of(merged)
+                    : zRegroupPaths(merged),
+              ) as T;
+            } catch (error) {
+              return ZDomainFailure('$error');
+            }
+            return _persist(entity);
+          },
+        ),
       ),
     );
   }
@@ -465,9 +1128,242 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
       }
     }
     seed ??= widget.defaultItemBuilder?.call();
-    if (seed is T) return _openEdition(initial: seed);
+    if (seed is T) {
+      return _openEdition(initial: seed, mode: _ZCrudEditionMode.create);
+    }
     if (seed is Map<String, Object?>) return _openEdition(seedValues: seed);
     return _openEdition();
+  }
+
+  // ── Gestes exposés aux descendants (ZCrudScreenScope) ─────────────────────
+  //
+  // Ces méthodes n'ouvrent RIEN par elles-mêmes : elles délèguent aux mêmes
+  // `_openEdition` / `_openDetails` / `_create` que le bouton « + » et les
+  // actions de ligne. C'est ce qui rend la surface obtenue par une carte
+  // strictement identique à celle des gestes assemblés — même politique de
+  // présentation, même poids de formulaire, même voie de sauvegarde, mêmes
+  // titres — au lieu du court-circuit qu'un rappel capturé par fermeture
+  // produirait.
+
+  /// Permission gouvernant l'écriture d'[entity] : `create` pour une entité
+  /// **éphémère** (l'enregistrer la crée), `update` sinon.
+  ZCrudAction _writePermissionFor(ZEntity entity) =>
+      entity.id == null ? ZCrudAction.create : ZCrudAction.update;
+
+  /// Interroge l'ACL mémorisée avec [target] pour cible (filtrage par ligne).
+  bool _allows(ZCrudAction action, ZEntity? target) => _resolvedAcl.can(
+        action,
+        target: target,
+        collectionId: widget.collectionId,
+      );
+
+  /// L'édition est-elle **structurellement** ouvrable ? (hors vue corbeille,
+  /// écran non verrouillé, source sachant écrire, formulaire disponible)
+  bool get _editionOpenable => !_trashView && _editionAvailable;
+
+  /// La fiche de détail est-elle **structurellement** ouvrable ?
+  bool get _detailsOpenable => !_trashView && _detailsAvailable;
+
+  @override
+  bool canOpenUpdate(ZEntity entity) =>
+      entity is T &&
+      _editionOpenable &&
+      _allows(_writePermissionFor(entity), entity);
+
+  @override
+  Future<void> openUpdate(ZEntity entity) async {
+    if (!canOpenUpdate(entity)) return;
+    await _openEdition(initial: entity as T);
+  }
+
+  @override
+  ZCrudOpener? updateOpener(ZEntity entity) =>
+      canOpenUpdate(entity) ? () => openUpdate(entity) : null;
+
+  @override
+  bool canOpenEdition(ZEntity entity) {
+    if (entity is! T) return false;
+    // Mode « détails » : le geste nominal est la CONSULTATION de la fiche —
+    // c'est celui que la ligne offre en premier, et il relève de `view`.
+    if (_detailsOpenable) return _allows(ZCrudAction.view, entity);
+    return canOpenUpdate(entity);
+  }
+
+  @override
+  Future<void> openEdition(ZEntity entity) async {
+    if (!canOpenEdition(entity)) return;
+    if (_detailsOpenable) {
+      await _openDetails(entity as T);
+      return;
+    }
+    await _openEdition(initial: entity as T);
+  }
+
+  @override
+  ZCrudOpener? editionOpener(ZEntity entity) =>
+      canOpenEdition(entity) ? () => openEdition(entity) : null;
+
+  @override
+  bool get canOpenCreation => _createOffered(_resolvedAcl, _activeTabIndex.value);
+
+  @override
+  Future<void> openCreation() async {
+    if (!canOpenCreation) return;
+    await _create();
+  }
+
+  @override
+  ZCrudOpener? creationOpener() => canOpenCreation ? openCreation : null;
+
+  @override
+  void sortBy(List<ZSort> sort) {
+    _userSort = List<ZSort>.unmodifiable(sort);
+    final controller = _activeController;
+    if (controller != null) {
+      // Le contrôleur porte le tri demandé ; le décorateur de tri par défaut
+      // ne comble QUE les requêtes qui n'en portent aucune — un tri demandé
+      // remplace donc le défaut, il ne s'y superpose pas.
+      controller.setSort(_userSort);
+      return;
+    }
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void filterBy(List<ZFilter> filters) {
+    _userFilters = List<ZFilter>.unmodifiable(filters);
+    final controller = _activeController;
+    if (controller != null) {
+      // `setFilters` ne remplace que les filtres DEMANDÉS : le socle
+      // persistant (les filtres permanents de la politique) est ANDé en tête
+      // par le contrôleur lui-même, hors d'atteinte de cet appel.
+      controller.setFilters(_userFilters);
+      return;
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// Empreinte des capacités structurelles portée par [ZCrudScreenScope] —
+  /// unique critère de reconstruction des descendants qui en dépendent.
+  Object _actionsSignature(bool createOffered) => (
+        _mode,
+        _trashView,
+        _editionAvailable,
+        _detailsAvailable,
+        createOffered,
+      );
+
+  // ── Duplication ───────────────────────────────────────────────────────────
+
+  /// `true` si le geste « dupliquer » est offert : autorisé par déclaration,
+  /// chemin d'édition disponible, et registre présent (la copie sans identité
+  /// est produite par le canal `encode`/`decode` du registre).
+  bool get _duplicateAvailable =>
+      widget.canDuplicate &&
+      _mode == ZScreenMode.full &&
+      _editionAvailable &&
+      widget.registry != null &&
+      _registryKind != null;
+
+  /// Copie **sans identité** d'[entity], produite par le même canal que la
+  /// reconstruction d'entité de l'écran : `encode` → retrait des clés `isId`
+  /// (noms réels lus dans les specs du registre) → `decode`. Un `initial`
+  /// sans `id` se présente en création : la sauvegarde matérialise une
+  /// **nouvelle** entité, l'originale reste intacte.
+  Future<void> _duplicate(T entity) {
+    final registry = widget.registry!;
+    final kind = _registryKind!;
+    final encoded = Map<String, dynamic>.of(registry.encode(kind, entity));
+    final specs = registry.tryFieldSpecsFor(kind);
+    var idRemoved = false;
+    if (specs != null) {
+      for (final spec in specs) {
+        if (spec.isId) {
+          encoded.remove(spec.name);
+          idRemoved = true;
+        }
+      }
+    }
+    // Repli défensif : registre sans spec `isId` (specs absentes ou schéma
+    // fourni par paramètre) — retirer la clé conventionnelle plutôt que de
+    // risquer une duplication qui ÉDITERAIT l'originale.
+    if (!idRemoved) encoded.remove('id');
+    final copy = registry.decode(kind, encoded) as T;
+    return _openEdition(initial: copy, mode: _ZCrudEditionMode.duplicate);
+  }
+
+  // ── Confirmation et notification (briques `zcrud_ui_kit`) ─────────────────
+
+  /// Demande la confirmation d'un geste destructif.
+  ///
+  /// Rend `true` si le geste doit être exécuté : soit l'écran ne confirme pas
+  /// ([ZCrudScreen.confirmDestructive] `false`), soit l'utilisateur a
+  /// **explicitement** confirmé. Toute autre issue (bouton d'annulation,
+  /// barrière, `pop` sans valeur) rend `false` — `showZConfirmDialog` replie
+  /// déjà `null` en `false` (AD-10) : aucune écriture n'a alors lieu.
+  ///
+  /// [permanent] choisit le **ton** : mise à la corbeille (geste réversible,
+  /// libellés `delete`/`confirmDeleteItem`) ou suppression définitive
+  /// (libellés `deleteForever`/`confirmDeleteForeverItem`, dont le texte
+  /// annonce l'irréversibilité). Dans les deux cas, la tonalité visuelle du
+  /// dialogue est [ZConfirmTone.destructive] — c'est le texte, et lui seul, qui
+  /// distingue « ça part à la corbeille » de « ça ne revient pas ».
+  ///
+  /// [count] accompagne un geste de **masse** : la question posée est la même,
+  /// suivie du nombre d'éléments concernés — celui du lot réellement soumis
+  /// (les éléments écartés en sont déjà retirés). `null` = geste unitaire,
+  /// message inchangé.
+  Future<bool> _confirmDestructive(
+    BuildContext context, {
+    bool permanent = false,
+    int? count,
+  }) {
+    if (!widget.confirmDestructive) return Future<bool>.value(true);
+    final title = permanent
+        ? label(context, 'deleteForever', fallback: 'Delete permanently')
+        : label(context, 'delete');
+    final base = permanent
+        ? label(
+            context,
+            'confirmDeleteForeverItem',
+            fallback: 'Delete this item permanently? This cannot be undone.',
+          )
+        : label(context, 'confirmDeleteItem');
+    final message = count == null ? base : '$base ($count)';
+    return showZConfirmDialog(
+      context,
+      title: title,
+      message: message,
+      confirmLabel: title,
+      tone: ZConfirmTone.destructive,
+    );
+  }
+
+  /// Notifie l'échec d'une **action de ligne** (corbeille / restauration) —
+  /// les seuls gestes de l'écran sans surface où s'afficher (l'échec d'une
+  /// sauvegarde reste, lui, rendu **dans** la surface d'édition,
+  /// `zCrudFormError`).
+  ///
+  /// Chaîne : `ZToasterScope` de l'hôte s'il est monté → repli pur-Flutter
+  /// (`zToast` → `ZScaffoldMessengerToaster`) si un `ScaffoldMessenger` est
+  /// atteignable → **silence** sinon. Jamais de `throw` (AD-10) : un écran
+  /// monté hors `MaterialApp` ne casse pas sur un échec de suppression.
+  void _notifyFailure(BuildContext context, ZFailure failure) =>
+      _notify(context, failure.message, ZToastSeverity.error);
+
+  /// Notifie [message] à la [severity] donnée, par la **même chaîne** que
+  /// l'échec d'une action de ligne : `ZToasterScope` de l'hôte s'il est monté
+  /// → repli pur-Flutter (`zToast`) si un `ScaffoldMessenger` est atteignable
+  /// → silence sinon. Jamais de `throw` (AD-10).
+  void _notify(BuildContext context, String message, ZToastSeverity severity) {
+    if (!context.mounted) return;
+    final toaster = ZToasterScope.maybeOf(context);
+    if (toaster != null) {
+      toaster.show(context, message: message, severity: severity);
+      return;
+    }
+    if (ScaffoldMessenger.maybeOf(context) == null) return;
+    zToast(context, message, severity: severity);
   }
 
   // ── Actions de ligne assemblées ───────────────────────────────────────────
@@ -476,6 +1372,23 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
     final actions = <ZRowAction<T>>[];
     final repo = widget.source.repository;
     if (!_trashView) {
+      if (_detailsAvailable) {
+        // Fiche de détail : première action de la ligne, gouvernée par la
+        // permission de CONSULTATION (`ZCrudAction.view`) — lire une fiche
+        // n'est pas la modifier. L'action « modifier » qui suit porte, elle,
+        // `ZCrudAction.update` : c'est ce filtrage-là, déjà appliqué par
+        // `DynamicList`, qui rend le retour vers l'édition présent si et
+        // seulement si le droit existe.
+        actions.add(
+          ZRowAction<T>(
+            id: 'details',
+            labelKey: 'details',
+            icon: Icons.visibility_outlined,
+            requiredPermission: ZCrudAction.view,
+            onInvoke: (context, entity) => _openDetails(entity),
+          ),
+        );
+      }
       if (_editionAvailable) {
         actions.add(
           ZRowAction<T>.edit(
@@ -484,13 +1397,42 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
           ),
         );
       }
-      if (_trashEnabled) {
+      if (_duplicateAvailable && widget.canCreate) {
+        // Geste « dupliquer » : même permission que la création (une
+        // duplication EST une création pré-remplie), filtrée par la même ACL
+        // que les autres actions de ligne.
+        actions.add(
+          ZRowAction<T>(
+            id: 'duplicate',
+            labelKey: 'copy',
+            icon: Icons.copy_outlined,
+            requiredPermission: ZCrudAction.create,
+            onInvoke: (context, entity) => _duplicate(entity),
+          ),
+        );
+      }
+      if (_trashEnabled && widget.trashPolicy.softDelete) {
+        // `softDeleteWith` (et non `softDelete`) parce que la CONFIRMATION doit
+        // précéder l'écriture : la fabrique `softDelete` appelle le dépôt
+        // elle-même, il n'y a pas de point d'insertion avant. Identité, clé
+        // l10n, permission (`ZCrudAction.delete`) et style destructif sont
+        // ceux de la fabrique nominale — seule la confirmation s'ajoute.
         if (repo != null) {
           actions.add(
-            ZRowAction<T>.softDelete(
-              repo,
+            ZRowAction<T>.softDeleteWith(
               icon: Icons.delete_outline,
-              onSuccess: _refresh,
+              (context, entity) async {
+                final entityId = entity.id;
+                // Parité stricte avec `ZRowAction.softDelete` : une entité
+                // éphémère n'a rien à supprimer (ignorée en silence).
+                if (entityId == null) return;
+                if (!await _confirmDestructive(context)) return;
+                final result = await repo.softDelete(entityId);
+                result.fold(
+                  (failure) => _notifyFailure(context, failure),
+                  (_) => _refresh(),
+                );
+              },
             ),
           );
         } else {
@@ -500,7 +1442,15 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
               ZRowAction<T>.softDeleteWith(
                 icon: Icons.delete_outline,
                 (context, entity) async {
-                  await onSoftDelete(entity);
+                  if (!await _confirmDestructive(context)) return;
+                  try {
+                    await onSoftDelete(context, entity);
+                  } catch (error) {
+                    // AD-10 : un callback hôte qui lève est notifié, jamais
+                    // relancé en erreur asynchrone non capturée.
+                    _notifyFailure(context, ZDomainFailure('$error'));
+                    return;
+                  }
                   _refresh();
                 },
               ),
@@ -508,49 +1458,707 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
           }
         }
       }
+      // Actions supplémentaires de l'app pour les éléments VIVANTS : ajoutées
+      // DANS la branche, jamais en dehors. Hors de ce `if`, une action de
+      // corbeille passée par l'hôte apparaîtrait aussi sur les vivants.
+      actions.addAll(widget.rowActions ?? const <Never>[]);
     } else {
-      if (repo != null) {
-        actions.add(
-          ZRowAction<T>.restore(
-            repo,
-            icon: Icons.restore_from_trash,
-            onSuccess: _refresh,
-          ),
-        );
-      } else {
-        final onRestore = widget.source.onRestore;
-        if (onRestore != null) {
+      // Restauration : jamais confirmée (geste non destructif), mais son échec
+      // est notifié comme celui de la mise à la corbeille.
+      if (widget.trashPolicy.restore) {
+        if (repo != null) {
           actions.add(
             ZRowAction<T>.restoreWith(
               icon: Icons.restore_from_trash,
               (context, entity) async {
-                await onRestore(entity);
-                _refresh();
+                final entityId = entity.id;
+                if (entityId == null) return;
+                final result = await repo.restore(entityId);
+                result.fold(
+                  (failure) => _notifyFailure(context, failure),
+                  (_) => _refresh(),
+                );
               },
             ),
           );
+        } else {
+          final onRestore = widget.source.onRestore;
+          if (onRestore != null) {
+            actions.add(
+              ZRowAction<T>.restoreWith(
+                icon: Icons.restore_from_trash,
+                (context, entity) async {
+                  try {
+                    await onRestore(context, entity);
+                  } catch (error) {
+                    _notifyFailure(context, ZDomainFailure('$error'));
+                    return;
+                  }
+                  _refresh();
+                },
+              ),
+            );
+          }
+        }
+      }
+      // Suppression définitive : troisième geste de la corbeille. Il n'existe
+      // que si la source sait le servir (mixin `ZPurgeable` sur le dépôt, ou
+      // rappel `onPurge` déclaré) ET que la politique le veut ; l'ACL
+      // (`ZCrudAction.clear`, portée par la fabrique) tranche le reste.
+      if (widget.trashPolicy.purge) {
+        final purge = _purgeHandler();
+        if (purge != null) {
+          actions.add(
+            ZRowAction<T>.purgeWith(icon: Icons.delete_forever, purge),
+          );
+        }
+      }
+      // Pendant symétrique : les actions supplémentaires DE LA CORBEILLE.
+      actions.addAll(widget.trashRowActions ?? const <Never>[]);
+    }
+    return actions.isEmpty ? null : actions;
+  }
+
+  /// Handler de **suppression définitive** effectif, ou `null` si la source ne
+  /// sait pas purger — auquel cas aucune action de purge n'est construite.
+  ///
+  /// Deux voies, dans cet ordre : dépôt appliquant le mixin `ZPurgeable`, puis
+  /// rappel `ZCrudSource.onPurge`. Dans les deux cas la **confirmation
+  /// irréversible précède l'écriture** : annuler ne touche pas la source.
+  FutureOr<void> Function(BuildContext context, T entity)? _purgeHandler() {
+    final repo = widget.source.repository;
+    if (repo is ZPurgeable<T>) {
+      // Cast explicite : `ZPurgeable` ne pose AUCUNE contrainte de superclasse
+      // (c'est ce qui lui permet de s'appliquer à un dépôt quelle que soit la
+      // façon dont il satisfait le port), donc le test `is` ne promeut pas un
+      // `ZRepository<T>?`.
+      final purgeable = repo as ZPurgeable<T>;
+      return (context, entity) async {
+        final entityId = entity.id;
+        // Parité avec les autres gestes de corbeille : une entité éphémère n'a
+        // pas d'identité à purger (ignorée en silence).
+        if (entityId == null) return;
+        if (!await _confirmDestructive(context, permanent: true)) return;
+        final result = await purgeable.purge(entityId);
+        result.fold(
+          (failure) => _notifyFailure(context, failure),
+          (_) => _refresh(),
+        );
+      };
+    }
+    final onPurge = widget.source.onPurge;
+    if (onPurge == null) return null;
+    return (context, entity) async {
+      if (!await _confirmDestructive(context, permanent: true)) return;
+      try {
+        await onPurge(context, entity);
+      } catch (error) {
+        // AD-10 : un rappel hôte qui lève est notifié, jamais relancé en
+        // erreur asynchrone non capturée.
+        _notifyFailure(context, ZDomainFailure('$error'));
+        return;
+      }
+      _refresh();
+    };
+  }
+
+  // ── Sélection multiple et actions de masse ────────────────────────────────
+
+  /// La sélection est-elle servie par le listing courant ?
+  ///
+  /// Elle l'est pour le listing **dont l'écran est propriétaire**. En mode
+  /// onglets, chaque onglet possède sa vue : hors corbeille, l'écran ne rend
+  /// pas la liste et n'y branche donc aucune sélection.
+  bool get _selectionOffered =>
+      _selection != null && (widget.tabs == null || _trashView);
+
+  /// Résout la gouvernance d'une ligne **par la voie des actions de ligne**
+  /// (`zResolveRowActions`) : mêmes actions assemblées, même ACL effective,
+  /// même résolveur [ZCrudScreen.rowAcl], même mode de refus. Aucune seconde
+  /// logique d'autorisation n'existe pour le lot.
+  ///
+  /// L'ACL lue est celle **mémorisée** par l'écran (paramètre > scope >
+  /// refus) : la barre d'actions vit au-dessus de la liste, donc au-dessus de
+  /// la dérivation de scope qui n'enveloppe qu'elle.
+  List<ZResolvedRowAction> _resolveGovernanceFor(
+    BuildContext context,
+    T entity,
+  ) {
+    final actions = _assembledRowActions();
+    if (actions == null) return const <ZResolvedRowAction>[];
+    return zResolveRowActions<T>(
+      context,
+      actions: actions,
+      entity: entity,
+      acl: _resolvedAcl,
+      mode: widget.actionAclMode,
+      rowAcl: widget.rowAcl,
+      collectionId: widget.collectionId,
+    );
+  }
+
+  /// `true` si [entity] **admet** l'action [actionId] : la résolution la rend,
+  /// et la rend active. Une action masquée pour cette ligne (droit refusé) ou
+  /// rendue inerte (ligne restreinte, action inapplicable) vaut refus — donc
+  /// **exclusion du lot**, jamais une écriture silencieuse.
+  bool _admitsBatch(BuildContext context, T entity, String actionId) {
+    for (final action in _resolveGovernanceFor(context, entity)) {
+      if (action.id == actionId) return action.enabled;
+    }
+    return false;
+  }
+
+  /// Écriture par racine de la **mise à la corbeille** : dépôt s'il y en a un,
+  /// sinon rappel déclaré par la source. Jamais de `throw` (AD-10) — un rappel
+  /// hôte qui lève devient une racine échouée, avec sa cause.
+  Future<ZResult<Unit>> _softDeleteRoot(
+    BuildContext context,
+    String rootId,
+    T entity,
+  ) async {
+    final repo = widget.source.repository;
+    if (repo != null) return repo.softDelete(rootId);
+    final callback = widget.source.onSoftDelete;
+    if (callback == null) {
+      return Left(const ZDomainFailure('no soft-delete path declared'));
+    }
+    try {
+      await callback(context, entity);
+    } catch (error) {
+      return Left(ZDomainFailure('$error'));
+    }
+    return const Right(unit);
+  }
+
+  /// Écriture par racine de la **restauration** (mêmes voies, mêmes règles).
+  Future<ZResult<Unit>> _restoreRoot(
+    BuildContext context,
+    String rootId,
+    T entity,
+  ) async {
+    final repo = widget.source.repository;
+    if (repo != null) return repo.restore(rootId);
+    final callback = widget.source.onRestore;
+    if (callback == null) {
+      return Left(const ZDomainFailure('no restore path declared'));
+    }
+    try {
+      await callback(context, entity);
+    } catch (error) {
+      return Left(ZDomainFailure('$error'));
+    }
+    return const Right(unit);
+  }
+
+  /// Écriture par racine de la **suppression définitive** : mixin `ZPurgeable`
+  /// du dépôt, sinon rappel `onPurge`. `null` si la source ne sait pas purger —
+  /// auquel cas aucune action de masse de purge n'est construite.
+  Future<ZResult<Unit>> Function(BuildContext, String, T)? _purgeRootWriter() {
+    final repo = widget.source.repository;
+    if (repo is ZPurgeable<T>) {
+      final purgeable = repo as ZPurgeable<T>;
+      return (context, rootId, entity) => purgeable.purge(rootId);
+    }
+    final callback = widget.source.onPurge;
+    if (callback == null) return null;
+    return (context, rootId, entity) async {
+      try {
+        await callback(context, entity);
+      } catch (error) {
+        return Left(ZDomainFailure('$error'));
+      }
+      return const Right(unit);
+    };
+  }
+
+  /// Entités actuellement sélectionnées, dans l'ordre de la sélection.
+  List<T> _selectedEntities() {
+    final controller = _selection;
+    if (controller == null) return const <Never>[];
+    return <T>[
+      for (final id in controller.selectedIds.value)
+        if (_entities[id] != null) _entities[id]!,
+    ];
+  }
+
+  /// Construit une action de masse **gouvernée**, ou `null` si le droit est
+  /// refusé et que le mode déclaré est le masquage.
+  ///
+  /// Droit refusé en mode [ZActionAclMode.disable] : l'action **garde sa
+  /// place**, rendue inerte — grisée, non actionnable, motif du refus annoncé
+  /// (`Semantics`). Même partage que pour une action de ligne : masquer relève
+  /// du mode déclaré, l'inertie de l'état de l'action. Le callback de refus
+  /// reste attaché en second rideau : rien ne s'écrit, quel que soit le chemin
+  /// qui l'atteindrait.
+  ZBatchAction? _batchEntry(
+    BuildContext context,
+    ZAcl acl, {
+    required ZBatchActionKind kind,
+    required String labelKey,
+    required IconData icon,
+    required ZCrudAction permission,
+    required String actionId,
+    required bool permanent,
+    required bool confirm,
+    required Future<ZResult<Unit>> Function(BuildContext, String, T) write,
+  }) {
+    final granted = acl.can(permission, collectionId: widget.collectionId);
+    if (!granted && widget.actionAclMode == ZActionAclMode.hide) return null;
+    return ZBatchAction(
+      kind: kind,
+      label: label(context, labelKey),
+      icon: icon,
+      enabled: granted,
+      disabledReason:
+          granted ? null : label(context, 'actionNotAllowed'),
+      onSelected: granted
+          ? () => unawaited(
+                _runBatch(
+                  context,
+                  actionId: actionId,
+                  permanent: permanent,
+                  confirm: confirm,
+                  write: write,
+                ),
+              )
+          : () => _notify(
+                context,
+                label(context, 'actionNotAllowed'),
+                ZToastSeverity.warning,
+              ),
+    );
+  }
+
+  /// Actions de masse **assemblées** de la vue courante, puis celles de
+  /// l'application. Mêmes conditions d'existence que les actions de ligne
+  /// homonymes : geste voulu par la politique de corbeille, servi par la
+  /// source, autorisé par l'ACL.
+  List<ZBatchAction> _batchActions(BuildContext context, ZAcl acl) {
+    final actions = <ZBatchAction>[];
+    if (!_trashView) {
+      final hasWriter = widget.source.repository != null ||
+          widget.source.onSoftDelete != null;
+      if (_trashEnabled && widget.trashPolicy.softDelete && hasWriter) {
+        final entry = _batchEntry(
+          context,
+          acl,
+          kind: ZBatchActionKind.delete,
+          labelKey: 'delete',
+          icon: Icons.delete_outline,
+          permission: ZCrudAction.delete,
+          actionId: 'delete',
+          permanent: false,
+          confirm: true,
+          write: _softDeleteRoot,
+        );
+        if (entry != null) actions.add(entry);
+      }
+    } else {
+      final hasWriter =
+          widget.source.repository != null || widget.source.onRestore != null;
+      if (widget.trashPolicy.restore && hasWriter) {
+        final entry = _batchEntry(
+          context,
+          acl,
+          kind: ZBatchActionKind.restore,
+          labelKey: 'restore',
+          icon: Icons.restore_from_trash,
+          permission: ZCrudAction.restore,
+          actionId: 'restore',
+          permanent: false,
+          // La restauration n'est pas destructive : elle ne se confirme pas,
+          // en lot comme à l'unité.
+          confirm: false,
+          write: _restoreRoot,
+        );
+        if (entry != null) actions.add(entry);
+      }
+      if (widget.trashPolicy.purge) {
+        final writer = _purgeRootWriter();
+        if (writer != null) {
+          final entry = _batchEntry(
+            context,
+            acl,
+            kind: ZBatchActionKind.delete,
+            labelKey: 'deleteForever',
+            icon: Icons.delete_forever,
+            permission: ZCrudAction.clear,
+            actionId: 'purge',
+            permanent: true,
+            confirm: true,
+            write: writer,
+          );
+          if (entry != null) actions.add(entry);
         }
       }
     }
-    actions.addAll(widget.rowActions ?? const []);
-    return actions.isEmpty ? null : actions;
+    final extra = widget.batchActions;
+    if (extra != null) actions.addAll(extra(context, _selectedEntities()));
+    return actions;
+  }
+
+  /// Exécute une action de masse : **écarte** les éléments que la gouvernance
+  /// n'admet pas, confirme (avec le compte), applique par élément via le
+  /// contrôleur de sélection, puis **rend compte**.
+  ///
+  /// L'ordre n'est pas indifférent : le lot est réduit aux éléments admis
+  /// **avant** la confirmation, pour que le nombre annoncé soit celui qui sera
+  /// réellement écrit. Annuler la confirmation n'écrit rien.
+  Future<void> _runBatch(
+    BuildContext context, {
+    required String actionId,
+    required bool permanent,
+    required bool confirm,
+    required Future<ZResult<Unit>> Function(BuildContext, String, T) write,
+  }) async {
+    final controller = _selection;
+    if (controller == null) return;
+    final selected = controller.selectedIds.value.toList(growable: false);
+    final eligible = <String>[];
+    var skipped = 0;
+    for (final id in selected) {
+      final entity = _entities[id];
+      if (entity != null && _admitsBatch(context, entity, actionId)) {
+        eligible.add(id);
+      } else {
+        skipped++;
+      }
+    }
+    if (eligible.isEmpty) {
+      // Aucun élément admis : rien n'est écrit, et le refus est annoncé plutôt
+      // que laissé sans effet visible.
+      _notify(
+        context,
+        label(context, 'actionNotApplicable'),
+        ZToastSeverity.warning,
+      );
+      return;
+    }
+    // Le lot devient la sélection : ce que l'utilisateur voit compté est
+    // exactement ce qui sera soumis.
+    controller.setSelection(eligible);
+    if (confirm &&
+        !await _confirmDestructive(
+          context,
+          permanent: permanent,
+          count: eligible.length,
+        )) {
+      return;
+    }
+    final report = await controller.batchApply(
+      applyToRoot: (rootId) async {
+        final entity = _entities[rootId];
+        if (entity == null) {
+          return Left(ZDomainFailure('unknown item "$rootId"'));
+        }
+        return write(context, rootId, entity);
+      },
+      clearSucceededFromSelection: false,
+    );
+    controller.clearSelection();
+    _refresh();
+    widget.selection?.onReport?.call(report);
+    if (!mounted) return;
+    // Le compte rendu est annoncé depuis le contexte de l'ÉCRAN, jamais depuis
+    // celui de la barre : vider la sélection fait disparaître la barre, et une
+    // notification adressée à un contexte démonté n'arriverait nulle part.
+    _notifyBatchReport(this.context, report, skipped: skipped);
+  }
+
+  /// Annonce le résultat d'un lot — **jamais** un succès global masquant un
+  /// échec par élément.
+  ///
+  /// Le message porte le nombre de succès, le nombre d'échecs, le nombre
+  /// d'éléments écartés par la gouvernance, et **nomme** les éléments en échec
+  /// (les trois premiers, le reste étant abrégé). Une application qui veut la
+  /// liste exhaustive la reçoit par `ZSelectionPolicy.onReport`.
+  void _notifyBatchReport(
+    BuildContext context,
+    ZBatchReport report, {
+    required int skipped,
+  }) {
+    final parts = <String>[
+      '${report.succeededCount} '
+          '${label(context, 'batchSucceeded', fallback: 'succeeded')}',
+      if (report.hasFailures)
+        '${report.failedCount} '
+            '${label(context, 'batchFailed', fallback: 'failed')}',
+      if (skipped > 0)
+        '$skipped ${label(context, 'batchSkipped', fallback: 'skipped')}',
+    ];
+    final names = _failedNames(report);
+    final message = names.isEmpty
+        ? parts.join(' · ')
+        : '${parts.join(' · ')} : $names';
+    final severity = !report.hasFailures
+        ? ZToastSeverity.success
+        : report.succeededCount == 0
+            ? ZToastSeverity.error
+            : ZToastSeverity.warning;
+    _notify(context, message, severity);
+  }
+
+  /// Noms des éléments en échec (trois au plus, le reste abrégé), lus par la
+  /// **première colonne non identifiante** du schéma de liste — celle qui sert
+  /// déjà de titre à la tuile générique. Repli sur l'identité quand aucune
+  /// valeur lisible n'est disponible.
+  String _failedNames(ZBatchReport report) {
+    final ids = report.failedRootIds.toList(growable: false);
+    if (ids.isEmpty) return '';
+    final shown = ids.take(3).map(_entityName).join(', ');
+    return ids.length > 3 ? '$shown…' : shown;
+  }
+
+  /// Nom lisible de l'élément [id], ou l'identité elle-même à défaut.
+  String _entityName(String id) {
+    final entity = _entities[id];
+    if (entity == null) return id;
+    ZFieldSpec? titleField;
+    for (final spec in _listFields) {
+      if (!spec.isId) {
+        titleField = spec;
+        break;
+      }
+    }
+    if (titleField == null) return id;
+    final value = _cellsOf(entity)[titleField.name];
+    final text = value?.toString();
+    return (text == null || text.isEmpty) ? id : text;
+  }
+
+  /// Barre d'actions de masse, rendue **au-dessus** du listing et visible
+  /// seulement quand la sélection n'est pas vide.
+  ///
+  /// Elle n'écoute que la tranche `selectedIds` du contrôleur (AD-2) : cocher
+  /// une case redessine la barre, pas le reste de l'écran — le corps est
+  /// construit une fois et transmis tel quel.
+  // ── Export du listing ─────────────────────────────────────────────────────
+
+  /// Formats d'export réellement offerts : ceux que la politique déclare,
+  /// **dédoublonnés par `id`** et dans l'ordre de déclaration.
+  ///
+  /// Sans politique — le défaut — la liste est vide : rien n'est offert, et
+  /// aucune des mécaniques d'export n'est construite.
+  List<ZListExporter> get _exporters {
+    final policy = widget.export;
+    if (policy == null) return const <ZListExporter>[];
+    final seen = <String>{};
+    return <ZListExporter>[
+      for (final exporter in policy.exporters)
+        if (seen.add(exporter.id)) exporter,
+    ];
+  }
+
+  /// Les lignes qui partiront dans le fichier.
+  ///
+  /// **La sélection l'emporte** quand elle porte : un utilisateur qui a coché
+  /// des éléments puis demandé l'export veut ceux-là, pas la page entière.
+  /// L'ordre reste celui de l'écran — la sélection restreint, elle ne réordonne
+  /// pas. Sans sélection, c'est tout ce qui est listé.
+  List<ZListRow> _exportRows() {
+    final selected = _selection?.selectedIds.value ?? const <String>{};
+    if (selected.isEmpty) return _visibleRows;
+    return <ZListRow>[
+      for (final row in _visibleRows)
+        if (selected.contains(row.id)) row,
+    ];
+  }
+
+  /// Produit le fichier du format [exporter] et le remet à l'application.
+  ///
+  /// Rien ici ne peut emporter l'écran (invariant AD-10) : une liste vide
+  /// s'annonce, un exporteur en échec — ou qui lève — s'annonce aussi, et la
+  /// remise du fichier reste le seul chemin de sortie.
+  Future<void> _runExport(BuildContext context, ZListExporter exporter) async {
+    final policy = widget.export;
+    if (policy == null) return;
+    final rows = _exportRows();
+    if (rows.isEmpty) {
+      _notify(context, label(context, 'exportEmpty'), ZToastSeverity.warning);
+      return;
+    }
+    final title = label(context, widget.title);
+    // Mêmes colonnes, même formatage que le rendu : la requête est construite
+    // exactement comme `DynamicList` construit la sienne (`zListFormatOf`,
+    // voie unique des seams d'affichage). Les ornements d'écran — numéro
+    // d'ordre, cases à cocher, boutons d'action — ne sont pas des colonnes et
+    // n'entrent donc jamais dans le fichier.
+    final request = ZListRenderRequest.fromSchema(
+      _listFields,
+      rows,
+      policy: widget.columnPolicy,
+      formatting: zListFormatOf(context),
+    );
+    // En-têtes résolus AVANT l'appel : l'exporteur est asynchrone, et un
+    // `BuildContext` ne se traverse pas au-delà d'un `await`.
+    final headers = <String, String>{
+      for (final column in request.columns)
+        column.header: label(context, column.header),
+    };
+    final result = await exporter.exportSafely(
+      request,
+      title: title,
+      resolveHeader: (key) => headers[key] ?? key,
+    );
+    if (!mounted || !context.mounted) return;
+    final failure = result.fold<ZFailure?>((f) => f, (_) => null);
+    if (failure != null) {
+      _notify(
+        context,
+        '${label(context, 'exportFailed')} — ${failure.message}',
+        ZToastSeverity.error,
+      );
+      return;
+    }
+    final bytes = result.getOrElse(() => Uint8List(0));
+    await policy.onExported(
+      context,
+      ZExportedBytes(
+        bytes: bytes,
+        fileName: zExportFileName(
+          policy.fileBaseName ?? title,
+          exporter.fileExtension,
+        ),
+        mimeType: exporter.mimeType,
+      ),
+    );
+  }
+
+  /// Une entrée de menu par format offert — « Exporter (CSV) ».
+  ///
+  /// Les entrées vont au **menu de débordement** de l'app-bar : l'export est un
+  /// geste occasionnel, il n'a pas à occuper une place permanente à côté des
+  /// gestes du quotidien. Aucun format déclaré ⇒ aucune entrée, donc aucun
+  /// menu supplémentaire.
+  ///
+  /// L'export est une **lecture** : il est offert là où le listing l'est, et
+  /// nulle part ailleurs (`ZCrudAction.view`). Aucun droit propre n'est
+  /// introduit.
+  List<ZAppBarAction> _exportEntries(BuildContext context, ZAcl acl) {
+    final exporters = _exporters;
+    if (exporters.isEmpty || !_viewAllowed(acl)) {
+      return const <ZAppBarAction>[];
+    }
+    final export = label(context, 'export');
+    return <ZAppBarAction>[
+      for (final exporter in exporters)
+        ZAppBarAction(
+          icon: Icons.file_download_outlined,
+          semanticLabel: '$export (${label(context, exporter.labelKey)})',
+          tooltip: '$export (${label(context, exporter.labelKey)})',
+          isOverflow: true,
+          onPressed: () => _runExport(context, exporter),
+        ),
+    ];
+  }
+
+  Widget _withBatchBar(BuildContext context, Widget body) {
+    final controller = _selection;
+    if (controller == null || !_selectionOffered) return body;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        ValueListenableBuilder<Set<String>>(
+          valueListenable: controller.selectedIds,
+          builder: (context, selected, _) => selected.isEmpty
+              ? const SizedBox.shrink()
+              : _buildBatchBar(context, controller),
+        ),
+        Expanded(child: body),
+      ],
+    );
+  }
+
+  /// Contenu de la barre : compteur, « tout sélectionner » (si déclaré), puis
+  /// les actions de masse gouvernées. Aucune action offerte ⇒ aucune barre
+  /// (jamais une barre vide).
+  Widget _buildBatchBar(
+    BuildContext context,
+    ZListSelectionController controller,
+  ) {
+    final actions = _batchActions(context, _resolvedAcl);
+    if (actions.isEmpty) return const SizedBox.shrink();
+    final policy = widget.selection!;
+    final selectAll = policy.showSelectAll && _visibleIds.isNotEmpty;
+    return Padding(
+      key: const ValueKey('zCrudBatchBar'),
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
+      child: ZBatchActionBar(
+        controller: controller,
+        actions: actions,
+        countLabelBuilder: (count) =>
+            '$count ${label(context, 'selectedCount', fallback: 'selected')}',
+        selectAllLabel: selectAll
+            ? label(context, 'selectAll', fallback: 'Select all')
+            : null,
+        onSelectAll: selectAll ? () => controller.selectAll(_visibleIds) : null,
+        overflowLabel: label(context, 'moreActions'),
+      ),
+    );
   }
 
   // ── Projection et contrôleurs ─────────────────────────────────────────────
 
+  /// Projette une entité en ligne et **indexe** l'entité sous la même clé —
+  /// celle de la convention publique `ZListRow.keyOf` (identité réelle, ou clé
+  /// éphémère pour une entité non encore persistée). C'est cet index que
+  /// `DynamicList.entityFor` consulte, pour les actions de ligne comme pour
+  /// les tuiles typées.
   ZListRow _project(T item) {
-    final id = item.id ?? ZListRow.ephemeralKey(identityHashCode(item));
+    final id = ZListRow.keyOf(item);
     _entities[id] = item;
     return ZListRow(id: id, cells: _cellsOf(item));
   }
 
-  ZListController<T> _createController(ZRepository<T> repo) =>
-      ZListController<T>(
-        repository: repo,
-        toRow: _project,
-        schema: _listFields,
-        watchMutations: true,
-      );
+  /// Construit un contrôleur de listing pour [repo], **gouverné par la
+  /// politique de requête déclarée** :
+  ///
+  /// * `pageSize` devient la taille de page curseur du contrôleur ;
+  /// * `baseFilters` devient son socle **persistant** de filtres — le cœur
+  ///   garantit qu'ils sont ANDés en tête de chaque requête et qu'aucun
+  ///   `setFilters`/`setSearch` ne peut les écraser ;
+  /// * `sort` devient le tri **de naissance** du contrôleur
+  ///   (`initialSorts`) : la première requête — celle que la construction
+  ///   émet — part déjà triée, au lieu d'en émettre une non triée puis de la
+  ///   remplacer. Un tri demandé plus tard (`sortBy`) le remplace ;
+  /// * `searchScope` et `searchFolding` deviennent la sémantique de recherche
+  ///   portée par **chaque** requête du contrôleur — vue corbeille comprise.
+  ZListController<T> _createController(ZRepository<T> repo) {
+    final policy = widget.query;
+    return ZListController<T>(
+      repository: repo,
+      toRow: _project,
+      schema: _listFields,
+      pageSize: policy.pageSize,
+      baseFilters: policy.baseFilters,
+      initialSorts: policy.sort,
+      searchScope: policy.searchScope,
+      searchFolding: policy.searchFolding,
+      watchMutations: true,
+    );
+  }
+
+  /// Réapplique à un contrôleur **fraîchement créé** le tri et les filtres déjà
+  /// demandés par l'application — le cas de la corbeille ouverte après un tri.
+  /// Sans demande en cours (le cas courant), rien n'est émis.
+  void _restoreRequestedQuery(ZListController<T> controller) {
+    if (_userSort.isNotEmpty) controller.setSort(_userSort);
+    if (_userFilters.isNotEmpty) controller.setFilters(_userFilters);
+  }
+
+  /// Contrôleur des **vivants**, créé au premier besoin (jamais avant qu'un
+  /// rendu autorisé ne le réclame). `null` sur la voie `items`.
+  ZListController<T> _ensureLiveController() {
+    final existing = _liveController;
+    if (existing != null) return existing;
+    final controller = _createController(widget.source.repository!);
+    _liveController = controller;
+    _restoreRequestedQuery(controller);
+    return controller;
+  }
 
   ZListController<T> _ensureTrashController() {
     final existing = _trashController;
@@ -558,35 +2166,158 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
     final repo = widget.source.repository!;
     final controller = _createController(_ZDeletedScopeRepository<T>(repo));
     _trashController = controller;
+    _restoreRequestedQuery(controller);
     return controller;
   }
 
   // ── Rendu ─────────────────────────────────────────────────────────────────
 
+  /// Résout la variante de vue effective.
+  ///
+  /// La tuile déclarée par l'application ([ZCrudScreen.itemBuilder], qui reçoit
+  /// l'entité `T`) descend **dans le layout choisi par l'application**, quel
+  /// qu'il soit — grille de cartes comprise (`ZListLayout.withEntityTiles`).
+  /// Un layout qui porte déjà sa propre tuile la garde (l'explicite l'emporte
+  /// sur l'injecté). Sans tuile déclarée, le rendu reste la tuile générique du
+  /// paquet.
   ZListLayout _effectiveLayout() {
-    final layout = widget.layout;
-    if (layout != null) return layout;
     final itemBuilder = widget.itemBuilder;
+    final layout = widget.layout;
+    // Présentation en menu : la tuile est enveloppée par `ZRowActionsMenu`
+    // (déclencheur et/ou geste contextuel). L'enveloppe n'est posée que sur
+    // les tuiles dont l'écran est PROPRIÉTAIRE — jamais sur celle qu'un layout
+    // de l'application porte déjà.
+    //
+    // Elle l'est aussi quand les boutons RESTENT en ligne mais qu'un geste
+    // contextuel est offert : le geste s'ajoute alors aux boutons, sans
+    // déclencheur supplémentaire.
+    final decorate = !_inlineActionsShown || _contextGestureOffered;
+    if (layout != null) {
+      if (itemBuilder == null) return layout;
+      return layout.withEntityTiles<T>(
+        decorate ? _menuDecorated(itemBuilder) : itemBuilder,
+      );
+    }
+    if (itemBuilder != null) {
+      return ZListBuilderLayout.forEntity<T>(
+        decorate ? _menuDecorated(itemBuilder) : itemBuilder,
+      );
+    }
     return ZListBuilderLayout(
       itemBuilder: (context, row, columns) {
-        if (itemBuilder != null) {
-          final entity = _entities[row.id];
-          if (entity == null) return const SizedBox.shrink();
-          return itemBuilder(context, entity, columns);
-        }
-        return _ZCrudDefaultTile(row: row, columns: columns);
+        final Widget tile = _ZCrudDefaultTile(row: row, columns: columns);
+        if (!decorate) return tile;
+        final entity = _entities[row.id];
+        // Ligne sans entité résolue : aucune action ne peut être liée, la
+        // tuile est rendue nue (jamais un déclencheur qui n'ouvrirait rien).
+        if (entity == null) return tile;
+        return _rowActionsMenu(context, entity, tile);
       },
     );
   }
 
+  // ── Présentation des actions de ligne ─────────────────────────────────────
+
+  /// Nombre d'actions **assemblées** de la vue courante — critère de la
+  /// présentation adaptative (le filtrage ACL, lui, est par ligne).
+  int get _assembledActionCount => _assembledRowActions()?.length ?? 0;
+
+  /// Les actions restent-elles des **boutons visibles dans la ligne** ?
+  ///
+  /// Vrai pour le défaut ([ZRowActionsPresentation.inline]) et pour la
+  /// présentation adaptative tant que la ligne ne porte pas plus d'actions que
+  /// le seuil déclaré.
+  bool get _inlineActionsShown => switch (widget.rowActionsPresentation) {
+        ZRowActionsPresentation.inline => true,
+        ZRowActionsPresentation.menu => false,
+        ZRowActionsPresentation.contextMenu => false,
+        ZRowActionsPresentation.auto =>
+          _assembledActionCount <= widget.inlineActionLimit,
+      };
+
+  /// Le **geste contextuel** (clic droit / appui long) est-il offert ?
+  bool get _contextGestureOffered =>
+      widget.rowActionsPresentation == ZRowActionsPresentation.contextMenu ||
+      widget.rowActionsPresentation == ZRowActionsPresentation.auto;
+
+  /// Résout les actions d'une ligne **exactement comme `DynamicList`** : les
+  /// deux présentations empruntent la **même** voie du socle
+  /// (`zResolveRowActions`), pour qu'aucune ne puisse dériver de l'autre sur
+  /// une question de droits — refus par défaut sans ACL déclarée
+  /// (fail-closed), intersection avec la gouvernance de ligne, filtrage ou
+  /// désactivation selon le mode d'ACL déclaré, entité liée à l'effet.
+  List<ZResolvedRowAction> _resolveRowActionsFor(
+    BuildContext context,
+    T entity,
+  ) {
+    final actions = _assembledRowActions();
+    if (actions == null) return const <ZResolvedRowAction>[];
+    final ZAcl acl = ZcrudScope.maybeOf(context)?.acl ?? const ZDenyAllAcl();
+    return zResolveRowActions<T>(
+      context,
+      actions: actions,
+      entity: entity,
+      acl: acl,
+      mode: widget.actionAclMode,
+      rowAcl: widget.rowAcl,
+      collectionId: widget.collectionId,
+    );
+  }
+
+  /// Enveloppe une tuile typée de l'application du menu d'actions.
+  ZCrudItemBuilder<T> _menuDecorated(ZCrudItemBuilder<T> builder) =>
+      (context, entity, columns) =>
+          _rowActionsMenu(context, entity, builder(context, entity, columns));
+
+  /// Tuile portant le menu d'actions de la ligne.
+  ///
+  /// Le déclencheur visible est rendu dès que les boutons en ligne ne le sont
+  /// pas : l'action reste ainsi atteignable **sans** geste contextuel
+  /// (invariant AD-13).
+  Widget _rowActionsMenu(BuildContext context, T entity, Widget tile) =>
+      ZRowActionsMenu(
+        actions: _resolveRowActionsFor(context, entity),
+        showTrigger: !_inlineActionsShown,
+        secondaryTap: _contextGestureOffered,
+        longPress: _contextGestureOffered &&
+            widget.longPressOwner == ZRowLongPressOwner.contextMenu,
+        child: tile,
+      );
+
   Widget _buildList(BuildContext context, ZListViewState state) {
+    // Portée de « tout sélectionner » : les lignes RÉELLEMENT listées, relevées
+    // au moment où elles le sont. Une simple lecture d'état — rien n'est
+    // notifié ni reconstruit ici.
+    if (state is ZListReady) {
+      _visibleIds = <String>[for (final row in state.rows) row.id];
+      _visibleRows = state.rows;
+    } else {
+      // Vide, sans résultat, en erreur, en chargement : il n'y a rien à
+      // l'écran, donc rien à exporter. Conserver les lignes du rendu précédent
+      // ferait exporter ce que l'utilisateur ne voit plus.
+      _visibleRows = const <ZListRow>[];
+    }
     final list = DynamicList<T>(
       fields: _listFields,
       state: state,
+      // Sélection : le contrôleur possédé par l'écran descend dans la liste,
+      // qui rend les cases à cocher. `null` (aucune politique déclarée) ⇒ liste
+      // strictement inchangée.
+      selection: _selectionOffered ? _selection : null,
+      // Ouverture de la sélection : à l'appui long si c'est à elle que ce
+      // geste a été déclaré, en permanence sinon (défaut inchangé).
+      selectionActivation:
+          widget.longPressOwner == ZRowLongPressOwner.selection
+              ? ZListSelectionActivation.longPress
+              : ZListSelectionActivation.always,
       layout: _effectiveLayout(),
       columnPolicy: widget.columnPolicy,
-      rowActions: _assembledRowActions(),
+      // Les actions ne descendent dans `DynamicList` que si elles doivent y
+      // être rendues EN BOUTONS : en présentation menu, la tuile porte le
+      // déclencheur, et laisser les boutons doublerait chaque action.
+      rowActions: _inlineActionsShown ? _assembledRowActions() : null,
       entityFor: (row) => _entities[row.id],
+      rowAcl: widget.rowAcl,
       actionAclMode: widget.actionAclMode,
       collectionId: widget.collectionId,
     );
@@ -598,27 +2329,14 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
   }
 
   /// Corps « voie repository » : contrôleur (vivants ou corbeille) écouté sur
-  /// sa seule tranche `state` (rebuild ciblé, AD-2).
+  /// sa seule tranche `state` (rebuild ciblé, AD-2). La recherche n'est plus
+  /// dans le corps : elle vit dans l'app-bar du shell (`ZAppBarSearchConfig`).
   Widget _buildRepositoryBody(BuildContext context) {
     final controller =
-        _trashView ? _ensureTrashController() : _liveController!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        if (widget.searchEnabled)
-          _ZCrudSearchBar(
-            key: ValueKey<String>(
-              _trashView ? 'zCrudSearchTrash' : 'zCrudSearchLive',
-            ),
-            onChanged: controller.setSearch,
-          ),
-        Expanded(
-          child: ValueListenableBuilder<ZListViewState>(
-            valueListenable: controller.state,
-            builder: (context, state, _) => _buildList(context, state),
-          ),
-        ),
-      ],
+        _trashView ? _ensureTrashController() : _ensureLiveController();
+    return ValueListenableBuilder<ZListViewState>(
+      valueListenable: controller.state,
+      builder: (context, state, _) => _buildList(context, state),
     );
   }
 
@@ -632,9 +2350,21 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
         if (predicate == null || predicate(item) == _trashView) item,
     ];
     final rows = <ZListRow>[for (final item in visible) _project(item)];
+    final policy = widget.query;
+    // Mêmes règles de composition que la voie dépôt, servies par les mêmes
+    // fonctions : filtres permanents en tête des filtres demandés, tri demandé
+    // sinon tri par défaut. La **taille de page** n'est pas appliquée ici :
+    // cette voie rend une liste déjà en mémoire, d'un bloc, sans geste « page
+    // suivante » — la tronquer masquerait des éléments sans recours.
     final page = zApplyListRequest(
       rows,
-      ZDataRequest(search: _search.isEmpty ? null : _search),
+      ZDataRequest(
+        filters: policy.filtersWith(_userFilters),
+        sorts: policy.sortFor(_userSort),
+        search: _search.isEmpty ? null : _search,
+        searchScope: policy.searchScope,
+        searchFolding: policy.searchFolding,
+      ),
       schema: _listFields,
     );
     final ZListViewState state;
@@ -645,34 +2375,32 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
     } else {
       state = ZListReady(page.rows);
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        if (widget.searchEnabled)
-          _ZCrudSearchBar(
-            key: ValueKey<String>(
-              _trashView ? 'zCrudSearchTrash' : 'zCrudSearchLive',
-            ),
-            onChanged: (value) => setState(() => _search = value),
-          ),
-        Expanded(child: _buildList(context, state)),
-      ],
-    );
+    return _buildList(context, state);
   }
 
   Widget _buildBody(BuildContext context) {
     // Mode onglets : le corps vivant est le ZTabbedList déclaré (chaque onglet
     // possède sa vue) ; la corbeille reste le listing assemblé de l'écran.
     if (widget.tabs != null && !_trashView) {
-      return ZTabbedList(
-        tabs: widget.tabs!,
+      final Widget tabbed = ZTabbedList(
+        tabs: _tabsWithComposedQuery(widget.tabs!),
         header: widget.header,
         activeIndexNotifier: _activeTabIndex,
       );
+      final acl = widget.acl;
+      if (acl == null) return tabbed;
+      // L'ACL de l'écran est posée AU-DESSUS des onglets : c'est elle que la
+      // restriction d'un onglet vient intersecter, et que lisent les listes
+      // construites par les onglets (même dérivation que la voie sans
+      // onglets, où elle enveloppe la liste assemblée).
+      return ZcrudScope.derive(context, acl: acl, child: tabbed);
     }
-    final body = widget.source.repository != null
-        ? _buildRepositoryBody(context)
-        : _buildItemsBody(context);
+    final body = _withBatchBar(
+      context,
+      widget.source.repository != null
+          ? _buildRepositoryBody(context)
+          : _buildItemsBody(context),
+    );
     final header = widget.header;
     if (header == null || _trashView) return body;
     return Column(
@@ -683,7 +2411,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
 
   bool _createOffered(ZAcl acl, int activeTabIndex) {
     if (!widget.canCreate ||
-        widget.readOnly ||
+        _mode != ZScreenMode.full ||
         _trashView ||
         !_editionAvailable) {
       return false;
@@ -696,58 +2424,318 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>> {
         !tabs[activeTabIndex].canCreate) {
       return false;
     }
-    return acl.can(ZCrudAction.create, collectionId: widget.collectionId);
+    // Droits de l'onglet actif : ils RESTREIGNENT ceux de l'écran, jamais
+    // l'inverse (voir `_tabScopedAcl`).
+    return _tabScopedAcl(acl, activeTabIndex)
+        .can(ZCrudAction.create, collectionId: widget.collectionId);
   }
 
-  bool _trashToggleOffered(ZAcl acl) =>
-      _trashEnabled &&
-      !_trashView &&
-      (acl.can(ZCrudAction.restore, collectionId: widget.collectionId) ||
-          acl.can(ZCrudAction.delete, collectionId: widget.collectionId));
+  /// Nombre d'éléments en corbeille, ou `null` s'il est **inconnu**.
+  ///
+  /// Deux sources, dans cet ordre : le compte déclaré par l'application
+  /// ([ZCrudScreen.trashCount]), puis la dérivation gratuite de la voie
+  /// `items` (la liste est déjà en mémoire, le prédicat de suppression déjà
+  /// déclaré). Sur la voie dépôt sans déclaration, le compte reste inconnu :
+  /// l'écran n'interroge jamais la source pour afficher un nombre.
+  int? _resolveTrashCount() {
+    final declared = widget.trashCount;
+    if (declared != null) return declared.value;
+    final items = widget.source.items;
+    final predicate = widget.source.isDeleted;
+    if (items == null || predicate == null) return null;
+    var count = 0;
+    for (final item in items) {
+      if (predicate(item)) count++;
+    }
+    return count;
+  }
+
+  /// L'accès à la corbeille est-il offert ?
+  ///
+  /// Trois conditions, toutes nécessaires :
+  ///
+  /// * la corbeille **existe** pour cet écran, et on n'y est pas déjà ;
+  /// * l'usager a de quoi y **faire quelque chose** : restaurer ou purger.
+  ///   Le droit de *supprimer* n'en fait pas partie — il ouvre la mise à la
+  ///   corbeille, pas la corbeille elle-même. Qui peut supprimer sans pouvoir
+  ///   ni restaurer ni purger n'a rien à y faire ;
+  /// * la corbeille n'est pas **vide**, si la déclaration l'exige
+  ///   (`ZTrashPolicy.visibleWhenEmpty: false`). Compte inconnu ⇒ l'accès
+  ///   reste offert : une corbeille non comptée n'est pas une corbeille vide.
+  bool _trashToggleOffered(ZAcl acl, int? count) {
+    if (!_trashEnabled || _trashView) return false;
+    final allowed =
+        acl.can(ZCrudAction.restore, collectionId: widget.collectionId) ||
+            acl.can(ZCrudAction.clear, collectionId: widget.collectionId);
+    if (!allowed) return false;
+    if (!widget.trashPolicy.visibleWhenEmpty && count != null && count <= 0) {
+      return false;
+    }
+    return true;
+  }
+
+  // ── Recherche (détenue par l'app-bar du shell) ────────────────────────────
+
+  /// Contrôleur de listing **actif** (voie repository), ou `null` sur la voie
+  /// `items` (filtrage in-memory).
+  ZListController<T>? get _activeController {
+    if (widget.source.repository == null) return null;
+    return _trashView ? _ensureTrashController() : _ensureLiveController();
+  }
+
+  /// La recherche est-elle offerte ? Déclarée par
+  /// [ZCrudScreen.searchEnabled], et **sans effet en mode onglets** hors
+  /// corbeille (chaque onglet possède sa propre vue) — exactement la portée
+  /// documentée avant le portage sur `zcrud_ui_kit`.
+  bool get _searchOffered {
+    if (!widget.searchEnabled) return false;
+    return !(widget.tabs != null && !_trashView);
+  }
+
+  /// Émission de la query par le shell : la valeur est propagée **telle
+  /// quelle** (aucune normalisation ici) au contrôleur actif, ou re-partitionne
+  /// la voie `items`.
+  void _onSearchChanged(String query) {
+    _search = query;
+    final controller = _activeController;
+    if (controller != null) {
+      controller.setSearch(query);
+      return;
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// Bascule vivants ⇄ corbeille : réaligne le filtre du contrôleur devenu
+  /// actif sur la query **visible** dans l'app-bar (le shell conserve sa
+  /// saisie d'une vue à l'autre).
+  void _setTrashView(bool value) {
+    // La sélection ne franchit pas la bascule : les éléments cochés d'une vue
+    // n'existent pas dans l'autre, et un lot exécuté sur eux serait invisible.
+    _clearSelection();
+    setState(() => _trashView = value);
+    if (_search.isEmpty) return;
+    _activeController?.setSearch(_search);
+  }
+
+  // ── Actions d'app-bar assemblées ──────────────────────────────────────────
+
+  /// Les actions assemblées passent par `ZAppBarAction.widget` (et non par le
+  /// constructeur à icône) uniquement pour **porter une `ValueKey`** sur le
+  /// glyphe : ces clés sont la surface de ciblage des gardes de l'écran et de
+  /// celles des hôtes. Le rendu est **identique** au chemin à icône : le shell
+  /// emballe les deux formes de la même façon
+  /// (`Semantics(label:) > ExcludeSemantics > enfant`).
+  List<ZAppBarAction> _appBarActions(
+    BuildContext context,
+    ZAcl acl,
+    int? trashCount,
+  ) {
+    final trashLabel = label(context, 'trash', fallback: 'Trash');
+    return <ZAppBarAction>[
+      ...widget.actions,
+      // Chemin DÉPRÉCIÉ : widget déjà construit, emballé inerte
+      // (`onPressed: null`) — c'est le bouton de l'hôte qui reçoit le tap.
+      // ignore: deprecated_member_use_from_same_package
+      for (final action in widget.appBarActions)
+        ZAppBarAction.widget(
+          semanticLabel: '',
+          child: action,
+        ),
+      if (_trashToggleOffered(acl, trashCount))
+        ZAppBarAction.widget(
+          semanticLabel: _trashActionLabel(context, trashLabel, trashCount),
+          tooltip: trashLabel,
+          onPressed: () => _setTrashView(true),
+          child: _trashToggleGlyph(trashCount),
+        ),
+      // Export : une entrée par format déclaré, dans le menu de débordement.
+      // Aucun format déclaré ⇒ liste vide ⇒ app-bar strictement inchangée.
+      ..._exportEntries(context, acl),
+      if (_createOffered(acl, _activeTabIndex.value))
+        ZAppBarAction.widget(
+          semanticLabel: label(context, 'create'),
+          tooltip: label(context, 'create'),
+          onPressed: _create,
+          child: const Icon(Icons.add, key: ValueKey('zCrudCreate')),
+        ),
+    ];
+  }
+
+  /// `true` si la **pastille de comptage** doit accompagner l'accès à la
+  /// corbeille : la déclaration la veut (`ZTrashPolicy.showCount`), le compte
+  /// est connu, et il n'est pas nul (une pastille à zéro n'apprend rien).
+  bool _trashBadgeShown(int? count) =>
+      widget.trashPolicy.showCount && count != null && count > 0;
+
+  /// Glyphe de l'accès à la corbeille, **pastillé** du nombre d'éléments
+  /// quand il est connu.
+  ///
+  /// La clé du glyphe (`zCrudTrashToggle`) est conservée dans les deux cas :
+  /// elle est la surface de ciblage des gardes de l'écran et de celles des
+  /// applications, et ne doit pas dépendre de la présence d'une pastille.
+  Widget _trashToggleGlyph(int? count) {
+    const glyph = Icon(Icons.delete, key: ValueKey('zCrudTrashToggle'));
+    if (!_trashBadgeShown(count)) return glyph;
+    return ZCountBadge(
+      key: const ValueKey('zCrudTrashCount'),
+      count: count!,
+      child: glyph,
+    );
+  }
+
+  /// Annonce de l'accès à la corbeille : son libellé, suivi du nombre
+  /// d'éléments quand il est affiché (« Corbeille, 3 éléments dans la
+  /// corbeille »). Sans pastille, l'annonce est inchangée.
+  String _trashActionLabel(
+    BuildContext context,
+    String trashLabel,
+    int? count,
+  ) {
+    if (!_trashBadgeShown(count)) return trashLabel;
+    final unit = label(context, 'trashCount', fallback: 'items in trash');
+    return '$trashLabel, $count $unit';
+  }
+
+  /// État **accès refusé** : rendu à la place du listing quand
+  /// `ZCrudAction.view` n'est pas autorisé pour la collection.
+  ///
+  /// Composé des briques d'état de `zcrud_ui_kit` (`ZErrorState`) : icône,
+  /// titre et message issus de la l10n générique, couleurs dérivées du thème
+  /// (jamais de littéral). Aucune action d'app-bar, aucune recherche : l'écran
+  /// ne propose rien de ce qu'il refuse. **Aucune lecture de la source n'est
+  /// déclenchée** — le contrôleur de listing n'est pas construit.
+  Widget _buildAccessDenied(BuildContext context) => ZPageScaffold(
+        title: label(context, widget.title),
+        leading: widget.leading,
+        body: ZErrorState(
+          key: const ValueKey('zCrudAccessDenied'),
+          icon: Icons.lock_outline,
+          title: label(context, 'accessDenied', fallback: 'Access denied'),
+          message: label(
+            context,
+            'accessDeniedMessage',
+            fallback: 'You are not allowed to view this content.',
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
     final acl = _effectiveAcl(context);
-    return Scaffold(
-      appBar: AppBar(
-        leading: _trashView
-            ? IconButton(
-                key: const ValueKey('zCrudTrashBack'),
-                tooltip: label(context, 'back', fallback: 'Back'),
-                onPressed: () => setState(() => _trashView = false),
-                icon: const BackButtonIcon(),
-              )
-            : widget.leading,
-        title: Text(
-          _trashView
-              ? label(context, 'trash', fallback: 'Trash')
-              : label(context, widget.title),
-        ),
-        actions: <Widget>[
-          ...widget.appBarActions,
-          if (_trashToggleOffered(acl))
-            IconButton(
-              key: const ValueKey('zCrudTrashToggle'),
-              tooltip: label(context, 'trash', fallback: 'Trash'),
-              onPressed: () => setState(() => _trashView = true),
-              icon: const Icon(Icons.delete),
-            ),
-          ValueListenableBuilder<int>(
-            valueListenable: _activeTabIndex,
-            builder: (context, activeTabIndex, _) =>
-                _createOffered(acl, activeTabIndex)
-                    ? IconButton(
-                        key: const ValueKey('zCrudCreate'),
-                        tooltip: label(context, 'create'),
-                        onPressed: _create,
-                        icon: const Icon(Icons.add),
-                      )
-                    : const SizedBox.shrink(),
-          ),
-        ],
-      ),
-      body: _buildBody(context),
+    // Mémorisation pour les gestes exposés aux descendants, qui sont
+    // interrogés hors du `build` de l'écran (cf. `_resolvedAcl`).
+    _resolvedAcl = acl;
+    // `view` gouverne l'écran entier : refusé, rien n'est lu ni rendu du
+    // listing. Le test précède toute construction de corps (donc de
+    // contrôleur), pour qu'un refus n'interroge jamais la source.
+    if (!_viewAllowed(acl)) return _buildAccessDenied(context);
+    // Le corps est construit UNE fois et passé en `child:` du
+    // `ValueListenableBuilder` : au changement d'onglet actif, seule la
+    // coquille (donc la liste d'actions) est rebâtie — le sous-arbre du corps
+    // est l'instance IDENTIQUE, que Flutter ne reconstruit pas (AD-2).
+    final body = _buildBody(context);
+    final counter = widget.trashCount;
+    if (counter == null) return _buildShell(context, acl, body, _resolveTrashCount());
+    // Compte DÉCLARÉ : seule la coquille s'abonne. Le corps est construit une
+    // fois, au-dessus de l'abonnement, et transmis **tel quel** — changer le
+    // compte redessine la pastille, jamais la liste (AD-2).
+    return ValueListenableBuilder<int>(
+      valueListenable: counter,
+      child: body,
+      builder: (context, count, child) =>
+          _buildShell(context, acl, child!, count),
     );
+  }
+
+  /// Coquille de l'écran (barre, actions, corbeille) au-dessus d'un [body]
+  /// **déjà construit**, qu'elle transmet sans le reconstruire.
+  Widget _buildShell(
+    BuildContext context,
+    ZAcl acl,
+    Widget body,
+    int? trashCount,
+  ) {
+    return ValueListenableBuilder<int>(
+      valueListenable: _activeTabIndex,
+      child: body,
+      // Le scope des gestes est posé ICI, au-dessus de la coquille : le corps
+      // (donc chaque carte) en est descendant, et le changement d'onglet actif
+      // rafraîchit l'empreinte des capacités (la création dépend de l'onglet).
+      builder: (context, activeTabIndex, child) => ZCrudScreenScope(
+        actions: this,
+        signature: _actionsSignature(_createOffered(acl, activeTabIndex)),
+        // La politique de requête est OFFERTE aux vues que l'application
+        // construit sous l'écran — au premier chef la page d'un onglet, qui
+        // possède sa propre requête et veut hériter des filtres permanents
+        // sans les recopier. Le contexte n'est posé que si une politique est
+        // déclarée : sans déclaration, l'arbre reste celui d'avant.
+        child: _wrapQueryScope(
+          ZPageScaffold(
+            title: _trashView
+                ? label(context, 'trash', fallback: 'Trash')
+                : label(context, widget.title),
+            leading: _trashView
+                ? IconButton(
+                    key: const ValueKey('zCrudTrashBack'),
+                    tooltip: label(context, 'back', fallback: 'Back'),
+                    onPressed: () => _setTrashView(false),
+                    icon: const BackButtonIcon(),
+                  )
+                : widget.leading,
+            actions: _appBarActions(context, acl, trashCount),
+            search: _searchOffered
+                ? ZAppBarSearchConfig(onQueryChanged: _onSearchChanged)
+                : null,
+            body: child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Compose, pour **chaque onglet**, la politique de requête que sa page
+  /// lira : les filtres permanents de l'écran **puis** le socle déclaré par
+  /// l'onglet (`ZListTab.baseFilters`, que `ZListTab.category` renseigne).
+  ///
+  /// C'est l'assembleur qui compose, non plus la page : une page d'onglet n'a
+  /// plus à aller chercher la politique de l'écran pour y mêler sa catégorie —
+  /// elle lit `ZListQueryPolicy.of(context).baseFilters` et le tout y est
+  /// déjà. Les deux socles sont ANDés en tête de chaque requête et restent
+  /// hors d'atteinte d'une recherche ou d'un filtre utilisateur : chercher
+  /// dans un onglet ne peut pas en faire sortir.
+  ///
+  /// Un onglet sans socle, sous un écran sans politique, est rendu **tel
+  /// quel** — aucun `InheritedWidget` de plus dans son arbre.
+  List<ZListTab> _tabsWithComposedQuery(List<ZListTab> tabs) {
+    final policy = widget.query;
+    return <ZListTab>[
+      for (final tab in tabs)
+        if (policy.declaresNothing && tab.baseFilters.isEmpty)
+          tab
+        else
+          tab.copyWith(
+            builder: (context) => ZListQueryScope(
+              policy: policy.copyWith(
+                baseFilters: <ZFilter>[
+                  ...policy.baseFilters,
+                  ...tab.baseFilters,
+                ],
+              ),
+              // La page doit être construite SOUS la portée, sinon elle lirait
+              // l'ancienne (ou aucune).
+              child: Builder(builder: tab.builder),
+            ),
+          ),
+    ];
+  }
+
+  /// Enveloppe [child] du contexte de politique de requête — **uniquement**
+  /// quand une politique est déclarée. Sans déclaration, [child] est rendu tel
+  /// quel : l'arbre est celui d'avant, à l'identique.
+  Widget _wrapQueryScope(Widget child) {
+    final policy = widget.query;
+    if (policy.declaresNothing) return child;
+    return ZListQueryScope(policy: policy, child: child);
   }
 }
 
@@ -802,39 +2790,6 @@ class _ZDeletedScopeRepository<T extends ZEntity> implements ZRepository<T> {
   }
 }
 
-/// Barre de recherche assemblée : `TextField` accessible câblé au contrôleur
-/// de la vue courante. Libellé via le seam l10n, primitives directionnelles.
-class _ZCrudSearchBar extends StatelessWidget {
-  const _ZCrudSearchBar({required this.onChanged, super.key});
-
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final hint = label(context, 'search');
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(
-        horizontal: 12,
-        vertical: 8,
-      ),
-      child: Semantics(
-        textField: true,
-        label: hint,
-        child: TextField(
-          key: const ValueKey('zCrudSearch'),
-          textAlign: TextAlign.start,
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            isDense: true,
-            hintText: hint,
-            prefixIcon: const Icon(Icons.search),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Tuile générique par défaut : première colonne en titre, colonnes suivantes
 /// en sous-titre `en-tête : valeur formatée` (formats du cœur —
 /// `ZListColumn.format`).
@@ -868,16 +2823,31 @@ class _ZCrudDefaultTile extends StatelessWidget {
 /// create/dispose — AD-2), rend un `DynamicEdition` sur les specs dérivées et
 /// un pied enregistrer/annuler. L'échec de persistance est affiché **dans**
 /// la surface (`Semantics` liveRegion), jamais levé (AD-10).
+///
+/// En mode lecture ([readOnly]), c'est **le même formulaire, les mêmes
+/// champs** : seul le rendu change (`DynamicEdition.readOnly`, qui force
+/// `spec.copyWith(readOnly: true)` sur chaque champ), et le pied se réduit à
+/// une fermeture — il n'y a rien à enregistrer.
 class _ZCrudEditionForm extends StatefulWidget {
   const _ZCrudEditionForm({
+    required this.title,
     required this.fields,
     required this.initialValues,
     required this.onSubmit,
+    this.readOnly = false,
   });
+
+  /// Titre du mode courant (création / duplication / édition / consultation),
+  /// déjà résolu.
+  final String title;
 
   final List<ZFieldSpec> fields;
   final Map<String, Object?> initialValues;
   final Future<ZFailure?> Function(Map<String, Object?> values) onSubmit;
+
+  /// Rendu en **consultation** : tous les champs en lecture seule, aucun
+  /// bouton d'enregistrement.
+  final bool readOnly;
 
   @override
   State<_ZCrudEditionForm> createState() => _ZCrudEditionFormState();
@@ -927,11 +2897,25 @@ class _ZCrudEditionFormState extends State<_ZCrudEditionForm> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
+          Semantics(
+            header: true,
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(bottom: 12),
+              child: Text(
+                widget.title,
+                key: const ValueKey('zCrudFormTitle'),
+                style: theme.textTheme.titleLarge,
+              ),
+            ),
+          ),
           Flexible(
             child: DynamicEdition(
               controller: _controller,
               fields: widget.fields,
               shrinkWrap: true,
+              // Dernier maillon de la chaîne : le drapeau atteint enfin le
+              // rendu des champs, où toutes les familles le respectent déjà.
+              readOnly: widget.readOnly,
             ),
           ),
           ValueListenableBuilder<String?>(
@@ -960,24 +2944,32 @@ class _ZCrudEditionFormState extends State<_ZCrudEditionForm> {
               ConstrainedBox(
                 constraints:
                     const BoxConstraints(minWidth: 48, minHeight: 48),
+                // En consultation, le pied n'offre qu'une **fermeture** :
+                // « Annuler » n'a pas de sens là où rien n'a été saisi, et le
+                // bouton d'enregistrement n'existe pas.
                 child: TextButton(
-                  key: const ValueKey('zCrudFormCancel'),
+                  key: widget.readOnly
+                      ? const ValueKey('zCrudFormClose')
+                      : const ValueKey('zCrudFormCancel'),
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text(label(context, 'cancel')),
-                ),
-              ),
-              ConstrainedBox(
-                constraints:
-                    const BoxConstraints(minWidth: 48, minHeight: 48),
-                child: ValueListenableBuilder<bool>(
-                  valueListenable: _busy,
-                  builder: (context, busy, _) => FilledButton(
-                    key: const ValueKey('zCrudFormSave'),
-                    onPressed: busy ? null : _submit,
-                    child: Text(label(context, 'save')),
+                  child: Text(
+                    label(context, widget.readOnly ? 'close' : 'cancel'),
                   ),
                 ),
               ),
+              if (!widget.readOnly)
+                ConstrainedBox(
+                  constraints:
+                      const BoxConstraints(minWidth: 48, minHeight: 48),
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: _busy,
+                    builder: (context, busy, _) => FilledButton(
+                      key: const ValueKey('zCrudFormSave'),
+                      onPressed: busy ? null : _submit,
+                      child: Text(label(context, 'save')),
+                    ),
+                  ),
+                ),
             ],
           ),
         ],

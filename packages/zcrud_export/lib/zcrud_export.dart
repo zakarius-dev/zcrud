@@ -32,5 +32,7 @@ library;
 // et perd `syncfusion_flutter_xlsio`, `syncfusion_officecore` et `jiffy`.
 export 'package:zcrud_export_pdf/zcrud_export_pdf.dart';
 
+export 'src/data/z_csv_list_exporter.dart' show ZCsvListExporter;
 export 'src/data/z_export_api.dart' show ZExportApi;
 export 'src/data/z_exporter.dart' show ZExporter;
+export 'src/data/z_xlsx_list_exporter.dart' show ZXlsxListExporter;

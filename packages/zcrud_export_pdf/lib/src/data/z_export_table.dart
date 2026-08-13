@@ -32,9 +32,16 @@ class ZExportTable {
   /// - En-tête de colonne = `resolveHeader(col.header)` (défaut identité :
   ///   `ZListColumn.header` est une **clé l10n non résolue** ; l'app peut la
   ///   résoudre sans `BuildContext`, export headless — AD-13/AD-15).
-  /// - Cellule = `col.format(row.cells[col.name])` : réutilise le formateur PUR
-  ///   du cœur (choix résolu, join `', '`, ISO date…), identique à l'écran
-  ///   (SM-5), défensif (AD-10 : clé absente/valeur null → `''`).
+  /// - Cellule = `col.formatRow(row.cells[col.name], row.cells)` : réutilise le
+  ///   formateur PUR du cœur (choix résolu, join `', '`, ISO date…), identique
+  ///   à l'écran (SM-5), défensif (AD-10 : clé absente/valeur null → `''`).
+  ///
+  /// La cellule est lue **en connaissant toute la ligne**, exactement comme
+  /// l'écran la peint : un montant suit alors la devise portée par sa propre
+  /// ligne, et un format composé (`ZListColumn.formatWithRow`) est honoré. Lire
+  /// la seule valeur brute (`col.format`) rendrait un fichier qui ne dit pas ce
+  /// que l'utilisateur a sous les yeux — une perte silencieuse, jamais une
+  /// erreur.
   factory ZExportTable.fromRequest(
     ZListRenderRequest request, {
     String Function(String headerKey)? resolveHeader,
@@ -47,7 +54,8 @@ class ZExportTable {
     final rows = <List<String>>[
       for (final row in request.rows)
         <String>[
-          for (final col in columns) col.format(row.cells[col.name]),
+          for (final col in columns)
+            col.formatRow(row.cells[col.name], row.cells),
         ],
     ];
     return ZExportTable(headers: headers, rows: rows);

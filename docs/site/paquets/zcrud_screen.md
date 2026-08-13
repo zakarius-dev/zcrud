@@ -16,6 +16,14 @@ déclaration (`title` + `ZCrudSource`). Quand le type est enregistré au
 **dérivent** du schéma généré ; l'ACL vient du `ZcrudScope` ambiant et le mode
 de présentation du breakpoint.
 
+L'écran est **bâti sur `zcrud_ui_kit`** : la coquille de page
+(`ZPageScaffold`/`ZSearchableAppBar`, actions `ZAppBarAction` avec menu de
+débordement, recherche `ZAppBarSearchConfig`), la **confirmation** des gestes
+destructifs (`showZConfirmDialog`, `ZConfirmTone.destructive`) et la
+**notification** d'échec des actions de ligne (`ZToaster`/`ZToasterScope`)
+viennent du socle — aucune n'est réinventée ici. Les états vide / chargement /
+erreur du listing restent ceux de `DynamicList` (aucun état doublé).
+
 ## Quand l'utiliser
 
 - Pour un écran « liste dont on crée, édite et met à la corbeille les
@@ -48,5 +56,6 @@ de présentation du breakpoint.
 - [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_screen/README.md) — installation, démarrage rapide, API complète.
 - [zcrud_core](zcrud_core.md) — les briques assemblées (liste, édition, registre, ACL).
 - [zcrud_navigation](zcrud_navigation.md) — `presentEdition` et la politique de présentation.
+- [zcrud_ui_kit](zcrud_ui_kit.md) — coquille de page, app-bar recherchable, confirmation et toaster consommés par l'écran.
 - [zcrud_list](zcrud_list.md) — backend de **rendu** Syncfusion (`ZListRenderer`), à injecter pour le layout `dataGrid`.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

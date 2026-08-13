@@ -48,7 +48,8 @@ const Object _zScopeUndefined = Object();
 ///   [ZDependencyResolver.throwing]) — inclut, côté binding, le **seam de cycle
 ///   de vie** du `ZFormController` (défaut zéro-config : cycle local possédé par
 ///   l'hôte) ;
-/// - [acl] : port d'autorisation (défaut sûr [ZAllowAllAcl]) ;
+/// - [acl] : port d'autorisation (défaut **fail-closed** [ZDenyAllAcl] : sans
+///   ACL déclarée, aucun geste n'est offert) ;
 /// - [labels] : registre de libellés surchargeables (défaut `null` →
 ///   résolution retombe sur `ZcrudLocalizations`) ;
 /// - [theme] : design-tokens injectés (défaut `null` → `ZcrudTheme.of`
@@ -58,17 +59,23 @@ const Object _zScopeUndefined = Object();
 ///   `ZUnsupportedFieldWidget`). Instanciable, jamais un singleton statique.
 ///
 /// Résolution via [of] / [maybeOf]. Le constructeur par défaut (zéro-config) est
-/// utilisable sans fournir de manager : il expose un [ZAllowAllAcl] et un
+/// utilisable sans fournir de manager : il expose un [ZDenyAllAcl] et un
 /// resolver throwing, `labels`/`theme` à `null` — les dépendances applicatives
 /// DOIVENT être fournies explicitement (« seams throw par défaut », AD-6).
+///
+/// **Autorisations — refus par défaut.** Tant qu'aucune ACL n'est déclarée,
+/// aucun geste (créer, modifier, mettre à la corbeille, restaurer, actions de
+/// ligne) n'est offert. Déclarez la vôtre — `ZcrudScope(acl: MonAcl())` — ou,
+/// en développement, déclarez explicitement l'ouverture totale :
+/// `ZcrudScope(acl: const ZAllowAllAcl())`.
 class ZcrudScope extends InheritedWidget {
   /// Construit le scope. Zéro-config par défaut : [resolver] throwing + [acl]
-  /// permissive + [labels]/[theme] `null`. Un binding/app fournit des seams
+  /// **refusante** + [labels]/[theme] `null`. Un binding/app fournit des seams
   /// concrets en les passant ici.
   const ZcrudScope({
     required super.child,
     this.resolver = ZDependencyResolver.throwing,
-    this.acl = const ZAllowAllAcl(),
+    this.acl = const ZDenyAllAcl(),
     this.labels,
     this.theme,
     this.widgetRegistry,
@@ -94,7 +101,11 @@ class ZcrudScope extends InheritedWidget {
   /// Seam de résolution des dépendances applicatives (défaut : throwing).
   final ZDependencyResolver resolver;
 
-  /// Port d'autorisation (défaut : permissif [ZAllowAllAcl]).
+  /// Port d'autorisation (défaut **fail-closed** : [ZDenyAllAcl]).
+  ///
+  /// Sans ACL déclarée, aucun geste n'est offert. Pour une ouverture totale
+  /// assumée (développement, prototype), déclarez-la :
+  /// `ZcrudScope(acl: const ZAllowAllAcl())`.
   final ZAcl acl;
 
   /// Registre de libellés surchargeables (défaut `null`).

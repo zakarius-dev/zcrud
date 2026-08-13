@@ -26,6 +26,21 @@ import 'z_field_config.dart';
 import 'z_field_size.dart';
 import 'z_validator_spec.dart';
 
+/// Résolveur de **choix conscients de l'état** d'un champ à choix
+/// (`select`/`radio`/`checkbox`/`rowChips`).
+///
+/// Appelé **au rendu** du champ avec un lecteur [valueOf] donnant accès aux
+/// valeurs courantes des autres tranches du formulaire (`valueOf('date')`,
+/// `valueOf('pays')`, …). Le résultat remplace les options du champ ;
+/// prioritaire sur [ZFieldSpec.choices] quand non-`null`.
+///
+/// Le moteur d'édition s'abonne de façon **granulaire** aux tranches lues par
+/// le résolveur : changer la valeur d'un champ dont il dépend ne reconstruit
+/// **que** le champ à choix concerné — jamais le formulaire entier.
+typedef ZChoicesResolver = List<ZFieldChoice> Function(
+  Object? Function(String name) valueOf,
+);
+
 /// Spécification `const` d'un champ du schéma `zcrud`, projetée depuis
 /// `@ZcrudField`/`@ZcrudId` par le générateur `zcrud_generator`.
 class ZFieldSpec {
@@ -55,9 +70,19 @@ class ZFieldSpec {
     this.hintText,
     this.helperText,
     this.derivedFrom,
+    this.widgetKind,
+    this.choicesResolver,
   });
 
   /// Clé persistée du champ (snake_case par défaut — invariant AD-3).
+  ///
+  /// Un **nom pointé** (`'vido.chef_equipe_poste_id'`) est admis et signifie un
+  /// champ **imbriqué** du modèle. Le socle d'édition le traite comme une clé
+  /// **plate** (une tranche par nom, point compris) : l'aplatissement à
+  /// l'ouverture et le regroupement à la soumission se font **à la frontière**,
+  /// via les utilitaires symétriques `zFlattenPaths`/`zRegroupPaths`
+  /// (`z_path_values.dart`). L'écran CRUD assemblé (`zcrud_screen`) câble cette
+  /// paire d'office.
   final String name;
 
   /// Type déclaratif du champ (fourni ou inféré).
@@ -149,6 +174,39 @@ class ZFieldSpec {
   /// projection restent valides).
   final ZDerivation? derivedFrom;
 
+  /// **Discriminant de builder** pour les familles servies par le
+  /// `ZWidgetRegistry` (`widget`, `custom`, markdown/géo/tél…, et la famille
+  /// `boolean` quand un builder est enregistré).
+  ///
+  /// `null` par défaut ⇒ comportement **strictement inchangé** : le `kind`
+  /// résolu reste `type.name` (`'widget'`, `'custom'`, …). Non-`null`, il est
+  /// consulté **avant** le repli sur `type.name` : deux champs `widget` d'un
+  /// même formulaire peuvent ainsi porter deux builders distincts
+  /// (`widgetKind: 'aclMatrix'` / `widgetKind: 'planning'`), enregistrés sous
+  /// leur `kind` respectif. Si aucun builder n'est enregistré sous
+  /// [widgetKind], la résolution **retombe** sur `type.name` (défensif,
+  /// invariant AD-10), puis sur le repli habituel.
+  ///
+  /// **Déclaration manuelle** : ce champ n'est pas émis par le générateur
+  /// `zcrud_generator` — il se pose à la main dans la spec (ou via
+  /// `copyWith(widgetKind: …)`). Le porter sur `@ZcrudField` serait une
+  /// évolution séparée.
+  final String? widgetKind;
+
+  /// **Choix dérivés d'autres champs** — résolveur consulté au rendu,
+  /// prioritaire sur [choices] quand non-`null` (cf. [ZChoicesResolver]).
+  ///
+  /// `null` par défaut ⇒ comportement **strictement inchangé** (options
+  /// statiques [choices] et canaux `ZSelectConfig` existants).
+  ///
+  /// Comme [derivedFrom], ce membre porte une **closure** : il n'est pas émis
+  /// par le générateur (le schéma statique reste pur-données — invariant AD-3),
+  /// c'est une surcharge runtime posée par l'hôte
+  /// (`spec.copyWith(choicesResolver: …)`). Il est volontairement **exclu de
+  /// `==`/`hashCode`** : deux specs ne diffèrent jamais par l'identité d'une
+  /// closure (mémoïsation runtime et tests de projection restent valides).
+  final ZChoicesResolver? choicesResolver;
+
   /// `true` ssi ce champ porte un validateur [ZValidatorKind.required].
   /// Alimente l'astérisque « requis » du label enrichi (`ZFieldLabel`), sans
   /// dépendance Flutter.
@@ -180,6 +238,8 @@ class ZFieldSpec {
     String? hintText,
     String? helperText,
     ZDerivation? derivedFrom,
+    String? widgetKind,
+    ZChoicesResolver? choicesResolver,
   }) =>
       ZFieldSpec(
         name: name ?? this.name,
@@ -202,6 +262,8 @@ class ZFieldSpec {
         hintText: hintText ?? this.hintText,
         helperText: helperText ?? this.helperText,
         derivedFrom: derivedFrom ?? this.derivedFrom,
+        widgetKind: widgetKind ?? this.widgetKind,
+        choicesResolver: choicesResolver ?? this.choicesResolver,
       );
 
   @override
@@ -226,11 +288,12 @@ class ZFieldSpec {
           suffix == other.suffix &&
           hintText == other.hintText &&
           helperText == other.helperText &&
+          widgetKind == other.widgetKind &&
           _listEquals(validators, other.validators) &&
           _listEquals(choices, other.choices);
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll(<Object?>[
         runtimeType,
         name,
         type,
@@ -249,9 +312,10 @@ class ZFieldSpec {
         suffix,
         hintText,
         helperText,
+        widgetKind,
         Object.hashAll(validators),
         Object.hashAll(choices),
-      );
+      ]);
 
   @override
   String toString() => 'ZFieldSpec(name: $name, type: ${type.name})';

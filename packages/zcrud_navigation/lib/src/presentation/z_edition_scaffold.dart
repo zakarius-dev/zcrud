@@ -10,6 +10,21 @@
 /// | `dialog` | en-tête compacte + corps + **barre d'actions en pied**               |
 /// | `sheet`  | **poignée** + en-tête + corps scrollable + actions ancrées, `SafeArea` |
 ///
+/// ## Où atterrissent les actions, par mode
+///
+/// Les actions **positives** — `chrome.extraActions` puis l'enregistrement —
+/// sont rendues **exactement une fois** dans chaque mode, toujours dans la même
+/// rangée et dans cet ordre :
+///
+/// | `mode`   | Actions positives            | Abandon                     |
+/// |----------|------------------------------|-----------------------------|
+/// | `page`   | `actions` de la `SliverAppBar` | `leading` de la `SliverAppBar` |
+/// | `dialog` | barre d'actions **en pied**   | barre d'actions, côté début  |
+/// | `sheet`  | barre d'actions **en pied**, sous `SafeArea` | barre d'actions, côté début |
+///
+/// L'**en-tête** des modes `dialog` et `sheet` ne porte que le titre : aucune
+/// action n'y est dupliquée.
+///
 /// ## Ce que ce fichier N'EST PAS
 ///
 /// * Il n'importe **aucun** gestionnaire d'état ni routeur (invariants
@@ -250,10 +265,14 @@ class ZEditionScaffold extends StatelessWidget {
 
   // ── briques communes ────────────────────────────────────────────────────
 
-  /// En-tête compacte : titre (si fourni) + actions supplémentaires.
+  /// En-tête compacte des modes `dialog` et `sheet` : le **titre** seul.
   ///
-  /// Si ni titre ni action supplémentaire n'existent, l'en-tête reste un
-  /// `Padding`+`Row` **vides** — jamais un `throw` (invariant AD-10).
+  /// Les actions supplémentaires ne sont **pas** rendues ici : elles
+  /// appartiennent à la rangée des actions positives (`_actions`), une seule
+  /// fois par mode — cf. [ZEditionChrome.extraActions].
+  ///
+  /// Si aucun titre n'existe, l'en-tête reste un `Padding`+`Row` **vides** —
+  /// jamais un `throw` (invariant AD-10).
   Widget _header(BuildContext context, ZEditionChromeMetrics m) {
     final String? title = chrome.title;
     final TextTheme text = Theme.of(context).textTheme;
@@ -275,7 +294,6 @@ class ZEditionScaffold extends StatelessWidget {
             )
           else
             const Spacer(),
-          ...chrome.extraActions,
         ],
       ),
     );
@@ -303,6 +321,12 @@ class ZEditionScaffold extends StatelessWidget {
   }
 
   /// Les actions **positives** : `extraActions` puis l'enregistrement.
+  ///
+  /// C'est l'**unique** chemin de rendu de [ZEditionChrome.extraActions], dans
+  /// les trois modes — d'où l'unicité à l'écran. Cette rangée est montée une
+  /// fois par mode : dans l'en-tête de page (`_pageAppBar`) en `page`, dans la
+  /// barre d'actions en pied (`_actionBar`) en `dialog` et en `sheet`.
+  ///
   /// Liste **vide** (donc rien dans l'arbre) si aucune n'existe (invariant
   /// AD-4).
   List<Widget> _actions(BuildContext context, ZEditionChromeMetrics m) {

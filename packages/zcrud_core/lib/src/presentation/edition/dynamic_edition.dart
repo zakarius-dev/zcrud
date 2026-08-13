@@ -49,6 +49,7 @@ import '../../domain/ports/z_acl.dart';
 import '../l10n/z_localizations.dart';
 import '../theme/z_theme.dart';
 import '../z_form_controller.dart';
+import '../zcrud_scope.dart';
 import 'z_derivation_engine.dart';
 import 'z_field_widget.dart';
 import 'z_responsive_grid.dart';
@@ -222,7 +223,7 @@ class DynamicEdition extends StatefulWidget {
     this.gridRunGutter,
     this.conditionContext = const <String, Object?>{},
     this.manageVisibility = true,
-    this.acl = const ZAllowAllAcl(),
+    this.acl,
     this.formActions = const <ZFormAction>[],
     this.collectionId,
     this.collapseStore,
@@ -299,10 +300,18 @@ class DynamicEdition extends StatefulWidget {
   final bool manageVisibility;
 
   /// **Port d'autorisation** filtrant les [formActions] de niveau formulaire.
-  /// Défaut `const ZAllowAllAcl()` (permissif) ⇒ comportement **strictement
-  /// identique** au cas sans ACL quand [formActions] est vide. **Aucune règle
-  /// métier** dans le cœur : le gate appelle `acl.can(…)` (invariant AD-16).
-  final ZAcl acl;
+  ///
+  /// `null` (défaut) ⇒ l'ACL du `ZcrudScope` ambiant est consultée ; en
+  /// l'absence de scope, le repli est **refusant** (`ZDenyAllAcl`) : aucune
+  /// action de formulaire portant une permission n'est offerte. Déclarez votre
+  /// ACL — au scope (`ZcrudScope(acl: MonAcl())`, valable pour tout le
+  /// sous-arbre) ou ici pour ce seul formulaire. En développement, l'ouverture
+  /// totale se déclare : `acl: const ZAllowAllAcl()`.
+  ///
+  /// Sans [formActions], ce port n'a aucun effet visible (aucune zone d'actions
+  /// n'est rendue). **Aucune règle métier** dans le cœur : le gate se contente
+  /// d'appeler `acl.can(…)` (invariant AD-16).
+  final ZAcl? acl;
 
   /// **Actions de niveau formulaire** (barre d'actions en-tête). Chaque
   /// action est **masquée** (mode `hide`) si son `requiredPermission` n'est
@@ -776,10 +785,13 @@ class _DynamicEditionState extends State<DynamicEdition> {
   /// « Archiver »… sur un formulaire en lecture. Les actions de **lecture**
   /// (`view`, `history`) restent disponibles — la consultation n'est pas une
   /// écriture.
-  List<ZFormAction> _permittedFormActions() {
+  List<ZFormAction> _permittedFormActions(BuildContext context) {
     final actions = widget.formActions;
     if (actions.isEmpty) return const <ZFormAction>[];
-    final acl = widget.acl;
+    // Priorité : paramètre du formulaire > ACL du scope ambiant > refus.
+    final acl = widget.acl ??
+        ZcrudScope.maybeOf(context)?.acl ??
+        const ZDenyAllAcl();
     final readOnly = widget.readOnly;
     final result = <ZFormAction>[];
     for (final a in actions) {
@@ -814,7 +826,7 @@ class _DynamicEditionState extends State<DynamicEdition> {
 
         // Rétro-compat pixel : sans action AUTORISÉE (défaut `formActions` vide,
         // ou toutes refusées par l'ACL), aucune zone d'actions n'est rendue.
-        final actions = _permittedFormActions();
+        final actions = _permittedFormActions(context);
         if (actions.isEmpty) return list;
 
         // Barre d'actions en TÊTE + liste. En `shrinkWrap`, la liste garde sa

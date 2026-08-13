@@ -43,7 +43,7 @@ class ZcrudRiverpodScope extends StatefulWidget {
     required this.child,
     this.overrides = const [],
     this.seams = const {},
-    this.acl = const ZAllowAllAcl(),
+    this.acl = const ZDenyAllAcl(),
     super.key,
   });
 
@@ -56,7 +56,12 @@ class ZcrudRiverpodScope extends StatefulWidget {
   /// Registre `Type → provider` pour la résolution des seams.
   final Map<Type, ProviderListenable<Object?>> seams;
 
-  /// Port d'autorisation exposé au cœur (défaut : [ZAllowAllAcl]).
+  /// Port d'autorisation exposé au cœur (défaut **fail-closed** :
+  /// [ZDenyAllAcl]).
+  ///
+  /// Sans ACL déclarée, aucun geste n'est offert. Pour une ouverture totale
+  /// assumée (développement, prototype), déclarez-la explicitement :
+  /// `acl: const ZAllowAllAcl()`.
   final ZAcl acl;
 
   @override

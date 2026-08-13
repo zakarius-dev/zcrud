@@ -12,7 +12,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 Finder _key(String name) => find.byKey(ValueKey<String>(name));
 Finder _editable(String name) =>
     find.descendant(of: _key(name), matching: find.byType(EditableText));
-Finder get _next => find.widgetWithText(FilledButton, 'Suivant');
+Finder get _next => find.widgetWithText(FilledButton, 'Next');
 
 void _bigView(WidgetTester tester) {
   tester.view.physicalSize = const Size(1200, 6000);
@@ -324,7 +324,7 @@ void main() {
       // nested, `.last` = parent. n0 required rempli pour lever le gate nested.
       await tester.enterText(_editable('n0'), 'y');
       await tester.pump();
-      await tester.tap(find.widgetWithText(FilledButton, 'Suivant').first);
+      await tester.tap(find.widgetWithText(FilledButton, 'Next').first);
       await tester.pumpAndSettle();
 
       // Nested à sub1 ⇒ fenêtre = [n1].
@@ -348,7 +348,7 @@ void main() {
 
       // Parent « Suivant » (dernier bouton de l'arbre) : gate honore n0 (sous-étape
       // active) ⇒ bloqué car n0 vide + erreur révélée dans le nested.
-      await tester.tap(find.widgetWithText(FilledButton, 'Suivant').last);
+      await tester.tap(find.widgetWithText(FilledButton, 'Next').last);
       await tester.pumpAndSettle();
       expect(_key('n0'), findsOneWidget, reason: 'parent bloqué (nested invalide)');
       expect(find.text('RN0'), findsOneWidget, reason: 'erreur nested révélée');
@@ -356,7 +356,7 @@ void main() {
       // Remplir n0 ⇒ parent peut avancer vers l'étape 2.
       await tester.enterText(_editable('n0'), 'y');
       await tester.pump();
-      await tester.tap(find.widgetWithText(FilledButton, 'Suivant').last);
+      await tester.tap(find.widgetWithText(FilledButton, 'Next').last);
       await tester.pumpAndSettle();
       expect(_key('p2'), findsOneWidget, reason: 'parent avance vers étape 2');
       expect(c.visibleFields.value, <String>['p2']);
@@ -380,7 +380,7 @@ void main() {
       await tester.pump();
 
       // Revenir à l'étape parente 0 (nav parent = dernier « Précédent » de l'arbre).
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Précédent').last);
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Previous').last);
       await tester.pumpAndSettle();
       expect(_key('p0'), findsOneWidget);
       expect(tester.widget<EditableText>(_editable('p0')).controller.text,

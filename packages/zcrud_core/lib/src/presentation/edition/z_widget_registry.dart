@@ -112,18 +112,45 @@ typedef ZFieldWidgetBuilder = Widget Function(
 /// si absent (bug de configuration, invariant AD-3) ; `tryBuilderFor` retourne
 /// `null` (chemin défensif utilisé par le dispatcher pour retomber sur le
 /// repli).
+///
+/// ## Chaînage parent (surcharge locale sans recopie)
+///
+/// `ZWidgetRegistry(parent: ambiant)` crée un registre **enfant** dont le
+/// lookup, lorsqu'un `kind` manque localement, **remonte la chaîne** vers le
+/// parent. La surcharge locale d'un scope dérivé
+/// (`ZcrudScope.derive(widgetRegistry: …)`) s'écrit alors sans recopier — donc
+/// sans **oublier** — les builders ambiants :
+///
+/// ```dart
+/// final registre = ZWidgetRegistry(parent: ambiant)
+///   ..register('widget', monBuilder);
+/// ```
+///
+/// La chaîne est **vivante** : un builder enregistré sur le parent **APRÈS**
+/// la création de l'enfant est visible de l'enfant (contrairement à une copie
+/// figée). Elle est **acyclique par construction** : [parent] est `final`,
+/// fourni au constructeur — un registre ne peut pas se précéder lui-même dans
+/// sa propre chaîne.
 class ZWidgetRegistry {
-  /// Construit un registre de widgets vide.
-  ZWidgetRegistry();
+  /// Construit un registre de widgets, vide localement, chaîné sur un
+  /// éventuel [parent] (lookup en cascade enfant → parent).
+  ZWidgetRegistry({this.parent});
+
+  /// Registre **parent** consulté quand un `kind` manque localement (`null` ⇒
+  /// registre racine, comportement historique inchangé). La chaîne reflète les
+  /// ajouts **ultérieurs** du parent.
+  final ZWidgetRegistry? parent;
 
   /// Nom logique du registre (messages d'erreur actionnables).
   static const String _name = 'ZWidgetRegistry';
 
   final Map<String, ZFieldWidgetBuilder> _builders = <String, ZFieldWidgetBuilder>{};
 
-  /// Enregistre le [builder] de [kind]. Collision → **`throw`**
+  /// Enregistre le [builder] de [kind]. Collision **locale** → **`throw`**
   /// [ZDuplicateRegistrationError] (jamais un « last-wins » silencieux,
-  /// invariant AD-3).
+  /// invariant AD-3). Enregistrer un `kind` déjà servi par le [parent] est en
+  /// revanche **permis** : c'est l'**ombrage** (enfant > parent), la raison
+  /// d'être du chaînage.
   void register(String kind, ZFieldWidgetBuilder builder) {
     if (_builders.containsKey(kind)) {
       throw ZDuplicateRegistrationError(kind: kind, registryName: _name);
@@ -131,24 +158,32 @@ class ZWidgetRegistry {
     _builders[kind] = builder;
   }
 
-  /// `true` si un builder est enregistré pour [kind].
-  bool isRegistered(String kind) => _builders.containsKey(kind);
+  /// `true` si un builder est enregistré pour [kind] — localement **ou** dans
+  /// la chaîne parent.
+  bool isRegistered(String kind) =>
+      _builders.containsKey(kind) || (parent?.isRegistered(kind) ?? false);
 
-  /// Les `kind` actuellement enregistrés.
-  Iterable<String> get kinds => _builders.keys;
+  /// Les `kind` actuellement servis : **union** des kinds locaux et de la
+  /// chaîne parent (dédupliquée — un `kind` ombré par l'enfant n'apparaît
+  /// qu'une fois, et c'est le builder **enfant** que le lookup rend).
+  Iterable<String> get kinds =>
+      <String>{..._builders.keys, ...?parent?.kinds};
 
-  /// Lookup **strict** : le builder de [kind], ou **`throw`**
-  /// [ZUnregisteredTypeError] si absent (invariant AD-3).
+  /// Lookup **strict** : le builder de [kind] (enfant d'abord, puis chaîne
+  /// parent), ou **`throw`** [ZUnregisteredTypeError] si absent partout
+  /// (invariant AD-3).
   ZFieldWidgetBuilder builderFor(String kind) {
-    final builder = _builders[kind];
+    final builder = tryBuilderFor(kind);
     if (builder == null) {
       throw ZUnregisteredTypeError(kind: kind, registryName: _name);
     }
     return builder;
   }
 
-  /// Lookup **défensif** : le builder de [kind], ou `null` si absent
+  /// Lookup **défensif** : le builder de [kind] (enfant d'abord — **ombrage**
+  /// enfant > parent —, puis chaîne parent), ou `null` si absent partout
   /// (invariant AD-10) — utilisé par le dispatcher pour retomber sur
   /// `ZUnsupportedFieldWidget`.
-  ZFieldWidgetBuilder? tryBuilderFor(String kind) => _builders[kind];
+  ZFieldWidgetBuilder? tryBuilderFor(String kind) =>
+      _builders[kind] ?? parent?.tryBuilderFor(kind);
 }

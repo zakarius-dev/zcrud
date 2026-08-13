@@ -15,8 +15,51 @@ library;
 
 import 'package:flutter/widgets.dart';
 
+import '../../domain/contracts/z_entity.dart';
 import 'z_list_column.dart';
 import 'z_list_render_request.dart';
+
+/// Construit la tuile d'une ligne à partir de la [ZListRow] **neutre** et des
+/// colonnes dérivées.
+///
+/// C'est la forme historique : la tuile ne voit que les cellules brutes de la
+/// ligne. Pour rendre une **carte métier** (qui a besoin de l'objet, pas de
+/// ses cellules), préférer [ZEntityTileBuilder].
+typedef ZRowTileBuilder = Widget Function(
+  BuildContext context,
+  ZListRow row,
+  List<ZListColumn> columns,
+);
+
+/// Construit la tuile d'une ligne à partir de l'**entité `T` résolue** et des
+/// colonnes dérivées.
+///
+/// C'est la forme à privilégier pour une **grille de cartes métier** : la carte
+/// reçoit directement l'objet qu'elle affiche (`Consignee`, `Declaration`…) au
+/// lieu d'un sac de cellules à re-décoder. L'entité est résolue par le seam
+/// `DynamicList.entityFor` (`ZListRow → T?`) : une ligne dont l'entité reste
+/// introuvable retombe sur la tuile de ligne du layout, s'il en porte une.
+typedef ZEntityTileBuilder<T extends ZEntity> = Widget Function(
+  BuildContext context,
+  T entity,
+  List<ZListColumn> columns,
+);
+
+/// Adapte un [ZEntityTileBuilder] typé `T` en builder de surface `ZEntity`.
+///
+/// La surface stockée par les layouts est **volontairement effacée**
+/// (`ZEntityTileBuilder<ZEntity>`) : les variantes de `ZListLayout` restent
+/// non génériques, donc `const`, donc utilisables sans paramètre de type par
+/// un hôte qui n'en a pas besoin. Le typage revient au point d'usage par cet
+/// adaptateur, qui **ne lève jamais** (AD-10) : une entité d'un autre type que
+/// `T` rend une tuile vide au lieu d'une exception de cast.
+ZEntityTileBuilder<ZEntity> zAdaptEntityTile<T extends ZEntity>(
+  ZEntityTileBuilder<T> builder,
+) =>
+    (BuildContext context, ZEntity entity, List<ZListColumn> columns) =>
+        entity is T
+            ? builder(context, entity, columns)
+            : const SizedBox.shrink();
 
 /// Sélecteur **fermé** de la variante de rendu de `DynamicList`.
 ///
@@ -27,6 +70,26 @@ import 'z_list_render_request.dart';
 sealed class ZListLayout {
   /// Constructeur `const` de base.
   const ZListLayout();
+
+  /// Retourne la variante **portant la tuile typée** [builder] — le rendu
+  /// reçoit alors l'entité `T` résolue au lieu de la seule `ZListRow`.
+  ///
+  /// C'est le canal par lequel un **assembleur** (`ZCrudScreen`) fait
+  /// descendre la tuile typée déclarée par l'application jusqu'au layout que
+  /// cette même application a choisi, sans que l'un ait à connaître l'autre.
+  ///
+  /// Règles, valables pour toutes les variantes :
+  /// * une variante qui ne rend **pas** de tuiles (`dataGrid`, `custom`)
+  ///   retourne `this` — rien à porter ;
+  /// * une variante qui porte **déjà** sa propre tuile (`itemBuilder` déclaré
+  ///   explicitement par l'hôte) retourne `this` : l'explicite l'emporte sur
+  ///   l'injecté, le rendu déclaré ne change jamais sous les pieds de l'hôte ;
+  /// * sinon, une **copie** portant [builder] est retournée (l'objet courant
+  ///   reste immuable).
+  ZListLayout withEntityTiles<T extends ZEntity>(
+    ZEntityTileBuilder<T> builder,
+  ) =>
+      this;
 }
 
 /// Vue **DataGrid** (défaut) : délègue au `ZListRenderer` injecté (backend
@@ -38,15 +101,49 @@ final class ZListDataGridLayout extends ZListLayout {
 }
 
 /// Vue **liste** : rend un `ListView.builder` **dans le cœur** (Material-free),
-/// une entrée par ligne construite par [itemBuilder]. N'exige AUCUN renderer.
+/// une entrée par ligne. N'exige AUCUN renderer.
+///
+/// Deux façons de décrire l'entrée, au choix :
+/// * [itemBuilder] — la ligne neutre (`ZListRow` + colonnes) ;
+/// * [entityBuilder] — l'**entité résolue**, forme typée obtenue par
+///   [ZListBuilderLayout.forEntity] ou posée par un assembleur via
+///   [withEntityTiles].
+///
+/// Quand les deux sont présents, [entityBuilder] l'emporte tant que l'entité
+/// de la ligne est résolue (seam `DynamicList.entityFor`) ; sinon le rendu
+/// retombe sur [itemBuilder]. Aucun des deux ⇒ entrée vide : la vue attend
+/// alors qu'un assembleur lui pose sa tuile.
 final class ZListBuilderLayout extends ZListLayout {
-  /// Construit la vue liste avec son [itemBuilder].
-  const ZListBuilderLayout({required this.itemBuilder});
+  /// Construit la vue liste avec sa tuile de ligne et/ou sa tuile d'entité.
+  const ZListBuilderLayout({this.itemBuilder, this.entityBuilder});
+
+  /// Construit la vue liste avec une tuile **typée** recevant l'entité `T`.
+  ///
+  /// ```dart
+  /// ZListBuilderLayout.forEntity<Consignee>(
+  ///   (context, consignee, columns) => ConsigneeTile(consignee),
+  /// )
+  /// ```
+  static ZListBuilderLayout forEntity<T extends ZEntity>(
+    ZEntityTileBuilder<T> tileBuilder,
+  ) =>
+      ZListBuilderLayout(entityBuilder: zAdaptEntityTile<T>(tileBuilder));
 
   /// Construit le widget d'une ligne à partir de la [ZListRow] et des colonnes
-  /// dérivées (`List<ZListColumn>`).
-  final Widget Function(BuildContext context, ZListRow row,
-      List<ZListColumn> columns) itemBuilder;
+  /// dérivées (`List<ZListColumn>`). `null` ⇒ aucune tuile de ligne.
+  final ZRowTileBuilder? itemBuilder;
+
+  /// Construit le widget d'une ligne à partir de l'**entité résolue** —
+  /// prioritaire sur [itemBuilder]. `null` ⇒ aucune tuile d'entité.
+  final ZEntityTileBuilder<ZEntity>? entityBuilder;
+
+  @override
+  ZListLayout withEntityTiles<T extends ZEntity>(
+    ZEntityTileBuilder<T> builder,
+  ) =>
+      itemBuilder != null || entityBuilder != null
+          ? this
+          : ZListBuilderLayout(entityBuilder: zAdaptEntityTile<T>(builder));
 }
 
 /// Vue **grille** : rend une **grille de cartes responsive** `GridView.builder`
@@ -63,10 +160,23 @@ final class ZListBuilderLayout extends ZListLayout {
 ///
 /// La hauteur des tuiles se règle par [mainAxisExtent] (hauteur fixe,
 /// prioritaire) ou [childAspectRatio] (ratio largeur/hauteur, défaut `1.0`).
+///
+/// La carte se décrit au choix par [itemBuilder] (ligne neutre) ou par
+/// [entityBuilder] (**entité résolue** — forme typée via
+/// [ZListGridLayout.forEntity], ou posée par un assembleur via
+/// [withEntityTiles]). Une carte métier veut presque toujours la seconde :
+///
+/// ```dart
+/// ZListGridLayout.forEntity<Consignee>(
+///   (context, consignee, columns) => ConsigneeCard(consignee),
+///   mainAxisExtent: 180,
+/// )
+/// ```
 final class ZListGridLayout extends ZListLayout {
-  /// Construit la vue grille avec son [itemBuilder].
+  /// Construit la vue grille avec sa tuile de ligne et/ou sa tuile d'entité.
   const ZListGridLayout({
-    required this.itemBuilder,
+    this.itemBuilder,
+    this.entityBuilder,
     this.maxCrossAxisExtent = 360,
     this.mainAxisSpacing = 8,
     this.crossAxisSpacing = 8,
@@ -79,10 +189,39 @@ final class ZListGridLayout extends ZListLayout {
           'ZListGridLayout.maxColumns doit être >= 1.',
         );
 
+  /// Construit la vue grille avec une carte **typée** recevant l'entité `T` ;
+  /// la géométrie (extent, espacements, plafond de colonnes) est celle du
+  /// constructeur principal.
+  static ZListGridLayout forEntity<T extends ZEntity>(
+    ZEntityTileBuilder<T> tileBuilder, {
+    double maxCrossAxisExtent = 360,
+    double mainAxisSpacing = 8,
+    double crossAxisSpacing = 8,
+    double childAspectRatio = 1.0,
+    double? mainAxisExtent,
+    EdgeInsetsGeometry? padding,
+    int? maxColumns,
+  }) =>
+      ZListGridLayout(
+        entityBuilder: zAdaptEntityTile<T>(tileBuilder),
+        maxCrossAxisExtent: maxCrossAxisExtent,
+        mainAxisSpacing: mainAxisSpacing,
+        crossAxisSpacing: crossAxisSpacing,
+        childAspectRatio: childAspectRatio,
+        mainAxisExtent: mainAxisExtent,
+        padding: padding,
+        maxColumns: maxColumns,
+      );
+
   /// Construit le widget (la **carte**) d'une ligne à partir de la [ZListRow]
-  /// et des colonnes dérivées (`List<ZListColumn>`).
-  final Widget Function(BuildContext context, ZListRow row,
-      List<ZListColumn> columns) itemBuilder;
+  /// et des colonnes dérivées (`List<ZListColumn>`). `null` ⇒ aucune carte de
+  /// ligne (la grille attend alors [entityBuilder]).
+  final ZRowTileBuilder? itemBuilder;
+
+  /// Construit la **carte** d'une ligne à partir de l'**entité résolue** —
+  /// prioritaire sur [itemBuilder] dès que l'entité de la ligne est connue
+  /// (seam `DynamicList.entityFor`). `null` ⇒ aucune carte d'entité.
+  final ZEntityTileBuilder<ZEntity>? entityBuilder;
 
   /// Largeur **maximale** d'une tuile (dp) — pilote la responsivité : nombre
   /// de colonnes = largeur disponible ÷ [maxCrossAxisExtent], arrondi au
@@ -116,6 +255,23 @@ final class ZListGridLayout extends ZListLayout {
   /// `null` (défaut) = aucun plafond, comportement antérieur inchangé
   /// (colonnes illimitées, dérivées de la seule largeur disponible).
   final int? maxColumns;
+
+  @override
+  ZListLayout withEntityTiles<T extends ZEntity>(
+    ZEntityTileBuilder<T> builder,
+  ) =>
+      itemBuilder != null || entityBuilder != null
+          ? this
+          : ZListGridLayout(
+              entityBuilder: zAdaptEntityTile<T>(builder),
+              maxCrossAxisExtent: maxCrossAxisExtent,
+              mainAxisSpacing: mainAxisSpacing,
+              crossAxisSpacing: crossAxisSpacing,
+              childAspectRatio: childAspectRatio,
+              mainAxisExtent: mainAxisExtent,
+              padding: padding,
+              maxColumns: maxColumns,
+            );
 }
 
 /// Vue **personnalisée** : rend un widget **arbitraire** fourni par l'app à

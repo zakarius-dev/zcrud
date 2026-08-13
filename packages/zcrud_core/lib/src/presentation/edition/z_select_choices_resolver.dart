@@ -25,12 +25,15 @@ import '../zcrud_scope.dart';
 
 /// Résout les **choix effectifs** d'un `select`/`rowChips` (défensif
 /// invariant AD-10). Priorité **stable** :
-/// 1. `choicesSourceKey` (si le registre + la clé résolvent une `ZChoicesSource`)
+/// 1. `choicesResolver` (résolveur conscient de l'état déclaré sur la spec —
+///    la déclaration la plus directe de l'hôte a le dernier mot ; son résultat
+///    est pris tel quel, même vide) ;
+/// 2. `choicesSourceKey` (si le registre + la clé résolvent une `ZChoicesSource`)
 ///    → options calculées depuis le `filterContext` (snapshot des `filterKeys`) ;
-/// 2. `choicesFromKey` (si la tranche référencée porte une `List<ZFieldChoice>`
+/// 3. `choicesFromKey` (si la tranche référencée porte une `List<ZFieldChoice>`
 ///    NON vide) ;
-/// 3. options DÉRIVÉES (`derivedFrom.options`) ;
-/// 4. `field.choices` (statique).
+/// 4. options DÉRIVÉES (`derivedFrom.options`) ;
+/// 5. `field.choices` (statique).
 ///
 /// Toute résolution absente/vide/mal typée / source en erreur ⇒ repli sur le
 /// niveau suivant, **jamais un throw dans le build**.
@@ -45,6 +48,18 @@ List<ZFieldChoice> zResolveSelectChoices(
   ZFieldSpec field,
   ZSelectConfig? selCfg,
 ) {
+  // 1. Résolveur DÉCLARÉ (`ZFieldSpec.choicesResolver`) — consulté au rendu,
+  // prioritaire sur tous les autres canaux. Le dispatcher (`ZFieldWidget`)
+  // s'abonne de façon CIBLÉE aux tranches lues par le résolveur (invariant
+  // AD-2) ; ici on ne fait que le CONSULTER, de façon synchrone.
+  final resolver = field.choicesResolver;
+  if (resolver != null) {
+    try {
+      return resolver(controller.valueOf);
+    } catch (_) {
+      // Invariant AD-10 : résolveur en erreur ⇒ repli sur les niveaux suivants.
+    }
+  }
   // Options DÉRIVÉES, lues AVANT le repli statique et AVANT le retour
   // anticipé ci-dessous : un champ qui déclare `derivedFrom.options` sans
   // `ZSelectConfig` doit quand même les recevoir. Un `choicesSourceKey` ou un

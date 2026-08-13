@@ -3,6 +3,370 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.93.0 — 2026-08-13
+
+### Modifié — rupture
+
+#### Autorisations : refus par défaut (fail-closed) partout
+
+Jusqu'ici, tant qu'aucune ACL n'était déclarée, le socle repliait sur
+`ZAllowAllAcl` : une application qui **oubliait** de brancher la sienne voyait
+**tous** les gestes (créer, modifier, mettre à la corbeille, restaurer, actions
+de ligne, actions de formulaire) au lieu d'**aucun**. Rien ne levait, rien ne
+signalait l'oubli. Le repli est désormais **refusant**.
+
+- Nouveau `ZDenyAllAcl` : implémentation de `ZAcl` qui refuse tout. C'est le
+  repli de tous les points qui consultent une ACL sans en avoir reçu une.
+- `ZcrudScope.acl` : défaut `ZAllowAllAcl()` → `ZDenyAllAcl()`.
+- `DynamicList` : sans `ZcrudScope` ambiant, les actions de ligne portant une
+  `requiredPermission` ne sont plus offertes. Les actions **sans** permission
+  (custom) restent offertes, comme avant.
+- `DynamicEdition.acl` devient **nullable** (`ZAcl?`, défaut `null`) : la
+  résolution suit désormais **paramètre > ACL du `ZcrudScope` ambiant >
+  refus**. Passer une ACL explicite reste possible et prioritaire.
+- `ZSubListFieldWidget.acl` devient **nullable**, avec la même résolution. Le
+  câblage du mode compact ne dépend plus de `ZSubListConfig.aclCollectionId` :
+  l'ACL du scope gouverne les gestes d'item **avec ou sans** discriminant,
+  celui-ci ne servant qu'à désigner la collection interrogée.
+
+**Échappatoire explicite.** `ZAllowAllAcl` reste public et documenté : il
+redevient l'ouverture totale, mais **déclarée** —
+`ZcrudScope(acl: const ZAllowAllAcl())`. Le geste est volontaire et lisible
+dans le code de l'application ; c'est toute la différence avec un repli
+implicite.
+
+#### Libellés : les clés manquantes rejoignent les deux tables
+
+Six clés étaient **consommées** par `label(context, …)` sans exister dans
+`_enLabels`/`_frLabels` : `trash`, `back`, `selectDateRange`, et les trois clés
+de navigation de l'assistant (`z.stepper.previous`/`next`/`finish`). Le repli
+silencieux de `label()` masquait le trou — une traduction française n'atteignait
+jamais ces libellés.
+
+- Ajout de `trash`, `back`, `selectDateRange`, `z.stepper.previous`,
+  `z.stepper.next`, `z.stepper.finish`, `accessDenied`,
+  `accessDeniedMessage` et `details` dans **les deux** tables. `details`
+  (« Details » / « Détails ») intitule la **fiche de consultation** ouverte
+  par un écran assemblé en mode « Détails » — distincte de `edit`, qui annonce
+  une modification, et de `viewItem`, qui désigne un élément de sous-liste.
+- ⚠️ **Rupture visible sur l'assistant multi-étapes** : les libellés
+  « Précédent / Suivant / Terminer » étaient codés en **français** comme repli
+  de dernier recours, alors que la table par défaut du socle est l'anglais. Une
+  application qui **monte** `ZcrudLocalizationsDelegate` avec la locale `fr`
+  voit exactement les mêmes libellés qu'avant ; une application qui ne le monte
+  pas voit désormais « Previous / Next / Finish », cohérents avec tous les
+  autres libellés du socle. Si le français est attendu, montez le delegate (ou
+  surchargez ces clés via `ZcrudScope(labels:)`).
+- Une garde de source vérifie désormais que **toute** clé littérale passée à
+  `label(context, …)` dans `zcrud_core/lib` et `zcrud_screen/lib` existe dans
+  les deux tables.
+
+### Ajouté
+
+#### Un contrôleur de liste qui naît trié (`ZListController.initialSorts`)
+
+Le tri d'une liste ne s'obtenait que par `setSort`, appelé après construction :
+la première requête partait non triée, une seconde la remplaçait aussitôt — une
+lecture de la source pour rien, et un premier rendu dans le mauvais ordre. Un
+assembleur devait contourner par un décorateur de dépôt. `initialSorts` fait
+porter le tri à la **toute première** requête. Défaut vide ⇒ requêtes
+strictement identiques. Un `setSort` ultérieur remplace ce tri, comme avant.
+
+#### Le socle de filtres d'un onglet est déclaré (`ZListTab.baseFilters`)
+
+La catégorie d'un onglet ne vivait que dans la fermeture de `ZListTab.category`,
+donc invisible à qui héberge les onglets : chaque page devait aller chercher la
+politique de l'écran pour y mêler sa catégorie. Elle est désormais **lisible**,
+ce qui permet à un assembleur de composer la requête d'un onglet à la place de
+sa page. `ZListTab.category` la renseigne (le `buildList` la reçoit toujours),
+`filtersWith` compose sans jamais remplacer, `copyWith` permet d'envelopper la
+vue d'un onglet sans recopier ses déclarations.
+
+#### Numérotation continue d'une page à l'autre (`ZListOrdinal.continuousAcrossPages`)
+
+`pageOffset` suppose que l'application sache dans quelle page elle se trouve —
+faux dès que c'est le rendu qui pagine, l'index de page lui étant privé : la
+numérotation continue y était **inatteignable**. La règle reste au cœur, seule
+la position vient du rendu (`textAt(displayIndex, pageIndex:, pageSize:)`).
+Défaut `false` ⇒ chaque page repart de `1`, comme avant.
+
+#### Actions de lot : l'inertie se déclare (`ZBatchAction.enabled`)
+
+Une action de lot était présente ou absente, jamais grisée — un mode d'ACL
+« désactiver » ne pouvait donc s'exprimer que par l'effet, pas par l'apparence.
+`enabled: false` garde l'action en place, non actionnable, et annonce son motif
+(`disabledReason`, `Semantics(enabled: false)`) : la parité exacte des actions
+de **ligne**. `onSelected == null` continue de la retirer.
+
+#### `ZBatchActionKind.restore`
+
+La restauration en lot devait se déclarer `custom`, c'est-à-dire « hors
+nomenclature », alors qu'elle est le pendant exact de `delete`.
+
+#### La sélection peut s'ouvrir à l'appui long (`ZListSelectionActivation`)
+
+`DynamicList(selectionActivation: ZListSelectionActivation.longPress)` n'affiche
+les cases qu'une fois la sélection non vide, et fait de l'appui long sur une
+ligne le geste qui l'ouvre — le motif tactile usuel, jusqu'ici inexprimable.
+Aucun état supplémentaire : « ouverte » **est** « non vide », si bien qu'un
+vidage venu d'ailleurs referme la sélection de lui-même. Vues `builder` et
+`grid` ; sur le chemin `dataGrid`, les gestes de ligne appartiennent au backend.
+L'appui long étant réclamé par plusieurs fonctions, l'arbitrage se **déclare**
+chez l'assembleur (`ZRowLongPressOwner` de `zcrud_screen`).
+
+#### Export d'une liste : le port `ZListExporter`
+
+Produire un `.csv`, un `.xlsx` ou un `.pdf` demande une bibliothèque lourde.
+Le cœur ne déclare donc que le **contrat**, et les implémentations vivent dans
+les paquets d'export : un hôte qui n'exporte rien ne tire rien.
+
+- **`ZListExporter`** — un identifiant de format, sa clé de libellé, son
+  extension, son type MIME, et une production d'octets à partir de la
+  `ZListRenderRequest` déjà construite par la liste (colonnes dérivées +
+  lignes). Aucune entité, aucun dépôt, aucun widget : l'exporteur reçoit
+  exactement ce que l'écran montre.
+- **`ZListExporter.exportSafely`** — appel blindé : un exporteur qui **lève**
+  rend un `Left(ZDomainFailure)` portant le jet d'origine, jamais une exception
+  qui emporterait l'écran.
+- **`ZExportedBytes`** — le fichier produit : octets, nom suggéré, type MIME.
+  Sa **destination** (enregistrer, partager, imprimer) n'est pas une décision
+  d'écran : elle reste à l'application.
+- **`zExportFileName(titre, extension)`** — compose un nom de fichier sûr à
+  partir d'un titre libre (accents, ponctuation, barres obliques écartés), avec
+  repli `export.<ext>` plutôt qu'un fichier nommé `.csv`.
+
+Les **colonnes techniques** ne sont pas exportables par construction : la
+colonne de numéro d'ordre vit hors des colonnes (`ZListRenderRequest.ordinal`),
+les champs d'identité sont écartés à la dérivation, et les cases à cocher comme
+les boutons d'action sont des ornements de rendu.
+
+#### `zListFormatOf(context)` — la voie unique des seams d'affichage
+
+Le libellé d'option orpheline, le port de formatage des dates et l'étiquette de
+locale se lisaient dans `DynamicList` et nulle part ailleurs. Ils sont désormais
+exposés par une fonction publique, que la liste **et** un export lancé depuis un
+écran partagent : ce que l'utilisateur lit à l'écran est ce que son fichier
+contient. Reconstruire cet objet à la main rouvrirait l'écart, sans erreur ni
+signe visible.
+
+#### Libellés génériques
+
+Nouvelles clés dans les **deux** tables (`en`/`fr`) : `export`, `exportEmpty`,
+`exportFailed`, ainsi que `selectedCount`, `selectAll`, `batchSucceeded`,
+`batchFailed`, `batchSkipped` — ces cinq dernières étaient consommées par
+l'écran assemblé mais absentes des tables, et retombaient donc sur un repli
+codé en dur, jamais traduit.
+
+#### Recherche : le domaine des colonnes et la normalisation se déclarent
+
+La recherche de liste interrogeait les seuls champs `searchable` et comparait
+en ignorant la casse et les accents. Deux réglages **additifs** portés par
+`ZDataRequest` la rendent déclarative, sans changer son défaut :
+
+- `ZSearchScope` — `searchableFields` (défaut, comportement historique) ou
+  `allColumns` : **toutes** les colonnes du schéma, le domaine des moteurs de
+  liste déclaratifs antérieurs. Un champ visible à l'écran redevient trouvable
+  sans avoir à annoter le schéma champ par champ.
+- `ZSearchFolding` — `diacritics` (défaut, comportement historique) ou
+  `diacriticsAndSpaces` : ignore en plus **tous** les blancs (espace, espace
+  insécable, tabulation, saut de ligne), de sorte que « SOCIETE X SARL U » se
+  laisse trouver par « sarlu ». La ponctuation reste significative dans les
+  deux modes.
+
+Surface : `ZDataRequest.searchScope` / `.searchFolding` (défauts
+rétro-compatibles, transportés par `copyWith`), `zFoldDiacritics(input,
+folding:)`, `zMatchesSearch(row, term, schema:, scope:, folding:)` et
+`ZListController(searchScope:, searchFolding:)` — le contrôleur les porte dans
+**chaque** requête émise, première page et pages suivantes comprises.
+`zApplyListRequest` les sert.
+
+**Non cassant** : sans rien déclarer, une requête par défaut est **égale en
+valeur** à celle d'avant et le moteur rend exactement les mêmes lignes (garde
+de contre-témoin dédiée). Un adaptateur qui exécute la recherche côté serveur
+reçoit les deux réglages mais reste libre de ne pas les servir — l'adaptateur
+Firestore, qui ne sert pas `search`, est inchangé.
+
+#### Onglets gouvernés : droits, intitulés et compteur par onglet
+
+Un onglet ne portait que son libellé et son contexte de création. Un écran
+segmenté par entité affichait donc le **même** intitulé de formulaire partout,
+sans moyen de fermer une écriture sur un segment précis ni d'annoncer son
+volume.
+
+- `ZListTab.acl` : restriction de droits **propre à l'onglet**. Elle se compose
+  en **cascade** avec celle de l'écran, puis du scope.
+- 🔒 **La cascade restreint, elle n'élargit jamais.** L'onglet est intersecté
+  avec le niveau supérieur : quelle que soit la générosité de ce qu'il déclare,
+  un geste refusé plus haut le reste. Sans aucun niveau supérieur monté, la
+  composition retombe sur le refus — déclarer des droits sur un onglet n'en
+  crée jamais à partir de rien.
+- Nouveaux `ZRestrictedAcl` et `zRestrictAcl(base, restriction)` : la
+  composition conjonctive de deux `ZAcl`, réutilisable partout où deux niveaux
+  d'autorisation se rencontrent. L'élargissement y est **inexprimable**.
+- `ZListTab.titles` (`ZCrudTitles`) : intitulés de formulaire de l'onglet
+  (« Nouveau dossier » ici, « Nouvelle pièce » à côté). Un mode non renseigné
+  retombe sur l'écran, puis sur la clé l10n générique.
+- `ZListTab.countOf` (`ValueListenable<int>`) : compteur affiché en pastille à
+  côté du libellé. C'est une valeur **écoutable**, et c'est délibéré — la
+  pastille se redessine seule, la page de l'onglet n'est pas reconstruite. Le
+  cœur ne compte jamais lui-même : compter, c'est lire la source.
+- `ZCrudTitles` **vit désormais dans `zcrud_core`** (et reste exporté par
+  `zcrud_screen` à l'identique) : c'est ce qui permet à un onglet de porter ses
+  intitulés sans que le cœur connaisse l'écran assemblé.
+- `ZTrashPolicy` gagne `showCount` (afficher le volume de la corbeille sur son
+  accès) et `visibleWhenEmpty` (`false` retire l'accès tant que la corbeille est
+  vide). Défauts inchangés : `showCount: true`, `visibleWhenEmpty: true`.
+- Clé l10n `trashCount` (`en` + `fr`), qui **nomme** ce que compte la pastille
+  dans l'annonce lue par les technologies d'assistance.
+
+
+#### Gouvernance par ligne : les droits d'UNE entité
+
+Les autorisations du socle s'arrêtaient à la collection : « peut-on supprimer
+ici ? », jamais « peut-on supprimer **cette** ligne-là ? ». Un dossier clôturé,
+une pièce déjà validée, un élément protégé réclamaient donc du filtrage maison
+en amont des actions — hors de toute garantie du socle.
+
+- Nouveau `ZRowPermissions` : ce qu'une ligne **retire**, jamais ce qu'elle
+  accorde — `.unrestricted()` (neutre, `const`), `.locked()` (toutes les
+  écritures tombent, consultation et historique restent), `.denying({…})`, avec
+  un `reasonKey` facultatif annonçant le motif.
+- Nouveau `ZRowAclResolver<T>` (`ZRowPermissions Function(T entity)`), déclaré
+  sur `DynamicList.rowAcl` : **un seul** point d'extension pour toute la
+  gouvernance de ligne. Ajouter un besoin n'ajoute jamais un paramètre.
+- 🔒 **Il restreint, il n'élargit jamais.** La composition avec l'ACL de
+  l'application est une **intersection** : un résolveur, même écrit permissif,
+  ne peut pas rouvrir un geste que l'ACL refuse — le vocabulaire de
+  `ZRowPermissions` ne permet même pas de l'exprimer. Une garde adversariale
+  dédiée fige la règle.
+- Nouveau `ZRowAction.enabledFor` (+ `ineligibleReasonKey`, et
+  `withEligibility(...)` pour en poser un sur une action de fabrique) :
+  l'**éligibilité métier** d'une action, distincte du droit. « Restaurer » sur
+  un élément vivant n'est pas un refus d'autorisation : l'action existe, elle
+  ne s'applique pas ici. Une action inéligible est **toujours rendue, inerte et
+  motivée**, jamais masquée — la présentation des refus de **droit**, elle,
+  reste gouvernée par le `ZActionAclMode` déclaré.
+- `ZResolvedRowAction.disabledReasonKey` (additif) porte ce motif jusqu'au
+  rendu : le bouton de ligne l'annonce en indice sémantique, à côté du
+  `Semantics(enabled: false)` qu'il posait déjà.
+- Nouvelle voie de résolution partagée `zResolveRowActions` : la liste et
+  l'écran assemblé y passent tous deux, pour qu'aucune présentation ne puisse
+  dériver de l'autre sur une question de droits.
+- Nouvelle clé de libellé générique `actionNotApplicable` (`en`/`fr`).
+
+Sans `rowAcl` déclaré ni `enabledFor` posé, le comportement est **strictement
+inchangé** (contre-témoin sous garde).
+
+#### Corbeille : le troisième geste, la suppression définitive
+
+La corbeille du socle savait y mettre et en sortir. Elle sait désormais aussi
+détruire — sans que cela devienne une obligation pour les dépôts qui ne le
+peuvent pas.
+
+- Nouveau mixin `ZPurgeable<T extends ZEntity>` (`Future<ZResult<Unit>>
+  purge(String id)`) : la suppression définitive est une capacité **déclarée**
+  par le dépôt, **pas** un membre du port `ZRepository`. Aucune implémentation
+  existante n'a à changer ; un dépôt qui ne l'applique pas reste complet et
+  valide, et les assemblages n'offrent alors simplement aucun geste de purge.
+  Le mixin ne pose aucune contrainte de superclasse : il s'applique à un dépôt
+  quelle que soit la façon dont celui-ci satisfait le port (`with` ou
+  `implements`). Contrepartie documentée : le test `is ZPurgeable<T>` ne
+  **promeut** pas une variable déclarée `ZRepository<T>`, un cast explicite
+  reste nécessaire.
+- Nouvelle fabrique `ZRowAction.purgeWith(handler)`, symétrique de
+  `softDeleteWith`/`restoreWith` : permission requise `ZCrudAction.clear`,
+  style destructif, identité `purge`, libellé `deleteForever`. Elle n'a pas de
+  jumelle à dépôt, précisément parce que la purge n'appartient pas au port.
+- Nouveau `ZTrashPolicy` — quels gestes une corbeille offre (`softDelete`,
+  `restore`, `purge`), avec les raccourcis `full` (défaut), `withoutPurge` et
+  `readOnly`. Trois questions distinctes se composent en conjonction : le geste
+  est-il **voulu** (ce type), **possible** (la source sait-elle le servir),
+  **autorisé** (`ZAcl`). Déclarer un geste ici n'accorde jamais un droit refusé
+  en amont.
+- Libellés génériques `deleteForever` et `confirmDeleteForeverItem` (tables
+  `en` et `fr`). Leur texte est **distinct** de `delete`/`confirmDeleteItem` :
+  la mise à la corbeille se défait, la suppression définitive annonce son
+  irréversibilité.
+
+#### Tuiles **typées** : une carte reçoit l'entité, plus seulement la ligne
+
+Une grille de cartes métier n'a que faire d'un sac de cellules : elle veut
+l'objet. Les layouts qui rendent des tuiles savent désormais le lui donner.
+
+- Nouveau `ZEntityTileBuilder<T extends ZEntity>` —
+  `Widget Function(BuildContext, T entity, List<ZListColumn> columns)` — et
+  `ZRowTileBuilder`, qui nomme la forme historique (`ZListRow`).
+- `ZListGridLayout.forEntity<T>(…)` et `ZListBuilderLayout.forEntity<T>(…)`
+  déclarent une tuile typée ; le paramètre `entityBuilder` des constructeurs
+  principaux fait de même sous forme non générique.
+- `ZListLayout.withEntityTiles<T>(builder)` : un **assembleur** (`ZCrudScreen`)
+  fait descendre la tuile typée déclarée par l'application dans le layout que
+  cette même application a choisi. Une variante sans tuiles (`dataGrid`,
+  `custom`) ou portant **déjà** sa tuile retourne `this` — l'explicite l'emporte
+  sur l'injecté, aucun rendu déclaré ne change.
+- L'entité est résolue par le seam **déjà déclaré** `DynamicList.entityFor`
+  (`ZListRow → T?`) : une seule déclaration sert l'ACL par entité, les actions
+  de ligne **et** le rendu des cartes. Ligne dont l'entité reste introuvable :
+  repli sur la tuile de ligne du layout, jamais d'exception (AD-10).
+- `ZListRow.keyOf(entity)` et `ZListRow.ofEntity(entity, cells)` publient la
+  **convention de clé** de l'assemblage (identité réelle, ou clé éphémère
+  stable si l'entité n'est pas persistée) : un hôte qui construit l'index
+  `ligne → entité` n'a plus à la deviner.
+- Les builders restent **hors** de `ZListRenderRequest` (value object à
+  égalité de valeur) : ce sont des closures, dont l'identité change à chaque
+  build. Les y faire entrer casserait la mémoïsation du rendu — même raison
+  que l'exclusion de `ZFieldSpec.derivedFrom`/`choicesResolver` de
+  `==`/`hashCode`. Une garde vérifie que deux rendus aux `entityFor`
+  différents produisent des requêtes **égales**.
+
+Compatibilité : `ZListGridLayout.itemBuilder` et `ZListBuilderLayout.itemBuilder`
+deviennent **optionnels et nullables** (un layout peut désormais n'être que de
+la géométrie, la tuile venant de l'assembleur). Les déclarations existantes
+`ZListGridLayout(itemBuilder: …)` restent valides et rendent à l'identique ;
+seul un code qui **lisait** `layout.itemBuilder` comme non-nullable doit
+s'adapter.
+
+#### Colonnes de liste : numéro d'ordre, devise par ligne, format sur la ligne, largeurs bornées
+
+Quatre réglages de colonne rejoignent le cœur — donc **tous** les rendus
+(tableau, cartes, grille, export), et non plus un seul backend.
+
+- **Numéro d'ordre** — `ZListOrdinal`, déclaré par
+  `ZColumnPolicy(ordinal: ZListOrdinal(enabled: true))` et porté par
+  `ZListRenderRequest.ordinal`. La numérotation est **1-based sur la séquence
+  rendue** : `request.ordinalTextAt(position)` et
+  `request.ordinalTextsForDisplay(lignesAffichées)` la produisent au moment du
+  rendu. Le numéro n'est **jamais** rangé dans les cellules de la ligne : un
+  tri renumérote donc l'écran au lieu de promener d'anciens numéros.
+  `pageOffset` permet une numérotation continue à travers les pages.
+- **Devise par ligne** — `ZCurrencyFormat(codeField: 'currency',
+  fallbackCode: 'XOF')` sur une colonne : chaque ligne s'affiche avec **sa**
+  devise, lue dans le champ désigné. Une ligne dont ce champ est absent, nul ou
+  vide retombe sur le **repli déclaré**, jamais sur la devise d'une autre
+  ligne : la résolution est purement locale à la ligne, sans mémoire d'un rendu
+  à l'autre. Un montant nul rend une cellule vide, jamais un code devise
+  esseulé. `decimalDigits`, `placement` et `separator` complètent le rendu, qui
+  reste locale-neutre.
+- **`ZListColumn.formatWithRow`** — un format qui reçoit, en plus de la valeur
+  de la cellule, **toute la ligne** : pour un suffixe d'unité rangé dans une
+  colonne voisine, un libellé composé, un montant et sa devise. Nouveau point
+  d'entrée `ZListColumn.formatRow(valeur, ligne)`, dont la précédence est
+  `formatWithRow` > `currency` > `format`. Comme `format`, cette fonction est
+  **exclue de l'égalité de valeur** : deux colonnes identiques aux formats
+  différents restent égales, sans quoi la mémoïsation du rendu serait perdue à
+  chaque build.
+- **`ZListColumn.minWidth` / `maxWidth`** — bornes d'**encombrement à l'écran**
+  (pixels logiques), à ne pas confondre avec une borne sur la valeur affichée
+  ou un filtre. Un backend qui ne sait pas contraindre ses colonnes les ignore.
+
+Ces trois derniers réglages se déclarent colonne par colonne via
+`ZColumnPolicy(overrides: {'amount': ZColumnOverride(…)})`, sans toucher aux
+annotations du modèle.
+
+Compatibilité : entièrement additif. Sans `ordinal` ni `overrides`, la
+dérivation des colonnes et le texte de chaque cellule sont **strictement**
+inchangés, et `formatRow` rend exactement ce que rend `format`.
+
 ## 0.92.0 — 2026-08-12
 
 ### Ajouté
@@ -30,6 +394,17 @@ fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
   `(largeur / extent).clamp(1, N)`). Plafonnée, la grille cesse d'ajouter des
   colonnes et les tuiles s'élargissent au-delà de `maxCrossAxisExtent` ;
   `null` (défaut) = comportement responsive antérieur strictement inchangé.
+
+### Corrigé
+
+- **Cocher une case ne reconstruit plus les tuiles de la liste** (AD-2). Sur les
+  vues rendues dans le cœur (`builder`, `grid`), l'abonnement à la sélection
+  était posé au niveau de la liste : chaque changement reconstruisait **toutes**
+  les tuiles visibles — mesuré à 5 reconstructions pour 5 lignes affichées, et
+  proportionnel au nombre de lignes à l'écran. Il descend désormais jusqu'à la
+  **case** de chaque ligne, le seul sous-arbre qui dépende réellement de
+  l'ensemble sélectionné. Le chemin `dataGrid` est inchangé : le backend y
+  reçoit la sélection comme donnée de son modèle de rendu.
 
 ### Documentation
 

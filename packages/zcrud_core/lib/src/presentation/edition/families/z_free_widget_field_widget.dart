@@ -3,10 +3,18 @@
 /// Le type `widget` rend un **widget d'édition host-fourni** résolu via le
 /// [ZWidgetRegistry] injecté (`ZcrudScope.widgetRegistry`) — **exactement le même
 /// seam** que les types [EditionFamily.registryOrFallback] (markdown/géo/tél/
-/// `custom`). Le `kind` résolu est le **nom de l'enum** (`'widget'`,
-/// aligné sur `ZTypeRegistry`). Si aucun builder n'est enregistré pour ce `kind`,
-/// on **retombe** sur le repli contrôlé [ZUnsupportedFieldWidget] (jamais une
-/// exception, invariant AD-10).
+/// `custom`). Le `kind` résolu est le **discriminant déclaré**
+/// `ZFieldSpec.widgetKind` s'il est non-`null` **et** enregistré ; sinon le
+/// **nom de l'enum** (`'widget'`, aligné sur `ZTypeRegistry`) — deux champs
+/// `widget` d'un même formulaire peuvent ainsi porter deux builders distincts.
+/// Si aucun builder n'est enregistré pour aucun de ces `kind`, on **retombe**
+/// sur le repli contrôlé [ZUnsupportedFieldWidget] (jamais une exception,
+/// invariant AD-10).
+///
+/// **Aucun libellé n'est rendu par le socle** pour cette famille — c'est
+/// délibéré : un widget libre peut vouloir occuper **toute** sa surface. Le
+/// widget hôte dessine son propre libellé, typiquement depuis
+/// `ctx.field.label`.
 ///
 /// **CONSOMME** ce registre (ne le réimplémente pas, invariant AD-4) : le cœur
 /// reste agnostique du widget métier (aucun import satellite ; graphe OUT=0
@@ -28,6 +36,9 @@ import 'z_unsupported_field_widget.dart';
 
 /// Champ d'édition **widget libre** : rend le widget host-fourni (registre) ou
 /// le repli contrôlé si le `kind` n'est pas enregistré.
+///
+/// Cette famille ne rend **aucun libellé** (surface entière laissée au widget
+/// hôte — qui dessine le sien depuis `ctx.field.label`).
 class ZFreeWidgetFieldWidget extends StatelessWidget {
   /// Construit le champ pour [field], valeur courante [value] (lue par le widget
   /// hôte), notifiant [onChanged] (branché sur `setValue` par le dispatcher).
@@ -50,9 +61,13 @@ class ZFreeWidgetFieldWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final registry = ZcrudScope.maybeOf(context)?.widgetRegistry;
-    // Convention `kind` alignée sur `ZTypeRegistry` : le nom de l'enum
-    // (`'widget'`). L'app enregistre codec + widget sous le même `kind`.
-    final builder = registry?.tryBuilderFor(field.type.name);
+    // Discriminant déclaré (`ZFieldSpec.widgetKind`) consulté AVANT le repli
+    // sur la convention `kind` alignée sur `ZTypeRegistry` : le nom de l'enum
+    // (`'widget'`). Discriminant absent OU non enregistré ⇒ repli inchangé
+    // (défensif, invariant AD-10).
+    final wk = field.widgetKind;
+    final builder = (wk == null ? null : registry?.tryBuilderFor(wk)) ??
+        registry?.tryBuilderFor(field.type.name);
     if (builder == null) {
       return ZUnsupportedFieldWidget(field: field);
     }

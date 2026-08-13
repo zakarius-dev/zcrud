@@ -16,7 +16,11 @@
 /// Les fabriques jumelles [ZRowAction.softDeleteWith] / [ZRowAction.restoreWith]
 /// offrent la MÊME corbeille (mêmes permissions, même filtrage `ZAcl`) sur un
 /// **handler fourni par l'app** — sans `ZRepository` (migration progressive,
-/// listes encore alimentées par les flux de l'hôte).
+/// listes encore alimentées par les flux de l'hôte). [ZRowAction.purgeWith]
+/// complète le cycle par le **troisième geste**, la suppression définitive
+/// (permission `ZCrudAction.clear`) : elle n'a **pas** de jumelle à dépôt,
+/// parce que la purge n'appartient pas au port `ZRepository` mais au mixin
+/// optionnel `ZPurgeable`.
 ///
 /// **Neutre** : imports limités à `dart:async` (`FutureOr`) +
 /// `package:flutter/widgets.dart` (`IconData`/`BuildContext`/`VoidCallback`) +
@@ -70,6 +74,7 @@ class ZResolvedRowAction {
     required this.onInvoke,
     this.icon,
     this.destructive = false,
+    this.disabledReasonKey,
   });
 
   /// Identifiant stable de l'action (déterministe, pour les clés/tests).
@@ -87,6 +92,15 @@ class ZResolvedRowAction {
   /// `true` si l'action est autorisée (ACL) et donc cliquable ; `false` = grisée
   /// (mode [ZActionAclMode.disable]).
   final bool enabled;
+
+  /// Clé de libellé du **motif** pour lequel l'action est inerte, quand elle
+  /// l'est ; `null` si l'action est offerte.
+  ///
+  /// Le motif est annoncé aux lecteurs d'écran par le bouton de ligne et repris
+  /// tel quel par les présentations en menu : une action montrée mais fermée
+  /// apprend à l'usager que le geste existe **et** pourquoi il lui est fermé —
+  /// ce qu'un bouton absent ne dit pas.
+  final String? disabledReasonKey;
 
   /// Callback **déjà liée** à l'entité de la ligne (invoque le handler original
   /// avec le `BuildContext` et l'entité capturés à la résolution).
@@ -108,6 +122,8 @@ class ZRowAction<T extends ZEntity> {
     this.icon,
     this.requiredPermission,
     this.destructive = false,
+    this.enabledFor,
+    this.ineligibleReasonKey,
   });
 
   /// Fabrique **corbeille** : soft-delete via `ZRepository.softDelete` (bascule
@@ -223,6 +239,38 @@ class ZRowAction<T extends ZEntity> {
     );
   }
 
+  /// Fabrique **purge** : suppression **définitive** déléguée au handler
+  /// [onInvoke] fourni par l'app. Permission requise : `ZCrudAction.clear`.
+  ///
+  /// Troisième geste de la corbeille, après [ZRowAction.softDeleteWith] (y
+  /// mettre) et [ZRowAction.restoreWith] (en sortir) — même forme, mêmes
+  /// motivations : c'est **l'app** qui écrit, le socle ne fait que gouverner le
+  /// geste. La fabrique ne prend **pas** de dépôt en paramètre, parce que la
+  /// purge n'appartient pas au port `ZRepository` : elle est déclarée par le
+  /// mixin optionnel `ZPurgeable`, qu'un dépôt applique ou non.
+  ///
+  /// Le style est **destructif** ; l'entité éphémère (`id == null`) est
+  /// transmise au handler, comme pour [ZRowAction.softDeleteWith] — l'app,
+  /// propriétaire du chemin de données, décide.
+  ///
+  /// La **confirmation** n'est pas rendue ici : elle appartient au handler (ou
+  /// à l'assemblage qui le fournit, `ZCrudScreen` la pose au ton irréversible).
+  factory ZRowAction.purgeWith(
+    FutureOr<void> Function(BuildContext context, T entity) onInvoke, {
+    String labelKey = 'deleteForever',
+    IconData? icon,
+    String id = 'purge',
+  }) {
+    return ZRowAction<T>(
+      id: id,
+      labelKey: labelKey,
+      icon: icon,
+      requiredPermission: ZCrudAction.clear,
+      destructive: true,
+      onInvoke: onInvoke,
+    );
+  }
+
   /// Fabrique **édition** : délègue au [onInvoke] fourni par l'app (navigation
   /// vers l'édition). Permission requise : `ZCrudAction.update`.
   factory ZRowAction.edit({
@@ -259,17 +307,66 @@ class ZRowAction<T extends ZEntity> {
   /// Handler typé invoqué avec le `BuildContext` et l'entité `T` de la ligne.
   final FutureOr<void> Function(BuildContext context, T entity) onInvoke;
 
+  /// **Éligibilité métier** de cette action pour une entité donnée : `null`
+  /// (défaut) = l'action s'applique à toutes les lignes.
+  ///
+  /// À ne pas confondre avec un droit. Un droit se refuse par l'ACL de
+  /// l'application ou par le résolveur de ligne (`ZRowAclResolver`) ; ceci dit
+  /// seulement que l'action **n'a pas de sens** sur cette ligne-là —
+  /// « restaurer » sur un élément vivant, « valider » sur une pièce déjà
+  /// validée. Une action inéligible reste **rendue, inerte et motivée**,
+  /// jamais masquée : c'est l'état de la ligne qui change, pas les droits de
+  /// qui regarde.
+  ///
+  /// Prédicat **pur et bon marché** : évalué une fois par ligne rendue.
+  final bool Function(T entity)? enabledFor;
+
+  /// Clé de libellé du motif annoncé quand [enabledFor] écarte l'action ;
+  /// `null` = motif générique du socle.
+  final String? ineligibleReasonKey;
+
+  /// Rend une copie de cette action assortie d'une **éligibilité métier**.
+  ///
+  /// Le chemin pour poser un `enabledFor` sur une action issue d'une fabrique
+  /// (`ZRowAction.softDeleteWith`, `ZRowAction.edit`…), sans que chaque
+  /// fabrique ait à reprendre le paramètre :
+  ///
+  /// ```dart
+  /// ZRowAction.restoreWith(monRestore)
+  ///     .withEligibility((piece) => piece.supprimee, reasonKey: 'itemIsLive');
+  /// ```
+  ZRowAction<T> withEligibility(
+    bool Function(T entity) predicate, {
+    String? reasonKey,
+  }) {
+    return ZRowAction<T>(
+      id: id,
+      labelKey: labelKey,
+      icon: icon,
+      requiredPermission: requiredPermission,
+      destructive: destructive,
+      onInvoke: onInvoke,
+      enabledFor: predicate,
+      ineligibleReasonKey: reasonKey ?? ineligibleReasonKey,
+    );
+  }
+
   /// Résout cette action **pour une ligne** donnée : lie l'[entity] et fige
-  /// l'état [enabled] (déjà tranché par l'ACL en amont), produisant une vue
-  /// neutre [ZResolvedRowAction] (sans `T`).
+  /// l'état [enabled] (déjà tranché en amont), produisant une vue neutre
+  /// [ZResolvedRowAction] (sans `T`).
   ///
   /// Le [context] et l'[entity] sont **capturés** dans la closure `onInvoke` de
   /// l'action résolue — la résolution a lieu par-ligne au `build` de
   /// `DynamicList`, où `T`, l'ACL et le `BuildContext` coexistent.
+  ///
+  /// [disabledReasonKey] accompagne une action inerte de son motif. La
+  /// composition complète (ACL, restrictions de ligne, éligibilité) est faite
+  /// par `zResolveRowActions`, voie unique du socle.
   ZResolvedRowAction resolve(
     BuildContext context,
     T entity, {
     required bool enabled,
+    String? disabledReasonKey,
   }) {
     return ZResolvedRowAction(
       id: id,
@@ -277,6 +374,7 @@ class ZRowAction<T extends ZEntity> {
       icon: icon,
       destructive: destructive,
       enabled: enabled,
+      disabledReasonKey: disabledReasonKey,
       onInvoke: () => onInvoke(context, entity),
     );
   }

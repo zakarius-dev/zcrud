@@ -33,10 +33,25 @@ const _compactField = ZFieldSpec(
   ),
 );
 
+/// Hôte de test. L'ACL permissive est **DÉCLARÉE** au scope : le socle refuse
+/// par défaut, et déclarer l'ouverture totale est précisément le geste qu'une
+/// application de développement doit poser. Un `acl:` passé au widget l'emporte
+/// sur ce scope (priorité paramètre > scope > refus).
 Widget _host(Widget child, {TextDirection dir = TextDirection.ltr}) =>
     MaterialApp(
+      home: ZcrudScope(
+        acl: const ZAllowAllAcl(),
+        child: Directionality(
+          textDirection: dir,
+          child: Scaffold(body: SingleChildScrollView(child: child)),
+        ),
+      ),
+    );
+
+/// Hôte SANS aucune ACL déclarée — sert les gardes de refus par défaut.
+Widget _hostNoAcl(Widget child) => MaterialApp(
       home: Directionality(
-        textDirection: dir,
+        textDirection: TextDirection.ltr,
         child: Scaffold(body: SingleChildScrollView(child: child)),
       ),
     );
@@ -244,7 +259,7 @@ void main() {
 
   // ── AC21 : ACL par action ──────────────────────────────────────────────────
   group('compact : ACL par action (AC21)', () {
-    testWidgets('ACL permissive (défaut) affiche add/view/edit/delete',
+    testWidgets('ACL permissive DÉCLARÉE au scope : add/view/edit/delete offerts',
         (tester) async {
       await tester.pumpWidget(_host(ZSubListFieldWidget(
         field: _compactField,
@@ -258,6 +273,27 @@ void main() {
       expect(find.byIcon(Icons.visibility), findsOneWidget);
       expect(find.byIcon(Icons.edit), findsOneWidget);
       expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+    });
+
+    testWidgets(
+        '🔴 AUCUNE ACL déclarée ⇒ AUCUN geste (refus par défaut, fail-closed)',
+        (tester) async {
+      await tester.pumpWidget(_hostNoAcl(ZSubListFieldWidget(
+        field: _compactField,
+        initialValue: const <Map<String, dynamic>>[
+          <String, dynamic>{'f1': 'A', 'f2': 'a'},
+        ],
+        onChanged: (_) {},
+      )));
+      await tester.pump();
+      // Le champ EST monté et la ligne EST rendue (garde non vacante) …
+      expect(find.byType(ZSubListFieldWidget), findsOneWidget);
+      expect(find.text('A'), findsWidgets);
+      // … mais aucun geste n'est offert tant qu'aucune ACL n'est déclarée.
+      expect(find.byIcon(Icons.add), findsNothing);
+      expect(find.byIcon(Icons.visibility), findsNothing);
+      expect(find.byIcon(Icons.edit), findsNothing);
+      expect(find.byIcon(Icons.delete_outline), findsNothing);
     });
 
     testWidgets('refus create → aucun bouton add', (tester) async {

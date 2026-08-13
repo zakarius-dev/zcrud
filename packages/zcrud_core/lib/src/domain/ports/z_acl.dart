@@ -104,9 +104,22 @@ abstract class ZAcl {
   bool can(ZCrudAction action, {ZEntity? target, String? collectionId});
 }
 
-/// Implémentation **permissive** par défaut (zéro-config) : autorise tout.
+/// Implémentation **permissive** : autorise tout, sans condition.
 ///
-/// Utile comme valeur par défaut tant que l'app n'injecte pas d'ACL réelle.
+/// ⚠️ Ce n'est **plus** le repli par défaut du socle (voir [ZDenyAllAcl]) :
+/// c'est un **choix explicite** de développement, de prototype ou de test.
+/// L'oubli d'une ACL ne doit jamais ouvrir tous les gestes ; la déclarer
+/// permissive, si.
+///
+/// À déclarer nommément, au scope ou à l'écran :
+///
+/// ```dart
+/// ZcrudScope(acl: const ZAllowAllAcl(), child: monEcran);
+/// ZCrudScreen<Dossier>(acl: const ZAllowAllAcl(), /* … */);
+/// ```
+///
+/// En production, remplacez-la par votre propre implémentation de [ZAcl]
+/// (rôles, droits par collection…) : aucune règle métier ne vit dans le socle.
 class ZAllowAllAcl implements ZAcl {
   /// Construit l'ACL permissive (`const`).
   const ZAllowAllAcl();
@@ -114,3 +127,122 @@ class ZAllowAllAcl implements ZAcl {
   @override
   bool can(ZCrudAction action, {ZEntity? target, String? collectionId}) => true;
 }
+
+/// Implémentation **refusante** : interdit tout, sans condition. C'est le
+/// **repli par défaut** du socle quand aucune ACL n'a été déclarée.
+///
+/// ## Pourquoi un refus par défaut
+///
+/// Une application qui **oublie** de brancher son ACL doit voir *aucun* geste,
+/// jamais *tous* les gestes. Un repli permissif transforme un oubli de câblage
+/// en ouverture silencieuse de la création, de la modification, de la mise à la
+/// corbeille et de la restauration — sans aucune erreur, sans aucun signal. Le
+/// repli refusant transforme le même oubli en absence visible de boutons : le
+/// défaut se voit à l'écran, immédiatement, et se corrige en une ligne.
+///
+/// ## Comment brancher une ACL réelle
+///
+/// Implémentez [ZAcl] avec vos règles, puis déclarez-la une fois pour tout un
+/// sous-arbre :
+///
+/// ```dart
+/// class MonAcl implements ZAcl {
+///   const MonAcl(this.role);
+///   final String role;
+///
+///   @override
+///   bool can(ZCrudAction action, {ZEntity? target, String? collectionId}) {
+///     if (action == ZCrudAction.view) return true;
+///     return role == 'admin';
+///   }
+/// }
+///
+/// ZcrudScope(acl: MonAcl(session.role), child: monEcran);
+/// ```
+///
+/// Un écran peut aussi porter la sienne : `ZCrudScreen(acl: MonAcl(...))`
+/// l'emporte alors sur celle du scope ambiant, pour ce seul écran.
+///
+/// ## Comment retrouver l'ancien comportement (développement / prototype)
+///
+/// Déclarez explicitement l'ACL permissive — c'est le geste que doit faire une
+/// application qui s'appuyait, sciemment ou non, sur l'ancien repli :
+///
+/// ```dart
+/// ZcrudScope(acl: const ZAllowAllAcl(), child: monEcran);
+/// ```
+///
+/// Ce geste est **volontaire et lisible** dans le code de l'application : c'est
+/// toute la différence avec un repli implicite.
+class ZDenyAllAcl implements ZAcl {
+  /// Construit l'ACL refusante (`const`).
+  const ZDenyAllAcl();
+
+  @override
+  bool can(ZCrudAction action, {ZEntity? target, String? collectionId}) =>
+      false;
+}
+
+/// Composition **restrictive** de deux autorisations : un geste n'est offert
+/// que si [base] **et** [restriction] l'accordent tous les deux.
+///
+/// ## À quoi ça sert
+///
+/// Une autorisation se déclare souvent à plusieurs endroits : au scope de
+/// l'application, à l'écran, puis à un onglet d'un écran segmenté. La question
+/// est alors : que fait la déclaration la plus proche de l'usager ? Deux
+/// réponses sont possibles, et une seule est sûre.
+///
+/// * *Remplacer* — l'onglet dit le dernier mot. Une déclaration d'onglet
+///   trop généreuse **rouvre** alors un geste que l'application avait refusé,
+///   sans qu'aucune erreur ne le signale.
+/// * *Restreindre* — c'est **ce type**. Une déclaration plus proche ne peut
+///   que **retirer** : elle affine un droit déjà accordé, jamais l'inverse.
+///
+/// L'intersection est la seule composition qui rende un élargissement
+/// **inexprimable** : quoi que déclare la restriction, aucun geste refusé par
+/// [base] ne peut réapparaître.
+///
+/// ```dart
+/// // L'onglet « Archives » ne rend AUCUN geste : au mieux, il en retire.
+/// final aclDeLOnglet = zRestrictAcl(aclDeLEcran, aclDeclareeSurLOnglet);
+/// ```
+class ZRestrictedAcl implements ZAcl {
+  /// Compose [base] (l'autorisation héritée) et [restriction] (la déclaration
+  /// la plus proche de l'usager) en **conjonction**.
+  const ZRestrictedAcl(this.base, this.restriction);
+
+  /// Autorisation **héritée** — celle du niveau supérieur (scope, écran).
+  final ZAcl base;
+
+  /// Autorisation **restreignante** — celle du niveau le plus proche
+  /// (onglet, section). Elle ne peut que retirer.
+  final ZAcl restriction;
+
+  @override
+  bool can(ZCrudAction action, {ZEntity? target, String? collectionId}) =>
+      base.can(action, target: target, collectionId: collectionId) &&
+      restriction.can(action, target: target, collectionId: collectionId);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZRestrictedAcl &&
+          other.base == base &&
+          other.restriction == restriction;
+
+  @override
+  int get hashCode => Object.hash(base, restriction);
+
+  @override
+  String toString() => 'ZRestrictedAcl($base ∩ $restriction)';
+}
+
+/// Restreint [base] par [restriction], en évitant d'emballer pour rien.
+///
+/// Retourne [base] tel quel quand aucune restriction n'est déclarée
+/// (`restriction == null`) : une déclaration absente ne change rien, ni dans
+/// un sens ni dans l'autre. Sinon, retourne la composition **conjonctive**
+/// ([ZRestrictedAcl]) — le résultat n'accorde jamais plus que [base].
+ZAcl zRestrictAcl(ZAcl base, ZAcl? restriction) =>
+    restriction == null ? base : ZRestrictedAcl(base, restriction);

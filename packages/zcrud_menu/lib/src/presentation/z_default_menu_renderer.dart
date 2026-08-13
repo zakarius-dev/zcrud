@@ -33,6 +33,7 @@ import '../domain/z_menu_entry.dart';
 import 'z_menu_entry_tile.dart';
 import 'z_menu_renderer.dart';
 import 'z_menu_request.dart';
+import 'z_menu_surface.dart';
 
 /// Repli zéro-dépendance : déclencheur `PopupMenuButton`, surface Material.
 class ZDefaultMenuRenderer extends ZMenuRenderer {
@@ -63,57 +64,12 @@ class ZDefaultMenuRenderer extends ZMenuRenderer {
         tooltip: trigger.tooltip ?? trigger.semanticLabel,
         // Voie UNIQUE de sélection (contrat ZMenuRenderer, point 3).
         onSelected: request.select,
-        itemBuilder: (context) => <PopupMenuEntry<ZMenuEntry>>[
-          if (contentBuilder != null)
-            _ZMenuPanelEntry(builder: contentBuilder, entries: entries)
-          else
-            for (final entry in entries)
-              PopupMenuItem<ZMenuEntry>(
-                value: entry,
-                enabled: entry.isEnabled,
-                // `PopupMenuItem` porte déjà son propre détecteur de geste :
-                // `onSelected` de la tuile reste nul (deux détecteurs
-                // superposés produiraient DEUX invocations).
-                child: ZMenuEntryTile(entry: entry),
-              ),
-        ],
+        // Items composés par le site PARTAGÉ avec la surface contextuelle
+        // (`zMenuPopupItems`) : le déclencheur visible et le clic droit ne
+        // peuvent pas diverger.
+        itemBuilder: (context) => zMenuPopupItems(request),
         child: trigger.child,
       ),
     );
   }
-}
-
-/// Entrée UNIQUE portant la présentation INJECTÉE — `PopupMenuEntry` NU.
-///
-/// Délibérément PAS un `PopupMenuItem` (cf. dartdoc de bibliothèque).
-/// [height] ne sert qu'à l'estimation de défilement du `PopupMenu` (le contenu
-/// se dimensionne lui-même) ; [represents] est `false` : l'entrée ne représente
-/// AUCUNE valeur, donc aucune surbrillance d'« item courant ».
-class _ZMenuPanelEntry extends PopupMenuEntry<ZMenuEntry> {
-  const _ZMenuPanelEntry({required this.builder, required this.entries});
-
-  final ZMenuContentBuilder builder;
-  final List<ZMenuEntry> entries;
-
-  @override
-  double get height => kZMenuMinTapTarget;
-
-  @override
-  bool represents(ZMenuEntry? value) => false;
-
-  @override
-  State<_ZMenuPanelEntry> createState() => _ZMenuPanelEntryState();
-}
-
-class _ZMenuPanelEntryState extends State<_ZMenuPanelEntry> {
-  @override
-  Widget build(BuildContext context) => widget.builder(
-        context,
-        widget.entries,
-        // MÊME chemin de sortie que la colonne par défaut : la valeur poppée est
-        // récupérée par `onSelected` du `PopupMenuButton`, qui appelle
-        // `request.select`. Une présentation injectée ne peut donc ni oublier de
-        // fermer, ni invoquer deux fois, ni diverger du défaut.
-        (entry) => Navigator.of(context).pop(entry),
-      );
 }

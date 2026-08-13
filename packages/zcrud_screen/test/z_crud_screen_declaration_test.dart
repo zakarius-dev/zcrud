@@ -69,8 +69,9 @@ void main() {
   });
 
   testWidgets(
-      'ACL refusante : create refusé ⇒ « + » absent ; delete+restore refusés '
-      '⇒ ni action corbeille ni bascule (mode hide)', (tester) async {
+      'ACL refusante : create refusé ⇒ « + » absent ; delete refusé ⇒ pas '
+      'd\'action corbeille ; restore+clear refusés ⇒ pas de bascule '
+      '(mode hide)', (tester) async {
     final repo = FakeItemRepo(const <Item>[Item(id: 'i1', name: 'Alpha')]);
     await pumpScreen(
       tester,
@@ -82,6 +83,9 @@ void main() {
           ZCrudAction.create,
           ZCrudAction.delete,
           ZCrudAction.restore,
+          // L'accès à la corbeille relève de `restore`/`clear` : refuser
+          // `delete` seul ne le ferme pas.
+          ZCrudAction.clear,
         }),
       ),
     );
@@ -130,8 +134,8 @@ void main() {
         source: ZCrudSource<Item>.items(
           items,
           onSave: (item) async => savedNames.add(item.name),
-          onSoftDelete: (item) => deletedIds.add(item.id!),
-          onRestore: (item) => deletedIds.remove(item.id!),
+          onSoftDelete: (_, item) => deletedIds.add(item.id!),
+          onRestore: (_, item) => deletedIds.remove(item.id!),
           isDeleted: (item) => deletedIds.contains(item.id),
         ),
         registry: buildItemRegistry(),
@@ -149,9 +153,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(savedNames, <String>['Gamma']);
 
-    // Soft-delete callback : Alpha quitte les vivants…
-    await tester.tap(find.byIcon(Icons.delete_outline).first);
-    await tester.pumpAndSettle();
+    // Soft-delete callback (CONFIRMÉ) : Alpha quitte les vivants…
+    await softDeleteFirstRow(tester);
     expect(deletedIds, <String>{'i1'});
     expect(find.text('Alpha'), findsNothing);
     // …et se retrouve dans la corbeille (partition isDeleted), restaurable.

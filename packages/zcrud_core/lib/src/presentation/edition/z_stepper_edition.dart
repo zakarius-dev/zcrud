@@ -1093,11 +1093,11 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
           isFirst: index == 0,
           isLast: index == _lastStep,
           previousLabel: widget.previousLabel ??
-              label(context, 'z.stepper.previous', fallback: 'Précédent'),
+              label(context, 'z.stepper.previous', fallback: 'Previous'),
           nextLabel: widget.nextLabel ??
-              label(context, 'z.stepper.next', fallback: 'Suivant'),
+              label(context, 'z.stepper.next', fallback: 'Next'),
           finishLabel: widget.finishLabel ??
-              label(context, 'z.stepper.finish', fallback: 'Terminer'),
+              label(context, 'z.stepper.finish', fallback: 'Finish'),
           onPrevious: index == 0 ? null : _previous,
           onNext: _next,
           finishEnabled: widget.onComplete != null,
@@ -1197,7 +1197,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
                     child: Text(
                       widget.finishLabel ??
                           label(context, 'z.stepper.finish',
-                              fallback: 'Terminer'),
+                              fallback: 'Finish'),
                       textAlign: TextAlign.start,
                     ),
                   ),
@@ -1299,11 +1299,11 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
           isFirst: index == 0,
           isLast: index == _lastStep,
           previousLabel: widget.previousLabel ??
-              label(context, 'z.stepper.previous', fallback: 'Précédent'),
+              label(context, 'z.stepper.previous', fallback: 'Previous'),
           nextLabel: widget.nextLabel ??
-              label(context, 'z.stepper.next', fallback: 'Suivant'),
+              label(context, 'z.stepper.next', fallback: 'Next'),
           finishLabel: widget.finishLabel ??
-              label(context, 'z.stepper.finish', fallback: 'Terminer'),
+              label(context, 'z.stepper.finish', fallback: 'Finish'),
           onPrevious: index == 0 ? null : _previous,
           onNext: _next,
           finishEnabled: widget.onComplete != null,

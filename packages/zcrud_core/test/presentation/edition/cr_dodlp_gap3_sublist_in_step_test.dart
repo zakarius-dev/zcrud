@@ -11,9 +11,9 @@
 //                      validation, qui rendait `"[]"`, donc non vide) ;
 //   G3  SM-1         — ouvrir le sous-éditeur / ajouter une ligne ne reconstruit
 //                      AUCUN autre champ de l'étape ;
-//   G4  ACL de ligne — `ZSubListConfig.aclCollectionId` branche réellement
-//                      `ZcrudScope.acl` sur les actions de ligne, et son absence
-//                      laisse le comportement DP-6 intact (LES DEUX branches) ;
+//   G4  ACL de ligne — `ZcrudScope.acl` gouverne les actions de ligne AVEC ou
+//                      SANS `ZSubListConfig.aclCollectionId` (ce dernier ne fait
+//                      que discriminer la collection interrogée) ;
 //   G5  mode déplié  — la sous-liste monte aussi sous `showAllSteps: true`.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,7 +26,7 @@ void _bigView(WidgetTester tester) {
   addTearDown(tester.view.resetDevicePixelRatio);
 }
 
-Finder get _next => find.widgetWithText(FilledButton, 'Suivant');
+Finder get _next => find.widgetWithText(FilledButton, 'Next');
 
 /// ACL refusant TOUT (y compris la création) — sonde du câblage.
 class _DenyAll implements ZAcl {
@@ -84,7 +84,9 @@ Widget _stepper(
   ZFormController c,
   List<ZFieldSpec> fields, {
   ZStepperConfig config = const ZStepperConfig(),
-  ZAcl? acl,
+  // Refus par défaut du socle : une ACL permissive est DÉCLARÉE ici, comme
+  // doit le faire toute application qui veut tous les gestes ouverts.
+  ZAcl acl = const ZAllowAllAcl(),
   void Function(String name)? onFieldBuild,
 }) {
   final body = ZStepperEdition(
@@ -108,9 +110,7 @@ Widget _stepper(
     onComplete: () {},
   );
   return MaterialApp(
-    home: acl == null
-        ? Scaffold(body: body)
-        : ZcrudScope(acl: acl, child: Scaffold(body: body)),
+    home: ZcrudScope(acl: acl, child: Scaffold(body: body)),
   );
 }
 
@@ -228,15 +228,20 @@ void main() {
   // ── G4 — ACL de ligne : les DEUX branches ─────────────────────────────────
 
   testWidgets(
-      'G4a — sans `aclCollectionId`, une ACL de scope refusant tout laisse le '
-      'bouton d\'ajout (comportement DP-6 inchangé)', (tester) async {
+      'G4a — sans `aclCollectionId`, une ACL de scope refusant tout retire '
+      'quand même le bouton d\'ajout (l\'ACL gouverne TOUJOURS)', (tester) async {
     _bigView(tester);
     final c = _controller();
     addTearDown(c.dispose);
     await tester
         .pumpWidget(_stepper(c, _fieldsPlain, acl: const _DenyAll()));
     await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.add), findsOneWidget);
+    // Le champ EST monté (garde non vacante) …
+    expect(find.byType(ZSubListFieldWidget), findsOneWidget);
+    // … et l'ACL déclarée au scope gouverne les gestes, que la sous-liste
+    // déclare ou non un `aclCollectionId` (celui-ci ne fait que discriminer la
+    // collection interrogée).
+    expect(find.byIcon(Icons.add), findsNothing);
   });
 
   testWidgets(

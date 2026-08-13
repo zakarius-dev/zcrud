@@ -18,6 +18,37 @@
 /// U+0300–U+036F avant consultation de la table.
 library;
 
+/// Profondeur de normalisation appliquée **des deux côtés** d'une recherche
+/// (le terme saisi et la valeur interrogée). Valeurs en **camelCase**
+/// (canonique §5).
+///
+/// | Valeur | Casse | Diacritiques | Blancs |
+/// |---|---|---|---|
+/// | [diacritics] (défaut) | pliée | pliés | **conservés** |
+/// | [diacriticsAndSpaces] | pliée | pliés | **supprimés** |
+///
+/// Ni l'une ni l'autre ne touche à la ponctuation, et aucune ne normalise les
+/// formes décomposées (NFD) — cf. la limite documentée de cette bibliothèque.
+enum ZSearchFolding {
+  /// Casse abaissée et diacritiques repliés, **blancs conservés** : « SARL U »
+  /// et « sarlu » restent deux textes différents.
+  ///
+  /// C'est le comportement historique, et il reste le **défaut** : élargir la
+  /// normalisation élargit aussi les correspondances, ce qu'une application
+  /// doit demander.
+  diacritics,
+
+  /// Casse abaissée, diacritiques repliés **et tous les blancs supprimés** —
+  /// espace, espace insécable, tabulation, saut de ligne, où qu'ils se
+  /// trouvent.
+  ///
+  /// « SOCIETE X SARL U » devient `societexsarlu` et se laisse donc trouver
+  /// par « sarlu », « SARL U » ou « sa rlu ». À déclarer quand les données
+  /// portent des espacements irréguliers (raisons sociales, immatriculations,
+  /// numéros de conteneur).
+  diacriticsAndSpaces,
+}
+
 /// Table de repli des **diacritiques Latin** courants (français + langues
 /// latines usuelles) vers leur forme ASCII. Clés en **minuscule** (le pliage
 /// abaisse la casse AVANT de consulter la table) ; les ligatures (`œ`/`æ`/`ß`)
@@ -74,12 +105,27 @@ const Map<String, String> _foldTable = <String, String>{
 /// `zFoldDiacritics('ÉÈÊË') == 'eeee'`, `zFoldDiacritics('Œuvre') == 'oeuvre'`.
 /// **Idempotent** (`zFoldDiacritics(zFoldDiacritics(x)) == zFoldDiacritics(x)`)
 /// et total (chaîne vide → chaîne vide ; ne lève jamais).
-String zFoldDiacritics(String input) {
+///
+/// [folding] choisit la **profondeur** du pliage. Le défaut
+/// [ZSearchFolding.diacritics] conserve les blancs — comportement historique,
+/// inchangé pour tout appelant existant. [ZSearchFolding.diacriticsAndSpaces]
+/// supprime en plus **tous** les blancs :
+/// `zFoldDiacritics('SARL U', folding: ZSearchFolding.diacriticsAndSpaces)`
+/// vaut `'sarlu'`. Les deux modes restent idempotents.
+String zFoldDiacritics(
+  String input, {
+  ZSearchFolding folding = ZSearchFolding.diacritics,
+}) {
   if (input.isEmpty) return input;
+  final dropSpaces = folding == ZSearchFolding.diacriticsAndSpaces;
   final lower = input.toLowerCase();
   final buffer = StringBuffer();
   for (final rune in lower.runes) {
     final ch = String.fromCharCode(rune);
+    // `trim()` porte la définition Unicode du blanc (espace, espace insécable,
+    // tabulation, saut de ligne, séparateurs de ligne) : un caractère dont le
+    // `trim()` est vide EST un blanc, sans table à maintenir.
+    if (dropSpaces && ch.trim().isEmpty) continue;
     buffer.write(_foldTable[ch] ?? ch);
   }
   return buffer.toString();

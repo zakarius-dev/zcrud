@@ -62,48 +62,12 @@ class ZActionMenu extends StatelessWidget {
         trigger: trigger,
         entries: visible,
         contentBuilder: contentBuilder,
-        // UNIQUE site d'invocation de l'effet, pour TOUS les renderers. Un
-        // renderer (y compris un adaptateur tiers) ne peut pas exécuter une
-        // entrée désactivée ni une entrée qu'il aurait fabriquée lui-même : la
-        // garde est ici, pas dans sa bonne volonté.
-        //
-        // On RÉSOUT l'entrée dans la liste COURANTE, puis on invoque l'effet
-        // de CELLE-LÀ — jamais celui porté par la valeur reçue.
-        //
-        // Pourquoi pas `visible.contains(entry)` : `ZMenuEntry.==` compare
-        // `onSelected`, donc une IDENTITÉ DE CLOSURE. Or une surface flottante
-        // capture la valeur de l'entrée à l'OUVERTURE et lit le callback de
-        // sélection à la SÉLECTION ; tout hôte déclarant `onSelected: () =>
-        // faire(x)` — le patron normal — en refabrique à chaque rebuild. Un
-        // simple rebuild pendant que le menu est ouvert rendait donc l'entrée
-        // « non contenue » et AVALAIT la sélection SANS AUCUNE TRACE : le no-op
-        // silencieux que l'invariant AD-4 proscrit, entré par la porte de
-        // derrière du garde-fou censé le prévenir.
-        //
-        // Ce que la résolution garde intact : une entrée FABRIQUÉE par un
-        // renderer ne peut toujours pas imposer son effet (c'est l'effet
-        // DÉCLARÉ par l'appelant qui s'exécute), et une entrée inconnue ou
-        // désactivée reste sans effet.
-        select: (entry) => _resoudre(visible, entry)?.onSelected?.call(),
+        // Voie de sélection UNIQUE, fabriquée par le site partagé
+        // (`zMenuSelectFor`) : le déclencheur visible et le menu contextuel
+        // (`ZContextMenuRegion`) empruntent exactement le même chemin, avec la
+        // même résolution d'entrée périmée.
+        select: zMenuSelectFor(visible),
       ),
     );
-  }
-
-  /// Retrouve dans [visible] l'entrée que désigne [recue], ou `null`.
-  ///
-  /// Deux passes, dans cet ordre :
-  /// 1. **identité** — le cas courant (aucun rebuild n'est survenu) ;
-  /// 2. **`id` + `label`** — l'identité DÉCLARÉE de l'entrée, stable au
-  ///    rebuild là où la closure ne l'est pas. `id` seul ne suffirait pas :
-  ///    la liste des identités est OUVERTE et un hôte peut réutiliser
-  ///    `'custom'` sur plusieurs entrées.
-  static ZMenuEntry? _resoudre(List<ZMenuEntry> visible, ZMenuEntry recue) {
-    for (final e in visible) {
-      if (identical(e, recue)) return e;
-    }
-    for (final e in visible) {
-      if (e.id == recue.id && e.label == recue.label) return e;
-    }
-    return null;
   }
 }

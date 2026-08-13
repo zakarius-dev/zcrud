@@ -55,6 +55,7 @@ import '../../../domain/ports/z_acl.dart';
 import '../../l10n/z_localizations.dart';
 import '../../theme/z_theme.dart';
 import '../../z_form_controller.dart';
+import '../../zcrud_scope.dart';
 import '../z_field_widget.dart';
 import '../z_read_only_value.dart';
 import '../z_select_choices_resolver.dart';
@@ -83,9 +84,10 @@ class ZSubListFieldWidget extends StatefulWidget {
   /// Construit le champ sous-liste pour [field], valeur initiale [initialValue]
   /// (`List<Map>` ou `null`), agrégeant vers la tranche parente via [onChanged].
   ///
-  /// Additifs, rétro-compat : [acl] filtre les actions du mode compact
-  /// (défaut `const ZAllowAllAcl()` = permissif → zéro régression) ;
-  /// [collectionId] est transmis à `ZAcl.can(..., collectionId:)` ;
+  /// [acl] filtre les actions du mode compact. `null` (défaut) ⇒ l'ACL du
+  /// `ZcrudScope` ambiant est consultée ; sans scope, le repli est **refusant**
+  /// (`ZDenyAllAcl`) : aucune action d'item n'est offerte. [collectionId] est
+  /// transmis à `ZAcl.can(..., collectionId:)` ;
   /// [itemTitleBuilder] dérive le titre du dialog / résumé de ligne. Ces
   /// paramètres sont **ignorés** en mode `inline` (comportement inchangé).
   const ZSubListFieldWidget({
@@ -93,7 +95,7 @@ class ZSubListFieldWidget extends StatefulWidget {
     required this.initialValue,
     required this.onChanged,
     this.itemFieldBuilder,
-    this.acl = const ZAllowAllAcl(),
+    this.acl,
     this.collectionId,
     this.itemTitleBuilder,
     super.key,
@@ -116,8 +118,12 @@ class ZSubListFieldWidget extends StatefulWidget {
   final ZSubItemFieldBuilder? itemFieldBuilder;
 
   /// Port d'autorisation consommé **uniquement** en mode compact pour
-  /// filtrer add/view/edit/delete. Défaut permissif (`const ZAllowAllAcl()`).
-  final ZAcl acl;
+  /// filtrer add/view/edit/delete.
+  ///
+  /// `null` (défaut) ⇒ ACL du `ZcrudScope` ambiant, puis repli **refusant**
+  /// (`ZDenyAllAcl`). En développement, l'ouverture totale se déclare :
+  /// `ZcrudScope(acl: const ZAllowAllAcl())`.
+  final ZAcl? acl;
 
   /// Discriminant de collection transmis à [ZAcl.can]. `null` par défaut.
   final String? collectionId;
@@ -846,13 +852,17 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     );
     final readOnly = widget.field.readOnly;
     final cid = widget.collectionId;
+    // Priorité : paramètre du champ > ACL du scope ambiant > refus.
+    final ZAcl acl = widget.acl ??
+        ZcrudScope.maybeOf(context)?.acl ??
+        const ZDenyAllAcl();
     final canCreate =
-        !readOnly && widget.acl.can(ZCrudAction.create, collectionId: cid);
-    final canView = widget.acl.can(ZCrudAction.view, collectionId: cid);
+        !readOnly && acl.can(ZCrudAction.create, collectionId: cid);
+    final canView = acl.can(ZCrudAction.view, collectionId: cid);
     final canUpdate =
-        !readOnly && widget.acl.can(ZCrudAction.update, collectionId: cid);
+        !readOnly && acl.can(ZCrudAction.update, collectionId: cid);
     final canDelete =
-        !readOnly && widget.acl.can(ZCrudAction.delete, collectionId: cid);
+        !readOnly && acl.can(ZCrudAction.delete, collectionId: cid);
 
     // a11y : pas de `label:` sur le conteneur — le `Text` visible
     // (en-tête) porte déjà le nom de section ; un `label:` doublerait l'annonce.

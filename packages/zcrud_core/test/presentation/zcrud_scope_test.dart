@@ -39,7 +39,9 @@ void main() {
     expect(ZcrudScope.maybeOf(ctx), isNull);
   });
 
-  testWidgets('scope par défaut expose ZAllowAllAcl permissive (AC5)', (
+  testWidgets(
+      '🔴 scope par défaut expose ZDenyAllAcl : REFUS par défaut (fail-closed)',
+      (
     tester,
   ) async {
     late ZcrudScope scope;
@@ -53,9 +55,34 @@ void main() {
         ),
       ),
     );
+    // Un oubli de câblage ne doit JAMAIS ouvrir tous les gestes : sans ACL
+    // déclarée, TOUTE action est refusée, y compris la consultation.
+    expect(scope.acl, isA<ZDenyAllAcl>());
+    for (final action in ZCrudAction.values) {
+      expect(scope.acl.can(action), isFalse, reason: 'action $action');
+    }
+  });
+
+  testWidgets(
+      '🔴 ZAllowAllAcl DÉCLARÉE restaure l\'ouverture totale (échappatoire)', (
+    tester,
+  ) async {
+    late ZcrudScope scope;
+    await tester.pumpWidget(
+      ZcrudScope(
+        acl: const ZAllowAllAcl(),
+        child: Builder(
+          builder: (context) {
+            scope = ZcrudScope.of(context);
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
     expect(scope.acl, isA<ZAllowAllAcl>());
-    expect(scope.acl.can(ZCrudAction.view), isTrue);
-    expect(scope.acl.can(ZCrudAction.delete), isTrue);
+    for (final action in ZCrudAction.values) {
+      expect(scope.acl.can(action), isTrue, reason: 'action $action');
+    }
   });
 
   testWidgets('resolver non fourni (défaut throwing) lève ZScopeError (AC4)', (
