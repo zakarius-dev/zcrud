@@ -6,7 +6,7 @@ sidebar_position: 1
 
 # zcrud
 
-**zcrud** est un écosystème de 39 paquets Flutter qui transforme un **schéma déclaratif de
+**zcrud** est un écosystème de 40 paquets Flutter qui transforme un **schéma déclaratif de
 champs** (`ZFieldSpec`) en applications CRUD complètes : formulaires d'édition, tableaux de
 liste, export PDF/Excel, synchronisation offline-first — avec des champs riches (Markdown,
 géo, téléphone, sous-listes, flashcards, mindmaps, chat).
@@ -49,6 +49,8 @@ géo, téléphone, sous-listes, flashcards, mindmaps, chat).
  provider       (Syncfusion) zcrud_html   zcrud_intl    zcrud_chat/…
         │                                 zcrud_media
    zcrud_firestore (offline-first)        zcrud_select
+
+   zcrud_screen ← l'écran CRUD assemblé, au-dessus des briques ci-dessus
 ```
 
 Chaque paquet expose son API par un barrel unique (`lib/<pkg>.dart`) ; l'implémentation

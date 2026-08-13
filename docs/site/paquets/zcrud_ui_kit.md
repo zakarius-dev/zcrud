@@ -46,6 +46,8 @@ UI tierce.
 | `ZToastSeverity` / `ZToaster` / `ZScaffoldMessengerToaster` | Sévérité de toast, port de notification pluggable et son implémentation par défaut. |
 | `ZDiscardChangesGuard` | `PopScope` interceptant la sortie tant qu'un état *dirty* injecté est vrai. |
 | `ZPageScaffold` / `ZPageShellBody` / `ZSearchableAppBar` | Page-shell déclaratif — deux formes (avec/sans `Scaffold` propre) partageant la même app-bar recherchable, repliable et à onglets. |
+| `ZAppBarAction` / `ZAppBarSearchConfig` | Action d'app-bar déclarée **en données** (avec débordement en menu) et configuration de la recherche qui morphe le titre en champ. |
+| `ZCountBadge` | Pastille de comptage — seule ou posée sur une icône/un avatar : nombre annoncé, cible 48 dp dès qu'elle est cliquable, placement directionnel, zéro invisible par défaut. |
 
 ## Voir aussi
 

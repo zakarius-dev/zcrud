@@ -1,12 +1,12 @@
 ---
 title: Catalogue des paquets
-description: Les 39 paquets zcrud, groupés par capacité — rôle en une ligne et fiche dédiée.
+description: Les 40 paquets zcrud, groupés par capacité — rôle en une ligne et fiche dédiée.
 sidebar_position: 1
 ---
 
 # Catalogue des paquets
 
-zcrud compte **39 paquets**, groupés ci-dessous par capacité — le même découpage que la
+zcrud compte **40 paquets**, groupés ci-dessous par capacité — le même découpage que la
 carte des paquets du dépôt. Chaque paquet expose son API par un barrel unique
 (`lib/<pkg>.dart`) ; l'implémentation sous `lib/src/` n'est pas un contrat. Le graphe de
 dépendances entre paquets est acyclique et vérifié par gate
@@ -37,7 +37,7 @@ rédaction.
 
 | Paquet | Rôle |
 |---|---|
-| [`zcrud_list`](./zcrud_list.md) | Backend de liste Syncfusion (`SfDataGrid`) derrière le port `ZListRenderer` du cœur. |
+| [`zcrud_list`](./zcrud_list.md) | Backend de **rendu** Syncfusion (`SfDataGrid`) du port `ZListRenderer` — pas l'écran de liste (voir `zcrud_screen`). |
 | [`zcrud_firestore`](./zcrud_firestore.md) | Adaptateurs Firestore/Hive offline-first derrière les ports neutres du cœur. |
 | [`zcrud_select`](./zcrud_select.md) | Présentateur de sélection (page/dialogue/feuille) au-dessus d'un fork vendored d'`awesome_select`. |
 
@@ -86,19 +86,19 @@ rédaction.
 
 | Paquet | Rôle |
 |---|---|
-| [`zcrud_export`](./zcrud_export.md) | Export tabulaire Excel/PDF (Syncfusion) derrière une API neutre en octets. |
-| [`zcrud_export_pdf`](./zcrud_export_pdf.md) | Export PDF (gabarits de flashcards et documents tabulaires), sans dépendance tableur. |
+| [`zcrud_export`](./zcrud_export.md) | Export tabulaire Excel/PDF (Syncfusion) derrière une API neutre en octets, plus les exporteurs de liste CSV/Excel du port `ZListExporter`. |
+| [`zcrud_export_pdf`](./zcrud_export_pdf.md) | Export PDF (gabarits de flashcards, documents tabulaires, exporteur de liste `ZListExporter`), sans dépendance tableur. |
 | [`zcrud_export_ui`](./zcrud_export_ui.md) | Destinations d'export plateforme : aperçu/impression/partage PDF et rastérisation LaTeX. |
 
 ## UI & navigation {#ui-navigation}
 
 | Paquet | Rôle |
 |---|---|
-| [`zcrud_ui_kit`](./zcrud_ui_kit.md) | Widgets d'état de contenu (vide/chargement/erreur) et boîte de dialogue de confirmation thémée. |
+| [`zcrud_ui_kit`](./zcrud_ui_kit.md) | Coquille de page et app-bar recherchable, états de contenu (vide/chargement/erreur), confirmation thémée, pastille de comptage. |
 | [`zcrud_responsive`](./zcrud_responsive.md) | Classes de largeur de fenêtre (Material 3) et valeurs par point de rupture. |
-| [`zcrud_menu`](./zcrud_menu.md) | Menus contextuels découplés derrière un seam neutre, avec repli Material sans dépendance tierce. |
+| [`zcrud_menu`](./zcrud_menu.md) | Menus déclarés en données derrière un seam neutre : rendus liste et grille, ouverture par clic droit / appui long, repli sans dépendance tierce. |
 | [`zcrud_navigation`](./zcrud_navigation.md) | Politique de présentation d'édition (page/feuille/dialogue) dérivée du point de rupture. |
-| [`zcrud_screen`](./zcrud_screen.md) | Écran CRUD assemblé et déclaratif : liste, création, édition, sauvegarde et corbeille depuis une déclaration. |
+| [`zcrud_screen`](./zcrud_screen.md) | Écran CRUD assemblé et déclaratif : liste, recherche, onglets, création/édition, fiche de détail, corbeille à trois gestes, gouvernance par ligne, sélection multiple et export. |
 | [`zcrud_dnd`](./zcrud_dnd.md) | Glisser-déposer natif opt-in (dépôts fichiers OS, échange inter-applications). |
 | [`zcrud_reorder`](./zcrud_reorder.md) | Backend de réordonnancement opt-in, avec repli zéro-dépendance si non installé. |
 

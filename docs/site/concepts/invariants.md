@@ -118,6 +118,17 @@ Le contrôle d'accès passe par un port `ZAcl` fourni par l'application ; la pag
 curseur (`startAfter`) est exprimée dans le contrat neutre `DataRequest` et implémentée
 par l'adaptateur backend.
 
+**Le repli est refusant (fail-closed).** Tout point qui consulte une ACL sans en avoir
+reçu une retombe sur `ZDenyAllAcl`, qui refuse tout : une application qui oublie de
+brancher la sienne n'offre **aucun** geste, au lieu de tous les offrir. La résolution est
+partout la même — **paramètre explicite > ACL du `ZcrudScope` ambiant > refus**. Sur un
+écran assemblé, `ZCrudAction.view` refusé bloque l'écran entier, qui affiche un état
+« accès refusé » **sans interroger le dépôt**.
+
+L'ouverture totale reste possible, mais **déclarée** :
+`ZcrudScope(acl: const ZAllowAllAcl())`. C'est toute la différence avec un repli
+implicite — le geste est volontaire et lisible dans le code de l'application.
+
 ## Voir aussi
 
 - [Architecture hexagonale](architecture-hexagonale.md) — comment ces règles se traduisent

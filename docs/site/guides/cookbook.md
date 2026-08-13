@@ -160,8 +160,12 @@ const ZFieldSpec(
 );
 ```
 
-`ZSubListConfig.displayMode` et `summaryFields` compactent l'affichage ; `aclCollectionId`
-soumet les actions de ligne au port `ZAcl` de l'hôte.
+`ZSubListConfig.displayMode` et `summaryFields` compactent l'affichage. Les gestes d'item
+sont gouvernés par l'`ZAcl` du `ZcrudScope` ambiant — **avec ou sans** `aclCollectionId`,
+qui ne sert qu'à désigner la collection interrogée. Sans ACL déclarée, le repli refuse
+tout ([AD-16](../concepts/invariants.md#ad-16)) : posez
+`ZcrudScope(acl: …)` à la racine, ou `const ZAllowAllAcl()` si l'ouverture totale est
+voulue.
 
 Voir l'écran de démo : `example/lib/demos/reference_form.dart` (champ `orderLines`) et
 `example/lib/demos/stepper_sub_list_demo_screen.dart` (sous-liste compacte + ACL de ligne
@@ -303,6 +307,62 @@ requête ; chacun ne notifie que la tranche `state`.
 
 Voir l'écran de démo : `example/lib/demos/list_demo_screen.dart` (recherche + filtre +
 tri + pagination + actions de ligne + onglets + corbeille).
+
+## Monter un écran CRUD complet sans recoudre le cycle {#ecran-crud-assemble}
+
+La recette précédente monte la liste ; il reste à lui recoudre la recherche, le bouton de
+création, la présentation du formulaire, la sauvegarde et la corbeille — écran par écran.
+
+`ZCrudScreen` est la pièce qui **assemble** ces briques. Quand le modèle est enregistré au
+`ZcrudRegistry` et que la source est un `ZRepository`, champs de liste et de formulaire,
+projection en cellules et reconstruction d'entité sont **dérivés** du schéma généré :
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_list/zcrud_list.dart';
+import 'package:zcrud_screen/zcrud_screen.dart';
+
+Widget buildContactsScreen(
+  ZRepository<Contact> repository,
+  ZcrudRegistry registry,
+) {
+  // Le rendu de la grille et l'ACL sont injectés une fois pour l'application.
+  return ZcrudScope(
+    listRenderer: const ZSfDataGridRenderer(),
+    acl: const ZAllowAllAcl(),
+    child: ZCrudScreen<Contact>(
+      title: 'Contacts',
+      source: ZCrudSource<Contact>.repository(repository),
+      registry: registry,
+      detailsEnabled: true,
+      query: const ZListQueryPolicy(
+        sort: <ZSort>[ZSort('name', ZSortDirection.asc)],
+        pageSize: 50,
+      ),
+    ),
+  );
+}
+```
+
+Trois points à ne pas manquer :
+
+- **l'ACL est refusante par défaut** ([AD-16](../concepts/invariants.md#ad-16)) : sans
+  `acl` déclarée, l'écran n'offre aucun geste et affiche « accès refusé ». `ZAllowAllAcl`
+  ci-dessus est l'ouverture totale **déclarée** — remplacez-la par la vôtre ;
+- **le layout par défaut délègue à un backend de rendu** que le cœur n'embarque pas :
+  sans `listRenderer` injecté, l'écran lève une `ZScopeError` explicite
+  ([AD-8](../concepts/invariants.md#ad-8)) ;
+- **`detailsEnabled: true`** ajoute la fiche de chaque ligne **sans** retirer la création
+  ni la corbeille — contrairement à `mode: ZScreenMode.details`, qui fait de l'écran
+  entier un écran de consultation.
+
+Tout le reste se déclare de la même façon sur le même widget : corbeille (`trash`,
+`trashPolicy`), droits par ligne (`rowAcl`), sélection multiple (`selection`), export
+(`export`), onglets (`tabs`), coloration (`rowColor`).
+
+Voir la [fiche `zcrud_screen`](../paquets/zcrud_screen.md) pour la carte complète des
+déclarations, et le README du paquet pour l'API exhaustive.
 
 ## Exporter une liste en PDF ou Excel {#export-liste}
 

@@ -1,6 +1,6 @@
 ---
 title: "Concept : architecture hexagonale"
-description: Couches domain/data/presentation, ports neutres, adaptateurs et carte des 39 paquets.
+description: Couches domain/data/presentation, ports neutres, adaptateurs et carte des 40 paquets.
 sidebar_position: 4
 ---
 
@@ -36,7 +36,7 @@ aucune dépendance backend — que les satellites implémentent. Les plus struct
 | `ZRepository<T>` | Contrat complet de persistance d'un agrégat : `watchAll`/`watch`, `getAll`/`getById`, `save`, `softDelete`/`restore`, `count`. Étend `ZReadOnlyRepository<T>`, qui expose la même surface de lecture sans écriture. |
 | `ZLocalStore<T>` | Store **local**, source de vérité offline-first : `put`/`putMerged`, `softDelete`/`restore`, et la voie de synchronisation `syncEntries`/`applyMerged`. |
 | `ZRemoteStore<T>` | Store **distant**, best-effort : `push`, `remoteDelete`, `pull`, et les mêmes primitives de synchronisation que `ZLocalStore`. |
-| `ZAcl` | Autorisation synchrone : `can(ZCrudAction action, {target, collectionId})`. L'implémentation par défaut `ZAllowAllAcl` autorise tout. |
+| `ZAcl` | Autorisation synchrone : `can(ZCrudAction action, {target, collectionId})`. **Sans implémentation déclarée, le repli est `ZDenyAllAcl` — il refuse tout** (voir [AD-16](invariants.md#ad-16)). |
 | `ZDataRequest` | Value object neutre de requête : `filters` (`ZFilter`), `sorts` (`ZSort`), `search`, pagination curseur (`limit`/`startAfter`). |
 
 Aucune de ces signatures n'expose un type backend (`Timestamp`, `Filter`,
@@ -121,7 +121,7 @@ Le traitement se fait par `fold`/`is`/`message`, jamais par un `switch` exhausti
 `ZFailure` — l'exhaustivité compilateur est explicitement sacrifiée pour permettre
 l'extension inter-paquet.
 
-## La carte des 39 paquets {#la-carte-des-39-paquets}
+## La carte des 40 paquets {#la-carte-des-paquets}
 
 | Capacité | Paquets |
 |---|---|
@@ -133,7 +133,7 @@ l'extension inter-paquet.
 | **Chat** | `zcrud_chat` · `zcrud_chat_kernel` · `zcrud_chat_markdown` · `zcrud_chat_material` · `zcrud_chat_study` · `zcrud_chat_syncfusion` |
 | **Champs spécialisés** | `zcrud_geo` · `zcrud_geo_location` · `zcrud_intl` (téléphone/pays/devise) · `zcrud_media` · `zcrud_field_extras` |
 | **Export** | `zcrud_export` · `zcrud_export_pdf` · `zcrud_export_ui` |
-| **UI & navigation** | `zcrud_ui_kit` · `zcrud_responsive` · `zcrud_menu` · `zcrud_navigation` · `zcrud_dnd` · `zcrud_reorder` |
+| **UI & navigation** | `zcrud_ui_kit` · `zcrud_responsive` · `zcrud_menu` · `zcrud_navigation` · `zcrud_screen` (écran CRUD assemblé) · `zcrud_dnd` · `zcrud_reorder` |
 
 Chaque paquet expose son API par un barrel unique (`lib/<pkg>.dart`) ; le code sous
 `lib/src/` n'est pas un contrat et peut changer sans préavis.

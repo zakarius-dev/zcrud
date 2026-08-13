@@ -106,14 +106,6 @@ devient alors un invariant vérifié par l'analyse.
 
 ## Publication du site
 
-> 🔴 **SUSPENDUE — consigne owner du 2026-08-13.** Le cycle décrit ci-dessous ne doit **pas**
-> être exécuté : ni coupe de version, ni `doc:api`, ni `doc:site`, ni `doc:deploy`. Le site
-> reste en ligne dans son état publié (0.92.0). La documentation continue d'être **écrite**
-> (README, dartdoc, CHANGELOG, pages de `docs/site/`) — elle n'est simplement plus
-> **publiée**. Le owner donnera le signal de reprise à une **version majeure mature** ; la
-> reprise consiste alors à couper la version du tag concerné, puis à dérouler le cycle
-> ci-dessous inchangé.
-
 Le site (contenu de `docs/site/` + référence d'API) est un **Docusaurus 3** construit et
 publié **depuis le poste**, sans aucun GitHub Actions : la CI du dépôt est à l'arrêt pour
 facturation (cf. `CLAUDE.md`), donc la publication n'est déclenchée par personne d'autre que

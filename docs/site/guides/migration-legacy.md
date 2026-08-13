@@ -122,6 +122,61 @@ Un hôte passif n'a rien à faire ; un hôte qui pré-convertissait ces formats
 avant de les transmettre au paquet peut retirer cette étape (cf. section
 suivante).
 
+## La recherche rétrécit en silence si on garde le défaut
+
+Les moteurs de liste déclaratifs dont zcrud a été extrait cherchaient dans
+**toutes** les colonnes déclarées et **ignoraient les blancs** en comparant.
+zcrud, lui, interroge par défaut les seuls champs marqués `searchable`, et les
+blancs y comptent. Une migration qui garde le défaut restreint donc le domaine
+de recherche **sans le moindre signal** : la liste s'affiche normalement, elle
+est simplement vide pour des saisies qui trouvaient auparavant.
+
+Les deux réglages se déclarent sur la politique de requête de l'écran assemblé
+(`ZCrudScreen(query:)`), et le raccourci `ZListQueryPolicy.legacySearch()` les
+pose d'un coup :
+
+```dart
+ZCrudScreen<Dossier>(
+  title: 'Dossiers',
+  source: ZCrudSource<Dossier>.repository(repo),
+  registry: registry,
+  query: const ZListQueryPolicy(
+    searchScope: ZSearchScope.allColumns,              // domaine historique
+    searchFolding: ZSearchFolding.diacriticsAndSpaces, // blancs ignorés
+  ),
+);
+```
+
+`ZSearchScope.allColumns` rend le domaine des moteurs legacy ;
+`ZSearchFolding.diacriticsAndSpaces` fait à nouveau correspondre
+« SOCIETE X SARL U » et « sarlu ». Élargir le domaine ne fait pas déborder la
+recherche hors de ce que la requête a déjà réduit : les filtres permanents
+restent opposables, la vue corbeille garde sa portée, un onglet garde son
+filtre de catégorie.
+
+## L'autorisation refuse par défaut
+
+Un moteur maison qui n'avait pas de notion d'ACL laissait, par construction,
+tous les gestes offerts. zcrud fait l'inverse : sans `ZAcl` déclarée, le repli
+est `ZDenyAllAcl` et **aucun** geste n'est offert
+([invariant AD-16](../concepts/invariants.md#ad-16)). Une migration qui porte
+les écrans avant de porter les droits verra donc des boutons manquants — et,
+sur un écran assemblé, un état « accès refusé » plutôt qu'une liste.
+
+Deux gestes de migration, dans cet ordre :
+
+1. **Rendre l'étape visible** en déclarant l'ouverture totale — jamais en la
+   subissant : `ZcrudScope(acl: const ZAllowAllAcl(), child: …)`. Le geste est
+   volontaire et se relit dans le code.
+2. **Remplacer cette déclaration** par votre implémentation de `ZAcl` au fur et
+   à mesure que les rôles sont portés. La résolution est partout la même —
+   paramètre explicite, puis ACL du `ZcrudScope` ambiant, puis refus.
+
+Si votre code hôte **filtrait lui-même** ses actions selon le rôle (le cas
+courant d'un moteur sans ACL), cette compensation s'additionne désormais à
+l'ACL déclarée : retirez-la, ou vérifiez qu'elle n'exclut pas ce que l'ACL
+autorise déjà.
+
 ## Les repositories précèdent les listes
 
 Une migration par étapes est tentée de commencer par les écrans de liste — le
