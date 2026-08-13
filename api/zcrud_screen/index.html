@@ -55,9 +55,25 @@ corbeille), sans que l'assemblage ne monte jamais dans le cœur (invariant AD-1)
 <code>ZFormController</code> (formulaire), <code>ZRepository</code>/<code>ZDataRequest.deletedScope</code>
 (données et corbeille). Ce paquet fournit <strong>la pièce qui les assemble</strong>, pour
 que chaque application n'ait plus à recoudre le cycle complet écran par écran.</p>
+<p>L'écran est <strong>bâti sur <code>zcrud_ui_kit</code></strong> : il ne refabrique ni sa coquille de
+page, ni sa confirmation, ni sa notification. Concrètement, sans une ligne de
+code hôte, il hérite :</p>
+<ul>
+<li>de l'<strong>app-bar recherchable</strong> du socle (<code>ZPageScaffold</code>/<code>ZSearchableAppBar</code>)
+— le titre morphe en champ de recherche, <code>Échap</code> referme, la frappe ne
+reconstruit que la tranche app-bar ; les actions sont <strong>déclarées en
+données</strong> (<code>ZAppBarAction</code>) avec le <strong>menu de débordement</strong> du socle, et la
+typographie d'en-tête reste atteignable par les jetons <code>ZcrudTheme</code> ;</li>
+<li>de la <strong>confirmation</strong> des gestes destructifs (<code>showZConfirmDialog</code>,
+<code>ZConfirmTone.destructive</code>) — dark-mode-aware, libellés l10n, cibles ≥ 48 dp ;</li>
+<li>de la <strong>notification</strong> d'échec des actions de ligne (<code>ZToaster</code> +
+<code>ZToasterScope</code>) — l'app substitue son toaster (GetX, <code>toastification</code>…)
+sans que le paquet n'importe le moindre tiers.</li>
+</ul>
 <p>Dépendances internes (arêtes sortantes uniquement, graphe acyclique) :</p>
 <pre class="language-dart"><code>zcrud_screen ──&gt; zcrud_core
-             └─&gt; zcrud_navigation ──&gt; zcrud_responsive ──&gt; zcrud_core
+             ├─&gt; zcrud_navigation ──&gt; zcrud_responsive ──&gt; zcrud_core
+             └─&gt; zcrud_ui_kit ──&gt; zcrud_core
 </code></pre>
 <p><strong>Quand l'utiliser</strong> : « une liste dont on crée, édite et met à la corbeille
 les éléments » — le cas d'usage nominal d'un écran CRUD, y compris ses
@@ -110,6 +126,68 @@ Widget buildConsigneesScreen(
   );
 }
 </code></pre>
+<h4 id="ce-que-ces-cinq-lignes-supposent">Ce que ces cinq lignes supposent</h4>
+<p>La déclaration ci-dessus tient en cinq lignes parce que <strong>trois conditions</strong>
+sont réunies. Ôtez-en une, et la déclaration s'allonge — ce n'est pas un défaut
+de l'assemblage, c'est le prix de ce qu'il ne peut plus dériver.</p>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Ce qui est dérivé</th>
+<th>Si elle n'est pas remplie</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Le modèle est <strong>enregistré au registre</strong> (<code>@ZcrudModel</code> + registrar appelé au bootstrap)</td>
+<td>champs de liste et de formulaire, projection en cellules, reconstruction d'entité</td>
+<td>déclarer <code>listFields</code>/<code>formFields</code>, <code>toCells</code>, <code>fromValues</code> à la main</td>
+</tr>
+<tr>
+<td>La source est un <strong><code>ZRepository</code></strong></td>
+<td>lecture paginée, recherche, corbeille, observation des mutations</td>
+<td><code>ZCrudSource.items</code> + les rappels d'écriture correspondants</td>
+</tr>
+<tr>
+<td>Les lignes sont rendues par la <strong>tuile générique</strong></td>
+<td>l'affichage d'une ligne</td>
+<td>un <code>itemBuilder</code>/<code>entityBuilder</code> — c'est-à-dire tout le code de votre carte métier</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Ordre de grandeur mesuré</strong> sur un écran réel à <strong>carte métier</strong> et source en
+mémoire : <strong>136 lignes</strong>, contre <strong>95</strong> pour le même écran écrit à la main sans
+l'assemblage. L'écart tient presque entièrement à la carte : une tuile
+dessinée par l'application reste du code de l'application, et l'assemblage ne
+peut ni la deviner ni la raccourcir. Ce qu'il apporte alors n'est pas la
+brièveté mais le <strong>cycle</strong> (édition, corbeille, recherche, gouvernance,
+notifications) qu'il n'y a plus à recoudre.</p>
+<p>À retenir : les cinq lignes sont le profil <strong>modèle enregistré + dépôt + tuile
+générique</strong>. Annoncer ce chiffre pour un écran à carte métier serait faux.</p>
+<h4 id="la-grille-de-donnes-exige-zcrud_list">La grille de données exige <code>zcrud_list</code></h4>
+<p>Le layout par défaut est <code>ZListDataGridLayout</code> : il <strong>délègue à un backend de
+rendu</strong>, et le cœur n'en embarque aucun (<code>zcrud_core</code> ne dépend ni de Syncfusion
+ni d'aucune bibliothèque de grille). Sans renderer injecté, l'écran lève une
+<code>ZScopeError</code> explicite au premier rendu de la liste.</p>
+<p>Deux façons de le brancher :</p>
+<pre class="language-dart"><code class="language-dart">// 1. Par le scope, une fois pour toute l'application (recommandé).
+ZcrudScope(
+  listRenderer: const ZSfDataGridRenderer(),
+  child: MonApplication(),
+);
+
+// 2. Ou en choisissant un layout rendu DANS le cœur, sans backend :
+ZCrudScreen&lt;Consignee&gt;(
+  title: 'Consignataires',
+  source: ZCrudSource&lt;Consignee&gt;.repository(repo),
+  registry: registry,
+  layout: ZListBuilderLayout(itemBuilder: ...), // ou ZListGridLayout
+);
+</code></pre>
+<p><code>zcrud_list</code> (dépendance : <code>syncfusion_flutter_datagrid</code>) fournit
+<code>ZSfDataGridRenderer</code>. Les layouts <code>builder</code>, <code>grid</code> et <code>custom</code> n'exigent
+<strong>aucun</strong> backend : ils sont rendus dans le cœur.</p>
 <p>Exemple <strong>complet</strong> (celui du CR d'origine) — chaque dérivation surchargée par
 un paramètre :</p>
 <pre class="language-dart"><code class="language-dart">import 'package:flutter/material.dart';
@@ -185,17 +263,1041 @@ la voie de cohabitation (callbacks optionnels). Les capacités de l'écran se
 <strong>dérivent</strong> de la source : sans voie d'écriture, ni création ni édition ; sans
 support de corbeille, ni bascule ni actions.</p>
 <h3 id="corbeille">Corbeille</h3>
+<p>La corbeille a <strong>trois gestes</strong> : y mettre, en sortir, supprimer
+définitivement.</p>
+<table>
+<thead>
+<tr>
+<th>Geste</th>
+<th>Permission <code>ZAcl</code></th>
+<th>Voie repository</th>
+<th>Voie items</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mettre à la corbeille</td>
+<td><code>ZCrudAction.delete</code></td>
+<td><code>repository.softDelete</code></td>
+<td><code>onSoftDelete</code></td>
+</tr>
+<tr>
+<td>Restaurer</td>
+<td><code>ZCrudAction.restore</code></td>
+<td><code>repository.restore</code></td>
+<td><code>onRestore</code></td>
+</tr>
+<tr>
+<td>Supprimer définitivement</td>
+<td><code>ZCrudAction.clear</code></td>
+<td><code>ZPurgeable.purge</code></td>
+<td><code>onPurge</code></td>
+</tr>
+</tbody>
+</table>
 <p>Voie repository : le listing corbeille interroge le backend en portée
-<code>ZDeletedScope.deletedOnly</code> (recherche et pagination inchangées) ; les actions
-sont <code>ZRowAction.softDelete</code>/<code>.restore</code>. Voie items : partition par le
-prédicat <code>isDeleted</code> déclaré, actions <code>softDeleteWith</code>/<code>restoreWith</code> — mêmes
-permissions (<code>ZCrudAction.delete</code>/<code>.restore</code>), même filtrage <code>ZAcl</code>.</p>
+<code>ZDeletedScope.deletedOnly</code> (recherche et pagination inchangées). Voie items :
+partition par le prédicat <code>isDeleted</code> déclaré — mêmes permissions, même
+filtrage <code>ZAcl</code>.</p>
+<p>Les deux premiers gestes sont servis par <strong>tout</strong> <code>ZRepository</code>. Le troisième
+non, et c'est délibéré : un journal immuable, un référentiel réglementaire ou un
+dépôt soumis à rétention n'ont aucun moyen légitime de détruire une donnée. La
+purge se <strong>déclare</strong> donc, par un mixin optionnel :</p>
+<pre class="language-dart"><code class="language-dart">class DepotDossiers with ZPurgeable&lt;Dossier&gt; implements ZRepository&lt;Dossier&gt; {
+  @override
+  Future&lt;ZResult&lt;Unit&gt;&gt; purge(String id) async {
+    // suppression définitive, irréversible ; idempotente si l'id est absent
+    return const Right(unit);
+  }
+  // … reste du port
+}
+</code></pre>
+<p><strong>Sans le mixin</strong> (ou, voie items, sans <code>onPurge</code>) : aucun bouton de
+suppression définitive, aucune erreur, aucun crash — la corbeille fonctionne
+normalement avec ses deux autres gestes.</p>
+<p>Un geste n'apparaît que s'il est <strong>voulu</strong>, <strong>possible</strong> et <strong>autorisé</strong> :</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Dossier&gt;(
+  // voulu : quels gestes le produit offre
+  trashPolicy: ZTrashPolicy.withoutPurge, // corbeille dont rien ne disparaît
+  // possible : la source sait-elle le servir (mixin / rappel déclaré)
+  source: ZCrudSource.repository(depot),
+  // autorisé : `delete`, `restore`, `clear` de votre ZAcl
+  acl: MonAcl(),
+  // …
+)
+</code></pre>
+<p><code>ZTrashMode</code> décide si la corbeille <em>existe</em> ; <code>ZTrashPolicy</code> décide de <em>ce
+qu'on y fait</em> (<code>full</code> par défaut, <code>withoutPurge</code>, <code>readOnly</code>, ou une
+combinaison libre).</p>
+<p><strong>Actions supplémentaires</strong> : <code>rowActions</code> s'applique aux éléments <strong>vivants</strong>,
+<code>trashRowActions</code> aux éléments <strong>en corbeille</strong>. Les deux canaux sont disjoints
+— une action déclarée pour l'un n'apparaît jamais dans l'autre.</p>
+<p><strong>Confirmation</strong> : les deux gestes destructifs sont confirmés
+(<code>confirmDestructive</code>, défaut <code>true</code>), mais ne posent pas la même question. La
+mise à la corbeille se défait ; la suppression définitive annonce son
+irréversibilité. Annuler — bouton, barrière ou retour arrière — n'écrit
+<strong>rien</strong>.</p>
+<h4 id="qui-voit-laccs--la-corbeille-et-avec-quel-compte">Qui voit l'accès à la corbeille, et avec quel compte</h4>
+<p>L'accès à la corbeille est offert à qui peut <strong>restaurer</strong> ou <strong>purger</strong>.
+Supprimer n'en fait pas partie : <em>mettre</em> à la corbeille n'est pas <em>y entrer</em>,
+et un usager qui ne sait ni restaurer ni purger n'a rien à y faire — il verrait
+une vue où aucun geste ne lui est possible.</p>
+<p>Le bouton peut afficher le <strong>nombre d'éléments</strong> que la corbeille contient, et
+disparaître quand elle est vide :</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Dossier&gt;(
+  trashCount: compteurDeCorbeille,                 // ValueListenable&lt;int&gt;
+  trashPolicy: const ZTrashPolicy(visibleWhenEmpty: false),
+  // …
+);
+</code></pre>
+<p>L'écran <strong>ne compte jamais lui-même</strong> : compter, c'est lire la source, et le
+faire au rendu coûterait une lecture asynchrone par image — l'écran
+clignoterait pour afficher un nombre. Il prend donc celui que l'application
+lui donne, sauf sur la voie <code>items</code> où le compte est <strong>dérivé gratuitement</strong>
+de la liste déjà en mémoire (rien à déclarer).</p>
+<p>Parce que le compte est <strong>écoutable</strong>, sa mise à jour ne redessine que la
+pastille : le corps de l'écran est construit une fois et transmis tel quel
+(invariant <a href="../../docs/site/concepts/invariants.md#ad-2">AD-2</a>). Compte
+inconnu, l'accès reste offert — une corbeille non comptée n'est pas une
+corbeille vide.</p>
+<h3 id="onglets-gouverns">Onglets gouvernés</h3>
+<p>Un écran segmenté déclare ses onglets dans <code>tabs</code>. Au-delà de son libellé et de
+son contexte de création, chaque onglet peut porter <strong>ses droits</strong>, <strong>ses
+intitulés de formulaire</strong> et <strong>son compteur</strong> :</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Piece&gt;(
+  tabs: &lt;ZListTab&gt;[
+    ZListTab(
+      labelKey: 'enCours',
+      titles: const ZCrudTitles(create: 'Nouveau dossier'),
+      countOf: compteurEnCours,          // ValueListenable&lt;int&gt;
+      builder: (_) =&gt; listeEnCours,
+    ),
+    ZListTab(
+      labelKey: 'clotures',
+      acl: const MesDroitsEnLecture(),   // ce segment ne s'écrit plus
+      titles: const ZCrudTitles(create: 'Nouvelle pièce'),
+      builder: (_) =&gt; listeCloturees,
+    ),
+  ],
+  // …
+);
+</code></pre>
+<h4 id="la-requte-dun-onglet-est-compose-par-lcran">La requête d'un onglet est composée par l'écran</h4>
+<p>Un onglet déclare son socle de filtres — <code>ZListTab(baseFilters: …)</code>, ou
+<code>ZListTab.category(filters: …)</code> qui le renseigne pour vous. L'écran le <strong>compose
+avec les filtres permanents de <code>query</code></strong> et offre le tout à la page de l'onglet :
+celle-ci n'a plus rien à composer.</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Piece&gt;(
+  query: const ZListQueryPolicy(
+    baseFilters: &lt;ZFilter&gt;[ZFilter('archive', ZFilterOp.eq, false)],
+  ),
+  tabs: &lt;ZListTab&gt;[
+    ZListTab.category(
+      labelKey: 'enCours',
+      filters: const &lt;ZFilter&gt;[ZFilter('statut', ZFilterOp.eq, 'open')],
+      buildList: (context, _) =&gt; MaPage(),
+    ),
+  ],
+);
+
+// Dans MaPage — une seule ligne, permanents ET catégorie compris :
+ZListController&lt;Piece&gt;(
+  repository: repo,
+  toRow: …,
+  schema: …,
+  baseFilters: ZListQueryPolicy.of(context).baseFilters,
+);
+</code></pre>
+<p>Les deux socles sont ANDés <strong>en tête</strong> de chaque requête : <code>setFilters</code> et
+<code>setSearch</code> ne peuvent pas les écraser — chercher dans un onglet ne peut pas en
+faire sortir.</p>
+<blockquote>
+<p><strong>Si votre page composait déjà elle-même</strong> (<code>ZListQueryPolicy.of(context) .filtersWith(categoryFilters)</code>), <strong>retirez cette composition</strong> : l'écran la
+fait désormais, et la garder ajoute une seconde fois le filtre de catégorie.
+La liste rendue reste correcte — une conjonction est idempotente — mais la
+requête émise porte un doublon.</p>
+</blockquote>
+<p><strong>La cascade restreint, elle n'élargit jamais.</strong> Les droits d'un onglet se
+composent en <strong>intersection</strong> avec ceux de l'écran, puis du scope :</p>
+<table>
+<thead>
+<tr>
+<th>Niveau</th>
+<th>Ce qu'il décide</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scope de l'application</td>
+<td>les droits de l'usager, valables partout</td>
+</tr>
+<tr>
+<td>Écran</td>
+<td>les droits de la ressource affichée</td>
+</tr>
+<tr>
+<td><strong>Onglet</strong></td>
+<td>l'affinage du segment courant — il <strong>retire seulement</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Un onglet ne peut donc pas rouvrir un geste refusé plus haut, quelle que soit
+la générosité de ce qu'il déclare. Et sans aucun niveau supérieur monté, la
+composition retombe sur le <strong>refus</strong> : déclarer des droits sur un onglet n'en
+crée jamais à partir de rien. La brique sous-jacente est
+<code>zRestrictAcl(base, restriction)</code> (type <code>ZRestrictedAcl</code>), réutilisable partout
+où deux niveaux d'autorisation se rencontrent.</p>
+<p>Les <strong>intitulés</strong> suivent l'onglet actif : un mode non renseigné par l'onglet
+retombe sur celui de l'écran, puis sur le libellé l10n générique. Le
+<strong>compteur</strong> est une <code>ValueListenable&lt;int&gt;</code> — la pastille se redessine seule,
+la page de l'onglet n'est pas reconstruite.</p>
+<h3 id="tri-filtres-de-base-et-pagination">Tri, filtres de base et pagination</h3>
+<p>Un listing s'ouvre rarement « dans l'ordre de la source » : il s'ouvre trié par
+date, sans les archives, cinquante lignes à la fois. Ces trois réglages se
+<strong>déclarent</strong> sur l'écran, dans une seule politique :</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Dossier&gt;(
+  title: 'Dossiers',
+  source: ZCrudSource.repository(repo),
+  registry: registry,
+  query: const ZListQueryPolicy(
+    sort: &lt;ZSort&gt;[ZSort('updated_at', ZSortDirection.desc)],
+    baseFilters: &lt;ZFilter&gt;[ZFilter('archive', ZFilterOp.eq, false)],
+    pageSize: 50,
+  ),
+);
+
+// Cas courant, en une ligne :
+query: ZListQueryPolicy.sortedBy('name'),
+</code></pre>
+<p><strong>Rien de déclaré, rien de changé</strong> : sans <code>query</code>, l'écran émet exactement les
+requêtes d'avant — aucun filtre, aucun tri, aucune limite de page.</p>
+<p><strong>Un tri se remplace, un filtre de base ne se remplace pas.</strong> C'est toute la
+différence entre les deux premières lignes du tableau :</p>
+<table>
+<thead>
+<tr>
+<th>Réglage</th>
+<th>Effet</th>
+<th>Ce qui l'emporte ensuite</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sort</code></td>
+<td>l'ordre du <strong>premier</strong> rendu</td>
+<td>un tri demandé le <strong>remplace</strong></td>
+</tr>
+<tr>
+<td><code>baseFilters</code></td>
+<td>une <strong>règle du listing</strong> (« jamais les archives »)</td>
+<td>rien : un filtre demandé s'y <strong>ajoute</strong></td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>la taille de page du listing paginé</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>Le tri et les filtres <strong>demandés</strong> n'obligent plus à descendre au
+<code>ZListController</code> : ils passent par les gestes de l'écran, donc par la même
+déclaration.</p>
+<pre class="language-dart"><code class="language-dart">// En-tête de tri posé par l'application, sous l'écran :
+final actions = ZCrudScreenScope.maybeOf(context)!;
+actions.sortBy(&lt;ZSort&gt;[const ZSort('qty', ZSortDirection.desc)]); // remplace le défaut
+actions.filterBy(&lt;ZFilter&gt;[const ZFilter('statut', ZFilterOp.eq, 'ouvert')]); // s'ajoute
+</code></pre>
+<p><strong>Ce que la politique compose, et qu'elle n'écrase jamais :</strong></p>
+<ul>
+<li>
+<p><strong>Corbeille</strong> — la vue corbeille reste une vue corbeille : sa portée de
+suppression est intacte, le tri, les filtres permanents et la taille de page
+s'y appliquent <strong>en plus</strong>.</p>
+</li>
+<li>
+<p><strong>Recherche</strong> — chercher, c'est ajouter un terme, pas remplacer une requête :
+ni les filtres permanents ni le tri ne sont perdus pendant la frappe.</p>
+</li>
+<li>
+<p><strong>Onglets</strong> — chaque onglet possède sa vue, donc sa requête. La politique de
+l'écran lui est <strong>offerte</strong>, à composer avec sa catégorie :</p>
+<pre class="language-dart"><code class="language-dart">// Dans la page d'un onglet : les permanents de l'écran, puis la catégorie.
+ZListController&lt;Dossier&gt;(
+  repository: repo,
+  toRow: toRow,
+  schema: specs,
+  baseFilters: ZListQueryPolicy.of(context).filtersWith(categoryFilters),
+);
+</code></pre>
+<p><code>filtersWith</code> ne sait qu'<strong>ajouter</strong> : aucun appel ne peut faire disparaître
+un filtre permanent, ni le filtre de catégorie qu'on lui confie.</p>
+</li>
+</ul>
+<p><strong>Deux limites à connaître.</strong> <code>pageSize</code> gouverne la pagination <strong>curseur</strong> de
+la voie dépôt ; sur la voie <code>items</code> (liste déjà en mémoire, rendue d'un bloc,
+sans geste « page suivante »), elle n'a pas d'objet — la tronquer masquerait
+des éléments sans recours. Et le tri par défaut est posé <strong>sur la requête</strong>,
+pas par un tri appliqué après coup : la toute première requête part déjà
+triée, sans lecture supplémentaire de la source.</p>
+<h3 id="recherche--ce-quelle-interroge-ce-quelle-ignore">Recherche : ce qu'elle interroge, ce qu'elle ignore</h3>
+<p>La barre de recherche de l'écran filtre la liste au fil de la frappe. Deux
+réglages décident de ce qu'elle trouve, et ils se déclarent dans la <strong>même</strong>
+politique que le tri et les filtres :</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Dossier&gt;(
+  title: 'Dossiers',
+  source: ZCrudSource.repository(repo),
+  registry: registry,
+  query: const ZListQueryPolicy(
+    searchScope: ZSearchScope.allColumns,                 // ce qu'elle interroge
+    searchFolding: ZSearchFolding.diacriticsAndSpaces,    // ce qu'elle ignore
+  ),
+);
+
+// Les deux d'un coup — la parité avec les moteurs de liste historiques :
+query: const ZListQueryPolicy.legacySearch(),
+</code></pre>
+<p><strong>Le domaine par défaut.</strong> Sans rien déclarer, la recherche interroge les seuls
+champs marqués <code>searchable: true</code> dans le schéma, et compare en ignorant la
+casse et les accents — les espaces, eux, comptent. C'est un domaine <strong>choisi</strong> :
+le schéma décide de ce qui est cherchable, la recherche ne coûte que ce qu'il a
+désigné, et une colonne technique ne devient pas trouvable par accident.</p>
+<p><strong>Retrouver la parité d'un moteur de liste historique.</strong> Les moteurs déclaratifs
+antérieurs cherchaient dans <strong>toutes</strong> les colonnes déclarées et ignoraient les
+espaces des deux côtés de la comparaison. Une migration qui garde le défaut
+rétrécit donc la recherche <strong>sans aucun signal</strong> : la liste s'affiche, elle est
+simplement vide. Les deux réglages ci-dessous rendent exactement ce
+comportement.</p>
+<table>
+<thead>
+<tr>
+<th>Réglage</th>
+<th>Défaut</th>
+<th>Valeur de parité</th>
+<th>Ce qui change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>searchScope</code></td>
+<td><code>searchableFields</code></td>
+<td><code>allColumns</code></td>
+<td>une valeur d'une colonne <strong>non</strong> <code>searchable</code> (numéro de conteneur, référence, quantité) redevient trouvable</td>
+</tr>
+<tr>
+<td><code>searchFolding</code></td>
+<td><code>diacritics</code></td>
+<td><code>diacriticsAndSpaces</code></td>
+<td>« SOCIETE X SARL U » se laisse trouver par « sarlu », « SARL U » ou « sa rlu »</td>
+</tr>
+</tbody>
+</table>
+<p><code>diacriticsAndSpaces</code> ignore <strong>tous</strong> les blancs — espace, espace insécable,
+tabulation, saut de ligne — où qu'ils se trouvent. La ponctuation, elle, reste
+significative dans les deux modes (<code>RC-2019-742</code> ne se cherche pas
+<code>RC2019742</code>).</p>
+<p><strong>Ce que coûte l'élargissement.</strong> <code>allColumns</code> compare le terme à <strong>chaque</strong>
+colonne de chaque ligne déjà retenue par les filtres, au lieu des seules
+colonnes <code>searchable</code> : un facteur au plus égal au nombre de colonnes, sur un
+jeu déjà réduit. Aucune lecture supplémentaire de la source, aucune requête de
+plus, aucune reconstruction de plus du corps de l'écran — c'est ce que la
+recherche <strong>compare</strong> qui change, pas ce que l'écran <strong>reconstruit</strong>.</p>
+<p><strong>Ce que l'élargissement ne fait jamais.</strong> Il ne fait pas déborder la recherche
+hors de ce que la requête a déjà réduit :</p>
+<ul>
+<li>
+<p>les <strong>filtres permanents</strong> restent opposables — une ligne exclue par
+<code>baseFilters</code> ne réapparaît pas parce qu'un terme la trouve ;</p>
+</li>
+<li>
+<p>la <strong>vue corbeille</strong> reste la corbeille — le domaine élargi s'y applique, sa
+portée de suppression est intacte ;</p>
+</li>
+<li>
+<p>un <strong>onglet</strong> garde son filtre de catégorie ; la sémantique de recherche lui
+est <strong>offerte</strong> comme les filtres permanents :</p>
+<pre class="language-dart"><code class="language-dart">// Dans la page d'un onglet : hériter du domaine déclaré par l'écran.
+final policy = ZListQueryPolicy.of(context);
+ZListController&lt;Dossier&gt;(
+  repository: repo,
+  toRow: toRow,
+  schema: specs,
+  baseFilters: policy.filtersWith(categoryFilters),
+  searchScope: policy.searchScope,
+  searchFolding: policy.searchFolding,
+);
+</code></pre>
+</li>
+</ul>
+<p><strong>Une limite à connaître.</strong> Ces réglages gouvernent la recherche exécutée par le
+moteur de liste de <code>zcrud_core</code> — la voie <code>items</code>, la voie dépôt en mémoire, et
+tout dépôt qui applique <code>ZDataRequest</code> par ce moteur. Un adaptateur qui exécute
+la recherche côté serveur reçoit les deux réglages dans la requête, mais reste
+libre de ne pas les servir : l'adaptateur Firestore, par exemple, ne sert pas
+<code>search</code> du tout et le documente.</p>
 <h3 id="prsentation-de-ldition">Présentation de l'édition</h3>
 <p>Le formulaire est présenté via <code>presentEdition</code> : le mode (<code>page</code>/<code>sheet</code>/
 <code>dialog</code>) se dérive du breakpoint par la <code>ZPresentationPolicy</code> déclarée
 (<code>policy</code>, <code>formWeight</code>). <code>editionBuilder</code> remplace le formulaire dérivé par
 un formulaire applicatif complet — la présentation et la voie de sauvegarde
 restent assemblées.</p>
+<h3 id="duplication-et-titres--trois-tats">Duplication et titres à trois états</h3>
+<p>Le geste <strong>« dupliquer »</strong> est une action de ligne câblée d'office : il ouvre
+la surface d'édition en mode <strong>duplication</strong>, pré-remplie d'une copie <strong>sans
+identité</strong> de l'entité (produite par le canal du registre : <code>encode</code> → retrait
+des champs <code>isId</code> → <code>decode</code>) ; la sauvegarde matérialise une <strong>nouvelle</strong>
+entité, l'originale reste intacte. Il est gouverné par la même permission que
+la création (<code>ZCrudAction.create</code>) et par <code>canCreate</code> ; <code>canDuplicate: false</code>
+le retire par déclaration, et il est absent hors de <code>ZScreenMode.full</code>, si la
+source ne sait pas écrire, ou sans <code>registry</code> (le canal de copie est la
+dérivation).</p>
+<p>Les <strong>titres</strong> de la surface d'édition se déclarent en une fois via
+<code>titles: ZCrudTitles(create: …, copy: …, update: …, read: …)</code> — quatre états,
+la duplication ayant son <strong>propre</strong> intitulé (ex. « Copie de la mutation »),
+distinct de la création nue, et la consultation le sien. Chaque titre est une
+clé l10n ou un littéral (résolu via <code>label(context, …)</code>) ; un titre <code>null</code>
+retombe sur les clés l10n génériques <code>create</code> / <code>copy</code> / <code>edit</code> / <code>details</code>.</p>
+<h3 id="consultation-fiche-de-dtail-verrouillage">Consultation, fiche de détail, verrouillage</h3>
+<p><strong>La fiche de détail est un geste de ligne, pas un mode d'écran.</strong> Un écran qui
+crée, met à la corbeille et restaure peut parfaitement ouvrir des fiches : c'est
+même le cas le plus courant. Il suffit de le déclarer.</p>
+<pre class="language-dart"><code class="language-dart">// On crée, on met à la corbeille, on restaure… et le tap consulte.
+ZCrudScreen&lt;Convocation&gt;(
+  title: 'Convocations',
+  source: ZCrudSource.repository(repo),
+  registry: registry,
+  detailsEnabled: true,
+)
+</code></pre>
+<p><code>detailsEnabled</code> ne retire rien : le bouton de création, la bascule corbeille,
+la mise à la corbeille et la restauration restent exactement ce qu'ils étaient.
+Chaque ligne gagne simplement une action « détails », et le geste <strong>nominal</strong>
+d'une carte métier devient la consultation.</p>
+<p>Le <code>mode:</code>, lui, décrit ce qu'est l'écran <strong>entier</strong> :</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Créer</th>
+<th>Consulter la fiche</th>
+<th>Éditer</th>
+<th>Corbeille</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZScreenMode.full</code> (défaut)</td>
+<td>oui</td>
+<td>selon <code>detailsEnabled</code></td>
+<td>oui</td>
+<td>oui</td>
+</tr>
+<tr>
+<td><code>ZScreenMode.details</code></td>
+<td>non</td>
+<td><strong>oui</strong></td>
+<td>oui si <code>ZCrudAction.update</code></td>
+<td>non</td>
+</tr>
+<tr>
+<td><code>ZScreenMode.locked</code></td>
+<td>non</td>
+<td>non</td>
+<td>non</td>
+<td>non</td>
+</tr>
+</tbody>
+</table>
+<p><code>ZScreenMode.details</code> est l'<strong>écran de consultation</strong> : une liste qui ne crée
+rien et n'a pas de corbeille. Ne le choisissez pas pour obtenir la fiche sur un
+écran par ailleurs complet — vous perdriez la création et la corbeille pour
+tout l'écran. C'est <code>detailsEnabled</code> qu'il faut.</p>
+<p><strong>La fiche est le formulaire entier, pas un résumé des colonnes.</strong> C'est le
+point qui la distingue d'un simple affichage en lecture : une fiche construite
+depuis le schéma de <strong>liste</strong> ne montrerait que les quatre ou six colonnes
+affichées, là où le formulaire porte <strong>tous</strong> les champs. L'action « détails »
+ouvre la surface d'édition habituelle — <code>formFields</code> dérivés du registre, ou le
+formulaire de l'application (<code>editionBuilder</code>) — rendue en lecture seule.</p>
+<pre class="language-dart"><code class="language-dart">// Un écran de consultation : la liste montre 5 colonnes, la fiche les 23
+// champs du formulaire, et l'utilisateur autorisé repart en édition d'un tap.
+ZCrudScreen&lt;Consignee&gt;(
+  title: 'Consignataires',
+  source: ZCrudSource.repository(repo),
+  registry: registry,
+  mode: ZScreenMode.details,
+)
+</code></pre>
+<p>Le retour vers l'édition n'est <strong>pas</strong> un cul-de-sac : l'action « modifier »
+reste rendue si et seulement si l'ACL accorde <code>ZCrudAction.update</code> — c'est
+l'ACL qui tranche, jamais le mode. <code>ZScreenMode.locked</code>, lui, est la
+consultation <strong>verrouillée</strong> : aucun geste, pas même l'ouverture d'une fiche
+(<code>detailsEnabled</code> y est sans effet).</p>
+<h4 id="ouvrir-la-fiche-depuis-une-carte">Ouvrir la fiche depuis une carte</h4>
+<p>Sur un écran déclaré consultable, deux rappels, deux intentions :</p>
+<pre class="language-dart"><code class="language-dart">// Le geste NOMINAL de la ligne : consultation dès que la fiche est offerte.
+final ouvrir = zCrudEditionOpener(context, convocation);
+// La consultation, demandée explicitement (`ZCrudAction.view`).
+final consulter = zCrudDetailsOpener(context, convocation);
+// L'édition, demandée explicitement (`ZCrudAction.update`).
+final modifier = ZCrudScreenScope.maybeOf(context)?.updateOpener(convocation);
+</code></pre>
+<p>Tous trois rendent <code>null</code> quand le geste n'est pas possible — hors écran, écran
+verrouillé, vue corbeille, aucun formulaire, ou permission refusée <strong>sur cette
+ligne</strong>. <code>null</code> veut dire « ne dessinez pas le bouton », jamais « dessinez-en un
+mort ».</p>
+<h4 id="revenir--ldition-depuis-la-fiche">Revenir à l'édition <strong>depuis</strong> la fiche</h4>
+<p>L'action « modifier » existe sur la <strong>ligne</strong>. Dans la fiche, c'est
+<code>ZCrudEditionScope.onEditOf(context)</code> qui la porte :</p>
+<pre class="language-dart"><code class="language-dart">editionBuilder: (context, initial, save) {
+  final modifier = ZCrudEditionScope.onEditOf(context);
+  return MonFormulaire(
+    initial: initial,
+    onSave: save,
+    readOnly: ZCrudEditionScope.readOnlyOf(context),
+    // `null` ⇒ pas de bouton « Modifier ».
+    onEdit: modifier,
+  );
+},
+</code></pre>
+<p><strong>Le geste ne referme rien.</strong> La surface reste ouverte, à sa place, et redevient
+éditable : aucune route n'est fermée ni rouverte, les valeurs déjà chargées sont
+conservées, et le titre passe de celui de la consultation à celui de la
+modification. Le formulaire <strong>dérivé</strong> obtient la même chose sans une ligne de
+code.</p>
+<p><code>onEdit</code> est <code>null</code> — donc le bouton n'a pas lieu d'être — dans tous ces cas :
+la surface est déjà en édition, l'ACL refuse <code>ZCrudAction.update</code> sur cette
+entité, l'écran est verrouillé ou en vue corbeille, la source ne sait pas
+écrire, ou le formulaire est monté hors d'un <code>ZCrudScreen</code>.</p>
+<p>⚠️ <strong><code>readOnly: true</code> est déprécié</strong> au profit de <code>mode:</code> (retrait en 1.0).
+La correspondance est exacte : <code>readOnly: true</code> → <code>ZScreenMode.locked</code>,
+<code>readOnly: false</code> → <code>ZScreenMode.full</code>. Le booléen ne savait pas exprimer le
+troisième état — le seul dont un écran de consultation a besoin.</p>
+<h4 id="un-formulaire-dapplication-se-rend-en-lecture-seule-aussi">Un formulaire d'application se rend en lecture seule aussi</h4>
+<p>Le drapeau est <strong>transporté jusqu'au formulaire</strong>, quel qu'il soit. Le
+formulaire dérivé le lit tout seul (<code>DynamicEdition.readOnly</code>, respecté par
+toutes les familles de champs). Un formulaire fourni par l'application le lit
+depuis le <code>BuildContext</code> qu'il reçoit :</p>
+<pre class="language-dart"><code class="language-dart">editionBuilder: (context, initial, save) =&gt; MonFormulaire(
+  initial: initial,
+  onSave: save,
+  readOnly: ZCrudEditionScope.readOnlyOf(context),
+),
+</code></pre>
+<p><code>ZCrudEditionScope</code> est un scope et non un paramètre de plus, délibérément :
+ajouter un paramètre à <code>ZCrudEditionBuilder</code> rendrait inassignables <strong>toutes</strong>
+les lambdas déjà écrites. Ici, le code existant compile inchangé, et celui qui
+veut le drapeau le lit.</p>
+<p>🔴 <strong>Un champ « widget libre » ne devient pas lecture seule tout seul.</strong> Un
+widget hôte servi par le <code>ZWidgetRegistry</code> dessine ses propres contrôles — une
+matrice d'autorisations à interrupteurs, par exemple. Le socle lui transmet
+l'information (<code>ctx.field.readOnly</code> vaut <code>true</code> en fiche), mais c'est au widget
+de l'honorer : sans cela, la fiche « lecture seule » reste cliquable.</p>
+<pre class="language-dart"><code class="language-dart">registry.register('permMatrix', (context, ctx) =&gt; Switch(
+      value: ctx.value == true,
+      onChanged: ctx.field.readOnly ? null : ctx.onChanged,
+    ));
+</code></pre>
+<p>Deux détails mesurés, qui évitent des surprises :</p>
+<ul>
+<li>le <code>ZWidgetRegistry</code> doit être posé <strong>au-dessus du <code>Navigator</code></strong>
+(<code>MaterialApp.builder</code>), pas sous <code>home:</code> : la surface d'édition est une
+route, elle n'hérite que de ce qui enveloppe le <code>Navigator</code> ;</li>
+<li>en lecture, un champ <strong>vide</strong> n'est affiché que s'il déclare
+<code>showIfNull: true</code> — règle du socle, antérieure à ce mode.</li>
+</ul>
+<h3 id="coquille-recherche-confirmation-et-notification-socle-zcrud_ui_kit">Coquille, recherche, confirmation et notification (socle <code>zcrud_ui_kit</code>)</h3>
+<p>La page est un <code>ZPageScaffold</code> : c'est <strong>lui</strong> qui construit le <code>Scaffold</code> et
+l'<code>AppBar</code>. Le titre, le <code>leading</code> et les actions déclarées (<code>actions:</code>,
+<code>List&lt;ZAppBarAction&gt;</code>) y sont propagés ; les actions <strong>assemblées</strong> (bascule
+corbeille, création) s'y ajoutent après. Une action <code>isOverflow: true</code> part
+dans le menu de débordement du socle — l'écran n'a pas de menu propre.</p>
+<p>La <strong>recherche</strong> est celle de l'app-bar (<code>ZAppBarSearchConfig</code>) : la loupe
+morphe le titre en champ, la query est propagée telle quelle à
+<code>ZListController.setSearch</code> (voie repository) ou au moteur in-memory
+<code>zApplyListRequest</code> (voie items), et la <strong>portée corbeille</strong> est respectée
+(la recherche interroge alors <code>ZDeletedScope.deletedOnly</code>). <code>searchEnabled: false</code> retire la loupe ; en mode <code>tabs</code> (hors corbeille) elle reste absente,
+chaque onglet possédant sa vue.</p>
+<p>La <strong>mise à la corbeille est confirmée</strong> par <code>showZConfirmDialog</code>
+(<code>ZConfirmTone.destructive</code>). Annuler — bouton, barrière ou <code>pop</code> sans valeur
+— n'écrit <strong>rien</strong> : ni <code>repository.softDelete</code>, ni <code>source.onSoftDelete</code>.
+<code>confirmDestructive: false</code> retire le dialogue pour l'hôte qui possède son
+propre flux. La <strong>restauration</strong> n'est jamais confirmée (geste non destructif).</p>
+<p>L'<strong>échec d'une action de ligne</strong> (corbeille, restauration) part au toaster :
+<code>ZToasterScope</code> de l'hôte s'il est monté, sinon le repli pur-Flutter
+(<code>ScaffoldMessenger</code>), sinon <strong>silence</strong> — jamais de <code>throw</code> (AD-10). L'échec
+d'une <strong>sauvegarde</strong> reste, lui, affiché <strong>dans</strong> la surface d'édition : les
+deux canaux sont distincts, et le formulaire est la seule surface où une
+erreur de saisie se corrige.</p>
+<p>Les états <strong>vide / chargement / aucun résultat / erreur</strong> du listing restent
+rendus par <code>DynamicList</code> (zcrud_core), qui les porte déjà avec <code>Semantics</code>,
+l10n et couleurs de thème : l'écran n'en <strong>double</strong> aucun.</p>
+<h3 id="grille-de-cartes-mtier">Grille de cartes métier</h3>
+<p>Une liste ne se rend pas toujours en tableau. Pour une <strong>grille de cartes</strong>, il
+suffit de déclarer la géométrie de la grille et la carte — la carte reçoit
+<strong>l'entité</strong>, pas un sac de cellules :</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Consignee&gt;(
+  title: 'Consignataires',
+  source: ZCrudSource&lt;Consignee&gt;.repository(repo),
+  registry: registry,
+  // Géométrie : largeur maximale d'une carte, hauteur fixe, plafond de
+  // colonnes sur très grand écran. Responsive et RTL par construction.
+  layout: const ZListGridLayout(
+    maxCrossAxisExtent: 360,
+    mainAxisExtent: 180,
+    maxColumns: 4,
+  ),
+  // La carte : elle reçoit l'objet métier, avec tous ses champs — y compris
+  // ceux qui ne sont pas des colonnes de liste.
+  itemBuilder: (context, consignee, columns) =&gt; ConsigneeCard(consignee),
+)
+</code></pre>
+<p>Ce qu'il n'y a <strong>pas</strong> à écrire : l'index <code>ligne → entité</code>. L'écran projette
+chaque entité en ligne sous la clé publique <code>ZListRow.keyOf</code> (l'identité réelle,
+ou une clé éphémère stable si l'entité n'est pas encore persistée) et alimente
+avec lui le seam <code>DynamicList.entityFor</code> — celui-là même qui sert déjà aux
+actions de ligne et à l'ACL par entité. La tuile déclarée descend dans <strong>le
+layout choisi par l'application</strong>, quel qu'il soit (grille, liste verticale) :
+la déclaration reste la seule source de vérité.</p>
+<p>Deux règles de priorité, sans surprise :</p>
+<ul>
+<li>un layout construit avec <strong>sa propre</strong> tuile de ligne
+(<code>ZListGridLayout(itemBuilder: (context, row, columns) =&gt; …)</code>, qui reçoit une
+<code>ZListRow</code>) garde la sienne — l'explicite l'emporte sur l'injecté ;</li>
+<li>sans tuile déclarée, ni ici ni sur le layout, le rendu reste la <strong>tuile
+générique</strong> du paquet (titre = première colonne dérivée).</li>
+</ul>
+<p>Hors <code>ZCrudScreen</code>, les mêmes tuiles typées se déclarent directement sur les
+layouts du cœur : <code>ZListGridLayout.forEntity&lt;T&gt;(…)</code> et
+<code>ZListBuilderLayout.forEntity&lt;T&gt;(…)</code>, alimentées par <code>DynamicList.entityFor</code>.</p>
+<h3 id="coloration-de-ligne">Coloration de ligne</h3>
+<p>Sur un tableau de dépouillement, <strong>la couleur porte l'information</strong> : c'est ce
+qui permet de balayer cent lignes d'un coup d'œil — une convocation relancée, un
+rapport non rendu, un dossier clos. <code>rowColor</code> déclare cette teinte, et il la
+décide sur <strong>l'entité typée</strong> :</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Convocation&gt;(
+  title: 'Convocations',
+  source: ZCrudSource.repository(repo),
+  registry: registry,
+  rowColor: (context, convocation) =&gt; switch (convocation.statut) {
+    Statut.relancee =&gt; ZRowTint(
+        Theme.of(context).colorScheme.errorContainer,
+        semanticLabel: 'Relancée',
+      ),
+    Statut.repondue =&gt; ZRowTint(
+        Theme.of(context).colorScheme.secondaryContainer,
+        semanticLabel: 'Répondue',
+      ),
+    // `null` ⇒ aucune teinte : la ligne est rendue telle quelle.
+    _ =&gt; null,
+  },
+)
+</code></pre>
+<p>Le seam reçoit l'objet métier, jamais une cellule formatée : un renommage de
+champ devient une <strong>erreur de compilation</strong>, là où une décision prise sur
+<code>row.cells['statut']</code> se contenterait de faire disparaître la couleur en
+silence.</p>
+<p>La teinte est peinte <strong>derrière</strong> la tuile — celle du paquet comme celle de
+l'application (<code>itemBuilder</code>), dans la liste verticale comme dans la grille de
+cartes. Elle ne s'applique pas à un layout qui porte déjà <strong>sa propre</strong> tuile
+(<code>ZListGridLayout(itemBuilder: …)</code>) — cette tuile appartient à l'application,
+qui la colore elle-même — ni à la grille de données (<code>ZListDataGridLayout</code>),
+dont le backend a sa propre coloration de cellules. Sans <code>rowColor</code>, le rendu
+est strictement inchangé : pas un widget de plus dans l'arbre.</p>
+<p>⚠️ <strong>Doublez la couleur — une information portée par la seule couleur est
+perdue.</strong> Elle l'est pour un usager daltonien, sur un écran en plein soleil, à
+l'impression, et pour un lecteur d'écran. <code>ZRowTint.semanticLabel</code> la rend
+<strong>audible</strong> (il est annoncé sur la ligne, et accepte une clé l10n). La rendre
+<strong>visible</strong> autrement reste l'affaire de la tuile :</p>
+<pre class="language-dart"><code class="language-dart">itemBuilder: (context, convocation, columns) =&gt; ListTile(
+  // Le même état, dit trois fois : par la teinte, par l'icône, par le mot.
+  leading: Icon(convocation.statut.icone),
+  title: Text(convocation.objet),
+  subtitle: Text(convocation.statut.libelle),
+),
+</code></pre>
+<p>Aucune couleur n'est codée dans zcrud : la teinte vient entièrement du thème de
+l'application, d'où le <code>BuildContext</code> passé au seam.</p>
+<h3 id="une-carte-qui-ouvre-ldition-de-lcran">Une carte qui ouvre l'édition de l'écran</h3>
+<p>La carte de la section précédente reçoit son entité — il lui manque le geste.
+Le lui passer par une fermeture serait un <strong>court-circuit</strong> : le rappel capturé
+ne connaîtrait ni la politique de présentation de l'écran, ni son <code>formWeight</code>,
+ni son <code>onSave</code>, ni son mode, ni ses titres. Une carte descendante d'un
+<code>ZCrudScreen</code> demande donc à l'écran :</p>
+<pre class="language-dart"><code class="language-dart">class ConsigneeCard extends StatelessWidget {
+  const ConsigneeCard(this.consignee, {super.key});
+  final Consignee consignee;
+
+  @override
+  Widget build(BuildContext context) {
+    // `null` ⇒ le geste n'est pas possible (écran verrouillé, vue corbeille,
+    // source en lecture seule, ou permission refusée). On ne dessine alors
+    // rien, plutôt qu'un bouton mort.
+    final ouvrir = zCrudEditionOpener(context, consignee);
+    return Card(
+      child: ListTile(
+        title: Text(consignee.nom),
+        subtitle: Text(consignee.ville),
+        onTap: ouvrir,
+        trailing: ouvrir == null
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: 'Modifier',
+                onPressed: ouvrir,
+              ),
+      ),
+    );
+  }
+}
+</code></pre>
+<p>La surface ouverte est <strong>exactement</strong> celle du bouton « + » et de l'action de
+ligne : même <code>ZPresentationPolicy</code>, même <code>ZFormWeight</code>, même formulaire (dérivé
+ou <code>editionBuilder</code>), même voie de sauvegarde, mêmes titres.</p>
+<p>Trois formes, pour trois besoins :</p>
+<table>
+<thead>
+<tr>
+<th>Forme</th>
+<th>Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZCrudScreenScope.maybeOf(context)?.canOpenEdition(entity)</code></td>
+<td>interroger la capacité <strong>avant de rendre</strong></td>
+</tr>
+<tr>
+<td><code>…openEdition(entity)</code></td>
+<td>ouvrir — <strong>inerte</strong> si le geste est refusé</td>
+</tr>
+<tr>
+<td><code>zCrudEditionOpener(context, entity)</code></td>
+<td>le rappel prêt à poser, ou <code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Le même triplet existe pour l'édition <strong>explicite</strong> (<code>canOpenUpdate</code> /
+<code>openUpdate</code> / <code>updateOpener</code>) et pour la <strong>création</strong> (<code>canOpenCreation</code> /
+<code>openCreation</code> / <code>creationOpener</code> — le geste du bouton « + », si vous préférez
+dessiner le vôtre).</p>
+<p><strong>Ce que « nominal » veut dire.</strong> <code>openEdition</code> ouvre le geste que la ligne
+offrirait d'elle-même : en <code>ZScreenMode.details</code>, c'est la <strong>fiche en lecture
+seule</strong> (permission <code>ZCrudAction.view</code>) ; ailleurs, c'est l'<strong>édition</strong>. Le
+retour vers l'édition depuis une fiche passe par <code>openUpdate</code>, offert si et
+seulement si l'ACL accorde <code>ZCrudAction.update</code> — c'est la même règle que
+l'action « modifier » de la ligne, pas une seconde logique de mode.</p>
+<p><strong>Refus, jamais d'exception.</strong> Aucun de ces membres ne lève :
+<code>ZCrudScreenScope.maybeOf</code> rend <code>null</code> hors d'un <code>ZCrudScreen</code> (votre carte
+reste montable seule, en galerie de composants ou en test), une capacité
+refusée rend <code>false</code>, un rappel refusé rend <code>null</code>, et une ouverture demandée
+malgré tout ne présente <strong>rien</strong>. La permission interrogée porte l'entité en
+cible : le filtrage est <strong>par ligne</strong>, comme celui des actions.</p>
+<p>Une entité <strong>éphémère</strong> (sans identité) relève de la création : c'est alors
+<code>ZCrudAction.create</code> qui gouverne son ouverture, puisque l'enregistrer la crée.</p>
+<p><strong>Deux scopes, deux endroits.</strong> <code>ZCrudEditionScope</code> est posé autour de la
+<strong>surface présentée</strong> — il dit au formulaire s'il est rendu en consultation.
+<code>ZCrudScreenScope</code> est posé autour du <strong>corps de l'écran</strong> — il dit aux tuiles
+ce que l'écran sait ouvrir. Une carte de la liste n'est jamais descendante de
+la surface d'édition : les fondre en un seul scope les rendrait mutuellement
+inatteignables.</p>
+<h3 id="champs--chemin--modle-imbriqu-dition-plate">Champs « chemin » (modèle imbriqué, édition plate)</h3>
+<p>Quand des specs (dérivées ou fournies via <code>formFields</code>) portent un nom
+<strong>pointé</strong> (<code>'vido.chefEquipePosteId'</code>), l'écran fait le pont entre le modèle
+imbriqué et le formulaire plat : à l'ouverture, les valeurs initiales sont
+aplaties (<code>zFlattenPaths</code> de <code>zcrud_core</code> sur l'entité encodée) ; à la
+soumission, les clés pointées sont regroupées (<code>zRegroupPaths</code>) avant
+<code>decode</code> — le sous-objet est reconstruit, les champs imbriqués non édités
+sont préservés. La paire est symétrique par construction (testée dans
+<code>zcrud_core</code>) : aucune paire aplatir/regrouper à réécrire côté hôte. Sans nom
+pointé, le chemin d'édition est strictement inchangé.</p>
+<h3 id="gouvernance-par-ligne">Gouvernance par ligne</h3>
+<p>Une autorisation utile ne s'arrête pas à « cet utilisateur peut-il supprimer
+dans cette collection ? ». Elle descend à la ligne : un dossier clôturé ne se
+modifie plus, une pièce déjà validée ne se valide pas deux fois, un élément
+protégé ne se supprime pas — alors même que les droits de qui regarde n'ont pas
+changé.</p>
+<p>Tout cela se déclare par <strong>un seul</strong> point d'extension, <code>rowAcl</code>. Il reçoit
+l'entité de la ligne et rend ses <code>ZRowPermissions</code> :</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Dossier&gt;(
+  title: 'Dossiers',
+  source: ZCrudSource&lt;Dossier&gt;.repository(depot),
+  registry: registre,
+  rowAcl: (dossier) =&gt; dossier.cloture
+      ? const ZRowPermissions.locked(reasonKey: 'dossierCloture')
+      : const ZRowPermissions.unrestricted(),
+);
+</code></pre>
+<p>Une seule déclaration gouverne <strong>tout</strong> : les actions de la vue vivante et
+celles de la corbeille, rendues en boutons dans la ligne comme en menu.</p>
+<h4 id="-un-rsolveur-restreint-il-nlargit-jamais">🔒 Un résolveur restreint, il n'élargit jamais</h4>
+<p><code>ZRowPermissions</code> n'a aucun vocabulaire d'autorisation : on y déclare ce que la
+ligne <strong>refuse</strong>, jamais ce qu'elle accorde. La composition avec votre ACL est
+une <strong>intersection</strong> — un résolveur, même écrit permissif, ne peut pas rouvrir
+un geste que l'ACL de l'écran ou du scope a fermé. C'est ce qui permet de
+confier <code>rowAcl</code> à du code métier sans en faire une surface de contournement
+des droits.</p>
+<h4 id="droit-refus--action-inapplicable">Droit refusé ≠ action inapplicable</h4>
+<table>
+<thead>
+<tr>
+<th>Nature</th>
+<th>Ce qui la déclare</th>
+<th>Ce qui est rendu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Droit refusé</strong></td>
+<td>votre ACL, ou <code>ZRowPermissions</code></td>
+<td>ce que dit votre <code>actionAclMode</code> : <code>hide</code> masque (défaut), <code>disable</code> montre l'action inerte avec son motif</td>
+</tr>
+<tr>
+<td><strong>Action inapplicable</strong></td>
+<td><code>ZRowAction.enabledFor</code></td>
+<td>l'action est <strong>toujours</strong> rendue, inerte, avec son motif — elle existe, elle ne s'applique pas à cette ligne</td>
+</tr>
+</tbody>
+</table>
+<p>La distinction compte : masquer une action inapplicable ferait clignoter les
+lignes au gré de leur état, tandis que la présentation des refus de <strong>droit</strong>
+reste votre décision. Dans les deux cas, l'action inerte annonce son motif aux
+lecteurs d'écran (<code>Semantics(enabled: false)</code> et indice), et n'invoque rien.</p>
+<h4 id="les-quatre-besoins-courants-un-seul-concept">Les quatre besoins courants, un seul concept</h4>
+<table>
+<thead>
+<tr>
+<th>Besoin</th>
+<th>Écriture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ACL propre à un élément</strong></td>
+<td><code>rowAcl: (e) =&gt; e.sensible ? const ZRowPermissions.denying({ZCrudAction.delete, ZCrudAction.update}) : const ZRowPermissions.unrestricted()</code></td>
+</tr>
+<tr>
+<td><strong>Lecture seule d'un élément</strong></td>
+<td><code>rowAcl: (e) =&gt; e.cloture ? const ZRowPermissions.locked() : const ZRowPermissions.unrestricted()</code> — toutes les écritures tombent, consultation et historique restent</td>
+</tr>
+<tr>
+<td><strong>Suppression conditionnelle</strong></td>
+<td><code>rowAcl: (e) =&gt; e.protege ? const ZRowPermissions.denying({ZCrudAction.delete}, reasonKey: 'elementProtege') : const ZRowPermissions.unrestricted()</code></td>
+</tr>
+<tr>
+<td><strong>Validation conditionnelle</strong></td>
+<td><code>rowAcl: (e) =&gt; e.valide ? const ZRowPermissions.denying({ZCrudAction.validate}) : const ZRowPermissions.unrestricted()</code> — ou, si le geste doit rester <strong>visible mais inerte</strong> : <code>monAction.withEligibility((e) =&gt; !e.valide, reasonKey: 'dejaValidee')</code></td>
+</tr>
+</tbody>
+</table>
+<p>Sans <code>rowAcl</code> déclaré ni <code>enabledFor</code> posé, le comportement est strictement
+inchangé.</p>
+<p><strong>Coût.</strong> Le résolveur est appelé une fois par ligne rendue : gardez-le pur et
+bon marché (aucune lecture de dépôt). Rendre la constante
+<code>ZRowPermissions.unrestricted()</code> pour les lignes ordinaires ne coûte rien.</p>
+<h3 id="slection-multiple-et-actions-de-masse">Sélection multiple et actions de masse</h3>
+<p>Une déclaration suffit : chaque ligne reçoit sa case à cocher, et une <strong>barre
+d'actions de masse</strong> apparaît dès le premier élément coché.</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Dossier&gt;(
+  title: 'Dossiers',
+  source: ZCrudSource.repository(repo),
+  registry: registry,
+  selection: const ZSelectionPolicy(),
+)
+</code></pre>
+<p>Les actions offertes sont celles de la <strong>vue courante</strong> : mise à la corbeille
+sur les éléments vivants, restauration et suppression définitive en corbeille.
+Chacune existe aux mêmes conditions que l'action de ligne homonyme — geste voulu
+par <code>trashPolicy</code>, servi par la source, autorisé par l'ACL. Rien à recoudre :
+sans <code>selection</code> déclarée, l'écran est exactement celui d'avant.</p>
+<h4 id="le-lot-obit-aux-mmes-droits-que-la-ligne">Le lot obéit aux mêmes droits que la ligne</h4>
+<p>La résolution est <strong>la même voie</strong> que celle des boutons de ligne : ACL de
+l'écran, <code>rowAcl</code>, <code>enabledFor</code>. Il n'existe pas de seconde logique
+d'autorisation pour le lot.</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Effet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Droit refusé pour la collection</td>
+<td>Action <strong>absente</strong> de la barre (<code>actionAclMode: hide</code>, défaut), ou <strong>inerte</strong> (<code>disable</code> : l'action garde sa place, grisée, non actionnable, motif du refus annoncé — et rien ne s'écrit)</td>
+</tr>
+<tr>
+<td>Ligne restreinte par <code>rowAcl</code></td>
+<td>L'élément est <strong>retiré du lot</strong> avant toute écriture, et le compte rendu le dit (« n skipped »)</td>
+</tr>
+<tr>
+<td>Action inapplicable (<code>enabledFor</code>)</td>
+<td>Même traitement : exclusion du lot, jamais une écriture silencieuse</td>
+</tr>
+</tbody>
+</table>
+<h4 id="ouvrir-la-slection--lappui-long">Ouvrir la sélection à l'appui long</h4>
+<p>Par défaut, chaque ligne porte sa case dès qu'une politique de sélection est
+déclarée. Le motif tactile usuel — ouvrir la sélection à l'appui long — se
+déclare par l'<strong>arbitrage du geste</strong> :</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Piece&gt;(
+  selection: const ZSelectionPolicy(),
+  longPressOwner: ZRowLongPressOwner.selection,
+);
+</code></pre>
+<p>Les cases n'apparaissent alors qu'une fois la sélection non vide, et la
+sélection se referme d'elle-même quand elle se vide. Le menu contextuel des
+actions de ligne ne s'ouvre plus qu'au <strong>clic droit</strong> ; son déclencheur visible
+reste rendu, l'action reste donc atteignable sans geste contextuel (AD-13).</p>
+<p>L'appui long est réclamé par trois fonctions — menu contextuel, copie de cellule
+d'un rendu de grille, ouverture de la sélection — et <code>longPressOwner</code> n'en
+désigne <strong>qu'une</strong>. C'est délibéré : trois réglages indépendants auraient permis
+d'en déclarer deux à la fois, c'est-à-dire de recréer le conflit que ce réglage
+existe pour empêcher. À noter : sur le layout <code>dataGrid</code>, les gestes de ligne
+appartiennent au backend de grille — y déclarer <code>selection</code> retirerait l'appui
+long au menu contextuel sans rien ouvrir en échange.</p>
+<h4 id="le-lot-rend-des-comptes">Le lot rend des comptes</h4>
+<p>Une action de masse qui échoue <strong>sur une partie</strong> du lot ne dit jamais « fait ».
+La notification porte le nombre de succès, le nombre d'échecs, le nombre
+d'éléments écartés, et <strong>nomme</strong> les éléments en échec (les trois premiers) :</p>
+<pre class="language-dart"><code>1 succeeded · 2 failed : Bravo, Charlie
+</code></pre>
+<p>L'application qui veut sa propre surface — liste exhaustive, journal, réessai —
+reçoit le <code>ZBatchReport</code> complet, avec les identités réussies et la cause de
+chaque échec :</p>
+<pre class="language-dart"><code class="language-dart">selection: ZSelectionPolicy(
+  onReport: (report) {
+    if (report.hasFailures) monJournal.consigner(report.failures);
+  },
+),
+</code></pre>
+<h4 id="confirmation-vidage-porte">Confirmation, vidage, portée</h4>
+<ul>
+<li>Un geste de masse <strong>destructif</strong> passe par la confirmation de l'écran
+(<code>confirmDestructive</code>, <code>true</code> par défaut), avec le <strong>nombre d'éléments</strong> dans
+la question — celui du lot réellement soumis, écartés déjà retirés. Annuler
+n'écrit rien. La restauration, non destructive, n'est pas confirmée.</li>
+<li>La sélection est <strong>vidée</strong> après chaque action de masse et à la bascule
+vivants ⇄ corbeille : un lot ne s'exécute jamais sur des éléments qu'on ne
+voit plus.</li>
+<li>« Tout sélectionner » porte sur les éléments <strong>actuellement listés</strong>, jamais
+au-delà de ce que la source a rendu.</li>
+<li>En mode <code>tabs</code>, chaque onglet possède sa vue : la sélection de l'écran
+s'applique au listing dont il est propriétaire (dont la corbeille). Une page
+d'onglet qui veut la sienne déclare sa propre <code>DynamicList(selection:)</code>.</li>
+</ul>
+<h4 id="actions-de-masse-de-lapplication">Actions de masse de l'application</h4>
+<p><code>batchActions</code> ajoute les vôtres après les actions assemblées ; elles reçoivent
+les entités sélectionnées et vous appartiennent (l'écran ne les gouverne pas) :</p>
+<pre class="language-dart"><code class="language-dart">batchActions: (context, selected) =&gt; &lt;ZBatchAction&gt;[
+  ZBatchAction(
+    kind: ZBatchActionKind.custom,
+    label: 'Exporter',
+    icon: Icons.download,
+    onSelected: () =&gt; exporter(selected),
+  ),
+],
+</code></pre>
+<h4 id="libells">Libellés</h4>
+<p>La barre et le compte rendu utilisent les clés <code>selectedCount</code>, <code>selectAll</code>,
+<code>batchSucceeded</code>, <code>batchFailed</code> et <code>batchSkipped</code>, désormais présentes dans les
+tables <code>en</code>/<code>fr</code> du socle. Elles restent surchargeables par le scope, comme
+toute clé générique :</p>
+<pre class="language-dart"><code class="language-dart">ZcrudScope(
+  labels: ZcrudLabels(&lt;String, String&gt;{
+    'selectedCount': 'éléments retenus',
+  }),
+  child: monEcran,
+)
+</code></pre>
+<h3 id="export-export">Export {#export}</h3>
+<p>L'écran n'exporte rien par défaut, et n'en sait rien faire : produire un
+<code>.xlsx</code> ou un <code>.pdf</code> demande des bibliothèques lourdes, qu'aucune application
+ne doit payer sans les avoir demandées. <code>zcrud_screen</code> ne connaît que le port
+<code>ZListExporter</code> du socle — il <strong>ne dépend d'aucun paquet d'export</strong>.</p>
+<h4 id="dclarer-un-format">Déclarer un format</h4>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Consignataire&gt;(
+  title: 'Consignataires',
+  source: ZCrudSource.repository(repo),
+  registry: registry,
+  export: ZExportPolicy(
+    exporters: const &lt;ZListExporter&gt;[
+      ZCsvListExporter(),   // zcrud_export      — Dart pur, aucun moteur
+      ZXlsxListExporter(),  // zcrud_export      — Excel
+      ZPdfListExporter(),   // zcrud_export_pdf  — PDF
+    ],
+    onExported: (context, fichier) =&gt; monPartage(fichier),
+  ),
+)
+</code></pre>
+<p>Un format déclaré = une entrée « Exporter (CSV) » dans le menu de débordement
+de l'app-bar, dans l'ordre de déclaration. <strong>Aucun format déclaré = aucune
+entrée</strong>, aucun menu, et rien de la mécanique d'export n'est construit. Deux
+exporteurs de même <code>id</code> désignent le même format : seul le premier est offert.</p>
+<p>Les exporteurs vivent dans les paquets d'export — c'est l'<strong>application</strong> qui
+en déclare la dépendance, jamais <code>zcrud_screen</code>. Un exporteur maison
+s'implémente en réalisant <code>ZListExporter</code> : rien n'oblige à passer par ces
+paquets.</p>
+<h4 id="o-va-le-fichier">Où va le fichier</h4>
+<p><code>onExported</code> reçoit un <code>ZExportedBytes</code> — octets, nom de fichier suggéré, type
+MIME — et <strong>conclut le geste</strong> : enregistrer, partager, imprimer, téléverser
+sont des décisions de plateforme et de produit, jamais d'écran. Le paramètre est
+requis : un export dont les octets n'iraient nulle part serait un geste sans
+effet, indiscernable d'une panne.</p>
+<p>Le nom du fichier dérive du titre de l'écran, réduit à des caractères sûrs
+(<code>Consignataires</code> → <code>Consignataires.csv</code>) ; <code>fileBaseName</code> le remplace.</p>
+<h4 id="ce-qui-est-export">Ce qui est exporté</h4>
+<p><strong>Ce que l'utilisateur voit, et rien d'autre</strong> :</p>
+<table>
+<thead>
+<tr>
+<th>Entre dans le fichier</th>
+<th>N'y entre pas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Les lignes <strong>réellement listées</strong> — tri, filtres, recherche et vue (vivants ou corbeille) déjà appliqués</td>
+<td>Ce que la source contient au-delà de l'écran</td>
+</tr>
+<tr>
+<td>Les colonnes <strong>dérivées du schéma</strong>, dans l'ordre affiché</td>
+<td>Les champs d'identité (<code>isId</code>), écartés à la dérivation</td>
+</tr>
+<tr>
+<td>Les valeurs <strong>formatées</strong>, telles qu'elles sont peintes — devise portée par la ligne, format composé</td>
+<td>Les valeurs brutes</td>
+</tr>
+<tr>
+<td>—</td>
+<td>La colonne de <strong>numéro d'ordre</strong> (<code>#</code>), qui décrit une position d'écran</td>
+</tr>
+<tr>
+<td>—</td>
+<td>Les <strong>cases à cocher</strong> de sélection et les <strong>boutons d'action</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Une sélection en cours restreint l'export</strong> aux seuls éléments cochés, dans
+l'ordre de l'écran : c'est la lecture attendue d'un export demandé sélection
+faite. Vider la sélection rend l'export à la liste entière.</p>
+<h4 id="ce-qui-ne-peut-pas-arriver">Ce qui ne peut pas arriver</h4>
+<ul>
+<li><strong>Une liste vide</strong> s'annonce (« Rien à exporter ») ; aucun exporteur n'est
+appelé, aucun fichier n'est remis.</li>
+<li><strong>Un exporteur en échec</strong> — ou qui <strong>lève</strong> — s'annonce avec son motif.
+Aucune exception ne remonte, l'écran reste debout, <code>onExported</code> n'est pas
+appelé.</li>
+</ul>
+<h4 id="droits">Droits</h4>
+<p>L'export est une <strong>lecture</strong> : il ne montre rien de plus que le listing déjà
+affiché, et n'est offert que là où l'écran affiche ce listing
+(<code>ZCrudAction.view</code>). Aucun droit propre à l'export n'est introduit — une
+application qui veut le restreindre plus finement déclare, ou non, sa politique
+selon le profil de l'utilisateur.</p>
+<h4 id="libells-2">Libellés</h4>
+<p>Clés employées : <code>export</code>, <code>exportEmpty</code>, <code>exportFailed</code> — présentes dans les
+tables <code>en</code>/<code>fr</code> du socle, surchargeables par <code>ZcrudScope(labels:)</code>. Le nom d'un
+format (<code>CSV</code>, <code>Excel</code>, <code>PDF</code>) est le <code>labelKey</code> de son exporteur : un sigle ne
+se traduit pas, et une clé inconnue des tables est rendue telle quelle.</p>
 <h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
 <table>
 <thead>
@@ -214,8 +1316,60 @@ restent assemblées.</p>
 <td>Source déclarative : <code>.repository(ZRepository&lt;T&gt;)</code> ou <code>.items(List&lt;T&gt;, callbacks…)</code>.</td>
 </tr>
 <tr>
+<td><code>ZScreenMode</code></td>
+<td>Mode de l'écran : <code>full</code> (défaut) / <code>details</code> (fiche de détail, retour vers l'édition selon l'ACL) / <code>locked</code> (consultation verrouillée). Remplace <code>readOnly</code>, déprécié.</td>
+</tr>
+<tr>
+<td><code>ZCrudEditionScope</code></td>
+<td>Transport du drapeau de lecture jusqu'au formulaire — <code>ZCrudEditionScope.readOnlyOf(context)</code> dans un <code>editionBuilder</code>.</td>
+</tr>
+<tr>
+<td><code>ZCrudScreenScope</code></td>
+<td>Contexte posé autour du corps de l'écran — <code>ZCrudScreenScope.maybeOf(context)</code> donne ses gestes à n'importe quelle carte descendante (<code>null</code> hors écran).</td>
+</tr>
+<tr>
+<td><code>ZCrudScreenActions</code></td>
+<td>Les gestes de l'écran : <code>canOpenEdition</code>/<code>openEdition</code>/<code>editionOpener</code>, <code>canOpenUpdate</code>/<code>openUpdate</code>/<code>updateOpener</code>, <code>canOpenCreation</code>/<code>openCreation</code>/<code>creationOpener</code>, plus <code>sortBy</code> (remplace le tri par défaut) et <code>filterBy</code> (s'ajoute aux filtres permanents). Aucun ne lève ; un geste refusé est <code>false</code>, <code>null</code> ou une ouverture inerte.</td>
+</tr>
+<tr>
+<td><code>zCrudEditionOpener(context, entity)</code></td>
+<td>Raccourci du cas courant : le rappel d'ouverture, ou <code>null</code> si le geste n'est pas possible.</td>
+</tr>
+<tr>
+<td><code>ZCrudOpener</code></td>
+<td><code>Future&lt;void&gt; Function()</code> — une ouverture déjà liée à son élément.</td>
+</tr>
+<tr>
 <td><code>ZTrashMode</code></td>
 <td>Activation de la corbeille : <code>auto</code> (dès que la source la supporte) / <code>none</code>.</td>
+</tr>
+<tr>
+<td><code>ZTrashPolicy</code></td>
+<td>Gestes offerts par la corbeille : <code>full</code> (défaut), <code>withoutPurge</code>, <code>readOnly</code>, ou combinaison libre ; plus <code>showCount</code> (pastille de comptage) et <code>visibleWhenEmpty</code> (accès masqué à corbeille vide).</td>
+</tr>
+<tr>
+<td><code>trashCount</code> (<code>ValueListenable&lt;int&gt;?</code>)</td>
+<td>Nombre d'éléments en corbeille fourni par l'application : pastille sur le bouton d'accès, et condition de visibilité. Dérivé gratuitement sur la voie <code>items</code>.</td>
+</tr>
+<tr>
+<td><code>ZListQueryPolicy</code> (<code>query</code>)</td>
+<td>Tri par défaut (<code>sort</code>), filtres permanents (<code>baseFilters</code>), taille de page (<code>pageSize</code>) et sémantique de recherche (<code>searchScope</code>, <code>searchFolding</code> ; raccourci <code>ZListQueryPolicy.legacySearch()</code>) du listing. <code>filtersWith</code> ajoute, <code>sortFor</code> remplace ; <code>ZListQueryPolicy.of(context)</code> la rend aux vues que l'application pose sous l'écran (page d'onglet). Rien de déclaré ⇒ requêtes strictement inchangées.</td>
+</tr>
+<tr>
+<td><code>ZListTab</code> (<code>tabs</code>)</td>
+<td>Onglet de catégorisation : <code>labelKey</code>, <code>builder</code>, <code>pageKey</code>, <code>canCreate</code>, <code>defaultItemBuilder</code>, plus <code>acl</code> (restriction du segment), <code>titles</code> (intitulés du formulaire) et <code>countOf</code> (pastille de comptage).</td>
+</tr>
+<tr>
+<td><code>ZRestrictedAcl</code> / <code>zRestrictAcl</code></td>
+<td>Composition <strong>conjonctive</strong> de deux <code>ZAcl</code> — la cascade onglet &gt; écran &gt; scope. L'élargissement y est inexprimable.</td>
+</tr>
+<tr>
+<td><code>ZPurgeable&lt;T&gt;</code></td>
+<td>Mixin optionnel du dépôt déclarant la <strong>suppression définitive</strong> (hors du port <code>ZRepository</code>).</td>
+</tr>
+<tr>
+<td><code>ZCrudTitles</code></td>
+<td>Titres à quatre états de la surface d'édition (<code>create</code> / <code>copy</code> / <code>update</code> / <code>read</code>), replis l10n génériques quand <code>null</code>.</td>
 </tr>
 <tr>
 <td><code>ZCrudSave&lt;T&gt;</code></td>
@@ -223,7 +1377,7 @@ restent assemblées.</p>
 </tr>
 <tr>
 <td><code>ZCrudTrashWrite&lt;T&gt;</code></td>
-<td>Écriture de corbeille déléguée (voie items).</td>
+<td>Écriture de corbeille déléguée (voie items) : <code>(BuildContext, T)</code>. Le contexte est celui de la ligne — confirmation maison, notification ou navigation sans capturer un contexte externe.</td>
 </tr>
 <tr>
 <td><code>ZCrudEditionBuilder&lt;T&gt;</code></td>
@@ -231,18 +1385,49 @@ restent assemblées.</p>
 </tr>
 <tr>
 <td><code>ZCrudItemBuilder&lt;T&gt;</code></td>
-<td>Rendu d'une tuile (reçoit l'entité <code>T</code>) — voie d'échappement de la tuile générique.</td>
+<td>Rendu d'une tuile (reçoit l'entité <code>T</code>) — voie d'échappement de la tuile générique, <strong>transmise au <code>layout</code> déclaré</strong> (grille de cartes comprise).</td>
+</tr>
+<tr>
+<td><code>rowAcl</code> (<code>ZRowAclResolver&lt;T&gt;</code>)</td>
+<td>Gouvernance <strong>par ligne</strong> : les droits propres à chaque entité, en intersection avec l'ACL. Gouverne la vue vivante, la corbeille, les boutons et le menu.</td>
+</tr>
+<tr>
+<td><code>selection</code> (<code>ZSelectionPolicy?</code>)</td>
+<td>Sélection multiple : <code>mode</code>, <code>showSelectAll</code>, <code>onReport</code>. <code>null</code> (défaut) ⇒ aucune sélection, écran inchangé.</td>
+</tr>
+<tr>
+<td><code>batchActions</code> (<code>ZCrudBatchActions&lt;T&gt;?</code>)</td>
+<td>Actions de masse supplémentaires de l'application, construites avec les entités sélectionnées.</td>
+</tr>
+<tr>
+<td><code>export</code> (<code>ZExportPolicy?</code>)</td>
+<td>Export du listing : <code>exporters</code> (les formats offerts, ordre conservé, dédoublonnés par <code>id</code>), <code>onExported</code> (remise du fichier — requis), <code>fileBaseName</code>. <code>null</code> (défaut) ⇒ aucune entrée d'export, aucune dépendance tirée.</td>
+</tr>
+<tr>
+<td><code>ZCrudExportDelivery</code></td>
+<td><code>FutureOr&lt;void&gt; Function(BuildContext, ZExportedBytes)</code> — la remise du fichier produit à l'application.</td>
+</tr>
+<tr>
+<td><code>ZRowPermissions</code></td>
+<td>Ce qu'une ligne <strong>retire</strong> : <code>.unrestricted()</code>, <code>.locked()</code>, <code>.denying({…})</code>, avec <code>reasonKey</code> facultatif. Aucun vocabulaire d'autorisation — un résolveur ne peut jamais élargir.</td>
 </tr>
 </tbody>
 </table>
+<p>Paramètres notables hérités du socle : <code>actions</code> (<code>List&lt;ZAppBarAction&gt;</code> de
+<code>zcrud_ui_kit</code>, débordement compris) et <code>confirmDestructive</code> (défaut <code>true</code>).
+<code>appBarActions</code> (widgets déjà construits) est <strong>déprécié</strong> au profit de
+<code>actions</code> : un widget opaque ne peut être transmis à l'app-bar du socle
+qu'emballé, ce qui masque sa sémantique propre et élargit sa boîte
+(48 → 64 dp) — le tap, lui, reste fonctionnel (mesuré).</p>
 <h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
 <ul>
-<li><strong>Lecture seule par déclaration</strong> : <code>readOnly: true</code>, <code>canCreate: false</code>,
-<code>trash: ZTrashMode.none</code>, ou <code>ZCrudSource.items(rows)</code> sans callbacks — un
-journal immuable ou un référentiel distant en lecture seule s'écrivent sans
-contournement.</li>
+<li><strong>Lecture seule par déclaration</strong> : <code>mode: ZScreenMode.locked</code> (consultation
+verrouillée), <code>mode: ZScreenMode.details</code> (fiche de détail, édition selon
+l'ACL), <code>canCreate: false</code>, <code>trash: ZTrashMode.none</code>, ou
+<code>ZCrudSource.items(rows)</code> sans callbacks — un journal immuable ou un
+référentiel distant en lecture seule s'écrivent sans contournement.</li>
 <li><strong>ACL partout</strong> (invariant AD-16) : bouton de création (<code>ZCrudAction.create</code>),
-actions de ligne (<code>update</code>/<code>delete</code>/<code>restore</code> — masquées par défaut,
+actions de ligne (<code>update</code>/<code>delete</code>/<code>restore</code>/<code>clear</code> — masquées par défaut,
 grisables via <code>actionAclMode</code>), bascule corbeille. <code>acl</code> non fourni ⇒ l'ACL
 du <code>ZcrudScope</code> ambiant s'applique.</li>
 <li><strong>Jamais d'exception de persistance</strong> (invariants AD-10/AD-11) : un échec de
@@ -260,12 +1445,28 @@ manquant — jamais un écran vide silencieux.</li>
 (<code>ZFormController</code>), bouton de création re-évalué par <code>ValueListenable</code>
 (onglets).</li>
 <li><strong>Onglets</strong> : <code>tabs</code> non-<code>null</code> ⇒ le corps est un <code>ZTabbedList</code> (chaque
-onglet possède sa vue) ; la création lit <code>canCreate</code> et <code>defaultItemBuilder</code>
-de l'onglet <strong>actif</strong> (<code>Map</code> de valeurs ou entité <code>T</code>). La recherche et la
-corbeille de l'écran ne s'appliquent pas au contenu des onglets.</li>
+onglet possède sa vue) ; la création lit <code>canCreate</code>, <code>defaultItemBuilder</code>,
+<code>acl</code> et <code>titles</code> de l'onglet <strong>actif</strong> (<code>Map</code> de valeurs ou entité <code>T</code>). La
+recherche et la corbeille de l'écran ne s'appliquent pas au contenu des
+onglets. L'ACL d'un onglet <strong>restreint</strong> celle de l'écran, jamais l'inverse.</li>
+<li><strong>Corbeille</strong> : l'accès s'ouvre sur <code>restore</code> <strong>ou</strong> <code>clear</code>, jamais sur
+<code>delete</code> seul. <code>ZTrashPolicy(visibleWhenEmpty: false)</code> le retire à corbeille
+vide, à condition que le compte soit connu (<code>trashCount</code>, ou voie <code>items</code>).</li>
 <li><strong>Purge définitive absente</strong> : <code>ZRepository</code> n'expose pas de suppression
 dure ; l'action « vider » se branche via <code>rowActions</code> (action custom) le cas
-échéant.</li>
+échéant — elle relève alors de l'hôte, y compris sa confirmation
+(<code>showZConfirmDialog</code> reste à sa disposition).</li>
+<li><strong>Confirmation destructive</strong> : demandée avant toute mise à la corbeille
+(<code>confirmDestructive: true</code> par défaut) ; une annulation ne produit
+<strong>aucune</strong> écriture. La restauration n'est pas confirmée.</li>
+<li><strong>Notification sans dépendance</strong> : un échec d'action de ligne passe par le
+port <code>ZToaster</code> ; sans <code>ZToasterScope</code> ni <code>ScaffoldMessenger</code> atteignable,
+le repli est <strong>silencieux</strong> et documenté, jamais une exception.</li>
+<li><strong>Actions de masse</strong> : un lot ne dit jamais « fait » quand une partie a
+échoué — le compte rendu porte succès, échecs, éléments écartés et nomme les
+échecs (<code>ZBatchReport</code> complet via <code>ZSelectionPolicy.onReport</code>). Un élément
+que la gouvernance n'admet pas est <strong>exclu du lot</strong>, jamais écrit en silence.
+La sélection est vidée après l'action et au changement de vue.</li>
 <li><strong>RTL / a11y</strong> (invariant AD-13) : primitives directionnelles, <code>Semantics</code>
 explicites, cibles ≥ 48 dp. Aucune couleur codée en dur (rôles du thème).</li>
 </ul>
@@ -320,7 +1521,7 @@ explicites, cibles ≥ 48 dp. Aucune couleur codée en dur (rôles du thème).</
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

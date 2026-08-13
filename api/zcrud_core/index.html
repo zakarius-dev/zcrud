@@ -202,15 +202,35 @@ nus. Les adaptateurs concrets vivent dans <code>zcrud_firestore</code>.</li>
 </tr>
 <tr>
 <td><code>ZListController</code></td>
-<td>Contrôleur réactif — pagination curseur, recherche/tri in-memory de repli.</td>
+<td>Contrôleur réactif — pagination curseur, recherche/tri in-memory de repli. <code>initialSorts</code> le fait <strong>naître trié</strong> : la toute première requête part déjà ordonnée, au lieu d'en émettre une non triée puis de la remplacer.</td>
+</tr>
+<tr>
+<td><code>ZListSelectionActivation</code></td>
+<td>Comment la sélection <strong>s'ouvre</strong> : en permanence (défaut) ou à l'<strong>appui long</strong>, les cases n'apparaissant qu'une fois la sélection non vide. « Ouverte » n'est pas un état à part — c'est « non vide ».</td>
+</tr>
+<tr>
+<td><code>ZListOrdinal</code></td>
+<td>Colonne de numéro d'ordre. <code>continuousAcrossPages</code> rend la numérotation continue quand c'est le <strong>rendu</strong> qui pagine : la règle reste au cœur, seule la position vient du rendu.</td>
 </tr>
 <tr>
 <td><code>ZRowAction&lt;T&gt;</code> / <code>ZBatchAction</code></td>
-<td>Actions de ligne et de lot (corbeille, déplacement…), filtrées par <code>ZAcl</code>.</td>
+<td>Actions de ligne et de lot (corbeille, restauration, déplacement…), filtrées par <code>ZAcl</code>. Absente et inerte sont distinctes : <code>onSelected == null</code> <strong>retire</strong> l'action, <code>enabled: false</code> la garde en place, grisée, motif annoncé.</td>
+</tr>
+<tr>
+<td><code>ZListTab</code></td>
+<td>Onglet de catégorisation. <code>baseFilters</code> déclare son socle (ANDé en tête, hors d'atteinte d'une recherche), <code>filtersWith</code> compose sans remplacer, <code>copyWith</code> permet à un assembleur d'envelopper sa vue sans recopier ses déclarations.</td>
 </tr>
 <tr>
 <td><code>ZSubListScreen&lt;T&gt;</code> / <code>ZTabbedList</code></td>
 <td>Sous-liste filtrée par relation ; liste à onglets indépendants.</td>
+</tr>
+<tr>
+<td><code>ZListExporter</code> / <code>ZExportedBytes</code></td>
+<td>Port d'export d'une liste (format, extension, type MIME, production d'octets) et fichier produit. Les implémentations vivent dans <code>zcrud_export</code>/<code>zcrud_export_pdf</code> : un hôte qui n'exporte rien ne tire rien. <code>exportSafely</code> convertit tout jet en <code>ZFailure</code> (invariant AD-10).</td>
+</tr>
+<tr>
+<td><code>zListFormatOf(context)</code></td>
+<td>Voie <strong>unique</strong> des seams d'affichage (libellé d'option orpheline, port de dates, locale) : liste et export la partagent, donc le fichier dit ce que l'écran montre.</td>
 </tr>
 <tr>
 <td><strong>Domaine &amp; données</strong></td>
@@ -348,7 +368,7 @@ catalogue <code>EditionFieldType</code> + types-valeur <code>const</code>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

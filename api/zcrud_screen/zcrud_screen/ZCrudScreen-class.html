@@ -74,8 +74,17 @@ champs et cellules sont dérivés du schéma généré) :</p>
 <ul>
 <li><code>canCreate: false</code> — aucun bouton de création ;</li>
 <li><code>trash: ZTrashMode.none</code> — aucune corbeille ;</li>
-<li><code>readOnly: true</code> — consultation pure (ni création, ni édition, ni
-corbeille) ;</li>
+<li><code>trashPolicy: ZTrashPolicy.withoutPurge</code> — corbeille dont rien ne
+disparaît, même si le dépôt sait supprimer définitivement ;</li>
+<li><code>detailsEnabled: true</code> — la <strong>fiche de détail comme geste de ligne</strong> :
+l'écran reste complet (création, corbeille, restauration) et le tap sur
+une ligne ouvre le formulaire entier en lecture seule ;</li>
+<li><code>mode: ZScreenMode.details</code> — <strong>écran de consultation</strong> : la fiche, sans
+création ni corbeille ;</li>
+<li><code>mode: ZScreenMode.locked</code> — consultation verrouillée (ni création, ni
+fiche, ni édition, ni corbeille) ;</li>
+<li><code>rowColor: (context, entity) =&gt; …</code> — <strong>coloration de ligne</strong> décidée sur
+l'entité typée (cf. <a href="../zcrud_screen/ZRowTint-class.html">ZRowTint</a>) ;</li>
 <li><code>ZCrudSource.items(rows)</code> <strong>sans callbacks</strong> — lecture seule effective.</li>
 </ul>
 </section>
@@ -111,7 +120,7 @@ corbeille) ;</li>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZCrudScreen.new" class="callable">
-          <span class="name"><a href="../zcrud_screen/ZCrudScreen/ZCrudScreen.html">ZCrudScreen</a></span><span class="signature">({<span class="parameter" id="param-title"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span>, </span><span class="parameter" id="param-source"><span>required</span> <span class="type-annotation"><a href="../zcrud_screen/ZCrudSource-class.html">ZCrudSource</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">source</span>, </span><span class="parameter" id="param-registry"><span class="type-annotation">ZcrudRegistry?</span> <span class="parameter-name">registry</span>, </span><span class="parameter" id="param-kind"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">kind</span>, </span><span class="parameter" id="param-listFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span>?</span> <span class="parameter-name">listFields</span>, </span><span class="parameter" id="param-formFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span>?</span> <span class="parameter-name">formFields</span>, </span><span class="parameter" id="param-cellsOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">cellsOf</span>(<span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span></span>)?, </span><span class="parameter" id="param-acl"><span class="type-annotation">ZAcl?</span> <span class="parameter-name">acl</span>, </span><span class="parameter" id="param-policy"><span class="type-annotation">ZPresentationPolicy</span> <span class="parameter-name">policy</span> = <span class="default-value">const ZPresentationPolicy()</span>, </span><span class="parameter" id="param-formWeight"><span class="type-annotation">ZFormWeight</span> <span class="parameter-name">formWeight</span> = <span class="default-value">ZFormWeight.light</span>, </span><span class="parameter" id="param-layout"><span class="type-annotation">ZListLayout?</span> <span class="parameter-name">layout</span>, </span><span class="parameter" id="param-itemBuilder"><span class="type-annotation"><a href="../zcrud_screen/ZCrudItemBuilder.html">ZCrudItemBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">itemBuilder</span>, </span><span class="parameter" id="param-tabs"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZListTab</span>&gt;</span>?</span> <span class="parameter-name">tabs</span>, </span><span class="parameter" id="param-header"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">header</span>, </span><span class="parameter" id="param-canCreate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">canCreate</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-trash"><span class="type-annotation"><a href="../zcrud_screen/ZTrashMode.html">ZTrashMode</a></span> <span class="parameter-name">trash</span> = <span class="default-value">ZTrashMode.auto</span>, </span><span class="parameter" id="param-readOnly"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readOnly</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-searchEnabled"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">searchEnabled</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-onSave"><span class="type-annotation"><a href="../zcrud_screen/ZCrudSave.html">ZCrudSave</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onSave</span>, </span><span class="parameter" id="param-editionBuilder"><span class="type-annotation"><a href="../zcrud_screen/ZCrudEditionBuilder.html">ZCrudEditionBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">editionBuilder</span>, </span><span class="parameter" id="param-defaultItemBuilder"><span class="type-annotation">T</span> <span class="parameter-name">defaultItemBuilder</span>()?, </span><span class="parameter" id="param-rowActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZRowAction<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">rowActions</span>, </span><span class="parameter" id="param-columnPolicy"><span class="type-annotation">ZColumnPolicy?</span> <span class="parameter-name">columnPolicy</span>, </span><span class="parameter" id="param-collectionId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">collectionId</span>, </span><span class="parameter" id="param-appBarActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>&gt;</span></span> <span class="parameter-name">appBarActions</span> = <span class="default-value">const &lt;Widget&gt;[]</span>, </span><span class="parameter" id="param-leading"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">leading</span>, </span><span class="parameter" id="param-actionAclMode"><span class="type-annotation">ZActionAclMode</span> <span class="parameter-name">actionAclMode</span> = <span class="default-value">ZActionAclMode.hide</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+          <span class="name"><a href="../zcrud_screen/ZCrudScreen/ZCrudScreen.html">ZCrudScreen</a></span><span class="signature">({<span class="parameter" id="param-title"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span>, </span><span class="parameter" id="param-source"><span>required</span> <span class="type-annotation"><a href="../zcrud_screen/ZCrudSource-class.html">ZCrudSource</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">source</span>, </span><span class="parameter" id="param-registry"><span class="type-annotation">ZcrudRegistry?</span> <span class="parameter-name">registry</span>, </span><span class="parameter" id="param-kind"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">kind</span>, </span><span class="parameter" id="param-listFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span>?</span> <span class="parameter-name">listFields</span>, </span><span class="parameter" id="param-formFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span>?</span> <span class="parameter-name">formFields</span>, </span><span class="parameter" id="param-cellsOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">cellsOf</span>(<span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span></span>)?, </span><span class="parameter" id="param-acl"><span class="type-annotation">ZAcl?</span> <span class="parameter-name">acl</span>, </span><span class="parameter" id="param-policy"><span class="type-annotation">ZPresentationPolicy</span> <span class="parameter-name">policy</span> = <span class="default-value">const ZPresentationPolicy()</span>, </span><span class="parameter" id="param-formWeight"><span class="type-annotation">ZFormWeight</span> <span class="parameter-name">formWeight</span> = <span class="default-value">ZFormWeight.light</span>, </span><span class="parameter" id="param-layout"><span class="type-annotation">ZListLayout?</span> <span class="parameter-name">layout</span>, </span><span class="parameter" id="param-itemBuilder"><span class="type-annotation"><a href="../zcrud_screen/ZCrudItemBuilder.html">ZCrudItemBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">itemBuilder</span>, </span><span class="parameter" id="param-tabs"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZListTab</span>&gt;</span>?</span> <span class="parameter-name">tabs</span>, </span><span class="parameter" id="param-query"><span class="type-annotation"><a href="../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a></span> <span class="parameter-name">query</span> = <span class="default-value">const ZListQueryPolicy()</span>, </span><span class="parameter" id="param-header"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">header</span>, </span><span class="parameter" id="param-canCreate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">canCreate</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-canDuplicate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">canDuplicate</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-titles"><span class="type-annotation"><a href="../zcrud_screen/ZCrudTitles-class.html">ZCrudTitles</a>?</span> <span class="parameter-name">titles</span>, </span><span class="parameter" id="param-trash"><span class="type-annotation"><a href="../zcrud_screen/ZTrashMode.html">ZTrashMode</a></span> <span class="parameter-name">trash</span> = <span class="default-value">ZTrashMode.auto</span>, </span><span class="parameter" id="param-trashPolicy"><span class="type-annotation">ZTrashPolicy</span> <span class="parameter-name">trashPolicy</span> = <span class="default-value">ZTrashPolicy.full</span>, </span><span class="parameter" id="param-trashCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">trashCount</span>, </span><span class="parameter" id="param-mode"><span class="type-annotation"><a href="../zcrud_screen/ZScreenMode.html">ZScreenMode</a></span> <span class="parameter-name">mode</span> = <span class="default-value">ZScreenMode.full</span>, </span><span class="parameter" id="param-detailsEnabled"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">detailsEnabled</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-rowColor"><span class="type-annotation"><a href="../zcrud_screen/ZRowTintBuilder.html">ZRowTintBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">rowColor</span>, </span><span class="parameter" id="param-readOnly"><span>@<a href="https://api.flutter.dev/flutter/dart-core/Deprecated/Deprecated.html">Deprecated</a>(&#39;Utiliser `mode` : `readOnly: true` devient `mode: ZScreenMode.locked`, &#39; &#39;et la fiche de détail (lecture seule AVEC retour vers l\&#39;édition) &#39; &#39;devient `mode: ZScreenMode.details`. Sera retiré en 1.0.&#39;)</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readOnly</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-searchEnabled"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">searchEnabled</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-onSave"><span class="type-annotation"><a href="../zcrud_screen/ZCrudSave.html">ZCrudSave</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onSave</span>, </span><span class="parameter" id="param-editionBuilder"><span class="type-annotation"><a href="../zcrud_screen/ZCrudEditionBuilder.html">ZCrudEditionBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">editionBuilder</span>, </span><span class="parameter" id="param-defaultItemBuilder"><span class="type-annotation">T</span> <span class="parameter-name">defaultItemBuilder</span>()?, </span><span class="parameter" id="param-rowActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZRowAction<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">rowActions</span>, </span><span class="parameter" id="param-trashRowActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZRowAction<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">trashRowActions</span>, </span><span class="parameter" id="param-columnPolicy"><span class="type-annotation">ZColumnPolicy?</span> <span class="parameter-name">columnPolicy</span>, </span><span class="parameter" id="param-collectionId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">collectionId</span>, </span><span class="parameter" id="param-actions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZAppBarAction</span>&gt;</span></span> <span class="parameter-name">actions</span> = <span class="default-value">const &lt;ZAppBarAction&gt;[]</span>, </span><span class="parameter" id="param-appBarActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>&gt;</span></span> <span class="parameter-name">appBarActions</span> = <span class="default-value">const &lt;Widget&gt;[]</span>, </span><span class="parameter" id="param-leading"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">leading</span>, </span><span class="parameter" id="param-rowAcl"><span class="type-annotation">ZRowAclResolver<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">rowAcl</span>, </span><span class="parameter" id="param-actionAclMode"><span class="type-annotation">ZActionAclMode</span> <span class="parameter-name">actionAclMode</span> = <span class="default-value">ZActionAclMode.hide</span>, </span><span class="parameter" id="param-rowActionsPresentation"><span class="type-annotation"><a href="../zcrud_screen/ZRowActionsPresentation.html">ZRowActionsPresentation</a></span> <span class="parameter-name">rowActionsPresentation</span> = <span class="default-value">ZRowActionsPresentation.inline</span>, </span><span class="parameter" id="param-inlineActionLimit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">inlineActionLimit</span> = <span class="default-value">2</span>, </span><span class="parameter" id="param-longPressOwner"><span class="type-annotation"><a href="../zcrud_screen/ZRowLongPressOwner.html">ZRowLongPressOwner</a></span> <span class="parameter-name">longPressOwner</span> = <span class="default-value">ZRowLongPressOwner.contextMenu</span>, </span><span class="parameter" id="param-confirmDestructive"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">confirmDestructive</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-selection"><span class="type-annotation"><a href="../zcrud_screen/ZSelectionPolicy-class.html">ZSelectionPolicy</a>?</span> <span class="parameter-name">selection</span>, </span><span class="parameter" id="param-batchActions"><span class="type-annotation"><a href="../zcrud_screen/ZCrudBatchActions.html">ZCrudBatchActions</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">batchActions</span>, </span><span class="parameter" id="param-export"><span class="type-annotation"><a href="../zcrud_screen/ZExportPolicy-class.html">ZExportPolicy</a>?</span> <span class="parameter-name">export</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
         </dt>
         <dd>
           Construit l'écran assemblé — seuls <code>title</code> et <code>source</code> sont requis.
@@ -150,14 +159,47 @@ quelle ; non-<code>null</code> ⇒ posée par <code>ZcrudScope.derive</code> aut
 
 </dd>
 
+        <dt id="actions" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/actions.html">actions</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZAppBarAction</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Actions additionnelles de l'app-bar, <strong>déclarées en données</strong>
+(<code>ZAppBarAction</code> de <code>zcrud_ui_kit</code>), rendues <strong>avant</strong> les actions
+assemblées (corbeille, création). Chaque action porte son
+<code>semanticLabel</code> (a11y AD-13, jamais nul) et peut demander le <strong>menu de
+débordement</strong> (<code>isOverflow: true</code>) — mécanisme du socle, pas une
+réinvention locale.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="appBarActions" class="property">
-  <span class="name"><a href="../zcrud_screen/ZCrudScreen/appBarActions.html">appBarActions</a></span>
+  <span class="name"><a class="deprecated" href="../zcrud_screen/ZCrudScreen/appBarActions.html">appBarActions</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>&gt;</span></span>
   
 
 </dt>
 <dd>
-  Boutons additionnels de l'<code>AppBar</code> (avant les boutons assemblés).
+  Boutons additionnels de l'<code>AppBar</code> sous forme de <strong>widgets déjà
+construits</strong> (avant les boutons assemblés).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="batchActions" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/batchActions.html">batchActions</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZCrudBatchActions.html">ZCrudBatchActions</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Actions de masse <strong>supplémentaires</strong> de l'application, ajoutées après les
+actions assemblées. Elles reçoivent les entités sélectionnées et
+appartiennent à l'application (l'écran ne les gouverne pas). Sans
+<a href="../zcrud_screen/ZCrudScreen/selection.html">selection</a> déclarée, elles ne sont jamais rendues.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -171,6 +213,25 @@ quelle ; non-<code>null</code> ⇒ posée par <code>ZcrudScope.derive</code> aut
 <dd>
   Autorise la création (défaut <code>true</code>). <code>false</code> ⇒ aucun bouton « + »,
 quelle que soit l'ACL.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="canDuplicate" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/canDuplicate.html">canDuplicate</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Autorise le geste <strong>« dupliquer »</strong> (défaut <code>true</code>) : action de ligne
+ouvrant la surface d'édition en mode duplication — une <strong>copie sans
+identité</strong> de l'entité (produite par le canal du registre :
+<code>encode</code> → retrait des champs <code>isId</code> → <code>decode</code>), que la sauvegarde
+matérialise en <strong>nouvelle</strong> entité. Gouvernée par la même permission que
+la création (<code>ZCrudAction.create</code>) et par <a href="../zcrud_screen/ZCrudScreen/canCreate.html">canCreate</a> ; absente si
+<a class="deprecated" href="../zcrud_screen/ZCrudScreen/readOnly.html">readOnly</a>, si la source ne sait pas écrire, ou sans <a href="../zcrud_screen/ZCrudScreen/registry.html">registry</a> (le
+canal de copie est la dérivation).
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -212,6 +273,20 @@ du registre (<code>encode</code>, clés persistées = noms de specs générées)
 
 </dd>
 
+        <dt id="confirmDestructive" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/confirmDestructive.html">confirmDestructive</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Demande une <strong>confirmation</strong> avant tout geste destructif de ligne — mise
+à la corbeille <strong>et</strong> suppression définitive —, via <code>showZConfirmDialog</code>
+de <code>zcrud_ui_kit</code>, en tonalité <code>ZConfirmTone.destructive</code> (défaut <code>true</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="defaultItemBuilder" class="property">
   <span class="name"><a href="../zcrud_screen/ZCrudScreen/defaultItemBuilder.html">defaultItemBuilder</a></span>
   <span class="signature">&#8594; T Function<span class="signature">()</span>?</span>
@@ -226,6 +301,19 @@ dérivé part de valeurs vides.
 
 </dd>
 
+        <dt id="detailsEnabled" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/detailsEnabled.html">detailsEnabled</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  La <strong>fiche de détail comme geste de ligne</strong> (défaut <code>false</code>), sur un écran
+qui reste complet.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="editionBuilder" class="property">
   <span class="name"><a href="../zcrud_screen/ZCrudScreen/editionBuilder.html">editionBuilder</a></span>
   <span class="signature">&#8594; <a href="../zcrud_screen/ZCrudEditionBuilder.html">ZCrudEditionBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span>
@@ -235,6 +323,20 @@ dérivé part de valeurs vides.
 <dd>
   Formulaire d'édition complet fourni par l'app — voie d'échappement de
 l'édition dérivée (<code>DynamicEdition</code> sur <a href="../zcrud_screen/ZCrudScreen/formFields.html">formFields</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="export" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/export.html">export</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZExportPolicy-class.html">ZExportPolicy</a>?</span>
+  
+
+</dt>
+<dd>
+  Politique d'<strong>export</strong> du listing — les formats offerts et la remise du
+fichier produit. <code>null</code> (défaut) : aucune entrée d'export, et aucune
+dépendance d'export tirée par l'écran.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -289,6 +391,20 @@ en mode <a href="../zcrud_screen/ZCrudScreen/tabs.html">tabs</a>).
 
 </dd>
 
+        <dt id="inlineActionLimit" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/inlineActionLimit.html">inlineActionLimit</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Seuil de la présentation adaptative (<a href="../zcrud_screen/ZRowActionsPresentation.html">ZRowActionsPresentation.auto</a>, défaut
+<code>2</code>) : jusqu'à ce nombre d'actions assemblées, la ligne garde ses boutons
+visibles ; au-delà, elle passe au déclencheur de menu.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="itemBuilder" class="property">
   <span class="name"><a href="../zcrud_screen/ZCrudScreen/itemBuilder.html">itemBuilder</a></span>
   <span class="signature">&#8594; <a href="../zcrud_screen/ZCrudItemBuilder.html">ZCrudItemBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span>
@@ -296,7 +412,7 @@ en mode <a href="../zcrud_screen/ZCrudScreen/tabs.html">tabs</a>).
 
 </dt>
 <dd>
-  Rendu d'une tuile (reçoit l'entité <code>T</code>). Ignoré si <a href="../zcrud_screen/ZCrudScreen/layout.html">layout</a> est fourni.
+  Rendu d'une tuile — il <strong>reçoit l'entité <code>T</code></strong>, pas la ligne neutre.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -333,8 +449,9 @@ sous <strong>plusieurs</strong> kinds (sinon <code>registry.kindOf&lt;T&gt;()</c
 
 </dt>
 <dd>
-  Variante de vue de la liste. <code>null</code> ⇒ <code>ZListBuilderLayout</code> avec la tuile
-générique du paquet (ou <a href="../zcrud_screen/ZCrudScreen/itemBuilder.html">itemBuilder</a>).
+  Variante de vue de la liste. <code>null</code> ⇒ liste verticale
+(<code>ZListBuilderLayout</code>) rendant <a href="../zcrud_screen/ZCrudScreen/itemBuilder.html">itemBuilder</a>, ou la tuile générique du
+paquet à défaut.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -364,6 +481,33 @@ corbeille).
 
 </dd>
 
+        <dt id="longPressOwner" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/longPressOwner.html">longPressOwner</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZRowLongPressOwner.html">ZRowLongPressOwner</a></span>
+  
+
+</dt>
+<dd>
+  À qui appartient l'<strong>appui long</strong> sur une ligne (défaut
+<a href="../zcrud_screen/ZRowLongPressOwner.html">ZRowLongPressOwner.contextMenu</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="mode" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/mode.html">mode</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZScreenMode.html">ZScreenMode</a></span>
+  
+
+</dt>
+<dd>
+  Mode de l'écran (défaut <a href="../zcrud_screen/ZScreenMode.html">ZScreenMode.full</a>) : écran complet, <strong>fiche de
+détail</strong> (<a href="../zcrud_screen/ZScreenMode.html">ZScreenMode.details</a>) ou consultation verrouillée
+(<a href="../zcrud_screen/ZScreenMode.html">ZScreenMode.locked</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="onSave" class="property">
   <span class="name"><a href="../zcrud_screen/ZCrudScreen/onSave.html">onSave</a></span>
   <span class="signature">&#8594; <a href="../zcrud_screen/ZCrudSave.html">ZCrudSave</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span>
@@ -389,8 +533,21 @@ corbeille).
 
 </dd>
 
+        <dt id="query" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/query.html">query</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a></span>
+  
+
+</dt>
+<dd>
+  <strong>Tri par défaut, filtres permanents, taille de page et sémantique de
+recherche</strong> du listing.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="readOnly" class="property">
-  <span class="name"><a href="../zcrud_screen/ZCrudScreen/readOnly.html">readOnly</a></span>
+  <span class="name"><a class="deprecated" href="../zcrud_screen/ZCrudScreen/readOnly.html">readOnly</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
   
 
@@ -418,6 +575,19 @@ l'édition exige <a href="../zcrud_screen/ZCrudScreen/editionBuilder.html">editi
 
 </dd>
 
+        <dt id="rowAcl" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/rowAcl.html">rowAcl</a></span>
+  <span class="signature">&#8594; ZRowAclResolver<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Gouvernance par ligne</strong> : les droits propres à chaque entité, déclarés
+une seule fois pour tout l'écran.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="rowActions" class="property">
   <span class="name"><a href="../zcrud_screen/ZCrudScreen/rowActions.html">rowActions</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZRowAction<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span>?</span>
@@ -425,8 +595,36 @@ l'édition exige <a href="../zcrud_screen/ZCrudScreen/editionBuilder.html">editi
 
 </dt>
 <dd>
-  Actions de ligne <strong>supplémentaires</strong> de l'app, ajoutées après les
-actions assemblées (édition, corbeille), filtrées par la même ACL.
+  Actions de ligne <strong>supplémentaires</strong> de l'app pour la vue des éléments
+<strong>vivants</strong>, ajoutées après les actions assemblées (édition, duplication,
+mise à la corbeille) et filtrées par la même ACL.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="rowActionsPresentation" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/rowActionsPresentation.html">rowActionsPresentation</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZRowActionsPresentation.html">ZRowActionsPresentation</a></span>
+  
+
+</dt>
+<dd>
+  Comment les actions d'une ligne sont présentées (défaut
+<a href="../zcrud_screen/ZRowActionsPresentation.html">ZRowActionsPresentation.inline</a> — boutons visibles, comportement
+inchangé).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="rowColor" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/rowColor.html">rowColor</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZRowTintBuilder.html">ZRowTintBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Coloration de ligne</strong> décidée sur l'<strong>entité typée</strong> — <code>null</code> (défaut)
+⇒ rendu strictement inchangé.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -452,6 +650,19 @@ actions assemblées (édition, corbeille), filtrées par la même ACL.
 <dd>
   Affiche la barre de recherche (défaut <code>true</code>). Sans effet en mode
 <a href="../zcrud_screen/ZCrudScreen/tabs.html">tabs</a> (chaque onglet possède sa propre vue).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="selection" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/selection.html">selection</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZSelectionPolicy-class.html">ZSelectionPolicy</a>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Sélection multiple et actions de masse</strong> — <code>null</code> (défaut) = aucune
+sélection, écran strictement inchangé.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -495,6 +706,20 @@ repli sur le littéral lui-même).
 
 </dd>
 
+        <dt id="titles" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/titles.html">titles</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZCrudTitles-class.html">ZCrudTitles</a>?</span>
+  
+
+</dt>
+<dd>
+  Titres à trois états de la surface d'édition (création / duplication /
+édition). <code>null</code> ⇒ replis l10n génériques (<code>create</code> / <code>copy</code> / <code>edit</code>),
+résolus via <code>label(context, …)</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="trash" class="property">
   <span class="name"><a href="../zcrud_screen/ZCrudScreen/trash.html">trash</a></span>
   <span class="signature">&#8594; <a href="../zcrud_screen/ZTrashMode.html">ZTrashMode</a></span>
@@ -503,6 +728,46 @@ repli sur le littéral lui-même).
 </dt>
 <dd>
   Activation de la corbeille (défaut <a href="../zcrud_screen/ZTrashMode.html">ZTrashMode.auto</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="trashCount" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/trashCount.html">trashCount</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Nombre d'éléments en corbeille</strong>, quand l'application le connaît
+(<code>null</code> par défaut).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="trashPolicy" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/trashPolicy.html">trashPolicy</a></span>
+  <span class="signature">&#8594; ZTrashPolicy</span>
+  
+
+</dt>
+<dd>
+  <strong>Quels gestes</strong> la corbeille offre : mettre, restaurer, supprimer
+définitivement (défaut : les trois, <code>ZTrashPolicy.full</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="trashRowActions" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreen/trashRowActions.html">trashRowActions</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZRowAction<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Actions de ligne <strong>supplémentaires</strong> de l'app pour la vue <strong>corbeille</strong>,
+ajoutées après les actions assemblées (restauration, suppression
+définitive) et filtrées par la même ACL.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -698,7 +963,7 @@ tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

@@ -62,7 +62,11 @@
       </section>
       
 <section class="desc markdown">
-  <p>Rendu d'une tuile (reçoit l'entité <code>T</code>). Ignoré si <a href="../../zcrud_screen/ZCrudScreen/layout.html">layout</a> est fourni.</p>
+  <p>Rendu d'une tuile — il <strong>reçoit l'entité <code>T</code></strong>, pas la ligne neutre.</p>
+<p>Il alimente le <a href="../../zcrud_screen/ZCrudScreen/layout.html">layout</a> déclaré (liste, grille de cartes) aussi bien que
+le rendu par défaut. Un layout construit avec sa <strong>propre</strong> tuile
+(<code>ZListGridLayout(itemBuilder: …)</code>, qui reçoit une <code>ZListRow</code>) garde la
+sienne : l'explicite l'emporte sur l'injecté.</p>
 </section>
 
       
@@ -97,7 +101,7 @@
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

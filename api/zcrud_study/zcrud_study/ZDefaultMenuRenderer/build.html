@@ -100,20 +100,10 @@ Widget build(BuildContext context, ZMenuRequest request) {
       tooltip: trigger.tooltip ?? trigger.semanticLabel,
       &#47;&#47; Voie UNIQUE de sélection (contrat ZMenuRenderer, point 3).
       onSelected: request.select,
-      itemBuilder: (context) =&gt; &lt;PopupMenuEntry&lt;ZMenuEntry&gt;&gt;[
-        if (contentBuilder != null)
-          _ZMenuPanelEntry(builder: contentBuilder, entries: entries)
-        else
-          for (final entry in entries)
-            PopupMenuItem&lt;ZMenuEntry&gt;(
-              value: entry,
-              enabled: entry.isEnabled,
-              &#47;&#47; `PopupMenuItem` porte déjà son propre détecteur de geste :
-              &#47;&#47; `onSelected` de la tuile reste nul (deux détecteurs
-              &#47;&#47; superposés produiraient DEUX invocations).
-              child: ZMenuEntryTile(entry: entry),
-            ),
-      ],
+      &#47;&#47; Items composés par le site PARTAGÉ avec la surface contextuelle
+      &#47;&#47; (`zMenuPopupItems`) : le déclencheur visible et le clic droit ne
+      &#47;&#47; peuvent pas diverger.
+      itemBuilder: (context) =&gt; zMenuPopupItems(request),
       child: trigger.child,
     ),
   );
@@ -145,7 +135,7 @@ Widget build(BuildContext context, ZMenuRequest request) {
 <footer>
   <span class="no-break">
     zcrud_study
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

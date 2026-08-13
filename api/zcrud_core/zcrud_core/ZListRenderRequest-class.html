@@ -72,7 +72,7 @@ et cellules comparées élément par élément).</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZListRenderRequest.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZListRenderRequest/ZListRenderRequest.html">ZListRenderRequest</a></span><span class="signature">({<span class="parameter" id="param-columns"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span>, </span><span class="parameter" id="param-rows"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span>&gt;</span></span> <span class="parameter-name">rows</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZListRenderRequest/ZListRenderRequest.html">ZListRenderRequest</a></span><span class="signature">({<span class="parameter" id="param-columns"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span>, </span><span class="parameter" id="param-rows"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span>&gt;</span></span> <span class="parameter-name">rows</span>, </span><span class="parameter" id="param-ordinal"><span class="type-annotation"><a href="../zcrud_core/ZListOrdinal-class.html">ZListOrdinal</a></span> <span class="parameter-name">ordinal</span> = <span class="default-value">const ZListOrdinal()</span></span>})</span>
         </dt>
         <dd>
           Construit une requête de rendu à partir des <code>columns</code> <strong>dérivées</strong> et
@@ -120,6 +120,18 @@ mapping <code>name</code>, largeur indicative, format pur par type).
 
 </dd>
 
+        <dt id="ordinal" class="property">
+  <span class="name"><a href="../zcrud_core/ZListRenderRequest/ordinal.html">ordinal</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZListOrdinal-class.html">ZListOrdinal</a></span>
+  
+
+</dt>
+<dd>
+  Déclaration de la colonne de <strong>numéro d'ordre</strong> (cf. <a href="../zcrud_core/ZListOrdinal-class.html">ZListOrdinal</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="rows" class="property">
   <span class="name"><a href="../zcrud_core/ZListRenderRequest/rows.html">rows</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span>&gt;</span></span>
@@ -163,6 +175,34 @@ mapping <code>name</code>, largeur indicative, format pur par type).
 <dd class="inherited">
   Invoked when a nonexistent method or property is accessed.
   <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="ordinalTextAt" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListRenderRequest/ordinalTextAt.html">ordinalTextAt</a></span><span class="signature">(<wbr><span class="parameter" id="ordinalTextAt-param-displayIndex"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">displayIndex</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Numéro affiché pour la ligne rendue en position <code>displayIndex</code>
+(<strong>0-based</strong>, après tri et filtrage), ou <code>null</code> si la colonne d'ordre
+n'est pas demandée.
+  
+
+</dd>
+
+        <dt id="ordinalTextsForDisplay" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListRenderRequest/ordinalTextsForDisplay.html">ordinalTextsForDisplay</a></span><span class="signature">(<wbr><span class="parameter" id="ordinalTextsForDisplay-param-displayedRows"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span>&gt;</span></span> <span class="parameter-name">displayedRows</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Numéros des lignes <strong>telles qu'elles sont affichées</strong>, dans cet ordre.
+  
 
 </dd>
 
@@ -229,7 +269,7 @@ mapping <code>name</code>, largeur indicative, format pur par type).
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

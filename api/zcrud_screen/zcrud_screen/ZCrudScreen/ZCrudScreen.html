@@ -68,20 +68,38 @@
 <li><span class="parameter" id="param-layout"><span class="type-annotation">ZListLayout?</span> <span class="parameter-name">layout</span>, </span></li>
 <li><span class="parameter" id="param-itemBuilder"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudItemBuilder.html">ZCrudItemBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">itemBuilder</span>, </span></li>
 <li><span class="parameter" id="param-tabs"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZListTab</span>&gt;</span>?</span> <span class="parameter-name">tabs</span>, </span></li>
+<li><span class="parameter" id="param-query"><span class="type-annotation"><a href="../../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a></span> <span class="parameter-name">query</span> = <span class="default-value">const ZListQueryPolicy()</span>, </span></li>
 <li><span class="parameter" id="param-header"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">header</span>, </span></li>
 <li><span class="parameter" id="param-canCreate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">canCreate</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="param-canDuplicate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">canDuplicate</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="param-titles"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudTitles-class.html">ZCrudTitles</a>?</span> <span class="parameter-name">titles</span>, </span></li>
 <li><span class="parameter" id="param-trash"><span class="type-annotation"><a href="../../zcrud_screen/ZTrashMode.html">ZTrashMode</a></span> <span class="parameter-name">trash</span> = <span class="default-value">ZTrashMode.auto</span>, </span></li>
-<li><span class="parameter" id="param-readOnly"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readOnly</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-trashPolicy"><span class="type-annotation">ZTrashPolicy</span> <span class="parameter-name">trashPolicy</span> = <span class="default-value">ZTrashPolicy.full</span>, </span></li>
+<li><span class="parameter" id="param-trashCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">trashCount</span>, </span></li>
+<li><span class="parameter" id="param-mode"><span class="type-annotation"><a href="../../zcrud_screen/ZScreenMode.html">ZScreenMode</a></span> <span class="parameter-name">mode</span> = <span class="default-value">ZScreenMode.full</span>, </span></li>
+<li><span class="parameter" id="param-detailsEnabled"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">detailsEnabled</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-rowColor"><span class="type-annotation"><a href="../../zcrud_screen/ZRowTintBuilder.html">ZRowTintBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">rowColor</span>, </span></li>
+<li><span class="parameter" id="param-readOnly"><span>@<a href="https://api.flutter.dev/flutter/dart-core/Deprecated/Deprecated.html">Deprecated</a>(&#39;Utiliser `mode` : `readOnly: true` devient `mode: ZScreenMode.locked`, &#39; &#39;et la fiche de détail (lecture seule AVEC retour vers l\&#39;édition) &#39; &#39;devient `mode: ZScreenMode.details`. Sera retiré en 1.0.&#39;)</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readOnly</span> = <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="param-searchEnabled"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">searchEnabled</span> = <span class="default-value">true</span>, </span></li>
 <li><span class="parameter" id="param-onSave"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudSave.html">ZCrudSave</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onSave</span>, </span></li>
 <li><span class="parameter" id="param-editionBuilder"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudEditionBuilder.html">ZCrudEditionBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">editionBuilder</span>, </span></li>
 <li><span class="parameter" id="param-defaultItemBuilder"><span class="type-annotation">T</span> <span class="parameter-name">defaultItemBuilder</span>()?, </span></li>
 <li><span class="parameter" id="param-rowActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZRowAction<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">rowActions</span>, </span></li>
+<li><span class="parameter" id="param-trashRowActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZRowAction<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">trashRowActions</span>, </span></li>
 <li><span class="parameter" id="param-columnPolicy"><span class="type-annotation">ZColumnPolicy?</span> <span class="parameter-name">columnPolicy</span>, </span></li>
 <li><span class="parameter" id="param-collectionId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">collectionId</span>, </span></li>
+<li><span class="parameter" id="param-actions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZAppBarAction</span>&gt;</span></span> <span class="parameter-name">actions</span> = <span class="default-value">const &lt;ZAppBarAction&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-appBarActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>&gt;</span></span> <span class="parameter-name">appBarActions</span> = <span class="default-value">const &lt;Widget&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-leading"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">leading</span>, </span></li>
+<li><span class="parameter" id="param-rowAcl"><span class="type-annotation">ZRowAclResolver<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">rowAcl</span>, </span></li>
 <li><span class="parameter" id="param-actionAclMode"><span class="type-annotation">ZActionAclMode</span> <span class="parameter-name">actionAclMode</span> = <span class="default-value">ZActionAclMode.hide</span>, </span></li>
+<li><span class="parameter" id="param-rowActionsPresentation"><span class="type-annotation"><a href="../../zcrud_screen/ZRowActionsPresentation.html">ZRowActionsPresentation</a></span> <span class="parameter-name">rowActionsPresentation</span> = <span class="default-value">ZRowActionsPresentation.inline</span>, </span></li>
+<li><span class="parameter" id="param-inlineActionLimit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">inlineActionLimit</span> = <span class="default-value">2</span>, </span></li>
+<li><span class="parameter" id="param-longPressOwner"><span class="type-annotation"><a href="../../zcrud_screen/ZRowLongPressOwner.html">ZRowLongPressOwner</a></span> <span class="parameter-name">longPressOwner</span> = <span class="default-value">ZRowLongPressOwner.contextMenu</span>, </span></li>
+<li><span class="parameter" id="param-confirmDestructive"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">confirmDestructive</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="param-selection"><span class="type-annotation"><a href="../../zcrud_screen/ZSelectionPolicy-class.html">ZSelectionPolicy</a>?</span> <span class="parameter-name">selection</span>, </span></li>
+<li><span class="parameter" id="param-batchActions"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudBatchActions.html">ZCrudBatchActions</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">batchActions</span>, </span></li>
+<li><span class="parameter" id="param-export"><span class="type-annotation"><a href="../../zcrud_screen/ZExportPolicy-class.html">ZExportPolicy</a>?</span> <span class="parameter-name">export</span>, </span></li>
 <li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
 </ol>})
     </section>
@@ -108,20 +126,43 @@
   this.layout,
   this.itemBuilder,
   this.tabs,
+  this.query = const ZListQueryPolicy(),
   this.header,
   this.canCreate = true,
+  this.canDuplicate = true,
+  this.titles,
   this.trash = ZTrashMode.auto,
+  this.trashPolicy = ZTrashPolicy.full,
+  this.trashCount,
+  this.mode = ZScreenMode.full,
+  this.detailsEnabled = false,
+  this.rowColor,
+  @Deprecated(
+    &#39;Utiliser `mode` : `readOnly: true` devient `mode: ZScreenMode.locked`, &#39;
+    &#39;et la fiche de détail (lecture seule AVEC retour vers l\&#39;édition) &#39;
+    &#39;devient `mode: ZScreenMode.details`. Sera retiré en 1.0.&#39;,
+  )
   this.readOnly = false,
   this.searchEnabled = true,
   this.onSave,
   this.editionBuilder,
   this.defaultItemBuilder,
   this.rowActions,
+  this.trashRowActions,
   this.columnPolicy,
   this.collectionId,
+  this.actions = const &lt;ZAppBarAction&gt;[],
   this.appBarActions = const &lt;Widget&gt;[],
   this.leading,
+  this.rowAcl,
   this.actionAclMode = ZActionAclMode.hide,
+  this.rowActionsPresentation = ZRowActionsPresentation.inline,
+  this.inlineActionLimit = 2,
+  this.longPressOwner = ZRowLongPressOwner.contextMenu,
+  this.confirmDestructive = true,
+  this.selection,
+  this.batchActions,
+  this.export,
   super.key,
 });</code></pre>
 </section>
@@ -151,7 +192,7 @@
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

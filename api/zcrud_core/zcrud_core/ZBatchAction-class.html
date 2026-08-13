@@ -59,6 +59,29 @@
 ⇒ action ABSENTE de la barre (AD-4). L'action s'exécute sur la sélection
 COURANTE : l'appelant (qui détient le contrôleur) lit la sélection dans
 son callback (ex. via <code>batchDelete</code>/<code>batchMove</code>/<code>applyCommonField</code>).</p>
+<p><strong>Absente ou inerte, deux choses distinctes</strong> — c'est le même partage que
+pour une action de ligne (<code>ZResolvedRowAction</code>) :</p>
+<table>
+<thead>
+<tr>
+<th>Déclaration</th>
+<th>Rendu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>onSelected == null</code></td>
+<td>l'action <strong>n'existe pas</strong> dans la barre</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZBatchAction/enabled.html">enabled</a> <code>== false</code></td>
+<td>l'action <strong>garde sa place</strong>, grisée, non actionnable, et annonce son motif</td>
+</tr>
+</tbody>
+</table>
+<p>La première forme sert au masquage ; la seconde à l'inertie — celle qu'un
+mode d'ACL « désactiver » attend, où l'utilisateur doit voir que le geste
+existe et apprendre pourquoi il lui est fermé.</p>
 </section>
 
 
@@ -88,7 +111,7 @@ son callback (ex. via <code>batchDelete</code>/<code>batchMove</code>/<code>appl
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZBatchAction.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZBatchAction/ZBatchAction.html">ZBatchAction</a></span><span class="signature">({<span class="parameter" id="param-kind"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZBatchActionKind.html">ZBatchActionKind</a></span> <span class="parameter-name">kind</span>, </span><span class="parameter" id="param-label"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">label</span>, </span><span class="parameter" id="param-icon"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a></span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="param-onSelected"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onSelected</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZBatchAction/ZBatchAction.html">ZBatchAction</a></span><span class="signature">({<span class="parameter" id="param-kind"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZBatchActionKind.html">ZBatchActionKind</a></span> <span class="parameter-name">kind</span>, </span><span class="parameter" id="param-label"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">label</span>, </span><span class="parameter" id="param-icon"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a></span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="param-onSelected"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onSelected</span>, </span><span class="parameter" id="param-enabled"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enabled</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-disabledReason"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">disabledReason</span></span>})</span>
         </dt>
         <dd>
           Construit une action de lot.
@@ -102,6 +125,35 @@ son callback (ex. via <code>batchDelete</code>/<code>batchMove</code>/<code>appl
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
+        <dt id="disabledReason" class="property">
+  <span class="name"><a href="../zcrud_core/ZBatchAction/disabledReason.html">disabledReason</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Motif LOCALISÉ INJECTÉ du refus, annoncé en <code>Semantics.hint</code> quand
+<a href="../zcrud_core/ZBatchAction/enabled.html">enabled</a> est <code>false</code> (<code>null</code> ⇒ aucun motif annoncé). Ignoré tant que
+l'action est active.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="enabled" class="property">
+  <span class="name"><a href="../zcrud_core/ZBatchAction/enabled.html">enabled</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>false</code> ⇒ l'action est rendue <strong>inerte</strong> : présente, grisée, non
+actionnable, et annoncée comme désactivée (<code>Semantics(enabled: false)</code>).
+<a href="../zcrud_core/ZBatchAction/onSelected.html">onSelected</a> n'est alors <strong>jamais</strong> invoqué — l'inertie porte sur
+l'apparence <em>et</em> sur l'effet.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="hashCode" class="property inherited">
   <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
@@ -259,7 +311,7 @@ son callback (ex. via <code>batchDelete</code>/<code>batchMove</code>/<code>appl
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

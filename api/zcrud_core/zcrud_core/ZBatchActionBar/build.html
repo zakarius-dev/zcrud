@@ -139,6 +139,8 @@ Widget build(BuildContext context) {
             icon: action.icon,
             label: action.label,
             onPressed: action.onSelected!,
+            enabled: action.enabled,
+            disabledReason: action.enabled ? null : action.disabledReason,
           ),
       ];
       return Semantics(
@@ -179,7 +181,8 @@ Widget build(BuildContext context) {
                   _BarButton(
                     icon: entry.icon,
                     label: entry.label,
-                    onPressed: entry.onPressed,
+                    onPressed: entry.enabled ? entry.onPressed : null,
+                    disabledReason: entry.disabledReason,
                   ),
                 if (overflow.isNotEmpty)
                   _OverflowMenu(entries: overflow, label: overflowLabel),
@@ -218,7 +221,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

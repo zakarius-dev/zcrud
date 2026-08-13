@@ -62,9 +62,11 @@
       </section>
       
 <section class="desc markdown">
-  <p>En-tête de la colonne de numéro d'ordre quand <a href="../../zcrud_list/ZSfDataGridRenderer/withOrderNumber.html">withOrderNumber</a> est actif.
-Défaut <code>'#'</code> (symbole ordinal universel, non dépendant de la langue).
-Personnalisable par l'hôte (sa propre l10n) sans toucher <code>zcrud_core</code>.</p>
+  <p>En-tête de la colonne de numéro d'ordre quand <a href="../../zcrud_list/ZSfDataGridRenderer/withOrderNumber.html">withOrderNumber</a> est le
+chemin retenu (cf. ci-dessus). Défaut <code>'#'</code> (symbole ordinal universel,
+non dépendant de la langue). Personnalisable par l'hôte (sa propre l10n)
+sans toucher <code>zcrud_core</code>. Sans effet quand la requête déclare son
+ordinal : c'est alors <code>ZListOrdinal.header</code> qui fait foi.</p>
 </section>
 
       
@@ -99,7 +101,7 @@ Personnalisable par l'hôte (sa propre l10n) sans toucher <code>zcrud_core</code
 <footer>
   <span class="no-break">
     zcrud_list
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

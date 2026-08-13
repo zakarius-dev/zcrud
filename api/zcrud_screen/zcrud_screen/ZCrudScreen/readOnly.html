@@ -27,7 +27,7 @@
     <li><a href="../../index.html">zcrud_screen</a></li>
     <li><a href="../../zcrud_screen/">zcrud_screen.dart</a></li>
     <li><a href="../../zcrud_screen/ZCrudScreen-class.html">ZCrudScreen<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></a></li>
-    <li class="self-crumb">readOnly property</li>
+    <li class="self-crumb"><span class="deprecated">readOnly</span> property</li>
   </ol>
   <div class="self-name">readOnly</div>
   <form class="search navbar-right" role="search">
@@ -55,8 +55,13 @@
     
       <section class="multi-line-signature">
         
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/Deprecated/Deprecated.html">Deprecated</a>(&#39;Utiliser `mode` : `readOnly: true` devient `mode: ZScreenMode.locked`. &#39; &#39;Sera retiré en 1.0.&#39;)</li>
+    </ol>
+  </div>
         <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>
-        <span class="name ">readOnly</span>
+        <span class="name deprecated">readOnly</span>
         <div class="features"><span class="feature">final</span></div>
 
       </section>
@@ -65,12 +70,45 @@
   <p>Consultation pure (défaut <code>false</code>) : ni création, ni édition, ni
 corbeille — les actions de ligne fournies via <a href="../../zcrud_screen/ZCrudScreen/rowActions.html">rowActions</a> restent
 rendues (elles appartiennent à l'app).</p>
+<p>⚠️ <strong>Déprécié — préférer <a href="../../zcrud_screen/ZCrudScreen/mode.html">mode</a></strong>. Correspondance exacte :</p>
+<table>
+<thead>
+<tr>
+<th>Ancien</th>
+<th>Nouveau</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>readOnly: false</code> (défaut)</td>
+<td><code>mode: ZScreenMode.full</code> (défaut)</td>
+</tr>
+<tr>
+<td><code>readOnly: true</code></td>
+<td><code>mode: ZScreenMode.locked</code></td>
+</tr>
+<tr>
+<td><em>(inexprimable)</em></td>
+<td><code>mode: ZScreenMode.details</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>readOnly: true</code> reste <strong>strictement</strong> équivalent à
+<a href="../../zcrud_screen/ZScreenMode.html">ZScreenMode.locked</a> : mêmes gestes retirés, même rendu. Le booléen ne
+savait pas dire la troisième chose — consulter la fiche complète, puis
+revenir à l'édition — d'où son remplacement par un mode à trois états.</p>
+<p>Quand les deux sont déclarés, <a href="../../zcrud_screen/ZCrudScreen/mode.html">mode</a> l'emporte (le booléen n'est lu que
+s'il vaut <code>mode: ZScreenMode.full</code>, c'est-à-dire le défaut).</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final bool readOnly;</code></pre>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(
+  &#39;Utiliser `mode` : `readOnly: true` devient `mode: ZScreenMode.locked`. &#39;
+  &#39;Sera retiré en 1.0.&#39;,
+)
+final bool readOnly;</code></pre>
 </section>
 
 
@@ -87,7 +125,7 @@ rendues (elles appartiennent à l'app).</p>
     <li><a href="../../index.html">zcrud_screen</a></li>
     <li><a href="../../zcrud_screen/">zcrud_screen</a></li>
     <li><a href="../../zcrud_screen/ZCrudScreen-class.html">ZCrudScreen<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></a></li>
-    <li class="self-crumb">readOnly property</li>
+    <li class="self-crumb"><span class="deprecated">readOnly</span> property</li>
 </ol>
 
   <h5>ZCrudScreen class</h5>
@@ -99,7 +137,7 @@ rendues (elles appartiennent à l'app).</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

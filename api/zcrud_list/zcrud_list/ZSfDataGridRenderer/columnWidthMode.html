@@ -55,22 +55,27 @@
     
       <section class="multi-line-signature">
         
-        <a href="https://pub.dev/documentation/syncfusion_flutter_datagrid/34.1.31/datagrid/ColumnWidthMode.html">ColumnWidthMode</a>
+        <a href="https://pub.dev/documentation/syncfusion_flutter_datagrid/34.1.31/datagrid/ColumnWidthMode.html">ColumnWidthMode</a>?
         <span class="name ">columnWidthMode</span>
         <div class="features"><span class="feature">final</span></div>
 
       </section>
       
 <section class="desc markdown">
-  <p>Mode de répartition des largeurs de colonnes. Défaut
-<a href="https://pub.dev/documentation/syncfusion_flutter_datagrid/34.1.31/datagrid/ColumnWidthMode.html">ColumnWidthMode.fill</a> : valeur strictement inchangée par rapport au
-rendu historique.</p>
+  <p>Mode de répartition des largeurs de colonnes, ou <code>null</code> (défaut) pour
+le laisser <strong>dériver</strong> de (plateforme × nombre de colonnes visibles) par
+<a href="../../zcrud_list/ZSfDataGridRenderer/responsiveColumnWidthMode.html">responsiveColumnWidthMode</a> — parité legacy.</p>
+<p>⚠️ <strong>Seul changement de défaut du lot</strong> : un hôte <strong>passif</strong> (qui ne
+passait pas ce paramètre) obtenait <code>fill</code> en toute circonstance ; il
+obtient désormais <code>fill</code> <strong>en deçà</strong> du seuil (≤ 3 colonnes en
+web/desktop, ≤ 1 en mobile) et <code>auto</code> au-delà. Pour figer l'ancien
+comportement : passer explicitement <code>columnWidthMode: ColumnWidthMode.fill</code>.</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final ColumnWidthMode columnWidthMode;</code></pre>
+  <pre class="language-dart"><code class="language-dart">final ColumnWidthMode? columnWidthMode;</code></pre>
 </section>
 
 
@@ -99,7 +104,7 @@ rendu historique.</p>
 <footer>
   <span class="no-break">
     zcrud_list
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

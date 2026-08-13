@@ -54,18 +54,20 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">ZWidgetRegistry</span>(<wbr>)
+      <span class="name ">ZWidgetRegistry</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-parent"><span class="type-annotation"><a href="../../zcrud_core/ZWidgetRegistry-class.html">ZWidgetRegistry</a>?</span> <span class="parameter-name">parent</span>, </span></li>
+</ol>})
     </section>
     
 <section class="desc markdown">
-  <p>Construit un registre de widgets vide.</p>
+  <p>Construit un registre de widgets, vide localement, chaîné sur un
+éventuel <code>parent</code> (lookup en cascade enfant → parent).</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">ZWidgetRegistry();</code></pre>
+  <pre class="language-dart"><code class="language-dart">ZWidgetRegistry({this.parent});</code></pre>
 </section>
 
 
@@ -93,7 +95,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

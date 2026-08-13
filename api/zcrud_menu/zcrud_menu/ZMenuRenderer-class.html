@@ -84,6 +84,7 @@ liste vide rend un déclencheur inerte, jamais une exception.</li>
           <dt>Implementers</dt>
           <dd><ul class="comma-separated clazz-relationships">
               <li><a href="../zcrud_menu/ZDefaultMenuRenderer-class.html">ZDefaultMenuRenderer</a></li>
+              <li><a href="../zcrud_menu/ZGridMenuRenderer-class.html">ZGridMenuRenderer</a></li>
           </ul></dd>
 
         
@@ -171,6 +172,21 @@ liste vide rend un déclencheur inerte, jamais une exception.</li>
 
 </dd>
 
+        <dt id="openAt" class="callable">
+  <span class="name"><a href="../zcrud_menu/ZMenuRenderer/openAt.html">openAt</a></span><span class="signature">(<wbr><span class="parameter" id="openAt-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="openAt-param-request"><span class="type-annotation"><a href="../zcrud_menu/ZMenuRequest-class.html">ZMenuRequest</a></span> <span class="parameter-name">request</span>, </span><span class="parameter" id="openAt-param-globalPosition"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Offset-class.html">Offset</a></span> <span class="parameter-name">globalPosition</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Ouvre la MÊME surface <strong>sans déclencheur visible</strong>, à la position globale
+<code>globalPosition</code> — c'est la voie du geste contextuel (clic droit sur
+pointeur, appui long sur tactile), servie par <code>ZContextMenuRegion</code>.
+  
+
+</dd>
+
         <dt id="toString" class="callable inherited">
   <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
@@ -234,7 +250,7 @@ liste vide rend un déclencheur inerte, jamais une exception.</li>
 <footer>
   <span class="no-break">
     zcrud_menu
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

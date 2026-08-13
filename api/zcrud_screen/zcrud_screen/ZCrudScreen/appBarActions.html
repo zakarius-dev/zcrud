@@ -27,7 +27,7 @@
     <li><a href="../../index.html">zcrud_screen</a></li>
     <li><a href="../../zcrud_screen/">zcrud_screen.dart</a></li>
     <li><a href="../../zcrud_screen/ZCrudScreen-class.html">ZCrudScreen<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></a></li>
-    <li class="self-crumb">appBarActions property</li>
+    <li class="self-crumb"><span class="deprecated">appBarActions</span> property</li>
   </ol>
   <div class="self-name">appBarActions</div>
   <form class="search navbar-right" role="search">
@@ -55,20 +55,44 @@
     
       <section class="multi-line-signature">
         
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/Deprecated/Deprecated.html">Deprecated</a>(&#39;Utiliser `actions` (List&lt;ZAppBarAction&gt;) : une action déclarée en &#39; &#39;données porte son semanticLabel et son débordement. Sera retiré en 1.0.&#39;)</li>
+    </ol>
+  </div>
         <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>&gt;</span>
-        <span class="name ">appBarActions</span>
+        <span class="name deprecated">appBarActions</span>
         <div class="features"><span class="feature">final</span></div>
 
       </section>
       
 <section class="desc markdown">
-  <p>Boutons additionnels de l'<code>AppBar</code> (avant les boutons assemblés).</p>
+  <p>Boutons additionnels de l'<code>AppBar</code> sous forme de <strong>widgets déjà
+construits</strong> (avant les boutons assemblés).</p>
+<p>⚠️ <strong>Déprécié — préférer <a href="../../zcrud_screen/ZCrudScreen/actions.html">actions</a></strong>. L'app-bar de l'écran est désormais
+celle de <code>zcrud_ui_kit</code> (<code>ZSearchableAppBar</code>), dont les actions sont des
+<strong>données</strong> (<code>ZAppBarAction</code>) : un widget déjà construit ne peut y être
+transmis qu'emballé (<code>ZAppBarAction.widget</code>), ce qui a deux effets
+<strong>mesurés</strong> :</p>
+<ul>
+<li>le tap reste fonctionnel (le bouton de l'hôte reçoit bien le geste —
+l'emballage est rendu <code>onPressed: null</code>, donc inerte) ;</li>
+<li>la sémantique <strong>propre</strong> du widget de l'hôte (tooltip, libellé) est
+masquée par l'<code>ExcludeSemantics</code> du socle et n'est <strong>pas</strong> remplacée
+(aucun <code>semanticLabel</code> n'est dérivable d'un widget opaque) ;</li>
+<li>la boîte du bouton passe de 48 dp à 64 dp de large (double rembourrage).</li>
+</ul>
+<p>Une action déclarée via <a href="../../zcrud_screen/ZCrudScreen/actions.html">actions</a> n'a <strong>aucun</strong> de ces défauts.</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final List&lt;Widget&gt; appBarActions;</code></pre>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(
+  &#39;Utiliser `actions` (List&lt;ZAppBarAction&gt;) : une action déclarée en &#39;
+  &#39;données porte son semanticLabel et son débordement. Sera retiré en 1.0.&#39;,
+)
+final List&lt;Widget&gt; appBarActions;</code></pre>
 </section>
 
 
@@ -85,7 +109,7 @@
     <li><a href="../../index.html">zcrud_screen</a></li>
     <li><a href="../../zcrud_screen/">zcrud_screen</a></li>
     <li><a href="../../zcrud_screen/ZCrudScreen-class.html">ZCrudScreen<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></a></li>
-    <li class="self-crumb">appBarActions property</li>
+    <li class="self-crumb"><span class="deprecated">appBarActions</span> property</li>
 </ol>
 
   <h5>ZCrudScreen class</h5>
@@ -97,7 +121,7 @@
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

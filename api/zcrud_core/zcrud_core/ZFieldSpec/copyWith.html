@@ -75,6 +75,8 @@
 <li><span class="parameter" id="copyWith-param-hintText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">hintText</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-helperText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">helperText</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-derivedFrom"><span class="type-annotation"><a href="../../zcrud_core/ZDerivation-class.html">ZDerivation</a>?</span> <span class="parameter-name">derivedFrom</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-widgetKind"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">widgetKind</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-choicesResolver"><span class="type-annotation"><a href="../../zcrud_core/ZChoicesResolver.html">ZChoicesResolver</a>?</span> <span class="parameter-name">choicesResolver</span>, </span></li>
 </ol>})
 
       
@@ -113,6 +115,8 @@ respectent déjà <code>field.readOnly</code>.</p>
   String? hintText,
   String? helperText,
   ZDerivation? derivedFrom,
+  String? widgetKind,
+  ZChoicesResolver? choicesResolver,
 }) =&gt;
     ZFieldSpec(
       name: name ?? this.name,
@@ -135,6 +139,8 @@ respectent déjà <code>field.readOnly</code>.</p>
       hintText: hintText ?? this.hintText,
       helperText: helperText ?? this.helperText,
       derivedFrom: derivedFrom ?? this.derivedFrom,
+      widgetKind: widgetKind ?? this.widgetKind,
+      choicesResolver: choicesResolver ?? this.choicesResolver,
     );</code></pre>
 </section>
 
@@ -163,7 +169,7 @@ respectent déjà <code>field.readOnly</code>.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

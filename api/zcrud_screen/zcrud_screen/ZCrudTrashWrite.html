@@ -53,19 +53,26 @@
 </h1></div>
     <section class="multi-line-signature">
         <span class="name ">ZCrudTrashWrite</span>&lt;<wbr><span class="type-parameter">T</span>&gt; =
-     <span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/FutureOr-class.html">FutureOr</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>)</span></span>
+     <span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/FutureOr-class.html">FutureOr</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>)</span></span>
 
     </section>
 
     
 <section class="desc markdown">
-  <p>Écriture de corbeille (soft-delete ou restore) déléguée à l'application.</p>
+  <p>Écriture de corbeille (mise à la corbeille, restauration, purge) déléguée à
+l'application.</p>
+<p>Le <code>BuildContext</code> est celui de la <strong>ligne</strong> au moment du geste : il permet à
+l'application de demander sa propre confirmation, d'afficher une notification
+ou de naviguer, sans avoir à capturer un contexte extérieur.</p>
 </section>
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">typedef ZCrudTrashWrite&lt;T&gt; = FutureOr&lt;void&gt; Function(T entity);</code></pre>
+  <pre class="language-dart"><code class="language-dart">typedef ZCrudTrashWrite&lt;T&gt; = FutureOr&lt;void&gt; Function(
+  BuildContext context,
+  T entity,
+);</code></pre>
 </section>
 
   </div> <!-- /.main-content -->
@@ -91,7 +98,7 @@
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

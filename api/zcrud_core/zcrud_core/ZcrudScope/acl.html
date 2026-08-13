@@ -62,7 +62,10 @@
       </section>
       
 <section class="desc markdown">
-  <p>Port d'autorisation (défaut : permissif <a href="../../zcrud_core/ZAllowAllAcl-class.html">ZAllowAllAcl</a>).</p>
+  <p>Port d'autorisation (défaut <strong>fail-closed</strong> : <a href="../../zcrud_core/ZDenyAllAcl-class.html">ZDenyAllAcl</a>).</p>
+<p>Sans ACL déclarée, aucun geste n'est offert. Pour une ouverture totale
+assumée (développement, prototype), déclarez-la :
+<code>ZcrudScope(acl: const ZAllowAllAcl())</code>.</p>
 </section>
 
       
@@ -97,7 +100,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

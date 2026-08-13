@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZListQueryPolicy class from the zcrud_screen library, for the Dart programming language.">
+  <title>ZListQueryPolicy class - zcrud_screen library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_screen</a></li>
+    <li><a href="../zcrud_screen/">zcrud_screen.dart</a></li>
+    <li class="self-crumb">ZListQueryPolicy class</li>
+  </ol>
+  <div class="self-name">ZListQueryPolicy</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_screen&#47;zcrud_screen-library-sidebar.html"
+    data-below-sidebar="zcrud_screen&#47;ZListQueryPolicy-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZListQueryPolicy</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Tri par défaut, filtres permanents, taille de page et sémantique de
+recherche d'un listing <strong>déclarés</strong> sur l'écran.</p>
+<h2 id="ce-que-chaque-rglage-veut-dire-et-ce-quil-ne-fait-jamais">Ce que chaque réglage veut dire, et ce qu'il ne fait jamais</h2>
+<table>
+<thead>
+<tr>
+<th>Réglage</th>
+<th>Effet</th>
+<th>Ce qui l'emporte</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../zcrud_screen/ZListQueryPolicy/sort.html">sort</a></td>
+<td>ordre du <strong>premier</strong> rendu</td>
+<td>un tri demandé ensuite le <strong>remplace</strong></td>
+</tr>
+<tr>
+<td><a href="../zcrud_screen/ZListQueryPolicy/baseFilters.html">baseFilters</a></td>
+<td>filtres <strong>permanents</strong> de l'écran</td>
+<td>rien : un filtre de l'usager s'y <strong>ajoute</strong></td>
+</tr>
+<tr>
+<td><a href="../zcrud_screen/ZListQueryPolicy/pageSize.html">pageSize</a></td>
+<td>taille de page du listing paginé</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="../zcrud_screen/ZListQueryPolicy/searchScope.html">searchScope</a></td>
+<td>colonnes que la recherche interroge</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="../zcrud_screen/ZListQueryPolicy/searchFolding.html">searchFolding</a></td>
+<td>ce que la recherche ignore en comparant</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>La différence entre les deux premières lignes est la clé : un <strong>tri</strong> est
+un point de vue, il se remplace ; un <strong>filtre de base</strong> est une règle de
+l'écran (« ce listing ne montre jamais les archives »), il ne se remplace
+pas. C'est pourquoi le tri passe par <a href="../zcrud_screen/ZListQueryPolicy/sortFor.html">sortFor</a> (« celui-ci, ou le mien à
+défaut ») et les filtres par <a href="../zcrud_screen/ZListQueryPolicy/filtersWith.html">filtersWith</a> (« les miens, puis les vôtres »).</p>
+<h2 id="composition-avec-le-reste-de-lcran">Composition avec le reste de l'écran</h2>
+<ul>
+<li><strong>Corbeille</strong> — la vue corbeille reste une vue corbeille : la portée de
+suppression qu'elle impose n'est pas touchée, les filtres permanents et
+le tri par défaut s'y appliquent <strong>en plus</strong>.</li>
+<li><strong>Onglets</strong> — un onglet catégorise par ses propres filtres. Une page
+d'onglet qui veut hériter des filtres permanents de l'écran les compose
+par <a href="../zcrud_screen/ZListQueryPolicy/filtersWith.html">filtersWith</a> : les permanents d'abord, la catégorie ensuite, jamais
+l'un à la place de l'autre.</li>
+<li><strong>Recherche</strong> — la recherche est un terme, pas un filtre : elle
+n'efface ni les filtres permanents ni le tri, et élargir son domaine
+(<a href="../zcrud_screen/ZListQueryPolicy/searchScope.html">searchScope</a>) ne la fait pas déborder d'un filtre permanent ni de la
+vue corbeille — elle cherche <strong>dans</strong> ce que la requête a déjà réduit.</li>
+</ul>
+<p>Immuable, comparable par valeur : deux politiques égales ne provoquent
+aucune reconstruction (AD-2).</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://api.flutter.dev/flutter/meta/immutable-constant.html">immutable</a></li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZListQueryPolicy.new" class="callable">
+          <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/ZListQueryPolicy.html">ZListQueryPolicy</a></span><span class="signature">({<span class="parameter" id="param-sort"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSort</span>&gt;</span></span> <span class="parameter-name">sort</span> = <span class="default-value">const &lt;ZSort&gt;[]</span>, </span><span class="parameter" id="param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilter</span>&gt;</span></span> <span class="parameter-name">baseFilters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span><span class="parameter" id="param-pageSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">pageSize</span>, </span><span class="parameter" id="param-searchScope"><span class="type-annotation">ZSearchScope</span> <span class="parameter-name">searchScope</span> = <span class="default-value">ZSearchScope.searchableFields</span>, </span><span class="parameter" id="param-searchFolding"><span class="type-annotation">ZSearchFolding</span> <span class="parameter-name">searchFolding</span> = <span class="default-value">ZSearchFolding.diacritics</span></span>})</span>
+        </dt>
+        <dd>
+          Déclare la politique de requête. Tout est optionnel — la politique par
+défaut ne déclare rien et laisse le comportement inchangé.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZListQueryPolicy.legacySearch" class="callable">
+          <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/ZListQueryPolicy.legacySearch.html">ZListQueryPolicy.legacySearch</a></span><span class="signature">({<span class="parameter" id="legacySearch-param-sort"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSort</span>&gt;</span></span> <span class="parameter-name">sort</span> = <span class="default-value">const &lt;ZSort&gt;[]</span>, </span><span class="parameter" id="legacySearch-param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilter</span>&gt;</span></span> <span class="parameter-name">baseFilters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span><span class="parameter" id="legacySearch-param-pageSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">pageSize</span></span>})</span>
+        </dt>
+        <dd>
+          Raccourci de la <strong>parité avec les moteurs de liste historiques</strong> : la
+recherche interroge <strong>toutes</strong> les colonnes déclarées et ignore les
+blancs.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZListQueryPolicy.sortedBy" class="callable">
+          <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/ZListQueryPolicy.sortedBy.html">ZListQueryPolicy.sortedBy</a></span><span class="signature">(<span class="parameter" id="sortedBy-param-field"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">field</span>, {</span><span class="parameter" id="sortedBy-param-direction"><span class="type-annotation">ZSortDirection</span> <span class="parameter-name">direction</span> = <span class="default-value">ZSortDirection.asc</span>, </span><span class="parameter" id="sortedBy-param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilter</span>&gt;</span></span> <span class="parameter-name">baseFilters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span><span class="parameter" id="sortedBy-param-pageSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">pageSize</span>, </span><span class="parameter" id="sortedBy-param-searchScope"><span class="type-annotation">ZSearchScope</span> <span class="parameter-name">searchScope</span> = <span class="default-value">ZSearchScope.searchableFields</span>, </span><span class="parameter" id="sortedBy-param-searchFolding"><span class="type-annotation">ZSearchFolding</span> <span class="parameter-name">searchFolding</span> = <span class="default-value">ZSearchFolding.diacritics</span></span>})</span>
+        </dt>
+        <dd>
+          Raccourci du cas courant : <strong>trier par un champ</strong>, éventuellement avec
+des filtres permanents et une taille de page.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="baseFilters" class="property">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/baseFilters.html">baseFilters</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilter</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  <strong>Filtres permanents</strong> de l'écran, présents dans <strong>chaque</strong> requête —
+première page, page suivante, recherche, vue corbeille comprise.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="declaresNothing" class="property">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/declaresNothing.html">declaresNothing</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> quand la politique ne déclare <strong>rien</strong> — l'écran se comporte alors
+exactement comme sans politique du tout.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="pageSize" class="property">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/pageSize.html">pageSize</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Taille de page</strong> du listing paginé (<code>null</code> par défaut = non paginé,
+comportement historique).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="searchFolding" class="property">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/searchFolding.html">searchFolding</a></span>
+  <span class="signature">&#8594; ZSearchFolding</span>
+  
+
+</dt>
+<dd>
+  <strong>Ce que la recherche ignore</strong> en comparant le terme aux valeurs.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="searchScope" class="property">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/searchScope.html">searchScope</a></span>
+  <span class="signature">&#8594; ZSearchScope</span>
+  
+
+</dt>
+<dd>
+  <strong>Colonnes interrogées</strong> par la recherche plein-texte.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="sort" class="property">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/sort.html">sort</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSort</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  <strong>Tri par défaut</strong> du listing, appliqué au premier rendu et à toute
+requête qui n'en porte pas d'autre (recherche, changement de page,
+rafraîchissement après écriture).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="applyTo" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/applyTo.html">applyTo</a></span><span class="signature">(<wbr><span class="parameter" id="applyTo-param-request"><span class="type-annotation">ZDataRequest</span> <span class="parameter-name">request</span></span>)
+    <span class="returntype parameter">&#8594; ZDataRequest</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Pose la politique sur une <code>request</code> : filtres permanents <strong>en tête</strong> des
+filtres déjà présents, tri par défaut si la requête n'en porte aucun,
+taille de page si la requête n'en fixe aucune, et sémantique de recherche
+déclarée.
+  
+
+</dd>
+
+        <dt id="copyWith" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-sort"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSort</span>&gt;</span>?</span> <span class="parameter-name">sort</span>, </span><span class="parameter" id="copyWith-param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilter</span>&gt;</span>?</span> <span class="parameter-name">baseFilters</span>, </span><span class="parameter" id="copyWith-param-pageSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">pageSize</span>, </span><span class="parameter" id="copyWith-param-searchScope"><span class="type-annotation">ZSearchScope?</span> <span class="parameter-name">searchScope</span>, </span><span class="parameter" id="copyWith-param-searchFolding"><span class="type-annotation">ZSearchFolding?</span> <span class="parameter-name">searchFolding</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Copie modifiée de la politique.
+  
+
+</dd>
+
+        <dt id="filtersWith" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/filtersWith.html">filtersWith</a></span><span class="signature">(<wbr><span class="parameter" id="filtersWith-param-extra"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilter</span>&gt;</span></span> <span class="parameter-name">extra</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilter</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Les filtres à appliquer quand <code>extra</code> s'ajoute aux filtres permanents :
+<strong>les permanents d'abord, <code>extra</code> ensuite</strong>.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="sortFor" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/sortFor.html">sortFor</a></span><span class="signature">(<wbr><span class="parameter" id="sortFor-param-requested"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSort</span>&gt;</span></span> <span class="parameter-name">requested</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSort</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le tri effectif quand <code>requested</code> est le tri demandé : <code>requested</code> s'il
+en porte un, sinon le tri par défaut <a href="../zcrud_screen/ZListQueryPolicy/sort.html">sort</a>.
+  
+
+</dd>
+
+        <dt id="toString" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A string representation of this object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="maybeOf" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/maybeOf.html">maybeOf</a></span><span class="signature">(<wbr><span class="parameter" id="maybeOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  La politique de l'écran englobant, ou <code>null</code> hors d'un écran qui en
+déclare une.
+  
+
+</dd>
+
+        <dt id="of" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZListQueryPolicy/of.html">of</a></span><span class="signature">(<wbr><span class="parameter" id="of-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  La politique de l'écran englobant, ou une politique <strong>vide</strong> hors écran —
+la forme à préférer quand l'appelant veut composer sans se soucier de
+l'absence.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_screen</a></li>
+    <li><a href="../zcrud_screen/">zcrud_screen</a></li>
+    <li class="self-crumb">ZListQueryPolicy class</li>
+</ol>
+
+    <h5>zcrud_screen library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_screen
+      0.94.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

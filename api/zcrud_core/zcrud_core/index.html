@@ -173,7 +173,7 @@ du cœur (invariant AD-1).
 
 </dt>
 <dd>
-  Implémentation <strong>permissive</strong> par défaut (zéro-config) : autorise tout.
+  Implémentation <strong>permissive</strong> : autorise tout, sans condition.
 </dd>
 
           <dt id="ZAppFileField">
@@ -331,14 +331,25 @@ AD-10, jamais de throw). Exposé <code>@visibleForTesting</code> pour l'exercer 
 passer par un <code>showDialog</code>.
 </dd>
 
+          <dt id="ZColumnOverride">
+  <span class="name "><a href="../zcrud_core/ZColumnOverride-class.html">ZColumnOverride</a></span> 
+
+</dt>
+<dd>
+  <strong>Réglages d'une colonne précise</strong>, appliqués par <a href="../zcrud_core/deriveColumns.html">deriveColumns</a> par-dessus
+ce que le schéma dicte.
+</dd>
+
           <dt id="ZColumnPolicy">
   <span class="name "><a href="../zcrud_core/ZColumnPolicy-class.html">ZColumnPolicy</a></span> 
 
 </dt>
 <dd>
   <strong>Politique de colonnes</strong> additive (AD-4) : permet à l'appelant de forcer
-l'inclusion/exclusion d'un champ par <code>name</code>, SANS modifier <code>ZFieldSpec</code> ni les
-annotations <code>@ZcrudField</code> (gelées). Point d'extension <code>const</code>-compatible.
+l'inclusion/exclusion d'un champ par <code>name</code>, de régler une colonne précise
+(<a href="../zcrud_core/ZColumnPolicy/overrides.html">overrides</a>) et de demander la colonne de numéro d'ordre (<a href="../zcrud_core/ZColumnPolicy/ordinal.html">ordinal</a>), SANS
+modifier <code>ZFieldSpec</code> ni les annotations <code>@ZcrudField</code> (gelées). Point
+d'extension <code>const</code>-compatible.
 </dd>
 
           <dt id="ZCondition">
@@ -417,6 +428,22 @@ et la testabilité).
 <dd>
   Extension de thème du chrome CRUD (FR-26). Couleurs sémantiques dérivées au
 repli ; espacements/rayons/insets directionnels comme tokens injectables.
+</dd>
+
+          <dt id="ZCrudTitles">
+  <span class="name "><a href="../zcrud_core/ZCrudTitles-class.html">ZCrudTitles</a></span> 
+
+</dt>
+<dd>
+  Titres des quatre modes de la surface d'édition d'un <code>ZCrudScreen</code>.
+</dd>
+
+          <dt id="ZCurrencyFormat">
+  <span class="name "><a href="../zcrud_core/ZCurrencyFormat-class.html">ZCurrencyFormat</a></span> 
+
+</dt>
+<dd>
+  <strong>Format monétaire d'une colonne, dont la devise peut venir de la LIGNE.</strong>
 </dd>
 
           <dt id="ZCursor">
@@ -528,6 +555,15 @@ Les bornes s'expriment soit comme <strong>clés d'autres champs</strong>
   Contexte <strong>immuable</strong> de (dé)codage, injecté au <a href="../zcrud_core/ZcrudRegistry-class.html">ZcrudRegistry</a> au bootstrap
 et threadé par lui aux <code>fromMap</code>/<code>toMap</code> conscients du contexte des entités
 extensibles (voir <code>ZModelCodec.fromMapWithContext</code>/<code>toMapWithContext</code>).
+</dd>
+
+          <dt id="ZDenyAllAcl">
+  <span class="name "><a href="../zcrud_core/ZDenyAllAcl-class.html">ZDenyAllAcl</a></span> 
+
+</dt>
+<dd>
+  Implémentation <strong>refusante</strong> : interdit tout, sans condition. C'est le
+<strong>repli par défaut</strong> du socle quand aucune ACL n'a été déclarée.
 </dd>
 
           <dt id="ZDependencyResolver">
@@ -679,6 +715,15 @@ champs qu'elle regroupe. Peut être <strong>repliable</strong> (<a href="../zcru
 </dt>
 <dd>
   Contrat abstrait d'une entité canonique persistable.
+</dd>
+
+          <dt id="ZExportedBytes">
+  <span class="name "><a href="../zcrud_core/ZExportedBytes-class.html">ZExportedBytes</a></span> 
+
+</dt>
+<dd>
+  Un fichier produit par un export : ses <strong>octets</strong>, un nom suggéré et son
+type MIME.
 </dd>
 
           <dt id="ZExtension">
@@ -891,7 +936,7 @@ persistance disque relève du binding/app, jamais du cœur.
 </dt>
 <dd>
   Vue <strong>liste</strong> : rend un <code>ListView.builder</code> <strong>dans le cœur</strong> (Material-free),
-une entrée par ligne construite par <a href="../zcrud_core/ZListBuilderLayout/itemBuilder.html">itemBuilder</a>. N'exige AUCUN renderer.
+une entrée par ligne. N'exige AUCUN renderer.
 </dd>
 
           <dt id="ZListColumn">
@@ -949,6 +994,14 @@ partir du <code>ZListRenderRequest</code> complet. N'exige AUCUN renderer.
 dérivé de la <code>ZFailure</code> + <code>Semantics(liveRegion: true)</code> (erreur <strong>annoncée</strong>).
 </dd>
 
+          <dt id="ZListExporter">
+  <span class="name "><a href="../zcrud_core/ZListExporter-class.html">ZListExporter</a></span> 
+
+</dt>
+<dd>
+  Contrat d'un <strong>format d'export</strong> de liste.
+</dd>
+
           <dt id="ZListFormat">
   <span class="name "><a href="../zcrud_core/ZListFormat-class.html">ZListFormat</a></span> 
 
@@ -1002,6 +1055,16 @@ progression + <code>Semantics(liveRegion: true)</code>.
   <strong>Aucun résultat après filtre/recherche</strong> — <strong>distinct</strong> d'<a href="../zcrud_core/ZListEmpty-class.html">ZListEmpty</a>
 (message différent). Ce fichier rend cet état ; le contrôleur de liste le
 <strong>décide</strong> (mapping selon qu'un filtre est actif).
+</dd>
+
+          <dt id="ZListOrdinal">
+  <span class="name "><a href="../zcrud_core/ZListOrdinal-class.html">ZListOrdinal</a></span> 
+
+</dt>
+<dd>
+  <strong>Colonne de numéro d'ordre</strong> (« # ») déclarée dans le cœur, donc disponible
+pour <strong>tous</strong> les rendus (tableau, cartes, grille, export) et non plus pour
+un seul backend.
 </dd>
 
           <dt id="ZListPage">
@@ -1351,6 +1414,15 @@ mutable).
   Nombre de colonnes qu'occupe un champ <strong>par breakpoint</strong> (1..12).
 </dd>
 
+          <dt id="ZRestrictedAcl">
+  <span class="name "><a href="../zcrud_core/ZRestrictedAcl-class.html">ZRestrictedAcl</a></span> 
+
+</dt>
+<dd>
+  Composition <strong>restrictive</strong> de deux autorisations : un geste n'est offert
+que si <a href="../zcrud_core/ZRestrictedAcl/base.html">base</a> <strong>et</strong> <a href="../zcrud_core/ZRestrictedAcl/restriction.html">restriction</a> l'accordent tous les deux.
+</dd>
+
           <dt id="ZRichTextRenderer">
   <span class="name "><a href="../zcrud_core/ZRichTextRenderer-class.html">ZRichTextRenderer</a></span> 
 
@@ -1373,6 +1445,14 @@ mutable).
 </dt>
 <dd>
   Champ d'édition à <strong>puces mono-choix</strong> (rangée depuis <code>field.choices</code>).
+</dd>
+
+          <dt id="ZRowPermissions">
+  <span class="name "><a href="../zcrud_core/ZRowPermissions-class.html">ZRowPermissions</a></span> 
+
+</dt>
+<dd>
+  Droits effectifs d'<strong>une ligne</strong>, exprimés en <strong>restrictions</strong>.
 </dd>
 
           <dt id="ZSectionCollapseStore">
@@ -1722,6 +1802,14 @@ indépendante par onglet, état préservé au switch).
   État d'affichage <strong>booléen</strong> : révélation, déplié/replié, ouvert/fermé…
 </dd>
 
+          <dt id="ZTrashPolicy">
+  <span class="name "><a href="../zcrud_core/ZTrashPolicy-class.html">ZTrashPolicy</a></span> 
+
+</dt>
+<dd>
+  Gestes de corbeille <strong>voulus</strong> par la déclaration.
+</dd>
+
           <dt id="ZTypeRegistry">
   <span class="name "><a href="../zcrud_core/ZTypeRegistry-class.html">ZTypeRegistry</a></span> 
 
@@ -1906,6 +1994,14 @@ applicatif.
   Action CRUD soumise à autorisation. Valeurs en <strong>camelCase</strong> (canonique §5).
 </dd>
 
+          <dt id="ZCurrencyPlacement">
+  <span class="name "><a href="../zcrud_core/ZCurrencyPlacement.html">ZCurrencyPlacement</a></span> 
+
+</dt>
+<dd>
+  Place du code monétaire par rapport au montant.
+</dd>
+
           <dt id="ZDateMode">
   <span class="name "><a href="../zcrud_core/ZDateMode.html">ZDateMode</a></span> 
 
@@ -1999,6 +2095,15 @@ il dit OÙ va le pied, jamais ce qu'il contient.
   Stratégie de pagination du <a href="../zcrud_core/ZListController-class.html">ZListController</a>.
 </dd>
 
+          <dt id="ZListSelectionActivation">
+  <span class="name "><a href="../zcrud_core/ZListSelectionActivation.html">ZListSelectionActivation</a></span> 
+
+</dt>
+<dd>
+  <strong>Comment la sélection s'ouvre</strong> — à distinguer de <a href="../zcrud_core/ZListSelectionMode.html">ZListSelectionMode</a>, qui
+dit seulement combien d'éléments elle admet.
+</dd>
+
           <dt id="ZListSelectionMode">
   <span class="name "><a href="../zcrud_core/ZListSelectionMode.html">ZListSelectionMode</a></span> 
 
@@ -2013,6 +2118,25 @@ il dit OÙ va le pied, jamais ce qu'il contient.
 </dt>
 <dd>
   Action décidée par le <a href="../zcrud_core/ZLwwResolver-class.html">ZLwwResolver</a> pour un <code>id</code> donné.
+</dd>
+
+          <dt id="ZSearchFolding">
+  <span class="name "><a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> 
+
+</dt>
+<dd>
+  Profondeur de normalisation appliquée <strong>des deux côtés</strong> d'une recherche
+(le terme saisi et la valeur interrogée). Valeurs en <strong>camelCase</strong>
+(canonique §5).
+</dd>
+
+          <dt id="ZSearchScope">
+  <span class="name "><a href="../zcrud_core/ZSearchScope.html">ZSearchScope</a></span> 
+
+</dt>
+<dd>
+  <strong>Domaine de colonnes</strong> interrogé par la recherche plein-texte d'une
+requête. Valeurs en <strong>camelCase</strong> (canonique §5).
 </dd>
 
           <dt id="ZSortDirection">
@@ -2209,6 +2333,14 @@ déterministe vit en présentation, invariants AD-2/AD-15).
   Mixin exposant les deux voies d'extension AD-4 sur une entité :
 </dd>
 
+          <dt id="ZPurgeable">
+  <span class="name "><a href="../zcrud_core/ZPurgeable-mixin.html">ZPurgeable</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Déclare qu'un dépôt sait <strong>supprimer définitivement</strong> une entité.
+</dd>
+
       </dl>
     </section>
 
@@ -2224,6 +2356,16 @@ déterministe vit en présentation, invariants AD-2/AD-15).
 </dt>
 <dd>
   Classification <strong>lecture / écriture</strong> d'une action CRUD.
+</dd>
+
+          <dt id="ZListExporterSafely">
+  <span class="name "><a href="../zcrud_core/ZListExporterSafely.html">ZListExporterSafely</a></span>
+  on <a href="../zcrud_core/ZListExporter-class.html">ZListExporter</a>
+  
+
+</dt>
+<dd>
+  Appel <strong>blindé</strong> d'un exporteur (invariant AD-10).
 </dd>
 
       </dl>
@@ -2468,6 +2610,19 @@ les autres.
 
 </dd>
 
+          <dt id="zAdaptEntityTile" class="callable">
+  <span class="name"><a href="../zcrud_core/zAdaptEntityTile.html">zAdaptEntityTile</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="zAdaptEntityTile-param-builder"><span class="type-annotation"><a href="../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">builder</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Adapte un <a href="../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a> typé <code>T</code> en builder de surface <code>ZEntity</code>.
+  
+
+</dd>
+
           <dt id="zApplyListRequest" class="callable">
   <span class="name"><a href="../zcrud_core/zApplyListRequest.html">zApplyListRequest</a></span><span class="signature">(<wbr><span class="parameter" id="zApplyListRequest-param-rows"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span>&gt;</span></span> <span class="parameter-name">rows</span>, </span><span class="parameter" id="zApplyListRequest-param-request"><span class="type-annotation"><a href="../zcrud_core/ZDataRequest-class.html">ZDataRequest</a></span> <span class="parameter-name">request</span>, {</span><span class="parameter" id="zApplyListRequest-param-schema"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">schema</span></span>})
     <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZListPage-class.html">ZListPage</a></span>
@@ -2613,6 +2768,20 @@ automatiquement — l'hôte le branche explicitement s'il en veut un.
 
 </dd>
 
+          <dt id="zExportFileName" class="callable">
+  <span class="name"><a href="../zcrud_core/zExportFileName.html">zExportFileName</a></span><span class="signature">(<wbr><span class="parameter" id="zExportFileName-param-title"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span>, </span><span class="parameter" id="zExportFileName-param-extension"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">extension</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Compose un <strong>nom de fichier</strong> sûr à partir d'un <code>title</code> libre et d'une
+<code>extension</code> sans point.
+  
+
+</dd>
+
           <dt id="zExtraRead" class="callable">
   <span class="name"><a href="../zcrud_core/zExtraRead.html">zExtraRead</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="zExtraRead-param-extra"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">extra</span>, </span><span class="parameter" id="zExtraRead-param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">key</span></span>)
     <span class="returntype parameter">&#8594; T?</span>
@@ -2659,8 +2828,21 @@ appelée par <a href="../zcrud_core/DynamicEdition-class.html">DynamicEdition</a
 
 </dd>
 
+          <dt id="zFlattenPaths" class="callable">
+  <span class="name"><a href="../zcrud_core/zFlattenPaths.html">zFlattenPaths</a></span><span class="signature">(<wbr><span class="parameter" id="zFlattenPaths-param-source"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">source</span>, {</span><span class="parameter" id="zFlattenPaths-param-paths"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">paths</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Aplati les valeurs <strong>imbriquées</strong> de <code>source</code> sous leurs clés <strong>pointées</strong>.
+  
+
+</dd>
+
           <dt id="zFoldDiacritics" class="callable">
-  <span class="name"><a href="../zcrud_core/zFoldDiacritics.html">zFoldDiacritics</a></span><span class="signature">(<wbr><span class="parameter" id="zFoldDiacritics-param-input"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">input</span></span>)
+  <span class="name"><a href="../zcrud_core/zFoldDiacritics.html">zFoldDiacritics</a></span><span class="signature">(<wbr><span class="parameter" id="zFoldDiacritics-param-input"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">input</span>, {</span><span class="parameter" id="zFoldDiacritics-param-folding"><span class="type-annotation"><a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> <span class="parameter-name">folding</span> = <span class="default-value">ZSearchFolding.diacritics</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
   </span>
   
@@ -2967,6 +3149,21 @@ collection/chaîne vide a une longueur <code>0</code> (donc « vide » et non-«
 
 </dd>
 
+          <dt id="zListFormatOf" class="callable">
+  <span class="name"><a href="../zcrud_core/zListFormatOf.html">zListFormatOf</a></span><span class="signature">(<wbr><span class="parameter" id="zListFormatOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZListFormat-class.html">ZListFormat</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Capture</strong> les seams d'affichage que <code>ZListColumn.format</code> ne peut pas
+atteindre lui-même : le libellé d'une option orpheline, le port de formatage
+des dates du <code>ZcrudScope</code>, et l'étiquette de locale.
+  
+
+</dd>
+
           <dt id="zListHash" class="callable">
   <span class="name"><a href="../zcrud_core/zListHash.html">zListHash</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="zListHash-param-list"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">list</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
@@ -2994,14 +3191,14 @@ collection/chaîne vide a une longueur <code>0</code> (donc « vide » et non-«
 </dd>
 
           <dt id="zMatchesSearch" class="callable">
-  <span class="name"><a href="../zcrud_core/zMatchesSearch.html">zMatchesSearch</a></span><span class="signature">(<wbr><span class="parameter" id="zMatchesSearch-param-row"><span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span>, </span><span class="parameter" id="zMatchesSearch-param-term"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">term</span>, {</span><span class="parameter" id="zMatchesSearch-param-schema"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">schema</span></span>})
+  <span class="name"><a href="../zcrud_core/zMatchesSearch.html">zMatchesSearch</a></span><span class="signature">(<wbr><span class="parameter" id="zMatchesSearch-param-row"><span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span>, </span><span class="parameter" id="zMatchesSearch-param-term"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">term</span>, {</span><span class="parameter" id="zMatchesSearch-param-schema"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">schema</span>, </span><span class="parameter" id="zMatchesSearch-param-scope"><span class="type-annotation"><a href="../zcrud_core/ZSearchScope.html">ZSearchScope</a></span> <span class="parameter-name">scope</span> = <span class="default-value">ZSearchScope.searchableFields</span>, </span><span class="parameter" id="zMatchesSearch-param-folding"><span class="type-annotation"><a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> <span class="parameter-name">folding</span> = <span class="default-value">ZSearchFolding.diacritics</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Prédicat de <strong>recherche sans accents</strong> sur les champs <code>searchable</code> du schéma.
+  Prédicat de <strong>recherche sans accents</strong> sur le schéma d'une liste.
   
 
 </dd>
@@ -3044,6 +3241,19 @@ COPIE</strong> quand le slot stocké est déjà propre.
   Regroupe une <strong>liste plate</strong> de <code>fields</code> en étapes, d'après l'annotation
 <a href="../zcrud_core/ZStepFieldConfig-class.html">ZStepFieldConfig</a> portée par chaque champ (ou d'après <code>stepOf</code> si l'hôte
 fournit son propre canal).
+  
+
+</dd>
+
+          <dt id="zRegroupPaths" class="callable">
+  <span class="name"><a href="../zcrud_core/zRegroupPaths.html">zRegroupPaths</a></span><span class="signature">(<wbr><span class="parameter" id="zRegroupPaths-param-flat"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">flat</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Regroupe les clés <strong>pointées</strong> de <code>flat</code> en une <code>Map</code> <strong>imbriquée</strong>.
   
 
 </dd>
@@ -3107,6 +3317,21 @@ ou inconnue rendent tous <code>null</code> sans lever.
 
 </dd>
 
+          <dt id="zResolveRowActions" class="callable">
+  <span class="name"><a href="../zcrud_core/zResolveRowActions.html">zResolveRowActions</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="zResolveRowActions-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zResolveRowActions-param-actions"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZRowAction-class.html">ZRowAction</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">actions</span>, </span><span class="parameter" id="zResolveRowActions-param-entity"><span>required</span> <span class="type-annotation">T</span> <span class="parameter-name">entity</span>, </span><span class="parameter" id="zResolveRowActions-param-acl"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZAcl-class.html">ZAcl</a></span> <span class="parameter-name">acl</span>, </span><span class="parameter" id="zResolveRowActions-param-mode"><span class="type-annotation"><a href="../zcrud_core/ZActionAclMode.html">ZActionAclMode</a></span> <span class="parameter-name">mode</span> = <span class="default-value">ZActionAclMode.hide</span>, </span><span class="parameter" id="zResolveRowActions-param-rowAcl"><span class="type-annotation"><a href="../zcrud_core/ZRowAclResolver.html">ZRowAclResolver</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">rowAcl</span>, </span><span class="parameter" id="zResolveRowActions-param-collectionId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">collectionId</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZResolvedRowAction-class.html">ZResolvedRowAction</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Résout les actions offertes sur <strong>une ligne</strong>, en composant l'ACL de
+l'application, les restrictions de la ligne et l'éligibilité métier de
+chaque action.
+  
+
+</dd>
+
           <dt id="zRestoreAbsentString" class="callable">
   <span class="name"><a href="../zcrud_core/zRestoreAbsentString.html">zRestoreAbsentString</a></span><span class="signature">(<wbr><span class="parameter" id="zRestoreAbsentString-param-extra"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">extra</span>, </span><span class="parameter" id="zRestoreAbsentString-param-field"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="zRestoreAbsentString-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">value</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
@@ -3117,6 +3342,19 @@ ou inconnue rendent tous <code>null</code> sans lever.
 <dd>
   Rend <code>null</code> si <code>field</code> était marqué absent <strong>et</strong> vaut toujours la chaîne
 vide ; sinon rend <code>value</code> tel quel.
+  
+
+</dd>
+
+          <dt id="zRestrictAcl" class="callable">
+  <span class="name"><a href="../zcrud_core/zRestrictAcl.html">zRestrictAcl</a></span><span class="signature">(<wbr><span class="parameter" id="zRestrictAcl-param-base"><span class="type-annotation"><a href="../zcrud_core/ZAcl-class.html">ZAcl</a></span> <span class="parameter-name">base</span>, </span><span class="parameter" id="zRestrictAcl-param-restriction"><span class="type-annotation"><a href="../zcrud_core/ZAcl-class.html">ZAcl</a>?</span> <span class="parameter-name">restriction</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZAcl-class.html">ZAcl</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Restreint <code>base</code> par <code>restriction</code>, en évitant d'emballer pour rien.
   
 
 </dd>
@@ -3330,6 +3568,21 @@ via <code>ZcrudScope.iconResolver</code>. Le domaine ne porte JAMAIS d'<code>Ico
 
 
           
+  <dt id="ZChoicesResolver" class="callable">
+    <span class="name"><a href="../zcrud_core/ZChoicesResolver.html">ZChoicesResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldChoice-class.html">ZFieldChoice</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-valueOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">valueOf</span>(<span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)</span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Résolveur de <strong>choix conscients de l'état</strong> d'un champ à choix
+(<code>select</code>/<code>radio</code>/<code>checkbox</code>/<code>rowChips</code>).
+    
+
+  </dd>
+
+          
   <dt id="ZClock" class="callable">
     <span class="name"><a href="../zcrud_core/ZClock.html">ZClock</a></span><span class="signature">
       <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a> Function<span class="signature">()</span></span>
@@ -3492,6 +3745,21 @@ dispatcher par type <a href="../zcrud_core/ZFieldWidget-class.html">ZFieldWidget
   </dd>
 
           
+  <dt id="ZEntityTileBuilder" class="callable">
+    <span class="name"><a href="../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a></span>&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;<span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span>, </span><span class="parameter" id="param-columns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit la tuile d'une ligne à partir de l'<strong>entité <code>T</code> résolue</strong> et des
+colonnes dérivées.
+    
+
+  </dd>
+
+          
   <dt id="ZExtensionResolver" class="callable">
     <span class="name"><a href="../zcrud_core/ZExtensionResolver.html">ZExtensionResolver</a></span><span class="signature">
       <span class="returntype parameter">= <a href="../zcrud_core/ZExtension-class.html">ZExtension</a>? Function<span class="signature">(<span class="parameter" id="param-kind"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">kind</span>, </span><span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span></span>
@@ -3610,6 +3878,36 @@ ce contrôleur se teste avec un <code>onSubmit</code> factice.
 
 </dd>
 
+
+          
+  <dt id="ZRowAclResolver" class="callable">
+    <span class="name"><a href="../zcrud_core/ZRowAclResolver.html">ZRowAclResolver</a></span>&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;<span class="signature">
+      <span class="returntype parameter">= <a href="../zcrud_core/ZRowPermissions-class.html">ZRowPermissions</a> Function<span class="signature">(<span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Résolveur des droits d'<strong>une ligne</strong> : fonction <strong>pure</strong> rendant les
+restrictions applicables à <code>entity</code>.
+    
+
+  </dd>
+
+          
+  <dt id="ZRowTileBuilder" class="callable">
+    <span class="name"><a href="../zcrud_core/ZRowTileBuilder.html">ZRowTileBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-row"><span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span>, </span><span class="parameter" id="param-columns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit la tuile d'une ligne à partir de la <a href="../zcrud_core/ZListRow-class.html">ZListRow</a> <strong>neutre</strong> et des
+colonnes dérivées.
+    
+
+  </dd>
 
           
   <dt id="ZSelectChoiceBuilder" class="callable">
@@ -3907,7 +4205,7 @@ n'est présent dans l'arbre.
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

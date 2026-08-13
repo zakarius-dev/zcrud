@@ -56,10 +56,23 @@
       const
       <span class="name ">ZSfDataGridRenderer</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-onLoadMore"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span> <span class="parameter-name">onLoadMore</span>()?, </span></li>
 <li><span class="parameter" id="param-headerRowHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">headerRowHeight</span> = <span class="default-value">_kMinRowHeight</span>, </span></li>
-<li><span class="parameter" id="param-columnWidthMode"><span class="type-annotation"><a href="https://pub.dev/documentation/syncfusion_flutter_datagrid/34.1.31/datagrid/ColumnWidthMode.html">ColumnWidthMode</a></span> <span class="parameter-name">columnWidthMode</span> = <span class="default-value">ColumnWidthMode.fill</span>, </span></li>
+<li><span class="parameter" id="param-columnWidthMode"><span class="type-annotation"><a href="https://pub.dev/documentation/syncfusion_flutter_datagrid/34.1.31/datagrid/ColumnWidthMode.html">ColumnWidthMode</a>?</span> <span class="parameter-name">columnWidthMode</span>, </span></li>
 <li><span class="parameter" id="param-withOrderNumber"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">withOrderNumber</span> = <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="param-orderColumnHeader"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">orderColumnHeader</span> = <span class="default-value">&#39;#&#39;</span>, </span></li>
 <li><span class="parameter" id="param-cellColorBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">cellColorBuilder</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-row"><span class="type-annotation">ZListRow</span> <span class="parameter-name">row</span>, </span></li>
+<li><span class="parameter" id="param-column"><span class="type-annotation">ZListColumn</span> <span class="parameter-name">column</span></span></li>
+</ol>)?, </span></li>
+<li><span class="parameter" id="param-rowsPerPage"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">rowsPerPage</span>, </span></li>
+<li><span class="parameter" id="param-copyCellOnLongPress"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">copyCellOnLongPress</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-copiedMessageKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">copiedMessageKey</span> = <span class="default-value">_kCopiedMessageKey</span>, </span></li>
+<li><span class="parameter" id="param-swipeToRevealActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">swipeToRevealActions</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-swipeMaxOffset"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">swipeMaxOffset</span>, </span></li>
+<li><span class="parameter" id="param-stackedHeaders"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_list/ZSfStackedHeader-class.html">ZSfStackedHeader</a></span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">stackedHeaders</span> = <span class="default-value">const &lt;List&lt;ZSfStackedHeader&gt;&gt;[]</span>, </span></li>
+<li><span class="parameter" id="param-columnSizing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../../zcrud_list/ZSfColumnSizing-class.html">ZSfColumnSizing</a></span>&gt;</span></span> <span class="parameter-name">columnSizing</span> = <span class="default-value">const &lt;String, ZSfColumnSizing&gt;{}</span>, </span></li>
+<li><span class="parameter" id="param-allowColumnResizing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">allowColumnResizing</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-adaptiveRowHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">adaptiveRowHeight</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-maxRowHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">maxRowHeight</span>, </span></li>
+<li><span class="parameter" id="param-cellStyleBuilder"><span class="type-annotation"><a href="../../zcrud_list/ZSfCellStyle-class.html">ZSfCellStyle</a>?</span> <span class="parameter-name">cellStyleBuilder</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-row"><span class="type-annotation">ZListRow</span> <span class="parameter-name">row</span>, </span></li>
 <li><span class="parameter" id="param-column"><span class="type-annotation">ZListColumn</span> <span class="parameter-name">column</span></span></li>
 </ol>)?, </span></li>
 </ol>})
@@ -76,10 +89,21 @@
   <pre class="language-dart"><code class="language-dart">const ZSfDataGridRenderer({
   this.onLoadMore,
   this.headerRowHeight = _kMinRowHeight,
-  this.columnWidthMode = ColumnWidthMode.fill,
+  this.columnWidthMode,
   this.withOrderNumber = false,
   this.orderColumnHeader = &#39;#&#39;,
   this.cellColorBuilder,
+  this.rowsPerPage,
+  this.copyCellOnLongPress = false,
+  this.copiedMessageKey = _kCopiedMessageKey,
+  this.swipeToRevealActions = false,
+  this.swipeMaxOffset,
+  this.stackedHeaders = const &lt;List&lt;ZSfStackedHeader&gt;&gt;[],
+  this.columnSizing = const &lt;String, ZSfColumnSizing&gt;{},
+  this.allowColumnResizing = false,
+  this.adaptiveRowHeight = false,
+  this.maxRowHeight,
+  this.cellStyleBuilder,
 });</code></pre>
 </section>
 
@@ -108,7 +132,7 @@
 <footer>
   <span class="no-break">
     zcrud_list
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

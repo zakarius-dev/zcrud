@@ -63,14 +63,16 @@
     </section>
     
 <section class="desc markdown">
-  <p><code>true</code> si un builder est enregistré pour <code>kind</code>.</p>
+  <p><code>true</code> si un builder est enregistré pour <code>kind</code> — localement <strong>ou</strong> dans
+la chaîne parent.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">bool isRegistered(String kind) =&gt; _builders.containsKey(kind);</code></pre>
+  <pre class="language-dart"><code class="language-dart">bool isRegistered(String kind) =&gt;
+    _builders.containsKey(kind) || (parent?.isRegistered(kind) ?? false);</code></pre>
 </section>
 
 
@@ -98,7 +100,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

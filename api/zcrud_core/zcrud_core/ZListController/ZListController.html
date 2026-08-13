@@ -61,6 +61,9 @@
 <li><span class="parameter" id="param-pageSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">pageSize</span>, </span></li>
 <li><span class="parameter" id="param-mode"><span class="type-annotation"><a href="../../zcrud_core/ZListPaginationMode.html">ZListPaginationMode</a></span> <span class="parameter-name">mode</span> = <span class="default-value">ZListPaginationMode.backendCursor</span>, </span></li>
 <li><span class="parameter" id="param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">baseFilters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span></li>
+<li><span class="parameter" id="param-searchScope"><span class="type-annotation"><a href="../../zcrud_core/ZSearchScope.html">ZSearchScope</a></span> <span class="parameter-name">searchScope</span> = <span class="default-value">ZSearchScope.searchableFields</span>, </span></li>
+<li><span class="parameter" id="param-searchFolding"><span class="type-annotation"><a href="../../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> <span class="parameter-name">searchFolding</span> = <span class="default-value">ZSearchFolding.diacritics</span>, </span></li>
+<li><span class="parameter" id="param-initialSorts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZSort-class.html">ZSort</a></span>&gt;</span></span> <span class="parameter-name">initialSorts</span> = <span class="default-value">const &lt;ZSort&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-watchMutations"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">watchMutations</span> = <span class="default-value">false</span>, </span></li>
 </ol>})
     </section>
@@ -83,6 +86,19 @@ un <strong>filtre de catégorie d'onglet</strong> (<code>ZTabbedList</code>) : <
 /<code>setSort</code> <strong>ne peuvent JAMAIS</strong> les écraser (là où <code>setFilters</code> remplace les
 SEULS filtres utilisateur). <code>baseFilters</code> vide ⇒ comportement strictement
 inchangé (mêmes <code>ZDataRequest</code>, mêmes tests).</p>
+<p><code>searchScope</code> et <code>searchFolding</code> portent la <strong>sémantique de recherche</strong>
+dans chaque requête émise : domaine de colonnes interrogé et profondeur de
+normalisation. Leurs défauts
+(<a href="../../zcrud_core/ZSearchScope.html">ZSearchScope.searchableFields</a> / <a href="../../zcrud_core/ZSearchFolding.html">ZSearchFolding.diacritics</a>)
+reproduisent le comportement historique <strong>à l'identique</strong>.</p>
+<p><code>initialSorts</code> fait <strong>naître le contrôleur trié</strong> : ces clés de tri sont
+portées par la <strong>toute première</strong> requête, celle que la construction émet.
+Sans ce paramètre, la seule voie était <code>setSort</code> — appelé après coup, il
+laissait partir une première requête non triée puis en émettait une
+seconde, soit une lecture de la source pour rien, et un premier rendu dans
+le mauvais ordre. Un <code>setSort</code> ultérieur <strong>remplace</strong> ce tri initial
+(même règle que pour les filtres utilisateur : un tri demandé remplace le
+tri par défaut). Défaut <code>const []</code> ⇒ comportement strictement inchangé.</p>
 </section>
 
 
@@ -96,8 +112,11 @@ inchangé (mêmes <code>ZDataRequest</code>, mêmes tests).</p>
   this.pageSize,
   this.mode = ZListPaginationMode.backendCursor,
   this.baseFilters = const &lt;ZFilter&gt;[],
+  this.searchScope = ZSearchScope.searchableFields,
+  this.searchFolding = ZSearchFolding.diacritics,
+  List&lt;ZSort&gt; initialSorts = const &lt;ZSort&gt;[],
   bool watchMutations = false,
-}) {
+}) : _sorts = initialSorts {
   if (watchMutations) {
     _subscription = repository.watchAll().listen((_) {
       &#47;&#47; Une mutation externe réinitialise la pagination et relance la requête.
@@ -134,7 +153,7 @@ inchangé (mêmes <code>ZDataRequest</code>, mêmes tests).</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

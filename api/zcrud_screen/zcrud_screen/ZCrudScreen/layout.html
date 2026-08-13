@@ -62,8 +62,13 @@
       </section>
       
 <section class="desc markdown">
-  <p>Variante de vue de la liste. <code>null</code> ⇒ <code>ZListBuilderLayout</code> avec la tuile
-générique du paquet (ou <a href="../../zcrud_screen/ZCrudScreen/itemBuilder.html">itemBuilder</a>).</p>
+  <p>Variante de vue de la liste. <code>null</code> ⇒ liste verticale
+(<code>ZListBuilderLayout</code>) rendant <a href="../../zcrud_screen/ZCrudScreen/itemBuilder.html">itemBuilder</a>, ou la tuile générique du
+paquet à défaut.</p>
+<p>Le layout déclaré ici <strong>reçoit</strong> <a href="../../zcrud_screen/ZCrudScreen/itemBuilder.html">itemBuilder</a> : une grille de cartes
+métier se déclare <code>layout: const ZListGridLayout(mainAxisExtent: 180)</code> +
+<code>itemBuilder: (context, entity, columns) =&gt; MaCarte(entity)</code>, sans que
+l'application n'ait à reconstruire l'index <code>ligne → entité</code>.</p>
 </section>
 
       
@@ -98,7 +103,7 @@ générique du paquet (ou <a href="../../zcrud_screen/ZCrudScreen/itemBuilder.ht
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

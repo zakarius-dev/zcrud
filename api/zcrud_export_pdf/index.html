@@ -126,7 +126,11 @@ faire disparaître le texte hors du rectangle de dessin.</li>
 <tbody>
 <tr>
 <td><code>buildPdfBytes</code> / <code>ZExportTable</code></td>
-<td>Export tabulaire neutre : table de chaînes → bytes PDF.</td>
+<td>Export tabulaire neutre : table de chaînes → bytes PDF. La cellule est lue <strong>en connaissant toute la ligne</strong> (<code>ZListColumn.formatRow</code>) : devise portée par la ligne et format composé sont honorés, comme à l'écran.</td>
+</tr>
+<tr>
+<td><code>ZPdfListExporter</code></td>
+<td>Exporteur de liste au format PDF réalisant le port <code>ZListExporter</code> du socle — le déclarer sur <code>ZCrudScreen(export:)</code> suffit à offrir l'export PDF d'un écran.</td>
 </tr>
 <tr>
 <td><code>ZPdfExportOptions</code> / <code>ZPdfHeaderSpec</code> / <code>ZPdfOrientation</code></td>
@@ -170,6 +174,22 @@ faire disparaître le texte hors du rectangle de dessin.</li>
 </tr>
 </tbody>
 </table>
+<h3 id="exporter-la-liste-dun-cran-assembl">Exporter la liste d'un écran assemblé</h3>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Consignataire&gt;(
+  title: 'Consignataires',
+  source: source,
+  export: ZExportPolicy(
+    exporters: const &lt;ZListExporter&gt;[ZPdfListExporter()],
+    onExported: (context, fichier) =&gt; monPartage(fichier),
+  ),
+)
+</code></pre>
+<p>Le titre de l'écran devient le titre du document — il <strong>comble</strong> un titre
+absent, il n'écrase jamais celui que des <code>ZPdfExportOptions</code> déclarent
+(<code>effectiveOptions</code> expose la règle). Ce qui part dans le fichier, c'est ce que
+l'écran affiche : lignes réellement listées (ou la seule sélection si elle
+porte), colonnes dérivées du schéma, valeurs formatées — jamais le numéro
+d'ordre, les cases à cocher ni les boutons d'action.</p>
 <h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
 <ul>
 <li>Une table ou un dossier vide produit toujours un document PDF <strong>valide</strong>
@@ -235,7 +255,7 @@ définitions canoniques AD-1 à AD-16.</li>
 <footer>
   <span class="no-break">
     zcrud_export_pdf
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

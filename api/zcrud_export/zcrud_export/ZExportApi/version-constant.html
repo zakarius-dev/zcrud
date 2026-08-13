@@ -64,17 +64,16 @@
 <section class="desc markdown">
   <p>Version de l'API publique (marqueur ; distincte de la version du package).</p>
 <p>Suit les évolutions <strong>additives</strong> de la surface publique (dernier ajout :
-le gabarit PDF flashcards <code>ZFlashcardPdfTemplate</code>, le port pur
-<code>ZLatexRasterizer</code>, <code>ZAnswerVisibility</code>, <code>ZFlashcardPdfInput</code>/
-<code>ZFlashcardPdfCard</code>/<code>ZFlashcardPdfChoice</code>/<code>ZFlashcardPdfLabels</code> et
-<code>ZExportedFile</code>). Le <strong>nom</strong> du champ reste <code>version</code> (consommé par
-<code>zcrud_flashcard</code>) — jamais renommé, jamais de retrait.</p>
+les exporteurs de liste <code>ZCsvListExporter</code>/<code>ZXlsxListExporter</code>, et
+<code>ZPdfListExporter</code> côté <code>zcrud_export_pdf</code>, qui réalisent le port
+<code>ZListExporter</code> du cœur). Le <strong>nom</strong> du champ reste <code>version</code> (consommé
+par <code>zcrud_flashcard</code>) — jamais renommé, jamais de retrait.</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static const String version = &#39;0.2.0&#39;;</code></pre>
+  <pre class="language-dart"><code class="language-dart">static const String version = &#39;0.3.0&#39;;</code></pre>
 </section>
 
 
@@ -103,7 +102,7 @@ le gabarit PDF flashcards <code>ZFlashcardPdfTemplate</code>, le port pur
 <footer>
   <span class="no-break">
     zcrud_export
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

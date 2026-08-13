@@ -64,6 +64,11 @@
 <section class="desc markdown">
   <p>ACL de l'écran. <code>null</code> ⇒ l'ACL du <code>ZcrudScope</code> ambiant s'applique telle
 quelle ; non-<code>null</code> ⇒ posée par <code>ZcrudScope.derive</code> autour de la liste.</p>
+<p><strong>Refus par défaut.</strong> Sans ACL déclarée — ni ici, ni au scope — aucun
+geste n'est offert, et <code>ZCrudAction.view</code> étant refusé, l'écran rend un
+<strong>état « accès refusé »</strong> sans jamais interroger la source. Déclarez la
+vôtre (<code>acl: MonAcl()</code>), ou, en développement, déclarez l'ouverture
+totale : <code>acl: const ZAllowAllAcl()</code>.</p>
 </section>
 
       
@@ -98,7 +103,7 @@ quelle ; non-<code>null</code> ⇒ posée par <code>ZcrudScope.derive</code> aut
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

@@ -62,10 +62,18 @@
       </section>
       
 <section class="desc markdown">
-  <p>Ajoute une colonne de numéro d'ordre (<code>#</code>) en tête de grille. Défaut
-<code>false</code> : aucune colonne ajoutée, comportement inchangé. Le numéro est
-le rang <strong>d'affichage</strong> (1-based, position dans <code>request.rows</code>) —
-purement positionnel.</p>
+  <p>Ajoute une colonne de numéro d'ordre (<code>#</code>) en tête de grille, <strong>quand la
+requête n'en déclare pas</strong> (<code>ZListRenderRequest.ordinal</code>). Défaut
+<code>false</code> : aucune colonne ajoutée, comportement inchangé.</p>
+<p>C'est le <strong>raccourci historique</strong> de la déclaration portée par le
+schéma : <code>ZColumnPolicy(ordinal: ZListOrdinal(enabled: true))</code>. Les deux
+chemins produisent la même colonne et la même numérotation ; la
+déclaration de la requête <strong>prime</strong> quand elle est active, parce qu'elle
+porte aussi l'en-tête, la largeur et le décalage de page. Ce raccourci
+reste utile à l'hôte qui construit sa requête sans politique de colonnes.</p>
+<p>Dans les deux cas, le numéro décrit la <strong>position à l'écran</strong> : la
+première ligne affichée porte <code>1</code>, la deuxième <code>2</code> — un tri renumérote
+donc la colonne au lieu de promener d'anciens numéros.</p>
 </section>
 
       
@@ -100,7 +108,7 @@ purement positionnel.</p>
 <footer>
   <span class="no-break">
     zcrud_list
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

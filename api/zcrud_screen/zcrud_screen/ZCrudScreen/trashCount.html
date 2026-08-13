@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the trashCount property from the ZCrudScreen class, for the Dart programming language.">
+  <title>trashCount property - ZCrudScreen class - zcrud_screen library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/">zcrud_screen.dart</a></li>
+    <li><a href="../../zcrud_screen/ZCrudScreen-class.html">ZCrudScreen<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></a></li>
+    <li class="self-crumb">trashCount property</li>
+  </ol>
+  <div class="self-name">trashCount</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_screen&#47;ZCrudScreen-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">trashCount</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?
+        <span class="name ">trashCount</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p><strong>Nombre d'éléments en corbeille</strong>, quand l'application le connaît
+(<code>null</code> par défaut).</p>
+<p>Sert à deux choses : afficher le compte sur l'accès à la corbeille
+(pastille <code>ZCountBadge</code>, si <code>ZTrashPolicy.showCount</code>) et <strong>masquer</strong> cet
+accès quand la corbeille est vide (si <code>ZTrashPolicy.visibleWhenEmpty</code>
+vaut <code>false</code>).</p>
+<h2 id="pourquoi-une-valuelistenable-et-pourquoi-lcran-ne-compte-pas">Pourquoi une <code>ValueListenable</code>, et pourquoi l'écran ne compte pas</h2>
+<p>Compter, c'est <strong>lire la source</strong>. Un <code>count(deletedOnly)</code> évalué au
+rendu coûterait une lecture du dépôt à chaque image — et une lecture
+asynchrone, donc un <code>FutureBuilder</code> par rendu : l'écran clignoterait
+pour afficher un nombre. L'écran ne le fait donc jamais.</p>
+<p>La valeur vient de l'application, qui sait d'où elle sort et quand elle
+change (un <code>ValueNotifier</code> alimenté après chaque mise à la corbeille,
+une projection d'un flux). Le fait qu'elle soit <strong>écoutable</strong> est ce qui
+permet à la pastille de se rafraîchir <strong>sans reconstruire la liste</strong> : le
+corps de l'écran est rendu une fois et <strong>transmis tel quel</strong> au travers
+des rafraîchissements de la coquille (AD-2).</p>
+<p>Le notifieur est <strong>possédé par l'application</strong> (create/dispose de son
+côté) : l'écran s'y abonne, il ne le dispose pas.</p>
+<p>Sur la voie <code>items</code> (liste en mémoire + prédicat <code>isDeleted</code>), le compte
+est <strong>dérivé gratuitement</strong> de la liste déjà parcourue : rien à déclarer,
+ce paramètre reste alors inutile.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final ValueListenable&lt;int&gt;? trashCount;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/ZCrudScreen-class.html">ZCrudScreen<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></a></li>
+    <li class="self-crumb">trashCount property</li>
+</ol>
+
+  <h5>ZCrudScreen class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_screen
+      0.94.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

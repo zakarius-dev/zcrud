@@ -54,8 +54,17 @@
 
     
 <section class="desc markdown">
-  <p>Implémentation <strong>permissive</strong> par défaut (zéro-config) : autorise tout.</p>
-<p>Utile comme valeur par défaut tant que l'app n'injecte pas d'ACL réelle.</p>
+  <p>Implémentation <strong>permissive</strong> : autorise tout, sans condition.</p>
+<p>⚠️ Ce n'est <strong>plus</strong> le repli par défaut du socle (voir <a href="../zcrud_core/ZDenyAllAcl-class.html">ZDenyAllAcl</a>) :
+c'est un <strong>choix explicite</strong> de développement, de prototype ou de test.
+L'oubli d'une ACL ne doit jamais ouvrir tous les gestes ; la déclarer
+permissive, si.</p>
+<p>À déclarer nommément, au scope ou à l'écran :</p>
+<pre class="language-dart"><code class="language-dart">ZcrudScope(acl: const ZAllowAllAcl(), child: monEcran);
+ZCrudScreen&lt;Dossier&gt;(acl: const ZAllowAllAcl(), /* … */);
+</code></pre>
+<p>En production, remplacez-la par votre propre implémentation de <a href="../zcrud_core/ZAcl-class.html">ZAcl</a>
+(rôles, droits par collection…) : aucune règle métier ne vit dans le socle.</p>
 </section>
 
 
@@ -222,7 +231,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

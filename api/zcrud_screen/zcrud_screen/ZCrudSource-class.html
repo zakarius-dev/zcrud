@@ -69,7 +69,7 @@ distant en lecture seule s'exprime donc <strong>par déclaration</strong>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZCrudSource.items" class="callable">
-          <span class="name"><a href="../zcrud_screen/ZCrudSource/ZCrudSource.items.html">ZCrudSource.items</a></span><span class="signature">(<span class="parameter" id="items-param-items"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">items</span>, {</span><span class="parameter" id="items-param-onSave"><span class="type-annotation"><a href="../zcrud_screen/ZCrudSave.html">ZCrudSave</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onSave</span>, </span><span class="parameter" id="items-param-onSoftDelete"><span class="type-annotation"><a href="../zcrud_screen/ZCrudTrashWrite.html">ZCrudTrashWrite</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onSoftDelete</span>, </span><span class="parameter" id="items-param-onRestore"><span class="type-annotation"><a href="../zcrud_screen/ZCrudTrashWrite.html">ZCrudTrashWrite</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onRestore</span>, </span><span class="parameter" id="items-param-isDeleted"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isDeleted</span>(<span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span></span>)?</span>})</span>
+          <span class="name"><a href="../zcrud_screen/ZCrudSource/ZCrudSource.items.html">ZCrudSource.items</a></span><span class="signature">(<span class="parameter" id="items-param-items"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">items</span>, {</span><span class="parameter" id="items-param-onSave"><span class="type-annotation"><a href="../zcrud_screen/ZCrudSave.html">ZCrudSave</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onSave</span>, </span><span class="parameter" id="items-param-onSoftDelete"><span class="type-annotation"><a href="../zcrud_screen/ZCrudTrashWrite.html">ZCrudTrashWrite</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onSoftDelete</span>, </span><span class="parameter" id="items-param-onRestore"><span class="type-annotation"><a href="../zcrud_screen/ZCrudTrashWrite.html">ZCrudTrashWrite</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onRestore</span>, </span><span class="parameter" id="items-param-onPurge"><span class="type-annotation"><a href="../zcrud_screen/ZCrudTrashWrite.html">ZCrudTrashWrite</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onPurge</span>, </span><span class="parameter" id="items-param-isDeleted"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isDeleted</span>(<span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span></span>)?</span>})</span>
         </dt>
         <dd>
           Voie <strong>cohabitation</strong> : <code>items</code> arrive déjà chargé (flux de l'hôte).
@@ -143,6 +143,19 @@ repository).
 
 </dd>
 
+        <dt id="onPurge" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudSource/onPurge.html">onPurge</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_screen/ZCrudTrashWrite.html">ZCrudTrashWrite</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Suppression <strong>définitive</strong> déléguée à l'hôte (voie <code>items</code>), ou <code>null</code>
+(action absente).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="onRestore" class="property">
   <span class="name"><a href="../zcrud_screen/ZCrudSource/onRestore.html">onRestore</a></span>
   <span class="signature">&#8594; <a href="../zcrud_screen/ZCrudTrashWrite.html">ZCrudTrashWrite</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span>
@@ -201,6 +214,19 @@ absente).
 <dd class="inherited">
   A representation of the runtime type of the object.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="supportsPurge" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudSource/supportsPurge.html">supportsPurge</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si la source sait <strong>supprimer définitivement</strong> : dépôt appliquant
+le mixin <code>ZPurgeable</code>, ou rappel <a href="../zcrud_screen/ZCrudSource/onPurge.html">onPurge</a> déclaré.
+  <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
@@ -303,7 +329,7 @@ au moins une écriture de corbeille.
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

@@ -67,6 +67,15 @@ et ne porte aucune couleur : la carte est entièrement l'affaire de
 <a href="../zcrud_core/ZListGridLayout/itemBuilder.html">itemBuilder</a> (thème via <code>ZcrudScope</code>/<code>Theme.of(context)</code>).</p>
 <p>La hauteur des tuiles se règle par <a href="../zcrud_core/ZListGridLayout/mainAxisExtent.html">mainAxisExtent</a> (hauteur fixe,
 prioritaire) ou <a href="../zcrud_core/ZListGridLayout/childAspectRatio.html">childAspectRatio</a> (ratio largeur/hauteur, défaut <code>1.0</code>).</p>
+<p>La carte se décrit au choix par <a href="../zcrud_core/ZListGridLayout/itemBuilder.html">itemBuilder</a> (ligne neutre) ou par
+<a href="../zcrud_core/ZListGridLayout/entityBuilder.html">entityBuilder</a> (<strong>entité résolue</strong> — forme typée via
+<a href="../zcrud_core/ZListGridLayout/forEntity.html">ZListGridLayout.forEntity</a>, ou posée par un assembleur via
+<a href="../zcrud_core/ZListGridLayout/withEntityTiles.html">withEntityTiles</a>). Une carte métier veut presque toujours la seconde :</p>
+<pre class="language-dart"><code class="language-dart">ZListGridLayout.forEntity&lt;Consignee&gt;(
+  (context, consignee, columns) =&gt; ConsigneeCard(consignee),
+  mainAxisExtent: 180,
+)
+</code></pre>
 </section>
 
 
@@ -98,10 +107,10 @@ prioritaire) ou <a href="../zcrud_core/ZListGridLayout/childAspectRatio.html">ch
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZListGridLayout.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZListGridLayout/ZListGridLayout.html">ZListGridLayout</a></span><span class="signature">({<span class="parameter" id="param-itemBuilder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">itemBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-row"><span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span>, </span><span class="parameter" id="param-columns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span></span>), </span><span class="parameter" id="param-maxCrossAxisExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">maxCrossAxisExtent</span> = <span class="default-value">360</span>, </span><span class="parameter" id="param-mainAxisSpacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">mainAxisSpacing</span> = <span class="default-value">8</span>, </span><span class="parameter" id="param-crossAxisSpacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">crossAxisSpacing</span> = <span class="default-value">8</span>, </span><span class="parameter" id="param-childAspectRatio"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">childAspectRatio</span> = <span class="default-value">1.0</span>, </span><span class="parameter" id="param-mainAxisExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">mainAxisExtent</span>, </span><span class="parameter" id="param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">padding</span>, </span><span class="parameter" id="param-maxColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">maxColumns</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZListGridLayout/ZListGridLayout.html">ZListGridLayout</a></span><span class="signature">({<span class="parameter" id="param-itemBuilder"><span class="type-annotation"><a href="../zcrud_core/ZRowTileBuilder.html">ZRowTileBuilder</a>?</span> <span class="parameter-name">itemBuilder</span>, </span><span class="parameter" id="param-entityBuilder"><span class="type-annotation"><a href="../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span>?</span> <span class="parameter-name">entityBuilder</span>, </span><span class="parameter" id="param-maxCrossAxisExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">maxCrossAxisExtent</span> = <span class="default-value">360</span>, </span><span class="parameter" id="param-mainAxisSpacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">mainAxisSpacing</span> = <span class="default-value">8</span>, </span><span class="parameter" id="param-crossAxisSpacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">crossAxisSpacing</span> = <span class="default-value">8</span>, </span><span class="parameter" id="param-childAspectRatio"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">childAspectRatio</span> = <span class="default-value">1.0</span>, </span><span class="parameter" id="param-mainAxisExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">mainAxisExtent</span>, </span><span class="parameter" id="param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">padding</span>, </span><span class="parameter" id="param-maxColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">maxColumns</span></span>})</span>
         </dt>
         <dd>
-          Construit la vue grille avec son <code>itemBuilder</code>.
+          Construit la vue grille avec sa tuile de ligne et/ou sa tuile d'entité.
             <div class="constructor-modifier features">const</div>
         </dd>
     </dl>
@@ -137,6 +146,20 @@ prioritaire) ou <a href="../zcrud_core/ZListGridLayout/childAspectRatio.html">ch
 
 </dd>
 
+        <dt id="entityBuilder" class="property">
+  <span class="name"><a href="../zcrud_core/ZListGridLayout/entityBuilder.html">entityBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Construit la <strong>carte</strong> d'une ligne à partir de l'<strong>entité résolue</strong> —
+prioritaire sur <a href="../zcrud_core/ZListGridLayout/itemBuilder.html">itemBuilder</a> dès que l'entité de la ligne est connue
+(seam <code>DynamicList.entityFor</code>). <code>null</code> ⇒ aucune carte d'entité.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="hashCode" class="property inherited">
   <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
@@ -151,13 +174,14 @@ prioritaire) ou <a href="../zcrud_core/ZListGridLayout/childAspectRatio.html">ch
 
         <dt id="itemBuilder" class="property">
   <span class="name"><a href="../zcrud_core/ZListGridLayout/itemBuilder.html">itemBuilder</a></span>
-  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-row"><span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span>, </span><span class="parameter" id="param-columns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span></span>)</span></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZRowTileBuilder.html">ZRowTileBuilder</a>?</span>
   
 
 </dt>
 <dd>
   Construit le widget (la <strong>carte</strong>) d'une ligne à partir de la <a href="../zcrud_core/ZListRow-class.html">ZListRow</a>
-et des colonnes dérivées (<code>List&lt;ZListColumn&gt;</code>).
+et des colonnes dérivées (<code>List&lt;ZListColumn&gt;</code>). <code>null</code> ⇒ aucune carte de
+ligne (la grille attend alors <a href="../zcrud_core/ZListGridLayout/entityBuilder.html">entityBuilder</a>).
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -247,7 +271,7 @@ supérieur (défaut <code>360</code>).
 
     
   <section
-      class="summary offset-anchor inherited"
+      class="summary offset-anchor"
       id="instance-methods">
     <h2>Methods</h2>
     <dl class="callables">
@@ -277,6 +301,20 @@ supérieur (défaut <code>360</code>).
 
 </dd>
 
+        <dt id="withEntityTiles" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListGridLayout/withEntityTiles.html">withEntityTiles</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="withEntityTiles-param-builder"><span class="type-annotation"><a href="../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">builder</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZListLayout-class.html">ZListLayout</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Retourne la variante <strong>portant la tuile typée</strong> <code>builder</code> — le rendu
+reçoit alors l'entité <code>T</code> résolue au lieu de la seule <code>ZListRow</code>.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
     </dl>
   </section>
     
@@ -302,6 +340,26 @@ supérieur (défaut <code>360</code>).
   </section>
     
     
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="forEntity" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListGridLayout/forEntity.html">forEntity</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="forEntity-param-tileBuilder"><span class="type-annotation"><a href="../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">tileBuilder</span>, {</span><span class="parameter" id="forEntity-param-maxCrossAxisExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">maxCrossAxisExtent</span> = <span class="default-value">360</span>, </span><span class="parameter" id="forEntity-param-mainAxisSpacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">mainAxisSpacing</span> = <span class="default-value">8</span>, </span><span class="parameter" id="forEntity-param-crossAxisSpacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">crossAxisSpacing</span> = <span class="default-value">8</span>, </span><span class="parameter" id="forEntity-param-childAspectRatio"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">childAspectRatio</span> = <span class="default-value">1.0</span>, </span><span class="parameter" id="forEntity-param-mainAxisExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">mainAxisExtent</span>, </span><span class="parameter" id="forEntity-param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">padding</span>, </span><span class="parameter" id="forEntity-param-maxColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">maxColumns</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZListGridLayout-class.html">ZListGridLayout</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Construit la vue grille avec une carte <strong>typée</strong> recevant l'entité <code>T</code> ;
+la géométrie (extent, espacements, plafond de colonnes) est celle du
+constructeur principal.
+  
+
+</dd>
+
+    </dl>
+  </section>
     
 
   </div> <!-- /.main-content -->
@@ -327,7 +385,7 @@ supérieur (défaut <code>360</code>).
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

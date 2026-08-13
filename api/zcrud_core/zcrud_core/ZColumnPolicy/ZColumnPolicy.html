@@ -56,6 +56,8 @@
       const
       <span class="name ">ZColumnPolicy</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-forceInclude"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">forceInclude</span> = <span class="default-value">const &lt;String&gt;{}</span>, </span></li>
 <li><span class="parameter" id="param-forceExclude"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">forceExclude</span> = <span class="default-value">const &lt;String&gt;{}</span>, </span></li>
+<li><span class="parameter" id="param-overrides"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../../zcrud_core/ZColumnOverride-class.html">ZColumnOverride</a></span>&gt;</span></span> <span class="parameter-name">overrides</span> = <span class="default-value">const &lt;String, ZColumnOverride&gt;{}</span>, </span></li>
+<li><span class="parameter" id="param-ordinal"><span class="type-annotation"><a href="../../zcrud_core/ZListOrdinal-class.html">ZListOrdinal</a></span> <span class="parameter-name">ordinal</span> = <span class="default-value">const ZListOrdinal()</span>, </span></li>
 </ol>})
     </section>
     
@@ -70,6 +72,8 @@
   <pre class="language-dart"><code class="language-dart">const ZColumnPolicy({
   this.forceInclude = const &lt;String&gt;{},
   this.forceExclude = const &lt;String&gt;{},
+  this.overrides = const &lt;String, ZColumnOverride&gt;{},
+  this.ordinal = const ZListOrdinal(),
 });</code></pre>
 </section>
 
@@ -98,7 +102,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

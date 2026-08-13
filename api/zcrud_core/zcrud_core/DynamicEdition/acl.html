@@ -55,23 +55,29 @@
     
       <section class="multi-line-signature">
         
-        <a href="../../zcrud_core/ZAcl-class.html">ZAcl</a>
+        <a href="../../zcrud_core/ZAcl-class.html">ZAcl</a>?
         <span class="name ">acl</span>
         <div class="features"><span class="feature">final</span></div>
 
       </section>
       
 <section class="desc markdown">
-  <p><strong>Port d'autorisation</strong> filtrant les <a href="../../zcrud_core/DynamicEdition/formActions.html">formActions</a> de niveau formulaire.
-Défaut <code>const ZAllowAllAcl()</code> (permissif) ⇒ comportement <strong>strictement
-identique</strong> au cas sans ACL quand <a href="../../zcrud_core/DynamicEdition/formActions.html">formActions</a> est vide. <strong>Aucune règle
-métier</strong> dans le cœur : le gate appelle <code>acl.can(…)</code> (invariant AD-16).</p>
+  <p><strong>Port d'autorisation</strong> filtrant les <a href="../../zcrud_core/DynamicEdition/formActions.html">formActions</a> de niveau formulaire.</p>
+<p><code>null</code> (défaut) ⇒ l'ACL du <code>ZcrudScope</code> ambiant est consultée ; en
+l'absence de scope, le repli est <strong>refusant</strong> (<code>ZDenyAllAcl</code>) : aucune
+action de formulaire portant une permission n'est offerte. Déclarez votre
+ACL — au scope (<code>ZcrudScope(acl: MonAcl())</code>, valable pour tout le
+sous-arbre) ou ici pour ce seul formulaire. En développement, l'ouverture
+totale se déclare : <code>acl: const ZAllowAllAcl()</code>.</p>
+<p>Sans <a href="../../zcrud_core/DynamicEdition/formActions.html">formActions</a>, ce port n'a aucun effet visible (aucune zone d'actions
+n'est rendue). <strong>Aucune règle métier</strong> dans le cœur : le gate se contente
+d'appeler <code>acl.can(…)</code> (invariant AD-16).</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final ZAcl acl;</code></pre>
+  <pre class="language-dart"><code class="language-dart">final ZAcl? acl;</code></pre>
 </section>
 
 
@@ -100,7 +106,7 @@ métier</strong> dans le cœur : le gate appelle <code>acl.can(…)</code> (inva
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

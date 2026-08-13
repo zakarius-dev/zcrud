@@ -110,9 +110,13 @@ and</li>
   <pre class="language-dart"><code class="language-dart">@override
 Widget build(BuildContext context) {
   final registry = ZcrudScope.maybeOf(context)?.widgetRegistry;
-  &#47;&#47; Convention `kind` alignée sur `ZTypeRegistry` : le nom de l&#39;enum
-  &#47;&#47; (`&#39;widget&#39;`). L&#39;app enregistre codec + widget sous le même `kind`.
-  final builder = registry?.tryBuilderFor(field.type.name);
+  &#47;&#47; Discriminant déclaré (`ZFieldSpec.widgetKind`) consulté AVANT le repli
+  &#47;&#47; sur la convention `kind` alignée sur `ZTypeRegistry` : le nom de l&#39;enum
+  &#47;&#47; (`&#39;widget&#39;`). Discriminant absent OU non enregistré ⇒ repli inchangé
+  &#47;&#47; (défensif, invariant AD-10).
+  final wk = field.widgetKind;
+  final builder = (wk == null ? null : registry?.tryBuilderFor(wk)) ??
+      registry?.tryBuilderFor(field.type.name);
   if (builder == null) {
     return ZUnsupportedFieldWidget(field: field);
   }
@@ -148,7 +152,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

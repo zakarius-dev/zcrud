@@ -85,12 +85,37 @@ généré (<code>kindOf</code> → <code>fieldSpecsFor</code> / <code>encode</co
     <section class="summary offset-anchor" id="classes">
       <h2>Classes</h2>
       <dl>
+          <dt id="ZCrudEditionScope">
+  <span class="name "><a href="../zcrud_screen/ZCrudEditionScope-class.html">ZCrudEditionScope</a></span> 
+
+</dt>
+<dd>
+  Contexte d'édition posé par <code>ZCrudScreen</code> autour de la surface présentée.
+</dd>
+
           <dt id="ZCrudScreen">
   <span class="name "><a href="../zcrud_screen/ZCrudScreen-class.html">ZCrudScreen</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></span> 
 
 </dt>
 <dd>
   Écran CRUD assemblé : liste + recherche + création + édition + sauvegarde
+</dd>
+
+          <dt id="ZCrudScreenActions">
+  <span class="name "><a href="../zcrud_screen/ZCrudScreenActions-class.html">ZCrudScreenActions</a></span> 
+
+</dt>
+<dd>
+  Les gestes d'ouverture qu'un <code>ZCrudScreen</code> expose à ses descendants.
+</dd>
+
+          <dt id="ZCrudScreenScope">
+  <span class="name "><a href="../zcrud_screen/ZCrudScreenScope-class.html">ZCrudScreenScope</a></span> 
+
+</dt>
+<dd>
+  Contexte posé par <code>ZCrudScreen</code> autour de son corps, portant les gestes
+que l'écran sait ouvrir.
 </dd>
 
           <dt id="ZCrudSource">
@@ -101,12 +126,95 @@ généré (<code>kindOf</code> → <code>fieldSpecsFor</code> / <code>encode</co
   Source de données déclarative d'un <code>ZCrudScreen&lt;T&gt;</code>.
 </dd>
 
+          <dt id="ZCrudTitles">
+  <span class="name "><a href="../zcrud_screen/ZCrudTitles-class.html">ZCrudTitles</a></span> 
+
+</dt>
+<dd>
+  Titres des quatre modes de la surface d'édition d'un <code>ZCrudScreen</code>.
+</dd>
+
+          <dt id="ZExportPolicy">
+  <span class="name "><a href="../zcrud_screen/ZExportPolicy-class.html">ZExportPolicy</a></span> 
+
+</dt>
+<dd>
+  Politique d'<strong>export</strong> d'un écran CRUD.
+</dd>
+
+          <dt id="ZListQueryPolicy">
+  <span class="name "><a href="../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a></span> 
+
+</dt>
+<dd>
+  Tri par défaut, filtres permanents, taille de page et sémantique de
+recherche d'un listing <strong>déclarés</strong> sur l'écran.
+</dd>
+
+          <dt id="ZListQueryScope">
+  <span class="name "><a href="../zcrud_screen/ZListQueryScope-class.html">ZListQueryScope</a></span> 
+
+</dt>
+<dd>
+  Contexte portant la <a href="../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a> d'un écran autour de son corps.
+</dd>
+
+          <dt id="ZRowActionsMenu">
+  <span class="name "><a href="../zcrud_screen/ZRowActionsMenu-class.html">ZRowActionsMenu</a></span> 
+
+</dt>
+<dd>
+  Tuile de ligne dont les actions sont offertes <strong>en menu</strong> — déclencheur
+visible, geste contextuel, ou les deux.
+</dd>
+
+          <dt id="ZRowTint">
+  <span class="name "><a href="../zcrud_screen/ZRowTint-class.html">ZRowTint</a></span> 
+
+</dt>
+<dd>
+  Teinte d'une ligne de liste, et le libellé qui la <strong>double</strong>.
+</dd>
+
+          <dt id="ZSelectionPolicy">
+  <span class="name "><a href="../zcrud_screen/ZSelectionPolicy-class.html">ZSelectionPolicy</a></span> 
+
+</dt>
+<dd>
+  Politique de <strong>sélection multiple</strong> d'un écran CRUD.
+</dd>
+
       </dl>
     </section>
 
     <section class="summary offset-anchor" id="enums">
       <h2>Enums</h2>
       <dl>
+          <dt id="ZRowActionsPresentation">
+  <span class="name "><a href="../zcrud_screen/ZRowActionsPresentation.html">ZRowActionsPresentation</a></span> 
+
+</dt>
+<dd>
+  Comment les actions d'une ligne sont présentées à l'utilisateur.
+</dd>
+
+          <dt id="ZRowLongPressOwner">
+  <span class="name "><a href="../zcrud_screen/ZRowLongPressOwner.html">ZRowLongPressOwner</a></span> 
+
+</dt>
+<dd>
+  À qui appartient l'<strong>appui long</strong> sur une ligne, quand deux fonctions le
+réclament.
+</dd>
+
+          <dt id="ZScreenMode">
+  <span class="name "><a href="../zcrud_screen/ZScreenMode.html">ZScreenMode</a></span> 
+
+</dt>
+<dd>
+  Les trois modes d'un <code>ZCrudScreen</code>.
+</dd>
+
           <dt id="ZTrashMode">
   <span class="name "><a href="../zcrud_screen/ZTrashMode.html">ZTrashMode</a></span> 
 
@@ -123,10 +231,88 @@ généré (<code>kindOf</code> → <code>fieldSpecsFor</code> / <code>encode</co
 
 
 
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="zCrudDetailsOpener" class="callable">
+  <span class="name"><a href="../zcrud_screen/zCrudDetailsOpener.html">zCrudDetailsOpener</a></span><span class="signature">(<wbr><span class="parameter" id="zCrudDetailsOpener-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zCrudDetailsOpener-param-entity"><span class="type-annotation">ZEntity</span> <span class="parameter-name">entity</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_screen/ZCrudOpener.html">ZCrudOpener</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le rappel qui ouvre la <strong>fiche de détail</strong> de <code>entity</code> sur l'écran
+englobant, ou <code>null</code> si la consultation n'est pas offerte — hors écran,
+écran verrouillé ou non déclaré consultable, vue corbeille, aucun
+formulaire, ou <code>ZCrudAction.view</code> refusé sur cette ligne.
+  
+
+</dd>
+
+          <dt id="zCrudEditionOpener" class="callable">
+  <span class="name"><a href="../zcrud_screen/zCrudEditionOpener.html">zCrudEditionOpener</a></span><span class="signature">(<wbr><span class="parameter" id="zCrudEditionOpener-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zCrudEditionOpener-param-entity"><span class="type-annotation">ZEntity</span> <span class="parameter-name">entity</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_screen/ZCrudOpener.html">ZCrudOpener</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le rappel qui ouvre la surface <strong>nominale</strong> de <code>entity</code> sur l'écran
+englobant, ou <code>null</code> si le geste n'est pas possible — hors écran, écran
+verrouillé, vue corbeille, source en lecture seule, ou permission refusée.
+  
+
+</dd>
+
+          <dt id="zMenuEntriesOfRowActions" class="callable">
+  <span class="name"><a href="../zcrud_screen/zMenuEntriesOfRowActions.html">zMenuEntriesOfRowActions</a></span><span class="signature">(<wbr><span class="parameter" id="zMenuEntriesOfRowActions-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zMenuEntriesOfRowActions-param-actions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResolvedRowAction</span>&gt;</span></span> <span class="parameter-name">actions</span>, {</span><span class="parameter" id="zMenuEntriesOfRowActions-param-disabledReason"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">disabledReason</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZMenuEntry</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Convertit une liste d'actions résolues, <strong>ordre préservé</strong>.
+  
+
+</dd>
+
+          <dt id="zMenuEntryOfRowAction" class="callable">
+  <span class="name"><a href="../zcrud_screen/zMenuEntryOfRowAction.html">zMenuEntryOfRowAction</a></span><span class="signature">(<wbr><span class="parameter" id="zMenuEntryOfRowAction-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zMenuEntryOfRowAction-param-action"><span class="type-annotation">ZResolvedRowAction</span> <span class="parameter-name">action</span>, {</span><span class="parameter" id="zMenuEntryOfRowAction-param-disabledReason"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">disabledReason</span></span>})
+    <span class="returntype parameter">&#8594; ZMenuEntry</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Convertit une action de ligne <strong>résolue</strong> (entité liée, ACL déjà tranchée)
+en entrée de menu.
+  
+
+</dd>
+
+      </dl>
+    </section>
 
     <section class="summary offset-anchor" id="typedefs">
       <h2>Typedefs</h2>
       <dl>
+          
+  <dt id="ZCrudBatchActions" class="callable">
+    <span class="name"><a href="../zcrud_screen/ZCrudBatchActions.html">ZCrudBatchActions</a></span>&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;<span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZBatchAction</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-selected"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">selected</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Actions de masse <strong>supplémentaires</strong> de l'application, construites avec les
+entités actuellement sélectionnées.
+    
+
+  </dd>
+
           
   <dt id="ZCrudEditionBuilder" class="callable">
     <span class="name"><a href="../zcrud_screen/ZCrudEditionBuilder.html">ZCrudEditionBuilder</a></span>&lt;<wbr><span class="type-parameter">T</span>&gt;<span class="signature">
@@ -143,6 +329,20 @@ l'édition dérivée.
   </dd>
 
           
+  <dt id="ZCrudExportDelivery" class="callable">
+    <span class="name"><a href="../zcrud_screen/ZCrudExportDelivery.html">ZCrudExportDelivery</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/FutureOr-class.html">FutureOr</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-file"><span class="type-annotation">ZExportedBytes</span> <span class="parameter-name">file</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Remise du fichier produit à l'application.
+    
+
+  </dd>
+
+          
   <dt id="ZCrudItemBuilder" class="callable">
     <span class="name"><a href="../zcrud_screen/ZCrudItemBuilder.html">ZCrudItemBuilder</a></span>&lt;<wbr><span class="type-parameter">T</span>&gt;<span class="signature">
       <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span>, </span><span class="parameter" id="param-columns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZListColumn</span>&gt;</span></span> <span class="parameter-name">columns</span></span>)</span></span>
@@ -152,6 +352,20 @@ l'édition dérivée.
   </dt>
   <dd>
     Rendu d'une tuile de liste, voie d'échappement du rendu par défaut.
+    
+
+  </dd>
+
+          
+  <dt id="ZCrudOpener" class="callable">
+    <span class="name"><a href="../zcrud_screen/ZCrudOpener.html">ZCrudOpener</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span> Function<span class="signature">()</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Ouverture d'une surface de l'écran, déjà liée à son élément.
     
 
   </dd>
@@ -173,13 +387,28 @@ l'édition dérivée.
           
   <dt id="ZCrudTrashWrite" class="callable">
     <span class="name"><a href="../zcrud_screen/ZCrudTrashWrite.html">ZCrudTrashWrite</a></span>&lt;<wbr><span class="type-parameter">T</span>&gt;<span class="signature">
-      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/FutureOr-class.html">FutureOr</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>)</span></span>
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/FutureOr-class.html">FutureOr</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>)</span></span>
     </span>
     
 
   </dt>
   <dd>
-    Écriture de corbeille (soft-delete ou restore) déléguée à l'application.
+    Écriture de corbeille (mise à la corbeille, restauration, purge) déléguée à
+l'application.
+    
+
+  </dd>
+
+          
+  <dt id="ZRowTintBuilder" class="callable">
+    <span class="name"><a href="../zcrud_screen/ZRowTintBuilder.html">ZRowTintBuilder</a></span>&lt;<wbr><span class="type-parameter">T</span>&gt;<span class="signature">
+      <span class="returntype parameter">= <a href="../zcrud_screen/ZRowTint-class.html">ZRowTint</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Décide la <a href="../zcrud_screen/ZRowTint-class.html">ZRowTint</a> d'une ligne à partir de l'<strong>entité typée</strong> <code>entity</code>.
     
 
   </dd>
@@ -214,7 +443,7 @@ l'édition dérivée.
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

@@ -71,7 +71,7 @@ de <strong>remettre à <code>null</code></strong> <a href="../zcrud_core/ZDataRe
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZDataRequest.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZDataRequest/ZDataRequest.html">ZDataRequest</a></span><span class="signature">({<span class="parameter" id="param-filters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">filters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span><span class="parameter" id="param-sorts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSort-class.html">ZSort</a></span>&gt;</span></span> <span class="parameter-name">sorts</span> = <span class="default-value">const &lt;ZSort&gt;[]</span>, </span><span class="parameter" id="param-search"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">search</span>, </span><span class="parameter" id="param-limit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">limit</span>, </span><span class="parameter" id="param-startAfter"><span class="type-annotation"><a href="../zcrud_core/ZCursor-class.html">ZCursor</a>?</span> <span class="parameter-name">startAfter</span>, </span><span class="parameter" id="param-deletedScope"><span class="type-annotation"><a href="../zcrud_core/ZDeletedScope.html">ZDeletedScope</a></span> <span class="parameter-name">deletedScope</span> = <span class="default-value">ZDeletedScope.aliveOnly</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZDataRequest/ZDataRequest.html">ZDataRequest</a></span><span class="signature">({<span class="parameter" id="param-filters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">filters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span><span class="parameter" id="param-sorts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSort-class.html">ZSort</a></span>&gt;</span></span> <span class="parameter-name">sorts</span> = <span class="default-value">const &lt;ZSort&gt;[]</span>, </span><span class="parameter" id="param-search"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">search</span>, </span><span class="parameter" id="param-limit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">limit</span>, </span><span class="parameter" id="param-startAfter"><span class="type-annotation"><a href="../zcrud_core/ZCursor-class.html">ZCursor</a>?</span> <span class="parameter-name">startAfter</span>, </span><span class="parameter" id="param-deletedScope"><span class="type-annotation"><a href="../zcrud_core/ZDeletedScope.html">ZDeletedScope</a></span> <span class="parameter-name">deletedScope</span> = <span class="default-value">ZDeletedScope.aliveOnly</span>, </span><span class="parameter" id="param-searchScope"><span class="type-annotation"><a href="../zcrud_core/ZSearchScope.html">ZSearchScope</a></span> <span class="parameter-name">searchScope</span> = <span class="default-value">ZSearchScope.searchableFields</span>, </span><span class="parameter" id="param-searchFolding"><span class="type-annotation"><a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> <span class="parameter-name">searchFolding</span> = <span class="default-value">ZSearchFolding.diacritics</span></span>})</span>
         </dt>
         <dd>
           Construit une requête. Tous les paramètres sont optionnels ; les valeurs
@@ -160,6 +160,34 @@ par défaut décrivent « tout, non paginé ».
 
 </dd>
 
+        <dt id="searchFolding" class="property">
+  <span class="name"><a href="../zcrud_core/ZDataRequest/searchFolding.html">searchFolding</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span>
+  
+
+</dt>
+<dd>
+  <strong>Profondeur de normalisation</strong> de la recherche <a href="../zcrud_core/ZDataRequest/search.html">search</a>, appliquée au
+terme comme aux valeurs. Par défaut : <a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding.diacritics</a> —
+comportement historique <strong>inchangé</strong>. Champ additif.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="searchScope" class="property">
+  <span class="name"><a href="../zcrud_core/ZDataRequest/searchScope.html">searchScope</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSearchScope.html">ZSearchScope</a></span>
+  
+
+</dt>
+<dd>
+  <strong>Domaine de colonnes</strong> de la recherche <a href="../zcrud_core/ZDataRequest/search.html">search</a>. Par défaut :
+<a href="../zcrud_core/ZSearchScope.html">ZSearchScope.searchableFields</a> — comportement historique <strong>inchangé</strong>
+(seuls les champs déclarés <code>searchable</code>). Champ additif.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="sorts" class="property">
   <span class="name"><a href="../zcrud_core/ZDataRequest/sorts.html">sorts</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSort-class.html">ZSort</a></span>&gt;</span></span>
@@ -194,7 +222,7 @@ par défaut décrivent « tout, non paginé ».
     <h2>Methods</h2>
     <dl class="callables">
         <dt id="copyWith" class="callable">
-  <span class="name"><a href="../zcrud_core/ZDataRequest/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-filters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span>?</span> <span class="parameter-name">filters</span>, </span><span class="parameter" id="copyWith-param-sorts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSort-class.html">ZSort</a></span>&gt;</span>?</span> <span class="parameter-name">sorts</span>, </span><span class="parameter" id="copyWith-param-search"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">search</span> = <span class="default-value">_unset</span>, </span><span class="parameter" id="copyWith-param-limit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">limit</span> = <span class="default-value">_unset</span>, </span><span class="parameter" id="copyWith-param-startAfter"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">startAfter</span> = <span class="default-value">_unset</span>, </span><span class="parameter" id="copyWith-param-deletedScope"><span class="type-annotation"><a href="../zcrud_core/ZDeletedScope.html">ZDeletedScope</a>?</span> <span class="parameter-name">deletedScope</span></span>})
+  <span class="name"><a href="../zcrud_core/ZDataRequest/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-filters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span>?</span> <span class="parameter-name">filters</span>, </span><span class="parameter" id="copyWith-param-sorts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSort-class.html">ZSort</a></span>&gt;</span>?</span> <span class="parameter-name">sorts</span>, </span><span class="parameter" id="copyWith-param-search"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">search</span> = <span class="default-value">_unset</span>, </span><span class="parameter" id="copyWith-param-limit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">limit</span> = <span class="default-value">_unset</span>, </span><span class="parameter" id="copyWith-param-startAfter"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">startAfter</span> = <span class="default-value">_unset</span>, </span><span class="parameter" id="copyWith-param-deletedScope"><span class="type-annotation"><a href="../zcrud_core/ZDeletedScope.html">ZDeletedScope</a>?</span> <span class="parameter-name">deletedScope</span>, </span><span class="parameter" id="copyWith-param-searchScope"><span class="type-annotation"><a href="../zcrud_core/ZSearchScope.html">ZSearchScope</a>?</span> <span class="parameter-name">searchScope</span>, </span><span class="parameter" id="copyWith-param-searchFolding"><span class="type-annotation"><a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding</a>?</span> <span class="parameter-name">searchFolding</span></span>})
     <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZDataRequest-class.html">ZDataRequest</a></span>
   </span>
   
@@ -283,7 +311,7 @@ les <strong>réinitialise</strong> ; les omettre conserve la valeur courante.
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

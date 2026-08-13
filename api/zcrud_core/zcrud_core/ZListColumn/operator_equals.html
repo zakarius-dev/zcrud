@@ -111,6 +111,17 @@ bool operator ==(Object other) =&gt;
         type == other.type &amp;&amp;
         order == other.order &amp;&amp;
         width == other.width &amp;&amp;
+        minWidth == other.minWidth &amp;&amp;
+        maxWidth == other.maxWidth &amp;&amp;
+        &#47;&#47; Réglage déclaratif pur : deux colonnes de devises différentes
+        &#47;&#47; rendent des textes différents, elles doivent être distinguées.
+        currency == other.currency &amp;&amp;
+        &#47;&#47; [formatWithRow] est ABSENT de l&#39;égalité : c&#39;est une fonction, et
+        &#47;&#47; deux fonctions écrites à l&#39;identique ne sont jamais égales en Dart.
+        &#47;&#47; L&#39;y faire entrer rendrait chaque requête de rendu différente de la
+        &#47;&#47; précédente et casserait la mémoïsation du backend — même règle que
+        &#47;&#47; [format], que `ZFieldSpec.derivedFrom`&#47;`choicesResolver` et que
+        &#47;&#47; `DynamicList.entityFor`.
         &#47;&#47; Deux colonnes de mêmes métadonnées mais de seams DIFFÉRENTS rendent
         &#47;&#47; des textes différents : les égaler ferait manquer au backend la
         &#47;&#47; reconstruction de ses cellules (cf. dartdoc de [ZListFormat]).
@@ -142,7 +153,7 @@ bool operator ==(Object other) =&gt;
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

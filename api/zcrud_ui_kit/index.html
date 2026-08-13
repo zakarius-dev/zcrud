@@ -132,6 +132,14 @@ recherche ne rebâtit que la tranche app-bar, jamais le corps de la page.</li>
 <a href="../../docs/site/concepts/invariants.md#ad-4">AD-4</a>) ; <a href="zcrud_ui_kit/ZScaffoldMessengerToaster-class.html">ZScaffoldMessengerToaster</a> en est l'implémentation
 par défaut pur-Flutter, substituable par <a href="zcrud_ui_kit/ZToasterScope-class.html">ZToasterScope</a> sans que ce
 paquet importe de dépendance tierce.</li>
+<li><strong>Une pastille de comptage dit <em>combien</em>, pas seulement « il y en a »</strong> —
+<a href="zcrud_ui_kit/ZCountBadge-class.html">ZCountBadge</a> traite les trois pièges que chaque recopie du motif retrouve :
+le nombre laissé <strong>muet</strong> (un lecteur d'écran lit « 3 », sans dire trois
+quoi — d'où <code>semanticsLabel</code>), la cible tactile <strong>rétrécie</strong> par la pastille
+collée sur une icône (48 dp imposés dès qu'elle est cliquable), et la couleur
+<strong>écrite en dur</strong> qui devient illisible en mode sombre (tout vient du
+<code>ColorScheme</code>). Elle ne compte jamais elle-même : elle affiche le nombre
+qu'on lui donne.</li>
 <li><strong>Page-shell : deux formes pour une même valeur</strong> — <a href="zcrud_ui_kit/ZPageScaffold-class.html">ZPageScaffold</a>
 construit son propre <code>Scaffold</code> (slots exposés en pass-through) ;
 <a href="zcrud_ui_kit/ZPageShellBody-class.html">ZPageShellBody</a> rend la même app-bar morphante repliable + onglets
@@ -198,6 +206,14 @@ l'enveloppe déjà (<code>PopScope</code>…) ou en aiguille plusieurs selon l'�
 <tr>
 <td><code>ZDiscardChangesGuard</code></td>
 <td><code>PopScope</code> interceptant la sortie tant qu'un <code>ValueListenable&lt;bool&gt;</code> <em>dirty</em> est vrai.</td>
+</tr>
+<tr>
+<td><strong>Comptage</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ZCountBadge</code></td>
+<td>Pastille de comptage : seule ou posée sur un contenu, nombre <strong>annoncé</strong>, cible ≥ 48 dp si cliquable, couleurs dérivées du <code>ColorScheme</code>, placement directionnel.</td>
 </tr>
 <tr>
 <td><strong>Index et transitions</strong></td>
@@ -306,7 +322,7 @@ sans que ce paquet en dépende.</li>
 <footer>
   <span class="no-break">
     zcrud_ui_kit
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

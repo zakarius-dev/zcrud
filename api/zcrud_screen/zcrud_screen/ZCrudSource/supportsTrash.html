@@ -77,7 +77,8 @@ au moins une écriture de corbeille.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">bool get supportsTrash =&gt;
     repository != null ||
-    (isDeleted != null &amp;&amp; (onSoftDelete != null || onRestore != null));</code></pre>
+    (isDeleted != null &amp;&amp;
+        (onSoftDelete != null || onRestore != null || onPurge != null));</code></pre>
 </section>
 
   </section>
@@ -107,7 +108,7 @@ au moins une écriture de corbeille.</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

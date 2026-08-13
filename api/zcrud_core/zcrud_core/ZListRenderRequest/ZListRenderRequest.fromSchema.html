@@ -80,7 +80,8 @@ locale-neutre d'origine (appel headless : <code>zcrud_export</code>).</p>
   this.rows, {
   ZColumnPolicy? policy,
   ZListFormat formatting = const ZListFormat(),
-}) : columns = deriveColumns(fields, policy: policy, formatting: formatting);</code></pre>
+})  : columns = deriveColumns(fields, policy: policy, formatting: formatting),
+      ordinal = policy?.ordinal ?? const ZListOrdinal();</code></pre>
 </section>
 
 
@@ -108,7 +109,7 @@ locale-neutre d'origine (appel headless : <code>zcrud_export</code>).</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

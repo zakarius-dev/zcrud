@@ -63,8 +63,9 @@
     </section>
     
 <section class="desc markdown">
-  <p>Lookup <strong>strict</strong> : le builder de <code>kind</code>, ou <strong><code>throw</code></strong>
-<a href="../../zcrud_core/ZUnregisteredTypeError-class.html">ZUnregisteredTypeError</a> si absent (invariant AD-3).</p>
+  <p>Lookup <strong>strict</strong> : le builder de <code>kind</code> (enfant d'abord, puis chaîne
+parent), ou <strong><code>throw</code></strong> <a href="../../zcrud_core/ZUnregisteredTypeError-class.html">ZUnregisteredTypeError</a> si absent partout
+(invariant AD-3).</p>
 </section>
 
 
@@ -72,7 +73,7 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">ZFieldWidgetBuilder builderFor(String kind) {
-  final builder = _builders[kind];
+  final builder = tryBuilderFor(kind);
   if (builder == null) {
     throw ZUnregisteredTypeError(kind: kind, registryName: _name);
   }
@@ -105,7 +106,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

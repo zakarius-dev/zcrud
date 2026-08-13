@@ -67,13 +67,16 @@
     </section>
     
 <section class="desc markdown">
-  <p>Les <code>kind</code> actuellement enregistrés.</p>
+  <p>Les <code>kind</code> actuellement servis : <strong>union</strong> des kinds locaux et de la
+chaîne parent (dédupliquée — un <code>kind</code> ombré par l'enfant n'apparaît
+qu'une fois, et c'est le builder <strong>enfant</strong> que le lookup rend).</p>
 </section>
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Iterable&lt;String&gt; get kinds =&gt; _builders.keys;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Iterable&lt;String&gt; get kinds =&gt;
+    &lt;String&gt;{..._builders.keys, ...?parent?.kinds};</code></pre>
 </section>
 
   </section>
@@ -103,7 +106,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

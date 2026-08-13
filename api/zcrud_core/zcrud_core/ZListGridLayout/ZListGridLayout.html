@@ -54,10 +54,8 @@
 
     <section class="multi-line-signature">
       const
-      <span class="name ">ZListGridLayout</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-itemBuilder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">itemBuilder</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span></li>
-<li><span class="parameter" id="param-row"><span class="type-annotation"><a href="../../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span>, </span></li>
-<li><span class="parameter" id="param-columns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span></span></li>
-</ol>), </span></li>
+      <span class="name ">ZListGridLayout</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-itemBuilder"><span class="type-annotation"><a href="../../zcrud_core/ZRowTileBuilder.html">ZRowTileBuilder</a>?</span> <span class="parameter-name">itemBuilder</span>, </span></li>
+<li><span class="parameter" id="param-entityBuilder"><span class="type-annotation"><a href="../../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span>?</span> <span class="parameter-name">entityBuilder</span>, </span></li>
 <li><span class="parameter" id="param-maxCrossAxisExtent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">maxCrossAxisExtent</span> = <span class="default-value">360</span>, </span></li>
 <li><span class="parameter" id="param-mainAxisSpacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">mainAxisSpacing</span> = <span class="default-value">8</span>, </span></li>
 <li><span class="parameter" id="param-crossAxisSpacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">crossAxisSpacing</span> = <span class="default-value">8</span>, </span></li>
@@ -69,7 +67,7 @@
     </section>
     
 <section class="desc markdown">
-  <p>Construit la vue grille avec son <code>itemBuilder</code>.</p>
+  <p>Construit la vue grille avec sa tuile de ligne et/ou sa tuile d'entité.</p>
 </section>
 
 
@@ -77,7 +75,8 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">const ZListGridLayout({
-  required this.itemBuilder,
+  this.itemBuilder,
+  this.entityBuilder,
   this.maxCrossAxisExtent = 360,
   this.mainAxisSpacing = 8,
   this.crossAxisSpacing = 8,
@@ -116,7 +115,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

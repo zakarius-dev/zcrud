@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZCrudScreenActions class from the zcrud_screen library, for the Dart programming language.">
+  <title>ZCrudScreenActions class - zcrud_screen library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_screen</a></li>
+    <li><a href="../zcrud_screen/">zcrud_screen.dart</a></li>
+    <li class="self-crumb">ZCrudScreenActions class</li>
+  </ol>
+  <div class="self-name">ZCrudScreenActions</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_screen&#47;zcrud_screen-library-sidebar.html"
+    data-below-sidebar="zcrud_screen&#47;ZCrudScreenActions-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZCrudScreenActions</span> class 
+    <a href="https://dart.dev/language/class-modifiers#abstract" class="feature feature-abstract" title="This type can not be directly constructed.">abstract</a>
+    <a href="https://dart.dev/language/class-modifiers#interface" class="feature feature-interface" title="This class can only be implemented (not extended or mixed in).">interface</a>
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Les gestes d'ouverture qu'un <code>ZCrudScreen</code> expose à ses descendants.</p>
+<p>Chaque geste existe en <strong>trois formes</strong>, qui répondent à trois besoins
+distincts d'une carte :</p>
+<table>
+<thead>
+<tr>
+<th>Forme</th>
+<th>Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>canOpenX(entity)</code></td>
+<td>interroger la capacité <strong>avant de rendre</strong></td>
+</tr>
+<tr>
+<td><code>openX(entity)</code></td>
+<td>ouvrir — <strong>inerte</strong> si le geste est refusé</td>
+</tr>
+<tr>
+<td><code>xOpener(entity)</code></td>
+<td>le rappel prêt à poser, ou <code>null</code> si refusé</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Aucun de ces membres ne lève</strong> (invariant AD-10) : un geste impossible
+est un <code>false</code>, un <code>null</code> ou un <code>Future</code> qui ne fait rien — jamais une
+exception. Une entité d'un autre type que celui de l'écran est traitée
+comme un refus.</p>
+<p><strong>Le <code>Future</code> rendu par une ouverture se complète à la FERMETURE de la
+surface</strong>, pas à son affichage — c'est celui de la présentation elle-même.
+Un geste refusé se complète immédiatement. Ne l'attendez donc que si vous
+voulez enchaîner <em>après</em> que l'utilisateur a refermé le formulaire.</p>
+<p>La capacité conjugue <strong>trois</strong> conditions, dans cet ordre : le geste est
+<em>voulu</em> (mode de l'écran, déclaration), <em>possible</em> (un formulaire existe,
+la source sait écrire) et <em>autorisé</em> (<code>ZAcl</code>, interrogée avec l'entité
+comme cible — le filtrage est donc par ligne, pas par écran).</p>
+</section>
+
+
+
+    
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="canOpenCreation" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/canOpenCreation.html">canOpenCreation</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  La capacité d'ouvrir une <strong>création</strong> — exactement celle du bouton « + »
+de l'écran : même déclaration (<code>canCreate</code>, onglet actif), même
+permission (<code>ZCrudAction.create</code>), même chemin d'édition.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="canOpenDetails" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/canOpenDetails.html">canOpenDetails</a></span><span class="signature">(<wbr><span class="parameter" id="canOpenDetails-param-entity"><span class="type-annotation">ZEntity</span> <span class="parameter-name">entity</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  La capacité d'ouvrir la <strong>fiche de détail</strong> de <code>entity</code>, explicitement :
+le formulaire entier, tous ses champs, rendu en lecture seule.
+  
+
+</dd>
+
+        <dt id="canOpenEdition" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/canOpenEdition.html">canOpenEdition</a></span><span class="signature">(<wbr><span class="parameter" id="canOpenEdition-param-entity"><span class="type-annotation">ZEntity</span> <span class="parameter-name">entity</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  La capacité d'ouvrir la surface <strong>nominale</strong> de <code>entity</code> : celle que la
+ligne offrirait d'elle-même.
+  
+
+</dd>
+
+        <dt id="canOpenUpdate" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/canOpenUpdate.html">canOpenUpdate</a></span><span class="signature">(<wbr><span class="parameter" id="canOpenUpdate-param-entity"><span class="type-annotation">ZEntity</span> <span class="parameter-name">entity</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  La capacité d'ouvrir <code>entity</code> <strong>en édition</strong>, explicitement.
+  
+
+</dd>
+
+        <dt id="creationOpener" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/creationOpener.html">creationOpener</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_screen/ZCrudOpener.html">ZCrudOpener</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le rappel de création, ou <code>null</code> si le geste est refusé.
+  
+
+</dd>
+
+        <dt id="detailsOpener" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/detailsOpener.html">detailsOpener</a></span><span class="signature">(<wbr><span class="parameter" id="detailsOpener-param-entity"><span class="type-annotation">ZEntity</span> <span class="parameter-name">entity</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_screen/ZCrudOpener.html">ZCrudOpener</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le rappel d'ouverture de la fiche de <code>entity</code>, ou <code>null</code> si le geste est
+refusé — la forme à préférer pour poser la consultation sur le <strong>tap</strong>
+d'une carte métier d'un écran par ailleurs complet :
+  
+
+</dd>
+
+        <dt id="editionOpener" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/editionOpener.html">editionOpener</a></span><span class="signature">(<wbr><span class="parameter" id="editionOpener-param-entity"><span class="type-annotation">ZEntity</span> <span class="parameter-name">entity</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_screen/ZCrudOpener.html">ZCrudOpener</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le rappel d'ouverture nominale de <code>entity</code>, ou <code>null</code> si le geste est
+refusé — la forme à préférer quand la carte doit décider <strong>si</strong> elle
+dessine son geste.
+  
+
+</dd>
+
+        <dt id="filterBy" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/filterBy.html">filterBy</a></span><span class="signature">(<wbr><span class="parameter" id="filterBy-param-filters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilter</span>&gt;</span></span> <span class="parameter-name">filters</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Filtre</strong> le listing de l'écran par les prédicats donnés.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="openCreation" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/openCreation.html">openCreation</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Ouvre une <strong>création</strong> — voir <a href="../zcrud_screen/ZCrudScreenActions/canOpenCreation.html">canOpenCreation</a>. Inerte si refusé.
+  
+
+</dd>
+
+        <dt id="openDetails" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/openDetails.html">openDetails</a></span><span class="signature">(<wbr><span class="parameter" id="openDetails-param-entity"><span class="type-annotation">ZEntity</span> <span class="parameter-name">entity</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Ouvre la <strong>fiche de détail</strong> de <code>entity</code> — voir <a href="../zcrud_screen/ZCrudScreenActions/canOpenDetails.html">canOpenDetails</a>. Inerte
+si refusé.
+  
+
+</dd>
+
+        <dt id="openEdition" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/openEdition.html">openEdition</a></span><span class="signature">(<wbr><span class="parameter" id="openEdition-param-entity"><span class="type-annotation">ZEntity</span> <span class="parameter-name">entity</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Ouvre la surface <strong>nominale</strong> de <code>entity</code> — voir <a href="../zcrud_screen/ZCrudScreenActions/canOpenEdition.html">canOpenEdition</a>.
+  
+
+</dd>
+
+        <dt id="openUpdate" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/openUpdate.html">openUpdate</a></span><span class="signature">(<wbr><span class="parameter" id="openUpdate-param-entity"><span class="type-annotation">ZEntity</span> <span class="parameter-name">entity</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Ouvre <code>entity</code> <strong>en édition</strong> — voir <a href="../zcrud_screen/ZCrudScreenActions/canOpenUpdate.html">canOpenUpdate</a>. Inerte si refusé.
+  
+
+</dd>
+
+        <dt id="sortBy" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/sortBy.html">sortBy</a></span><span class="signature">(<wbr><span class="parameter" id="sortBy-param-sort"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSort</span>&gt;</span></span> <span class="parameter-name">sort</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Trie</strong> le listing de l'écran par les clés données, dans l'ordre.
+  
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="updateOpener" class="callable">
+  <span class="name"><a href="../zcrud_screen/ZCrudScreenActions/updateOpener.html">updateOpener</a></span><span class="signature">(<wbr><span class="parameter" id="updateOpener-param-entity"><span class="type-annotation">ZEntity</span> <span class="parameter-name">entity</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_screen/ZCrudOpener.html">ZCrudOpener</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le rappel d'édition de <code>entity</code>, ou <code>null</code> si le geste est refusé.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_screen</a></li>
+    <li><a href="../zcrud_screen/">zcrud_screen</a></li>
+    <li class="self-crumb">ZCrudScreenActions class</li>
+</ol>
+
+    <h5>zcrud_screen library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_screen
+      0.94.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

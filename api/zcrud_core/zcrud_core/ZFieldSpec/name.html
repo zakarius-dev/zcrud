@@ -63,6 +63,13 @@
       
 <section class="desc markdown">
   <p>Clé persistée du champ (snake_case par défaut — invariant AD-3).</p>
+<p>Un <strong>nom pointé</strong> (<code>'vido.chef_equipe_poste_id'</code>) est admis et signifie un
+champ <strong>imbriqué</strong> du modèle. Le socle d'édition le traite comme une clé
+<strong>plate</strong> (une tranche par nom, point compris) : l'aplatissement à
+l'ouverture et le regroupement à la soumission se font <strong>à la frontière</strong>,
+via les utilitaires symétriques <code>zFlattenPaths</code>/<code>zRegroupPaths</code>
+(<code>z_path_values.dart</code>). L'écran CRUD assemblé (<code>zcrud_screen</code>) câble cette
+paire d'office.</p>
 </section>
 
       
@@ -97,7 +104,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

@@ -108,6 +108,10 @@ int get hashCode =&gt; Object.hash(
       runtimeType,
       Object.hashAllUnordered(forceInclude),
       Object.hashAllUnordered(forceExclude),
+      Object.hashAllUnordered(
+        overrides.entries.map((e) =&gt; Object.hash(e.key, e.value)),
+      ),
+      ordinal,
     );</code></pre>
 </section>
 
@@ -138,7 +142,7 @@ int get hashCode =&gt; Object.hash(
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

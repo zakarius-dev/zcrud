@@ -60,9 +60,11 @@
 <li><span class="parameter" id="param-renderer"><span class="type-annotation"><a href="../../zcrud_core/ZListRenderer-class.html">ZListRenderer</a>?</span> <span class="parameter-name">renderer</span>, </span></li>
 <li><span class="parameter" id="param-columnPolicy"><span class="type-annotation"><a href="../../zcrud_core/ZColumnPolicy-class.html">ZColumnPolicy</a>?</span> <span class="parameter-name">columnPolicy</span>, </span></li>
 <li><span class="parameter" id="param-selection"><span class="type-annotation"><a href="../../zcrud_core/ZListSelectionController-class.html">ZListSelectionController</a>?</span> <span class="parameter-name">selection</span>, </span></li>
+<li><span class="parameter" id="param-selectionActivation"><span class="type-annotation"><a href="../../zcrud_core/ZListSelectionActivation.html">ZListSelectionActivation</a></span> <span class="parameter-name">selectionActivation</span> = <span class="default-value">ZListSelectionActivation.always</span>, </span></li>
 <li><span class="parameter" id="param-rowActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZRowAction-class.html">ZRowAction</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">rowActions</span>, </span></li>
 <li><span class="parameter" id="param-entityFor"><span class="type-annotation">T?</span> <span class="parameter-name">entityFor</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-row"><span class="type-annotation"><a href="../../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span></span></li>
 </ol>)?, </span></li>
+<li><span class="parameter" id="param-rowAcl"><span class="type-annotation"><a href="../../zcrud_core/ZRowAclResolver.html">ZRowAclResolver</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">rowAcl</span>, </span></li>
 <li><span class="parameter" id="param-actionAclMode"><span class="type-annotation"><a href="../../zcrud_core/ZActionAclMode.html">ZActionAclMode</a></span> <span class="parameter-name">actionAclMode</span> = <span class="default-value">ZActionAclMode.hide</span>, </span></li>
 <li><span class="parameter" id="param-onSelectionChanged"><span class="type-annotation">void</span> <span class="parameter-name">onSelectionChanged</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-selectedIds"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">selectedIds</span></span></li>
 </ol>)?, </span></li>
@@ -86,8 +88,10 @@
   this.renderer,
   this.columnPolicy,
   this.selection,
+  this.selectionActivation = ZListSelectionActivation.always,
   this.rowActions,
   this.entityFor,
+  this.rowAcl,
   this.actionAclMode = ZActionAclMode.hide,
   this.onSelectionChanged,
   this.collectionId,
@@ -120,7 +124,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

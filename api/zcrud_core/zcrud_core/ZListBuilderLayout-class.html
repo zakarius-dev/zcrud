@@ -56,7 +56,18 @@
     
 <section class="desc markdown">
   <p>Vue <strong>liste</strong> : rend un <code>ListView.builder</code> <strong>dans le cœur</strong> (Material-free),
-une entrée par ligne construite par <a href="../zcrud_core/ZListBuilderLayout/itemBuilder.html">itemBuilder</a>. N'exige AUCUN renderer.</p>
+une entrée par ligne. N'exige AUCUN renderer.</p>
+<p>Deux façons de décrire l'entrée, au choix :</p>
+<ul>
+<li><a href="../zcrud_core/ZListBuilderLayout/itemBuilder.html">itemBuilder</a> — la ligne neutre (<code>ZListRow</code> + colonnes) ;</li>
+<li><a href="../zcrud_core/ZListBuilderLayout/entityBuilder.html">entityBuilder</a> — l'<strong>entité résolue</strong>, forme typée obtenue par
+<a href="../zcrud_core/ZListBuilderLayout/forEntity.html">ZListBuilderLayout.forEntity</a> ou posée par un assembleur via
+<a href="../zcrud_core/ZListBuilderLayout/withEntityTiles.html">withEntityTiles</a>.</li>
+</ul>
+<p>Quand les deux sont présents, <a href="../zcrud_core/ZListBuilderLayout/entityBuilder.html">entityBuilder</a> l'emporte tant que l'entité
+de la ligne est résolue (seam <code>DynamicList.entityFor</code>) ; sinon le rendu
+retombe sur <a href="../zcrud_core/ZListBuilderLayout/itemBuilder.html">itemBuilder</a>. Aucun des deux ⇒ entrée vide : la vue attend
+alors qu'un assembleur lui pose sa tuile.</p>
 </section>
 
 
@@ -88,10 +99,10 @@ une entrée par ligne construite par <a href="../zcrud_core/ZListBuilderLayout/i
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZListBuilderLayout.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZListBuilderLayout/ZListBuilderLayout.html">ZListBuilderLayout</a></span><span class="signature">({<span class="parameter" id="param-itemBuilder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">itemBuilder</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-row"><span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span>, </span><span class="parameter" id="param-columns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span></span>)</span>})</span>
+          <span class="name"><a href="../zcrud_core/ZListBuilderLayout/ZListBuilderLayout.html">ZListBuilderLayout</a></span><span class="signature">({<span class="parameter" id="param-itemBuilder"><span class="type-annotation"><a href="../zcrud_core/ZRowTileBuilder.html">ZRowTileBuilder</a>?</span> <span class="parameter-name">itemBuilder</span>, </span><span class="parameter" id="param-entityBuilder"><span class="type-annotation"><a href="../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span>?</span> <span class="parameter-name">entityBuilder</span></span>})</span>
         </dt>
         <dd>
-          Construit la vue liste avec son <code>itemBuilder</code>.
+          Construit la vue liste avec sa tuile de ligne et/ou sa tuile d'entité.
             <div class="constructor-modifier features">const</div>
         </dd>
     </dl>
@@ -102,6 +113,19 @@ une entrée par ligne construite par <a href="../zcrud_core/ZListBuilderLayout/i
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
+        <dt id="entityBuilder" class="property">
+  <span class="name"><a href="../zcrud_core/ZListBuilderLayout/entityBuilder.html">entityBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Construit le widget d'une ligne à partir de l'<strong>entité résolue</strong> —
+prioritaire sur <a href="../zcrud_core/ZListBuilderLayout/itemBuilder.html">itemBuilder</a>. <code>null</code> ⇒ aucune tuile d'entité.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="hashCode" class="property inherited">
   <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
@@ -116,13 +140,13 @@ une entrée par ligne construite par <a href="../zcrud_core/ZListBuilderLayout/i
 
         <dt id="itemBuilder" class="property">
   <span class="name"><a href="../zcrud_core/ZListBuilderLayout/itemBuilder.html">itemBuilder</a></span>
-  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-row"><span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span>, </span><span class="parameter" id="param-columns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span></span>)</span></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZRowTileBuilder.html">ZRowTileBuilder</a>?</span>
   
 
 </dt>
 <dd>
   Construit le widget d'une ligne à partir de la <a href="../zcrud_core/ZListRow-class.html">ZListRow</a> et des colonnes
-dérivées (<code>List&lt;ZListColumn&gt;</code>).
+dérivées (<code>List&lt;ZListColumn&gt;</code>). <code>null</code> ⇒ aucune tuile de ligne.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -144,7 +168,7 @@ dérivées (<code>List&lt;ZListColumn&gt;</code>).
 
     
   <section
-      class="summary offset-anchor inherited"
+      class="summary offset-anchor"
       id="instance-methods">
     <h2>Methods</h2>
     <dl class="callables">
@@ -174,6 +198,20 @@ dérivées (<code>List&lt;ZListColumn&gt;</code>).
 
 </dd>
 
+        <dt id="withEntityTiles" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListBuilderLayout/withEntityTiles.html">withEntityTiles</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="withEntityTiles-param-builder"><span class="type-annotation"><a href="../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">builder</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZListLayout-class.html">ZListLayout</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Retourne la variante <strong>portant la tuile typée</strong> <code>builder</code> — le rendu
+reçoit alors l'entité <code>T</code> résolue au lieu de la seule <code>ZListRow</code>.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
     </dl>
   </section>
     
@@ -199,6 +237,24 @@ dérivées (<code>List&lt;ZListColumn&gt;</code>).
   </section>
     
     
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="forEntity" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListBuilderLayout/forEntity.html">forEntity</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="forEntity-param-tileBuilder"><span class="type-annotation"><a href="../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">tileBuilder</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZListBuilderLayout-class.html">ZListBuilderLayout</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Construit la vue liste avec une tuile <strong>typée</strong> recevant l'entité <code>T</code>.
+  
+
+</dd>
+
+    </dl>
+  </section>
     
 
   </div> <!-- /.main-content -->
@@ -224,7 +280,7 @@ dérivées (<code>List&lt;ZListColumn&gt;</code>).
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

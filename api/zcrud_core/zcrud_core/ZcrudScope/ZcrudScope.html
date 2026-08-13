@@ -56,7 +56,7 @@
       const
       <span class="name ">ZcrudScope</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-child"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">child</span>, </span></li>
 <li><span class="parameter" id="param-resolver"><span class="type-annotation"><a href="../../zcrud_core/ZDependencyResolver-class.html">ZDependencyResolver</a></span> <span class="parameter-name">resolver</span> = <span class="default-value">ZDependencyResolver.throwing</span>, </span></li>
-<li><span class="parameter" id="param-acl"><span class="type-annotation"><a href="../../zcrud_core/ZAcl-class.html">ZAcl</a></span> <span class="parameter-name">acl</span> = <span class="default-value">const ZAllowAllAcl()</span>, </span></li>
+<li><span class="parameter" id="param-acl"><span class="type-annotation"><a href="../../zcrud_core/ZAcl-class.html">ZAcl</a></span> <span class="parameter-name">acl</span> = <span class="default-value">const ZDenyAllAcl()</span>, </span></li>
 <li><span class="parameter" id="param-labels"><span class="type-annotation"><a href="../../zcrud_core/ZcrudLabels-class.html">ZcrudLabels</a>?</span> <span class="parameter-name">labels</span>, </span></li>
 <li><span class="parameter" id="param-theme"><span class="type-annotation"><a href="../../zcrud_core/ZcrudTheme-class.html">ZcrudTheme</a>?</span> <span class="parameter-name">theme</span>, </span></li>
 <li><span class="parameter" id="param-widgetRegistry"><span class="type-annotation"><a href="../../zcrud_core/ZWidgetRegistry-class.html">ZWidgetRegistry</a>?</span> <span class="parameter-name">widgetRegistry</span>, </span></li>
@@ -82,7 +82,7 @@
     
 <section class="desc markdown">
   <p>Construit le scope. Zéro-config par défaut : <code>resolver</code> throwing + <code>acl</code>
-permissive + <code>labels</code>/<code>theme</code> <code>null</code>. Un binding/app fournit des seams
+<strong>refusante</strong> + <code>labels</code>/<code>theme</code> <code>null</code>. Un binding/app fournit des seams
 concrets en les passant ici.</p>
 </section>
 
@@ -93,7 +93,7 @@ concrets en les passant ici.</p>
   <pre class="language-dart"><code class="language-dart">const ZcrudScope({
   required super.child,
   this.resolver = ZDependencyResolver.throwing,
-  this.acl = const ZAllowAllAcl(),
+  this.acl = const ZDenyAllAcl(),
   this.labels,
   this.theme,
   this.widgetRegistry,
@@ -142,7 +142,7 @@ concrets en les passant ici.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

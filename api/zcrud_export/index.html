@@ -88,9 +88,11 @@ Uint8List exportXlsx() {
 aucun <code>Workbook</code>/<code>PdfDocument</code> n'apparaît jamais dans une signature
 publique. La fuite de type Syncfusion est donc structurellement impossible.</li>
 <li><strong>Parité écran/fichier</strong> — la valeur d'une cellule exportée est
-<code>col.format(row.cells[col.name])</code>, exactement le même formateur pur que le
-rendu <code>SfDataGrid</code> de <code>zcrud_list</code>. Une seule source de vérité de
-formatage, zéro duplication entre écran et fichier.</li>
+<code>col.formatRow(row.cells[col.name], row.cells)</code>, exactement le même
+formateur pur que le rendu <code>SfDataGrid</code> de <code>zcrud_list</code>. La cellule est lue
+<strong>en connaissant toute la ligne</strong> : un montant suit alors la devise portée
+par sa propre ligne, et un format composé est honoré. Une seule source de
+vérité de formatage, zéro duplication entre écran et fichier.</li>
 <li><strong>Licence Syncfusion hors package (invariant <a href="../../docs/site/concepts/invariants.md#ad-12">AD-12</a>)</strong> —
 l'enregistrement de licence (<code>SyncfusionLicense.registerLicense</code>) est une
 responsabilité du bootstrap de l'application hôte, jamais de ce package.</li>
@@ -109,11 +111,36 @@ responsabilité du bootstrap de l'application hôte, jamais de ce package.</li>
 <td>Façade d'export neutre et immuable : <code>toExcelBytes</code> / <code>toPdfBytes</code>.</td>
 </tr>
 <tr>
+<td><code>ZCsvListExporter</code></td>
+<td>Exporteur de liste au format CSV (port <code>ZListExporter</code>), Dart pur : séparateur et marque d'ordre des octets paramétrables.</td>
+</tr>
+<tr>
+<td><code>ZXlsxListExporter</code></td>
+<td>Exporteur de liste au format Excel (port <code>ZListExporter</code>), au-dessus de <code>ZExporter</code>.</td>
+</tr>
+<tr>
 <td><code>ZExportApi</code></td>
 <td>Marqueur de version de l'API publique du paquet.</td>
 </tr>
 </tbody>
 </table>
+<h3 id="exporter-la-liste-dun-cran-assembl">Exporter la liste d'un écran assemblé</h3>
+<p><code>ZCsvListExporter</code> et <code>ZXlsxListExporter</code> réalisent le port <code>ZListExporter</code> du
+socle : les déclarer sur un <code>ZCrudScreen</code> suffit à offrir l'export, sans que
+l'assemblage connaisse ni Excel ni PDF.</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Consignataire&gt;(
+  title: 'Consignataires',
+  source: source,
+  export: ZExportPolicy(
+    exporters: const &lt;ZListExporter&gt;[ZCsvListExporter(), ZXlsxListExporter()],
+    onExported: (context, fichier) =&gt; monEnregistrement(fichier),
+  ),
+)
+</code></pre>
+<p>Ce qui part dans le fichier, c'est ce que l'écran affiche : lignes réellement
+listées (tri, filtres, recherche appliqués — ou la seule sélection si elle
+porte), colonnes dérivées du schéma, valeurs formatées. Les ornements d'écran —
+numéro d'ordre, cases à cocher, boutons d'action — n'y entrent jamais.</p>
 <p>Ce barrel réexporte aussi l'intégralité de la surface publique de
 <code>zcrud_export_pdf</code> (assemblage PDF, sauvegarde de fichier, options de mise en
 page, gabarit flashcards) — voir sa propre fiche pour le détail.</p>
@@ -126,6 +153,14 @@ sur un chemin d'export vide ou en cas d'exception : aucune ressource
 native non libérée.</li>
 <li><code>resolveHeader</code> (optionnel) résout la clé l10n de l'en-tête sans
 <code>BuildContext</code>, pour un export exécutable hors arbre de widgets.</li>
+<li>Un exporteur qui <strong>lève</strong> ne doit pas emporter l'écran : appelé par
+<code>exportSafely</code>, son jet devient un <code>ZFailure</code> ordinaire (invariant AD-10).
+C'est la voie qu'emprunte <code>ZCrudScreen</code>.</li>
+<li>Le CSV échappe selon RFC 4180 (guillemets doublés) et pose par défaut la
+marque d'ordre des octets UTF-8, sans laquelle plusieurs tableurs dégradent
+les accents. Le séparateur par défaut est la virgule ; <code>;</code> convient mieux aux
+tableurs configurés en locale francophone, qui lisent la virgule comme un
+séparateur décimal.</li>
 </ul>
 <h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
 <ul>
@@ -180,7 +215,7 @@ définitions canoniques AD-1 à AD-16.</li>
 <footer>
   <span class="no-break">
     zcrud_export
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

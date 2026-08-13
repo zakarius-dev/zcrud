@@ -100,7 +100,7 @@ réactif GetX (<code>Get.put</code>/<code>Get.delete</code>), pour une app GetX 
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZcrudGetScope.new" class="callable">
-          <span class="name"><a href="../zcrud_get/ZcrudGetScope/ZcrudGetScope.html">ZcrudGetScope</a></span><span class="signature">({<span class="parameter" id="param-child"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">child</span>, </span><span class="parameter" id="param-locator"><span class="type-annotation"><a href="https://pub.dev/documentation/get_it/9.2.1/get_it/GetIt-class.html">GetIt</a>?</span> <span class="parameter-name">locator</span>, </span><span class="parameter" id="param-createController"><span class="type-annotation">ZFormController</span> <span class="parameter-name">createController</span>()?, </span><span class="parameter" id="param-acl"><span class="type-annotation">ZAcl</span> <span class="parameter-name">acl</span> = <span class="default-value">const ZAllowAllAcl()</span>, </span><span class="parameter" id="param-registerController"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">registerController</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-registerInGetX"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">registerInGetX</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+          <span class="name"><a href="../zcrud_get/ZcrudGetScope/ZcrudGetScope.html">ZcrudGetScope</a></span><span class="signature">({<span class="parameter" id="param-child"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">child</span>, </span><span class="parameter" id="param-locator"><span class="type-annotation"><a href="https://pub.dev/documentation/get_it/9.2.1/get_it/GetIt-class.html">GetIt</a>?</span> <span class="parameter-name">locator</span>, </span><span class="parameter" id="param-createController"><span class="type-annotation">ZFormController</span> <span class="parameter-name">createController</span>()?, </span><span class="parameter" id="param-acl"><span class="type-annotation">ZAcl</span> <span class="parameter-name">acl</span> = <span class="default-value">const ZDenyAllAcl()</span>, </span><span class="parameter" id="param-registerController"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">registerController</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-registerInGetX"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">registerInGetX</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
         </dt>
         <dd>
           Construit le scope.
@@ -121,7 +121,8 @@ réactif GetX (<code>Get.put</code>/<code>Get.delete</code>), pour une app GetX 
 
 </dt>
 <dd>
-  Port d'autorisation exposé au cœur (défaut : <code>ZAllowAllAcl</code>).
+  Port d'autorisation exposé au cœur (défaut <strong>fail-closed</strong> :
+<code>ZDenyAllAcl</code>).
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -563,7 +564,7 @@ tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode
 <footer>
   <span class="no-break">
     zcrud_get
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

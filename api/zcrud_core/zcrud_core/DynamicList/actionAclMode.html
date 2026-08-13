@@ -63,6 +63,12 @@
       
 <section class="desc markdown">
   <p>Mode de filtrage ACL des actions (défaut <code>hide</code>, cf. <a href="../../zcrud_core/ZActionAclMode.html">ZActionAclMode</a>).</p>
+<p>L'ACL consultée est celle du <code>ZcrudScope</code> ambiant. <strong>En son absence, le
+repli est refusant</strong> (<code>ZDenyAllAcl</code>) : aucune action portant une
+<code>requiredPermission</code> n'est offerte. Déclarez votre ACL —
+<code>ZcrudScope(acl: MonAcl())</code> — ou, en développement,
+<code>ZcrudScope(acl: const ZAllowAllAcl())</code>. Les actions sans
+<code>requiredPermission</code> (custom) restent toujours offertes.</p>
 </section>
 
       
@@ -97,7 +103,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

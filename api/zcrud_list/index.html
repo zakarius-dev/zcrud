@@ -44,8 +44,13 @@
       
 <section class="desc markdown">
   <h1 id="zcrud_list">zcrud_list</h1>
-<p>Backend <code>SfDataGrid</code> du port <code>ZListRenderer</code> de zcrud, seule arête Syncfusion
-du graphe — invariant <a href="../../docs/site/concepts/invariants.md#ad-8">AD-8</a>.</p>
+<p>Ce paquet <strong>n'est pas « l'écran de liste »</strong> : il est le <strong>backend de rendu
+Syncfusion</strong> du port <code>ZListRenderer</code> — la seule arête Syncfusion du graphe,
+invariant <a href="../../docs/site/concepts/invariants.md#ad-8">AD-8</a>. Pour un écran
+CRUD complet et assemblé (liste + création + édition + corbeille), voir
+<a href="../zcrud_screen/README.md"><code>zcrud_screen</code></a> ; <code>zcrud_list</code> est ce que l'on
+<strong>injecte</strong> derrière lui pour que ses tableaux soient rendus par
+<code>SfDataGrid</code>.</p>
 <h2 id="aperu-apercu">Aperçu {#apercu}</h2>
 <p><code>DynamicList</code> (déclaré dans <code>zcrud_core</code>) ne connaît que l'abstraction
 <code>ZListRenderer</code> et des modèles neutres, sans dépendance Flutter tierce. Ce
@@ -53,13 +58,19 @@ paquet fournit le rendu concret <code>ZSfDataGridRenderer</code>, adossé à Syn
 <code>SfDataGrid</code> : c'est la <strong>seule</strong> arête Syncfusion du graphe zcrud pour la
 liste. Un consommateur qui n'importe pas <code>zcrud_list</code> (par exemple
 <code>zcrud_markdown</code> seul) ne tire donc aucune dépendance Syncfusion.</p>
+<p>Le paquet dépend de <code>zcrud_core</code> (modèles neutres, port, localisation) et de
+<code>zcrud_ui_kit</code> (toaster injecté servant le retour visuel de la copie de
+cellule) ; ces deux arêtes laissent le graphe acyclique et <code>zcrud_core</code> sans
+dépendance sortante.</p>
 <p>Le renderer mémoïse sa <code>DataGridSource</code> et son <code>DataGridController</code> : ni le
 scroll ni la sélection ne sont perdus au rebuild, au scroll ou au changement
 de page — la source est mise à jour <strong>en place</strong>, jamais reconstruite par
 <code>build</code>.</p>
-<p><strong>Utilisez ce paquet</strong> pour rendre <code>DynamicList</code> avec la grille Syncfusion.
+<p><strong>Utilisez ce paquet</strong> pour rendre les tableaux de <code>DynamicList</code> (ou de
+<code>zcrud_screen</code> en layout tableau) avec la grille Syncfusion.
 <strong>N'utilisez pas ce paquet</strong> si votre application n'a pas besoin de liste
-(évitez la dépendance Syncfusion), ou si vous fournissez votre propre
+tabulaire (évitez la dépendance Syncfusion), si vous cherchez l'écran CRUD
+assemblé (c'est <code>zcrud_screen</code>), ou si vous fournissez votre propre
 implémentation de <code>ZListRenderer</code>.</p>
 <h2 id="installation-installation">Installation {#installation}</h2>
 <p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
@@ -73,24 +84,148 @@ import 'package:zcrud_list/zcrud_list.dart';
 // Branche le renderer Syncfusion derrière le port neutre ZListRenderer.
 const ZListRenderer renderer = ZSfDataGridRenderer();
 </code></pre>
+<p>Tous les réglages ci-dessous sont <strong>des paramètres nommés optionnels</strong> du même
+constructeur <code>const</code> : omis, ils rendent exactement la grille par défaut.</p>
+<pre class="language-dart"><code class="language-dart">import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_list/zcrud_list.dart';
+
+const ZListRenderer richRenderer = ZSfDataGridRenderer(
+  rowsPerPage: 25, // pager numéroté sous la grille
+  copyCellOnLongPress: true, // long-press = copie de la valeur affichée
+  swipeToRevealActions: true, // swipe = actions de ligne déjà résolues
+  allowColumnResizing: true, // l'utilisateur ajuste les largeurs
+  adaptiveRowHeight: true, // les lignes grandissent avec leur contenu
+  maxRowHeight: 160,
+);
+</code></pre>
 <h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
 <ul>
+<li><strong>Backend de rendu, pas écran</strong> — ce paquet ne porte ni barre d'application,
+ni recherche, ni navigation vers l'édition : il transforme un
+<code>ZListRenderRequest</code> neutre en widget de grille. L'écran est
+<a href="../zcrud_screen/README.md"><code>zcrud_screen</code></a>, la liste déclarative est
+<code>DynamicList</code> dans <code>zcrud_core</code>.</li>
 <li><strong>Parité écran/fichier</strong> — chaque cellule est rendue avec le même
 formateur pur que l'export (<code>col.format(row.cells[col.name])</code>), une seule
-source de vérité de mise en forme.</li>
+source de vérité de mise en forme. C'est aussi ce texte formaté — jamais la
+valeur brute — qui part au presse-papiers lors d'une copie.</li>
 <li><strong>Sélection bidirectionnelle keyée par <code>id</code></strong> — la sélection Syncfusion est
 synchronisée depuis <code>ZListInteraction.selectedIds</code> et remontée via
 <code>onSelectionChanged</code>, toujours par l'identifiant stable de la ligne, jamais
 par sa position affichée.</li>
-<li><strong>Pagination automatique opt-in</strong> — <code>onLoadMore</code> déclenche le
-<code>loadMoreViewBuilder</code> natif de Syncfusion quand le scroll atteint la fin ;
-<code>null</code> (défaut) ne pose aucun builder, comportement strictement inchangé
-pour un hôte qui ne l'utilise pas.</li>
-<li><strong>Réglages additifs à défaut inchangé</strong> — <code>headerRowHeight</code>,
-<code>columnWidthMode</code>, <code>withOrderNumber</code>, <code>orderColumnHeader</code> et
-<code>cellColorBuilder</code> sont tous des paramètres optionnels dont le défaut
-reproduit exactement le rendu historique.</li>
+<li><strong>Réglages additifs à défaut inchangé</strong> — hormis la largeur de colonnes
+(ci-dessous), chaque paramètre a un défaut qui reproduit exactement le rendu
+d'origine : l'arbre de widgets d'un hôte qui n'active rien est strictement
+identique.</li>
 </ul>
+<h3 id="largeur-de-colonnes-responsive-largeur-responsive">Largeur de colonnes responsive {#largeur-responsive}</h3>
+<p><code>columnWidthMode</code> est <strong>nullable</strong>. Laissé à <code>null</code> (défaut), le mode est
+<strong>dérivé</strong> de la plateforme et du nombre de colonnes de données :</p>
+<table>
+<thead>
+<tr>
+<th>Cible</th>
+<th>Règle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Web et bureau</td>
+<td>plus de 3 colonnes : <code>auto</code> ; sinon <code>fill</code></td>
+</tr>
+<tr>
+<td>Mobile</td>
+<td>plus de 1 colonne : <code>auto</code> ; sinon <code>fill</code></td>
+</tr>
+</tbody>
+</table>
+<p>Intuition : <code>fill</code> répartit la largeur disponible (agréable tant que les
+colonnes sont peu nombreuses) ; au-delà du seuil il écrase les contenus, et
+<code>auto</code> dimensionne alors chaque colonne sur son contenu en laissant le
+défilement horizontal faire le reste.</p>
+<p>Une valeur explicite <strong>écrase</strong> la dérivation. Pour figer la répartition en
+<code>fill</code> quel que soit le nombre de colonnes :</p>
+<pre class="language-dart"><code class="language-dart">import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_list/zcrud_list.dart';
+
+const ZListRenderer filled = ZSfDataGridRenderer(
+  columnWidthMode: ColumnWidthMode.fill,
+);
+</code></pre>
+<p><code>ColumnWidthMode</code> est <strong>ré-exporté par le barrel</strong> du paquet : figer la
+largeur — ou régler <code>ZSfColumnSizing.widthMode</code> — ne demande donc <strong>aucune
+dépendance Syncfusion</strong> dans votre application. C'est le seul type Syncfusion
+ré-exporté, parce que c'est le seul qui apparaisse dans la signature publique
+du renderer ; les types de rendu (<code>SfDataGrid</code>, <code>GridColumn</code>, <code>DataGridRow</code>…)
+restent internes au paquet.</p>
+<p>La règle est aussi exposée comme fonction <strong>pure</strong> —
+<code>ZSfDataGridRenderer.responsiveColumnWidthMode(visibleColumnCount:, platform:, isWeb:)</code> — pour la rejouer ou la tester sans monter de widget.</p>
+<h3 id="pagination--deux-mcanismes-orthogonaux-pagination">Pagination : deux mécanismes orthogonaux {#pagination}</h3>
+<ul>
+<li><code>onLoadMore</code> (<code>null</code> par défaut) branche le défilement infini natif de
+Syncfusion : le callback est déclenché quand le scroll vertical atteint la
+fin, un indicateur accessible s'affiche pendant l'attente. C'est le chemin
+d'une pagination <strong>backend par curseur</strong> ; l'hôte le câble typiquement sur
+<code>ZListController.loadMore()</code>.</li>
+<li><code>rowsPerPage</code> (<code>null</code> par défaut) ajoute un <strong>pager numéroté</strong> sous la
+grille et ne rend que la tranche de la page courante. Il pagine <strong>côté
+client</strong> l'instantané déjà en mémoire. La virtualisation Syncfusion est
+conservée.</li>
+</ul>
+<p>Les deux peuvent coexister, mais un hôte qui pagine côté backend n'a
+normalement pas besoin du pager numéroté.</p>
+<h3 id="en-ttes-empils-et-dimensionnement-par-colonne-entetes-colonnes">En-têtes empilés et dimensionnement par colonne {#entetes-colonnes}</h3>
+<p><code>stackedHeaders</code> (liste de lignes, de haut en bas ; vide par défaut) ajoute
+des lignes d'en-tête au-dessus de l'en-tête normal, chaque groupe couvrant
+plusieurs colonnes désignées par leur <code>name</code>. Les libellés sont des <strong>clés
+l10n</strong> résolues au rendu, jamais du texte codé en dur.</p>
+<p><code>columnSizing</code> (map vide par défaut) applique un dimensionnement <strong>par
+colonne</strong> : largeur fixe, minimum, maximum, mode de largeur spécifique, marge
+d'auto-ajustement. Chaque champ est indépendant : une entrée partielle laisse
+les autres réglages à leur valeur d'origine.</p>
+<pre class="language-dart"><code class="language-dart">import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_list/zcrud_list.dart';
+
+const ZListRenderer grouped = ZSfDataGridRenderer(
+  stackedHeaders: &lt;List&lt;ZSfStackedHeader&gt;&gt;[
+    &lt;ZSfStackedHeader&gt;[
+      ZSfStackedHeader(
+        labelKey: 'invoice.amounts',
+        columnNames: &lt;String&gt;['unitPrice', 'total'],
+      ),
+    ],
+  ],
+  columnSizing: &lt;String, ZSfColumnSizing&gt;{
+    'label': ZSfColumnSizing(minimumWidth: 180),
+    'total': ZSfColumnSizing(width: 120),
+  },
+);
+</code></pre>
+<h3 id="style-conditionnel-de-cellule-style-cellule">Style conditionnel de cellule {#style-cellule}</h3>
+<p><code>cellStyleBuilder</code> (<code>null</code> par défaut) résout, pour chaque couple ligne ×
+colonne, un <code>ZSfCellStyle</code> optionnel : fond, style de texte, alignement,
+marge, alignement du texte, nombre maximal de lignes. Tous les champs sont
+nullables — un style partiel ne touche que ce qu'il déclare, et rendre <code>null</code>
+laisse la cellule au rendu par défaut. L'appelant dérive ses couleurs de son
+thème ; ce paquet n'en code aucune.</p>
+<pre class="language-dart"><code class="language-dart">import 'package:flutter/material.dart';
+import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_list/zcrud_list.dart';
+
+ZListRenderer emphasized(ColorScheme scheme) =&gt; ZSfDataGridRenderer(
+      cellStyleBuilder: (ZListRow row, ZListColumn column) {
+        if (column.name != 'total') return null;
+        return ZSfCellStyle(
+          textStyle: const TextStyle(fontWeight: FontWeight.bold),
+          backgroundColor: scheme.errorContainer,
+          textAlign: TextAlign.end,
+        );
+      },
+    );
+</code></pre>
+<p><code>cellColorBuilder</code> reste disponible et rétro-compatible : si les deux sont
+fournis, le fond de <code>cellStyleBuilder</code> est prioritaire et retombe sur celui de
+<code>cellColorBuilder</code> quand il n'en déclare pas.</p>
 <h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
 <table>
 <thead>
@@ -104,25 +239,202 @@ reproduit exactement le rendu historique.</li>
 <td><code>ZSfDataGridRenderer</code></td>
 <td>Implémentation concrète de <code>ZListRenderer</code>, injectable via <code>ZcrudScope.listRenderer</code>.</td>
 </tr>
+<tr>
+<td><code>ZSfCellStyle</code></td>
+<td>Style conditionnel d'une cellule (fond, texte, alignement, marge, <code>maxLines</code>).</td>
+</tr>
+<tr>
+<td><code>ZSfStackedHeader</code></td>
+<td>Groupe d'en-tête empilé : une clé l10n couvrant plusieurs colonnes.</td>
+</tr>
+<tr>
+<td><code>ZSfColumnSizing</code></td>
+<td>Dimensionnement d'une colonne (largeur, min, max, mode, marge d'auto-ajustement).</td>
+</tr>
 </tbody>
 </table>
+<p>Paramètres de <code>ZSfDataGridRenderer</code>, avec leur défaut :</p>
+<table>
+<thead>
+<tr>
+<th>Paramètre</th>
+<th>Défaut</th>
+<th>Effet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>onLoadMore</code></td>
+<td><code>null</code> (opt-in)</td>
+<td>Défilement infini natif : aucun builder posé au défaut.</td>
+</tr>
+<tr>
+<td><code>headerRowHeight</code></td>
+<td><code>48</code></td>
+<td>Hauteur de la ligne d'en-tête.</td>
+</tr>
+<tr>
+<td><code>columnWidthMode</code></td>
+<td><code>null</code> (dérivé)</td>
+<td>Mode de largeur ; <code>null</code> déclenche la dérivation responsive.</td>
+</tr>
+<tr>
+<td><code>withOrderNumber</code></td>
+<td><code>false</code> (opt-in)</td>
+<td>Raccourci de la colonne de numéro d'ordre, quand la requête n'en déclare pas (cf. ci-dessous).</td>
+</tr>
+<tr>
+<td><code>orderColumnHeader</code></td>
+<td><code>'#'</code></td>
+<td>En-tête de la colonne de numéro d'ordre, pour ce raccourci.</td>
+</tr>
+<tr>
+<td><code>cellColorBuilder</code></td>
+<td><code>null</code> (opt-in)</td>
+<td>Couleur de fond par cellule, sur les types neutres.</td>
+</tr>
+<tr>
+<td><code>rowsPerPage</code></td>
+<td><code>null</code> (opt-in)</td>
+<td>Pager numéroté côté client ; aucun pager au défaut.</td>
+</tr>
+<tr>
+<td><code>copyCellOnLongPress</code></td>
+<td><code>false</code> (opt-in)</td>
+<td>Long-press d'une cellule : copie de la valeur formatée + toast.</td>
+</tr>
+<tr>
+<td><code>copiedMessageKey</code></td>
+<td><code>'list.valueCopied'</code></td>
+<td>Clé l10n du message de copie ; repli sur la clé générique <code>copy</code>.</td>
+</tr>
+<tr>
+<td><code>swipeToRevealActions</code></td>
+<td><code>false</code> (opt-in)</td>
+<td>Swipe début→fin révélant les actions de ligne déjà résolues.</td>
+</tr>
+<tr>
+<td><code>swipeMaxOffset</code></td>
+<td><code>null</code> (dérivé)</td>
+<td>Offset maximal de swipe ; dérivé du nombre d'actions sinon.</td>
+</tr>
+<tr>
+<td><code>stackedHeaders</code></td>
+<td><code>[]</code> (opt-in)</td>
+<td>Lignes d'en-tête empilées, de haut en bas.</td>
+</tr>
+<tr>
+<td><code>columnSizing</code></td>
+<td><code>{}</code> (opt-in)</td>
+<td>Dimensionnement par nom de colonne.</td>
+</tr>
+<tr>
+<td><code>allowColumnResizing</code></td>
+<td><code>false</code> (opt-in)</td>
+<td>Redimensionnement des colonnes par l'utilisateur, largeurs persistées.</td>
+</tr>
+<tr>
+<td><code>adaptiveRowHeight</code></td>
+<td><code>false</code> (opt-in)</td>
+<td>Hauteur de ligne suivant le contenu, passage à la ligne des cellules.</td>
+</tr>
+<tr>
+<td><code>maxRowHeight</code></td>
+<td><code>null</code> (opt-in)</td>
+<td>Plafond de hauteur quand la hauteur adaptative est active.</td>
+</tr>
+<tr>
+<td><code>cellStyleBuilder</code></td>
+<td><code>null</code> (opt-in)</td>
+<td>Style conditionnel complet par cellule.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="la-colonne-de-numro-dordre-suit-lcran-colonne-ordre">La colonne de numéro d'ordre suit l'écran {#colonne-ordre}</h3>
+<p>Le numéro d'ordre décrit une <strong>position à l'écran</strong>, pas une propriété de la
+donnée : la première ligne affichée porte <code>1</code>, la deuxième <code>2</code>. Trier la grille
+<strong>renumérote</strong> donc la colonne au lieu de promener les anciens numéros avec
+leurs lignes.</p>
+<p>Elle se déclare avec le reste du schéma, ce qui la rend disponible partout où la
+requête voyage :</p>
+<pre class="language-dart"><code class="language-dart">final request = ZListRenderRequest.fromSchema(
+  fields,
+  rows,
+  policy: const ZColumnPolicy(
+    ordinal: ZListOrdinal(enabled: true, header: 'N°', width: 64),
+  ),
+);
+</code></pre>
+<p><code>withOrderNumber: true</code> reste le raccourci équivalent pour l'hôte qui construit
+sa requête sans politique de colonnes ; la déclaration de la requête l'emporte
+dès qu'elle est active, car elle porte aussi l'en-tête, la largeur et le
+décalage de page.</p>
+<p><strong>Avec un pager</strong> (<code>rowsPerPage</code>), chaque page est numérotée à partir de <code>1</code> :
+c'est le sens du décalage par défaut (<code>ZListOrdinal.pageOffset</code> à <code>0</code>), qui
+numérote la page rendue. Pour une numérotation <strong>continue</strong> — la deuxième page
+d'un pager de 20 lignes commençant à <code>21</code> — déclarez :</p>
+<pre class="language-dart"><code class="language-dart">const ZListOrdinal(enabled: true, continuousAcrossPages: true);
+</code></pre>
+<p>C'est le rendu qui transmet alors la page qu'il peint à la règle du cœur. Le
+détour par <code>pageOffset</code> ne pouvait pas y suffire : l'index de page du pager est
+<strong>privé au rendu</strong>, l'hôte n'apprenait jamais qu'il avait changé. <code>pageOffset</code>
+reste la voie de l'hôte qui découpe <strong>lui-même</strong> ses pages (pagination
+applicative ou backend) : il connaît alors son index et déclare
+<code>pageOffset: pageIndex * pageSize</code>. Les deux se composent.</p>
 <h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
 <ul>
-<li>Cible tactile minimale de 48 dp sur les cellules et les boutons d'action
-(invariant <a href="../../docs/site/concepts/invariants.md#ad-13">AD-13</a>).</li>
-<li><code>cellColorBuilder</code> ne doit jamais lever ; une exception de l'appelant est
-propagée telle quelle, sans absorption silencieuse.</li>
-<li>Une closure <code>actionsFor</code> recréée à chaque <code>build</code> (ex. à chaque changement
-de sélection) est rafraîchie sans reconstruire les lignes de la grille :
-cocher une case ne reconstruit jamais toute la source.</li>
+<li><strong>Un seul changement de défaut</strong> dans ce paquet : <code>columnWidthMode</code>. Un hôte
+qui ne le passait pas obtenait <code>fill</code> en toute circonstance et obtient
+désormais <code>fill</code> en deçà du seuil, <code>auto</code> au-delà. L'échappatoire exacte est
+<code>columnWidthMode: ColumnWidthMode.fill</code>. Tous les autres réglages sont
+strictement additifs.</li>
+<li><code>ColumnWidthMode</code> — le seul type Syncfusion présent dans la signature
+publique (<code>columnWidthMode</code>, <code>ZSfColumnSizing.widthMode</code>,
+<code>responsiveColumnWidthMode</code>) — est <strong>ré-exporté par le barrel</strong> : tout ce
+qui s'écrit sur le renderer s'écrit avec le seul import
+<code>package:zcrud_list/zcrud_list.dart</code>, sans déclarer de dépendance
+Syncfusion. Rien d'autre n'est ré-exporté : le paquet reste la seule arête
+Syncfusion du graphe
+(<a href="../../docs/site/concepts/invariants.md#ad-8">AD-8</a>).</li>
+<li>L'offset de swipe <strong>dérivé</strong> suit la page courante quand un pager numéroté
+est monté : deux pages dont les lignes portent un nombre d'actions
+différent obtiennent chacune l'offset correspondant à ce qu'elles révèlent.
+Un <code>swipeMaxOffset</code> explicite reste, lui, appliqué tel quel.</li>
+<li>Cible tactile minimale de 48 dp sur les cellules, les boutons d'action et
+les actions révélées au swipe (invariant
+<a href="../../docs/site/concepts/invariants.md#ad-13">AD-13</a>) ; la hauteur
+adaptative respecte ce plancher avant tout plafond.</li>
+<li>Le swipe <strong>n'ouvre aucun second canal d'actions</strong> : ce sont exactement les
+actions déjà résolues par l'ACL en amont, mêmes libellés, même état activé,
+mêmes callbacks. Sans résolveur d'actions, le swipe reste désactivé même
+demandé.</li>
+<li>La copie au long-press ne concerne ni la ligne d'en-tête ni les colonnes
+techniques (numéro d'ordre, actions) ; un échec du presse-papiers est
+absorbé sans toast de succès mensonger.</li>
+<li>Le message de copie utilise une clé qui n'est <strong>pas</strong> enregistrée dans
+<code>zcrud_core</code> : sans surcharge de libellés par l'hôte, le toast affiche le
+libellé générique « Copier ». Fournissez votre propre traduction pour un
+message dédié.</li>
+<li><code>cellColorBuilder</code> et <code>cellStyleBuilder</code> ne doivent jamais lever ; une
+exception de l'appelant est propagée telle quelle, sans absorption
+silencieuse.</li>
+<li>Le redimensionnement interactif persiste les largeurs sans reconstruire la
+liste : la source mémoïsée et le contrôleur sont préservés, donc le scroll
+et la sélection aussi.</li>
+<li>Une closure de résolution d'actions recréée à chaque <code>build</code> (par exemple à
+chaque changement de sélection) est rafraîchie sans reconstruire les lignes
+de la grille : cocher une case ne reconstruit jamais toute la source.</li>
 <li>Aucune clé ni licence Syncfusion n'est enregistrée par ce paquet :
 <code>SyncfusionLicense.registerLicense</code> reste une configuration de
 l'application hôte.</li>
 </ul>
 <h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
 <ul>
+<li><a href="../zcrud_screen/README.md">zcrud_screen</a> — l'écran CRUD assemblé, à ne pas
+confondre avec ce backend de rendu.</li>
 <li><a href="../zcrud_export/README.md">zcrud_export</a> — export tabulaire partageant le
 même formateur de colonne.</li>
+<li><a href="../../docs/site/paquets/zcrud_list.md">Fiche du paquet</a> — résumé côté site.</li>
 <li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> —
 définitions canoniques AD-1 à AD-16.</li>
 </ul>
@@ -168,7 +480,7 @@ définitions canoniques AD-1 à AD-16.</li>
 <footer>
   <span class="no-break">
     zcrud_list
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

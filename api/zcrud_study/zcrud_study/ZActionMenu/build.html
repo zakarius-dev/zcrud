@@ -119,29 +119,11 @@ Widget build(BuildContext context) {
       trigger: trigger,
       entries: visible,
       contentBuilder: contentBuilder,
-      &#47;&#47; UNIQUE site d&#39;invocation de l&#39;effet, pour TOUS les renderers. Un
-      &#47;&#47; renderer (y compris un adaptateur tiers) ne peut pas exécuter une
-      &#47;&#47; entrée désactivée ni une entrée qu&#39;il aurait fabriquée lui-même : la
-      &#47;&#47; garde est ici, pas dans sa bonne volonté.
-      &#47;&#47;
-      &#47;&#47; On RÉSOUT l&#39;entrée dans la liste COURANTE, puis on invoque l&#39;effet
-      &#47;&#47; de CELLE-LÀ — jamais celui porté par la valeur reçue.
-      &#47;&#47;
-      &#47;&#47; Pourquoi pas `visible.contains(entry)` : `ZMenuEntry.==` compare
-      &#47;&#47; `onSelected`, donc une IDENTITÉ DE CLOSURE. Or une surface flottante
-      &#47;&#47; capture la valeur de l&#39;entrée à l&#39;OUVERTURE et lit le callback de
-      &#47;&#47; sélection à la SÉLECTION ; tout hôte déclarant `onSelected: () =&gt;
-      &#47;&#47; faire(x)` — le patron normal — en refabrique à chaque rebuild. Un
-      &#47;&#47; simple rebuild pendant que le menu est ouvert rendait donc l&#39;entrée
-      &#47;&#47; « non contenue » et AVALAIT la sélection SANS AUCUNE TRACE : le no-op
-      &#47;&#47; silencieux que l&#39;invariant AD-4 proscrit, entré par la porte de
-      &#47;&#47; derrière du garde-fou censé le prévenir.
-      &#47;&#47;
-      &#47;&#47; Ce que la résolution garde intact : une entrée FABRIQUÉE par un
-      &#47;&#47; renderer ne peut toujours pas imposer son effet (c&#39;est l&#39;effet
-      &#47;&#47; DÉCLARÉ par l&#39;appelant qui s&#39;exécute), et une entrée inconnue ou
-      &#47;&#47; désactivée reste sans effet.
-      select: (entry) =&gt; _resoudre(visible, entry)?.onSelected?.call(),
+      &#47;&#47; Voie de sélection UNIQUE, fabriquée par le site partagé
+      &#47;&#47; (`zMenuSelectFor`) : le déclencheur visible et le menu contextuel
+      &#47;&#47; (`ZContextMenuRegion`) empruntent exactement le même chemin, avec la
+      &#47;&#47; même résolution d&#39;entrée périmée.
+      select: zMenuSelectFor(visible),
     ),
   );
 }</code></pre>
@@ -172,7 +154,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_study
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

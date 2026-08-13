@@ -62,8 +62,13 @@
       </section>
       
 <section class="desc markdown">
-  <p>Actions de ligne <strong>supplémentaires</strong> de l'app, ajoutées après les
-actions assemblées (édition, corbeille), filtrées par la même ACL.</p>
+  <p>Actions de ligne <strong>supplémentaires</strong> de l'app pour la vue des éléments
+<strong>vivants</strong>, ajoutées après les actions assemblées (édition, duplication,
+mise à la corbeille) et filtrées par la même ACL.</p>
+<p>Elles ne sont <strong>jamais</strong> rendues en vue corbeille : les gestes qui s'y
+appliquent se déclarent par <a href="../../zcrud_screen/ZCrudScreen/trashRowActions.html">trashRowActions</a>. Les deux canaux sont
+disjoints, précisément pour qu'une action destructive de corbeille ne
+puisse pas apparaître au milieu des éléments vivants.</p>
 </section>
 
       
@@ -98,7 +103,7 @@ actions assemblées (édition, corbeille), filtrées par la même ACL.</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

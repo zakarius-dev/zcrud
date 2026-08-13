@@ -64,6 +64,20 @@ si absent (bug de configuration, invariant AD-3) ; <code>tryBuilderFor</code> re
 <code>null</code> (chemin défensif utilisé par le dispatcher pour retomber sur le
 repli).</li>
 </ul>
+<h2 id="chanage-parent-surcharge-locale-sans-recopie">Chaînage parent (surcharge locale sans recopie)</h2>
+<p><code>ZWidgetRegistry(parent: ambiant)</code> crée un registre <strong>enfant</strong> dont le
+lookup, lorsqu'un <code>kind</code> manque localement, <strong>remonte la chaîne</strong> vers le
+parent. La surcharge locale d'un scope dérivé
+(<code>ZcrudScope.derive(widgetRegistry: …)</code>) s'écrit alors sans recopier — donc
+sans <strong>oublier</strong> — les builders ambiants :</p>
+<pre class="language-dart"><code class="language-dart">final registre = ZWidgetRegistry(parent: ambiant)
+  ..register('widget', monBuilder);
+</code></pre>
+<p>La chaîne est <strong>vivante</strong> : un builder enregistré sur le parent <strong>APRÈS</strong>
+la création de l'enfant est visible de l'enfant (contrairement à une copie
+figée). Elle est <strong>acyclique par construction</strong> : <a href="../zcrud_core/ZWidgetRegistry/parent.html">parent</a> est <code>final</code>,
+fourni au constructeur — un registre ne peut pas se précéder lui-même dans
+sa propre chaîne.</p>
 </section>
 
 
@@ -73,10 +87,11 @@ repli).</li>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZWidgetRegistry.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZWidgetRegistry/ZWidgetRegistry.html">ZWidgetRegistry</a></span><span class="signature">()</span>
+          <span class="name"><a href="../zcrud_core/ZWidgetRegistry/ZWidgetRegistry.html">ZWidgetRegistry</a></span><span class="signature">({<span class="parameter" id="param-parent"><span class="type-annotation"><a href="../zcrud_core/ZWidgetRegistry-class.html">ZWidgetRegistry</a>?</span> <span class="parameter-name">parent</span></span>})</span>
         </dt>
         <dd>
-          Construit un registre de widgets vide.
+          Construit un registre de widgets, vide localement, chaîné sur un
+éventuel <code>parent</code> (lookup en cascade enfant → parent).
         </dd>
     </dl>
   </section>
@@ -105,8 +120,24 @@ repli).</li>
 
 </dt>
 <dd>
-  Les <code>kind</code> actuellement enregistrés.
+  Les <code>kind</code> actuellement servis : <strong>union</strong> des kinds locaux et de la
+chaîne parent (dédupliquée — un <code>kind</code> ombré par l'enfant n'apparaît
+qu'une fois, et c'est le builder <strong>enfant</strong> que le lookup rend).
   <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="parent" class="property">
+  <span class="name"><a href="../zcrud_core/ZWidgetRegistry/parent.html">parent</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZWidgetRegistry-class.html">ZWidgetRegistry</a>?</span>
+  
+
+</dt>
+<dd>
+  Registre <strong>parent</strong> consulté quand un <code>kind</code> manque localement (<code>null</code> ⇒
+registre racine, comportement historique inchangé). La chaîne reflète les
+ajouts <strong>ultérieurs</strong> du parent.
+  <div class="features"><span class="feature">final</span></div>
 
 </dd>
 
@@ -139,8 +170,9 @@ repli).</li>
 
 </dt>
 <dd>
-  Lookup <strong>strict</strong> : le builder de <code>kind</code>, ou <strong><code>throw</code></strong>
-<a href="../zcrud_core/ZUnregisteredTypeError-class.html">ZUnregisteredTypeError</a> si absent (invariant AD-3).
+  Lookup <strong>strict</strong> : le builder de <code>kind</code> (enfant d'abord, puis chaîne
+parent), ou <strong><code>throw</code></strong> <a href="../zcrud_core/ZUnregisteredTypeError-class.html">ZUnregisteredTypeError</a> si absent partout
+(invariant AD-3).
   
 
 </dd>
@@ -153,7 +185,8 @@ repli).</li>
 
 </dt>
 <dd>
-  <code>true</code> si un builder est enregistré pour <code>kind</code>.
+  <code>true</code> si un builder est enregistré pour <code>kind</code> — localement <strong>ou</strong> dans
+la chaîne parent.
   
 
 </dd>
@@ -179,9 +212,11 @@ repli).</li>
 
 </dt>
 <dd>
-  Enregistre le <code>builder</code> de <code>kind</code>. Collision → <strong><code>throw</code></strong>
+  Enregistre le <code>builder</code> de <code>kind</code>. Collision <strong>locale</strong> → <strong><code>throw</code></strong>
 <a href="../zcrud_core/ZDuplicateRegistrationError-class.html">ZDuplicateRegistrationError</a> (jamais un « last-wins » silencieux,
-invariant AD-3).
+invariant AD-3). Enregistrer un <code>kind</code> déjà servi par le <a href="../zcrud_core/ZWidgetRegistry/parent.html">parent</a> est en
+revanche <strong>permis</strong> : c'est l'<strong>ombrage</strong> (enfant &gt; parent), la raison
+d'être du chaînage.
   
 
 </dd>
@@ -207,7 +242,8 @@ invariant AD-3).
 
 </dt>
 <dd>
-  Lookup <strong>défensif</strong> : le builder de <code>kind</code>, ou <code>null</code> si absent
+  Lookup <strong>défensif</strong> : le builder de <code>kind</code> (enfant d'abord — <strong>ombrage</strong>
+enfant &gt; parent —, puis chaîne parent), ou <code>null</code> si absent partout
 (invariant AD-10) — utilisé par le dispatcher pour retomber sur
 <code>ZUnsupportedFieldWidget</code>.
   
@@ -264,7 +300,7 @@ invariant AD-3).
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

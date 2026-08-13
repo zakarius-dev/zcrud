@@ -109,12 +109,28 @@ elle-même déplacée dans le cœur (<code>ZcrudScope.menuRenderer</code>).</p>
   Menu contextuel à déclencheur et contenu DÉCOUPLÉS.
 </dd>
 
+          <dt id="ZContextMenuRegion">
+  <span class="name "><a href="../zcrud_menu/ZContextMenuRegion-class.html">ZContextMenuRegion</a></span> 
+
+</dt>
+<dd>
+  Enveloppe un contenu d'un geste contextuel ouvrant un menu d'entrées.
+</dd>
+
           <dt id="ZDefaultMenuRenderer">
   <span class="name "><a href="../zcrud_menu/ZDefaultMenuRenderer-class.html">ZDefaultMenuRenderer</a></span> 
 
 </dt>
 <dd>
   Repli zéro-dépendance : déclencheur <code>PopupMenuButton</code>, surface Material.
+</dd>
+
+          <dt id="ZGridMenuRenderer">
+  <span class="name "><a href="../zcrud_menu/ZGridMenuRenderer-class.html">ZGridMenuRenderer</a></span> 
+
+</dt>
+<dd>
+  Renderer de menu à contenu en <strong>grille</strong>, zéro dépendance tierce.
 </dd>
 
           <dt id="ZMenuEntry">
@@ -140,6 +156,14 @@ elle-même déplacée dans le cœur (<code>ZcrudScope.menuRenderer</code>).</p>
 <dd>
   Cellule d'entrée de menu : ≥ 48 dp, <code>Semantics</code> correctes, directionnelle,
 sans couleur ni chaîne codée en dur.
+</dd>
+
+          <dt id="ZMenuPanelEntry">
+  <span class="name "><a href="../zcrud_menu/ZMenuPanelEntry-class.html">ZMenuPanelEntry</a></span> 
+
+</dt>
+<dd>
+  Entrée UNIQUE portant la présentation <strong>INJECTÉE</strong> du contenu.
 </dd>
 
           <dt id="ZMenuRenderer">
@@ -184,6 +208,18 @@ sans couleur ni chaîne codée en dur.
     <section class="summary offset-anchor" id="constants">
       <h2>Constants</h2>
       <dl class="properties">
+          <dt id="kZGridMenuColumns" class="constant">
+    <span class="name "><a href="../zcrud_menu/kZGridMenuColumns-constant.html">kZGridMenuColumns</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre de colonnes par défaut de la grille de menu.
+  
+
+</dd>
+
           <dt id="kZMenuMinTapTarget" class="constant">
     <span class="name "><a href="../zcrud_menu/kZMenuMinTapTarget-constant.html">kZMenuMinTapTarget</a></span>
   <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
@@ -215,6 +251,35 @@ sans couleur ni chaîne codée en dur.
     <section class="summary offset-anchor" id="functions">
       <h2>Functions</h2>
       <dl class="callables">
+          <dt id="zMenuPopupItems" class="callable">
+  <span class="name"><a href="../zcrud_menu/zMenuPopupItems.html">zMenuPopupItems</a></span><span class="signature">(<wbr><span class="parameter" id="zMenuPopupItems-param-request"><span class="type-annotation"><a href="../zcrud_menu/ZMenuRequest-class.html">ZMenuRequest</a></span> <span class="parameter-name">request</span>, {</span><span class="parameter" id="zMenuPopupItems-param-contentBuilder"><span class="type-annotation"><a href="../zcrud_menu/ZMenuContentBuilder.html">ZMenuContentBuilder</a>?</span> <span class="parameter-name">contentBuilder</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/material/PopupMenuEntry-class.html">PopupMenuEntry</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_menu/ZMenuEntry-class.html">ZMenuEntry</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Construit les items Material d'une <code>request</code> — colonne d'entrées par
+défaut, ou <strong>présentation injectée</strong> portée par une entrée nue.
+  
+
+</dd>
+
+          <dt id="zMenuSelectFor" class="callable">
+  <span class="name"><a href="../zcrud_menu/zMenuSelectFor.html">zMenuSelectFor</a></span><span class="signature">(<wbr><span class="parameter" id="zMenuSelectFor-param-visible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_menu/ZMenuEntry-class.html">ZMenuEntry</a></span>&gt;</span></span> <span class="parameter-name">visible</span></span>)
+    <span class="returntype parameter">&#8594; void Function<span class="signature">(<span class="parameter" id="param-entry"><span class="type-annotation"><a href="../zcrud_menu/ZMenuEntry-class.html">ZMenuEntry</a></span> <span class="parameter-name">entry</span></span>)</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Fabrique la voie de sélection <strong>UNIQUE</strong> d'une liste d'entrées déjà
+filtrée — l'unique site d'invocation de l'effet, pour tous les renderers et
+pour tous les gestes (déclencheur visible comme menu contextuel).
+  
+
+</dd>
+
           <dt id="zResolveMenuRenderer" class="callable">
   <span class="name"><a href="../zcrud_menu/zResolveMenuRenderer.html">zResolveMenuRenderer</a></span><span class="signature">(<wbr><span class="parameter" id="zResolveMenuRenderer-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zResolveMenuRenderer-param-override"><span class="type-annotation"><a href="../zcrud_menu/ZMenuRenderer-class.html">ZMenuRenderer</a>?</span> <span class="parameter-name">override</span></span>})
     <span class="returntype parameter">&#8594; <a href="../zcrud_menu/ZMenuRenderer-class.html">ZMenuRenderer</a></span>
@@ -224,6 +289,19 @@ sans couleur ni chaîne codée en dur.
 </dt>
 <dd>
   Chaîne <strong>totale</strong> : <code>override</code> → <a href="../zcrud_menu/ZMenuScope-class.html">ZMenuScope</a> → <a href="../zcrud_menu/zFallbackMenuRenderer-constant.html">zFallbackMenuRenderer</a>.
+  
+
+</dd>
+
+          <dt id="zShowZMenuAt" class="callable">
+  <span class="name"><a href="../zcrud_menu/zShowZMenuAt.html">zShowZMenuAt</a></span><span class="signature">(<wbr><span class="parameter" id="zShowZMenuAt-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zShowZMenuAt-param-request"><span class="type-annotation"><a href="../zcrud_menu/ZMenuRequest-class.html">ZMenuRequest</a></span> <span class="parameter-name">request</span>, </span><span class="parameter" id="zShowZMenuAt-param-globalPosition"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Offset-class.html">Offset</a></span> <span class="parameter-name">globalPosition</span>, {</span><span class="parameter" id="zShowZMenuAt-param-contentBuilder"><span class="type-annotation"><a href="../zcrud_menu/ZMenuContentBuilder.html">ZMenuContentBuilder</a>?</span> <span class="parameter-name">contentBuilder</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Ouvre la surface du menu à la position globale <code>globalPosition</code>.
   
 
 </dd>
@@ -292,7 +370,7 @@ package.
 <footer>
   <span class="no-break">
     zcrud_menu
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

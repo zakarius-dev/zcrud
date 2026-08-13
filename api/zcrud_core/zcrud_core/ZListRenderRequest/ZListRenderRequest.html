@@ -56,6 +56,7 @@
       const
       <span class="name ">ZListRenderRequest</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-columns"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span>, </span></li>
 <li><span class="parameter" id="param-rows"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZListRow-class.html">ZListRow</a></span>&gt;</span></span> <span class="parameter-name">rows</span>, </span></li>
+<li><span class="parameter" id="param-ordinal"><span class="type-annotation"><a href="../../zcrud_core/ZListOrdinal-class.html">ZListOrdinal</a></span> <span class="parameter-name">ordinal</span> = <span class="default-value">const ZListOrdinal()</span>, </span></li>
 </ol>})
     </section>
     
@@ -69,7 +70,11 @@ fabrique <a href="../../zcrud_core/ZListRenderRequest/ZListRenderRequest.fromSch
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">const ZListRenderRequest({required this.columns, required this.rows});</code></pre>
+  <pre class="language-dart"><code class="language-dart">const ZListRenderRequest({
+  required this.columns,
+  required this.rows,
+  this.ordinal = const ZListOrdinal(),
+});</code></pre>
 </section>
 
 
@@ -97,7 +102,7 @@ fabrique <a href="../../zcrud_core/ZListRenderRequest/ZListRenderRequest.fromSch
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

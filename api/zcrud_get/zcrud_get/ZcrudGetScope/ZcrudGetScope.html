@@ -57,7 +57,7 @@
       <span class="name ">ZcrudGetScope</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-child"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">child</span>, </span></li>
 <li><span class="parameter" id="param-locator"><span class="type-annotation"><a href="https://pub.dev/documentation/get_it/9.2.1/get_it/GetIt-class.html">GetIt</a>?</span> <span class="parameter-name">locator</span>, </span></li>
 <li><span class="parameter" id="param-createController"><span class="type-annotation">ZFormController</span> <span class="parameter-name">createController</span>()?, </span></li>
-<li><span class="parameter" id="param-acl"><span class="type-annotation">ZAcl</span> <span class="parameter-name">acl</span> = <span class="default-value">const ZAllowAllAcl()</span>, </span></li>
+<li><span class="parameter" id="param-acl"><span class="type-annotation">ZAcl</span> <span class="parameter-name">acl</span> = <span class="default-value">const ZDenyAllAcl()</span>, </span></li>
 <li><span class="parameter" id="param-registerController"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">registerController</span> = <span class="default-value">true</span>, </span></li>
 <li><span class="parameter" id="param-registerInGetX"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">registerInGetX</span> = <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
@@ -94,7 +94,7 @@ optionnel (défaut faux — évite tout état global partagé).</p>
   required this.child,
   this.locator,
   this.createController,
-  this.acl = const ZAllowAllAcl(),
+  this.acl = const ZDenyAllAcl(),
   this.registerController = true,
   this.registerInGetX = false,
   super.key,
@@ -126,7 +126,7 @@ optionnel (défaut faux — évite tout état global partagé).</p>
 <footer>
   <span class="no-break">
     zcrud_get
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

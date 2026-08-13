@@ -62,7 +62,11 @@
       </section>
       
 <section class="desc markdown">
-  <p>Port d'autorisation exposé au cœur (défaut : <code>ZAllowAllAcl</code>).</p>
+  <p>Port d'autorisation exposé au cœur (défaut <strong>fail-closed</strong> :
+<code>ZDenyAllAcl</code>).</p>
+<p>Sans ACL déclarée, aucun geste n'est offert. Pour une ouverture totale
+assumée (développement, prototype), déclarez-la explicitement :
+<code>acl: const ZAllowAllAcl()</code>.</p>
 </section>
 
       
@@ -97,7 +101,7 @@
 <footer>
   <span class="no-break">
     zcrud_provider
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

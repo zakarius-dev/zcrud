@@ -164,7 +164,7 @@ du cœur (invariant AD-1).
 
 </dt>
 <dd>
-  Implémentation <strong>permissive</strong> par défaut (zéro-config) : autorise tout.
+  Implémentation <strong>permissive</strong> : autorise tout, sans condition.
 </dd>
 
           <dt id="ZAppFileResolver">
@@ -359,6 +359,15 @@ Les bornes s'expriment soit comme <strong>clés d'autres champs</strong>
   Contexte <strong>immuable</strong> de (dé)codage, injecté au <a href="../zcrud_core/ZcrudRegistry-class.html">ZcrudRegistry</a> au bootstrap
 et threadé par lui aux <code>fromMap</code>/<code>toMap</code> conscients du contexte des entités
 extensibles (voir <code>ZModelCodec.fromMapWithContext</code>/<code>toMapWithContext</code>).
+</dd>
+
+          <dt id="ZDenyAllAcl">
+  <span class="name "><a href="../zcrud_core/ZDenyAllAcl-class.html">ZDenyAllAcl</a></span> 
+
+</dt>
+<dd>
+  Implémentation <strong>refusante</strong> : interdit tout, sans condition. C'est le
+<strong>repli par défaut</strong> du socle quand aucune ACL n'a été déclarée.
 </dd>
 
           <dt id="ZDerivation">
@@ -647,6 +656,15 @@ mutable).
 </dt>
 <dd>
   Contrat repository en lecture-écriture pour l'entité <code>T</code>.
+</dd>
+
+          <dt id="ZRestrictedAcl">
+  <span class="name "><a href="../zcrud_core/ZRestrictedAcl-class.html">ZRestrictedAcl</a></span> 
+
+</dt>
+<dd>
+  Composition <strong>restrictive</strong> de deux autorisations : un geste n'est offert
+que si <a href="../zcrud_core/ZRestrictedAcl/base.html">base</a> <strong>et</strong> <a href="../zcrud_core/ZRestrictedAcl/restriction.html">restriction</a> l'accordent tous les deux.
 </dd>
 
           <dt id="ZSelectConfig">
@@ -966,6 +984,25 @@ par la config.
   Action décidée par le <a href="../zcrud_core/ZLwwResolver-class.html">ZLwwResolver</a> pour un <code>id</code> donné.
 </dd>
 
+          <dt id="ZSearchFolding">
+  <span class="name "><a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> 
+
+</dt>
+<dd>
+  Profondeur de normalisation appliquée <strong>des deux côtés</strong> d'une recherche
+(le terme saisi et la valeur interrogée). Valeurs en <strong>camelCase</strong>
+(canonique §5).
+</dd>
+
+          <dt id="ZSearchScope">
+  <span class="name "><a href="../zcrud_core/ZSearchScope.html">ZSearchScope</a></span> 
+
+</dt>
+<dd>
+  <strong>Domaine de colonnes</strong> interrogé par la recherche plein-texte d'une
+requête. Valeurs en <strong>camelCase</strong> (canonique §5).
+</dd>
+
           <dt id="ZSortDirection">
   <span class="name "><a href="../zcrud_core/ZSortDirection.html">ZSortDirection</a></span> 
 
@@ -1020,6 +1057,14 @@ déterministe vit en présentation, invariants AD-2/AD-15).
 </dt>
 <dd>
   Mixin exposant les deux voies d'extension AD-4 sur une entité :
+</dd>
+
+          <dt id="ZPurgeable">
+  <span class="name "><a href="../zcrud_core/ZPurgeable-mixin.html">ZPurgeable</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Déclare qu'un dépôt sait <strong>supprimer définitivement</strong> une entité.
 </dd>
 
       </dl>
@@ -1213,8 +1258,21 @@ AD-10). Commodité pour consommer l'échappatoire non typée sans cast risqué.
 
 </dd>
 
+          <dt id="zFlattenPaths" class="callable">
+  <span class="name"><a href="../zcrud_core/zFlattenPaths.html">zFlattenPaths</a></span><span class="signature">(<wbr><span class="parameter" id="zFlattenPaths-param-source"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">source</span>, {</span><span class="parameter" id="zFlattenPaths-param-paths"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">paths</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Aplati les valeurs <strong>imbriquées</strong> de <code>source</code> sous leurs clés <strong>pointées</strong>.
+  
+
+</dd>
+
           <dt id="zFoldDiacritics" class="callable">
-  <span class="name"><a href="../zcrud_core/zFoldDiacritics.html">zFoldDiacritics</a></span><span class="signature">(<wbr><span class="parameter" id="zFoldDiacritics-param-input"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">input</span></span>)
+  <span class="name"><a href="../zcrud_core/zFoldDiacritics.html">zFoldDiacritics</a></span><span class="signature">(<wbr><span class="parameter" id="zFoldDiacritics-param-input"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">input</span>, {</span><span class="parameter" id="zFoldDiacritics-param-folding"><span class="type-annotation"><a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> <span class="parameter-name">folding</span> = <span class="default-value">ZSearchFolding.diacritics</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
   </span>
   
@@ -1561,6 +1619,19 @@ COPIE</strong> quand le slot stocké est déjà propre.
 
 </dd>
 
+          <dt id="zRegroupPaths" class="callable">
+  <span class="name"><a href="../zcrud_core/zRegroupPaths.html">zRegroupPaths</a></span><span class="signature">(<wbr><span class="parameter" id="zRegroupPaths-param-flat"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">flat</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Regroupe les clés <strong>pointées</strong> de <code>flat</code> en une <code>Map</code> <strong>imbriquée</strong>.
+  
+
+</dd>
+
           <dt id="zRestoreAbsentString" class="callable">
   <span class="name"><a href="../zcrud_core/zRestoreAbsentString.html">zRestoreAbsentString</a></span><span class="signature">(<wbr><span class="parameter" id="zRestoreAbsentString-param-extra"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">extra</span>, </span><span class="parameter" id="zRestoreAbsentString-param-field"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="zRestoreAbsentString-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">value</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
@@ -1571,6 +1642,19 @@ COPIE</strong> quand le slot stocké est déjà propre.
 <dd>
   Rend <code>null</code> si <code>field</code> était marqué absent <strong>et</strong> vaut toujours la chaîne
 vide ; sinon rend <code>value</code> tel quel.
+  
+
+</dd>
+
+          <dt id="zRestrictAcl" class="callable">
+  <span class="name"><a href="../zcrud_core/zRestrictAcl.html">zRestrictAcl</a></span><span class="signature">(<wbr><span class="parameter" id="zRestrictAcl-param-base"><span class="type-annotation"><a href="../zcrud_core/ZAcl-class.html">ZAcl</a></span> <span class="parameter-name">base</span>, </span><span class="parameter" id="zRestrictAcl-param-restriction"><span class="type-annotation"><a href="../zcrud_core/ZAcl-class.html">ZAcl</a>?</span> <span class="parameter-name">restriction</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZAcl-class.html">ZAcl</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Restreint <code>base</code> par <code>restriction</code>, en évitant d'emballer pour rien.
   
 
 </dd>
@@ -1713,6 +1797,21 @@ zéro-copie (rend <code>map</code> si c'est déjà une <a href="https://api.flut
 
 </dd>
 
+
+          
+  <dt id="ZChoicesResolver" class="callable">
+    <span class="name"><a href="../zcrud_core/ZChoicesResolver.html">ZChoicesResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldChoice-class.html">ZFieldChoice</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-valueOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">valueOf</span>(<span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)</span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Résolveur de <strong>choix conscients de l'état</strong> d'un champ à choix
+(<code>select</code>/<code>radio</code>/<code>checkbox</code>/<code>rowChips</code>).
+    
+
+  </dd>
 
           
   <dt id="ZClock" class="callable">
@@ -2005,7 +2104,7 @@ registre (collision).
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

@@ -61,6 +61,8 @@
 <li><span class="parameter" id="copyWith-param-limit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">limit</span> = <span class="default-value">_unset</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-startAfter"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">startAfter</span> = <span class="default-value">_unset</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-deletedScope"><span class="type-annotation"><a href="../../zcrud_core/ZDeletedScope.html">ZDeletedScope</a>?</span> <span class="parameter-name">deletedScope</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-searchScope"><span class="type-annotation"><a href="../../zcrud_core/ZSearchScope.html">ZSearchScope</a>?</span> <span class="parameter-name">searchScope</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-searchFolding"><span class="type-annotation"><a href="../../zcrud_core/ZSearchFolding.html">ZSearchFolding</a>?</span> <span class="parameter-name">searchFolding</span>, </span></li>
 </ol>})
 
       
@@ -83,6 +85,8 @@ les <strong>réinitialise</strong> ; les omettre conserve la valeur courante.</p
   Object? limit = _unset,
   Object? startAfter = _unset,
   ZDeletedScope? deletedScope,
+  ZSearchScope? searchScope,
+  ZSearchFolding? searchFolding,
 }) {
   return ZDataRequest(
     filters: filters ?? this.filters,
@@ -92,6 +96,8 @@ les <strong>réinitialise</strong> ; les omettre conserve la valeur courante.</p
     startAfter:
         identical(startAfter, _unset) ? this.startAfter : startAfter as ZCursor?,
     deletedScope: deletedScope ?? this.deletedScope,
+    searchScope: searchScope ?? this.searchScope,
+    searchFolding: searchFolding ?? this.searchFolding,
   );
 }</code></pre>
 </section>
@@ -121,7 +127,7 @@ les <strong>réinitialise</strong> ; les omettre conserve la valeur courante.</p
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

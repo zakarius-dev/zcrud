@@ -66,10 +66,16 @@
 <li>En-tête de colonne = <code>resolveHeader(col.header)</code> (défaut identité :
 <code>ZListColumn.header</code> est une <strong>clé l10n non résolue</strong> ; l'app peut la
 résoudre sans <code>BuildContext</code>, export headless — AD-13/AD-15).</li>
-<li>Cellule = <code>col.format(row.cells[col.name])</code> : réutilise le formateur PUR
-du cœur (choix résolu, join <code>', '</code>, ISO date…), identique à l'écran
-(SM-5), défensif (AD-10 : clé absente/valeur null → <code>''</code>).</li>
+<li>Cellule = <code>col.formatRow(row.cells[col.name], row.cells)</code> : réutilise le
+formateur PUR du cœur (choix résolu, join <code>', '</code>, ISO date…), identique
+à l'écran (SM-5), défensif (AD-10 : clé absente/valeur null → <code>''</code>).</li>
 </ul>
+<p>La cellule est lue <strong>en connaissant toute la ligne</strong>, exactement comme
+l'écran la peint : un montant suit alors la devise portée par sa propre
+ligne, et un format composé (<code>ZListColumn.formatWithRow</code>) est honoré. Lire
+la seule valeur brute (<code>col.format</code>) rendrait un fichier qui ne dit pas ce
+que l'utilisateur a sous les yeux — une perte silencieuse, jamais une
+erreur.</p>
 </section>
 
 
@@ -88,7 +94,8 @@ du cœur (choix résolu, join <code>', '</code>, ISO date…), identique à l'é
   final rows = &lt;List&lt;String&gt;&gt;[
     for (final row in request.rows)
       &lt;String&gt;[
-        for (final col in columns) col.format(row.cells[col.name]),
+        for (final col in columns)
+          col.formatRow(row.cells[col.name], row.cells),
       ],
   ];
   return ZExportTable(headers: headers, rows: rows);
@@ -120,7 +127,7 @@ du cœur (choix résolu, join <code>', '</code>, ISO date…), identique à l'é
 <footer>
   <span class="no-break">
     zcrud_export_pdf
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

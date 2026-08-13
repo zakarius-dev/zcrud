@@ -55,7 +55,7 @@
     
       <section class="multi-line-signature">
         
-        <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-row"><span class="type-annotation"><a href="../../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span>, </span><span class="parameter" id="param-columns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span></span>)</span>
+        <a href="../../zcrud_core/ZRowTileBuilder.html">ZRowTileBuilder</a>?
         <span class="name ">itemBuilder</span>
         <div class="features"><span class="feature">final</span></div>
 
@@ -63,14 +63,14 @@
       
 <section class="desc markdown">
   <p>Construit le widget (la <strong>carte</strong>) d'une ligne à partir de la <a href="../../zcrud_core/ZListRow-class.html">ZListRow</a>
-et des colonnes dérivées (<code>List&lt;ZListColumn&gt;</code>).</p>
+et des colonnes dérivées (<code>List&lt;ZListColumn&gt;</code>). <code>null</code> ⇒ aucune carte de
+ligne (la grille attend alors <a href="../../zcrud_core/ZListGridLayout/entityBuilder.html">entityBuilder</a>).</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final Widget Function(BuildContext context, ZListRow row,
-    List&lt;ZListColumn&gt; columns) itemBuilder;</code></pre>
+  <pre class="language-dart"><code class="language-dart">final ZRowTileBuilder? itemBuilder;</code></pre>
 </section>
 
 
@@ -99,7 +99,7 @@ et des colonnes dérivées (<code>List&lt;ZListColumn&gt;</code>).</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

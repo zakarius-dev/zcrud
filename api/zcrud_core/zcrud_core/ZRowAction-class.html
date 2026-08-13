@@ -87,7 +87,7 @@ résout par ligne en un <a href="../zcrud_core/ZResolvedRowAction-class.html">ZR
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZRowAction.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZRowAction/ZRowAction.html">ZRowAction</a></span><span class="signature">({<span class="parameter" id="param-id"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span>, </span><span class="parameter" id="param-labelKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span>, </span><span class="parameter" id="param-onInvoke"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/FutureOr-class.html">FutureOr</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span> <span class="parameter-name">onInvoke</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>), </span><span class="parameter" id="param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="param-requiredPermission"><span class="type-annotation"><a href="../zcrud_core/ZCrudAction.html">ZCrudAction</a>?</span> <span class="parameter-name">requiredPermission</span>, </span><span class="parameter" id="param-destructive"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">destructive</span> = <span class="default-value">false</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZRowAction/ZRowAction.html">ZRowAction</a></span><span class="signature">({<span class="parameter" id="param-id"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span>, </span><span class="parameter" id="param-labelKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span>, </span><span class="parameter" id="param-onInvoke"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/FutureOr-class.html">FutureOr</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span> <span class="parameter-name">onInvoke</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>), </span><span class="parameter" id="param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="param-requiredPermission"><span class="type-annotation"><a href="../zcrud_core/ZCrudAction.html">ZCrudAction</a>?</span> <span class="parameter-name">requiredPermission</span>, </span><span class="parameter" id="param-destructive"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">destructive</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-enabledFor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enabledFor</span>(<span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>)?, </span><span class="parameter" id="param-ineligibleReasonKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">ineligibleReasonKey</span></span>})</span>
         </dt>
         <dd>
           Construit une action de ligne générique.
@@ -99,6 +99,14 @@ résout par ligne en un <a href="../zcrud_core/ZResolvedRowAction-class.html">ZR
         <dd>
           Fabrique <strong>édition</strong> : délègue au <code>onInvoke</code> fourni par l'app (navigation
 vers l'édition). Permission requise : <code>ZCrudAction.update</code>.
+            <div class="constructor-modifier features">factory</div>
+        </dd>
+        <dt id="ZRowAction.purgeWith" class="callable">
+          <span class="name"><a href="../zcrud_core/ZRowAction/ZRowAction.purgeWith.html">ZRowAction.purgeWith</a></span><span class="signature">(<span class="parameter" id="purgeWith-param-onInvoke"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/FutureOr-class.html">FutureOr</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span> <span class="parameter-name">onInvoke</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>), {</span><span class="parameter" id="purgeWith-param-labelKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span> = <span class="default-value">&#39;deleteForever&#39;</span>, </span><span class="parameter" id="purgeWith-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="purgeWith-param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span> = <span class="default-value">&#39;purge&#39;</span></span>})</span>
+        </dt>
+        <dd>
+          Fabrique <strong>purge</strong> : suppression <strong>définitive</strong> déléguée au handler
+<code>onInvoke</code> fourni par l'app. Permission requise : <code>ZCrudAction.clear</code>.
             <div class="constructor-modifier features">factory</div>
         </dd>
         <dt id="ZRowAction.restore" class="callable">
@@ -159,6 +167,19 @@ qui reste le <strong>raccourci</strong> du cas nominal (repository disponible).
 
 </dd>
 
+        <dt id="enabledFor" class="property">
+  <span class="name"><a href="../zcrud_core/ZRowAction/enabledFor.html">enabledFor</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a> Function<span class="signature">(<span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Éligibilité métier</strong> de cette action pour une entité donnée : <code>null</code>
+(défaut) = l'action s'applique à toutes les lignes.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="hashCode" class="property inherited">
   <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
@@ -191,6 +212,19 @@ qui reste le <strong>raccourci</strong> du cas nominal (repository disponible).
 </dt>
 <dd>
   Identifiant stable de l'action.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="ineligibleReasonKey" class="property">
+  <span class="name"><a href="../zcrud_core/ZRowAction/ineligibleReasonKey.html">ineligibleReasonKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé de libellé du motif annoncé quand <a href="../zcrud_core/ZRowAction/enabledFor.html">enabledFor</a> écarte l'action ;
+<code>null</code> = motif générique du socle.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -267,7 +301,7 @@ toujours autorisée (jamais filtrée).
 </dd>
 
         <dt id="resolve" class="callable">
-  <span class="name"><a href="../zcrud_core/ZRowAction/resolve.html">resolve</a></span><span class="signature">(<wbr><span class="parameter" id="resolve-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="resolve-param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span>, {</span><span class="parameter" id="resolve-param-enabled"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enabled</span></span>})
+  <span class="name"><a href="../zcrud_core/ZRowAction/resolve.html">resolve</a></span><span class="signature">(<wbr><span class="parameter" id="resolve-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="resolve-param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span>, {</span><span class="parameter" id="resolve-param-enabled"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enabled</span>, </span><span class="parameter" id="resolve-param-disabledReasonKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">disabledReasonKey</span></span>})
     <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZResolvedRowAction-class.html">ZResolvedRowAction</a></span>
   </span>
   
@@ -275,8 +309,8 @@ toujours autorisée (jamais filtrée).
 </dt>
 <dd>
   Résout cette action <strong>pour une ligne</strong> donnée : lie l'<code>entity</code> et fige
-l'état <code>enabled</code> (déjà tranché par l'ACL en amont), produisant une vue
-neutre <a href="../zcrud_core/ZResolvedRowAction-class.html">ZResolvedRowAction</a> (sans <code>T</code>).
+l'état <code>enabled</code> (déjà tranché en amont), produisant une vue neutre
+<a href="../zcrud_core/ZResolvedRowAction-class.html">ZResolvedRowAction</a> (sans <code>T</code>).
   
 
 </dd>
@@ -291,6 +325,19 @@ neutre <a href="../zcrud_core/ZResolvedRowAction-class.html">ZResolvedRowAction<
 <dd class="inherited">
   A string representation of this object.
   <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="withEligibility" class="callable">
+  <span class="name"><a href="../zcrud_core/ZRowAction/withEligibility.html">withEligibility</a></span><span class="signature">(<wbr><span class="parameter" id="withEligibility-param-predicate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">predicate</span>(<span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>), {</span><span class="parameter" id="withEligibility-param-reasonKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reasonKey</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZRowAction-class.html">ZRowAction</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Rend une copie de cette action assortie d'une <strong>éligibilité métier</strong>.
+  
 
 </dd>
 
@@ -344,7 +391,7 @@ neutre <a href="../zcrud_core/ZResolvedRowAction-class.html">ZResolvedRowAction<
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

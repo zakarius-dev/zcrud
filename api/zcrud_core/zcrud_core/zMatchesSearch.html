@@ -58,6 +58,8 @@
 <span class="name ">zMatchesSearch</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="zMatchesSearch-param-row"><span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span>, </span></li>
 <li><span class="parameter" id="zMatchesSearch-param-term"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">term</span>, {</span></li>
 <li><span class="parameter" id="zMatchesSearch-param-schema"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">schema</span>, </span></li>
+<li><span class="parameter" id="zMatchesSearch-param-scope"><span class="type-annotation"><a href="../zcrud_core/ZSearchScope.html">ZSearchScope</a></span> <span class="parameter-name">scope</span> = <span class="default-value">ZSearchScope.searchableFields</span>, </span></li>
+<li><span class="parameter" id="zMatchesSearch-param-folding"><span class="type-annotation"><a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> <span class="parameter-name">folding</span> = <span class="default-value">ZSearchFolding.diacritics</span>, </span></li>
 </ol>})
 
         
@@ -65,12 +67,18 @@
     </section>
     
 <section class="desc markdown">
-  <p>Prédicat de <strong>recherche sans accents</strong> sur les champs <code>searchable</code> du schéma.</p>
+  <p>Prédicat de <strong>recherche sans accents</strong> sur le schéma d'une liste.</p>
 <p>(a) <code>term</code> vide/blanc → <strong>match tous</strong> (<code>true</code>) ; (b) sinon, replie le terme
-(<a href="../zcrud_core/zFoldDiacritics.html">zFoldDiacritics</a>) et teste <code>contains</code> sur le texte replié de <strong>chaque</strong>
-champ <code>searchable == true</code> du <code>schema</code>. La valeur brute <code>row.cells[name]</code> est
-coercée en <code>String</code> de façon neutre (<code>null → ''</code>, <code>Iterable →</code> éléments
-joints). Un champ <strong>non</strong> <code>searchable</code> n'est <strong>jamais</strong> interrogé.</p>
+(<a href="../zcrud_core/zFoldDiacritics.html">zFoldDiacritics</a>) et teste <code>contains</code> sur le texte replié de chaque champ
+<strong>du domaine</strong> <code>scope</code>. La valeur brute <code>row.cells[name]</code> est coercée en
+<code>String</code> de façon neutre (<code>null → ''</code>, <code>Iterable →</code> éléments joints).</p>
+<p><code>scope</code> choisit le domaine : <a href="../zcrud_core/ZSearchScope.html">ZSearchScope.searchableFields</a> (défaut) ne
+consulte que les champs déclarés <code>searchable: true</code> — un champ non
+<code>searchable</code> n'est alors <strong>jamais</strong> interrogé ; <a href="../zcrud_core/ZSearchScope.html">ZSearchScope.allColumns</a>
+consulte <strong>toutes</strong> les colonnes du <code>schema</code>.</p>
+<p><code>folding</code> choisit la normalisation appliquée <strong>des deux côtés</strong> (terme et
+valeur) : <a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding.diacritics</a> par défaut,
+<a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding.diacriticsAndSpaces</a> pour ignorer aussi les blancs.</p>
 </section>
 
 
@@ -81,12 +89,18 @@ joints). Un champ <strong>non</strong> <code>searchable</code> n'est <strong>jam
   ZListRow row,
   String term, {
   required List&lt;ZFieldSpec&gt; schema,
+  ZSearchScope scope = ZSearchScope.searchableFields,
+  ZSearchFolding folding = ZSearchFolding.diacritics,
 }) {
-  final folded = zFoldDiacritics(term.trim());
+  final folded = zFoldDiacritics(term.trim(), folding: folding);
   if (folded.isEmpty) return true;
+  final all = scope == ZSearchScope.allColumns;
   for (final field in schema) {
-    if (!field.searchable) continue;
-    final text = zFoldDiacritics(_coerceText(row.cells[field.name]));
+    if (!all &amp;&amp; !field.searchable) continue;
+    final text = zFoldDiacritics(
+      _coerceText(row.cells[field.name]),
+      folding: folding,
+    );
     if (text.contains(folded)) return true;
   }
   return false;
@@ -117,7 +131,7 @@ joints). Un champ <strong>non</strong> <code>searchable</code> n'est <strong>jam
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

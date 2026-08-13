@@ -62,9 +62,17 @@
       </section>
       
 <section class="desc markdown">
-  <p>Résolveur <code>ZListRow → T?</code> fournissant l'entité d'une ligne (source du
-filtrage ACL row-level et du binding <code>onInvoke</code>). Requis si <a href="../../zcrud_core/DynamicList/rowActions.html">rowActions</a> est
-non nul. Une ligne dont l'entité est <code>null</code> voit ses actions <strong>omises</strong>.</p>
+  <p>Résolveur <code>ZListRow → T?</code> fournissant l'entité d'une ligne.</p>
+<p><strong>Une seule déclaration, trois usages</strong> : le filtrage ACL row-level, le
+binding <code>onInvoke</code> des actions de ligne, et le rendu des <strong>tuiles
+typées</strong> (<code>ZEntityTileBuilder</code>, cf. <code>ZListLayout.withEntityTiles</code>). Requis
+si <a href="../../zcrud_core/DynamicList/rowActions.html">rowActions</a> est non nul, et si le <a href="../../zcrud_core/DynamicList/layout.html">layout</a> porte une tuile d'entité.</p>
+<p>Une ligne dont l'entité est <code>null</code> voit ses actions <strong>omises</strong> et sa
+tuile retomber sur le builder de ligne du layout (s'il en porte un).</p>
+<p>L'index attendu est keyé par <code>ZListRow.id</code> ; pour produire cette clé
+depuis une entité — <code>id</code> réel, ou clé éphémère si l'entité n'est pas
+encore persistée — utiliser <code>ZListRow.keyOf(entity)</code> plutôt que de
+réinventer la convention (<code>entityFor: (row) =&gt; index[row.id]</code>).</p>
 </section>
 
       
@@ -99,7 +107,7 @@ non nul. Une ligne dont l'entité est <code>null</code> voit ses actions <strong
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

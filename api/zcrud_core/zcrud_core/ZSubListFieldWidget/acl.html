@@ -55,7 +55,7 @@
     
       <section class="multi-line-signature">
         
-        <a href="../../zcrud_core/ZAcl-class.html">ZAcl</a>
+        <a href="../../zcrud_core/ZAcl-class.html">ZAcl</a>?
         <span class="name ">acl</span>
         <div class="features"><span class="feature">final</span></div>
 
@@ -63,13 +63,16 @@
       
 <section class="desc markdown">
   <p>Port d'autorisation consommé <strong>uniquement</strong> en mode compact pour
-filtrer add/view/edit/delete. Défaut permissif (<code>const ZAllowAllAcl()</code>).</p>
+filtrer add/view/edit/delete.</p>
+<p><code>null</code> (défaut) ⇒ ACL du <code>ZcrudScope</code> ambiant, puis repli <strong>refusant</strong>
+(<code>ZDenyAllAcl</code>). En développement, l'ouverture totale se déclare :
+<code>ZcrudScope(acl: const ZAllowAllAcl())</code>.</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final ZAcl acl;</code></pre>
+  <pre class="language-dart"><code class="language-dart">final ZAcl? acl;</code></pre>
 </section>
 
 
@@ -98,7 +101,7 @@ filtrer add/view/edit/delete. Défaut permissif (<code>const ZAllowAllAcl()</cod
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

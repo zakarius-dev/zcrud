@@ -57,9 +57,13 @@
       <span class="name ">ZListTab</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-labelKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span>, </span></li>
 <li><span class="parameter" id="param-builder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a></span> <span class="parameter-name">builder</span>, </span></li>
 <li><span class="parameter" id="param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span></li>
+<li><span class="parameter" id="param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">baseFilters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-defaultItemBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">defaultItemBuilder</span>()?, </span></li>
 <li><span class="parameter" id="param-pageKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">pageKey</span>, </span></li>
 <li><span class="parameter" id="param-canCreate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">canCreate</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="param-acl"><span class="type-annotation"><a href="../../zcrud_core/ZAcl-class.html">ZAcl</a>?</span> <span class="parameter-name">acl</span>, </span></li>
+<li><span class="parameter" id="param-titles"><span class="type-annotation"><a href="../../zcrud_core/ZCrudTitles-class.html">ZCrudTitles</a>?</span> <span class="parameter-name">titles</span>, </span></li>
+<li><span class="parameter" id="param-countOf"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">countOf</span>, </span></li>
 </ol>})
     </section>
     
@@ -68,7 +72,9 @@
 (construit la vue de l'onglet), <code>icon</code> optionnelle,
 <code>defaultItemBuilder</code> optionnel (contexte de création de l'onglet),
 <code>pageKey</code> optionnelle (identité technique découplée du libellé),
-<code>canCreate</code> (autorisation de création de l'onglet, défaut <code>true</code>).</p>
+<code>canCreate</code> (autorisation de création de l'onglet, défaut <code>true</code>),
+<code>acl</code> (restriction de droits propre à l'onglet), <code>titles</code> (intitulés de
+formulaire de l'onglet), <code>countOf</code> (compteur affiché en pastille).</p>
 </section>
 
 
@@ -79,9 +85,13 @@
   required this.labelKey,
   required this.builder,
   this.icon,
+  this.baseFilters = const &lt;ZFilter&gt;[],
   this.defaultItemBuilder,
   this.pageKey,
   this.canCreate = true,
+  this.acl,
+  this.titles,
+  this.countOf,
 });</code></pre>
 </section>
 
@@ -110,7 +120,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

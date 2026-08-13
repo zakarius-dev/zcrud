@@ -94,12 +94,22 @@ ne lève (AD-10) : un type non comparable retombe sur « ne matche pas »
         if (_matchesFilter(row, filter)) row,
     ];
   }
-  &#47;&#47; (2) Recherche sans accents sur les champs `searchable`.
+  &#47;&#47; (2) Recherche sans accents sur le domaine déclaré par la requête
+  &#47;&#47; (`searchable` par défaut) et avec la normalisation qu&#39;elle déclare.
   final search = request.search;
-  if (search != null &amp;&amp; zFoldDiacritics(search.trim()).isNotEmpty) {
+  final folding = request.searchFolding;
+  if (search != null &amp;&amp;
+      zFoldDiacritics(search.trim(), folding: folding).isNotEmpty) {
     result = &lt;ZListRow&gt;[
       for (final row in result)
-        if (zMatchesSearch(row, search, schema: schema)) row,
+        if (zMatchesSearch(
+          row,
+          search,
+          schema: schema,
+          scope: request.searchScope,
+          folding: folding,
+        ))
+          row,
     ];
   }
   &#47;&#47; (3) Tri multi-clés STABLE (direction respectée ; `null` ordonné en dernier
@@ -151,7 +161,7 @@ ne lève (AD-10) : un type non comparable retombe sur « ne matche pas »
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

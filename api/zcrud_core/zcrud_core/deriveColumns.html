@@ -84,6 +84,14 @@ pour l'<strong>inclure malgré tout</strong>, passer
 <p>L'<strong>ordre</strong> suit l'ordre du schéma (l'<code>order</code> = index d'origine dans <code>schema</code>,
 stable, indépendant du filtrage). Le <code>header</code> = <code>field.label ?? field.name</code>
 (clé non résolue). Le <a href="../zcrud_core/ZListColumn/format.html">ZListColumn.format</a> est dérivé PUR du <code>type</code>.</p>
+<p><code>policy.overrides</code> applique, colonne par colonne, ce que le schéma ne peut
+pas dire : largeurs <code>minWidth</code>/<code>maxWidth</code>, format monétaire à devise portée
+par la ligne, format recevant la ligne entière (cf. <a href="../zcrud_core/ZColumnOverride-class.html">ZColumnOverride</a>). Une
+entrée sans colonne correspondante est sans effet.</p>
+<p>La colonne de <strong>numéro d'ordre</strong> (<code>policy.ordinal</code>) n'apparaît PAS dans le
+résultat : elle n'est pas dérivée d'un champ et son contenu dépend de la
+position d'affichage. Elle est portée par <code>ZListRenderRequest.ordinal</code> et
+rendue par le backend (cf. <a href="../zcrud_core/ZListOrdinal-class.html">ZListOrdinal</a>).</p>
 </section>
 
 
@@ -99,13 +107,18 @@ stable, indépendant du filtrage). Le <code>header</code> = <code>field.label ??
   for (var index = 0; index &lt; schema.length; index++) {
     final field = schema[index];
     if (!_isVisible(field, policy)) continue;
+    final override = policy?.overrides[field.name];
     columns.add(
       ZListColumn(
         name: field.name,
-        header: field.label ?? field.name,
+        header: override?.header ?? field.label ?? field.name,
         type: field.type,
         order: index,
-        width: _widthFor(field.type),
+        width: override?.width ?? _widthFor(field.type),
+        minWidth: override?.minWidth,
+        maxWidth: override?.maxWidth,
+        currency: override?.currency,
+        formatWithRow: override?.formatWithRow,
         format: _formatterFor(field, formatting),
         formatting: formatting,
       ),
@@ -139,7 +152,7 @@ stable, indépendant du filtrage). Le <code>header</code> = <code>field.label ??
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

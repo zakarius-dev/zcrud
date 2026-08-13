@@ -62,6 +62,9 @@
   <p>Voie <strong>repository</strong> : lecture, sauvegarde et corbeille passent par les
 ports neutres de <code>repository</code> (<code>getAll</code>/<code>save</code>/<code>softDelete</code>/<code>restore</code>,
 listing corbeille via <code>ZDataRequest.deletedScope</code>).</p>
+<p>La <strong>suppression définitive</strong> n'appartient pas au port : elle est offerte
+si et seulement si le dépôt applique le mixin <code>ZPurgeable</code> (voir
+<a href="../../zcrud_screen/ZCrudSource/supportsPurge.html">supportsPurge</a>).</p>
 </section>
 
 
@@ -73,6 +76,7 @@ listing corbeille via <code>ZDataRequest.deletedScope</code>).</p>
       onSave = null,
       onSoftDelete = null,
       onRestore = null,
+      onPurge = null,
       isDeleted = null;</code></pre>
 </section>
 
@@ -101,7 +105,7 @@ listing corbeille via <code>ZDataRequest.deletedScope</code>).</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

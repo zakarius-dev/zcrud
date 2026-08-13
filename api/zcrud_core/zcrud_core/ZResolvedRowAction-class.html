@@ -88,7 +88,7 @@ vue <code>builder</code> du cœur) consomme UNIQUEMENT ce type — il ne connaî
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZResolvedRowAction.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZResolvedRowAction/ZResolvedRowAction.html">ZResolvedRowAction</a></span><span class="signature">({<span class="parameter" id="param-id"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span>, </span><span class="parameter" id="param-labelKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span>, </span><span class="parameter" id="param-enabled"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enabled</span>, </span><span class="parameter" id="param-onInvoke"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a></span> <span class="parameter-name">onInvoke</span>, </span><span class="parameter" id="param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="param-destructive"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">destructive</span> = <span class="default-value">false</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZResolvedRowAction/ZResolvedRowAction.html">ZResolvedRowAction</a></span><span class="signature">({<span class="parameter" id="param-id"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span>, </span><span class="parameter" id="param-labelKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span>, </span><span class="parameter" id="param-enabled"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enabled</span>, </span><span class="parameter" id="param-onInvoke"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a></span> <span class="parameter-name">onInvoke</span>, </span><span class="parameter" id="param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="param-destructive"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">destructive</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-disabledReasonKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">disabledReasonKey</span></span>})</span>
         </dt>
         <dd>
           Construit une action résolue neutre.
@@ -110,6 +110,19 @@ vue <code>builder</code> du cœur) consomme UNIQUEMENT ce type — il ne connaî
 </dt>
 <dd>
   <code>true</code> si l'action est <strong>destructive</strong> (suppression) — indice de style.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="disabledReasonKey" class="property">
+  <span class="name"><a href="../zcrud_core/ZResolvedRowAction/disabledReasonKey.html">disabledReasonKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé de libellé du <strong>motif</strong> pour lequel l'action est inerte, quand elle
+l'est ; <code>null</code> si l'action est offerte.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -285,7 +298,7 @@ avec le <code>BuildContext</code> et l'entité capturés à la résolution).
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

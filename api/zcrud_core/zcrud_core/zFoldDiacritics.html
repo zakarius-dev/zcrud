@@ -55,8 +55,9 @@
     <section class="multi-line-signature">
         
 <span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
-<span class="name ">zFoldDiacritics</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="zFoldDiacritics-param-input"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">input</span></span></li>
-</ol>)
+<span class="name ">zFoldDiacritics</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="zFoldDiacritics-param-input"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">input</span>, {</span></li>
+<li><span class="parameter" id="zFoldDiacritics-param-folding"><span class="type-annotation"><a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> <span class="parameter-name">folding</span> = <span class="default-value">ZSearchFolding.diacritics</span>, </span></li>
+</ol>})
 
         
 
@@ -69,18 +70,32 @@ remplace chaque diacritique Latin par sa forme ASCII (table <code>_foldTable</co
 <code>zFoldDiacritics('ÉÈÊË') == 'eeee'</code>, <code>zFoldDiacritics('Œuvre') == 'oeuvre'</code>.
 <strong>Idempotent</strong> (<code>zFoldDiacritics(zFoldDiacritics(x)) == zFoldDiacritics(x)</code>)
 et total (chaîne vide → chaîne vide ; ne lève jamais).</p>
+<p><code>folding</code> choisit la <strong>profondeur</strong> du pliage. Le défaut
+<a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding.diacritics</a> conserve les blancs — comportement historique,
+inchangé pour tout appelant existant. <a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding.diacriticsAndSpaces</a>
+supprime en plus <strong>tous</strong> les blancs :
+<code>zFoldDiacritics('SARL U', folding: ZSearchFolding.diacriticsAndSpaces)</code>
+vaut <code>'sarlu'</code>. Les deux modes restent idempotents.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">String zFoldDiacritics(String input) {
+  <pre class="language-dart"><code class="language-dart">String zFoldDiacritics(
+  String input, {
+  ZSearchFolding folding = ZSearchFolding.diacritics,
+}) {
   if (input.isEmpty) return input;
+  final dropSpaces = folding == ZSearchFolding.diacriticsAndSpaces;
   final lower = input.toLowerCase();
   final buffer = StringBuffer();
   for (final rune in lower.runes) {
     final ch = String.fromCharCode(rune);
+    &#47;&#47; `trim()` porte la définition Unicode du blanc (espace, espace insécable,
+    &#47;&#47; tabulation, saut de ligne, séparateurs de ligne) : un caractère dont le
+    &#47;&#47; `trim()` est vide EST un blanc, sans table à maintenir.
+    if (dropSpaces &amp;&amp; ch.trim().isEmpty) continue;
     buffer.write(_foldTable[ch] ?? ch);
   }
   return buffer.toString();
@@ -111,7 +126,7 @@ et total (chaîne vide → chaîne vide ; ne lève jamais).</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

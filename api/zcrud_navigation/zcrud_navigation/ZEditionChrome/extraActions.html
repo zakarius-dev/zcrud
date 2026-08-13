@@ -63,6 +63,33 @@
       
 <section class="desc markdown">
   <p>Actions supplémentaires placées <strong>avant</strong> l'action d'enregistrement.</p>
+<p>Elles sont rendues <strong>exactement une fois</strong>, dans <strong>tous</strong> les modes, dans
+la rangée des actions positives — jamais en plus dans l'en-tête :</p>
+<table>
+<thead>
+<tr>
+<th><code>mode</code></th>
+<th>Emplacement à l'écran</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page</code></td>
+<td><code>actions</code> de l'en-tête repliable, avant l'enregistrement</td>
+</tr>
+<tr>
+<td><code>dialog</code></td>
+<td>barre d'actions <strong>en pied</strong>, avant l'enregistrement</td>
+</tr>
+<tr>
+<td><code>sheet</code></td>
+<td>barre d'actions <strong>en pied</strong> (<code>SafeArea</code>), avant l'enregistrement</td>
+</tr>
+</tbody>
+</table>
+<p>Liste vide (le défaut) ⇒ <strong>rien</strong> dans l'arbre (invariant AD-4). Ces
+widgets sont rendus tels quels : c'est à l'appelant de leur donner leur
+cible tactile (≥ 48 dp) et leur <code>Semantics</code> (invariant AD-13).</p>
 </section>
 
       
@@ -97,7 +124,7 @@
 <footer>
   <span class="no-break">
     zcrud_navigation
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

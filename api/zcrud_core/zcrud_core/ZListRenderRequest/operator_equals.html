@@ -107,7 +107,8 @@ bool operator ==(Object other) =&gt;
     other is ZListRenderRequest &amp;&amp;
         runtimeType == other.runtimeType &amp;&amp;
         _listEquals(columns, other.columns) &amp;&amp;
-        _listEquals(rows, other.rows);</code></pre>
+        _listEquals(rows, other.rows) &amp;&amp;
+        ordinal == other.ordinal;</code></pre>
 </section>
 
 
@@ -135,7 +136,7 @@ bool operator ==(Object other) =&gt;
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

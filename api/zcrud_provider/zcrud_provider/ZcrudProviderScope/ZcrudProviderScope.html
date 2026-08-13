@@ -57,7 +57,7 @@
       <span class="name ">ZcrudProviderScope</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-child"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">child</span>, </span></li>
 <li><span class="parameter" id="param-createController"><span class="type-annotation">ZFormController</span> <span class="parameter-name">createController</span>()?, </span></li>
 <li><span class="parameter" id="param-providers"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/nested/1.0.0/nested/SingleChildWidget-class.html">SingleChildWidget</a></span>&gt;</span></span> <span class="parameter-name">providers</span> = <span class="default-value">const []</span>, </span></li>
-<li><span class="parameter" id="param-acl"><span class="type-annotation">ZAcl</span> <span class="parameter-name">acl</span> = <span class="default-value">const ZAllowAllAcl()</span>, </span></li>
+<li><span class="parameter" id="param-acl"><span class="type-annotation">ZAcl</span> <span class="parameter-name">acl</span> = <span class="default-value">const ZDenyAllAcl()</span>, </span></li>
 <li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
 </ol>})
     </section>
@@ -79,7 +79,7 @@ d'autorisation exposé au cœur.</p>
   required this.child,
   this.createController,
   this.providers = const [],
-  this.acl = const ZAllowAllAcl(),
+  this.acl = const ZDenyAllAcl(),
   super.key,
 });</code></pre>
 </section>
@@ -109,7 +109,7 @@ d'autorisation exposé au cœur.</p>
 <footer>
   <span class="no-break">
     zcrud_provider
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

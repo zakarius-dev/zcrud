@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZRowPermissions class from the zcrud_core library, for the Dart programming language.">
+  <title>ZRowPermissions class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZRowPermissions class</li>
+  </ol>
+  <div class="self-name">ZRowPermissions</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZRowPermissions-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZRowPermissions</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Droits effectifs d'<strong>une ligne</strong>, exprimés en <strong>restrictions</strong>.</p>
+<p>Une instance ne dit jamais « cette ligne autorise X » : elle dit « cette
+ligne refuse X », ou « cette ligne est en lecture seule ». Les droits
+réellement offerts restent ceux de l'ACL de l'application, <strong>moins</strong> ce que
+la ligne retire.</p>
+<pre class="language-dart"><code class="language-dart">// Un dossier clôturé ne s'écrit plus.
+ZCrudScreen&lt;Dossier&gt;(
+  rowAcl: (dossier) =&gt; dossier.cloture
+      ? const ZRowPermissions.locked(reasonKey: 'dossierClosed')
+      : const ZRowPermissions.unrestricted(),
+  // …
+);
+</code></pre>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://api.flutter.dev/flutter/meta/immutable-constant.html">immutable</a></li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZRowPermissions.new" class="callable">
+          <span class="name"><a href="../zcrud_core/ZRowPermissions/ZRowPermissions.html">ZRowPermissions</a></span><span class="signature">({<span class="parameter" id="param-denied"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZCrudAction.html">ZCrudAction</a></span>&gt;</span></span> <span class="parameter-name">denied</span> = <span class="default-value">const &lt;ZCrudAction&gt;{}</span>, </span><span class="parameter" id="param-readOnly"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readOnly</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-reasonKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reasonKey</span></span>})</span>
+        </dt>
+        <dd>
+          Construit les restrictions d'une ligne.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZRowPermissions.denying" class="callable">
+          <span class="name"><a href="../zcrud_core/ZRowPermissions/ZRowPermissions.denying.html">ZRowPermissions.denying</a></span><span class="signature">(<span class="parameter" id="denying-param-actions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZCrudAction.html">ZCrudAction</a></span>&gt;</span></span> <span class="parameter-name">actions</span>, {</span><span class="parameter" id="denying-param-reasonKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reasonKey</span></span>})</span>
+        </dt>
+        <dd>
+          La ligne refuse les <code>actions</code> nommées, et rien d'autre.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZRowPermissions.locked" class="callable">
+          <span class="name"><a href="../zcrud_core/ZRowPermissions/ZRowPermissions.locked.html">ZRowPermissions.locked</a></span><span class="signature">({<span class="parameter" id="locked-param-reasonKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">reasonKey</span></span>})</span>
+        </dt>
+        <dd>
+          La ligne est en <strong>lecture seule</strong> : toute action qui écrit lui est
+retirée, la consultation reste ouverte.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZRowPermissions.unrestricted" class="callable">
+          <span class="name"><a href="../zcrud_core/ZRowPermissions/ZRowPermissions.unrestricted.html">ZRowPermissions.unrestricted</a></span><span class="signature">()</span>
+        </dt>
+        <dd>
+          La ligne ne retire <strong>rien</strong> : les droits sont exactement ceux de l'ACL.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="denied" class="property">
+  <span class="name"><a href="../zcrud_core/ZRowPermissions/denied.html">denied</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZCrudAction.html">ZCrudAction</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Actions expressément refusées sur cette ligne.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_core/ZRowPermissions/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="readOnly" class="property">
+  <span class="name"><a href="../zcrud_core/ZRowPermissions/readOnly.html">readOnly</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si la ligne interdit toute action qui écrit.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="reasonKey" class="property">
+  <span class="name"><a href="../zcrud_core/ZRowPermissions/reasonKey.html">reasonKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé de libellé du motif de refus, annoncée quand l'action est montrée
+inerte ; <code>null</code> = motif générique.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="restrictsNothing" class="property">
+  <span class="name"><a href="../zcrud_core/ZRowPermissions/restrictsNothing.html">restrictsNothing</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si cette instance ne retire aucun droit (cas de la très grande
+majorité des lignes) — permet de court-circuiter toute la résolution.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="admits" class="callable">
+  <span class="name"><a href="../zcrud_core/ZRowPermissions/admits.html">admits</a></span><span class="signature">(<wbr><span class="parameter" id="admits-param-action"><span class="type-annotation"><a href="../zcrud_core/ZCrudAction.html">ZCrudAction</a></span> <span class="parameter-name">action</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si la ligne <strong>admet</strong> <code>action</code> — c'est-à-dire si elle ne la retire
+pas. Ce n'est jamais une autorisation : le droit reste celui de l'ACL.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="reasonFor" class="callable">
+  <span class="name"><a href="../zcrud_core/ZRowPermissions/reasonFor.html">reasonFor</a></span><span class="signature">(<wbr><span class="parameter" id="reasonFor-param-action"><span class="type-annotation"><a href="../zcrud_core/ZCrudAction.html">ZCrudAction</a></span> <span class="parameter-name">action</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Motif du refus de <code>action</code> sur cette ligne, ou <code>null</code> si la ligne
+l'admet.
+  
+
+</dd>
+
+        <dt id="toString" class="callable">
+  <span class="name"><a href="../zcrud_core/ZRowPermissions/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A string representation of this object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_core/ZRowPermissions/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZRowPermissions class</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.94.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

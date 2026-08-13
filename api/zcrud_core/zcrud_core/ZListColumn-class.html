@@ -100,7 +100,7 @@ pas comparées).</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZListColumn.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZListColumn/ZListColumn.html">ZListColumn</a></span><span class="signature">({<span class="parameter" id="param-name"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="param-header"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">header</span>, </span><span class="parameter" id="param-type"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/EditionFieldType.html">EditionFieldType</a></span> <span class="parameter-name">type</span>, </span><span class="parameter" id="param-order"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">order</span>, </span><span class="parameter" id="param-format"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">format</span>(<span class="parameter" id="param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>), </span><span class="parameter" id="param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">width</span>, </span><span class="parameter" id="param-formatting"><span class="type-annotation"><a href="../zcrud_core/ZListFormat-class.html">ZListFormat</a></span> <span class="parameter-name">formatting</span> = <span class="default-value">const ZListFormat()</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZListColumn/ZListColumn.html">ZListColumn</a></span><span class="signature">({<span class="parameter" id="param-name"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="param-header"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">header</span>, </span><span class="parameter" id="param-type"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/EditionFieldType.html">EditionFieldType</a></span> <span class="parameter-name">type</span>, </span><span class="parameter" id="param-order"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">order</span>, </span><span class="parameter" id="param-format"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">format</span>(<span class="parameter" id="param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>), </span><span class="parameter" id="param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">width</span>, </span><span class="parameter" id="param-minWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">minWidth</span>, </span><span class="parameter" id="param-maxWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">maxWidth</span>, </span><span class="parameter" id="param-currency"><span class="type-annotation"><a href="../zcrud_core/ZCurrencyFormat-class.html">ZCurrencyFormat</a>?</span> <span class="parameter-name">currency</span>, </span><span class="parameter" id="param-formatWithRow"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">formatWithRow</span>(<span class="parameter" id="param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span>, </span><span class="parameter" id="param-row"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">row</span></span>)?, </span><span class="parameter" id="param-formatting"><span class="type-annotation"><a href="../zcrud_core/ZListFormat-class.html">ZListFormat</a></span> <span class="parameter-name">formatting</span> = <span class="default-value">const ZListFormat()</span></span>})</span>
         </dt>
         <dd>
           Construit une colonne <code>const</code>.
@@ -114,6 +114,19 @@ pas comparées).</p>
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
+        <dt id="currency" class="property">
+  <span class="name"><a href="../zcrud_core/ZListColumn/currency.html">currency</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZCurrencyFormat-class.html">ZCurrencyFormat</a>?</span>
+  
+
+</dt>
+<dd>
+  Format monétaire de la colonne, éventuellement à <strong>devise portée par la
+ligne</strong> (cf. <a href="../zcrud_core/ZCurrencyFormat-class.html">ZCurrencyFormat</a>). <code>null</code> ⇒ colonne non monétaire.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="format" class="property">
   <span class="name"><a href="../zcrud_core/ZListColumn/format.html">format</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>)</span></span>
@@ -141,6 +154,20 @@ Par défaut vide ⇒ rendu locale-neutre non enrichi.
 
 </dd>
 
+        <dt id="formatWithRow" class="property">
+  <span class="name"><a href="../zcrud_core/ZListColumn/formatWithRow.html">formatWithRow</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span>, </span><span class="parameter" id="param-row"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">row</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  Format recevant, en plus de la valeur de la cellule, <strong>toute la ligne</strong> —
+pour les affichages dérivés d'un autre champ (un suffixe d'unité rangé
+dans une colonne voisine, un montant et sa devise, un libellé composé).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="hashCode" class="property">
   <span class="name"><a href="../zcrud_core/ZListColumn/hashCode.html">hashCode</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
@@ -161,6 +188,32 @@ Par défaut vide ⇒ rendu locale-neutre non enrichi.
 </dt>
 <dd>
   Libellé/clé <strong>non résolu</strong> (<code>field.label ?? field.name</code>). Résolu au rendu.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="maxWidth" class="property">
+  <span class="name"><a href="../zcrud_core/ZListColumn/maxWidth.html">maxWidth</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Largeur <strong>maximale</strong> de la colonne, en pixels logiques, ou <code>null</code> (aucune
+borne). Même nature que <a href="../zcrud_core/ZListColumn/minWidth.html">minWidth</a> : de l'encombrement, pas de la valeur.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="minWidth" class="property">
+  <span class="name"><a href="../zcrud_core/ZListColumn/minWidth.html">minWidth</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span>
+  
+
+</dt>
+<dd>
+  Largeur <strong>minimale</strong> de la colonne, en pixels logiques, ou <code>null</code>
+(aucune borne).
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -234,6 +287,20 @@ Par défaut vide ⇒ rendu locale-neutre non enrichi.
       id="instance-methods">
     <h2>Methods</h2>
     <dl class="callables">
+        <dt id="formatRow" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListColumn/formatRow.html">formatRow</a></span><span class="signature">(<wbr><span class="parameter" id="formatRow-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span>, </span><span class="parameter" id="formatRow-param-row"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">row</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Texte de la cellule de cette colonne pour la ligne <code>row</code>, <strong>en connaissant
+toute la ligne</strong>.
+  
+
+</dd>
+
         <dt id="noSuchMethod" class="callable inherited">
   <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
     <span class="returntype parameter">&#8594; dynamic</span>
@@ -310,7 +377,7 @@ Par défaut vide ⇒ rendu locale-neutre non enrichi.
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

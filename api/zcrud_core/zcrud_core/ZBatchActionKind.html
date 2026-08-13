@@ -60,11 +60,12 @@
     
 <section class="desc markdown">
   <p>Nature d'une action de <strong>lot</strong> — enum EXTENSIBLE additif (AD-4).</p>
-<p><a href="../zcrud_core/ZBatchActionKind.html">delete</a>/<a href="../zcrud_core/ZBatchActionKind.html">move</a> sont les natures intégrées ; <a href="../zcrud_core/ZBatchActionKind.html">custom</a> couvre toute action
-applicative hors nomenclature (l'appelant porte le <a href="../zcrud_core/ZBatchAction/label.html">ZBatchAction.label</a>/<code>icon</code>
-et le callback). Un membre neuf est <strong>non-breaking</strong> : aucun <code>switch</code>
-exhaustif sur ce type n'existe dans le cœur (grep négatif — la barre filtre
-sur <code>onSelected</code>, elle ne branche pas par nature).</p>
+<p><a href="../zcrud_core/ZBatchActionKind.html">delete</a>/<a href="../zcrud_core/ZBatchActionKind.html">restore</a>/<a href="../zcrud_core/ZBatchActionKind.html">move</a> sont les natures intégrées ; <a href="../zcrud_core/ZBatchActionKind.html">custom</a> couvre toute
+action applicative hors nomenclature (l'appelant porte le
+<a href="../zcrud_core/ZBatchAction/label.html">ZBatchAction.label</a>/<code>icon</code> et le callback). Un membre neuf est
+<strong>non-breaking</strong> : aucun <code>switch</code> exhaustif sur ce type n'existe dans le cœur
+(grep négatif — la barre filtre sur <code>onSelected</code>, elle ne branche pas par
+nature).</p>
 </section>
 
 
@@ -104,6 +105,24 @@ sur <code>onSelected</code>, elle ne branche pas par nature).</p>
 </dt>
 <dd>
   <p>Supprimer les éléments sélectionnés (voie <code>batchDelete</code> — cascade injectée).</p>
+  
+
+</dd>
+
+            <dt id="restore" class="constant">
+    <span class="name ">restore</span>
+  <span class="signature">&#8594; const <a href="../zcrud_core/ZBatchActionKind.html">ZBatchActionKind</a></span>
+  
+
+</dt>
+<dd>
+  <p><strong>Restaurer</strong> les éléments sélectionnés — le geste inverse de <a href="../zcrud_core/ZBatchActionKind.html">delete</a>,
+celui d'un listing de corbeille.</p>
+<p>Sans ce membre, une barre de corbeille devait déclarer sa restauration en
+<a href="../zcrud_core/ZBatchActionKind.html">custom</a>, c'est-à-dire annoncer « hors nomenclature » un geste qui est
+exactement le pendant du plus intégré de tous. La nature d'une action de
+lot sert à la reconnaître (journalisation, télémétrie, décoration d'un
+hôte) : <a href="../zcrud_core/ZBatchActionKind.html">custom</a> y perdait cette information.</p>
   
 
 </dd>
@@ -295,7 +314,7 @@ sur <code>onSelected</code>, elle ne branche pas par nature).</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

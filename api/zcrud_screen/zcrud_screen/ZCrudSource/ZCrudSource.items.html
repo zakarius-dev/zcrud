@@ -58,6 +58,7 @@
 <li><span class="parameter" id="items-param-onSave"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudSave.html">ZCrudSave</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onSave</span>, </span></li>
 <li><span class="parameter" id="items-param-onSoftDelete"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudTrashWrite.html">ZCrudTrashWrite</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onSoftDelete</span>, </span></li>
 <li><span class="parameter" id="items-param-onRestore"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudTrashWrite.html">ZCrudTrashWrite</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onRestore</span>, </span></li>
+<li><span class="parameter" id="items-param-onPurge"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudTrashWrite.html">ZCrudTrashWrite</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onPurge</span>, </span></li>
 <li><span class="parameter" id="items-param-isDeleted"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isDeleted</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span></span></li>
 </ol>)?, </span></li>
 </ol>})
@@ -66,9 +67,10 @@
 <section class="desc markdown">
   <p>Voie <strong>cohabitation</strong> : <code>items</code> arrive déjà chargé (flux de l'hôte).</p>
 <p>Les écritures sont des callbacks <strong>optionnels</strong> : <code>onSave</code> (création +
-édition), <code>onSoftDelete</code> / <code>onRestore</code> (corbeille). <code>isDeleted</code> est le
-prédicat de <strong>partition</strong> vivants/corbeille (la source livrant tout,
-c'est l'écran qui partitionne — <code>null</code> = aucune corbeille).</p>
+édition), <code>onSoftDelete</code> / <code>onRestore</code> / <code>onPurge</code> (les trois gestes de
+corbeille). <code>isDeleted</code> est le prédicat de <strong>partition</strong> vivants/corbeille
+(la source livrant tout, c'est l'écran qui partitionne — <code>null</code> = aucune
+corbeille).</p>
 </section>
 
 
@@ -80,6 +82,7 @@ c'est l'écran qui partitionne — <code>null</code> = aucune corbeille).</p>
   this.onSave,
   this.onSoftDelete,
   this.onRestore,
+  this.onPurge,
   this.isDeleted,
 }) : repository = null;</code></pre>
 </section>
@@ -109,7 +112,7 @@ c'est l'écran qui partitionne — <code>null</code> = aucune corbeille).</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

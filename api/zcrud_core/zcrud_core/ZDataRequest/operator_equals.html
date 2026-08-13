@@ -110,6 +110,8 @@ bool operator ==(Object other) =&gt;
         limit == other.limit &amp;&amp;
         startAfter == other.startAfter &amp;&amp;
         deletedScope == other.deletedScope &amp;&amp;
+        searchScope == other.searchScope &amp;&amp;
+        searchFolding == other.searchFolding &amp;&amp;
         _listEquals(filters, other.filters) &amp;&amp;
         _listEquals(sorts, other.sorts);</code></pre>
 </section>
@@ -139,7 +141,7 @@ bool operator ==(Object other) =&gt;
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

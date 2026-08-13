@@ -63,7 +63,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Lookup <strong>défensif</strong> : le builder de <code>kind</code>, ou <code>null</code> si absent
+  <p>Lookup <strong>défensif</strong> : le builder de <code>kind</code> (enfant d'abord — <strong>ombrage</strong>
+enfant &gt; parent —, puis chaîne parent), ou <code>null</code> si absent partout
 (invariant AD-10) — utilisé par le dispatcher pour retomber sur
 <code>ZUnsupportedFieldWidget</code>.</p>
 </section>
@@ -72,7 +73,8 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">ZFieldWidgetBuilder? tryBuilderFor(String kind) =&gt; _builders[kind];</code></pre>
+  <pre class="language-dart"><code class="language-dart">ZFieldWidgetBuilder? tryBuilderFor(String kind) =&gt;
+    _builders[kind] ?? parent?.tryBuilderFor(kind);</code></pre>
 </section>
 
 
@@ -100,7 +102,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

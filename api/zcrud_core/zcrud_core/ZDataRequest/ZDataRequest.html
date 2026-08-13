@@ -60,6 +60,8 @@
 <li><span class="parameter" id="param-limit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">limit</span>, </span></li>
 <li><span class="parameter" id="param-startAfter"><span class="type-annotation"><a href="../../zcrud_core/ZCursor-class.html">ZCursor</a>?</span> <span class="parameter-name">startAfter</span>, </span></li>
 <li><span class="parameter" id="param-deletedScope"><span class="type-annotation"><a href="../../zcrud_core/ZDeletedScope.html">ZDeletedScope</a></span> <span class="parameter-name">deletedScope</span> = <span class="default-value">ZDeletedScope.aliveOnly</span>, </span></li>
+<li><span class="parameter" id="param-searchScope"><span class="type-annotation"><a href="../../zcrud_core/ZSearchScope.html">ZSearchScope</a></span> <span class="parameter-name">searchScope</span> = <span class="default-value">ZSearchScope.searchableFields</span>, </span></li>
+<li><span class="parameter" id="param-searchFolding"><span class="type-annotation"><a href="../../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> <span class="parameter-name">searchFolding</span> = <span class="default-value">ZSearchFolding.diacritics</span>, </span></li>
 </ol>})
     </section>
     
@@ -79,6 +81,8 @@ par défaut décrivent « tout, non paginé ».</p>
   this.limit,
   this.startAfter,
   this.deletedScope = ZDeletedScope.aliveOnly,
+  this.searchScope = ZSearchScope.searchableFields,
+  this.searchFolding = ZSearchFolding.diacritics,
 });</code></pre>
 </section>
 
@@ -107,7 +111,7 @@ par défaut décrivent « tout, non paginé ».</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

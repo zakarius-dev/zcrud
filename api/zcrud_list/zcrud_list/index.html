@@ -72,6 +72,24 @@ renderer matérialise l'arête AD-1 <code>zcrud_list → zcrud_core</code>.</p>
     <section class="summary offset-anchor" id="classes">
       <h2>Classes</h2>
       <dl>
+          <dt id="ZSfCellStyle">
+  <span class="name "><a href="../zcrud_list/ZSfCellStyle-class.html">ZSfCellStyle</a></span> 
+
+</dt>
+<dd>
+  Style <strong>CONDITIONNEL</strong> d'une cellule, résolu par ligne × colonne (cf.
+<code>ZSfDataGridRenderer.cellStyleBuilder</code>).
+</dd>
+
+          <dt id="ZSfColumnSizing">
+  <span class="name "><a href="../zcrud_list/ZSfColumnSizing-class.html">ZSfColumnSizing</a></span> 
+
+</dt>
+<dd>
+  Dimensionnement <strong>d'UNE colonne</strong>, appliqué par <code>name</code> (cf.
+<code>ZSfDataGridRenderer.columnSizing</code>).
+</dd>
+
           <dt id="ZSfDataGridRenderer">
   <span class="name "><a href="../zcrud_list/ZSfDataGridRenderer-class.html">ZSfDataGridRenderer</a></span> 
 
@@ -80,9 +98,32 @@ renderer matérialise l'arête AD-1 <code>zcrud_list → zcrud_core</code>.</p>
   Backend concret rendant un <code>ZListRenderRequest</code> neutre en <code>SfDataGrid</code>.
 </dd>
 
+          <dt id="ZSfStackedHeader">
+  <span class="name "><a href="../zcrud_list/ZSfStackedHeader-class.html">ZSfStackedHeader</a></span> 
+
+</dt>
+<dd>
+  Groupe d'en-tête <strong>empilé</strong> : un libellé unique couvrant plusieurs colonnes
+sur une ligne d'en-tête supplémentaire (patron « Valeurs (F/Kg) » couvrant
+<code>valeurTransacParKg</code>/<code>valeurAppliqueeParKg</code>/<code>ecart</code>).
+</dd>
+
       </dl>
     </section>
 
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="ColumnWidthMode">
+  <span class="name "><a href="https://pub.dev/documentation/syncfusion_flutter_datagrid/34.1.31/datagrid/ColumnWidthMode.html">ColumnWidthMode</a></span> 
+
+</dt>
+<dd>
+  Determines how the width of the columns are adjusted.
+</dd>
+
+      </dl>
+    </section>
 
 
 
@@ -118,7 +159,7 @@ renderer matérialise l'arête AD-1 <code>zcrud_list → zcrud_core</code>.</p>
 <footer>
   <span class="no-break">
     zcrud_list
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

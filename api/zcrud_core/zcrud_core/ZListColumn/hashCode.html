@@ -104,8 +104,18 @@ like <a href="https://api.flutter.dev/flutter/dart-collection/HashSet-class.html
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-int get hashCode =&gt;
-    Object.hash(runtimeType, name, header, type, order, width, formatting);</code></pre>
+int get hashCode =&gt; Object.hash(
+      runtimeType,
+      name,
+      header,
+      type,
+      order,
+      width,
+      minWidth,
+      maxWidth,
+      currency,
+      formatting,
+    );</code></pre>
 </section>
 
   </section>
@@ -135,7 +145,7 @@ int get hashCode =&gt;
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

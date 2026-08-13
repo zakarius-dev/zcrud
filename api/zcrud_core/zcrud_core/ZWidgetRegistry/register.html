@@ -64,9 +64,11 @@
     </section>
     
 <section class="desc markdown">
-  <p>Enregistre le <code>builder</code> de <code>kind</code>. Collision → <strong><code>throw</code></strong>
+  <p>Enregistre le <code>builder</code> de <code>kind</code>. Collision <strong>locale</strong> → <strong><code>throw</code></strong>
 <a href="../../zcrud_core/ZDuplicateRegistrationError-class.html">ZDuplicateRegistrationError</a> (jamais un « last-wins » silencieux,
-invariant AD-3).</p>
+invariant AD-3). Enregistrer un <code>kind</code> déjà servi par le <a href="../../zcrud_core/ZWidgetRegistry/parent.html">parent</a> est en
+revanche <strong>permis</strong> : c'est l'<strong>ombrage</strong> (enfant &gt; parent), la raison
+d'être du chaînage.</p>
 </section>
 
 
@@ -106,7 +108,7 @@ invariant AD-3).</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.92.0
+      0.94.0
   </span>
   
 </footer>

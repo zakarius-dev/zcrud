@@ -57,7 +57,7 @@
       <span class="name ">ZcrudRiverpodScope</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-child"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">child</span>, </span></li>
 <li><span class="parameter" id="param-overrides"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/riverpod/3.3.2/misc/Override-class.html">Override</a></span>&gt;</span></span> <span class="parameter-name">overrides</span> = <span class="default-value">const []</span>, </span></li>
 <li><span class="parameter" id="param-seams"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>, <span class="type-parameter"><a href="https://pub.dev/documentation/riverpod/3.3.2/misc/ProviderListenable-class.html">ProviderListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">seams</span> = <span class="default-value">const {}</span>, </span></li>
-<li><span class="parameter" id="param-acl"><span class="type-annotation">ZAcl</span> <span class="parameter-name">acl</span> = <span class="default-value">const ZAllowAllAcl()</span>, </span></li>
+<li><span class="parameter" id="param-acl"><span class="type-annotation">ZAcl</span> <span class="parameter-name">acl</span> = <span class="default-value">const ZDenyAllAcl()</span>, </span></li>
 <li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
 </ol>})
     </section>
@@ -77,7 +77,7 @@ répondre à <code>resolve&lt;T&gt;()</code>. <code>acl</code> : port d'autorisa
   required this.child,
   this.overrides = const [],
   this.seams = const {},
-  this.acl = const ZAllowAllAcl(),
+  this.acl = const ZDenyAllAcl(),
   super.key,
 });</code></pre>
 </section>
@@ -107,7 +107,7 @@ répondre à <code>resolve&lt;T&gt;()</code>. <code>acl</code> : port d'autorisa
 <footer>
   <span class="no-break">
     zcrud_riverpod
-      0.92.0
+      0.94.0
   </span>
   
 </footer>
