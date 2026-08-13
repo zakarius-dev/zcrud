@@ -1,23 +1,29 @@
-/// `ZCrudEditionScope` — **transport du drapeau de lecture** jusqu'au
-/// formulaire présenté par un `ZCrudScreen`.
+/// `ZCrudEditionScope` — **transport du drapeau de lecture et du retour vers
+/// l'édition** jusqu'au formulaire présenté par un `ZCrudScreen`.
 ///
 /// La chaîne d'une fiche de détail va de la liste au formulaire :
 /// `liste → présentation → formulaire`. Le dernier maillon est celui qui
 /// compte — une fiche dérivée des **colonnes** ne montre que les quatre ou six
 /// champs affichés, là où le formulaire les montre **tous**. Ce scope est ce
 /// maillon : posé autour de la surface d'édition, il dit au formulaire, quel
-/// qu'il soit, qu'il est rendu en consultation.
+/// qu'il soit, qu'il est rendu en consultation — et **comment en sortir**.
 ///
 /// Le formulaire **dérivé** de l'écran le lit tout seul (rien à faire). Un
 /// formulaire **fourni par l'application** (`ZCrudScreen.editionBuilder`) le
 /// lit depuis le `BuildContext` qu'il reçoit :
 ///
 /// ```dart
-/// editionBuilder: (context, initial, save) => MonFormulaire(
-///   initial: initial,
-///   onSave: save,
-///   readOnly: ZCrudEditionScope.readOnlyOf(context),
-/// ),
+/// editionBuilder: (context, initial, save) {
+///   final modifier = ZCrudEditionScope.onEditOf(context);
+///   return MonFormulaire(
+///     initial: initial,
+///     onSave: save,
+///     readOnly: ZCrudEditionScope.readOnlyOf(context),
+///     // `null` ⇒ l'édition n'est pas permise : on ne dessine pas le bouton,
+///     // plutôt que d'en dessiner un mort.
+///     onEdit: modifier,
+///   );
+/// },
 /// ```
 ///
 /// **Pourquoi un scope plutôt qu'un paramètre de plus** : `ZCrudEditionBuilder`
@@ -30,16 +36,20 @@ library;
 
 import 'package:flutter/widgets.dart';
 
+import 'z_crud_screen_actions.dart' show ZCrudOpener;
+
 /// Contexte d'édition posé par `ZCrudScreen` autour de la surface présentée.
 ///
-/// Porte l'unique information que la surface ne peut pas déduire seule : le
-/// formulaire est-il ouvert en **consultation** ([readOnly] `true`, mode
-/// `ZScreenMode.details`) ou en **édition** ([readOnly] `false`) ?
+/// Porte les deux informations que la surface ne peut pas déduire seule : le
+/// formulaire est-il ouvert en **consultation** ([readOnly] `true`, fiche de
+/// détail) ou en **édition** ([readOnly] `false`) — et, en consultation, le
+/// **retour vers l'édition** est-il offert ([onEdit]) ?
 class ZCrudEditionScope extends InheritedWidget {
   /// Pose le contexte d'édition autour de [child].
   const ZCrudEditionScope({
     required this.readOnly,
     required super.child,
+    this.onEdit,
     super.key,
   });
 
@@ -49,6 +59,29 @@ class ZCrudEditionScope extends InheritedWidget {
   /// modifiables — y compris ceux qu'il dessine lui-même — et masquer ses
   /// actions d'écriture.
   final bool readOnly;
+
+  /// Bascule la surface **courante** vers l'édition, ou `null` si le geste
+  /// n'est pas offert.
+  ///
+  /// C'est le « Modifier » **de la fiche**, symétrique du `zCrudEditionOpener`
+  /// des cartes de liste : l'action « modifier » existe sur la **ligne**, elle
+  /// manquait **dans** la fiche. L'appeler ne referme rien — la surface reste
+  /// ouverte, à sa place, et redevient éditable : les valeurs déjà chargées, la
+  /// position de défilement et l'état du formulaire sont conservés.
+  ///
+  /// **`null` veut dire « ne dessinez pas le bouton »** — même contrat que
+  /// [ZCrudScreenActions.editionOpener]. Il est `null` dans tous les cas où le
+  /// geste n'a pas de sens ou n'est pas permis :
+  ///
+  /// * la surface est déjà **en édition** ([readOnly] `false`) ;
+  /// * l'ACL refuse `ZCrudAction.update` sur cette entité (filtrage par ligne) ;
+  /// * l'écran est en `ZScreenMode.locked`, en vue corbeille, ou sa source ne
+  ///   sait pas écrire ;
+  /// * la surface a été ouverte hors d'un `ZCrudScreen`.
+  ///
+  /// Le `Future` rendu se complète dès que la bascule est faite (aucune
+  /// nouvelle surface n'est présentée) ; un second appel est sans effet.
+  final ZCrudOpener? onEdit;
 
   /// Le contexte d'édition le plus proche, ou `null` hors d'une surface
   /// présentée par un `ZCrudScreen`.
@@ -61,7 +94,15 @@ class ZCrudEditionScope extends InheritedWidget {
   static bool readOnlyOf(BuildContext context) =>
       maybeOf(context)?.readOnly ?? false;
 
+  /// Le retour vers l'édition du contexte le plus proche, ou `null` — hors
+  /// écran assemblé, hors consultation, ou droit de modification refusé.
+  ///
+  /// À lire **avant de rendre** : un formulaire de consultation ne dessine son
+  /// bouton « Modifier » que si ce rappel existe.
+  static ZCrudOpener? onEditOf(BuildContext context) => maybeOf(context)?.onEdit;
+
   @override
   bool updateShouldNotify(ZCrudEditionScope oldWidget) =>
-      oldWidget.readOnly != readOnly;
+      oldWidget.readOnly != readOnly ||
+      !identical(oldWidget.onEdit, onEdit);
 }

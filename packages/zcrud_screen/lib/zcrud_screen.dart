@@ -30,5 +30,6 @@ export 'src/presentation/z_export_policy.dart';
 export 'src/presentation/z_list_query_policy.dart';
 export 'src/presentation/z_row_action_menu.dart';
 export 'src/presentation/z_row_actions_presentation.dart';
+export 'src/presentation/z_row_tint.dart';
 export 'src/presentation/z_screen_mode.dart';
 export 'src/presentation/z_selection_policy.dart';

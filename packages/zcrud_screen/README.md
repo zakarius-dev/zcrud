@@ -602,20 +602,43 @@ retombe sur les clés l10n génériques `create` / `copy` / `edit` / `details`.
 
 ### Consultation, fiche de détail, verrouillage
 
-Un écran a **trois** modes, déclarés par `mode:` :
+**La fiche de détail est un geste de ligne, pas un mode d'écran.** Un écran qui
+crée, met à la corbeille et restaure peut parfaitement ouvrir des fiches : c'est
+même le cas le plus courant. Il suffit de le déclarer.
+
+```dart
+// On crée, on met à la corbeille, on restaure… et le tap consulte.
+ZCrudScreen<Convocation>(
+  title: 'Convocations',
+  source: ZCrudSource.repository(repo),
+  registry: registry,
+  detailsEnabled: true,
+)
+```
+
+`detailsEnabled` ne retire rien : le bouton de création, la bascule corbeille,
+la mise à la corbeille et la restauration restent exactement ce qu'ils étaient.
+Chaque ligne gagne simplement une action « détails », et le geste **nominal**
+d'une carte métier devient la consultation.
+
+Le `mode:`, lui, décrit ce qu'est l'écran **entier** :
 
 | Mode | Créer | Consulter la fiche | Éditer | Corbeille |
 |---|---|---|---|---|
-| `ZScreenMode.full` (défaut) | oui | — | oui | oui |
+| `ZScreenMode.full` (défaut) | oui | selon `detailsEnabled` | oui | oui |
 | `ZScreenMode.details` | non | **oui** | oui si `ZCrudAction.update` | non |
 | `ZScreenMode.locked` | non | non | non | non |
 
-**La fiche de détail est le formulaire entier, pas un résumé des colonnes.**
-C'est le point qui distingue ce mode d'un simple affichage en lecture : une
-fiche construite depuis le schéma de **liste** ne montrerait que les quatre ou
-six colonnes affichées, là où le formulaire porte **tous** les champs. En
-`ZScreenMode.details`, chaque ligne gagne une action « détails » qui ouvre la
-surface d'édition habituelle — `formFields` dérivés du registre, ou le
+`ZScreenMode.details` est l'**écran de consultation** : une liste qui ne crée
+rien et n'a pas de corbeille. Ne le choisissez pas pour obtenir la fiche sur un
+écran par ailleurs complet — vous perdriez la création et la corbeille pour
+tout l'écran. C'est `detailsEnabled` qu'il faut.
+
+**La fiche est le formulaire entier, pas un résumé des colonnes.** C'est le
+point qui la distingue d'un simple affichage en lecture : une fiche construite
+depuis le schéma de **liste** ne montrerait que les quatre ou six colonnes
+affichées, là où le formulaire porte **tous** les champs. L'action « détails »
+ouvre la surface d'édition habituelle — `formFields` dérivés du registre, ou le
 formulaire de l'application (`editionBuilder`) — rendue en lecture seule.
 
 ```dart
@@ -632,7 +655,55 @@ ZCrudScreen<Consignee>(
 Le retour vers l'édition n'est **pas** un cul-de-sac : l'action « modifier »
 reste rendue si et seulement si l'ACL accorde `ZCrudAction.update` — c'est
 l'ACL qui tranche, jamais le mode. `ZScreenMode.locked`, lui, est la
-consultation **verrouillée** : aucun geste, pas même l'ouverture d'une fiche.
+consultation **verrouillée** : aucun geste, pas même l'ouverture d'une fiche
+(`detailsEnabled` y est sans effet).
+
+#### Ouvrir la fiche depuis une carte
+
+Sur un écran déclaré consultable, deux rappels, deux intentions :
+
+```dart
+// Le geste NOMINAL de la ligne : consultation dès que la fiche est offerte.
+final ouvrir = zCrudEditionOpener(context, convocation);
+// La consultation, demandée explicitement (`ZCrudAction.view`).
+final consulter = zCrudDetailsOpener(context, convocation);
+// L'édition, demandée explicitement (`ZCrudAction.update`).
+final modifier = ZCrudScreenScope.maybeOf(context)?.updateOpener(convocation);
+```
+
+Tous trois rendent `null` quand le geste n'est pas possible — hors écran, écran
+verrouillé, vue corbeille, aucun formulaire, ou permission refusée **sur cette
+ligne**. `null` veut dire « ne dessinez pas le bouton », jamais « dessinez-en un
+mort ».
+
+#### Revenir à l'édition **depuis** la fiche
+
+L'action « modifier » existe sur la **ligne**. Dans la fiche, c'est
+`ZCrudEditionScope.onEditOf(context)` qui la porte :
+
+```dart
+editionBuilder: (context, initial, save) {
+  final modifier = ZCrudEditionScope.onEditOf(context);
+  return MonFormulaire(
+    initial: initial,
+    onSave: save,
+    readOnly: ZCrudEditionScope.readOnlyOf(context),
+    // `null` ⇒ pas de bouton « Modifier ».
+    onEdit: modifier,
+  );
+},
+```
+
+**Le geste ne referme rien.** La surface reste ouverte, à sa place, et redevient
+éditable : aucune route n'est fermée ni rouverte, les valeurs déjà chargées sont
+conservées, et le titre passe de celui de la consultation à celui de la
+modification. Le formulaire **dérivé** obtient la même chose sans une ligne de
+code.
+
+`onEdit` est `null` — donc le bouton n'a pas lieu d'être — dans tous ces cas :
+la surface est déjà en édition, l'ACL refuse `ZCrudAction.update` sur cette
+entité, l'écran est verrouillé ou en vue corbeille, la source ne sait pas
+écrire, ou le formulaire est monté hors d'un `ZCrudScreen`.
 
 ⚠️ **`readOnly: true` est déprécié** au profit de `mode:` (retrait en 1.0).
 La correspondance est exacte : `readOnly: true` → `ZScreenMode.locked`,
@@ -756,6 +827,64 @@ Deux règles de priorité, sans surprise :
 Hors `ZCrudScreen`, les mêmes tuiles typées se déclarent directement sur les
 layouts du cœur : `ZListGridLayout.forEntity<T>(…)` et
 `ZListBuilderLayout.forEntity<T>(…)`, alimentées par `DynamicList.entityFor`.
+
+### Coloration de ligne
+
+Sur un tableau de dépouillement, **la couleur porte l'information** : c'est ce
+qui permet de balayer cent lignes d'un coup d'œil — une convocation relancée, un
+rapport non rendu, un dossier clos. `rowColor` déclare cette teinte, et il la
+décide sur **l'entité typée** :
+
+```dart
+ZCrudScreen<Convocation>(
+  title: 'Convocations',
+  source: ZCrudSource.repository(repo),
+  registry: registry,
+  rowColor: (context, convocation) => switch (convocation.statut) {
+    Statut.relancee => ZRowTint(
+        Theme.of(context).colorScheme.errorContainer,
+        semanticLabel: 'Relancée',
+      ),
+    Statut.repondue => ZRowTint(
+        Theme.of(context).colorScheme.secondaryContainer,
+        semanticLabel: 'Répondue',
+      ),
+    // `null` ⇒ aucune teinte : la ligne est rendue telle quelle.
+    _ => null,
+  },
+)
+```
+
+Le seam reçoit l'objet métier, jamais une cellule formatée : un renommage de
+champ devient une **erreur de compilation**, là où une décision prise sur
+`row.cells['statut']` se contenterait de faire disparaître la couleur en
+silence.
+
+La teinte est peinte **derrière** la tuile — celle du paquet comme celle de
+l'application (`itemBuilder`), dans la liste verticale comme dans la grille de
+cartes. Elle ne s'applique pas à un layout qui porte déjà **sa propre** tuile
+(`ZListGridLayout(itemBuilder: …)`) — cette tuile appartient à l'application,
+qui la colore elle-même — ni à la grille de données (`ZListDataGridLayout`),
+dont le backend a sa propre coloration de cellules. Sans `rowColor`, le rendu
+est strictement inchangé : pas un widget de plus dans l'arbre.
+
+⚠️ **Doublez la couleur — une information portée par la seule couleur est
+perdue.** Elle l'est pour un usager daltonien, sur un écran en plein soleil, à
+l'impression, et pour un lecteur d'écran. `ZRowTint.semanticLabel` la rend
+**audible** (il est annoncé sur la ligne, et accepte une clé l10n). La rendre
+**visible** autrement reste l'affaire de la tuile :
+
+```dart
+itemBuilder: (context, convocation, columns) => ListTile(
+  // Le même état, dit trois fois : par la teinte, par l'icône, par le mot.
+  leading: Icon(convocation.statut.icone),
+  title: Text(convocation.objet),
+  subtitle: Text(convocation.statut.libelle),
+),
+```
+
+Aucune couleur n'est codée dans zcrud : la teinte vient entièrement du thème de
+l'application, d'où le `BuildContext` passé au seam.
 
 ### Une carte qui ouvre l'édition de l'écran
 

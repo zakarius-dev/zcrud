@@ -85,9 +85,10 @@ abstract interface class ZCrudScreenActions {
   /// La capacité d'ouvrir la surface **nominale** de [entity] : celle que la
   /// ligne offrirait d'elle-même.
   ///
-  /// En mode `ZScreenMode.details`, c'est la **fiche en lecture seule**
-  /// (permission `ZCrudAction.view`) ; en mode `ZScreenMode.full`, c'est
-  /// l'**édition** (mêmes conditions que [canOpenUpdate]). En mode
+  /// C'est la **fiche en lecture seule** (permission `ZCrudAction.view`) dès
+  /// que la consultation est offerte — mode `ZScreenMode.details`, ou mode
+  /// `ZScreenMode.full` déclaré `detailsEnabled: true` ; c'est l'**édition**
+  /// sinon (mêmes conditions que [canOpenUpdate]). En mode
   /// `ZScreenMode.locked`, ou en vue corbeille, c'est toujours `false`.
   bool canOpenEdition(ZEntity entity);
 
@@ -101,6 +102,34 @@ abstract interface class ZCrudScreenActions {
   /// refusé — la forme à préférer quand la carte doit décider **si** elle
   /// dessine son geste.
   ZCrudOpener? editionOpener(ZEntity entity);
+
+  /// La capacité d'ouvrir la **fiche de détail** de [entity], explicitement :
+  /// le formulaire entier, tous ses champs, rendu en lecture seule.
+  ///
+  /// C'est le pendant de [canOpenUpdate] pour la consultation, et il est
+  /// gouverné par `ZCrudAction.view` — lire une fiche n'est pas la modifier.
+  ///
+  /// `false` tant que la consultation n'est pas **offerte par l'écran** : mode
+  /// `ZScreenMode.details`, ou mode `ZScreenMode.full` déclaré
+  /// `detailsEnabled: true`. `false` aussi en `ZScreenMode.locked`, en vue
+  /// corbeille, et sans formulaire disponible.
+  bool canOpenDetails(ZEntity entity);
+
+  /// Ouvre la **fiche de détail** de [entity] — voir [canOpenDetails]. Inerte
+  /// si refusé.
+  Future<void> openDetails(ZEntity entity);
+
+  /// Le rappel d'ouverture de la fiche de [entity], ou `null` si le geste est
+  /// refusé — la forme à préférer pour poser la consultation sur le **tap**
+  /// d'une carte métier d'un écran par ailleurs complet :
+  ///
+  /// ```dart
+  /// // Un écran qui crée, met à la corbeille et restaure, ET dont le tap
+  /// // ouvre la fiche : les deux ne sont pas exclusifs.
+  /// final consulter = zCrudDetailsOpener(context, convocation);
+  /// return ListTile(title: Text(convocation.objet), onTap: consulter);
+  /// ```
+  ZCrudOpener? detailsOpener(ZEntity entity);
 
   /// La capacité d'ouvrir [entity] **en édition**, explicitement.
   ///
@@ -202,3 +231,16 @@ class ZCrudScreenScope extends InheritedWidget {
 /// dessine son geste d'ouverture.
 ZCrudOpener? zCrudEditionOpener(BuildContext context, ZEntity entity) =>
     ZCrudScreenScope.maybeOf(context)?.editionOpener(entity);
+
+/// Le rappel qui ouvre la **fiche de détail** de [entity] sur l'écran
+/// englobant, ou `null` si la consultation n'est pas offerte — hors écran,
+/// écran verrouillé ou non déclaré consultable, vue corbeille, aucun
+/// formulaire, ou `ZCrudAction.view` refusé sur cette ligne.
+///
+/// Raccourci de `ZCrudScreenScope.maybeOf(context)?.detailsOpener(entity)`.
+/// C'est la **forme de geste de ligne** de la fiche : elle s'utilise sur un
+/// écran `ZScreenMode.full` — qui continue de créer, de mettre à la corbeille
+/// et de restaurer — sans avoir à basculer l'écran entier en mode
+/// consultation.
+ZCrudOpener? zCrudDetailsOpener(BuildContext context, ZEntity entity) =>
+    ZCrudScreenScope.maybeOf(context)?.detailsOpener(entity);

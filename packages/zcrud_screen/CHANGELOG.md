@@ -3,6 +3,107 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.94.0 — 2026-08-13
+
+### Ajouté
+
+#### La fiche de détail devient un **geste de ligne** — `detailsEnabled`
+
+`ZCrudScreen(detailsEnabled: true)` ouvre la fiche de chaque ligne **sans que
+l'écran perde quoi que ce soit** : le bouton de création, la bascule corbeille,
+la mise à la corbeille et la restauration restent offerts, à l'identique.
+
+Jusqu'ici, la consultation n'existait qu'en `ZScreenMode.details` — un mode qui
+retire la création et la corbeille de **tout** l'écran. Consulter et administrer
+ne sont pourtant pas exclusifs : le cas le plus courant est l'écran complet dont
+le tap sur une ligne ouvre la fiche. Il fallait choisir ; il n'y a plus à
+choisir.
+
+- `ZScreenMode.details` est **inchangé** : il reste l'écran de consultation (ni
+  création, ni corbeille), et reste le bon choix quand c'est l'écran **entier**
+  qui est un écran de consultation ;
+- `detailsEnabled` est ignoré en `ZScreenMode.locked` — un écran verrouillé
+  n'ouvre rien ;
+- la ligne porte l'action « détails » (`ZCrudAction.view`) **avant** l'action
+  « modifier » (`ZCrudAction.update`), toutes deux filtrées par ligne.
+
+#### `ZCrudScreenActions` expose la consultation — `zCrudDetailsOpener`
+
+Trois membres nouveaux, symétriques de ceux de l'édition : `canOpenDetails`,
+`openDetails`, `detailsOpener`, plus le raccourci
+`zCrudDetailsOpener(context, entity)`. Même contrat que `zCrudEditionOpener` :
+`null` quand le geste n'est pas possible, pour qu'une carte ne dessine pas un
+bouton mort.
+
+Sur un écran déclaré consultable, le geste **nominal** d'une ligne devient la
+consultation : `zCrudEditionOpener` ouvre alors la fiche, `updateOpener` reste
+l'édition.
+
+#### Retour vers l'édition **depuis** la fiche — `ZCrudEditionScope.onEdit`
+
+`ZCrudEditionScope` portait le seul drapeau `readOnly` : une fois la fiche
+ouverte, le formulaire de l'application n'avait aucun moyen d'offrir
+« Modifier » — l'action existait sur la **ligne**, pas **dans** la fiche.
+
+`ZCrudEditionScope.onEditOf(context)` rend ce geste, ou `null` quand il n'est
+pas permis (`ZCrudAction.update` refusé sur cette entité, surface déjà en
+édition, écran verrouillé, vue corbeille, source en lecture seule, formulaire
+monté hors écran assemblé).
+
+**Il bascule la surface courante sans la refermer** : aucune route n'est fermée
+ni rouverte, l'état du formulaire de l'application survit, les valeurs déjà
+chargées sont conservées, et le titre passe de celui de la consultation à celui
+de la modification. Le formulaire **dérivé** en bénéficie sans rien déclarer.
+
+#### Coloration de ligne — `rowColor` et `ZRowTint`
+
+`ZCrudScreen(rowColor: (context, entity) => ZRowTint(…))` teinte les lignes
+selon un état métier. La décision se prend sur **l'entité typée**, jamais sur
+une cellule formatée : un renommage de champ devient une erreur de compilation
+au lieu d'une couleur qui disparaît en silence.
+
+- la teinte est peinte **derrière** la tuile — celle du paquet comme celle de
+  l'application (`itemBuilder`), en liste verticale comme en grille de cartes ;
+- elle ne s'applique pas à un layout portant **sa propre** tuile, ni à la grille
+  de données (`ZListDataGridLayout`), dont le backend a sa propre coloration de
+  cellules ;
+- sans `rowColor` — ou pour une ligne dont le seam rend `null` — le rendu est
+  **strictement inchangé** : pas un widget de plus dans l'arbre ;
+- la couleur n'entre **pas** dans la requête de rendu : deux écrans qui ne
+  diffèrent que par leur `rowColor` produisent la même `ZListRenderRequest`, et
+  la mémoïsation du rendu est préservée ;
+- **aucune couleur n'est codée dans zcrud** : la teinte vient entièrement du
+  thème de l'application, d'où le `BuildContext` passé au seam.
+
+⚠️ **Accessibilité** : une information portée par la seule couleur est perdue
+pour un usager daltonien, en plein soleil, à l'impression et pour un lecteur
+d'écran. `ZRowTint.semanticLabel` la rend **audible** (annoncé sur la ligne,
+accepte une clé l10n) ; la rendre **visible** autrement — icône, pastille, mot
+d'état — reste l'affaire de la tuile.
+
+### Impact sur votre code
+
+- **Hôte passif** (qui n'implémente pas `ZCrudScreenActions` lui-même) : rien à
+  faire, tout est additif ; les écrans existants sont rendus à l'identique.
+- **Hôte qui COMPENSAIT l'absence de fiche sur un écran complet** — en
+  dupliquant l'écran en deux versions, en basculant `mode` selon le rôle de
+  l'utilisateur, ou en câblant sa propre feuille de consultation : la
+  compensation **s'ajoute** désormais au comportement natif. Remplacez-la par
+  `detailsEnabled: true`, et retirez le `mode: ZScreenMode.details` posé pour
+  obtenir la consultation — il continuerait à retirer création et corbeille.
+- **Hôte qui portait son propre « Modifier » dans la fiche** (rappel capturé par
+  fermeture, scope maison type `DodlpZReadOnlyScope`) : `onEditOf` le remplace,
+  et bascule sans refermer. Les deux cohabitent sans conflit, mais l'hôte
+  dessinerait alors **deux** boutons.
+- **Hôte qui colorait ses lignes lui-même** (décorateur autour de sa tuile) :
+  `rowColor` fait la même chose en amont. Les deux se superposeraient — la
+  couleur de l'hôte étant peinte **par-dessus** celle de l'écran, le résultat
+  visible reste le sien, mais la teinte du socle est alors inutile.
+- **Hôte qui IMPLÉMENTE `ZCrudScreenActions`** (interface, non destinée à
+  l'implémentation) : trois membres s'y ajoutent (`canOpenDetails`,
+  `openDetails`, `detailsOpener`) — une implémentation maison doit être
+  complétée.
+
 ## 0.93.0 — 2026-08-13
 
 ### Modifié — rupture

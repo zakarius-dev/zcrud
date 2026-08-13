@@ -58,6 +58,7 @@ import 'z_export_policy.dart';
 import 'z_list_query_policy.dart';
 import 'z_row_action_menu.dart';
 import 'z_row_actions_presentation.dart';
+import 'z_row_tint.dart';
 import 'z_screen_mode.dart';
 import 'z_selection_policy.dart';
 
@@ -139,11 +140,15 @@ typedef ZCrudItemBuilder<T> = Widget Function(
 /// * `trash: ZTrashMode.none` — aucune corbeille ;
 /// * `trashPolicy: ZTrashPolicy.withoutPurge` — corbeille dont rien ne
 ///   disparaît, même si le dépôt sait supprimer définitivement ;
-/// * `mode: ZScreenMode.details` — **fiche de détail** : chaque ligne s'ouvre
-///   sur le formulaire entier en lecture seule, avec retour vers l'édition si
-///   `ZCrudAction.update` est autorisé ;
+/// * `detailsEnabled: true` — la **fiche de détail comme geste de ligne** :
+///   l'écran reste complet (création, corbeille, restauration) et le tap sur
+///   une ligne ouvre le formulaire entier en lecture seule ;
+/// * `mode: ZScreenMode.details` — **écran de consultation** : la fiche, sans
+///   création ni corbeille ;
 /// * `mode: ZScreenMode.locked` — consultation verrouillée (ni création, ni
 ///   fiche, ni édition, ni corbeille) ;
+/// * `rowColor: (context, entity) => …` — **coloration de ligne** décidée sur
+///   l'entité typée (cf. [ZRowTint]) ;
 /// * `ZCrudSource.items(rows)` **sans callbacks** — lecture seule effective.
 class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// Construit l'écran assemblé — seuls [title] et [source] sont requis.
@@ -170,6 +175,8 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
     this.trashPolicy = ZTrashPolicy.full,
     this.trashCount,
     this.mode = ZScreenMode.full,
+    this.detailsEnabled = false,
+    this.rowColor,
     @Deprecated(
       'Utiliser `mode` : `readOnly: true` devient `mode: ZScreenMode.locked`, '
       'et la fiche de détail (lecture seule AVEC retour vers l\'édition) '
@@ -395,7 +402,87 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// seulement si l'ACL autorise `ZCrudAction.update` — la consultation n'est
   /// pas un cul-de-sac pour qui a le droit de modifier. La création, la
   /// duplication et la corbeille, elles, sont absentes.
+  ///
+  /// 🔴 **Un écran complet peut lui aussi ouvrir des fiches** : ce n'est pas
+  /// l'affaire du mode, c'est [detailsEnabled]. Choisir [ZScreenMode.details]
+  /// pour obtenir la consultation **retirerait** la création et la corbeille de
+  /// tout l'écran.
   final ZScreenMode mode;
+
+  /// La **fiche de détail comme geste de ligne** (défaut `false`), sur un écran
+  /// qui reste complet.
+  ///
+  /// Déclaré `true` en [ZScreenMode.full], chaque ligne gagne l'ouverture de sa
+  /// fiche — le formulaire entier, tous ses champs, en lecture seule — **sans
+  /// que l'écran perde quoi que ce soit** : le bouton de création, la mise à la
+  /// corbeille et la restauration restent offerts, exactement comme avant.
+  ///
+  /// ```dart
+  /// // On crée, on met à la corbeille, on restaure… et le tap consulte.
+  /// ZCrudScreen<Convocation>(
+  ///   title: 'Convocations',
+  ///   source: ZCrudSource.repository(repo),
+  ///   registry: registry,
+  ///   detailsEnabled: true,
+  /// )
+  /// ```
+  ///
+  /// **Consulter et administrer ne sont pas exclusifs** — c'est même le cas le
+  /// plus courant. [ZScreenMode.details] reste l'**écran de consultation** :
+  /// une liste qui ne crée rien et n'a pas de corbeille. Ce drapeau est l'autre
+  /// besoin : l'écran complet dont on ouvre les fiches.
+  ///
+  /// Trois conséquences, toutes gouvernées par l'ACL :
+  ///
+  /// * la ligne porte une action « détails » (`ZCrudAction.view`), **avant**
+  ///   l'action « modifier » (`ZCrudAction.update`) ;
+  /// * le geste **nominal** d'une carte métier devient la consultation :
+  ///   `zCrudEditionOpener` ouvre la fiche, `zCrudDetailsOpener` la demande
+  ///   explicitement, `ZCrudScreenActions.updateOpener` reste l'édition ;
+  /// * depuis la fiche, `ZCrudEditionScope.onEditOf(context)` bascule la
+  ///   surface vers l'édition sans la refermer, si `ZCrudAction.update` est
+  ///   accordé.
+  ///
+  /// Sans formulaire disponible ([editionBuilder], ou registre + schéma), il
+  /// n'y a rien à consulter : le drapeau reste alors sans effet. En
+  /// [ZScreenMode.locked], il est ignoré — l'écran verrouillé n'ouvre rien.
+  final bool detailsEnabled;
+
+  /// **Coloration de ligne** décidée sur l'**entité typée** — `null` (défaut)
+  /// ⇒ rendu strictement inchangé.
+  ///
+  /// Sur un tableau de dépouillement, la couleur porte l'information : elle
+  /// permet de balayer cent lignes d'un coup d'œil. Le seam reçoit l'objet
+  /// métier, pas une cellule formatée — un renommage de champ devient une
+  /// **erreur de compilation** au lieu d'une couleur qui disparaît en silence.
+  ///
+  /// ```dart
+  /// rowColor: (context, convocation) => convocation.relancee
+  ///     ? ZRowTint(
+  ///         Theme.of(context).colorScheme.errorContainer,
+  ///         semanticLabel: 'Relancée',
+  ///       )
+  ///     : null,
+  /// ```
+  ///
+  /// La teinte est peinte **derrière** la tuile : celle du paquet comme celle
+  /// de l'application ([itemBuilder]), dans la liste comme dans la grille de
+  /// cartes. Elle ne s'applique **pas** à un [layout] qui porte déjà sa propre
+  /// tuile (`ZListGridLayout(itemBuilder: …)`) — cette tuile appartient à
+  /// l'application, qui la colore elle-même — ni à la grille de données
+  /// (`ZListDataGridLayout`), dont le backend a sa propre coloration de
+  /// cellules.
+  ///
+  /// 🔴 **Doublez la couleur.** Une information portée par la seule couleur est
+  /// perdue pour un usager daltonien, en plein soleil, à l'impression et pour
+  /// un lecteur d'écran (invariant AD-13). `ZRowTint.semanticLabel` la rend
+  /// **audible** ; la rendre **visible** autrement — icône, pastille, mot
+  /// d'état — est l'affaire de la tuile ([itemBuilder]).
+  ///
+  /// Aucune couleur n'est codée dans zcrud (invariant FR-26) : la teinte est
+  /// entièrement dérivée du thème par l'application, d'où le `BuildContext`
+  /// passé au seam.
+  final ZRowTintBuilder<T>? rowColor;
 
   /// Consultation pure (défaut `false`) : ni création, ni édition, ni
   /// corbeille — les actions de ligne fournies via [rowActions] restent
@@ -896,11 +983,23 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       widget.source.canWrite &&
       _formPathAvailable;
 
-  /// `true` si la **fiche de détail** est offerte : mode [ZScreenMode.details]
-  /// et formulaire disponible. L'ACL tranche ensuite (`ZCrudAction.view`,
-  /// portée par l'action de ligne).
-  bool get _detailsAvailable =>
-      _mode == ZScreenMode.details && _formPathAvailable;
+  /// `true` si la consultation est **déclarée** — indépendamment du fait qu'un
+  /// formulaire existe pour la servir.
+  ///
+  /// Deux déclarations mènent à la fiche, et elles ne s'excluent pas : le mode
+  /// [ZScreenMode.details] (écran de consultation) et le drapeau
+  /// [ZCrudScreen.detailsEnabled] posé sur un écran **complet** (geste de
+  /// ligne). Le mode verrouillé n'ouvre rien, quel que soit le drapeau.
+  bool get _detailsDeclared => switch (_mode) {
+        ZScreenMode.details => true,
+        ZScreenMode.full => widget.detailsEnabled,
+        ZScreenMode.locked => false,
+      };
+
+  /// `true` si la **fiche de détail** est offerte : consultation déclarée
+  /// ([_detailsDeclared]) et formulaire disponible. L'ACL tranche ensuite
+  /// (`ZCrudAction.view`, portée par l'action de ligne).
+  bool get _detailsAvailable => _detailsDeclared && _formPathAvailable;
 
   /// ACL effective : paramètre de l'écran > scope ambiant > **refus**.
   ///
@@ -1034,22 +1133,33 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     // formulaire DÉRIVÉ (via `DynamicEdition.readOnly`) comme le formulaire de
     // l'application (via `ZCrudEditionScope`, lu depuis son `BuildContext`).
     final readOnly = effectiveMode == _ZCrudEditionMode.read;
+    // Retour vers l'édition DEPUIS la fiche : offert si et seulement si la
+    // surface s'ouvre en consultation d'une entité que l'ACL laisse modifier.
+    // Évalué ICI, à l'ouverture, avec l'entité pour cible — c'est le même
+    // filtrage par ligne que l'action « modifier » de la liste.
+    final canEdit =
+        readOnly && initial != null && canOpenUpdate(initial);
     final builder = widget.editionBuilder;
     if (builder != null) {
       return presentEdition<void>(
         context,
         policy: widget.policy,
         formWeight: widget.formWeight,
-        // Le `Builder` interposé n'est pas décoratif : sans lui, le contexte
-        // remis à l'application serait celui du dessus du scope, où
-        // `ZCrudEditionScope.readOnlyOf` ne trouverait rien.
-        builder: (ctx) => ZCrudEditionScope(
-          readOnly: readOnly,
-          child: Builder(
-            builder: (inner) => builder(inner, initial, (T entity) async {
-              final failure = await _persist(entity);
-              if (failure != null) throw StateError(failure.message);
-            }),
+        builder: (ctx) => _ZCrudEditionSurface(
+          initialReadOnly: readOnly,
+          canEdit: canEdit,
+          // Le `Builder` interposé n'est pas décoratif : sans lui, le contexte
+          // remis à l'application serait celui du dessus du scope, où
+          // `ZCrudEditionScope.readOnlyOf` ne trouverait rien.
+          builder: (surface, surfaceReadOnly, onEdit) => ZCrudEditionScope(
+            readOnly: surfaceReadOnly,
+            onEdit: onEdit,
+            child: Builder(
+              builder: (inner) => builder(inner, initial, (T entity) async {
+                final failure = await _persist(entity);
+                if (failure != null) throw StateError(failure.message);
+              }),
+            ),
           ),
         ),
       );
@@ -1088,28 +1198,41 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       context,
       policy: widget.policy,
       formWeight: widget.formWeight,
-      builder: (ctx) => ZCrudEditionScope(
-        readOnly: readOnly,
-        child: _ZCrudEditionForm(
-          title: _editionTitle(ctx, effectiveMode),
-          fields: fields,
-          readOnly: readOnly,
-          initialValues: baseValues,
-          onSubmit: (values) async {
-            final merged = <String, Object?>{...baseValues, ...values};
-            final T entity;
-            try {
-              entity = registry.decode(
-                kind,
-                pointedNames.isEmpty
-                    ? Map<String, dynamic>.of(merged)
-                    : zRegroupPaths(merged),
-              ) as T;
-            } catch (error) {
-              return ZDomainFailure('$error');
-            }
-            return _persist(entity);
-          },
+      builder: (ctx) => _ZCrudEditionSurface(
+        initialReadOnly: readOnly,
+        canEdit: canEdit,
+        builder: (surface, surfaceReadOnly, onEdit) => ZCrudEditionScope(
+          readOnly: surfaceReadOnly,
+          onEdit: onEdit,
+          child: _ZCrudEditionForm(
+            // Le titre suit la bascule : une fiche devenue éditable n'annonce
+            // plus « Détails ». Les autres modes (création, duplication) ne
+            // basculent jamais — leur intitulé est donc inchangé.
+            title: _editionTitle(
+              surface,
+              surfaceReadOnly || effectiveMode != _ZCrudEditionMode.read
+                  ? effectiveMode
+                  : _ZCrudEditionMode.update,
+            ),
+            fields: fields,
+            readOnly: surfaceReadOnly,
+            initialValues: baseValues,
+            onSubmit: (values) async {
+              final merged = <String, Object?>{...baseValues, ...values};
+              final T entity;
+              try {
+                entity = registry.decode(
+                  kind,
+                  pointedNames.isEmpty
+                      ? Map<String, dynamic>.of(merged)
+                      : zRegroupPaths(merged),
+                ) as T;
+              } catch (error) {
+                return ZDomainFailure('$error');
+              }
+              return _persist(entity);
+            },
+          ),
         ),
       ),
     );
@@ -1181,10 +1304,27 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       canOpenUpdate(entity) ? () => openUpdate(entity) : null;
 
   @override
+  bool canOpenDetails(ZEntity entity) =>
+      entity is T && _detailsOpenable && _allows(ZCrudAction.view, entity);
+
+  @override
+  Future<void> openDetails(ZEntity entity) async {
+    if (!canOpenDetails(entity)) return;
+    await _openDetails(entity as T);
+  }
+
+  @override
+  ZCrudOpener? detailsOpener(ZEntity entity) =>
+      canOpenDetails(entity) ? () => openDetails(entity) : null;
+
+  @override
   bool canOpenEdition(ZEntity entity) {
     if (entity is! T) return false;
-    // Mode « détails » : le geste nominal est la CONSULTATION de la fiche —
-    // c'est celui que la ligne offre en premier, et il relève de `view`.
+    // Consultation offerte : le geste nominal est la CONSULTATION de la fiche —
+    // c'est celui que la ligne offre en premier, et il relève de `view`. Vrai
+    // de l'écran de consultation (`ZScreenMode.details`) comme de l'écran
+    // COMPLET déclaré `detailsEnabled` : dans les deux cas, le tap consulte,
+    // l'édition restant joignable par `updateOpener` et par l'action de ligne.
     if (_detailsOpenable) return _allows(ZCrudAction.view, entity);
     return canOpenUpdate(entity);
   }
@@ -2195,24 +2335,77 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     if (layout != null) {
       if (itemBuilder == null) return layout;
       return layout.withEntityTiles<T>(
-        decorate ? _menuDecorated(itemBuilder) : itemBuilder,
+        _tinted(decorate ? _menuDecorated(itemBuilder) : itemBuilder),
       );
     }
     if (itemBuilder != null) {
       return ZListBuilderLayout.forEntity<T>(
-        decorate ? _menuDecorated(itemBuilder) : itemBuilder,
+        _tinted(decorate ? _menuDecorated(itemBuilder) : itemBuilder),
       );
     }
     return ZListBuilderLayout(
       itemBuilder: (context, row, columns) {
         final Widget tile = _ZCrudDefaultTile(row: row, columns: columns);
-        if (!decorate) return tile;
         final entity = _entities[row.id];
         // Ligne sans entité résolue : aucune action ne peut être liée, la
-        // tuile est rendue nue (jamais un déclencheur qui n'ouvrirait rien).
+        // tuile est rendue nue (jamais un déclencheur qui n'ouvrirait rien) —
+        // et aucune teinte, faute d'entité sur laquelle la décider.
         if (entity == null) return tile;
-        return _rowActionsMenu(context, entity, tile);
+        return _paintTint(
+          context,
+          entity,
+          decorate ? _rowActionsMenu(context, entity, tile) : tile,
+        );
       },
+    );
+  }
+
+  // ── Coloration de ligne ───────────────────────────────────────────────────
+
+  /// Enveloppe une tuile typée de sa **teinte de ligne**.
+  ///
+  /// Sans `rowColor` déclaré, le builder est rendu **tel quel** — la même
+  /// instance, pas une copie enveloppée : un écran qui ne colore rien n'a pas
+  /// un widget de plus dans son arbre.
+  ZCrudItemBuilder<T> _tinted(ZCrudItemBuilder<T> builder) =>
+      widget.rowColor == null
+          ? builder
+          : (context, entity, columns) => _paintTint(
+                context,
+                entity,
+                builder(context, entity, columns),
+              );
+
+  /// Peint la teinte déclarée **derrière** [tile], et l'annonce.
+  ///
+  /// La couleur vient entièrement de l'application (invariant FR-26 : aucune
+  /// couleur n'est décidée ici) ; le libellé qui la double est résolu comme
+  /// tout intitulé du paquet — clé l10n, repli sur le littéral. Sans teinte
+  /// (seam absent, ou `null` rendu pour cette ligne), [tile] ressort
+  /// **inchangée**.
+  ///
+  /// La teinte ne porte volontairement **aucune** décoration au-delà de la
+  /// couleur : bordure, rayon et élévation appartiennent à la tuile, qui
+  /// continue d'être rendue par-dessus telle qu'elle l'était.
+  Widget _paintTint(BuildContext context, T entity, Widget tile) {
+    final resolve = widget.rowColor;
+    if (resolve == null) return tile;
+    final tint = resolve(context, entity);
+    if (tint == null) return tile;
+    final Widget painted = DecoratedBox(
+      key: ValueKey<String>('zRowTint_${ZListRow.keyOf(entity)}'),
+      decoration: BoxDecoration(color: tint.color),
+      child: tile,
+    );
+    final semantic = tint.semanticLabel;
+    if (semantic == null) return painted;
+    // Doublage de la couleur (invariant AD-13) : ce que la teinte veut dire,
+    // annoncé à qui ne la voit pas. `container` pour que l'annonce accompagne
+    // la ligne au lieu de se fondre dans la précédente.
+    return Semantics(
+      container: true,
+      label: label(context, semantic),
+      child: painted,
     );
   }
 
@@ -2790,6 +2983,64 @@ class _ZDeletedScopeRepository<T extends ZEntity> implements ZRepository<T> {
   }
 }
 
+/// Construit le contenu d'une surface d'édition pour l'état courant : le
+/// drapeau de lecture, et le rappel de bascule vers l'édition (`null` s'il
+/// n'est pas offert).
+typedef _ZCrudSurfaceBuilder = Widget Function(
+  BuildContext context,
+  bool readOnly,
+  ZCrudOpener? onEdit,
+);
+
+/// Enveloppe **à état** de la surface présentée : c'est elle qui rend le retour
+/// vers l'édition possible **sans refermer la fiche**.
+///
+/// Le drapeau de lecture était jusqu'ici figé au moment de l'ouverture. En le
+/// portant dans un `State` posé au sommet de la surface, la bascule devient un
+/// simple `setState` : le formulaire est reconstruit **à la même place**, donc
+/// son `State` — et le `ZFormController` qu'il possède — survit. Les valeurs
+/// déjà chargées, la position de défilement et les modifications en cours sont
+/// conservées ; aucune route n'est fermée ni rouverte.
+class _ZCrudEditionSurface extends StatefulWidget {
+  const _ZCrudEditionSurface({
+    required this.initialReadOnly,
+    required this.canEdit,
+    required this.builder,
+  });
+
+  /// État d'ouverture : `true` pour une fiche de détail.
+  final bool initialReadOnly;
+
+  /// La bascule vers l'édition est-elle **permise** ? Décidé à l'ouverture par
+  /// l'écran (mode, source, ACL avec l'entité pour cible).
+  final bool canEdit;
+
+  final _ZCrudSurfaceBuilder builder;
+
+  @override
+  State<_ZCrudEditionSurface> createState() => _ZCrudEditionSurfaceState();
+}
+
+class _ZCrudEditionSurfaceState extends State<_ZCrudEditionSurface> {
+  late bool _readOnly = widget.initialReadOnly;
+
+  /// Bascule la surface vers l'édition. Sans effet si elle y est déjà, ou si
+  /// le geste n'est pas permis (AD-10 : un second appel ne lève pas).
+  Future<void> _switchToEdition() async {
+    if (!_readOnly || !widget.canEdit || !mounted) return;
+    setState(() => _readOnly = false);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(
+        context,
+        _readOnly,
+        // `null` tant que le geste n'a pas de sens (surface déjà éditable) ou
+        // n'est pas permis : l'appelant ne dessine alors pas de bouton mort.
+        _readOnly && widget.canEdit ? _switchToEdition : null,
+      );
+}
+
 /// Tuile générique par défaut : première colonne en titre, colonnes suivantes
 /// en sous-titre `en-tête : valeur formatée` (formats du cœur —
 /// `ZListColumn.format`).
@@ -2910,6 +3161,14 @@ class _ZCrudEditionFormState extends State<_ZCrudEditionForm> {
           ),
           Flexible(
             child: DynamicEdition(
+              // Le mode de rendu d'un champ est arrêté à son MONTAGE (une
+              // fiche de lecture n'alloue ni contrôleur de texte ni clavier —
+              // invariant AD-2). Le retour vers l'édition doit donc remonter
+              // les champs : la place est keyée par le mode. Ce qui survit à
+              // la bascule est ce qui compte — le `ZFormController` du
+              // formulaire, donc les valeurs déjà chargées, et la surface
+              // elle-même, qui n'est ni fermée ni rouverte.
+              key: ValueKey<bool>(widget.readOnly),
               controller: _controller,
               fields: widget.fields,
               shrinkWrap: true,
