@@ -125,6 +125,12 @@ class ZOfflineFirstRepository<T extends ZEntity> extends ZSyncableRepository<T>
   // son succès ; propage ENSUITE au distant en **fire-and-forget** — un échec
   // distant est **loggé** et n'invalide JAMAIS le succès local.
 
+  /// Persiste [item] au local (autoritaire), puis propage au distant.
+  ///
+  /// **[collectionId] est IGNORÉ** : l'emplacement des données est déterminé
+  /// par la topologie du store local et du store distant injectés, jamais par
+  /// l'appelant. Aucune redirection d'écriture n'est possible par cette voie —
+  /// et donc aucun silo accidentel.
   @override
   Future<ZResult<T>> save(T item, {String? collectionId}) async {
     final localRes = await _local.put(item);

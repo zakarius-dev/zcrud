@@ -3,6 +3,63 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.98.0 — 2026-08-14
+
+### Corrigé
+
+#### Les données d'un écran partaient dans une collection que rien ne relisait
+
+`ZCrudScreen` transmettait son `collectionId` à `repository.save`. Sur un
+adaptateur qui honore ce paramètre — c'est le cas de `FirebaseZRepositoryImpl`,
+où il désigne un **chemin de collection** — la valeur déclarée pour gouverner
+les droits de l'écran devenait la destination des écritures. Un écran déclarant
+`collectionId: 'ships'` sur un dépôt configuré `collectionPath: 'bmd_ships'`
+écrivait dans `ships`.
+
+C'était une **perte de données**, et une perte silencieuse : l'enregistrement
+réussissait (`Right`, aucune erreur, aucun avertissement) tandis que les
+lectures continuaient d'interroger le chemin du dépôt. La liste n'affichait
+donc jamais ce qui venait d'être saisi, et l'usager en concluait que sa saisie
+n'avait pas été enregistrée. Elle l'était — ailleurs, dans une collection créée
+à la volée que ni la liste, ni la corbeille, ni aucun export ne relisent.
+
+`ZCrudScreen.collectionId` gouverne désormais l'**autorisation** et rien
+d'autre : il continue d'être soumis à `ZAcl.can` pour toutes les décisions de
+l'écran (consultation, création, édition, corbeille, purge), et n'est plus
+transmis à aucune écriture. Un dépôt sait déjà où il écrit.
+
+**Étiez-vous touché ?** Uniquement si vos écritures passaient par le socle,
+c'est-à-dire si votre écran déclare à la fois un `collectionId` et une
+`ZCrudSource.repository(...)` branchée sur un adaptateur qui honore le
+paramètre, **et** ne détourne pas la sauvegarde par `onSave`. Le signe
+caractéristique, côté backend : une collection portant exactement le nom de
+votre clé d'autorisation, contenant les documents absents de votre collection
+métier. Les écrans sur `ZCrudSource.items(...)` et ceux qui persistent par
+`onSave` n'ont jamais été concernés — leur voie de sauvegarde était déjà la
+leur.
+
+**Que faire des documents déjà égarés ?** Ils sont intacts et complets : seul
+leur emplacement est faux. Avant toute chose, relevez le contenu de la
+collection homonyme de votre clé d'autorisation, elle n'est visible d'aucune de
+vos vues. Rapatriez ensuite ces documents dans la collection déclarée par le
+`collectionPath` de votre dépôt, en conservant leur identifiant : les corps
+écrits par le socle portent déjà leur `id` logique et leurs métadonnées de
+synchronisation, ils sont relus tels quels une fois au bon endroit. Traitez les
+collisions d'identifiant comme votre politique de fusion l'exige — le socle ne
+peut pas arbitrer à votre place. Supprimez enfin la collection fantôme, sans
+quoi une prochaine reprise la relira comme une source légitime.
+
+**Si vous aviez contourné le défaut** — par exemple en persistant via `onSave`
+pour appeler `repository.save(entity)` sans `collectionId` — votre
+contournement reste correct et sans effet de bord : `onSave` demeure prioritaire
+sur la voie du dépôt. Vous pouvez le retirer pour revenir à la voie du socle,
+qui écrit maintenant au même endroit que lui.
+
+La redirection d'écriture, elle, n'est pas supprimée : `ZRepository.save`
+conserve son paramètre `collectionId`, et un appel direct
+`repository.save(item, collectionId: …)` localise toujours le conteneur. Ce
+qui change, c'est qu'une déclaration d'écran ne la déclenche plus à votre insu.
+
 ## 0.97.0 — 2026-08-14
 
 ### Ajouté

@@ -997,6 +997,14 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T>
   /// Le **merge Last-Write-Wins** sur `updated_at` (offline-first, préservation
   /// des écritures concurrentes) est la responsabilité de la couche de
   /// synchronisation offline-first — hors du périmètre de cet adaptateur.
+  ///
+  /// **[collectionId] est un CHEMIN DE COLLECTION**, pas une clé de droits :
+  /// renseigné, il **remplace** le `collectionPath` du dépôt pour cette
+  /// écriture — c'est une redirection délibérée. Firestore crée toute
+  /// collection nommée à la volée : une valeur qui ne désigne pas un conteneur
+  /// réel n'échoue pas, elle **fabrique un silo** que les lectures de ce dépôt
+  /// (toutes ancrées sur `collectionPath`) n'interrogeront jamais. Ne jamais y
+  /// passer l'identifiant de collection soumis à `ZAcl.can`.
   @override
   Future<ZResult<T>> save(T item, {String? collectionId}) => _guard(() async {
         final collection = _rawCollection(collectionId);

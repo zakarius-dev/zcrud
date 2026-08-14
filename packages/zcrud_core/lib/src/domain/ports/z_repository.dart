@@ -151,8 +151,31 @@ abstract class ZRepository<T extends ZEntity> implements ZReadOnlyRepository<T> 
   Future<ZResult<T>> getById(String id);
 
   /// Persiste [item]. Matérialise l'éphémère (attribution d'`id`) et rejette
-  /// une cible manquante via `Left(ZDomainFailure)` (AD-14). [collectionId]
-  /// localise le conteneur si nécessaire.
+  /// une cible manquante via `Left(ZDomainFailure)` (AD-14).
+  ///
+  /// ## [collectionId] — une **redirection d'écriture**, pas une clé de droits
+  ///
+  /// Quand un adaptateur l'honore, [collectionId] **localise le conteneur** :
+  /// il désigne l'emplacement où le document est écrit, **à la place** de celui
+  /// que le dépôt porte. C'est le cas de l'adaptateur Firestore, où la valeur
+  /// est prise comme chemin de collection.
+  ///
+  /// **Ne jamais y passer un identifiant d'autorisation.** L'homonymie avec
+  /// le `collectionId` de `ZAcl.can` est trompeuse : les deux mots désignent des
+  /// choses différentes. Passer ici la clé de gouvernance d'un écran envoie les
+  /// données **ailleurs** — l'écriture réussit (`Right`), aucune erreur n'est
+  /// levée, et les lectures continuent d'interroger l'emplacement du dépôt :
+  /// les documents écrits deviennent invisibles sans qu'aucun signal ne le
+  /// laisse voir. Un backend qui crée toute collection nommée à la volée
+  /// (Firestore) ne protège pas de cette confusion.
+  ///
+  /// Le laisser à `null` — cas normal — écrit là où le dépôt écrit. Ne le
+  /// renseigner que pour une redirection **voulue et explicite**, vers un
+  /// conteneur dont l'appelant connaît le nom réel.
+  ///
+  /// Un adaptateur n'est pas tenu de l'honorer : certaines implémentations
+  /// (offline-first sur store local) l'ignorent, l'emplacement étant déterminé
+  /// par leur propre topologie.
   Future<ZResult<T>> save(T item, {String? collectionId});
 
   /// Soft-delete l'élément [id] (`is_deleted = true`, hors-entité `ZSyncMeta`).

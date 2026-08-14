@@ -596,7 +596,18 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// Politique de colonnes (force include/exclude par nom).
   final ZColumnPolicy? columnPolicy;
 
-  /// Identifiant de collection passé à `ZAcl.can` et `repository.save`.
+  /// Identifiant de collection soumis à l'**autorisation**, et à elle seule :
+  /// c'est la valeur passée à `ZAcl.can(action, collectionId:)` pour toutes les
+  /// décisions de l'écran (consultation, création, édition, corbeille, purge).
+  ///
+  /// Il n'est **jamais** transmis à `repository.save` : un dépôt porte déjà son
+  /// propre emplacement d'écriture, c'est sa raison d'être. Déclarer ici la clé
+  /// de gouvernance de l'écran est donc sans effet sur l'endroit où les données
+  /// atterrissent — l'écriture suit toujours le dépôt déclaré dans [source].
+  ///
+  /// Pour rediriger réellement une écriture vers un autre conteneur, l'appel
+  /// doit être explicite et direct : `repository.save(item, collectionId: …)`
+  /// (voir `ZRepository.save`), jamais par le détour de cette déclaration.
   final String? collectionId;
 
   /// Actions additionnelles de l'app-bar, **déclarées en données**
@@ -1207,7 +1218,12 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
         'ZCrudScreen : aucune voie de sauvegarde (ni onSave, ni repository).',
       );
     }
-    final result = await repo.save(entity, collectionId: widget.collectionId);
+    // [collectionId] n'est PAS transmis ici : c'est une clé d'AUTORISATION, et
+    // un dépôt sait déjà où il écrit. Le transmettre faisait interpréter la
+    // clé d'ACL comme un chemin de collection par les adaptateurs qui
+    // l'honorent — l'écriture réussissait alors dans une collection que
+    // personne ne relit.
+    final result = await repo.save(entity);
     return result.fold(
       (failure) => failure,
       (_) {
@@ -3349,6 +3365,10 @@ class _ZDeletedScopeRepository<T extends ZEntity> implements ZRepository<T> {
   @override
   Future<ZResult<T>> getById(String id) => _inner.getById(id);
 
+  /// Délègue **tel quel**, `collectionId` compris : un décorateur ne réinterprète
+  /// pas le contrat qu'il décore. Ce qui arrive ici vient d'un appelant qui a
+  /// choisi sa redirection en connaissance de cause — l'écran, lui, n'en passe
+  /// aucune (voir `ZCrudScreen.collectionId`, clé d'autorisation).
   @override
   Future<ZResult<T>> save(T item, {String? collectionId}) =>
       _inner.save(item, collectionId: collectionId);

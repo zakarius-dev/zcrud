@@ -3,6 +3,27 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.98.0 — 2026-08-14
+
+### Corrigé
+
+#### `ZRepository.save` documente enfin ce que `collectionId` fait vraiment
+
+La documentation du port se contentait de « localise le conteneur si
+nécessaire », formule assez neutre pour être lue comme une clé d'autorisation.
+Elle en désigne en réalité l'inverse : quand un adaptateur l'honore,
+`collectionId` **remplace** l'emplacement d'écriture du dépôt. Y passer la clé
+de gouvernance d'un écran envoyait donc les données ailleurs, sans erreur, dans
+un conteneur que les lectures du même dépôt n'interrogent jamais.
+
+La dartdoc nomme désormais cette redirection, avertit de l'homonymie avec le
+`collectionId` de `ZAcl.can`, et pose la règle : `null` — le cas normal — écrit
+là où le dépôt écrit ; une valeur ne se renseigne que pour une redirection
+voulue, vers un conteneur dont l'appelant connaît le nom réel.
+
+Aucun changement de signature ni de comportement : le paramètre reste au
+contrat, et les appelants qui l'utilisent délibérément ne sont pas affectés.
+
 ## 0.97.0 — 2026-08-14
 
 ### Ajouté

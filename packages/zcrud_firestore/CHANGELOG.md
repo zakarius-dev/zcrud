@@ -2,6 +2,29 @@
 
 All notable changes to `zcrud_firestore` are documented in this file.
 
+## 0.98.0 — 2026-08-14
+
+### Corrigé
+
+#### Le `collectionId` de `save` est un chemin de collection, et c'est écrit
+
+`FirebaseZRepositoryImpl.save` prend `collectionId` comme **chemin de
+collection de remplacement** : renseigné, il détourne l'écriture hors du
+`collectionPath` du dépôt. Rien ne le disait, et Firestore ne le signale pas
+davantage — il crée toute collection nommée à la volée. Une valeur qui ne
+désignait pas un conteneur réel ne provoquait donc aucune erreur : elle
+fabriquait un silo, invisible aux lectures de ce dépôt, toutes ancrées sur
+`collectionPath`.
+
+La dartdoc de `save` énonce désormais cette redirection et interdit
+explicitement d'y passer l'identifiant soumis à `ZAcl.can`. Celle de
+`ZOfflineFirstRepository.save` précise le pendant : le paramètre y est
+**ignoré**, l'emplacement étant fixé par la topologie des stores injectés —
+aucun silo accidentel n'est possible par cette voie.
+
+Aucun changement de comportement : une redirection explicite reste servie à
+l'identique.
+
 ## 0.97.0 — 2026-08-14
 
 ### Corrigé
