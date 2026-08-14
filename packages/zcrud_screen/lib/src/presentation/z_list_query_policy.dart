@@ -81,20 +81,29 @@ import 'package:zcrud_core/zcrud_core.dart'
 ///
 /// ## Quand le périmètre n'est pas une requête
 ///
-/// [baseFilters] suppose que la règle de l'écran s'écrit en clauses. Deux
+/// [baseFilters] suppose que la règle de l'écran s'écrit en clauses. Trois
 /// déclarations prennent le relais quand ce n'est pas le cas :
 ///
+/// * `ZFilter.servedBySource`, dans [baseFilters], pour la clause que **seule
+///   la base sait trancher** — un champ calculé, jamais persisté, qu'aucune
+///   colonne ne porte : elle part dans la requête et n'est jamais rejouée sur
+///   les lignes ;
 /// * [baseFilterGroups] pour la **disjonction** — « cet état **ou** ce champ
 ///   jamais renseigné », le cas de l'onglet d'entrée d'un workflow ;
 /// * [itemFilter] pour le **post-filtre** — un prédicat Dart écrit sur
 ///   l'entité, quand le dernier mot appartient au métier (croisement de
 ///   droits, fenêtre calculée, catégorie qui n'existe pas en base).
 ///
-/// Les deux se paient de la même façon, et il faut le savoir avant de les
-/// déclarer : **le listing bascule en mémoire** et lit le jeu entier à chaque
-/// requête, parce qu'aucune source n'est réputée savoir les servir. Voir
-/// [itemFilter] pour le détail du coût et des cas où il ne faut pas en
-/// déclarer.
+/// Les deux dernières se paient de la même façon, et il faut le savoir avant
+/// de les déclarer : **le listing bascule en mémoire** et lit le jeu entier à
+/// chaque requête, parce qu'aucune source n'est réputée savoir les servir.
+/// Voir [itemFilter] pour le détail du coût et des cas où il ne faut pas en
+/// déclarer. La première, elle, ne coûte rien — mais elle ne vaut que ce que
+/// la source en fait (voir [baseFilters]).
+///
+/// Une fois en mémoire, le listing **n'envoie plus son tri à la source** : il
+/// lit le jeu entier puis l'ordonne lui-même, en classant les valeurs absentes
+/// au lieu de les retrancher (voir [paginationMode]).
 ///
 /// Immuable, comparable par valeur : deux politiques égales ne provoquent
 /// aucune reconstruction (AD-2).
@@ -178,6 +187,32 @@ class ZListQueryPolicy {
   /// l'exercice courant »), pas un choix de l'usager : un filtre appliqué
   /// ensuite s'y **ajoute** en conjonction, il ne les remplace jamais. Vide
   /// (défaut) = aucun filtre permanent.
+  ///
+  /// **Une clause que seule la base sait trancher** se déclare ici aussi, avec
+  /// `ZFilter.servedBySource` :
+  ///
+  /// ```dart
+  /// // `etat_depotage` est calculé côté source : aucune colonne ne le porte.
+  /// baseFilters: <ZFilter>[
+  ///   ZFilter.servedBySource('etat_depotage', ZFilterOp.isIn, <String>['termine']),
+  /// ],
+  /// ```
+  ///
+  /// Dès qu'un listing est servi en mémoire (voir [paginationMode],
+  /// [itemFilter], [baseFilterGroups], ou une recherche en cours), les filtres
+  /// de la requête sont **ré-appliqués** aux lignes projetées — c'est ce qui
+  /// les rend exacts devant une source qui ne les traduit pas. Une clause
+  /// visant un champ **absent de la ligne** n'y trouve alors rien et **vide le
+  /// listing** dès le premier rendu ; la déclarer servie par la source la
+  /// laisse partir dans la requête sans jamais être rejouée, ce qui supprime
+  /// l'obligation d'ajouter une colonne « pont » au seul bénéfice du filtre.
+  ///
+  /// ⚠️ C'est une **promesse faite à la source**, pas une garantie du socle :
+  /// devant un dépôt qui ne sert pas la clause — ou sur la voie
+  /// `ZCrudSource.items`, où il n'y a pas de source à qui adresser la promesse
+  /// — elle ne filtre **rien**, et l'écran montre plus que ce qui a été
+  /// déclaré, sans erreur ni avertissement. À réserver aux clauses dont le
+  /// dépôt est connu capable ; sinon, une clause ordinaire ou un [itemFilter].
   final List<ZFilter> baseFilters;
 
   /// **Disjonctions permanentes** de l'écran : chaque groupe est ANDé au reste
@@ -318,6 +353,18 @@ class ZListQueryPolicy {
   /// **Ce que cela coûte** : une lecture non paginée de la source à chaque
   /// requête. Raisonnable pour un référentiel de quelques milliers de lignes,
   /// à proscrire sur une collection sans borne.
+  ///
+  /// **Ce que devient le tri** : il n'est **pas** transmis à la source. Le jeu
+  /// est lu avant d'être ordonné, et c'est le moteur du socle qui rend l'ordre
+  /// demandé — en **classant** les valeurs absentes (dernières en croissant,
+  /// premières en décroissant) là où l'ordre d'un backend documentaire
+  /// **exclut** les documents dépourvus du champ trié. Un listing trié sur une
+  /// date facultative garde donc ses éléments non datés, et aucun index
+  /// composite n'est exigé pour un tri qui ne s'applique qu'en mémoire. Cela
+  /// vaut pour toutes les bascules en mémoire — celle-ci, celle d'un
+  /// [itemFilter] ou d'un [baseFilterGroups], celle d'une recherche en cours.
+  /// Sur la voie dépôt à périmètre requêtable, tri et pagination restent
+  /// **serveur**, inchangés.
   ///
   /// **À n'employer que si le mode automatique ne suffit pas** : un dépôt qui
   /// déclare `ZDelegatesSearch` (l'adaptateur Firestore le fait) fait déjà

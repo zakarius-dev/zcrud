@@ -29,6 +29,18 @@
 /// sa vie. C'est délibéré — une déclaration de périmètre silencieusement
 /// ignorée par la pagination curseur montrerait à l'usager plus que ce que
 /// l'écran a autorisé.
+///
+/// **Ce que la voie mémoire demande à la source** : le jeu, entier, et rien
+/// d'autre. Ni page, ni **tri** : le jeu est lu avant d'être ordonné, et c'est
+/// le moteur du socle qui rend l'ordre demandé — en **classant** les valeurs
+/// absentes, là où l'ordre d'un backend documentaire les **exclut**. Un
+/// listing trié sur une date facultative garde donc ses éléments non datés.
+///
+/// **Ce que le socle ne ré-applique pas** : une clause déclarée
+/// `ZFilter.servedBySource`. Elle part dans la requête et n'est jamais rejouée
+/// sur les lignes projetées — la voie d'une règle que seule la base sait
+/// trancher (valeur calculée, colonne non projetée), et qui, ré-appliquée,
+/// viderait le listing faute de cellule correspondante.
 library;
 
 import 'dart:async';
@@ -163,6 +175,10 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   /// Socle de filtres **persistant** (relation parent / catégorie d'onglet),
   /// **toujours ANDé en tête** des filtres utilisateur dans chaque requête ; jamais
   /// écrasé par `setFilters`. Défaut `const []` ⇒ rétro-compatible.
+  ///
+  /// Une clause déclarée `ZFilter.servedBySource` y a sa place : elle voyage
+  /// dans chaque requête, et le socle ne la rejoue pas sur les lignes — la
+  /// voie d'un périmètre que seule la base sait trancher.
   final List<ZFilter> baseFilters;
 
   /// Socle de **disjonctions** persistantes, ANDées au reste dans chaque
@@ -366,15 +382,31 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
     _commitBackendPage(rows, request, append: append);
   }
 
-  /// Repli in-memory (AD-16) : récupère le jeu **non paginé** puis pagine via
-  /// [zApplyListRequest]. Sert le mode [ZListPaginationMode.inMemory] ET le
-  /// repli sur échec curseur du mode [ZListPaginationMode.backendCursor].
+  /// Repli in-memory (AD-16) : récupère le jeu **non paginé et non trié** puis
+  /// ordonne et pagine via [zApplyListRequest]. Sert le mode
+  /// [ZListPaginationMode.inMemory] ET le repli sur échec curseur du mode
+  /// [ZListPaginationMode.backendCursor].
+  ///
+  /// **Ce que la lecture ne demande pas** : ni page (`limit`/`startAfter`), ni
+  /// **tri**. Le jeu est lu entier avant d'être ordonné — un tri servi par la
+  /// source n'apporterait donc aucun ordre au rendu, puisque le moteur du
+  /// socle ré-ordonne de toute façon. Il ne resterait de lui que ses effets de
+  /// bord : sur un backend documentaire, un ordre serveur **exclut** les
+  /// documents dépourvus du champ trié, et un listing trié sur une date
+  /// facultative perdait ainsi, en silence, tous ses éléments non datés. La
+  /// requête part donc sans tri, et l'ordre demandé est rendu par
+  /// [zApplyListRequest], qui **classe** les valeurs absentes au lieu de les
+  /// retrancher.
   Future<void> _runInMemory(
     ZDataRequest request,
     int gen, {
     required bool append,
   }) async {
-    final unpaged = request.copyWith(limit: null, startAfter: null);
+    final unpaged = request.copyWith(
+      limit: null,
+      startAfter: null,
+      sorts: const <ZSort>[],
+    );
     final result = await repository.getAll(request: unpaged);
     // Réponse obsolète OU disposé → aucun commit/émission.
     if (_disposed || gen != _generation) return;

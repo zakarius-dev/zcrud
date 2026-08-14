@@ -149,7 +149,11 @@ typedef ZCrudItemBuilder<T> = Widget Function(
 ///   fiche, ni édition, ni corbeille) ;
 /// * `rowColor: (context, entity) => …` — **coloration de ligne** décidée sur
 ///   l'entité typée (cf. [ZRowTint]) ;
-/// * `ZCrudSource.items(rows)` **sans callbacks** — lecture seule effective.
+/// * `ZCrudSource.items(rows)` **sans callbacks** — lecture seule effective ;
+/// * `ZCrudSource.readOnlyRepository(repo)` — **ressource immuable servie par
+///   un dépôt** : pagination, tri et recherche serveur restent entiers, mais
+///   ni création, ni édition, ni corbeille n'existent, quelle que soit l'ACL
+///   (cf. [ZCrudSource.readOnlyRepository]).
 class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// Construit l'écran assemblé — seuls [title] et [source] sont requis.
   const ZCrudScreen({
@@ -1212,7 +1216,10 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       _refresh();
       return null;
     }
-    final repo = widget.source.repository;
+    // Dépôt d'ÉCRITURE, jamais `source.repository` : une source déclarée en
+    // lecture seule sert le listing sans jamais offrir de voie d'enregistrement
+    // — le refus tient à la déclaration, pas à ce qui manquerait par ailleurs.
+    final repo = widget.source.writeRepository;
     if (repo == null) {
       return const ZDomainFailure(
         'ZCrudScreen : aucune voie de sauvegarde (ni onSave, ni repository).',
@@ -1697,7 +1704,9 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
 
   List<ZRowAction<T>>? _assembledRowActions() {
     final actions = <ZRowAction<T>>[];
-    final repo = widget.source.repository;
+    // Dépôt d'ÉCRITURE : les gestes de corbeille assemblés ici s'appuient sur
+    // lui, jamais sur le dépôt de lecture.
+    final repo = widget.source.writeRepository;
     // Fiche de détail : première action de la ligne, gouvernée par la
     // permission de CONSULTATION (`ZCrudAction.view`) — lire une fiche n'est
     // pas la modifier. L'action « modifier » qui suit porte, elle,
@@ -1858,7 +1867,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   /// rappel `ZCrudSource.onPurge`. Dans les deux cas la **confirmation
   /// irréversible précède l'écriture** : annuler ne touche pas la source.
   FutureOr<void> Function(BuildContext context, T entity)? _purgeHandler() {
-    final repo = widget.source.repository;
+    final repo = widget.source.writeRepository;
     if (repo is ZPurgeable<T>) {
       // Cast explicite : `ZPurgeable` ne pose AUCUNE contrainte de superclasse
       // (c'est ce qui lui permet de s'appliquer à un dépôt quelle que soit la
@@ -1947,7 +1956,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     String rootId,
     T entity,
   ) async {
-    final repo = widget.source.repository;
+    final repo = widget.source.writeRepository;
     if (repo != null) return repo.softDelete(rootId);
     final callback = widget.source.onSoftDelete;
     if (callback == null) {
@@ -1967,7 +1976,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     String rootId,
     T entity,
   ) async {
-    final repo = widget.source.repository;
+    final repo = widget.source.writeRepository;
     if (repo != null) return repo.restore(rootId);
     final callback = widget.source.onRestore;
     if (callback == null) {
@@ -1985,7 +1994,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   /// du dépôt, sinon rappel `onPurge`. `null` si la source ne sait pas purger —
   /// auquel cas aucune action de masse de purge n'est construite.
   Future<ZResult<Unit>> Function(BuildContext, String, T)? _purgeRootWriter() {
-    final repo = widget.source.repository;
+    final repo = widget.source.writeRepository;
     if (repo is ZPurgeable<T>) {
       final purgeable = repo as ZPurgeable<T>;
       return (context, rootId, entity) => purgeable.purge(rootId);
@@ -2067,7 +2076,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   List<ZBatchAction> _batchActions(BuildContext context, ZAcl acl) {
     final actions = <ZBatchAction>[];
     if (!_trashView) {
-      final hasWriter = widget.source.repository != null ||
+      final hasWriter = widget.source.writeRepository != null ||
           widget.source.onSoftDelete != null;
       if (_trashEnabled && widget.trashPolicy.softDelete && hasWriter) {
         final entry = _batchEntry(
@@ -2085,8 +2094,8 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
         if (entry != null) actions.add(entry);
       }
     } else {
-      final hasWriter =
-          widget.source.repository != null || widget.source.onRestore != null;
+      final hasWriter = widget.source.writeRepository != null ||
+          widget.source.onRestore != null;
       if (widget.trashPolicy.restore && hasWriter) {
         final entry = _batchEntry(
           context,

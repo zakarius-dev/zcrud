@@ -96,9 +96,46 @@ enum ZSortDirection {
 /// [value] est **opaque** (`Object?`) — aucune contrainte de type backend. Pour
 /// [ZFilterOp.isIn], [value] est une `List` ; pour [ZFilterOp.isNull], [value]
 /// est ignorée.
+///
+/// Une clause ordinaire est **doublement honorée** : elle part dans la requête,
+/// et le moteur du socle la ré-applique aux lignes chaque fois qu'il sert la
+/// liste en mémoire. C'est ce qui la rend fiable devant une source qui ne la
+/// traduit pas. [ZFilter.servedBySource] déclare l'exception à cette règle.
 class ZFilter {
-  /// Construit un filtre `field op value`.
-  const ZFilter(this.field, this.op, [this.value]);
+  /// Construit un filtre `field op value`, **servi par la source ET
+  /// ré-appliqué** aux lignes projetées.
+  const ZFilter(this.field, this.op, [this.value]) : sourceOnly = false;
+
+  /// Construit une clause **servie par la source uniquement** : elle part dans
+  /// la requête comme n'importe quelle autre, mais le socle ne la ré-applique
+  /// **jamais** aux lignes projetées.
+  ///
+  /// C'est la déclaration d'une règle que **seule la base sait évaluer** —
+  /// typiquement un champ qui n'existe pas sur la ligne :
+  ///
+  /// ```dart
+  /// // `etat_depotage` est calculé côté source : aucune cellule ne le porte.
+  /// baseFilters: <ZFilter>[
+  ///   ZFilter.servedBySource('etat_depotage', ZFilterOp.isIn, <String>['termine']),
+  /// ],
+  /// ```
+  ///
+  /// Sans cette déclaration, une telle clause **vide le listing** dès le
+  /// premier rendu chaque fois que la liste est servie en mémoire : le moteur
+  /// cherche la cellule `etat_depotage`, ne la trouve sur aucune ligne, et
+  /// n'en retient aucune. Le contournement habituel — ajouter une colonne
+  /// « pont » au seul bénéfice du filtre — devient inutile.
+  ///
+  /// 🔴 **C'est une promesse faite à la source, pas une garantie du socle.**
+  /// La clause ne vaut que si le dépôt la sert : devant un dépôt qui l'ignore
+  /// (ou sur une liste fournie en mémoire, où il n'y a **pas** de source à qui
+  /// adresser la promesse), elle ne filtre **rien** — et le listing montre
+  /// alors plus que ce qui a été déclaré, sans erreur ni avertissement. À ne
+  /// déclarer que sur une clause dont on sait le dépôt capable ; partout
+  /// ailleurs, une clause ordinaire (ré-appliquée, donc exacte) ou un
+  /// post-filtre écrit sur l'entité restent les bonnes voies.
+  const ZFilter.servedBySource(this.field, this.op, [this.value])
+      : sourceOnly = true;
 
   /// Nom logique du champ ciblé (opaque, snake/camel décidé par l'adaptateur).
   final String field;
@@ -109,6 +146,12 @@ class ZFilter {
   /// Opérande de comparaison (opaque), ou `null`.
   final Object? value;
 
+  /// `true` quand la clause est **servie par la source uniquement** : le
+  /// moteur du socle ne l'évalue jamais sur les lignes projetées (ni en
+  /// conjonction, ni dans une disjonction). Défaut `false` — une clause
+  /// ordinaire est ré-appliquée, comme elle l'a toujours été.
+  final bool sourceOnly;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -116,13 +159,17 @@ class ZFilter {
           runtimeType == other.runtimeType &&
           field == other.field &&
           op == other.op &&
+          sourceOnly == other.sourceOnly &&
           _deepEquals(value, other.value);
 
   @override
-  int get hashCode => Object.hash(runtimeType, field, op, _deepHash(value));
+  int get hashCode =>
+      Object.hash(runtimeType, field, op, _deepHash(value), sourceOnly);
 
   @override
-  String toString() => 'ZFilter($field, $op, $value)';
+  String toString() => sourceOnly
+      ? 'ZFilter.servedBySource($field, $op, $value)'
+      : 'ZFilter($field, $op, $value)';
 }
 
 /// **Disjonction** de prédicats : une ligne est retenue dès qu'**au moins une**
@@ -149,6 +196,14 @@ class ZFilter {
 /// [ZDataRequest.filters]. Un groupe élargit donc *à l'intérieur de lui-même*,
 /// jamais au-delà : ajouter un groupe ne peut pas faire ressortir une ligne
 /// qu'un filtre permanent a exclue.
+///
+/// **Clause servie par la source** : une clause [ZFilter.servedBySource] ne
+/// peut pas participer à une disjonction — le socle ne l'évalue pas, il ne
+/// peut donc pas savoir si elle retient la ligne. Elle est **écartée** du OR,
+/// et ce sont les autres clauses qui décident ; un groupe qui n'en contient
+/// que de celles-là n'a plus aucune clause jugeable et devient inerte (règle
+/// ci-dessous). Une disjonction se déclare donc sur des champs présents sur
+/// la ligne.
 ///
 /// **Groupe sans clause** : inerte — il n'exprime aucune intention, il
 /// n'impose donc aucune contrainte (et ne fait basculer aucun listing en
@@ -244,6 +299,12 @@ class ZDataRequest {
   });
 
   /// Prédicats de filtrage (conjonction). Par défaut : aucun.
+  ///
+  /// Toutes les clauses partent à la source, **y compris** celles déclarées
+  /// [ZFilter.servedBySource] : un adaptateur les traduit sans avoir à les
+  /// distinguer. La distinction ne joue qu'au retour — le moteur du socle
+  /// ré-applique les clauses ordinaires aux lignes projetées et laisse les
+  /// autres à la source qui a promis de les servir.
   final List<ZFilter> filters;
 
   /// **Disjonctions** ([ZFilterGroup]) de la requête, ANDées entre elles et

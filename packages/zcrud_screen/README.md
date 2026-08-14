@@ -236,6 +236,50 @@ la voie de cohabitation (callbacks optionnels). Les capacités de l'écran se
 **dérivent** de la source : sans voie d'écriture, ni création ni édition ; sans
 support de corbeille, ni bascule ni actions.
 
+#### Une ressource qui ne s'écrit pas
+
+Certaines ressources se lisent, se paginent et se cherchent, mais ne se
+modifient **jamais** : un journal d'opérations horodatées, un référentiel servi
+par un tiers, l'historique d'un parcours métier. `ZCrudSource.repository` ne
+sait pas les dire — brancher un dépôt suffit à faire déclarer à l'écran qu'il
+sait écrire. La troisième fabrique le dit :
+
+```dart
+ZCrudScreen<Operation>(
+  title: 'Journal des opérations',
+  // Le dépôt sert toute la lecture ; l'écriture n'existe pas.
+  source: ZCrudSource.readOnlyRepository(journalRepository),
+  registry: registry,
+  detailsEnabled: true,
+)
+```
+
+`canWrite`, `supportsTrash` et `supportsPurge` valent alors **tous `false`**,
+dépôt présent — et dépôt `ZPurgeable` compris. L'écran n'offre ni bouton de
+création, ni action d'édition, ni duplication, ni bascule corbeille, et ses
+gestes programmatiques (`ZCrudScreenActions.openCreation` / `openEdition` /
+`openUpdate`) restent **inertes**. Pagination, tri, recherche serveur et
+périmètre de requête, eux, sont intacts : c'est la contrepartie qu'on n'a plus
+à payer pour exprimer l'immuabilité.
+
+**Ce n'est pas une ACL — et il ne faut pas le remplacer par une.** Une ACL
+gouverne **qui** a le droit d'agir : elle se paramètre par usager, et un profil
+administrateur finit toujours par obtenir le geste qu'elle refusait aux autres.
+Cette fabrique parle de **ce que la ressource permet**. Un journal immuable
+n'est pas « un CRUD interdit à tout le monde » : c'est une ressource dont
+l'écriture n'existe pas. Le geste n'est donc offert à personne — pas même sous
+une ACL tout-accordée — et sa disparition ne dépend d'aucune configuration
+qu'un oubli pourrait défaire.
+
+C'est aussi la différence avec une **omission**. Un écran qui n'ouvre pas
+d'édition faute de `registry` tient son invariant d'un manque : le premier
+refactoring qui ajoute le registre le lui reprend, sans bruit. Ici le registre
+peut être fourni, le formulaire dérivable et la fiche de détail offerte : il n'y
+a toujours **aucune voie d'écriture** à emprunter.
+
+La consultation, elle, reste entière : `detailsEnabled: true` ouvre le
+formulaire complet en lecture, sans retour vers l'édition.
+
 ### Corbeille
 
 La corbeille a **trois gestes** : y mettre, en sortir, supprimer
@@ -695,6 +739,20 @@ query: const ZListQueryPolicy(
 Le jeu est alors lu en entier à **chaque** requête, puis filtré, trié et paginé
 par le socle — à ne déclarer que sur un listing borné.
 
+**Ce que devient le tri sur la voie mémoire.** Il n'est **pas** transmis à la
+source : la requête part sans tri, et c'est le moteur du socle qui rend l'ordre
+demandé, une fois le jeu lu. Ce n'est pas une économie, c'est une correction.
+Un ordre servi par un backend documentaire **exclut** les documents dépourvus
+du champ trié — trier sur une date facultative y perd, en silence, tous les
+éléments non datés, et la seule alternative était de renoncer à l'ordre. Le
+moteur du socle, lui, **classe** les valeurs absentes au lieu de les
+retrancher : dernières en ordre croissant, premières en décroissant. Un listing
+servi en mémoire — parce qu'il déclare `paginationMode: inMemory`, un
+`itemFilter`, une disjonction, ou parce qu'une recherche est en cours — affiche
+donc **tout** ce qu'il a lu, dans l'ordre demandé, et n'exige aucun index
+composite pour un tri qui ne s'applique qu'en mémoire. Sur la voie dépôt à
+périmètre requêtable, rien ne change : tri et pagination restent **serveur**.
+
 #### Quand le périmètre n'est pas une requête
 
 Les trois lignes ci-dessus supposent que le périmètre de l'écran s'écrit en
@@ -705,10 +763,46 @@ prennent alors le relais, et elles se paient de la même façon.
 | Déclaration | Ce qu'elle dit | Ce que cela coûte |
 |---|---|---|
 | `baseFilters` | « ce listing ne montre jamais les archives » | rien : servi par la source, pagination curseur intacte |
+| `ZFilter.servedBySource` | « cette clause-là, c'est la base qui la tranche » | rien — mais elle ne vaut que ce que la source en fait |
 | `baseFilterGroups` | « cet état **ou** ce champ jamais renseigné » | une lecture non paginée du jeu, à chaque requête |
 | `itemFilter` | « ce que ce prédicat retient, et rien d'autre » | une lecture non paginée du jeu, à chaque requête |
 
-**La disjonction**, d'abord, parce que c'est le cas le plus courant d'un
+**La clause que seule la base sait trancher**, d'abord, parce qu'elle est la
+moins visible. Dès qu'un listing est servi en mémoire, le socle **ré-applique**
+les filtres de la requête sur les lignes projetées : c'est ce qui les rend
+exacts devant une source qui ne les traduit pas. Mais une clause qui vise un
+champ **absent de la ligne** — une valeur calculée, jamais persistée, ou une
+colonne que l'écran n'affiche pas — n'y trouve rien, et **vide le listing dès
+le premier rendu**. Le contournement était d'ajouter une colonne « pont » au
+seul bénéfice du filtre. `ZFilter.servedBySource` le remplace :
+
+```dart
+// `etat_depotage` est calculé côté source : aucune colonne ne le porte.
+query: const ZListQueryPolicy(
+  baseFilters: <ZFilter>[
+    ZFilter.servedBySource('etat_depotage', ZFilterOp.isIn, <String>['termine']),
+  ],
+),
+```
+
+La clause part dans la requête comme n'importe quelle autre — l'adaptateur la
+traduit sans avoir à la distinguer — et le socle ne la rejoue **jamais** sur
+les lignes. Le listing filtre donc à la lecture, sans colonne-pont et sans se
+vider.
+
+⚠️ **C'est une promesse faite à la source, pas une garantie du socle.** La
+clause ne vaut que si le dépôt la sert : devant un dépôt qui l'ignore, elle ne
+filtre **rien**, et l'écran montre alors plus que ce qui a été déclaré — sans
+erreur, sans avertissement. Il en va de même sur la voie `ZCrudSource.items`,
+où il n'y a pas de source à qui adresser la promesse : la liste fournie est
+prise telle quelle, la clause n'y filtre rien. À ne déclarer que sur une clause
+dont vous savez votre dépôt capable ; partout ailleurs, une clause ordinaire
+(ré-appliquée, donc exacte) ou un `itemFilter` écrit sur l'entité restent les
+bonnes voies. Une clause servie par la source n'a pas non plus sa place dans un
+`baseFilterGroups` : le socle ne pouvant pas l'évaluer, elle est écartée de la
+disjonction.
+
+**La disjonction**, ensuite, parce que c'est le cas le plus courant d'un
 workflow : *l'état initial est l'absence d'état*. Un onglet « En attente »
 exprimé par la seule égalité se vide des dossiers fraîchement déposés, dont le
 champ n'a jamais été écrit — sans un message, sans une erreur.
@@ -1535,7 +1629,7 @@ de l'écran qui les a produites.
 | Type | Rôle |
 |---|---|
 | `ZCrudScreen<T>` | Écran CRUD assemblé : liste + recherche + création + édition + sauvegarde + corbeille, depuis une déclaration. |
-| `ZCrudSource<T>` | Source déclarative : `.repository(ZRepository<T>)` ou `.items(List<T>, callbacks…)`. |
+| `ZCrudSource<T>` | Source déclarative : `.repository(ZRepository<T>)`, `.readOnlyRepository(ZRepository<T>)` (ressource immuable : lecture entière, `canWrite`/`supportsTrash`/`supportsPurge` tous `false`) ou `.items(List<T>, callbacks…)`. |
 | `ZScreenMode` | Mode de l'écran : `full` (défaut) / `details` (fiche de détail, retour vers l'édition selon l'ACL) / `locked` (consultation verrouillée). Remplace `readOnly`, déprécié. |
 | `ZCrudEditionScope` | Transport du drapeau de lecture jusqu'au formulaire — `ZCrudEditionScope.readOnlyOf(context)` dans un `editionBuilder`. |
 | `ZCrudScreenScope` | Contexte posé autour du corps de l'écran — `ZCrudScreenScope.maybeOf(context)` donne ses gestes à n'importe quelle carte descendante (`null` hors écran). |
@@ -1575,9 +1669,12 @@ qu'emballé, ce qui masque sa sémantique propre et élargit sa boîte
 
 - **Lecture seule par déclaration** : `mode: ZScreenMode.locked` (consultation
   verrouillée), `mode: ZScreenMode.details` (fiche de détail, édition selon
-  l'ACL), `canCreate: false`, `trash: ZTrashMode.none`, ou
-  `ZCrudSource.items(rows)` sans callbacks — un journal immuable ou un
-  référentiel distant en lecture seule s'écrivent sans contournement.
+  l'ACL), `canCreate: false`, `trash: ZTrashMode.none`,
+  `ZCrudSource.items(rows)` sans callbacks, ou
+  `ZCrudSource.readOnlyRepository(repo)` (ressource immuable **servie par un
+  dépôt** : lecture, pagination et recherche entières, aucune écriture, quelle
+  que soit l'ACL) — un journal immuable ou un référentiel distant en lecture
+  seule s'écrivent sans contournement.
 - **ACL partout** (invariant AD-16) : bouton de création (`ZCrudAction.create`),
   actions de ligne (`update`/`delete`/`restore`/`clear` — masquées par défaut,
   grisables via `actionAclMode`), bascule corbeille. `acl` non fourni ⇒ l'ACL

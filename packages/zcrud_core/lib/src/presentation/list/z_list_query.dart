@@ -107,6 +107,20 @@ bool zMatchesSearch(
 /// résolu en **disjonction** de ses clauses (« cette valeur **ou** ce champ
 /// absent »).
 ///
+/// **Ce que ce moteur n'évalue jamais** : une clause déclarée
+/// [ZFilter.servedBySource]. Elle vise une règle que seule la base sait
+/// trancher — la ré-appliquer sur une cellule qui n'existe pas viderait le
+/// listing au lieu de le filtrer. Elle est donc sautée en conjonction, et
+/// retirée des clauses d'une disjonction (un groupe qui n'en contient que de
+/// celles-là redevient inerte).
+///
+/// **Ce qu'il ordonne sans jamais retrancher** : une valeur absente est
+/// **classée**, pas retirée — dernière en ordre croissant, première en
+/// décroissant (la négation du même classement). C'est la différence avec un
+/// ordre servi par un backend documentaire, dont l'`orderBy` exclut
+/// silencieusement les documents dépourvus du champ : le listing ordonné en
+/// mémoire garde tout ce qu'il a lu.
+///
 /// La sémantique du curseur (comparaison positionnelle par
 /// `ZCursor.values` alignées sur `request.sorts`, `id` en départage,
 /// `id: null` légitime, ancre introuvable gérée **gracieusement** — page vide
@@ -119,9 +133,14 @@ ZListPage zApplyListRequest(
   ZDataRequest request, {
   required List<ZFieldSpec> schema,
 }) {
-  // (1) Filtres (conjonction) sur les cellules brutes.
+  // (1) Filtres (conjonction) sur les cellules brutes. Une clause déclarée
+  // `ZFilter.servedBySource` est SAUTÉE : la source a promis de la servir, et
+  // le champ qu'elle vise n'existe souvent pas sur la ligne (valeur calculée,
+  // colonne non projetée) — la ré-appliquer ici ne la vérifierait pas, elle
+  // viderait le listing.
   var result = rows;
   for (final filter in request.filters) {
+    if (filter.sourceOnly) continue;
     result = <ZListRow>[
       for (final row in result)
         if (_matchesFilter(row, filter)) row,
@@ -134,9 +153,18 @@ ZListPage zApplyListRequest(
   // retenir personne » viderait le listing sans recours.
   for (final group in request.filterGroups) {
     if (group.isEmpty) continue;
+    // Une clause servie par la source n'est pas jugeable ici : elle est
+    // retirée du OR. Un groupe qui n'en contient que de celles-là n'a plus
+    // aucune clause jugeable — il redevient inerte, plutôt que de vider le
+    // listing sur une disjonction que le socle ne sait pas évaluer.
+    final judged = <ZFilter>[
+      for (final clause in group.clauses)
+        if (!clause.sourceOnly) clause,
+    ];
+    if (judged.isEmpty) continue;
     result = <ZListRow>[
       for (final row in result)
-        if (_matchesAnyFilter(row, group.clauses)) row,
+        if (_matchesAnyFilter(row, judged)) row,
     ];
   }
   // (2) Recherche sans accents sur le domaine déclaré par la requête

@@ -3,6 +3,75 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.0.0 — 2026-08-14
+
+### Corrigé
+
+#### Un listing trié sur une date facultative perdait, en silence, les éléments non datés
+
+Quand un listing est servi **en mémoire** — parce qu'il déclare un post-filtre,
+une disjonction, le mode mémoire, ou simplement parce qu'une recherche est en
+cours — le jeu est lu **en entier** puis ordonné par le moteur du socle. Le tri
+partait pourtant **aussi** à la source, où il ne servait plus à rien : l'ordre
+final était de toute façon recalculé.
+
+Il n'était pas sans effet pour autant. Sur un backend documentaire, un ordre
+serveur **exclut** les documents dépourvus du champ trié. Trier un listing sur
+une date facultative en retranchait donc tous les éléments non datés — sans
+message, sans erreur, sans rien qui distingue « il n'y en a pas » de « ils ont
+été écartés ». Restait une alternative sans issue : déclarer le tri et amputer
+la liste, ou renoncer à l'ordre.
+
+La requête d'une lecture servie en mémoire ne porte plus de tri. L'ordre demandé
+est rendu par le moteur du socle, qui **classe** les valeurs absentes au lieu de
+les retrancher — dernières en ordre croissant, premières en décroissant. Un
+listing affiche donc tout ce qu'il a lu, et aucun index composite n'est exigé
+pour un tri qui ne s'applique qu'en mémoire.
+
+**Ce qui ne change pas** : un listing à périmètre requêtable garde son tri
+**et** sa pagination **serveur**, à l'identique. La correction ne touche que la
+lecture non paginée de la voie mémoire.
+
+⚠️ **Si vous compensiez** — en renonçant au tri déclaré, en le ré-appliquant
+après coup, ou en réintroduisant à la main les éléments perdus — cette
+compensation **s'ajoute** désormais à la correction : elle est à retirer.
+
+### Ajouté
+
+#### Une clause que seule la base sait trancher
+
+Dès qu'un listing est servi en mémoire, les filtres de la requête sont
+**ré-appliqués** aux lignes projetées : c'est ce qui les rend exacts devant une
+source qui ne les traduit pas. Mais une clause qui vise un champ **absent de la
+ligne** — une valeur calculée, jamais persistée, ou une colonne que l'écran
+n'affiche pas — n'y trouve rien, et **vide le listing dès le premier rendu**. Le
+seul contournement était d'ajouter une colonne « pont » au seul bénéfice du
+filtre, et certaines clauses restaient impossibles à porter.
+
+`ZFilter.servedBySource` déclare l'exception :
+
+```dart
+// `etat_depotage` est calculé côté source : aucune colonne ne le porte.
+baseFilters: <ZFilter>[
+  ZFilter.servedBySource('etat_depotage', ZFilterOp.isIn, <String>['termine']),
+],
+```
+
+La clause part dans la requête comme n'importe quelle autre — un adaptateur la
+traduit sans avoir à la distinguer — et le socle ne la rejoue **jamais** sur les
+lignes, ni en conjonction ni dans une disjonction. Le listing filtre à la
+lecture, sans colonne-pont et sans se vider.
+
+⚠️ **C'est une promesse faite à la source, pas une garantie du socle.** Devant
+un dépôt qui ne sert pas la clause, elle ne filtre **rien** et l'écran montre
+plus que ce qui a été déclaré, sans erreur ni avertissement. À réserver aux
+clauses dont votre dépôt est connu capable ; partout ailleurs, une clause
+ordinaire — ré-appliquée, donc exacte — ou un post-filtre écrit sur l'entité
+restent les bonnes voies.
+
+**Rien ne change sans déclaration** : `ZFilter` conserve son comportement, ses
+requêtes et ses tests.
+
 ## 0.99.0 — 2026-08-14
 
 ### Ajouté
