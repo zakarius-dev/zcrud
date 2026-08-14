@@ -3,6 +3,43 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.97.0 — 2026-08-14
+
+### Ajouté
+
+#### `ZListQueryPolicy.paginationMode` — où la liste est paginée, filtrée et cherchée
+
+La politique de requête portait le tri, les filtres permanents, la taille de
+page et la sémantique de recherche, mais pas la **voie** : un écran assemblé ne
+pouvait pas demander que son listing soit servi en mémoire, alors que le socle
+savait le faire. Déclarer `paginationMode: ZListPaginationMode.inMemory` rend
+recherche, filtres et tri exacts sur une source qui n'en sert aucun, sans avoir
+à construire un contrôleur à la main.
+
+Le jeu est alors lu en entier à chaque requête : à déclarer sur un listing
+borné. Par défaut (`backendCursor`), les requêtes émises sont **strictement**
+celles d'avant.
+
+### Corrigé
+
+#### Une barre de recherche qui ne filtrait rien, sur la voie dépôt
+
+Sur `ZCrudSource.repository(...)` avec une source ne servant pas la recherche —
+l'adaptateur Firestore, un dépôt offline-first — la barre s'affichait et ne
+filtrait rien : un terme sans correspondance rendait la **totalité** des
+documents, ce dont l'usager conclut que la liste ne contient pas ce qu'il
+cherche.
+
+L'écran interroge désormais la capacité déclarée par le dépôt
+(`ZDelegatesSearch`, `zcrud_core`) : quand la source délègue la recherche, le
+listing est filtré par le moteur du socle **le temps de la recherche** — vue
+corbeille comprise. Un terme sans correspondance rend la liste vide, le pliage
+diacritique tient, et la portée reste celle des champs `searchable`.
+
+Rien ne change ailleurs : la voie `items` est inchangée, et une source qui sert
+la recherche continue de la servir, paginée. Sans terme saisi, aucune lecture
+supplémentaire n'a lieu.
+
 ## 0.96.0 — 2026-08-14
 
 ### Corrigé

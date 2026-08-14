@@ -644,7 +644,56 @@ moteur de liste de `zcrud_core` — la voie `items`, la voie dépôt en mémoire
 tout dépôt qui applique `ZDataRequest` par ce moteur. Un adaptateur qui exécute
 la recherche côté serveur reçoit les deux réglages dans la requête, mais reste
 libre de ne pas les servir : l'adaptateur Firestore, par exemple, ne sert pas
-`search` du tout et le documente.
+`search` du tout.
+
+#### Ce qui filtre, sur quelle voie, à quel coût
+
+Une barre de recherche qui ne filtre rien est pire qu'une barre absente :
+l'usager en conclut que la liste ne contient pas ce qu'il cherche. L'écran ne
+suppose donc plus que la source sait chercher — il le lui **demande**.
+
+| Voie | Qui filtre | Ce que cela coûte |
+|---|---|---|
+| `ZCrudSource.items` | le moteur du socle | rien : la liste est déjà en mémoire |
+| Dépôt qui **sert** `search` (SQL, index plein-texte, champ normalisé) | la source | une requête paginée par frappe |
+| Dépôt qui **délègue** `search` (`ZDelegatesSearch` : Firestore, dépôts offline-first) | le moteur du socle, **le temps de la recherche** | une lecture non paginée du jeu, tant qu'un terme est saisi |
+
+La troisième ligne est automatique et ne se déclare pas : le dépôt porte le
+mixin `ZDelegatesSearch` de `zcrud_core`, l'écran le lit. **Tant qu'aucun terme
+n'est saisi, rien ne change** — la pagination curseur reste le chemin nominal,
+et aucune lecture supplémentaire n'a lieu. Dès qu'un terme est saisi, le
+listing est servi en mémoire : recherche exacte, portée de colonnes et pliage
+diacritique (« elephant » trouve « Éléphant ») compris ; un terme sans
+correspondance rend la liste **vide**, jamais la totalité. Le terme effacé
+ramène la voie paginée.
+
+Ce chemin convient à un listing dont le jeu tient en mémoire (quelques milliers
+de lignes). Au-delà, la voie tenable reste un **champ de recherche normalisé
+pré-calculé** côté application, interrogeable par égalité ou par préfixe : le
+dépôt sert alors la recherche lui-même et n'applique pas le mixin.
+
+Un dépôt d'application qui a la même limite le déclare de la même façon :
+
+```dart
+class MonDepot<T extends ZEntity> extends ZRepository<T>
+    with ZDelegatesSearch<T> {
+  // … le port, inchangé : aucun membre à ajouter.
+}
+```
+
+**Quand le filtrage ou le tri, eux aussi, sont inexacts.** La bascule
+automatique ne concerne que la recherche. Si la source ne sert ni les filtres
+ni le tri, le listing entier se déclare en mémoire :
+
+```dart
+query: const ZListQueryPolicy(
+  pageSize: 50,
+  paginationMode: ZListPaginationMode.inMemory,
+),
+```
+
+Le jeu est alors lu en entier à **chaque** requête, puis filtré, trié et paginé
+par le socle — à ne déclarer que sur un listing borné.
 
 ### Présentation de l'édition
 
@@ -1426,7 +1475,7 @@ de l'écran qui les a produites.
 | `ZTrashMode` | Activation de la corbeille : `auto` (dès que la source la supporte) / `none`. |
 | `ZTrashPolicy` | Gestes offerts par la corbeille : `full` (défaut), `withoutPurge`, `readOnly`, ou combinaison libre ; plus `showCount` (pastille de comptage) et `visibleWhenEmpty` (accès masqué à corbeille vide). |
 | `trashCount` (`ValueListenable<int>?`) | Nombre d'éléments en corbeille fourni par l'application : pastille sur le bouton d'accès, et condition de visibilité. Dérivé gratuitement sur la voie `items`. |
-| `ZListQueryPolicy` (`query`) | Tri par défaut (`sort`), filtres permanents (`baseFilters`), taille de page (`pageSize`) et sémantique de recherche (`searchScope`, `searchFolding` ; raccourci `ZListQueryPolicy.legacySearch()`) du listing. `filtersWith` ajoute, `sortFor` remplace ; `ZListQueryPolicy.of(context)` la rend aux vues que l'application pose sous l'écran (page d'onglet). Rien de déclaré ⇒ requêtes strictement inchangées. |
+| `ZListQueryPolicy` (`query`) | Tri par défaut (`sort`), filtres permanents (`baseFilters`), taille de page (`pageSize`) et sémantique de recherche (`searchScope`, `searchFolding` ; raccourci `ZListQueryPolicy.legacySearch()`) et voie de pagination (`paginationMode`) du listing. `filtersWith` ajoute, `sortFor` remplace ; `ZListQueryPolicy.of(context)` la rend aux vues que l'application pose sous l'écran (page d'onglet). Rien de déclaré ⇒ requêtes strictement inchangées. |
 | `ZListTab` (`tabs`) | Onglet de catégorisation : `labelKey`, `builder`, `pageKey`, `canCreate`, `defaultItemBuilder`, plus `acl` (restriction du segment), `titles` (intitulés du formulaire) et `countOf` (pastille de comptage). |
 | `ZRestrictedAcl` / `zRestrictAcl` | Composition **conjonctive** de deux `ZAcl` — la cascade onglet > écran > scope. L'élargissement y est inexprimable. |
 | `ZPurgeable<T>` | Mixin optionnel du dépôt déclarant la **suppression définitive** (hors du port `ZRepository`). |

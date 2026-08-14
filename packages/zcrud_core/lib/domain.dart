@@ -119,6 +119,10 @@ export 'src/domain/ports/z_relation_crud.dart';
 export 'src/domain/ports/z_relation_source.dart';
 export 'src/domain/ports/z_remote_store.dart';
 export 'src/domain/ports/z_repository.dart';
+// Capacité DÉCLARÉE de recherche : mixin `ZDelegatesSearch<T>` (un dépôt qui
+// ne sert pas `ZDataRequest.search` la délègue au moteur du socle) +
+// `zRepositoryServesSearch`. Absent = servie, le défaut historique.
+export 'src/domain/ports/z_search_capability.dart';
 // Sur-port synchronisable : `ZSyncableRepository<T>`.
 export 'src/domain/ports/z_syncable_repository.dart';
 // Registres ouverts d'extensibilité : `ZTypeRegistry`, `ZSourceRegistry`,

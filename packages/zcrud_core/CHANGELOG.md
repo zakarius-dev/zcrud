@@ -3,6 +3,46 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.97.0 — 2026-08-14
+
+### Ajouté
+
+#### Une source peut désormais **déclarer** qu'elle ne sait pas chercher
+
+Un dépôt reçoit un terme de recherche dans chaque requête, et rien ne
+permettait de savoir s'il le servait. Les listings le **supposaient** — au
+détriment des sources qui ne le peuvent pas : Firestore n'a ni `LIKE`, ni
+recherche plein-texte, ni pliage diacritique, et rendait donc la liste entière
+quel que soit le terme saisi.
+
+Le mixin `ZDelegatesSearch<T>` remplace la supposition par une déclaration :
+un dépôt qui l'applique dit au socle qu'il délègue la recherche. Il ne coûte
+rien à écrire (aucun membre à implémenter) et **ne casse aucune implémentation
+existante** : ne pas l'appliquer signifie « je sers la recherche », le
+comportement historique. `zRepositoryServesSearch(depot)` lit la capacité.
+
+C'est la même forme que `ZPurgeable` — une capacité déclarée, jamais devinée
+d'après le type du dépôt.
+
+### Corrigé
+
+#### Sur une source qui ne sait pas chercher, la recherche filtre enfin
+
+`ZListController` interroge la capacité au moment où un terme est saisi. Si la
+source la délègue, le listing emprunte le **chemin mémoire** — celui-là même
+qu'il empruntait déjà quand un curseur n'était pas honoré — et le filtrage
+devient exact : portée des champs `searchable` inchangée, pliage diacritique
+tenu (« elephant » trouve « Éléphant »), et un terme sans correspondance rend
+la liste **vide** au lieu de la totalité.
+
+**Ce que cela coûte, et quand** : le chemin mémoire lit le jeu **non paginé**.
+La bascule ne s'applique donc que **tant qu'une recherche est active** — sans
+terme, la pagination curseur reste le chemin nominal, et aucune lecture
+supplémentaire n'a lieu. Le terme effacé ramène immédiatement la voie paginée.
+Ce chemin convient à un listing dont le jeu tient en mémoire ; au-delà, la voie
+tenable reste un champ de recherche normalisé pré-calculé côté application —
+le dépôt sert alors la recherche et n'applique pas le mixin.
+
 ## 0.95.0 — 2026-08-14
 
 ### Ajouté

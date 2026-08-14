@@ -94,8 +94,14 @@ void _noopLog(String message, {Object? error, StackTrace? stackTrace}) {}
 /// - [logger] : journal neutre optionnel ;
 /// - [autoListen] : démarre le listener temps réel à la construction (défaut
 ///   `true` ; `false` pour piloter la synchro à la main / en test).
-class ZOfflineFirstBoxRepository<T extends ZEntity>
-    extends ZStudyRepository<T> {
+///
+/// **Recherche déléguée** : ce dépôt rend le snapshot local **complet** et ne
+/// traduit aucun `ZDataRequest` (recherche comprise). Il le **déclare** par le
+/// mixin `ZDelegatesSearch` : un listing assemblé au-dessus filtre alors le
+/// terme saisi par le moteur du socle, au lieu d'afficher une barre inerte. Le
+/// jeu étant déjà lu en entier, cette voie ne coûte aucune lecture de plus.
+class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
+    with ZDelegatesSearch<T> {
   /// Construit la base offline-first par **composition** du store local et d'un
   /// accès Firestore résolu par [resolver].
   ZOfflineFirstBoxRepository({

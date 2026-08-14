@@ -44,6 +44,11 @@ d'implémentation (`create-story` → `dev-story` → `code-review` → sprint-s
 story, pas de transition de statut, pas de Workflow multi-agent à lentilles : le CR **est** la
 spécification, et il porte déjà ses constats mesurés côté hôte.
 
+**Publication systématique (consigne owner, 2026-08-14)** : **chaque CR traité donne lieu à une
+release**, sans attendre de regroupement ni de signal — vérif verte au repos, bump des paquets
+**et** de `tool/*`, CHANGELOGs datés, `docs/handoff-vX.Y.Z.md`, tag, push. La publication du
+**site** reste un geste distinct, demandé explicitement par le owner.
+
 Ce qui **reste** obligatoire, sans exception :
 - ✅ **Vérifier chaque constat du CR sur disque** avant de déléguer — un CR est un signalement, pas
   une preuve (les causes supposées par le pilote se sont déjà révélées justes *et* incomplètes).

@@ -2,6 +2,32 @@
 
 All notable changes to `zcrud_firestore` are documented in this file.
 
+## 0.97.0 — 2026-08-14
+
+### Corrigé
+
+#### La limite de recherche de Firestore n'est plus seulement documentée
+
+`FirebaseZRepositoryImpl` ne sert pas `ZDataRequest.search` (Firestore n'a ni
+`LIKE`, ni plein-texte, ni pliage diacritique) : la limite était consignée dans
+la documentation, et les listings assemblés au-dessus offraient malgré tout une
+barre de recherche inerte.
+
+L'adaptateur applique désormais le mixin `ZDelegatesSearch` de `zcrud_core` :
+il **déclare** qu'il délègue la recherche. Un listing du socle filtre alors le
+terme saisi par son propre moteur, le temps de la recherche — au prix d'une
+lecture non paginée de la collection, et de rien du tout tant qu'aucun terme
+n'est saisi. `ZOfflineFirstRepository` et `ZOfflineFirstBoxRepository`, qui
+rendent le snapshot local complet sans traduire la requête, le déclarent
+également ; le jeu y étant déjà lu en entier, cette voie n'y coûte aucune
+lecture de plus.
+
+Aucune signature ne change, et aucune implémentation hôte du port n'est
+touchée : la capacité est un mixin, pas un membre de `ZRepository`.
+
+Sur un gros parc, la voie recommandée reste inchangée : un champ de recherche
+normalisé pré-calculé, interrogeable par égalité ou par préfixe.
+
 ## 0.91.0 — 2026-08-12
 
 ### Ajouté

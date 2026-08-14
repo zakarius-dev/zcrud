@@ -2450,7 +2450,9 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   ///   émet — part déjà triée, au lieu d'en émettre une non triée puis de la
   ///   remplacer. Un tri demandé plus tard (`sortBy`) le remplace ;
   /// * `searchScope` et `searchFolding` deviennent la sémantique de recherche
-  ///   portée par **chaque** requête du contrôleur — vue corbeille comprise.
+  ///   portée par **chaque** requête du contrôleur — vue corbeille comprise ;
+  /// * `paginationMode` choisit **où** la liste est paginée, filtrée et
+  ///   cherchée : sur la source (défaut) ou en mémoire.
   ///
   /// [policy] permet à un **onglet assemblé** de faire naître son contrôleur
   /// sur la politique composée de l'écran et de sa catégorie — sans quoi
@@ -2465,6 +2467,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       toRow: _project,
       schema: _listFields,
       pageSize: policy.pageSize,
+      mode: policy.paginationMode,
       baseFilters: policy.baseFilters,
       initialSorts: policy.sort,
       searchScope: policy.searchScope,
@@ -2496,7 +2499,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     final existing = _trashController;
     if (existing != null) return existing;
     final repo = widget.source.repository!;
-    final controller = _createController(_ZDeletedScopeRepository<T>(repo));
+    final controller = _createController(_deletedScopeView<T>(repo));
     _trashController = controller;
     _restoreRequestedQuery(controller);
     return controller;
@@ -2520,7 +2523,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     if (existing != null) return existing;
     final repo = widget.source.repository!;
     final controller = _createController(
-      trash ? _ZDeletedScopeRepository<T>(repo) : repo,
+      trash ? _deletedScopeView<T>(repo) : repo,
       policy: _tabPolicy(tab),
     );
     _tabControllers[key] = controller;
@@ -3313,6 +3316,13 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
 /// `watchAll` délègue tel quel (il ne sert que de **signal de mutation** à
 /// `watchMutations`). Les écritures délèguent. [dispose] est un no-op : le
 /// décorateur ne possède pas le dépôt décoré.
+///
+/// **Capacité de recherche préservée** : un décorateur ne sait pas chercher
+/// mieux que le dépôt qu'il décore. Quand celui-ci déclare déléguer la
+/// recherche (`ZDelegatesSearch`), la vue corbeille doit le déclarer aussi —
+/// sans quoi la corbeille rendrait la barre inerte que le listing vivant, lui,
+/// vient de rendre exacte. C'est le rôle de [_deletedScopeView], qui choisit
+/// la variante portant la capacité.
 class _ZDeletedScopeRepository<T extends ZEntity> implements ZRepository<T> {
   _ZDeletedScopeRepository(this._inner);
 
@@ -3354,6 +3364,23 @@ class _ZDeletedScopeRepository<T extends ZEntity> implements ZRepository<T> {
     // No-op : le dépôt décoré appartient à l'appelant.
   }
 }
+
+/// Vue corbeille d'un dépôt qui **délègue la recherche** : le même décorateur,
+/// plus la capacité `ZDelegatesSearch` du dépôt décoré.
+class _ZDeletedScopeDelegatingSearchRepository<T extends ZEntity>
+    extends _ZDeletedScopeRepository<T> with ZDelegatesSearch<T> {
+  _ZDeletedScopeDelegatingSearchRepository(super.inner);
+}
+
+/// Vue **corbeille** de [inner], portant la même capacité de recherche que lui.
+///
+/// Un décorateur est transparent pour la portée de suppression, il doit l'être
+/// aussi pour ce que le dépôt sait faire : décorer un dépôt qui ne sert pas la
+/// recherche ne lui apprend pas à chercher.
+ZRepository<T> _deletedScopeView<T extends ZEntity>(ZRepository<T> inner) =>
+    zRepositoryServesSearch(inner)
+        ? _ZDeletedScopeRepository<T>(inner)
+        : _ZDeletedScopeDelegatingSearchRepository<T>(inner);
 
 /// Construit le contenu d'une surface d'édition pour l'état courant : le
 /// drapeau de lecture, et le rappel de bascule vers l'édition (`null` s'il

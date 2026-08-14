@@ -27,7 +27,7 @@
 /// ([ZListQueryPolicy.declaresNothing]) laisse l'écran émettre exactement les
 /// mêmes requêtes qu'avant — mêmes filtres (aucun), même tri (aucun), même
 /// taille de page (aucune, donc jeu non paginé), même recherche (les seuls
-/// champs `searchable`, blancs significatifs).
+/// champs `searchable`, blancs significatifs), même voie de pagination.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -35,6 +35,7 @@ import 'package:zcrud_core/zcrud_core.dart'
     show
         ZDataRequest,
         ZFilter,
+        ZListPaginationMode,
         ZSearchFolding,
         ZSearchScope,
         ZSort,
@@ -52,6 +53,7 @@ import 'package:zcrud_core/zcrud_core.dart'
 /// | [pageSize] | taille de page du listing paginé | — |
 /// | [searchScope] | colonnes que la recherche interroge | — |
 /// | [searchFolding] | ce que la recherche ignore en comparant | — |
+/// | [paginationMode] | où la liste est paginée, filtrée et cherchée | — |
 ///
 /// La différence entre les deux premières lignes est la clé : un **tri** est
 /// un point de vue, il se remplace ; un **filtre de base** est une règle de
@@ -85,6 +87,7 @@ class ZListQueryPolicy {
     this.pageSize,
     this.searchScope = ZSearchScope.searchableFields,
     this.searchFolding = ZSearchFolding.diacritics,
+    this.paginationMode = ZListPaginationMode.backendCursor,
   });
 
   /// Raccourci du cas courant : **trier par un champ**, éventuellement avec
@@ -108,6 +111,7 @@ class ZListQueryPolicy {
     this.pageSize,
     this.searchScope = ZSearchScope.searchableFields,
     this.searchFolding = ZSearchFolding.diacritics,
+    this.paginationMode = ZListPaginationMode.backendCursor,
   }) : sort = <ZSort>[ZSort(field, direction)];
 
   /// Raccourci de la **parité avec les moteurs de liste historiques** : la
@@ -125,6 +129,7 @@ class ZListQueryPolicy {
     this.sort = const <ZSort>[],
     this.baseFilters = const <ZFilter>[],
     this.pageSize,
+    this.paginationMode = ZListPaginationMode.backendCursor,
   })  : searchScope = ZSearchScope.allColumns,
         searchFolding = ZSearchFolding.diacriticsAndSpaces;
 
@@ -185,6 +190,37 @@ class ZListQueryPolicy {
   /// immatriculations, numéros de conteneur).
   final ZSearchFolding searchFolding;
 
+  /// **Où la liste est paginée, filtrée, triée et cherchée** : sur la source,
+  /// ou en mémoire.
+  ///
+  /// Par défaut ([ZListPaginationMode.backendCursor]), le listing demande une
+  /// page à la fois et laisse la source faire le travail — le comportement
+  /// historique, et le seul tenable sur un gros parc.
+  ///
+  /// [ZListPaginationMode.inMemory] lit le jeu **entier** puis applique
+  /// recherche, filtres, tri et pagination avec le moteur du socle. C'est le
+  /// réglage à déclarer quand la source ne sait pas tout servir — typiquement
+  /// une recherche plein-texte, que Firestore n'a pas — et que le listing
+  /// tient en mémoire :
+  ///
+  /// ```dart
+  /// query: const ZListQueryPolicy(
+  ///   paginationMode: ZListPaginationMode.inMemory,
+  /// ),
+  /// ```
+  ///
+  /// **Ce que cela coûte** : une lecture non paginée de la source à chaque
+  /// requête. Raisonnable pour un référentiel de quelques milliers de lignes,
+  /// à proscrire sur une collection sans borne.
+  ///
+  /// **À n'employer que si le mode automatique ne suffit pas** : un dépôt qui
+  /// déclare `ZDelegatesSearch` (l'adaptateur Firestore le fait) fait déjà
+  /// basculer le listing en mémoire **le temps d'une recherche**, sans rien
+  /// déclarer ici et sans rien coûter le reste du temps. Ce réglage sert les
+  /// cas où le filtrage ou le tri, eux aussi, doivent être exacts sur une
+  /// source qui ne les sert pas.
+  final ZListPaginationMode paginationMode;
+
   /// `true` quand la politique ne déclare **rien** — l'écran se comporte alors
   /// exactement comme sans politique du tout.
   bool get declaresNothing =>
@@ -192,7 +228,8 @@ class ZListQueryPolicy {
       baseFilters.isEmpty &&
       pageSize == null &&
       searchScope == ZSearchScope.searchableFields &&
-      searchFolding == ZSearchFolding.diacritics;
+      searchFolding == ZSearchFolding.diacritics &&
+      paginationMode == ZListPaginationMode.backendCursor;
 
   /// Les filtres à appliquer quand [extra] s'ajoute aux filtres permanents :
   /// **les permanents d'abord, [extra] ensuite**.
@@ -238,6 +275,7 @@ class ZListQueryPolicy {
     int? pageSize,
     ZSearchScope? searchScope,
     ZSearchFolding? searchFolding,
+    ZListPaginationMode? paginationMode,
   }) =>
       ZListQueryPolicy(
         sort: sort ?? this.sort,
@@ -245,6 +283,7 @@ class ZListQueryPolicy {
         pageSize: pageSize ?? this.pageSize,
         searchScope: searchScope ?? this.searchScope,
         searchFolding: searchFolding ?? this.searchFolding,
+        paginationMode: paginationMode ?? this.paginationMode,
       );
 
   /// La politique de l'écran englobant, ou `null` hors d'un écran qui en
@@ -277,6 +316,7 @@ class ZListQueryPolicy {
           pageSize == other.pageSize &&
           searchScope == other.searchScope &&
           searchFolding == other.searchFolding &&
+          paginationMode == other.paginationMode &&
           _sameSorts(sort, other.sort) &&
           _sameFilters(baseFilters, other.baseFilters);
 
@@ -288,12 +328,14 @@ class ZListQueryPolicy {
         pageSize,
         searchScope,
         searchFolding,
+        paginationMode,
       );
 
   @override
   String toString() => 'ZListQueryPolicy(sort: $sort, '
       'baseFilters: $baseFilters, pageSize: $pageSize, '
-      'searchScope: $searchScope, searchFolding: $searchFolding)';
+      'searchScope: $searchScope, searchFolding: $searchFolding, '
+      'paginationMode: $paginationMode)';
 }
 
 /// Contexte portant la [ZListQueryPolicy] d'un écran autour de son corps.

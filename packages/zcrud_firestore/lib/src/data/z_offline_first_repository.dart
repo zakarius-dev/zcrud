@@ -48,8 +48,14 @@ void _noopLog(String message, {Object? error, StackTrace? stackTrace}) {}
 /// canonique `const ZLwwResolver()`), une couture de connectivité `isConnected`
 /// **optionnelle** (défaut `null` — jamais court-circuitée), et un
 /// [ZOfflineFirstLog] optionnel (défaut no-op).
-class ZOfflineFirstRepository<T extends ZEntity>
-    extends ZSyncableRepository<T> {
+///
+/// **Recherche déléguée** : ce dépôt rend le snapshot local **complet** et ne
+/// traduit aucun `ZDataRequest` (recherche comprise). Il le **déclare** par le
+/// mixin `ZDelegatesSearch` : un listing assemblé au-dessus filtre alors le
+/// terme saisi par le moteur du socle, au lieu d'afficher une barre inerte. Le
+/// jeu étant déjà lu en entier, cette voie ne coûte aucune lecture de plus.
+class ZOfflineFirstRepository<T extends ZEntity> extends ZSyncableRepository<T>
+    with ZDelegatesSearch<T> {
   /// Construit le dépôt par **composition** des deux stores + du résolveur LWW.
   ZOfflineFirstRepository({
     required ZLocalStore<T> local,

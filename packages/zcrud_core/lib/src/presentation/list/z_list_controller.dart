@@ -11,6 +11,15 @@
 /// **entièrement en mémoire** (repli AD-16), projette `T → ZListRow` via le seam
 /// [toRow], et mappe le résultat en `ZListViewState` (dont la décision `empty`
 /// vs `noResults` est tranchée ici).
+///
+/// **Recherche que la source ne sait pas servir** : un dépôt qui applique le
+/// mixin `ZDelegatesSearch` déclare qu'il ignore `ZDataRequest.search` (ni
+/// `LIKE`, ni plein-texte, ni pliage diacritique — le cas de Firestore). Tant
+/// qu'aucun terme n'est saisi, rien ne change ; dès qu'une recherche est
+/// active, le contrôleur emprunte le chemin mémoire — celui-là même qu'il
+/// emprunte déjà quand un curseur n'est pas honoré — et le filtrage devient
+/// exact. Le coût, assumé et borné à la durée de la recherche, est une lecture
+/// **non paginée** du jeu.
 library;
 
 import 'dart:async';
@@ -24,6 +33,7 @@ import '../../domain/data/z_search_text.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../../domain/failures/z_failure.dart';
 import '../../domain/ports/z_repository.dart';
+import '../../domain/ports/z_search_capability.dart';
 import 'z_list_query.dart';
 import 'z_list_render_request.dart';
 import 'z_list_view_state.dart';
@@ -35,7 +45,10 @@ import 'z_list_view_state.dart';
 ///   curseur** bascule automatiquement sur le repli in-memory (AD-16).
 /// - [inMemory] : le backend ne supporte PAS le curseur (ou on force le repli) —
 ///   le jeu non paginé est récupéré puis paginé **en mémoire** via
-///   [zApplyListRequest].
+///   [zApplyListRequest]. C'est aussi le mode à déclarer quand le listing tient
+///   en mémoire et doit offrir recherche, tri et filtres complets quelle que
+///   soit la source ; son coût est une lecture non paginée du jeu à chaque
+///   requête.
 enum ZListPaginationMode {
   /// Pagination curseur native (avec repli in-memory sur échec curseur).
   backendCursor,
@@ -164,11 +177,31 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   /// doublon ni trou dans l'accumulé (AD-16).
   int _generation = 0;
 
+  /// `true` si une recherche est **réellement** active (terme non vide une
+  /// fois les blancs retirés).
+  bool get _hasActiveSearch => _search != null && _search!.trim().isNotEmpty;
+
   /// `true` si une recherche OU un filtre est actif (discriminant `empty` vs
   /// `noResults`) — signal **local et déterministe** (pas de comptage du
   /// jeu total).
-  bool get _hasActiveQuery =>
-      (_search != null && _search!.trim().isNotEmpty) || _filters.isNotEmpty;
+  bool get _hasActiveQuery => _hasActiveSearch || _filters.isNotEmpty;
+
+  /// Le dépôt **délègue-t-il** la recherche au moteur du socle ?
+  ///
+  /// Capacité **déclarée** par le dépôt lui-même ([ZDelegatesSearch]), jamais
+  /// devinée d'après son type : le cœur ne connaît aucun de ses adaptateurs
+  /// (AD-1). Lue une seule fois — la capacité d'un dépôt ne change pas en
+  /// cours de vie.
+  late final bool _delegatesSearch = !zRepositoryServesSearch(repository);
+
+  /// La requête courante doit-elle être servie **en mémoire** faute d'un dépôt
+  /// sachant chercher ?
+  ///
+  /// Vrai **seulement** quand une recherche est réellement active : sans
+  /// terme, un dépôt qui ne sait pas chercher n'a rien à déléguer, et la
+  /// pagination curseur reste le chemin nominal. C'est ce qui borne le coût de
+  /// la bascule à la durée d'une recherche.
+  bool get _searchNeedsMemory => _delegatesSearch && _hasActiveSearch;
 
   /// Remplace le terme de recherche, réinitialise la pagination et re-interroge.
   void setSearch(String? term) {
@@ -236,7 +269,11 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
     if (!append) _emit(const ZListLoading());
     final request = _buildRequest(startAfter: startAfter);
 
-    if (mode == ZListPaginationMode.inMemory) {
+    // Deux raisons d'aller en mémoire, et une seule mécanique : le mode
+    // déclaré, ou une recherche active que le dépôt ne sait pas servir. Dans
+    // le second cas la bascule dure ce que dure la recherche — le terme effacé
+    // ramène la voie curseur.
+    if (mode == ZListPaginationMode.inMemory || _searchNeedsMemory) {
       await _runInMemory(request, gen, append: append);
       return;
     }

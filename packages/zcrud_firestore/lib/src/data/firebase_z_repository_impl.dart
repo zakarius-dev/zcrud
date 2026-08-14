@@ -99,10 +99,21 @@ enum ZDeletionSemantics {
 /// document mais restent séparées côté modèle (aucun champ métier touché par
 /// [softDelete]/[restore]).
 ///
-/// **Recherche accent-insensible — limite documentée** : Firestore n'a ni
+/// **Recherche accent-insensible — limite DÉCLARÉE** : Firestore n'a ni
 /// `LIKE`, ni full-text, ni pliage diacritique natif. `ZDataRequest.search`
 /// n'est donc **pas** servi ici (préfixe/égalité ou champ normalisé pré-calculé
 /// requis côté application). Aucune normalisation NFD n'est appliquée.
+///
+/// Cette limite n'est plus seulement documentée : l'adaptateur applique le
+/// mixin `ZDelegatesSearch`, par lequel il **déclare** au socle qu'il délègue
+/// la recherche. Un listing assemblé (`ZCrudScreen`, `ZListController`) le lit
+/// et, **dès qu'un terme est saisi**, filtre en mémoire par le moteur du socle
+/// — recherche exacte, portée de colonnes et pliage diacritique compris — au
+/// lieu d'afficher une barre inerte. Le coût de ce chemin est une lecture
+/// **non paginée** de la collection, le temps de la recherche : il convient à
+/// un listing dont le jeu tient en mémoire. Au-delà, la voie recommandée reste
+/// un **champ normalisé pré-calculé** interrogeable par égalité ou préfixe —
+/// le dépôt sert alors la recherche, et n'applique pas ce mixin.
 ///
 /// **PRÉCONDITION — collection « zcrud-native »** : cet adaptateur suppose
 /// une collection gérée **exclusivement** par zcrud, où **tout** document
@@ -142,7 +153,8 @@ enum ZDeletionSemantics {
 /// `DateTime`, `{_seconds,_nanoseconds}`) en `String` ISO **avant** d'appeler
 /// le `fromMap` injecté (cf. [_normalizeTemporalDeep]) : un cast dur
 /// `as Timestamp?` y jette systématiquement.
-class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
+class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T>
+    with ZDelegatesSearch<T> {
   /// Construit l'adaptateur à partir du couple (dé)sérialisation typé.
   FirebaseZRepositoryImpl({
     required FirebaseFirestore firestore,
