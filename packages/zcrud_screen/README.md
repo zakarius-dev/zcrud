@@ -290,6 +290,20 @@ ZCrudScreen<Dossier>(
 qu'on y fait* (`full` par défaut, `withoutPurge`, `readOnly`, ou une
 combinaison libre).
 
+**Consulter avant d'agir** : la fiche de détail est offerte **en corbeille
+aussi**, dès que vous l'avez déclarée (`detailsEnabled`, ou `ZScreenMode.details`)
+et que votre `ZAcl` accorde `ZCrudAction.view` sur la ligne. L'asymétrie avec
+les gestes d'écriture est voulue : *écrire* sur un élément supprimé n'a pas de
+sens, *le lire* en a — et c'est là qu'on en a le plus besoin. Une corbeille
+contient souvent des documents qui se ressemblent, dont la ligne ne montre
+qu'une poignée de colonnes ; la fiche les montre **tous**, et la suppression
+définitive ne se rejoue pas.
+
+La fiche ainsi ouverte est **strictement en lecture** : aucun bouton
+« Modifier » n'y apparaît, **même** pour un usager muni de `ZCrudAction.update`
+(`ZCrudEditionScope.onEditOf` y rend `null`). Éditer un élément supprimé n'est
+offert nulle part.
+
 **Actions supplémentaires** : `rowActions` s'applique aux éléments **vivants**,
 `trashRowActions` aux éléments **en corbeille**. Les deux canaux sont disjoints
 — une action déclarée pour l'un n'apparaît jamais dans l'autre.
@@ -731,9 +745,12 @@ final modifier = ZCrudScreenScope.maybeOf(context)?.updateOpener(convocation);
 ```
 
 Tous trois rendent `null` quand le geste n'est pas possible — hors écran, écran
-verrouillé, vue corbeille, aucun formulaire, ou permission refusée **sur cette
-ligne**. `null` veut dire « ne dessinez pas le bouton », jamais « dessinez-en un
-mort ».
+verrouillé, aucun formulaire, ou permission refusée **sur cette ligne**. `null`
+veut dire « ne dessinez pas le bouton », jamais « dessinez-en un mort ».
+
+La **vue corbeille** ne retire que l'écriture : `updateOpener` y rend `null`,
+tandis que `zCrudDetailsOpener` — et donc `zCrudEditionOpener`, dont le geste
+nominal est la consultation — y reste offert si `ZCrudAction.view` est accordé.
 
 #### Revenir à l'édition **depuis** la fiche
 

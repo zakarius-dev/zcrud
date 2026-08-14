@@ -89,7 +89,10 @@ abstract interface class ZCrudScreenActions {
   /// que la consultation est offerte — mode `ZScreenMode.details`, ou mode
   /// `ZScreenMode.full` déclaré `detailsEnabled: true` ; c'est l'**édition**
   /// sinon (mêmes conditions que [canOpenUpdate]). En mode
-  /// `ZScreenMode.locked`, ou en vue corbeille, c'est toujours `false`.
+  /// `ZScreenMode.locked`, c'est toujours `false`.
+  ///
+  /// En **vue corbeille**, seule l'édition est retirée : la consultation y
+  /// reste offerte (voir [canOpenDetails]).
   bool canOpenEdition(ZEntity entity);
 
   /// Ouvre la surface **nominale** de [entity] — voir [canOpenEdition].
@@ -111,8 +114,14 @@ abstract interface class ZCrudScreenActions {
   ///
   /// `false` tant que la consultation n'est pas **offerte par l'écran** : mode
   /// `ZScreenMode.details`, ou mode `ZScreenMode.full` déclaré
-  /// `detailsEnabled: true`. `false` aussi en `ZScreenMode.locked`, en vue
-  /// corbeille, et sans formulaire disponible.
+  /// `detailsEnabled: true`. `false` aussi en `ZScreenMode.locked` et sans
+  /// formulaire disponible.
+  ///
+  /// **Vrai en vue corbeille** comme sur les vivants, aux mêmes conditions :
+  /// consulter ce qu'on s'apprête à restaurer — ou à détruire définitivement —
+  /// est la vérification qui précède le geste. Seule l'**écriture** est
+  /// réservée aux vivants ; la fiche ouverte depuis la corbeille reste donc
+  /// strictement en lecture, sans retour vers l'édition.
   bool canOpenDetails(ZEntity entity);
 
   /// Ouvre la **fiche de détail** de [entity] — voir [canOpenDetails]. Inerte
@@ -234,13 +243,15 @@ ZCrudOpener? zCrudEditionOpener(BuildContext context, ZEntity entity) =>
 
 /// Le rappel qui ouvre la **fiche de détail** de [entity] sur l'écran
 /// englobant, ou `null` si la consultation n'est pas offerte — hors écran,
-/// écran verrouillé ou non déclaré consultable, vue corbeille, aucun
-/// formulaire, ou `ZCrudAction.view` refusé sur cette ligne.
+/// écran verrouillé ou non déclaré consultable, aucun formulaire, ou
+/// `ZCrudAction.view` refusé sur cette ligne.
 ///
 /// Raccourci de `ZCrudScreenScope.maybeOf(context)?.detailsOpener(entity)`.
 /// C'est la **forme de geste de ligne** de la fiche : elle s'utilise sur un
 /// écran `ZScreenMode.full` — qui continue de créer, de mettre à la corbeille
 /// et de restaurer — sans avoir à basculer l'écran entier en mode
-/// consultation.
+/// consultation. Elle est offerte **en vue corbeille aussi**, aux mêmes
+/// conditions : la fiche y est le seul moyen de vérifier avant de restaurer ou
+/// de purger.
 ZCrudOpener? zCrudDetailsOpener(BuildContext context, ZEntity entity) =>
     ZCrudScreenScope.maybeOf(context)?.detailsOpener(entity);

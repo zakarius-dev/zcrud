@@ -486,6 +486,12 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   ///   surface vers l'édition sans la refermer, si `ZCrudAction.update` est
   ///   accordé.
   ///
+  /// La fiche est offerte **en vue corbeille aussi**, aux mêmes conditions
+  /// (`ZCrudAction.view`) : c'est là qu'on en a le plus besoin, la suppression
+  /// définitive ne se rejouant pas. Les gestes d'**écriture**, eux, restent
+  /// réservés aux vivants — la fiche ouverte depuis la corbeille n'offre donc
+  /// aucun retour vers l'édition, quelle que soit l'ACL.
+  ///
   /// Sans formulaire disponible ([editionBuilder], ou registre + schéma), il
   /// n'y a rien à consulter : le drapeau reste alors sans effet. En
   /// [ZScreenMode.locked], il est ignoré — l'écran verrouillé n'ouvre rien.
@@ -1431,7 +1437,26 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   bool get _editionOpenable => !_trashView && _editionAvailable;
 
   /// La fiche de détail est-elle **structurellement** ouvrable ?
-  bool get _detailsOpenable => !_trashView && _detailsAvailable;
+  ///
+  /// **Volontairement indifférente à la vue corbeille** — contrairement à
+  /// [_editionOpenable]. L'asymétrie est le cœur du geste : *écrire* sur un
+  /// élément supprimé n'a pas de sens, *le lire* en a — et c'est même là qu'on
+  /// en a le plus besoin. La corbeille d'un écran métier contient des documents
+  /// qui se ressemblent, dont la ligne ne montre qu'une poignée de colonnes ;
+  /// consulter la fiche est la **vérification qui précède un geste
+  /// irréversible** (la purge ne se rejoue pas).
+  ///
+  /// Ne pas y réintroduire `!_trashView` « par symétrie » : la symétrie porte
+  /// sur l'écriture, pas sur la lecture. La gouvernance reste entière —
+  /// [_detailsAvailable] (consultation déclarée + formulaire disponible) puis
+  /// l'ACL (`ZCrudAction.view`, filtrée par ligne). Un usager sans `view`
+  /// n'obtient pas la fiche, en corbeille comme sur les vivants.
+  ///
+  /// La fiche ainsi ouverte reste **strictement en lecture** : le retour vers
+  /// l'édition (`ZCrudEditionScope.onEdit`) est décidé par `canOpenUpdate`,
+  /// donc par [_editionOpenable] — qui, lui, exclut bien la corbeille. Aucune
+  /// ACL ne peut y faire apparaître un bouton « Modifier ».
+  bool get _detailsOpenable => _detailsAvailable;
 
   @override
   bool canOpenUpdate(ZEntity entity) =>
@@ -1657,24 +1682,29 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   List<ZRowAction<T>>? _assembledRowActions() {
     final actions = <ZRowAction<T>>[];
     final repo = widget.source.repository;
+    // Fiche de détail : première action de la ligne, gouvernée par la
+    // permission de CONSULTATION (`ZCrudAction.view`) — lire une fiche n'est
+    // pas la modifier. L'action « modifier » qui suit porte, elle,
+    // `ZCrudAction.update` : c'est ce filtrage-là, déjà appliqué par
+    // `DynamicList`, qui rend le retour vers l'édition présent si et seulement
+    // si le droit existe.
+    //
+    // Assemblée HORS de la partition vivants/corbeille, et c'est délibéré :
+    // consulter est offert dans les DEUX vues, à la même place et avec la même
+    // gouvernance, tandis que les gestes d'écriture restent réservés aux
+    // vivants. Voir [_detailsOpenable] pour la raison de l'asymétrie.
+    if (_detailsAvailable) {
+      actions.add(
+        ZRowAction<T>(
+          id: 'details',
+          labelKey: 'details',
+          icon: Icons.visibility_outlined,
+          requiredPermission: ZCrudAction.view,
+          onInvoke: (context, entity) => _openDetails(entity),
+        ),
+      );
+    }
     if (!_trashView) {
-      if (_detailsAvailable) {
-        // Fiche de détail : première action de la ligne, gouvernée par la
-        // permission de CONSULTATION (`ZCrudAction.view`) — lire une fiche
-        // n'est pas la modifier. L'action « modifier » qui suit porte, elle,
-        // `ZCrudAction.update` : c'est ce filtrage-là, déjà appliqué par
-        // `DynamicList`, qui rend le retour vers l'édition présent si et
-        // seulement si le droit existe.
-        actions.add(
-          ZRowAction<T>(
-            id: 'details',
-            labelKey: 'details',
-            icon: Icons.visibility_outlined,
-            requiredPermission: ZCrudAction.view,
-            onInvoke: (context, entity) => _openDetails(entity),
-          ),
-        );
-      }
       if (_editionAvailable) {
         actions.add(
           ZRowAction<T>.edit(

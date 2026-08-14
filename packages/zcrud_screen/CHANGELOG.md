@@ -3,6 +3,39 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.96.0 — 2026-08-14
+
+### Corrigé
+
+#### La fiche de détail est de nouveau consultable **en corbeille**
+
+La vue corbeille n'offrait plus que deux gestes de ligne — restaurer et
+supprimer définitivement. Aucun moyen, donc, de regarder ce qu'on s'apprête à
+rendre ou à détruire, alors que la ligne ne montre qu'une poignée de colonnes et
+que la suppression définitive est irréversible.
+
+L'action **« détails »** est rétablie en corbeille, à la même place et avec la
+même gouvernance qu'en vue vivante : elle apparaît dès que la consultation est
+déclarée (`detailsEnabled`, ou `ZScreenMode.details`) et que votre `ZAcl`
+accorde `ZCrudAction.view` **sur la ligne**. L'ouverture publique suit :
+`zCrudDetailsOpener`, `ZCrudScreenScope.detailsOpener` et `openDetails` ne
+rendent plus un geste inerte en corbeille — une action ajoutée par
+`trashRowActions` n'y est donc plus condamnée à être un bouton mort. Le geste
+nominal d'une carte (`zCrudEditionOpener`) y consulte lui aussi.
+
+L'asymétrie avec l'écriture est **voulue et documentée** : écrire sur un élément
+supprimé n'a pas de sens, le lire en a. La fiche ouverte depuis la corbeille
+reste donc **strictement en lecture** — aucun bouton « Modifier », **même** pour
+un usager muni de `ZCrudAction.update` (`ZCrudEditionScope.onEditOf` y rend
+`null`). Les gestes `edit`, `duplicate` et `softDelete`, ainsi que la création,
+restent absents de la corbeille ; la vue vivante est inchangée.
+
+**Rien à faire côté application** si vous n'aviez rien contourné. Si vous aviez
+compensé ce défaut — coquille hôte réintroduisant un bouton « voir », ou action
+`trashRowActions` maison ouvrant votre propre fiche —, **retirez la
+compensation** : elle s'ajouterait désormais à l'action assemblée et la ligne de
+corbeille porterait deux gestes de consultation.
+
 ## 0.95.0 — 2026-08-14
 
 ### Ajouté
