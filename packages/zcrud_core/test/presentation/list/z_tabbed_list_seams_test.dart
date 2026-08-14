@@ -258,4 +258,36 @@ void main() {
           reason: 'aucune création depuis un onglet canCreate:false');
     });
   });
+
+  group('onglet sans vue déclarée (builder optionnel)', () {
+    testWidgets(
+        'un onglet ASSEMBLÉ monté nu rend une page VIDE, sans jamais lever',
+        (tester) async {
+      await tester.pumpWidget(
+        _host(
+          const ZTabbedList(
+            tabs: <ZListTab>[
+              ZListTab(labelKey: 'sans-vue'),
+              ZListTab(labelKey: 'avec-vue', builder: _pageAvecVue),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text('page-avec-vue', skipOffstage: false),
+        findsNothing,
+        reason: 'seul l\'onglet ACTIF (le premier, sans vue) est monté',
+      );
+
+      // CONTRE-TÉMOIN : l'onglet qui DÉCLARE sa vue la rend, inchangé.
+      await tester.tap(find.widgetWithText(Tab, 'avec-vue'));
+      await tester.pumpAndSettle();
+      expect(find.text('page-avec-vue'), findsOneWidget);
+    });
+  });
 }
+
+Widget _pageAvecVue(BuildContext context) => const Text('page-avec-vue');

@@ -330,31 +330,88 @@ pastille : le corps de l'écran est construit une fois et transmis tel quel
 inconnu, l'accès reste offert — une corbeille non comptée n'est pas une
 corbeille vide.
 
-### Onglets gouvernés
+### Onglets
 
-Un écran segmenté déclare ses onglets dans `tabs`. Au-delà de son libellé et de
-son contexte de création, chaque onglet peut porter **ses droits**, **ses
-intitulés de formulaire** et **son compteur** :
+Un écran segmenté déclare ses onglets dans `tabs`. Un onglet prend l'une de
+**deux formes**, et la présence de son `builder` suffit à trancher :
+
+| Forme | Ce que l'onglet déclare | Ce que l'écran y accroche | Ce qu'il en coûte |
+|---|---|---|---|
+| **Onglet assemblé** (`builder` absent) | sa catégorie (`baseFilters`), et s'il y a lieu ses droits (`acl`) | la liste dérivée du schéma, ses actions de ligne (consulter, modifier, dupliquer, mettre à la corbeille), le filtrage par les droits, la recherche partagée, la corbeille catégorisée | l'onglet rend une **liste** — pas autre chose |
+| **Onglet à builder** | la vue entière | **rien** : la vue est opaque à l'écran | ni actions de ligne, ni recherche partagée, ni onglets dans la corbeille |
+
+**Préférez l'onglet assemblé** dès que l'onglet n'est qu'une **partition de la
+même collection**. C'est le cas le plus courant — segmenter par statut, par
+type, par service — et il ne demande alors aucune ligne de vue :
 
 ```dart
 ZCrudScreen<Piece>(
+  title: 'Pièces',
+  source: ZCrudSource<Piece>.repository(repo),
+  registry: registry,
+  detailsEnabled: true,
+  tabsScrollable: true,               // 6 onglets ne tiennent pas sur une barre fixe
   tabs: <ZListTab>[
     ZListTab(
       labelKey: 'enCours',
+      baseFilters: const <ZFilter>[ZFilter('statut', ZFilterOp.eq, 'open')],
       titles: const ZCrudTitles(create: 'Nouveau dossier'),
-      countOf: compteurEnCours,          // ValueListenable<int>
-      builder: (_) => listeEnCours,
+      countOf: compteurEnCours,       // ValueListenable<int>
     ),
     ZListTab(
       labelKey: 'clotures',
-      acl: const MesDroitsEnLecture(),   // ce segment ne s'écrit plus
-      titles: const ZCrudTitles(create: 'Nouvelle pièce'),
-      builder: (_) => listeCloturees,
+      baseFilters: const <ZFilter>[ZFilter('statut', ZFilterOp.eq, 'closed')],
+      acl: const MesDroitsEnLecture(), // ce segment ne s'écrit plus
     ),
   ],
-  // …
 );
 ```
+
+Chaque onglet assemblé possède **son propre contrôleur de liste**, né sur la
+politique de l'écran **élargie de sa catégorie** : sa position de défilement,
+sa pagination et sa recherche lui appartiennent, et changer d'onglet ne les
+perd pas.
+
+L'onglet à builder reste la voie ouverte pour tout ce qui **n'est pas une
+liste** — vue carte, carte mentale, tableau de bord. Ce que cet onglet rend,
+l'écran ne le connaît pas ; il ne peut donc rien y accrocher, et il ne prétend
+pas le contraire :
+
+```dart
+ZListTab(
+  labelKey: 'carte',
+  builder: (context) => MaCarteMentale(),  // l'écran ne sait pas ce que c'est
+),
+```
+
+Les deux formes cohabitent dans une même barre. Mais **un seul onglet opaque
+suffit** à retirer la barre de recherche partagée et les onglets de la
+corbeille : l'écran ne propose pas ce qu'il ne pourrait honorer que sur une
+partie des onglets.
+
+#### Une barre de recherche unique, pour l'onglet actif
+
+Des onglets **tous assemblés** rendent la loupe à l'app-bar. La barre est
+unique — une seule saisie, au-dessus de toute la barre d'onglets — et elle
+filtre **l'onglet actif, et lui seul** : les autres gardent leur liste
+entière. Changer d'onglet fait **suivre** la recherche : l'onglet quitté
+retrouve sa liste, l'onglet rejoint reçoit le terme resté visible dans la
+barre.
+
+Avec un onglet à builder, la loupe disparaît : l'écran n'a aucun moyen de
+porter une recherche dans une vue qu'il ne construit pas. C'est à l'onglet de
+poser la sienne, dans sa propre vue.
+
+#### La corbeille garde la catégorisation
+
+Quand tous les onglets sont assemblés, la vue corbeille **conserve la barre
+d'onglets** : les mêmes filtres de catégorie s'appliquent à la partition
+supprimée, et l'on retrouve ses éléments là où on les avait laissés. Avec un
+onglet opaque, la corbeille reste le **listing unique** de l'écran — inchangé.
+
+La **sélection multiple** (`selection`) n'est pas servie tant que la barre
+d'onglets est rendue : chaque onglet possède sa vue, et un lot exécuté sur une
+sélection faite dans un autre onglet serait invisible.
 
 #### La requête d'un onglet est composée par l'écran
 
@@ -469,8 +526,10 @@ actions.filterBy(<ZFilter>[const ZFilter('statut', ZFilterOp.eq, 'ouvert')]); //
   s'y appliquent **en plus**.
 - **Recherche** — chercher, c'est ajouter un terme, pas remplacer une requête :
   ni les filtres permanents ni le tri ne sont perdus pendant la frappe.
-- **Onglets** — chaque onglet possède sa vue, donc sa requête. La politique de
-  l'écran lui est **offerte**, à composer avec sa catégorie :
+- **Onglets** — un onglet **assemblé** (sans `builder`) reçoit la politique de
+  l'écran **déjà composée avec sa catégorie** : il n'a rien à déclarer. Un
+  onglet à `builder` possède sa vue, donc sa requête ; la politique composée
+  lui est alors **offerte** :
 
   ```dart
   // Dans la page d'un onglet : les permanents de l'écran, puis la catégorie.
@@ -764,8 +823,9 @@ morphe le titre en champ, la query est propagée telle quelle à
 `ZListController.setSearch` (voie repository) ou au moteur in-memory
 `zApplyListRequest` (voie items), et la **portée corbeille** est respectée
 (la recherche interroge alors `ZDeletedScope.deletedOnly`). `searchEnabled:
-false` retire la loupe ; en mode `tabs` (hors corbeille) elle reste absente,
-chaque onglet possédant sa vue.
+false` retire la loupe ; en mode `tabs`, elle est offerte quand **tous** les
+onglets sont assemblés (elle filtre alors l'onglet actif) et retirée dès qu'un
+onglet porte son propre `builder`.
 
 La **mise à la corbeille est confirmée** par `showZConfirmDialog`
 (`ZConfirmTone.destructive`). Annuler — bouton, barrière ou `pop` sans valeur
@@ -1129,9 +1189,11 @@ selection: ZSelectionPolicy(
   voit plus.
 - « Tout sélectionner » porte sur les éléments **actuellement listés**, jamais
   au-delà de ce que la source a rendu.
-- En mode `tabs`, chaque onglet possède sa vue : la sélection de l'écran
-  s'applique au listing dont il est propriétaire (dont la corbeille). Une page
-  d'onglet qui veut la sienne déclare sa propre `DynamicList(selection:)`.
+- Tant que la barre d'onglets est rendue — vue vivante, et corbeille
+  catégorisée — la sélection de l'écran n'est pas servie : chaque onglet
+  possède sa vue. Elle s'applique au listing dont l'écran est propriétaire (le
+  listing sans onglets, et la corbeille non catégorisée). Une page d'onglet
+  qui veut la sienne déclare sa propre `DynamicList(selection:)`.
 
 #### Actions de masse de l'application
 
@@ -1250,6 +1312,88 @@ tables `en`/`fr` du socle, surchargeables par `ZcrudScope(labels:)`. Le nom d'un
 format (`CSV`, `Excel`, `PDF`) est le `labelKey` de son exporteur : un sigle ne
 se traduit pas, et une clé inconnue des tables est rendue telle quelle.
 
+### Formulaire seul et édition en fenêtre {#formulaire-seul}
+
+L'écran assemblé n'est pas toujours la bonne maille. Deux besoins reviennent :
+poser le **formulaire nu au milieu d'une page** que l'on compose soi-même, et
+éditer des **données sans modèle typé** — un bloc de configuration, un filtre
+avancé — dans une fenêtre qui **rend une carte de valeurs**.
+
+#### Le formulaire, intégré dans votre page
+
+`ZFormOnly` rend les champs, et rien d'autre : aucun `Scaffold`, aucune barre
+d'application, aucun bouton d'enregistrement. Le pilotage se fait de
+l'extérieur, par un `ZFormOnlyController` que votre page détient :
+
+```dart
+final _form = ZFormOnlyController(
+  fields: motDePasseFields,
+  initialValues: const <String, Object?>{'ancien': '', 'nouveau': ''},
+);
+
+@override
+void dispose() {
+  _form.dispose(); // vous l'avez créé, vous le libérez
+  super.dispose();
+}
+
+@override
+Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(title: const Text('Bienvenue')),
+      body: ZFormOnly(controller: _form),
+      bottomNavigationBar: FilledButton(
+        onPressed: () async {
+          final valeurs = _form.submit();
+          // Invalide : les messages sont affichés, rien n'est rendu.
+          if (valeurs == null) return;
+          await monService.changerMotDePasse(valeurs);
+        },
+        child: const Text('Valider'),
+      ),
+    );
+```
+
+Le contrôleur expose `validate()` (table `champ → message`, sans rien
+afficher), `isValid`, `revealErrors()`, `values` (valeurs normalisées) et
+`submit()` (valide puis rend les valeurs, ou `null`). Vous pouvez aussi ne rien
+fournir — `ZFormOnly(fields: …)` crée son pilotage et le libère lui-même.
+
+#### La fenêtre qui rend une carte de valeurs
+
+`presentFormEdition` ouvre le même formulaire en **page, feuille ou dialogue**
+— selon la même politique de présentation que le reste du socle — et retourne
+`Map<String, dynamic>?` : les valeurs si l'utilisateur enregistre, `null` s'il
+renonce.
+
+```dart
+final reglages = await presentFormEdition(
+  context,
+  fields: reglagesExportFields,
+  initialValues: const <String, Object?>{'format': 'pdf', 'paysage': true},
+  title: "Réglages d'export",
+);
+if (reglages != null) await monService.exporter(reglages);
+```
+
+#### Ce que contient la carte rendue
+
+Les valeurs sont **validées puis normalisées**, jamais l'état brut des
+contrôleurs de saisie :
+
+- les types sont coercés (`'12,5'` sur un champ nombre ⇒ `12.5`) ;
+- les dates sortent en ISO-8601, les heures en `HH:mm`, les plages en
+  `{start, end}` ;
+- les valeurs d'énumération sortent en camelCase (leur `name`) ;
+- les champs **en lecture seule** et ceux qu'une **condition d'affichage
+  masque** sont **absents** : ce qui n'était ni modifiable ni visible n'a pas
+  été décidé par l'utilisateur ;
+- un formulaire **invalide ne rend rien** : les messages s'affichent, la
+  fenêtre reste ouverte, et l'appelant ne reçoit aucune donnée partielle.
+
+C'est la **même** normalisation que celle de la sauvegarde de `ZCrudScreen`
+(`zNormalizeFormValues`, de `zcrud_core`) : la forme des données ne dépend pas
+de l'écran qui les a produites.
+
 ## API principale {#api-principale}
 
 | Type | Rôle |
@@ -1279,6 +1423,9 @@ se traduit pas, et une clé inconnue des tables est rendue telle quelle.
 | `batchActions` (`ZCrudBatchActions<T>?`) | Actions de masse supplémentaires de l'application, construites avec les entités sélectionnées. |
 | `export` (`ZExportPolicy?`) | Export du listing : `exporters` (les formats offerts, ordre conservé, dédoublonnés par `id`), `onExported` (remise du fichier — requis), `fileBaseName`. `null` (défaut) ⇒ aucune entrée d'export, aucune dépendance tirée. |
 | `ZCrudExportDelivery` | `FutureOr<void> Function(BuildContext, ZExportedBytes)` — la remise du fichier produit à l'application. |
+| `ZFormOnly` | Le formulaire déclaratif **nu** : les champs, sans coquille ni bouton. `controller` (pilotage de la page) ou `fields` (pilotage possédé et libéré par le widget). |
+| `ZFormOnlyController` | Pilotage extérieur d'un `ZFormOnly` : `validate()`, `isValid`, `revealErrors()`, `values` (normalisées), `submit()` (valeurs ou `null`), `isDirty`, `form` (le `ZFormController` sous-jacent). |
+| `presentFormEdition(...)` | Présente un formulaire en page/feuille/dialogue et rend `Map<String, dynamic>?` — les valeurs validées et normalisées, ou `null` si l'utilisateur renonce. |
 | `ZRowPermissions` | Ce qu'une ligne **retire** : `.unrestricted()`, `.locked()`, `.denying({…})`, avec `reasonKey` facultatif. Aucun vocabulaire d'autorisation — un résolveur ne peut jamais élargir. |
 
 Paramètres notables hérités du socle : `actions` (`List<ZAppBarAction>` de
@@ -1313,11 +1460,14 @@ qu'emballé, ce qui masque sa sémantique propre et élargit sa boîte
   `ValueListenable<ZListViewState>`, formulaire réactif par tranche
   (`ZFormController`), bouton de création re-évalué par `ValueListenable`
   (onglets).
-- **Onglets** : `tabs` non-`null` ⇒ le corps est un `ZTabbedList` (chaque
-  onglet possède sa vue) ; la création lit `canCreate`, `defaultItemBuilder`,
-  `acl` et `titles` de l'onglet **actif** (`Map` de valeurs ou entité `T`). La
-  recherche et la corbeille de l'écran ne s'appliquent pas au contenu des
-  onglets. L'ACL d'un onglet **restreint** celle de l'écran, jamais l'inverse.
+- **Onglets** : `tabs` non-`null` ⇒ le corps est un `ZTabbedList` ; la création
+  lit `canCreate`, `defaultItemBuilder`, `acl` et `titles` de l'onglet **actif**
+  (`Map` de valeurs ou entité `T`). Un onglet **assemblé** (`builder` absent)
+  reçoit la liste de l'écran, ses actions de ligne, la recherche partagée et la
+  corbeille catégorisée ; un onglet **à `builder`** reste opaque — l'écran n'y
+  accroche rien, et un seul onglet opaque retire la recherche partagée et les
+  onglets de corbeille à l'écran entier. L'ACL d'un onglet **restreint** celle
+  de l'écran, jamais l'inverse.
 - **Corbeille** : l'accès s'ouvre sur `restore` **ou** `clear`, jamais sur
   `delete` seul. `ZTrashPolicy(visibleWhenEmpty: false)` le retire à corbeille
   vide, à condition que le compte soit connu (`trashCount`, ou voie `items`).

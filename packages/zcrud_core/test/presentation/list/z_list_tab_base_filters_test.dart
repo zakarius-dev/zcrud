@@ -28,7 +28,7 @@ void main() {
       _category,
       reason: 'la catégorie doit être LISIBLE par l\'assembleur',
     );
-    tab.builder(_FakeContext());
+    tab.builder!(_FakeContext());
     expect(
       received,
       _category,
@@ -84,7 +84,7 @@ void main() {
     expect(wrapped.titles?.create, 'c');
     expect(wrapped.countOf, same(countOf));
     expect(wrapped.defaultItemBuilder?.call(), 'seed');
-    expect(wrapped.builder(_FakeContext()), isA<Placeholder>());
+    expect(wrapped.builder!(_FakeContext()), isA<Placeholder>());
   });
 }
 

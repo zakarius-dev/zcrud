@@ -21,12 +21,14 @@
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
 library;
 
+export 'src/presentation/present_form_edition.dart';
 export 'src/presentation/z_crud_edition_scope.dart';
 export 'src/presentation/z_crud_screen.dart';
 export 'src/presentation/z_crud_screen_actions.dart';
 export 'src/presentation/z_crud_source.dart';
 export 'src/presentation/z_crud_titles.dart';
 export 'src/presentation/z_export_policy.dart';
+export 'src/presentation/z_form_only.dart';
 export 'src/presentation/z_list_query_policy.dart';
 export 'src/presentation/z_row_action_menu.dart';
 export 'src/presentation/z_row_actions_presentation.dart';

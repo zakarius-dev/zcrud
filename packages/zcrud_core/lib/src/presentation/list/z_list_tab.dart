@@ -2,9 +2,23 @@
 /// (AD-8/AD-13).
 ///
 /// Un onglet porte une **clé de libellé l10n** (`labelKey`, résolue au rendu
-/// via `label`), une **icône** optionnelle et un [WidgetBuilder] `builder` qui
-/// construit la vue de l'onglet (typiquement une [DynamicList]/`ZListController`
-/// ou un `ZSubListScreen`, catégorisé via `baseFilters`).
+/// via `label`), une **icône** optionnelle et — au choix — un [WidgetBuilder]
+/// `builder` qui construit la vue de l'onglet (typiquement une
+/// [DynamicList]/`ZListController` ou un `ZSubListScreen`, catégorisé via
+/// `baseFilters`), ou **rien du tout**.
+///
+/// **Deux formes d'onglet**, et le choix se fait par la seule présence du
+/// `builder` :
+///
+/// | Forme | Ce que l'onglet déclare | Ce que l'assembleur peut y accrocher |
+/// |---|---|---|
+/// | **assemblé** (`builder: null`) | sa catégorie (`baseFilters`), ses droits (`acl`) | la liste, ses actions de ligne, la recherche |
+/// | **à builder** | la vue entière | rien : la vue est opaque |
+///
+/// L'onglet assemblé est le défaut à préférer quand l'onglet n'est qu'une
+/// **partition de la même collection** ; l'onglet à builder reste la voie
+/// ouverte pour tout ce qui n'est pas une liste (vue carte, carte mentale,
+/// tableau de bord).
 ///
 /// **Pourquoi un `WidgetBuilder`, pas un `ZListController`** : un contrôleur est
 /// un `ChangeNotifier` à cycle de vie (create/dispose) — le figer dans un modèle
@@ -47,7 +61,8 @@ import '../z_crud_titles.dart';
 @immutable
 class ZListTab {
   /// Construit un onglet : [labelKey] (clé l10n résolue via `label`), [builder]
-  /// (construit la vue de l'onglet), [icon] optionnelle,
+  /// **optionnel** (`null` = onglet **assemblé**, dont la vue est construite
+  /// par l'assembleur hôte — voir [ZListTab.builder]), [icon] optionnelle,
   /// [defaultItemBuilder] optionnel (contexte de création de l'onglet),
   /// [pageKey] optionnelle (identité technique découplée du libellé),
   /// [canCreate] (autorisation de création de l'onglet, défaut `true`),
@@ -55,7 +70,7 @@ class ZListTab {
   /// formulaire de l'onglet), [countOf] (compteur affiché en pastille).
   const ZListTab({
     required this.labelKey,
-    required this.builder,
+    this.builder,
     this.icon,
     this.baseFilters = const <ZFilter>[],
     this.defaultItemBuilder,
@@ -268,8 +283,37 @@ class ZListTab {
     );
   }
 
-  /// Construit la vue de l'onglet (une `DynamicList`/`ZSubListScreen`, etc.).
-  final WidgetBuilder builder;
+  /// Construit la vue de l'onglet (une `DynamicList`/`ZSubListScreen`, etc.),
+  /// ou `null` pour un **onglet assemblé**.
+  ///
+  /// **Onglet à builder** (`builder` fourni) : l'onglet rend ce que l'on veut —
+  /// une vue carte, une carte mentale, un tableau de bord. Ce que l'onglet
+  /// rend, l'assembleur ne le connaît pas : il ne peut donc y accrocher ni
+  /// actions de ligne, ni recherche. C'est le prix de la liberté totale.
+  ///
+  /// **Onglet assemblé** (`builder` à `null`) : l'onglet ne déclare que sa
+  /// **catégorie** ([baseFilters]) et, s'il y a lieu, sa restriction de droits
+  /// ([acl]) — l'assembleur qui l'héberge construit la vue lui-même, avec tout
+  /// ce qu'il sait faire (liste dérivée du schéma, actions de ligne, filtrage
+  /// par les droits, recherche). C'est le défaut à préférer pour un onglet qui
+  /// n'est qu'une **partition de la même collection**.
+  ///
+  /// ```dart
+  /// // Trois partitions d'une même collection, sans une ligne de vue.
+  /// tabs: <ZListTab>[
+  ///   ZListTab(labelKey: 'enCours', baseFilters: <ZFilter>[
+  ///     ZFilter('statut', ZFilterOp.eq, 'enCours'),
+  ///   ]),
+  ///   ZListTab(labelKey: 'clos', baseFilters: <ZFilter>[
+  ///     ZFilter('statut', ZFilterOp.eq, 'clos'),
+  ///   ]),
+  /// ],
+  /// ```
+  ///
+  /// Un onglet assemblé n'a de sens que **sous un assembleur** : monté
+  /// directement dans un [ZTabbedList], il n'a rien à rendre et sa page reste
+  /// vide (jamais d'exception — AD-10).
+  final WidgetBuilder? builder;
 
   /// **Contexte de création** optionnel de l'onglet : fabrique la **valeur
   /// initiale** (typiquement l'entité pré-remplie, ou un `Map` de valeurs)

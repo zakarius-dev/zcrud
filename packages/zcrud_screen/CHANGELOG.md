@@ -3,6 +3,130 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.95.0 — 2026-08-14
+
+### Ajouté
+
+#### Le formulaire **seul**, et la fenêtre qui rend une carte de valeurs
+
+Le formulaire déclaratif s'utilise désormais **hors** de l'écran assemblé :
+
+- `ZFormOnly` rend les champs et **rien d'autre** — aucun `Scaffold`, aucune
+  barre d'application, aucun bouton d'enregistrement — pour être posé au milieu
+  d'une page que vous composez. Le pilotage vient de l'extérieur avec
+  `ZFormOnlyController` : `validate()`, `isValid`, `revealErrors()`, `values`,
+  `submit()`. Un contrôleur que vous créez, vous le libérez ; sinon le
+  formulaire crée le sien et le libère.
+- `presentFormEdition(...)` présente ce formulaire en **page, feuille ou
+  dialogue** (même politique de présentation que partout ailleurs) et retourne
+  `Map<String, dynamic>?` — les valeurs si l'utilisateur enregistre, `null`
+  s'il renonce. De quoi éditer une configuration ou des données sans modèle
+  typé, sans écrire de formulaire à la main.
+
+Les valeurs rendues sont **validées et normalisées** : types coercés, dates en
+ISO-8601, heures en `HH:mm`, valeurs d'énumération en camelCase. Les champs en
+**lecture seule** et ceux qu'une **condition d'affichage masque** en sont
+absents, et un formulaire **invalide ne rend rien**.
+
+```dart
+final reglages = await presentFormEdition(
+  context,
+  fields: reglagesExportFields,
+  initialValues: const <String, Object?>{'format': 'pdf'},
+  title: "Réglages d'export",
+);
+if (reglages != null) await monService.exporter(reglages);
+```
+
+### Modifié
+
+#### Une seule normalisation des saisies, pour toutes les surfaces
+
+La sauvegarde de `ZCrudScreen` passe désormais par la **même** projection que
+le formulaire seul (`zNormalizeFormValues`, de `zcrud_core`). Un écran passif
+enregistre comme avant ; ce qui change est que la forme des données ne dépend
+plus de la surface qui les a produites — et qu'un champ déclaré en lecture
+seule ou masqué par sa condition ne peut plus contribuer à ce qui est écrit.
+
+#### L'onglet **assemblé** : une catégorie déclarée, un écran complet rendu
+
+Un onglet de `ZCrudScreen(tabs: …)` peut désormais **omettre son `builder`**.
+Il ne déclare alors que sa **catégorie** (`ZListTab.baseFilters`) et, s'il y a
+lieu, sa **restriction de droits** (`ZListTab.acl`) — et l'écran construit sa
+vue lui-même, exactement comme il construit la sienne en l'absence d'onglets :
+
+- la **liste** dérivée du schéma, avec les tuiles, le layout et la coloration
+  de ligne déclarés sur l'écran ;
+- ses **actions de ligne** assemblées — consulter, modifier, dupliquer, mettre
+  à la corbeille — gouvernées par `view` / `update` / `create` / `delete` ;
+- la **cascade d'autorisations** inchangée : les droits de l'onglet se
+  composent en **conjonction** avec ceux de l'écran, puis du scope. Un onglet
+  retire un geste, il n'en ajoute jamais un que l'écran refuse.
+
+```dart
+ZCrudScreen<Piece>(
+  title: 'Pièces',
+  source: ZCrudSource<Piece>.repository(repo),
+  registry: registry,
+  detailsEnabled: true,
+  tabs: <ZListTab>[
+    ZListTab(labelKey: 'enCours', baseFilters: const <ZFilter>[
+      ZFilter('statut', ZFilterOp.eq, 'open'),
+    ]),
+    ZListTab(labelKey: 'clotures', baseFilters: const <ZFilter>[
+      ZFilter('statut', ZFilterOp.eq, 'closed'),
+    ], acl: const MesDroitsEnLecture()),
+  ],
+);
+```
+
+Chaque onglet assemblé possède **son propre contrôleur de liste**, né sur la
+politique de l'écran élargie de sa catégorie : sa position, sa pagination et sa
+recherche lui appartiennent, et changer d'onglet ne les perd pas.
+
+#### Une **barre de recherche unique**, qui filtre l'onglet actif
+
+Quand **tous** les onglets sont assemblés, la loupe de l'app-bar est de nouveau
+offerte. La barre est unique et filtre **l'onglet actif, et lui seul** ; changer
+d'onglet fait suivre la recherche — l'onglet quitté retrouve sa liste entière.
+
+La restriction est devenue « pas de recherche **si un onglet est opaque** » au
+lieu de « pas de recherche **si onglets** » : un onglet qui fournit son
+`builder` rend une vue que l'écran ne connaît pas, et où il ne peut donc pas
+porter un terme de recherche.
+
+#### La **corbeille garde la catégorisation**
+
+Avec des onglets tous assemblés, la vue corbeille conserve la barre d'onglets :
+les mêmes filtres de catégorie s'appliquent à la partition supprimée. Avec un
+onglet opaque, la corbeille reste le listing unique de l'écran — inchangé.
+
+#### `tabsScrollable` — la barre d'onglets défilante
+
+`ZCrudScreen(tabsScrollable: true)` rend la barre d'onglets défilante (le
+réglage atteint `ZTabbedList.isScrollable`). Défaut `false` : rendu inchangé.
+
+### Modifié
+
+- **Sélection multiple** : tant que la barre d'onglets est rendue — vue vivante
+  **et** corbeille catégorisée — la sélection de l'écran n'est pas servie
+  (chaque onglet possède sa vue). Sans changement pour un écran dont les
+  onglets sont opaques : sa corbeille reste le listing unique, avec sa
+  sélection.
+
+### Impact sur votre code
+
+- **Hôte passif** (aucun onglet, ou onglets tous à `builder`) : **rien à
+  faire**. Un onglet qui fournit son `builder` rend exactement ce qu'il
+  rendait, et l'écran ne lui accroche rien de nouveau.
+- **Hôte qui COMPENSAIT l'absence d'assemblage** — c'est-à-dire qui
+  re-déclarait dans son écran la liste de chaque onglet, sa partition, ses
+  actions de ligne, son `entityFor` ou sa barre de recherche posée en
+  `header` — **retirez ces compensations** en passant l'onglet en forme
+  assemblée (supprimez son `builder`) : autrement la liste re-déclarée et la
+  liste assemblée coexisteraient, et la recherche posée en `header`
+  doublerait celle de l'app-bar.
+
 ## 0.94.0 — 2026-08-13
 
 ### Ajouté

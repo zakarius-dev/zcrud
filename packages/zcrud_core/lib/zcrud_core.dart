@@ -82,6 +82,11 @@ export 'src/presentation/edition/z_field_widget.dart';
 // concrète image_picker/file_picker fournie par l'application ou un binding —
 // jamais par le cœur).
 export 'src/presentation/edition/z_file_picker.dart';
+// Voie UNIQUE de validation agrégée et de normalisation des saisies :
+// `zValidateFormFields` / `zNormalizeFormValues` / `zNormalizeFieldValue`.
+// Partagée par la soumission (`ZEditionSubmitController`) et par les
+// formulaires intégrés hors de cette voie.
+export 'src/presentation/edition/z_form_values.dart';
 // Décorateur Card de la variante `ZFieldSize.large` : label au-dessus, champ
 // interne bare, mesures pilotées par les tokens `large*` de `ZcrudTheme`.
 export 'src/presentation/edition/z_large_field_card.dart';

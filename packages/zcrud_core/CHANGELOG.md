@@ -3,6 +3,59 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.95.0 — 2026-08-14
+
+### Ajouté
+
+#### Validation agrégée et normalisation des saisies, en fonctions publiques
+
+Trois fonctions pures rendent explicite ce que la soumission faisait déjà, et
+le rendent réutilisable par toute surface d'édition :
+
+- `zValidateFormFields(fields:, controller:)` — la table `champ → message` des
+  champs **visibles** en erreur (vide ⇒ formulaire valide), sans rien afficher ;
+- `zNormalizeFormValues(fields:, controller:)` — les valeurs projetées vers
+  leur forme de persistance : types coercés, dates en ISO-8601, heures en
+  `HH:mm`, plages en `{start, end}`, valeurs d'énumération en camelCase. Les
+  champs **en lecture seule** et ceux qu'une **condition d'affichage masque**
+  en sont absents ;
+- `zNormalizeFieldValue(spec, value)` — la même projection, pour une valeur.
+
+Une valeur qui ne se laisse pas convertir est rendue **inchangée** : c'est au
+validateur de refuser une saisie, jamais à la normalisation de la perdre
+(AD-10). `ZEditionSubmitController` valide désormais **par** ces fonctions —
+une seule règle, partagée par toutes les voies de soumission.
+
+#### `ZListTab.builder` devient **optionnel** — l'onglet assemblé
+
+Un `ZListTab` peut désormais se déclarer **sans vue** : il ne porte alors que
+sa catégorie (`baseFilters`) et, s'il y a lieu, ses droits (`acl`), et c'est
+l'**assembleur** qui l'héberge (`ZCrudScreen`) qui lui construit sa vue. C'est
+un **défaut, pas un remplacement** : un onglet qui fournit son `builder` reste
+libre de rendre ce qu'il veut — vue carte, carte mentale, tableau de bord.
+
+Monté nu dans un `ZTabbedList`, un onglet sans vue rend une **page vide** :
+jamais d'exception (AD-10).
+
+### Corrigé
+
+- `ZTabbedList` ne notifie plus `activeIndexNotifier` **pendant une
+  construction**. Quand l'index publié au montage diffère de la valeur déjà
+  portée par le notifieur — remontage au-dessus d'un notifieur déjà avancé, ou
+  `initialIndex` non nul — la mise à jour est reportée à la fin de la frame
+  courante au lieu de réveiller des abonnés en cours de construction (ce qui
+  levait un « setState() called during build »). Quand la valeur est déjà la
+  bonne — le cas de très loin le plus courant — rien n'est notifié et le
+  timing est celui d'avant.
+
+### Impact sur votre code
+
+- **Hôte passif** : **rien à faire**. `builder` reste accepté et se comporte à
+  l'identique ; seule son obligation disparaît.
+- **Code qui LISAIT `tab.builder`** : le type devient `WidgetBuilder?` — un
+  appel direct `tab.builder(context)` doit désormais traiter le cas `null`
+  (l'onglet est assemblé, sa vue vient de l'assembleur).
+
 ## 0.93.0 — 2026-08-13
 
 ### Modifié — rupture

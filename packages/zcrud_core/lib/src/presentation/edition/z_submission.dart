@@ -26,12 +26,10 @@ library;
 
 import 'package:flutter/foundation.dart';
 
-import '../../domain/edition/z_condition_evaluator.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../../domain/failures/z_failure.dart';
 import '../z_form_controller.dart';
-import 'z_cross_field_validator.dart';
-import 'z_value_emptiness.dart';
+import 'z_form_values.dart';
 
 /// Échec spécifique de **validation agrégée** (distinct d'un échec
 /// applicatif). Porte la table `name → message` des champs invalides.
@@ -256,26 +254,14 @@ class ZEditionSubmitController<T> {
   }
 
   /// Valide les champs dont la **condition** est satisfaite (conditionnels
-  /// honorés), plat comme toutes-étapes. PUR : exécute le validateur
-  /// combiné (champ-local + inter-champs) mémoïsé contre `_stringOf(valueOf)`.
-  Map<String, String> _aggregateValidate() {
-    final errors = <String, String>{};
-    for (final field in fields) {
-      final condition = field.condition;
-      if (condition != null &&
-          !evaluateZCondition(condition, controller.valueOf)) {
-        continue; // champ masqué par displayCondition ⇒ ne bloque pas.
-      }
-      final validator =
-          ZCrossFieldValidator.compileField(field, controller);
-      if (validator == null) continue;
-      // Cf. `zValidationText` — une collection/map VIDE vaut `''`, donc
-      // `required` MORD sur une multi-selection non remplie.
-      final error =
-          validator(zValidationText(controller.valueOf(field.name)));
-      if (error != null) errors[field.name] = error;
-    }
-    return errors;
-  }
+  /// honorés), plat comme toutes-étapes.
+  ///
+  /// Délègue à [zValidateFormFields] — voie de validation **unique** du dépôt,
+  /// partagée avec les formulaires intégrés hors de cette voie de soumission :
+  /// deux implémentations de la même règle finiraient par diverger.
+  Map<String, String> _aggregateValidate() => zValidateFormFields(
+        fields: fields,
+        controller: controller,
+      );
 
 }

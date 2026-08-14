@@ -122,7 +122,30 @@ class _ZTabbedListState extends State<ZTabbedList>
     _tabController = _createController();
     // Suivi de l'onglet actif : positionné dès le montage à l'index initial
     // effectif (clampé) — sans passer par `onTabChanged` (timing préservé).
-    widget.activeIndexNotifier?.value = _tabController.index;
+    _publishActiveIndex();
+  }
+
+  /// Porte l'index actif dans le notifieur de l'hôte, **sans jamais notifier
+  /// pendant une construction**.
+  ///
+  /// Le montage d'un `ZTabbedList` a lieu au milieu du `build` de son parent :
+  /// y écrire une valeur *différente* réveillerait sur-le-champ des abonnés que
+  /// le framework est en train de construire. Quand la valeur est déjà la
+  /// bonne — le cas de très loin le plus courant, un notifieur neuf sur
+  /// l'onglet initial — rien n'est notifié et le timing reste celui d'avant.
+  /// Quand elle diffère (remontage au-dessus d'un notifieur déjà avancé, ou
+  /// `initialIndex` non nul), la mise à jour est reportée à la fin de la frame
+  /// courante : l'hôte l'obtient toujours, une frame plus tard, au lieu d'une
+  /// exception de construction.
+  void _publishActiveIndex() {
+    final notifier = widget.activeIndexNotifier;
+    if (notifier == null) return;
+    final index = _tabController.index;
+    if (notifier.value == index) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.activeIndexNotifier?.value = index;
+    });
   }
 
   TabController _createController() {
@@ -161,7 +184,7 @@ class _ZTabbedListState extends State<ZTabbedList>
     // Nouveau notifieur (ou controller recyclé) ⇒ resynchronise l'index actif.
     if (oldWidget.activeIndexNotifier != widget.activeIndexNotifier ||
         oldWidget.tabs.length != widget.tabs.length) {
-      widget.activeIndexNotifier?.value = _tabController.index;
+      _publishActiveIndex();
     }
   }
 
@@ -184,18 +207,29 @@ class _ZTabbedListState extends State<ZTabbedList>
   /// Le niveau englobant est lu par le scope ambiant, et **retombe sur le
   /// refus** quand aucun n'est monté : déclarer des droits sur un onglet ne
   /// crée jamais un droit à partir de rien.
+  ///
+  /// **Onglet sans vue** (`ZListTab.builder` à `null`, dit *assemblé*) : sa
+  /// page est laissée **vide**. Un tel onglet ne déclare que sa catégorie et
+  /// ses droits, et attend d'un **assembleur** (`ZCrudScreen`) qu'il lui
+  /// fournisse une vue avant de le monter ; monté nu, il n'a rien à rendre —
+  /// et le rendre vide vaut mieux que lever (AD-10).
   WidgetBuilder _pageBuilderFor(ZListTab tab) {
+    final declared = tab.builder;
+    if (declared == null) return _emptyPage;
     final tabAcl = tab.acl;
-    if (tabAcl == null) return tab.builder;
+    if (tabAcl == null) return declared;
     return (pageContext) => ZcrudScope.derive(
           pageContext,
           acl: ZRestrictedAcl(
             ZcrudScope.maybeOf(pageContext)?.acl ?? const ZDenyAllAcl(),
             tabAcl,
           ),
-          child: Builder(builder: tab.builder),
+          child: Builder(builder: declared),
         );
   }
+
+  /// Page d'un onglet **sans vue déclarée** : rien à rendre.
+  static Widget _emptyPage(BuildContext context) => const SizedBox.shrink();
 
   @override
   Widget build(BuildContext context) {

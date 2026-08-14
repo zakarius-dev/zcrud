@@ -166,6 +166,7 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
     this.layout,
     this.itemBuilder,
     this.tabs,
+    this.tabsScrollable = false,
     this.query = const ZListQueryPolicy(),
     this.header,
     this.canCreate = true,
@@ -268,10 +269,52 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// sienne : l'explicite l'emporte sur l'injecté.
   final ZCrudItemBuilder<T>? itemBuilder;
 
-  /// Onglets de catégorisation. Non-`null` ⇒ le corps est un `ZTabbedList`
-  /// (chaque onglet possède sa vue) ; le bouton de création lit `canCreate`
-  /// et `defaultItemBuilder` de l'**onglet actif**.
+  /// Onglets de catégorisation. Non-`null` ⇒ le corps est un `ZTabbedList` ;
+  /// le bouton de création lit `canCreate` et `defaultItemBuilder` de
+  /// l'**onglet actif**.
+  ///
+  /// Un onglet se déclare sous l'une de deux formes, et la présence de son
+  /// `ZListTab.builder` suffit à trancher :
+  ///
+  /// * **onglet assemblé** (`builder` absent — la forme à préférer) : l'onglet
+  ///   ne déclare que sa **catégorie** (`baseFilters`) et, s'il y a lieu, sa
+  ///   restriction de droits (`acl`). L'écran construit alors sa liste
+  ///   **exactement comme il construirait la sienne** — même schéma de
+  ///   colonnes, mêmes tuiles, mêmes actions de ligne (consulter, modifier,
+  ///   dupliquer, mettre à la corbeille), même filtrage par les droits, même
+  ///   recherche. L'écran n'a rien à redéclarer : la catégorie de l'onglet
+  ///   s'ajoute aux filtres permanents de [query], et ses droits se composent
+  ///   en **conjonction** avec ceux de l'écran ;
+  /// * **onglet à builder** : l'onglet rend ce qu'il veut (vue carte, carte
+  ///   mentale, tableau de bord). L'écran ne connaît pas ce qu'il rend et n'y
+  ///   accroche donc **ni actions de ligne, ni recherche** — c'est le prix de
+  ///   la liberté totale, et il est assumé.
+  ///
+  /// Les deux formes cohabitent dans une même barre. Mais un seul onglet à
+  /// builder suffit à retirer la **barre de recherche partagée** de l'écran
+  /// (voir [searchEnabled]) et les **onglets de la corbeille** : l'écran ne
+  /// propose pas ce qu'il ne pourrait honorer que sur une partie des onglets.
+  ///
+  /// ```dart
+  /// tabs: <ZListTab>[
+  ///   ZListTab(labelKey: 'enCours', baseFilters: <ZFilter>[
+  ///     ZFilter('statut', ZFilterOp.eq, 'enCours'),
+  ///   ]),
+  ///   ZListTab(labelKey: 'clos', baseFilters: <ZFilter>[
+  ///     ZFilter('statut', ZFilterOp.eq, 'clos'),
+  ///   ], acl: const MesDroitsEnLecture()),
+  /// ],
+  /// ```
   final List<ZListTab>? tabs;
+
+  /// Barre d'onglets **défilante** (défaut `false` = onglets répartis sur la
+  /// largeur).
+  ///
+  /// À passer à `true` dès que le nombre d'onglets dépasse ce qu'une barre
+  /// fixe peut afficher lisiblement : au-delà de quatre ou cinq libellés, une
+  /// barre fixe les tronque, une barre défilante les laisse entiers. Sans
+  /// [tabs], le réglage est sans effet.
+  final bool tabsScrollable;
 
   /// **Tri par défaut, filtres permanents, taille de page et sémantique de
   /// recherche** du listing.
@@ -817,6 +860,38 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   ZListController<T>? _liveController;
   ZListController<T>? _trashController;
 
+  /// Contrôleurs des **onglets assemblés**, un par onglet et par portée
+  /// (vivants / corbeille), créés au premier rendu de la page concernée.
+  ///
+  /// Chaque onglet assemblé possède le sien parce qu'il possède sa **requête** :
+  /// sa catégorie est le socle persistant de son contrôleur, hors d'atteinte
+  /// d'une recherche ou d'un filtre. Un contrôleur unique partagé forcerait à
+  /// réécrire ce socle à chaque changement d'onglet — donc à re-interroger la
+  /// source, et à perdre la position et la pagination de l'onglet quitté.
+  ///
+  /// Clé : `'<portée>:<clé de page de l'onglet>'` (voir [_tabControllerKey]).
+  final Map<String, ZListController<T>> _tabControllers =
+      <String, ZListController<T>>{};
+
+  /// Lignes rendues par chaque onglet assemblé, relevées au même endroit et au
+  /// même moment que [_visibleRows] — la matière d'un export fait depuis un
+  /// onglet.
+  ///
+  /// Elles sont mémorisées **par onglet** parce que les pages d'onglets sont
+  /// keep-alive : changer d'onglet ne reconstruit pas la page rejointe, et un
+  /// relevé unique resterait donc celui de l'onglet construit en dernier —
+  /// pas celui que l'usager regarde.
+  final Map<String, List<ZListRow>> _tabVisibleRows =
+      <String, List<ZListRow>>{};
+
+  /// Clé du contrôleur d'onglet portant actuellement le terme de recherche,
+  /// ou `null` si aucun ne le porte.
+  ///
+  /// La barre de recherche est **unique et partagée**, mais elle ne filtre que
+  /// l'onglet **actif** : quitter un onglet lui rend donc sa liste entière.
+  /// C'est cette clé qui dit lequel il faut relâcher.
+  String? _searchedTabKey;
+
   // Le contrôleur des vivants est créé PARESSEUSEMENT, au premier rendu qui en
   // a besoin (voir `_ensureLiveController`) — jamais dans `initState`. Sa
   // construction déclenche une lecture de la source : la créer d'office
@@ -830,7 +905,14 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     // Changer d'onglet change ce qui est listé : garder une sélection faite
     // sur l'onglet précédent laisserait un lot invisible s'exécuter sur des
     // éléments que l'utilisateur ne voit plus.
-    _activeTabIndex.addListener(_clearSelection);
+    _activeTabIndex.addListener(_onActiveTabChanged);
+  }
+
+  /// Changement d'onglet actif : la sélection est vidée, et la recherche
+  /// partagée **suit** l'onglet devenu actif.
+  void _onActiveTabChanged() {
+    _clearSelection();
+    _followSearchToActiveTab();
   }
 
   /// Aligne le contrôleur de sélection sur la politique déclarée : il n'existe
@@ -868,16 +950,32 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       // contrôleur ; un rendu refusé n'interroge pas la nouvelle source.
       _liveController = null;
       _trashController = null;
+      // Les contrôleurs d'onglets naissent de la MÊME politique : ils suivent
+      // le même sort, sans quoi un onglet continuerait d'interroger l'ancienne
+      // source avec l'ancien socle.
+      _disposeTabControllers();
       _entities.clear();
     }
+  }
+
+  /// Libère les contrôleurs d'onglets et oublie ce qu'ils portaient (recherche
+  /// en cours, lignes relevées).
+  void _disposeTabControllers() {
+    for (final controller in _tabControllers.values) {
+      controller.dispose();
+    }
+    _tabControllers.clear();
+    _tabVisibleRows.clear();
+    _searchedTabKey = null;
   }
 
   @override
   void dispose() {
     _liveController?.dispose();
     _trashController?.dispose();
+    _disposeTabControllers();
     _selection?.dispose();
-    _activeTabIndex.removeListener(_clearSelection);
+    _activeTabIndex.removeListener(_onActiveTabChanged);
     _activeTabIndex.dispose();
     super.dispose();
   }
@@ -1008,15 +1106,58 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   ZAcl _effectiveAcl(BuildContext context) =>
       widget.acl ?? ZcrudScope.maybeOf(context)?.acl ?? const ZDenyAllAcl();
 
-  /// Onglet **actif**, ou `null` hors mode onglets (et en vue corbeille, qui
-  /// n'a pas d'onglets : c'est le listing assemblé de l'écran).
+  /// Onglet **actif**, ou `null` hors mode onglets (et en vue corbeille sans
+  /// onglets, où le corps est le listing assemblé de l'écran).
   ZListTab? get _activeTab {
     final tabs = widget.tabs;
-    if (tabs == null || tabs.isEmpty || _trashView) return null;
+    if (tabs == null || tabs.isEmpty) return null;
+    if (_trashView && !_trashTabsRendered) return null;
     final index = _activeTabIndex.value;
     if (index < 0 || index >= tabs.length) return null;
     return tabs[index];
   }
+
+  /// `true` si **tous** les onglets déclarés sont assemblés (aucun ne porte de
+  /// vue opaque).
+  ///
+  /// C'est la condition de tout ce que l'écran ne peut offrir que d'un bout à
+  /// l'autre de la barre : la recherche partagée et la corbeille catégorisée.
+  /// Un seul onglet opaque suffit à l'en priver — offrir une recherche qui ne
+  /// filtrerait qu'une partie des onglets tromperait sur ce qu'elle fait.
+  bool get _tabsFullyAssembled {
+    final tabs = widget.tabs;
+    if (tabs == null || tabs.isEmpty) return false;
+    for (final tab in tabs) {
+      if (tab.builder != null) return false;
+    }
+    return true;
+  }
+
+  /// `true` si la **vue corbeille garde les onglets** : ils sont tous
+  /// assemblés, donc l'écran sait construire la partition supprimée de chaque
+  /// catégorie, avec les mêmes filtres de catégorie qu'en vue vivante.
+  ///
+  /// Avec un onglet opaque, la corbeille reste le **listing unique** de
+  /// l'écran — exactement comme avant.
+  bool get _trashTabsRendered => _tabsFullyAssembled;
+
+  /// `true` si le corps rendu est la barre d'onglets (vue vivante, ou vue
+  /// corbeille catégorisée).
+  bool get _tabsRendered =>
+      widget.tabs != null && (!_trashView || _trashTabsRendered);
+
+  /// Onglet actif **assemblé** (donc dont l'écran possède la liste), ou `null`.
+  ZListTab? get _activeAssembledTab {
+    final tab = _activeTab;
+    if (tab == null || tab.builder != null) return null;
+    return tab;
+  }
+
+  /// Clé du contrôleur d'un onglet dans une portée donnée : la portée d'abord
+  /// (vivants / corbeille), puis la clé de page de l'onglet — que
+  /// `ZTabbedList` garantit unique.
+  String _tabControllerKey(ZListTab tab, {required bool trash}) =>
+      '${trash ? 'trash' : 'live'}:${tab.resolvedPageKey}';
 
   /// ACL de l'onglet [index], **restreinte** par celle de l'écran.
   ///
@@ -1075,6 +1216,11 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   void _refresh() {
     unawaited(_liveController?.refresh());
     unawaited(_trashController?.refresh());
+    // Les onglets assemblés listent la même collection : une écriture faite
+    // depuis l'un d'eux les concerne tous (l'entité peut changer de catégorie).
+    for (final controller in _tabControllers.values) {
+      unawaited(controller.refresh());
+    }
     if (mounted) setState(() {});
   }
 
@@ -1709,8 +1855,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   /// Elle l'est pour le listing **dont l'écran est propriétaire**. En mode
   /// onglets, chaque onglet possède sa vue : hors corbeille, l'écran ne rend
   /// pas la liste et n'y branche donc aucune sélection.
-  bool get _selectionOffered =>
-      _selection != null && (widget.tabs == null || _trashView);
+  bool get _selectionOffered => _selection != null && !_tabsRendered;
 
   /// Résout la gouvernance d'une ligne **par la voie des actions de ligne**
   /// (`zResolveRowActions`) : mêmes actions assemblées, même ACL effective,
@@ -2096,12 +2241,22 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   /// L'ordre reste celui de l'écran — la sélection restreint, elle ne réordonne
   /// pas. Sans sélection, c'est tout ce qui est listé.
   List<ZListRow> _exportRows() {
+    final rows = _rowsInView;
     final selected = _selection?.selectedIds.value ?? const <String>{};
-    if (selected.isEmpty) return _visibleRows;
+    if (selected.isEmpty) return rows;
     return <ZListRow>[
-      for (final row in _visibleRows)
+      for (final row in rows)
         if (selected.contains(row.id)) row,
     ];
+  }
+
+  /// Lignes réellement **sous les yeux** de l'usager : celles de l'onglet
+  /// assemblé actif quand il y en a un, celles du listing de l'écran sinon.
+  List<ZListRow> get _rowsInView {
+    final tab = _activeAssembledTab;
+    if (tab == null) return _visibleRows;
+    return _tabVisibleRows[_tabControllerKey(tab, trash: _trashView)] ??
+        const <ZListRow>[];
   }
 
   /// Produit le fichier du format [exporter] et le remet à l'application.
@@ -2266,8 +2421,15 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   ///   remplacer. Un tri demandé plus tard (`sortBy`) le remplace ;
   /// * `searchScope` et `searchFolding` deviennent la sémantique de recherche
   ///   portée par **chaque** requête du contrôleur — vue corbeille comprise.
-  ZListController<T> _createController(ZRepository<T> repo) {
-    final policy = widget.query;
+  ///
+  /// [policy] permet à un **onglet assemblé** de faire naître son contrôleur
+  /// sur la politique composée de l'écran et de sa catégorie — sans quoi
+  /// c'est celle de l'écran ([ZCrudScreen.query]) qui s'applique.
+  ZListController<T> _createController(
+    ZRepository<T> repo, {
+    ZListQueryPolicy? policy,
+  }) {
+    policy ??= widget.query;
     return ZListController<T>(
       repository: repo,
       toRow: _project,
@@ -2308,6 +2470,51 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     _trashController = controller;
     _restoreRequestedQuery(controller);
     return controller;
+  }
+
+  /// Contrôleur d'un **onglet assemblé** dans la portée courante, créé au
+  /// premier rendu de sa page — jamais avant : un onglet jamais ouvert
+  /// n'interroge jamais la source.
+  ///
+  /// Il naît sur la politique **composée** de l'écran et de la catégorie de
+  /// l'onglet ([_tabPolicy]) : la catégorie est donc son socle persistant,
+  /// ANDé en tête de chaque requête et hors d'atteinte de `setFilters` comme
+  /// de `setSearch`. Chercher dans un onglet ne peut pas en faire sortir.
+  ///
+  /// Si l'onglet est **actif** et qu'une recherche est en cours, le terme lui
+  /// est appliqué dès sa naissance : la barre partagée dit alors la vérité sur
+  /// ce qui est listé, y compris pour un onglet ouvert pendant une recherche.
+  ZListController<T> _ensureTabController(ZListTab tab, {required bool trash}) {
+    final key = _tabControllerKey(tab, trash: trash);
+    final existing = _tabControllers[key];
+    if (existing != null) return existing;
+    final repo = widget.source.repository!;
+    final controller = _createController(
+      trash ? _ZDeletedScopeRepository<T>(repo) : repo,
+      policy: _tabPolicy(tab),
+    );
+    _tabControllers[key] = controller;
+    _restoreRequestedQuery(controller);
+    if (_search.isNotEmpty && identical(tab, _activeAssembledTab)) {
+      controller.setSearch(_search);
+      _searchedTabKey = key;
+    }
+    return controller;
+  }
+
+  /// Politique de requête d'un onglet : celle de l'écran, **élargie du socle de
+  /// l'onglet** — les filtres permanents de l'écran d'abord, la catégorie de
+  /// l'onglet ensuite.
+  ///
+  /// Une seule composition sert les deux lecteurs : le contrôleur d'un onglet
+  /// assemblé, et le `ZListQueryScope` posé sur la page d'un onglet à builder.
+  /// Aucun des deux ne peut donc dériver de l'autre.
+  ZListQueryPolicy _tabPolicy(ZListTab tab) {
+    final policy = widget.query;
+    if (tab.baseFilters.isEmpty) return policy;
+    return policy.copyWith(
+      baseFilters: <ZFilter>[...policy.baseFilters, ...tab.baseFilters],
+    );
   }
 
   // ── Rendu ─────────────────────────────────────────────────────────────────
@@ -2477,13 +2684,29 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
         child: tile,
       );
 
-  Widget _buildList(BuildContext context, ZListViewState state) {
+  /// Rend le listing pour [state].
+  ///
+  /// [tabKey] non-`null` = ce listing est celui d'un **onglet assemblé** :
+  /// ses lignes sont relevées sous cette clé (chaque onglet garde les
+  /// siennes), et l'ACL de l'écran n'est **pas** re-dérivée ici — elle est
+  /// déjà posée au-dessus de la barre d'onglets, et la restriction de l'onglet
+  /// par-dessus. La re-poser écraserait la seconde.
+  Widget _buildList(
+    BuildContext context,
+    ZListViewState state, {
+    String? tabKey,
+  }) {
     // Portée de « tout sélectionner » : les lignes RÉELLEMENT listées, relevées
     // au moment où elles le sont. Une simple lecture d'état — rien n'est
     // notifié ni reconstruit ici.
-    if (state is ZListReady) {
-      _visibleIds = <String>[for (final row in state.rows) row.id];
-      _visibleRows = state.rows;
+    final rows = state is ZListReady ? state.rows : const <ZListRow>[];
+    if (tabKey != null) {
+      // Vide, sans résultat, en erreur, en chargement : il n'y a rien à
+      // l'écran, donc rien à exporter (même règle que le listing d'écran).
+      _tabVisibleRows[tabKey] = rows;
+    } else if (state is ZListReady) {
+      _visibleIds = <String>[for (final row in rows) row.id];
+      _visibleRows = rows;
     } else {
       // Vide, sans résultat, en erreur, en chargement : il n'y a rien à
       // l'écran, donc rien à exporter. Conserver les lignes du rendu précédent
@@ -2515,7 +2738,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       collectionId: widget.collectionId,
     );
     final acl = widget.acl;
-    if (acl == null) return list;
+    if (acl == null || tabKey != null) return list;
     // ACL d'écran : posée par dérivation du scope ambiant (les autres seams
     // sont hérités, jamais recopiés).
     return ZcrudScope.derive(context, acl: acl, child: list);
@@ -2524,18 +2747,31 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   /// Corps « voie repository » : contrôleur (vivants ou corbeille) écouté sur
   /// sa seule tranche `state` (rebuild ciblé, AD-2). La recherche n'est plus
   /// dans le corps : elle vit dans l'app-bar du shell (`ZAppBarSearchConfig`).
-  Widget _buildRepositoryBody(BuildContext context) {
-    final controller =
-        _trashView ? _ensureTrashController() : _ensureLiveController();
+  ///
+  /// [tab] non-`null` = corps d'un **onglet assemblé** : le contrôleur est
+  /// celui de l'onglet (sa catégorie en socle), et non celui de l'écran.
+  Widget _buildRepositoryBody(BuildContext context, {ZListTab? tab}) {
+    final controller = tab == null
+        ? (_trashView ? _ensureTrashController() : _ensureLiveController())
+        : _ensureTabController(tab, trash: _trashView);
+    final tabKey =
+        tab == null ? null : _tabControllerKey(tab, trash: _trashView);
     return ValueListenableBuilder<ZListViewState>(
       valueListenable: controller.state,
-      builder: (context, state, _) => _buildList(context, state),
+      builder: (context, state, _) =>
+          _buildList(context, state, tabKey: tabKey),
     );
   }
 
   /// Corps « voie items » : partition vivants/corbeille par le prédicat
   /// déclaré, puis recherche in-memory par le moteur du cœur.
-  Widget _buildItemsBody(BuildContext context) {
+  ///
+  /// [tab] non-`null` = corps d'un **onglet assemblé** : la catégorie de
+  /// l'onglet s'ajoute aux filtres permanents de l'écran (même composition que
+  /// la voie dépôt, par la même [_tabPolicy]), et le terme de recherche n'est
+  /// appliqué que si cet onglet est l'**actif** — une barre partagée filtre
+  /// l'onglet regardé, pas les autres.
+  Widget _buildItemsBody(BuildContext context, {ZListTab? tab}) {
     final items = widget.source.items ?? const <Never>[];
     final predicate = widget.source.isDeleted;
     final visible = <T>[
@@ -2543,7 +2779,8 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
         if (predicate == null || predicate(item) == _trashView) item,
     ];
     final rows = <ZListRow>[for (final item in visible) _project(item)];
-    final policy = widget.query;
+    final policy = tab == null ? widget.query : _tabPolicy(tab);
+    final searched = tab == null || identical(tab, _activeAssembledTab);
     // Mêmes règles de composition que la voie dépôt, servies par les mêmes
     // fonctions : filtres permanents en tête des filtres demandés, tri demandé
     // sinon tri par défaut. La **taille de page** n'est pas appliquée ici :
@@ -2554,7 +2791,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       ZDataRequest(
         filters: policy.filtersWith(_userFilters),
         sorts: policy.sortFor(_userSort),
-        search: _search.isEmpty ? null : _search,
+        search: (!searched || _search.isEmpty) ? null : _search,
         searchScope: policy.searchScope,
         searchFolding: policy.searchFolding,
       ),
@@ -2568,16 +2805,26 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     } else {
       state = ZListReady(page.rows);
     }
-    return _buildList(context, state);
+    return _buildList(
+      context,
+      state,
+      tabKey: tab == null ? null : _tabControllerKey(tab, trash: _trashView),
+    );
   }
 
   Widget _buildBody(BuildContext context) {
-    // Mode onglets : le corps vivant est le ZTabbedList déclaré (chaque onglet
-    // possède sa vue) ; la corbeille reste le listing assemblé de l'écran.
-    if (widget.tabs != null && !_trashView) {
+    // Mode onglets : le corps est le `ZTabbedList` déclaré. Un onglet à builder
+    // possède sa vue ; un onglet assemblé reçoit ici celle que l'écran
+    // construit. La corbeille garde les onglets quand ils sont TOUS assemblés
+    // (même catégorisation qu'en vue vivante), et retombe sur le listing
+    // unique de l'écran sinon.
+    if (_tabsRendered) {
       final Widget tabbed = ZTabbedList(
-        tabs: _tabsWithComposedQuery(widget.tabs!),
-        header: widget.header,
+        tabs: _composedTabs(widget.tabs!),
+        // L'en-tête partagé de l'application appartient à la vue vivante : la
+        // corbeille ne l'a jamais porté (même règle que le listing unique).
+        header: _trashView ? null : widget.header,
+        isScrollable: widget.tabsScrollable,
         activeIndexNotifier: _activeTabIndex,
       );
       final acl = widget.acl;
@@ -2673,29 +2920,96 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   /// `items` (filtrage in-memory).
   ZListController<T>? get _activeController {
     if (widget.source.repository == null) return null;
+    final tab = _activeAssembledTab;
+    if (tab != null) {
+      // Lecture SEULE de la table : un onglet dont la page n'a pas encore été
+      // montée n'a pas de contrôleur, et en fabriquer un ici interrogerait la
+      // source pour une vue que personne ne regarde. Sa naissance appliquera
+      // la recherche en cours (voir `_ensureTabController`).
+      return _tabControllers[_tabControllerKey(tab, trash: _trashView)];
+    }
     return _trashView ? _ensureTrashController() : _ensureLiveController();
   }
 
-  /// La recherche est-elle offerte ? Déclarée par
-  /// [ZCrudScreen.searchEnabled], et **sans effet en mode onglets** hors
-  /// corbeille (chaque onglet possède sa propre vue) — exactement la portée
-  /// documentée avant le portage sur `zcrud_ui_kit`.
+  /// La recherche est-elle offerte ?
+  ///
+  /// Déclarée par [ZCrudScreen.searchEnabled], et retirée dès qu'un onglet est
+  /// **opaque** (il porte son propre `ZListTab.builder`) : l'écran ne connaît
+  /// pas ce qu'un tel onglet rend, il ne peut donc pas y appliquer un terme de
+  /// recherche — et une barre qui ne filtrerait qu'une partie des onglets
+  /// mentirait sur ce qu'elle fait.
+  ///
+  /// Des onglets **tous assemblés** l'offrent : la barre est unique, partagée
+  /// par la barre d'onglets, et filtre l'onglet **actif** (voir
+  /// [_onSearchChanged]).
   bool get _searchOffered {
     if (!widget.searchEnabled) return false;
-    return !(widget.tabs != null && !_trashView);
+    final tabs = widget.tabs;
+    if (tabs == null) return true;
+    // Corbeille non catégorisée : le corps est le listing unique de l'écran,
+    // que la recherche filtre comme n'importe quel listing.
+    if (_trashView && !_trashTabsRendered) return true;
+    return _tabsFullyAssembled;
   }
 
   /// Émission de la query par le shell : la valeur est propagée **telle
   /// quelle** (aucune normalisation ici) au contrôleur actif, ou re-partitionne
   /// la voie `items`.
+  ///
+  /// En mode onglets, « le contrôleur actif » est celui de l'onglet **actif** :
+  /// une barre unique, un onglet filtré. L'onglet qui portait la recherche
+  /// précédemment est relâché — il retrouve sa liste entière.
   void _onSearchChanged(String query) {
     _search = query;
     final controller = _activeController;
     if (controller != null) {
+      _releaseSearchedTab(except: _activeSearchKey);
       controller.setSearch(query);
+      _searchedTabKey = _activeSearchKey;
       return;
     }
     if (mounted) setState(() {});
+  }
+
+  /// Clé du contrôleur qui doit porter la recherche, ou `null` hors onglets
+  /// assemblés.
+  String? get _activeSearchKey {
+    final tab = _activeAssembledTab;
+    if (tab == null) return null;
+    return _tabControllerKey(tab, trash: _trashView);
+  }
+
+  /// Rend sa liste entière à l'onglet qui portait la recherche, sauf s'il est
+  /// celui d'[except]. No-op quand aucun onglet ne la porte.
+  void _releaseSearchedTab({String? except}) {
+    final key = _searchedTabKey;
+    if (key == null || key == except) return;
+    _tabControllers[key]?.setSearch('');
+    _searchedTabKey = null;
+  }
+
+  /// Fait **suivre** la recherche partagée à l'onglet devenu actif : l'onglet
+  /// quitté retrouve sa liste entière, le nouvel onglet reçoit le terme
+  /// toujours visible dans la barre.
+  ///
+  /// Rien n'est émis sans onglets, ni quand la barre est vide. Sur la voie
+  /// `items`, un simple rendu suffit : la partition est recalculée par
+  /// [_buildItemsBody], qui n'applique le terme qu'à l'onglet actif.
+  void _followSearchToActiveTab() {
+    if (widget.tabs == null) return;
+    final target = _activeSearchKey;
+    if (target == _searchedTabKey) return;
+    _releaseSearchedTab(except: target);
+    if (_search.isEmpty) return;
+    if (widget.source.repository == null) {
+      if (mounted) setState(() {});
+      return;
+    }
+    final controller = target == null ? null : _tabControllers[target];
+    // Onglet jamais ouvert : son contrôleur naîtra avec le terme appliqué.
+    if (controller == null) return;
+    controller.setSearch(_search);
+    _searchedTabKey = target;
   }
 
   /// Bascule vivants ⇄ corbeille : réaligne le filtre du contrôleur devenu
@@ -2705,9 +3019,17 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     // La sélection ne franchit pas la bascule : les éléments cochés d'une vue
     // n'existent pas dans l'autre, et un lot exécuté sur eux serait invisible.
     _clearSelection();
+    // La recherche ne franchit pas la bascule sur le contrôleur QUITTÉ : la
+    // portée change, et l'onglet laissé derrière doit retrouver sa liste
+    // entière. Le terme, lui, reste visible dans la barre et est réappliqué
+    // ci-dessous à la vue devenue active.
+    _releaseSearchedTab();
     setState(() => _trashView = value);
     if (_search.isEmpty) return;
-    _activeController?.setSearch(_search);
+    final controller = _activeController;
+    if (controller == null) return;
+    controller.setSearch(_search);
+    _searchedTabKey = _activeSearchKey;
   }
 
   // ── Actions d'app-bar assemblées ──────────────────────────────────────────
@@ -2886,40 +3208,60 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     );
   }
 
-  /// Compose, pour **chaque onglet**, la politique de requête que sa page
-  /// lira : les filtres permanents de l'écran **puis** le socle déclaré par
-  /// l'onglet (`ZListTab.baseFilters`, que `ZListTab.category` renseigne).
+  /// Donne à **chaque onglet** la vue qu'il rendra, et la politique de requête
+  /// qu'elle lira.
   ///
-  /// C'est l'assembleur qui compose, non plus la page : une page d'onglet n'a
-  /// plus à aller chercher la politique de l'écran pour y mêler sa catégorie —
-  /// elle lit `ZListQueryPolicy.of(context).baseFilters` et le tout y est
-  /// déjà. Les deux socles sont ANDés en tête de chaque requête et restent
-  /// hors d'atteinte d'une recherche ou d'un filtre utilisateur : chercher
-  /// dans un onglet ne peut pas en faire sortir.
+  /// Deux cas, et un seul critère : la présence du `ZListTab.builder`.
   ///
-  /// Un onglet sans socle, sous un écran sans politique, est rendu **tel
-  /// quel** — aucun `InheritedWidget` de plus dans son arbre.
-  List<ZListTab> _tabsWithComposedQuery(List<ZListTab> tabs) {
+  /// * **Onglet assemblé** (`builder` absent) : l'écran construit sa liste par
+  ///   les **mêmes** fonctions que le mode sans onglets
+  ///   (`_buildRepositoryBody`/`_buildItemsBody`, donc `_buildList` et
+  ///   `_assembledRowActions`). Il n'existe pas de seconde voie d'assemblage :
+  ///   ce que l'onglet rend est ce que l'écran rendrait, catégorisé.
+  /// * **Onglet à builder** : sa page est rendue **telle quelle**, simplement
+  ///   posée sous la politique composée pour qu'elle puisse la lire
+  ///   (`ZListQueryPolicy.of(context)`). Rien d'autre ne change — c'est le
+  ///   comportement d'avant, à l'identique.
+  ///
+  /// La politique composée est celle de [_tabPolicy] : les filtres permanents
+  /// de l'écran **puis** le socle de l'onglet. Les deux socles sont ANDés en
+  /// tête de chaque requête et restent hors d'atteinte d'une recherche ou d'un
+  /// filtre utilisateur : chercher dans un onglet ne peut pas en faire sortir.
+  ///
+  /// Un onglet à builder sans socle, sous un écran sans politique, est rendu
+  /// **tel quel** — aucun `InheritedWidget` de plus dans son arbre.
+  List<ZListTab> _composedTabs(List<ZListTab> tabs) => <ZListTab>[
+        for (final tab in tabs) _composedTab(tab),
+      ];
+
+  ZListTab _composedTab(ZListTab tab) {
+    final declared = tab.builder;
+    if (declared == null) {
+      return tab.copyWith(
+        builder: (context) => _wrapTabQueryScope(
+          tab,
+          widget.source.repository != null
+              ? _buildRepositoryBody(context, tab: tab)
+              : _buildItemsBody(context, tab: tab),
+        ),
+      );
+    }
     final policy = widget.query;
-    return <ZListTab>[
-      for (final tab in tabs)
-        if (policy.declaresNothing && tab.baseFilters.isEmpty)
-          tab
-        else
-          tab.copyWith(
-            builder: (context) => ZListQueryScope(
-              policy: policy.copyWith(
-                baseFilters: <ZFilter>[
-                  ...policy.baseFilters,
-                  ...tab.baseFilters,
-                ],
-              ),
-              // La page doit être construite SOUS la portée, sinon elle lirait
-              // l'ancienne (ou aucune).
-              child: Builder(builder: tab.builder),
-            ),
-          ),
-    ];
+    if (policy.declaresNothing && tab.baseFilters.isEmpty) return tab;
+    return tab.copyWith(
+      // La page doit être construite SOUS la portée, sinon elle lirait
+      // l'ancienne (ou aucune).
+      builder: (context) =>
+          _wrapTabQueryScope(tab, Builder(builder: declared)),
+    );
+  }
+
+  /// Enveloppe [child] de la politique composée de [tab] — **uniquement**
+  /// quand il y a quelque chose à déclarer.
+  Widget _wrapTabQueryScope(ZListTab tab, Widget child) {
+    final policy = _tabPolicy(tab);
+    if (policy.declaresNothing) return child;
+    return ZListQueryScope(policy: policy, child: child);
   }
 
   /// Enveloppe [child] du contexte de politique de requête — **uniquement**
@@ -3125,9 +3467,17 @@ class _ZCrudEditionFormState extends State<_ZCrudEditionForm> {
     if (_busy.value) return;
     _busy.value = true;
     _error.value = null;
+    // Voie de normalisation UNIQUE du socle (`zNormalizeFormValues`) : la même
+    // que celle du formulaire seul. Les champs en lecture seule et ceux qu'une
+    // condition masque n'en sortent pas — leur valeur d'origine, elle, reste
+    // portée par `initialValues`.
     final values = <String, Object?>{
       ...widget.initialValues,
-      ..._controller.values,
+      ...zNormalizeFormValues(
+        fields: widget.fields,
+        controller: _controller,
+        persistedValueOf: _controller.baselineValueOf,
+      ),
     };
     final failure = await widget.onSubmit(values);
     if (!mounted) return;
