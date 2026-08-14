@@ -46,8 +46,8 @@
 /// refusé plus haut. Voir `zRestrictAcl`/`ZRestrictedAcl`.
 ///
 /// **Neutre** : imports limités à `package:flutter/widgets.dart` + les
-/// contrats neutres `ZFilter`/`ZAcl`. AUCUN `package:syncfusion`, AUCUN
-/// backend.
+/// contrats neutres `ZFilter`/`ZFilterGroup`/`ZItemFilter`/`ZAcl`. AUCUN
+/// `package:syncfusion`, AUCUN backend.
 library;
 
 import 'package:flutter/foundation.dart' show ValueListenable;
@@ -56,6 +56,7 @@ import 'package:flutter/widgets.dart';
 import '../../domain/data/z_data_request.dart';
 import '../../domain/ports/z_acl.dart';
 import '../z_crud_titles.dart';
+import 'z_item_filter.dart';
 
 /// Descripteur **immuable** d'un onglet de catégorisation de [ZTabbedList].
 @immutable
@@ -73,6 +74,8 @@ class ZListTab {
     this.builder,
     this.icon,
     this.baseFilters = const <ZFilter>[],
+    this.baseFilterGroups = const <ZFilterGroup>[],
+    this.itemFilter,
     this.defaultItemBuilder,
     this.pageKey,
     this.canCreate = true,
@@ -238,6 +241,52 @@ class ZListTab {
   /// tient l'ordre (socle d'abord).
   final List<ZFilter> baseFilters;
 
+  /// **Disjonctions** de l'onglet (défaut `const []` ⇒ aucune, comportement
+  /// inchangé) : le pendant de [baseFilters] pour la règle que la conjonction
+  /// ne sait pas dire.
+  ///
+  /// Le cas est celui de l'onglet d'entrée d'un workflow : « en attente »,
+  /// c'est l'état déclaré **ou** l'absence d'état, parce qu'un dossier
+  /// fraîchement déposé n'a encore été touché par personne.
+  ///
+  /// ```dart
+  /// ZListTab(
+  ///   labelKey: 'enAttente',
+  ///   baseFilterGroups: const <ZFilterGroup>[
+  ///     ZFilterGroup.any(<ZFilter>[
+  ///       ZFilter('etat', ZFilterOp.eq, 'enAttente'),
+  ///       ZFilter('etat', ZFilterOp.isNull),
+  ///     ]),
+  ///   ],
+  /// )
+  /// ```
+  ///
+  /// Comme [baseFilters], ces groupes sont ANDés au reste de la requête et
+  /// hors d'atteinte d'une recherche ou d'un filtre de l'usager.
+  final List<ZFilterGroup> baseFilterGroups;
+
+  /// **Post-filtre** de l'onglet (`null` = aucun, défaut) : le dernier mot sur
+  /// ce que l'onglet montre, écrit sur l'entité plutôt qu'en clauses.
+  ///
+  /// La voie des catégories que la source ne connaît pas — une cellule
+  /// calculée, un croisement de droits, une fenêtre de dates. Il se compose en
+  /// **conjonction** avec le post-filtre de l'écran qui héberge l'onglet : un
+  /// onglet ne peut que retirer, jamais rendre ce que l'écran a écarté (même
+  /// règle que la cascade d'[acl]).
+  ///
+  /// ```dart
+  /// ZListTab(
+  ///   labelKey: 'aMoi',
+  ///   itemFilter: ZItemFilter.of<Dossier>((d) => d.agent == moi),
+  /// )
+  /// ```
+  ///
+  /// **Ce qu'il coûte** : un prédicat Dart ne se traduit dans aucun langage de
+  /// requête — l'onglet qui en déclare un lit le jeu entier à chaque requête
+  /// (voir `ZItemFilter`). À réserver aux périmètres réellement non
+  /// requêtables et aux listings bornés.
+  final ZItemFilter? itemFilter;
+
   /// Compose le socle de l'onglet avec des filtres [extra] : le socle **en
   /// tête**, les autres ensuite.
   ///
@@ -262,6 +311,8 @@ class ZListTab {
     WidgetBuilder? builder,
     IconData? icon,
     List<ZFilter>? baseFilters,
+    List<ZFilterGroup>? baseFilterGroups,
+    ZItemFilter? itemFilter,
     Object? Function()? defaultItemBuilder,
     String? pageKey,
     bool? canCreate,
@@ -274,6 +325,8 @@ class ZListTab {
       builder: builder ?? this.builder,
       icon: icon ?? this.icon,
       baseFilters: baseFilters ?? this.baseFilters,
+      baseFilterGroups: baseFilterGroups ?? this.baseFilterGroups,
+      itemFilter: itemFilter ?? this.itemFilter,
       defaultItemBuilder: defaultItemBuilder ?? this.defaultItemBuilder,
       pageKey: pageKey ?? this.pageKey,
       canCreate: canCreate ?? this.canCreate,

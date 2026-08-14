@@ -3,6 +3,77 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.99.0 — 2026-08-14
+
+### Ajouté
+
+#### L'écran dit enfin le dernier mot sur ce qu'il montre
+
+Sur `ZCrudSource.items`, l'application remet une liste **déjà constituée** :
+elle peut la calculer comme elle veut, puis la confier à l'écran. Sur
+`ZCrudSource.repository`, ce point disparaissait — le périmètre était
+entièrement dérivé de la requête, et la voie nominale n'était donc ouverte
+qu'aux écrans dont le périmètre s'exprime en clauses. Sur un parc métier, c'est
+une minorité : le dernier mot appartient souvent au métier, et il s'écrit en
+Dart.
+
+`ZListQueryPolicy` porte désormais deux déclarations de plus :
+
+* **`baseFilterGroups`** — des disjonctions permanentes, pour la règle que la
+  conjonction ne sait pas dire : « cet état **ou** ce champ jamais renseigné ».
+  C'est le cas le plus courant d'un workflow, *l'état initial étant l'absence
+  d'état* : l'onglet d'entrée exprimé par la seule égalité se vidait des
+  dossiers fraîchement déposés, silencieusement ;
+* **`itemFilter`** — un **post-filtre** écrit sur l'entité typée
+  (`ZItemFilter.of(...)`), appliqué aux entités lues avant leur projection en
+  lignes.
+
+```dart
+// Déclaré une fois, HORS du `build`.
+bool _visiblePour(Dossier dossier) => dossier.habilitations.contains(agent);
+
+ZCrudScreen<Dossier>(
+  source: ZCrudSource.repository(repo),
+  query: ZListQueryPolicy(itemFilter: ZItemFilter.of(_visiblePour)),
+  tabs: const <ZListTab>[
+    ZListTab(
+      labelKey: 'enAttente',
+      baseFilterGroups: <ZFilterGroup>[
+        ZFilterGroup.any(<ZFilter>[
+          ZFilter('etat', ZFilterOp.eq, 'enAttente'),
+          ZFilter('etat', ZFilterOp.isNull),
+        ]),
+      ],
+    ),
+  ],
+);
+```
+
+Les deux se déclarent aussi **par onglet** (`ZListTab.baseFilterGroups`,
+`ZListTab.itemFilter`) et se composent avec ceux de l'écran comme se composent
+les droits : l'onglet **retire**, il ne rouvre jamais ce que l'écran a écarté.
+Le post-filtre vaut pour les deux voies de données — la voie `items` l'applique
+elle aussi, une déclaration de périmètre valant pour l'écran et non pour une
+source.
+
+**Ce que cela coûte, et quand ne pas en déclarer.** Ni une disjonction ni un
+prédicat Dart ne sont réputés traduisibles par la source : en déclarer un fait
+**basculer le listing sur le chemin mémoire**, où le jeu entier est lu à chaque
+requête, pour toute la vie de l'écran. Le socle préfère ce coût à une
+déclaration de périmètre silencieusement ignorée par la pagination curseur —
+un écran qui montre plus que ce qui a été déclaré. Dès que la règle s'exprime
+en clauses, `baseFilters` reste le bon outil : servi par la source, pagination
+curseur intacte, seule la page affichée est lue. La section « Ce qui filtre,
+sur quelle voie, à quel coût » du README détaille le compromis.
+
+⚠️ **Déclarez le prédicat hors du `build`** : deux politiques sont comparées
+par valeur, et une lambda recréée à chaque image rechargerait le listing sans
+fin. Une fonction nommée reste égale à elle-même.
+
+**Étiez-vous touché ?** Non : rien de déclaré, rien de changé. Un écran sans
+post-filtre ni disjonction émet exactement les mêmes requêtes qu'avant,
+pagination serveur comprise.
+
 ## 0.98.0 — 2026-08-14
 
 ### Corrigé

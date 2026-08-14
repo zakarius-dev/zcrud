@@ -99,8 +99,13 @@ bool zMatchesSearch(
 }
 
 /// Applique un [request] **entièrement en mémoire** à [rows] et retourne une
-/// [ZListPage] (filtre → recherche → tri → saut curseur → `take(limit)` →
-/// dérivation `nextCursor`/`hasMore`).
+/// [ZListPage] (filtres → disjonctions → recherche → tri → saut curseur →
+/// `take(limit)` → dérivation `nextCursor`/`hasMore`).
+///
+/// Les [ZDataRequest.filters] se composent en **conjonction** ; chaque
+/// [ZFilterGroup] de [ZDataRequest.filterGroups] est ANDé au reste mais
+/// résolu en **disjonction** de ses clauses (« cette valeur **ou** ce champ
+/// absent »).
 ///
 /// La sémantique du curseur (comparaison positionnelle par
 /// `ZCursor.values` alignées sur `request.sorts`, `id` en départage,
@@ -120,6 +125,18 @@ ZListPage zApplyListRequest(
     result = <ZListRow>[
       for (final row in result)
         if (_matchesFilter(row, filter)) row,
+    ];
+  }
+  // (1 bis) Disjonctions : chaque groupe est ANDé aux filtres et aux autres
+  // groupes, mais ses clauses sont en OR — une ligne suffit à retenir dès
+  // qu'une clause la retient. Un groupe SANS clause n'exprime aucune intention :
+  // il est ignoré (il n'élargit ni ne restreint), là où le lire comme « ne
+  // retenir personne » viderait le listing sans recours.
+  for (final group in request.filterGroups) {
+    if (group.isEmpty) continue;
+    result = <ZListRow>[
+      for (final row in result)
+        if (_matchesAnyFilter(row, group.clauses)) row,
     ];
   }
   // (2) Recherche sans accents sur le domaine déclaré par la requête
@@ -217,6 +234,18 @@ bool _matchesFilter(ZListRow row, ZFilter filter) {
     case ZFilterOp.isNull:
       return value == null;
   }
+}
+
+/// `true` si **au moins un** des [clauses] retient [row] (disjonction).
+///
+/// Même défense qu'en conjonction (AD-10) : une clause dont la comparaison est
+/// impossible retombe sur « ne matche pas » et laisse les autres décider — une
+/// disjonction ne lève jamais.
+bool _matchesAnyFilter(ZListRow row, List<ZFilter> clauses) {
+  for (final clause in clauses) {
+    if (_matchesFilter(row, clause)) return true;
+  }
+  return false;
 }
 
 /// Compare deux valeurs opaques de façon **défensive** : renvoie `null` si elles

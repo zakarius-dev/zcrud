@@ -52,6 +52,13 @@ const _enLabels = <String, String>{
   'selectTime': 'Select a time',
   'selectDateTime': 'Select a date and time',
   'selectDateRange': 'Select a date range',
+  // Refus d'AMPLITUDE d'une plage de dates : les deux entames de phrase sont
+  // suivies du nombre autorisé, puis de `daysInclusive` — « The period must not
+  // exceed 7 days (both bounds included) ». L'unité porte le comptage : le
+  // nombre annoncé est celui des JOURS COUVERTS, jamais celui des intervalles.
+  'dateRangeTooLong': 'The period must not exceed',
+  'dateRangeTooShort': 'The period must cover at least',
+  'daysInclusive': 'days (both bounds included)',
   'close': 'Close',
   'back': 'Back',
   'reset': 'Reset',
@@ -206,6 +213,11 @@ const _frLabels = <String, String>{
   'selectTime': 'Sélectionner une heure',
   'selectDateTime': 'Sélectionner une date et une heure',
   'selectDateRange': 'Sélectionner une période',
+  // Cf. commentaire de la table `en` — « La période ne doit pas dépasser 7
+  // jours (bornes incluses) ».
+  'dateRangeTooLong': 'La période ne doit pas dépasser',
+  'dateRangeTooShort': 'La période doit couvrir au moins',
+  'daysInclusive': 'jours (bornes incluses)',
   'close': 'Fermer',
   'back': 'Retour',
   'reset': 'Réinitialiser',

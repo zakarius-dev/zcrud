@@ -35,6 +35,8 @@ import 'package:zcrud_core/zcrud_core.dart'
     show
         ZDataRequest,
         ZFilter,
+        ZFilterGroup,
+        ZItemFilter,
         ZListPaginationMode,
         ZSearchFolding,
         ZSearchScope,
@@ -50,6 +52,8 @@ import 'package:zcrud_core/zcrud_core.dart'
 /// |---|---|---|
 /// | [sort] | ordre du **premier** rendu | un tri demandé ensuite le **remplace** |
 /// | [baseFilters] | filtres **permanents** de l'écran | rien : un filtre de l'usager s'y **ajoute** |
+/// | [baseFilterGroups] | disjonctions permanentes (« valeur **ou** champ absent ») | rien : ANDées au reste |
+/// | [itemFilter] | **post-filtre** de l'écran, écrit sur l'entité | rien : il ne peut que retirer |
 /// | [pageSize] | taille de page du listing paginé | — |
 /// | [searchScope] | colonnes que la recherche interroge | — |
 /// | [searchFolding] | ce que la recherche ignore en comparant | — |
@@ -75,6 +79,23 @@ import 'package:zcrud_core/zcrud_core.dart'
 ///   ([searchScope]) ne la fait pas déborder d'un filtre permanent ni de la
 ///   vue corbeille — elle cherche **dans** ce que la requête a déjà réduit.
 ///
+/// ## Quand le périmètre n'est pas une requête
+///
+/// [baseFilters] suppose que la règle de l'écran s'écrit en clauses. Deux
+/// déclarations prennent le relais quand ce n'est pas le cas :
+///
+/// * [baseFilterGroups] pour la **disjonction** — « cet état **ou** ce champ
+///   jamais renseigné », le cas de l'onglet d'entrée d'un workflow ;
+/// * [itemFilter] pour le **post-filtre** — un prédicat Dart écrit sur
+///   l'entité, quand le dernier mot appartient au métier (croisement de
+///   droits, fenêtre calculée, catégorie qui n'existe pas en base).
+///
+/// Les deux se paient de la même façon, et il faut le savoir avant de les
+/// déclarer : **le listing bascule en mémoire** et lit le jeu entier à chaque
+/// requête, parce qu'aucune source n'est réputée savoir les servir. Voir
+/// [itemFilter] pour le détail du coût et des cas où il ne faut pas en
+/// déclarer.
+///
 /// Immuable, comparable par valeur : deux politiques égales ne provoquent
 /// aucune reconstruction (AD-2).
 @immutable
@@ -84,6 +105,8 @@ class ZListQueryPolicy {
   const ZListQueryPolicy({
     this.sort = const <ZSort>[],
     this.baseFilters = const <ZFilter>[],
+    this.baseFilterGroups = const <ZFilterGroup>[],
+    this.itemFilter,
     this.pageSize,
     this.searchScope = ZSearchScope.searchableFields,
     this.searchFolding = ZSearchFolding.diacritics,
@@ -108,6 +131,8 @@ class ZListQueryPolicy {
     String field, {
     ZSortDirection direction = ZSortDirection.asc,
     this.baseFilters = const <ZFilter>[],
+    this.baseFilterGroups = const <ZFilterGroup>[],
+    this.itemFilter,
     this.pageSize,
     this.searchScope = ZSearchScope.searchableFields,
     this.searchFolding = ZSearchFolding.diacritics,
@@ -128,6 +153,8 @@ class ZListQueryPolicy {
   const ZListQueryPolicy.legacySearch({
     this.sort = const <ZSort>[],
     this.baseFilters = const <ZFilter>[],
+    this.baseFilterGroups = const <ZFilterGroup>[],
+    this.itemFilter,
     this.pageSize,
     this.paginationMode = ZListPaginationMode.backendCursor,
   })  : searchScope = ZSearchScope.allColumns,
@@ -152,6 +179,85 @@ class ZListQueryPolicy {
   /// ensuite s'y **ajoute** en conjonction, il ne les remplace jamais. Vide
   /// (défaut) = aucun filtre permanent.
   final List<ZFilter> baseFilters;
+
+  /// **Disjonctions permanentes** de l'écran : chaque groupe est ANDé au reste
+  /// de la requête, mais ses clauses sont en **OR**. Vide (défaut) = aucune.
+  ///
+  /// C'est la règle que [baseFilters] ne sait pas dire, et c'est la plus
+  /// courante d'un workflow : **l'état initial est l'absence d'état**. Un
+  /// onglet « En attente » exprimé par la seule égalité se vide des dossiers
+  /// fraîchement déposés, dont le champ n'a jamais été écrit.
+  ///
+  /// ```dart
+  /// query: const ZListQueryPolicy(
+  ///   baseFilterGroups: <ZFilterGroup>[
+  ///     ZFilterGroup.any(<ZFilter>[
+  ///       ZFilter('etat', ZFilterOp.eq, 'enAttente'),
+  ///       ZFilter('etat', ZFilterOp.isNull),
+  ///     ]),
+  ///   ],
+  /// ),
+  /// ```
+  ///
+  /// Un groupe **élargit à l'intérieur de lui-même**, jamais au-delà : il ne
+  /// peut pas faire ressortir une ligne qu'un filtre permanent, une catégorie
+  /// d'onglet ou la portée de corbeille ont exclue. Un groupe **sans clause**
+  /// est inerte : il n'impose rien et ne coûte rien.
+  ///
+  /// **Ce que cela coûte** : aucune source n'est réputée savoir traduire une
+  /// disjonction — en déclarer une non inerte fait passer le listing en
+  /// mémoire (voir [itemFilter] pour le détail). Le socle préfère cette
+  /// lecture complète à une disjonction que la pagination curseur aurait
+  /// ignorée en silence, c'est-à-dire à un écran qui montre plus, ou moins,
+  /// que ce qui a été déclaré.
+  final List<ZFilterGroup> baseFilterGroups;
+
+  /// **Post-filtre de l'écran** : le dernier mot sur ce qui est listé, écrit
+  /// sur l'entité typée (`null` par défaut = aucun, rien ne change).
+  ///
+  /// Filtres et disjonctions supposent une règle exprimable en clauses. Quand
+  /// le périmètre appartient au métier — un croisement de droits, une fenêtre
+  /// de dates calculée, une catégorie qui n'existe pas en base — il s'écrit en
+  /// Dart, et c'est ici qu'il se déclare :
+  ///
+  /// ```dart
+  /// // Déclaré une fois, hors du `build` (voir plus bas).
+  /// static bool _visiblePour(Dossier d) => d.habilitations.contains(agent);
+  ///
+  /// query: ZListQueryPolicy(itemFilter: ZItemFilter.of(_visiblePour)),
+  /// ```
+  ///
+  /// Le prédicat reçoit **l'entité**, jamais la ligne rendue : la règle se lit
+  /// dans le vocabulaire du domaine, et renommer un champ devient une erreur
+  /// de compilation au lieu d'un listing qui se met silencieusement à tout
+  /// montrer.
+  ///
+  /// **Il ne peut que restreindre** : le listing montre au plus ce qu'il
+  /// montrait sans lui. Il s'applique aux entités **lues**, avant leur
+  /// projection en lignes — donc avant la recherche, le tri et la pagination :
+  /// une page pleine reste pleine, jamais trouée par un filtrage venu après
+  /// coup. Le post-filtre d'un onglet (`ZListTab.itemFilter`) s'y ajoute en
+  /// conjonction : l'onglet retire, il ne rouvre pas.
+  ///
+  /// **Ce que cela coûte** : un prédicat Dart ne se traduit dans aucun langage
+  /// de requête. Le socle ne peut l'appliquer que sur un jeu déjà lu — le
+  /// listing bascule donc sur le **chemin mémoire** et lit le jeu **entier** à
+  /// chaque requête, pour toute sa vie (là où la bascule d'une recherche ne
+  /// dure que le temps du terme saisi). Raisonnable sur un listing borné,
+  /// à proscrire sur une collection sans borne.
+  ///
+  /// **Quand ne PAS en déclarer** : dès que la règle est exprimable en
+  /// clauses. Un [baseFilters] — ou un [baseFilterGroups] pour « cette valeur
+  /// ou ce champ absent » — reste servi par la source, garde la pagination
+  /// curseur et ne lit que la page affichée. Le post-filtre est la voie de ce
+  /// qui n'est **pas** requêtable, jamais un raccourci d'écriture.
+  ///
+  /// **À déclarer hors du `build`** : deux politiques sont comparées par
+  /// valeur, et changer de politique reconstruit les contrôleurs du listing.
+  /// Une fonction nommée reste égale à elle-même d'une image à l'autre ; une
+  /// lambda écrite dans `build` est une fonction neuve à chaque fois, et le
+  /// listing se rechargerait sans fin.
+  final ZItemFilter? itemFilter;
 
   /// **Taille de page** du listing paginé (`null` par défaut = non paginé,
   /// comportement historique).
@@ -226,6 +332,8 @@ class ZListQueryPolicy {
   bool get declaresNothing =>
       sort.isEmpty &&
       baseFilters.isEmpty &&
+      baseFilterGroups.isEmpty &&
+      itemFilter == null &&
       pageSize == null &&
       searchScope == ZSearchScope.searchableFields &&
       searchFolding == ZSearchFolding.diacritics &&
@@ -243,6 +351,26 @@ class ZListQueryPolicy {
     return <ZFilter>[...baseFilters, ...extra];
   }
 
+  /// Les disjonctions à appliquer quand [extra] s'ajoute à celles de l'écran :
+  /// **celles de l'écran d'abord, [extra] ensuite**.
+  ///
+  /// Même règle que [filtersWith], et pour la même raison : les groupes sont
+  /// ANDés entre eux, aucun appel ne peut donc en faire disparaître un.
+  List<ZFilterGroup> filterGroupsWith(List<ZFilterGroup> extra) {
+    if (extra.isEmpty) return baseFilterGroups;
+    if (baseFilterGroups.isEmpty) return extra;
+    return <ZFilterGroup>[...baseFilterGroups, ...extra];
+  }
+
+  /// Le post-filtre effectif quand [extra] s'ajoute à celui de l'écran : les
+  /// deux doivent retenir l'entité (**conjonction**), ou celui qui existe si
+  /// l'autre est absent, ou `null` si aucun n'est déclaré.
+  ///
+  /// C'est la règle de cascade des niveaux — écran puis onglet : un niveau ne
+  /// peut que **retirer**, jamais rendre ce qu'un autre a écarté.
+  ZItemFilter? itemFilterWith(ZItemFilter? extra) =>
+      ZItemFilter.every(<ZItemFilter?>[itemFilter, extra]);
+
   /// Le tri effectif quand [requested] est le tri demandé : [requested] s'il
   /// en porte un, sinon le tri par défaut [sort].
   ///
@@ -253,15 +381,20 @@ class ZListQueryPolicy {
       requested.isEmpty ? sort : requested;
 
   /// Pose la politique sur une [request] : filtres permanents **en tête** des
-  /// filtres déjà présents, tri par défaut si la requête n'en porte aucun,
-  /// taille de page si la requête n'en fixe aucune, et sémantique de recherche
-  /// déclarée.
+  /// filtres déjà présents, disjonctions permanentes en tête de celles déjà
+  /// présentes, tri par défaut si la requête n'en porte aucun, taille de page
+  /// si la requête n'en fixe aucune, et sémantique de recherche déclarée.
+  ///
+  /// Le **post-filtre** ([itemFilter]) n'entre pas dans la requête : il ne
+  /// s'exprime pas en clauses, et c'est le listing qui l'applique aux entités
+  /// lues.
   ///
   /// Tout le reste de la requête est transmis tel quel — la portée de
   /// suppression d'une vue corbeille, le terme de recherche et le curseur de
   /// page ne sont jamais touchés.
   ZDataRequest applyTo(ZDataRequest request) => request.copyWith(
         filters: filtersWith(request.filters),
+        filterGroups: filterGroupsWith(request.filterGroups),
         sorts: sortFor(request.sorts),
         limit: request.limit ?? pageSize,
         searchScope: searchScope,
@@ -272,6 +405,8 @@ class ZListQueryPolicy {
   ZListQueryPolicy copyWith({
     List<ZSort>? sort,
     List<ZFilter>? baseFilters,
+    List<ZFilterGroup>? baseFilterGroups,
+    ZItemFilter? itemFilter,
     int? pageSize,
     ZSearchScope? searchScope,
     ZSearchFolding? searchFolding,
@@ -280,6 +415,8 @@ class ZListQueryPolicy {
       ZListQueryPolicy(
         sort: sort ?? this.sort,
         baseFilters: baseFilters ?? this.baseFilters,
+        baseFilterGroups: baseFilterGroups ?? this.baseFilterGroups,
+        itemFilter: itemFilter ?? this.itemFilter,
         pageSize: pageSize ?? this.pageSize,
         searchScope: searchScope ?? this.searchScope,
         searchFolding: searchFolding ?? this.searchFolding,
@@ -317,14 +454,18 @@ class ZListQueryPolicy {
           searchScope == other.searchScope &&
           searchFolding == other.searchFolding &&
           paginationMode == other.paginationMode &&
+          itemFilter == other.itemFilter &&
           _sameSorts(sort, other.sort) &&
-          _sameFilters(baseFilters, other.baseFilters);
+          _sameFilters(baseFilters, other.baseFilters) &&
+          _sameGroups(baseFilterGroups, other.baseFilterGroups);
 
   @override
   int get hashCode => Object.hash(
         runtimeType,
         Object.hashAll(sort),
         Object.hashAll(baseFilters),
+        Object.hashAll(baseFilterGroups),
+        itemFilter,
         pageSize,
         searchScope,
         searchFolding,
@@ -333,7 +474,8 @@ class ZListQueryPolicy {
 
   @override
   String toString() => 'ZListQueryPolicy(sort: $sort, '
-      'baseFilters: $baseFilters, pageSize: $pageSize, '
+      'baseFilters: $baseFilters, baseFilterGroups: $baseFilterGroups, '
+      'itemFilter: $itemFilter, pageSize: $pageSize, '
       'searchScope: $searchScope, searchFolding: $searchFolding, '
       'paginationMode: $paginationMode)';
 }
@@ -370,6 +512,16 @@ bool _sameSorts(List<ZSort> a, List<ZSort> b) {
 
 /// Égalité élément par élément de deux listes de filtres.
 bool _sameFilters(List<ZFilter> a, List<ZFilter> b) {
+  if (identical(a, b)) return true;
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
+}
+
+/// Égalité élément par élément de deux listes de disjonctions.
+bool _sameGroups(List<ZFilterGroup> a, List<ZFilterGroup> b) {
   if (identical(a, b)) return true;
   if (a.length != b.length) return false;
   for (var i = 0; i < a.length; i++) {

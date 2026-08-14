@@ -167,6 +167,10 @@ export 'src/presentation/l10n/z_localizations.dart';
 export 'src/presentation/list/dynamic_list.dart';
 export 'src/presentation/list/z_batch_action.dart';
 export 'src/presentation/list/z_batch_deletion_report.dart';
+// Post-filtre d'écran (AD-2/AD-10) : `ZItemFilter`, prédicat écrit sur
+// l'entité typée et appliqué aux entités lues avant qu'elles ne deviennent des
+// lignes — la voie des périmètres que la source ne sait pas exprimer.
+export 'src/presentation/list/z_item_filter.dart';
 export 'src/presentation/list/z_list_column.dart';
 // Interrogation de liste (invariants AD-2/AD-8/AD-10/AD-15/AD-16) : contrôleur
 // réactif Flutter-native `ZListController` (tranche

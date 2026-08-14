@@ -2468,7 +2468,12 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   /// * `searchScope` et `searchFolding` deviennent la sémantique de recherche
   ///   portée par **chaque** requête du contrôleur — vue corbeille comprise ;
   /// * `paginationMode` choisit **où** la liste est paginée, filtrée et
-  ///   cherchée : sur la source (défaut) ou en mémoire.
+  ///   cherchée : sur la source (défaut) ou en mémoire ;
+  /// * `baseFilterGroups` devient son socle de **disjonctions** persistantes,
+  ///   et `itemFilter` son **post-filtre** — le dernier mot sur ce qui est
+  ///   listé, appliqué aux entités lues. Déclarer l'un ou l'autre fait
+  ///   emprunter au contrôleur la voie mémoire : le cœur refuse qu'une
+  ///   déclaration de périmètre soit ignorée par la pagination curseur.
   ///
   /// [policy] permet à un **onglet assemblé** de faire naître son contrôleur
   /// sur la politique composée de l'écran et de sa catégorie — sans quoi
@@ -2478,6 +2483,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     ZListQueryPolicy? policy,
   }) {
     policy ??= widget.query;
+    final itemFilter = policy.itemFilter;
     return ZListController<T>(
       repository: repo,
       toRow: _project,
@@ -2485,6 +2491,10 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       pageSize: policy.pageSize,
       mode: policy.paginationMode,
       baseFilters: policy.baseFilters,
+      baseFilterGroups: policy.baseFilterGroups,
+      // Le post-filtre déclaré est un prédicat sur l'entité : il est remis au
+      // contrôleur tel quel, typé sur `T`.
+      itemFilter: itemFilter == null ? null : (T item) => itemFilter.keeps(item),
       initialSorts: policy.sort,
       searchScope: policy.searchScope,
       searchFolding: policy.searchFolding,
@@ -2560,9 +2570,17 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   /// Aucun des deux ne peut donc dériver de l'autre.
   ZListQueryPolicy _tabPolicy(ZListTab tab) {
     final policy = widget.query;
-    if (tab.baseFilters.isEmpty) return policy;
+    if (tab.baseFilters.isEmpty &&
+        tab.baseFilterGroups.isEmpty &&
+        tab.itemFilter == null) {
+      return policy;
+    }
     return policy.copyWith(
-      baseFilters: <ZFilter>[...policy.baseFilters, ...tab.baseFilters],
+      baseFilters: policy.filtersWith(tab.baseFilters),
+      baseFilterGroups: policy.filterGroupsWith(tab.baseFilterGroups),
+      // Les deux post-filtres doivent retenir l'entité : un onglet retire, il
+      // ne rouvre pas ce que l'écran a écarté (même sens que la cascade d'ACL).
+      itemFilter: policy.itemFilterWith(tab.itemFilter),
     );
   }
 
@@ -2823,12 +2841,18 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   Widget _buildItemsBody(BuildContext context, {ZListTab? tab}) {
     final items = widget.source.items ?? const <Never>[];
     final predicate = widget.source.isDeleted;
+    final policy = tab == null ? widget.query : _tabPolicy(tab);
+    // Post-filtre déclaré : appliqué ICI aussi, sur les entités et avant leur
+    // projection. Une déclaration de périmètre vaut pour l'écran, pas pour une
+    // voie de données — la voie `items` n'a pas le droit de l'ignorer.
+    final itemFilter = policy.itemFilter;
     final visible = <T>[
       for (final item in items)
-        if (predicate == null || predicate(item) == _trashView) item,
+        if ((predicate == null || predicate(item) == _trashView) &&
+            (itemFilter == null || itemFilter.keeps(item)))
+          item,
     ];
     final rows = <ZListRow>[for (final item in visible) _project(item)];
-    final policy = tab == null ? widget.query : _tabPolicy(tab);
     final searched = tab == null || identical(tab, _activeAssembledTab);
     // Mêmes règles de composition que la voie dépôt, servies par les mêmes
     // fonctions : filtres permanents en tête des filtres demandés, tri demandé
@@ -2839,6 +2863,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       rows,
       ZDataRequest(
         filters: policy.filtersWith(_userFilters),
+        filterGroups: policy.baseFilterGroups,
         sorts: policy.sortFor(_userSort),
         search: (!searched || _search.isEmpty) ? null : _search,
         searchScope: policy.searchScope,
@@ -2932,9 +2957,14 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     final items = widget.source.items;
     final predicate = widget.source.isDeleted;
     if (items == null || predicate == null) return null;
+    // Le post-filtre de l'écran vaut aussi pour ce compte : la pastille
+    // annonce ce que la vue corbeille montrera, jamais davantage.
+    final itemFilter = widget.query.itemFilter;
     var count = 0;
     for (final item in items) {
-      if (predicate(item)) count++;
+      if (predicate(item) && (itemFilter == null || itemFilter.keeps(item))) {
+        count++;
+      }
     }
     return count;
   }
@@ -3295,8 +3325,9 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
         ),
       );
     }
-    final policy = widget.query;
-    if (policy.declaresNothing && tab.baseFilters.isEmpty) return tab;
+    // Rien à offrir à la page : ni l'écran ni l'onglet ne déclarent quoi que
+    // ce soit (la politique composée est la mesure des deux à la fois).
+    if (_tabPolicy(tab).declaresNothing) return tab;
     return tab.copyWith(
       // La page doit être construite SOUS la portée, sinon elle lirait
       // l'ancienne (ou aucune).

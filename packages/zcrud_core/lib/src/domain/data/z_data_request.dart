@@ -125,6 +125,73 @@ class ZFilter {
   String toString() => 'ZFilter($field, $op, $value)';
 }
 
+/// **Disjonction** de prédicats : une ligne est retenue dès qu'**au moins une**
+/// des [clauses] la retient.
+///
+/// Les [ZFilter] d'une requête se composent en **conjonction** — chacun
+/// restreint ce que le précédent a laissé passer. C'est la bonne règle pour un
+/// listing (« jamais les archives », « seulement l'exercice courant »), mais
+/// elle ne sait pas dire le cas le plus courant d'un workflow : **une valeur ou
+/// l'absence de valeur**. L'état initial d'un dossier, c'est très souvent
+/// l'absence d'état — le champ n'a jamais été écrit. Un onglet « En attente »
+/// exprimé par la seule égalité `etat == enAttente` se vide donc des dossiers
+/// fraîchement déposés, silencieusement.
+///
+/// ```dart
+/// // « En attente », c'est la valeur… OU le champ jamais renseigné.
+/// ZFilterGroup.any(<ZFilter>[
+///   ZFilter('etat', ZFilterOp.eq, 'enAttente'),
+///   ZFilter('etat', ZFilterOp.isNull),
+/// ])
+/// ```
+///
+/// **Composition** : les groupes d'une requête sont ANDés entre eux **et** avec
+/// [ZDataRequest.filters]. Un groupe élargit donc *à l'intérieur de lui-même*,
+/// jamais au-delà : ajouter un groupe ne peut pas faire ressortir une ligne
+/// qu'un filtre permanent a exclue.
+///
+/// **Groupe sans clause** : inerte — il n'exprime aucune intention, il
+/// n'impose donc aucune contrainte (et ne fait basculer aucun listing en
+/// mémoire). C'est délibéré : une disjonction est une construction qui
+/// **élargit** ; une disjonction vide n'élargit rien, et la lire comme « ne
+/// retenir personne » viderait un listing sur une liste de clauses calculée
+/// qui se trouve vide — exactement l'écran vide sans recours que ce type
+/// cherche à éviter.
+///
+/// **Qui le sert** : le moteur de liste du socle (`zApplyListRequest`), donc la
+/// voie mémoire. Un adaptateur libre de traduire la disjonction dans son
+/// langage de requête peut le faire ; celui qui ne le sait pas l'ignore, et le
+/// socle ne s'y fie jamais — un listing dont la déclaration porte un groupe est
+/// servi en mémoire, où la disjonction est appliquée pour de bon.
+class ZFilterGroup {
+  /// Construit une disjonction des [clauses] : une ligne est retenue dès
+  /// qu'**une** clause la retient. Sans clause, le groupe est inerte.
+  const ZFilterGroup.any(this.clauses);
+
+  /// Clauses de la disjonction (au moins une doit matcher).
+  final List<ZFilter> clauses;
+
+  /// `true` quand le groupe ne porte **aucune** clause — il n'impose alors
+  /// aucune contrainte.
+  bool get isEmpty => clauses.isEmpty;
+
+  /// `true` quand le groupe porte au moins une clause.
+  bool get isNotEmpty => clauses.isNotEmpty;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZFilterGroup &&
+          runtimeType == other.runtimeType &&
+          _listEquals(clauses, other.clauses);
+
+  @override
+  int get hashCode => Object.hash(runtimeType, Object.hashAll(clauses));
+
+  @override
+  String toString() => 'ZFilterGroup.any($clauses)';
+}
+
 /// Clé de tri neutre : `field` dans la [direction] donnée (croissant par défaut).
 class ZSort {
   /// Construit une clé de tri sur [field] dans la [direction] donnée.
@@ -166,6 +233,7 @@ class ZDataRequest {
   /// par défaut décrivent « tout, non paginé ».
   const ZDataRequest({
     this.filters = const <ZFilter>[],
+    this.filterGroups = const <ZFilterGroup>[],
     this.sorts = const <ZSort>[],
     this.search,
     this.limit,
@@ -177,6 +245,19 @@ class ZDataRequest {
 
   /// Prédicats de filtrage (conjonction). Par défaut : aucun.
   final List<ZFilter> filters;
+
+  /// **Disjonctions** ([ZFilterGroup]) de la requête, ANDées entre elles et
+  /// avec [filters]. Par défaut : aucune — champ **additif**, aucune requête
+  /// existante n'est affectée.
+  ///
+  /// Servi par le moteur de liste du socle (`zApplyListRequest`). Un
+  /// adaptateur qui exécute la requête côté serveur reste libre de ne pas le
+  /// traduire, comme il l'est déjà pour [search] : c'est pourquoi la
+  /// déclaration d'un groupe **impose** au listing la voie mémoire, où la
+  /// disjonction est appliquée pour de bon. Une lecture directe du dépôt avec
+  /// des groupes, hors du listing, ne bénéficie donc d'aucune garantie
+  /// d'exactitude tant que l'adaptateur ne les documente pas comme servis.
+  final List<ZFilterGroup> filterGroups;
 
   /// Clés de tri, appliquées dans l'ordre. Par défaut : aucun tri.
   final List<ZSort> sorts;
@@ -214,10 +295,20 @@ class ZDataRequest {
   /// `null` » dans [copyWith].
   static const Object _unset = Object();
 
+  /// `true` quand la requête porte au moins une disjonction **non inerte** —
+  /// c'est-à-dire une contrainte que les seuls [filters] ne savent pas dire.
+  bool get hasFilterGroups {
+    for (final group in filterGroups) {
+      if (group.isNotEmpty) return true;
+    }
+    return false;
+  }
+
   /// Copie modifiée. Passer explicitement `null` à [search]/[limit]/[startAfter]
   /// les **réinitialise** ; les omettre conserve la valeur courante.
   ZDataRequest copyWith({
     List<ZFilter>? filters,
+    List<ZFilterGroup>? filterGroups,
     List<ZSort>? sorts,
     Object? search = _unset,
     Object? limit = _unset,
@@ -228,6 +319,7 @@ class ZDataRequest {
   }) {
     return ZDataRequest(
       filters: filters ?? this.filters,
+      filterGroups: filterGroups ?? this.filterGroups,
       sorts: sorts ?? this.sorts,
       search: identical(search, _unset) ? this.search : search as String?,
       limit: identical(limit, _unset) ? this.limit : limit as int?,
@@ -251,12 +343,14 @@ class ZDataRequest {
           searchScope == other.searchScope &&
           searchFolding == other.searchFolding &&
           _listEquals(filters, other.filters) &&
+          _listEquals(filterGroups, other.filterGroups) &&
           _listEquals(sorts, other.sorts);
 
   @override
   int get hashCode => Object.hash(
         runtimeType,
         Object.hashAll(filters),
+        Object.hashAll(filterGroups),
         Object.hashAll(sorts),
         search,
         limit,
@@ -268,7 +362,8 @@ class ZDataRequest {
 
   @override
   String toString() =>
-      'ZDataRequest(filters: $filters, sorts: $sorts, search: $search, '
+      'ZDataRequest(filters: $filters, filterGroups: $filterGroups, '
+      'sorts: $sorts, search: $search, '
       'limit: $limit, startAfter: $startAfter, deletedScope: $deletedScope, '
       'searchScope: $searchScope, searchFolding: $searchFolding)';
 }

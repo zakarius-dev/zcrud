@@ -760,10 +760,32 @@ enum ZDateMode {
   time,
 }
 
-/// Config triviale pur-cœur des champs **date/heure** (`dateTime`/`time`).
-/// Les bornes s'expriment soit comme **clés d'autres champs**
-/// ([firstDateKey]/[lastDateKey], résolution cross-champ), soit comme
-/// **littéraux ISO-8601** ([minDateIso]/[maxDateIso]).
+/// Verdict d'**amplitude** d'une plage de dates confrontée à
+/// [ZDateConfig.maxDays]/[ZDateConfig.minDays].
+///
+/// Rendu par [ZDateConfig.checkSpanDays] ; les valeurs sont en **camelCase** et
+/// ne sont **jamais persistées** (verdict calculé, pas une donnée).
+enum ZDateSpanVerdict {
+  /// L'amplitude est admise : la plage peut être écrite dans le champ.
+  accepted,
+
+  /// La plage couvre **plus** de jours que [ZDateConfig.maxDays] ne l'autorise.
+  tooLong,
+
+  /// La plage couvre **moins** de jours que [ZDateConfig.minDays] ne l'exige.
+  tooShort,
+}
+
+/// Config triviale pur-cœur des champs **date/heure** (`dateTime`/`time`) et
+/// **plage de dates** (`dateRange`).
+///
+/// Deux familles de contraintes, à ne pas confondre :
+///
+/// - **où** la plage se situe — [firstDateKey]/[lastDateKey] (clés d'autres
+///   champs, résolution cross-champ) ou [minDateIso]/[maxDateIso] (littéraux
+///   ISO-8601) ;
+/// - **quelle largeur** elle peut avoir — [maxDays]/[minDays] (amplitude, type
+///   `dateRange` uniquement).
 ///
 /// **const-safe** : les bornes littérales sont des `String?` ISO-8601 (et
 /// **non** des `DateTime`, qui n'ont pas de constructeur `const`) ⇒ la config
@@ -778,6 +800,8 @@ class ZDateConfig extends ZFieldConfig {
     this.minDateIso,
     this.maxDateIso,
     this.mode,
+    this.maxDays,
+    this.minDays,
   });
 
   /// Clé d'un autre champ fixant la date minimale sélectionnable (cross-champ).
@@ -796,6 +820,91 @@ class ZDateConfig extends ZFieldConfig {
   /// type du champ (`time` → time ; sinon → `dateTime` combiné).
   final ZDateMode? mode;
 
+  /// **Amplitude maximale** d'une plage (`dateRange`), exprimée en **nombre de
+  /// jours couverts, bornes incluses**.
+  ///
+  /// 🔴 **Le comptage, sans ambiguïté** : `maxDays` compte les **jours**, pas
+  /// les nuits ni les intervalles. `maxDays: 7` autorise « du 1er au 7 janvier
+  /// » (7 jours) et **refuse** « du 1er au 8 janvier » (8 jours). Une plage
+  /// commençant et finissant le même jour compte pour **1**. C'est exactement
+  /// le nombre annoncé à l'utilisateur dans le message de refus : la valeur
+  /// déclarée ici et le nombre affiché sont **le même**.
+  ///
+  /// **Moment du refus** : à la **sélection**. Quand le sélecteur de plage rend
+  /// une période trop large, elle est **rejetée** — le champ conserve sa valeur
+  /// précédente et un message nomme l'amplitude autorisée. Rien n'est reporté à
+  /// la validation du formulaire : l'utilisateur voit le refus au moment où il
+  /// choisit, sur le champ concerné.
+  ///
+  /// **Composition avec les autres bornes** : l'amplitude est **indépendante**
+  /// de [minDateIso]/[maxDateIso]/[firstDateKey]/[lastDateKey]. Celles-ci
+  /// restreignent le calendrier proposé (aucune date hors bornes n'est
+  /// sélectionnable) ; l'amplitude, elle, s'applique à la période retenue
+  /// **à l'intérieur** de ce calendrier. Une plage peut donc être conforme aux
+  /// bornes et refusée pour sa largeur ; les deux contraintes ne se
+  /// contredisent jamais — elles se cumulent.
+  ///
+  /// **Défensif** (invariant AD-10) : `null` (défaut) ⇒ aucune contrainte
+  /// d'amplitude, comportement strictement inchangé. Une valeur `< 1` est
+  /// **ignorée** (elle interdirait toute plage), jamais une exception.
+  ///
+  /// Sans effet sur les types `dateTime`/`time`, qui portent une date unique.
+  final int? maxDays;
+
+  /// **Amplitude minimale** d'une plage (`dateRange`), même comptage que
+  /// [maxDays] : **nombre de jours couverts, bornes incluses**.
+  ///
+  /// `minDays: 2` refuse une plage d'une seule journée. `null` (défaut) ⇒
+  /// aucune exigence. Refus à la **sélection**, comme [maxDays].
+  ///
+  /// **Défensif** (invariant AD-10) : une valeur `< 1` est **ignorée** (toute
+  /// plage couvre au moins un jour). Une déclaration **contradictoire**
+  /// (`minDays` supérieur à [maxDays] — aucune plage ne pourrait satisfaire les
+  /// deux) est résolue en faveur de la contrainte protectrice : [maxDays]
+  /// s'applique, `minDays` est **ignoré**. Le champ reste utilisable ; il ne se
+  /// bloque jamais sur une déclaration incohérente.
+  final int? minDays;
+
+  /// [maxDays] **retenue**, ou `null` si aucune amplitude maximale ne
+  /// s'applique (non déclarée, ou valeur `< 1` ignorée — cf. [maxDays]).
+  ///
+  /// C'est cette valeur — et non [maxDays] brute — qu'il faut afficher à
+  /// l'utilisateur : elle est celle que [checkSpanDays] applique réellement.
+  int? get effectiveMaxDays {
+    final int? v = maxDays;
+    return (v != null && v >= 1) ? v : null;
+  }
+
+  /// [minDays] **retenue**, ou `null` si aucune amplitude minimale ne
+  /// s'applique — non déclarée, valeur `< 1`, ou déclaration contradictoire
+  /// avec [effectiveMaxDays] (cf. [minDays]).
+  int? get effectiveMinDays {
+    final int? v = minDays;
+    if (v == null || v < 1) return null;
+    final int? max = effectiveMaxDays;
+    if (max != null && v > max) return null;
+    return v;
+  }
+
+  /// Confronte une amplitude ([ZDateRange.spanDays] — **jours couverts, bornes
+  /// incluses**) aux contraintes déclarées.
+  ///
+  /// Rend [ZDateSpanVerdict.accepted] si aucune amplitude n'est déclarée, si
+  /// les valeurs déclarées sont ignorées (cf. [effectiveMaxDays] /
+  /// [effectiveMinDays]), ou si la plage tombe **dans** l'intervalle admis —
+  /// bornes **incluses** : une plage d'exactement [maxDays] jours est acceptée,
+  /// une plage d'exactement [minDays] jours aussi.
+  ///
+  /// Pur-Dart, sans effet de bord : le message présenté à l'utilisateur est
+  /// construit par la couche présentation à partir de ce verdict.
+  ZDateSpanVerdict checkSpanDays(int spanDays) {
+    final int? max = effectiveMaxDays;
+    if (max != null && spanDays > max) return ZDateSpanVerdict.tooLong;
+    final int? min = effectiveMinDays;
+    if (min != null && spanDays < min) return ZDateSpanVerdict.tooShort;
+    return ZDateSpanVerdict.accepted;
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -805,7 +914,9 @@ class ZDateConfig extends ZFieldConfig {
           lastDateKey == other.lastDateKey &&
           minDateIso == other.minDateIso &&
           maxDateIso == other.maxDateIso &&
-          mode == other.mode;
+          mode == other.mode &&
+          maxDays == other.maxDays &&
+          minDays == other.minDays;
 
   @override
   int get hashCode => Object.hash(
@@ -815,5 +926,7 @@ class ZDateConfig extends ZFieldConfig {
         minDateIso,
         maxDateIso,
         mode,
+        maxDays,
+        minDays,
       );
 }

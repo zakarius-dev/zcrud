@@ -3,6 +3,148 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 0.99.0 — 2026-08-14
+
+### Ajouté
+
+#### Une plage de dates peut enfin déclarer son amplitude
+
+`ZDateConfig` savait dire **où** une période se situe (`minDateIso`,
+`maxDateIso`, `firstDateKey`, `lastDateKey`) mais pas **quelle largeur** elle
+peut avoir. Cette contrainte n'est pas une préférence d'ergonomie : sur les
+écrans qui alimentent une lecture ou un export à partir d'une période, c'est
+elle qui protège la requête. Et son absence est **silencieuse** — un champ sans
+amplitude fonctionne parfaitement, l'utilisateur choisit trois ans, et le
+premier symptôme est une lenteur ou un export inexploitable, jamais un message
+qui pointe la cause.
+
+Deux nouvelles clés, pour le type `dateRange` :
+
+```dart
+ZFieldSpec(
+  name: 'periode',
+  type: EditionFieldType.dateRange,
+  config: ZDateConfig(maxDays: 45, minDateIso: '2023-01-01'),
+)
+```
+
+**Le comptage porte sur les jours, bornes incluses.** `maxDays: 7` autorise
+« du 1er au 7 janvier » (7 jours) et refuse « du 1er au 8 » (8 jours) ; une
+période d'une seule journée compte pour 1. Le nombre déclaré et le nombre
+annoncé à l'utilisateur sont **le même** — le message le dit d'ailleurs mot
+pour mot : « La période ne doit pas dépasser 45 jours (bornes incluses) ».
+
+**Le refus a lieu à la sélection**, pas à la validation du formulaire : quand
+le sélecteur rend une période hors amplitude, elle n'est pas écrite, le champ
+**conserve sa valeur précédente**, et le motif est présenté sur le champ
+concerné — et annoncé aux lecteurs d'écran. L'utilisateur n'a jamais à deviner
+quel champ corriger.
+
+`minDays` est le symétrique. Une déclaration hors de sens (valeur inférieure à
+1, ou `minDays` supérieur à `maxDays`) est **ignorée** plutôt que de bloquer le
+champ. Un champ qui ne déclare aucune amplitude se comporte exactement comme
+avant.
+
+Nouveaux membres publics : `ZDateConfig.maxDays`/`minDays`,
+`ZDateConfig.effectiveMaxDays`/`effectiveMinDays`/`checkSpanDays`,
+`ZDateSpanVerdict`, `ZDateRange.spanDays`, `zDateSpanRefusalMessage`,
+`zShowDateSpanRefusal`. Libellés `dateRangeTooLong`, `dateRangeTooShort`,
+`daysInclusive` (tables `en` et `fr`).
+
+### Corrigé
+
+#### Les bornes d'une plage de dates étaient déclarées mais jamais appliquées
+
+Un champ `dateRange` portant `minDateIso`/`maxDateIso`/`firstDateKey`/
+`lastDateKey` déclarait des bornes que le sélecteur **n'a jamais reçues** : il
+s'ouvrait sur l'intervalle de repli 1900–2100, et l'utilisateur pouvait choisir
+n'importe quelle date. Seule la famille date sœur les honorait. Les bornes sont
+désormais résolues et transmises au sélecteur, selon la même règle qu'ailleurs
+(littéral prioritaire sur la clé d'un autre champ, résolution **au moment du
+geste**), et elles se **cumulent** avec l'amplitude : une période peut être
+conforme au calendrier proposé et refusée pour sa largeur.
+
+⚠️ **À vérifier chez vous** : si un écran compensait ce défaut — bornes
+restituées par un validateur, par une correction après coup, ou par des dates
+volontairement laissées hors config — cette compensation **s'ajoute** désormais
+au comportement natif. Les écrans qui déclaraient simplement leurs bornes en
+attendant qu'elles s'appliquent n'ont rien à faire.
+
+## 0.99.0 — 2026-08-14
+
+### Ajouté
+
+#### Une disjonction dans les filtres : « cette valeur **ou** ce champ absent »
+
+Les `ZFilter` d'une requête se composaient uniquement en **conjonction**. C'est
+la bonne règle pour un listing, mais elle ne sait pas dire le cas le plus
+courant d'un workflow : *l'état initial est l'absence d'état*. Un onglet
+« En attente » exprimé par la seule égalité `etat == enAttente` se vidait des
+dossiers fraîchement déposés, dont le champ n'a jamais été écrit — sans
+message, sans erreur.
+
+`ZFilterGroup.any([...])` exprime cette règle, et `ZDataRequest.filterGroups`
+la transporte : chaque groupe est ANDé aux filtres et aux autres groupes, mais
+ses clauses sont résolues en **OU**.
+
+```dart
+ZFilterGroup.any(<ZFilter>[
+  ZFilter('etat', ZFilterOp.eq, 'enAttente'),
+  ZFilter('etat', ZFilterOp.isNull),
+])
+```
+
+Un groupe élargit **à l'intérieur de lui-même**, jamais au-delà : il ne peut
+pas faire ressortir une ligne qu'un filtre permanent, une catégorie d'onglet ou
+la portée de corbeille ont exclue. Un groupe **sans clause** est inerte — il
+n'impose rien, plutôt que de vider un listing sur une liste de clauses calculée
+qui se trouve vide.
+
+Le moteur de liste du socle (`zApplyListRequest`) sert les groupes. Un
+adaptateur qui exécute la requête côté serveur reste libre de ne pas les
+traduire, comme il l'est déjà pour la recherche : c'est pourquoi en déclarer un
+**impose la voie mémoire** au listing (voir ci-dessous). Champ additif,
+défaut vide : aucune requête existante n'est affectée.
+
+#### Un post-filtre écrit sur l'entité, pour les périmètres non requêtables
+
+Sur la voie dépôt, le périmètre d'un listing était **entièrement** dérivé de sa
+requête : il n'existait aucun point d'accroche entre la lecture de la source et
+le rendu. Un écran dont le périmètre appartient au métier — croisement de
+droits, fenêtre de dates calculée, catégorie qui n'existe pas en base — n'avait
+donc pas de voie honnête : basculer sur le dépôt aurait élargi ou amputé ce que
+voit l'usager.
+
+`ZListController.itemFilter` est ce point d'accroche : un prédicat **écrit sur
+l'entité** `T`, appliqué aux entités lues, après la lecture de la source et
+**avant** leur projection en lignes — donc avant la recherche, le tri et la
+pagination. Une page pleine reste pleine. `ZItemFilter.of<T>(…)` porte le même
+prédicat dans les déclarations (`ZListTab.itemFilter`, et la politique de
+requête de `zcrud_screen`), en le gardant typé sur l'entité : renommer un champ
+devient une erreur de compilation, jamais un listing qui se met à tout montrer.
+
+Il ne peut que **restreindre** — aucune entité que la requête n'a pas ramenée
+ne peut réapparaître — et il se compose en conjonction avec celui d'un onglet :
+chaque niveau retire, aucun ne rouvre.
+
+#### Une déclaration de périmètre n'est jamais ignorée en silence
+
+Un post-filtre et une disjonction ont ceci de commun qu'aucune source n'est
+réputée savoir les servir. Le contrôleur de liste **bascule donc sur le chemin
+mémoire** dès que l'un des deux est déclaré — le même chemin qu'emprunte déjà
+une recherche que le dépôt délègue — au lieu de laisser la pagination curseur
+les ignorer.
+
+**Ce que cela coûte** : le jeu est lu **en entier** à chaque requête, et pour
+toute la vie du listing (là où la bascule d'une recherche ne dure que le temps
+du terme saisi). C'est le prix de l'exactitude, raisonnable sur un listing
+borné, à proscrire sur une collection sans borne. Une disjonction **sans
+clause** ne déclenche rien : elle n'exprime aucune intention.
+
+**Rien de déclaré, rien de changé** : un listing sans post-filtre ni
+disjonction émet exactement les mêmes requêtes qu'avant, pagination serveur
+comprise.
+
 ## 0.98.0 — 2026-08-14
 
 ### Corrigé

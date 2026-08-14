@@ -47,6 +47,29 @@ class ZDateRange {
   /// Borne haute (incluse) de la plage — **>= [start]**.
   final DateTime end;
 
+  /// **Amplitude** de la plage : le nombre de **journées civiles couvertes,
+  /// bornes incluses**.
+  ///
+  /// C'est le comptage que l'on annonce à l'utilisateur — « du 1er au 7 janvier
+  /// » fait **7** jours, pas 6 :
+  ///
+  /// | Plage | [spanDays] |
+  /// |---|---|
+  /// | 1er janvier → 1er janvier | `1` |
+  /// | 1er janvier → 7 janvier | `7` |
+  /// | 1er janvier → 8 janvier | `8` |
+  ///
+  /// Le calcul porte sur la **journée** de chaque borne : l'heure est ignorée
+  /// (une plage du 1er à 23 h au 2 à 1 h couvre 2 jours, pas 1). Les deux
+  /// journées sont ramenées en UTC avant la soustraction, afin qu'un
+  /// changement d'heure saisonnier ne retire ni n'ajoute jamais un jour au
+  /// résultat.
+  int get spanDays =>
+      DateTime.utc(end.year, end.month, end.day)
+          .difference(DateTime.utc(start.year, start.month, start.day))
+          .inDays +
+      1;
+
   /// Sérialise la plage en `{'start': iso, 'end': iso}` (ISO-8601).
   Map<String, dynamic> toJson() => <String, dynamic>{
         'start': start.toIso8601String(),

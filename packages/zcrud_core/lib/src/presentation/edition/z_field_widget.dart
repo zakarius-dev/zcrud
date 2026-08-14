@@ -31,6 +31,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../domain/edition/z_date_range.dart';
 import '../../domain/edition/z_derivation.dart';
 import '../../domain/edition/z_field_choice.dart';
 import '../../domain/edition/z_field_config.dart';
@@ -595,10 +596,23 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
         // Plage de dates (AD-47) : même chemin `ZFieldListenableBuilder`/
         // `setValue` que la famille date. Widget `StatelessWidget` pur (ne reçoit
         // jamais le `ZFormController`) ; `showDateRangePicker` = SDK (CORE OUT=0).
+        //
+        // Ce point est le SEUL à détenir à la fois la déclaration du champ et
+        // l'écriture de la tranche : il y honore les DEUX familles de
+        // contraintes de `ZDateConfig` — les bornes (OÙ la plage se situe,
+        // résolues paresseusement comme pour la famille date sœur) et
+        // l'amplitude (QUELLE LARGEUR elle peut avoir, vérifiée au retour du
+        // sélecteur). Les deux se cumulent sans se contredire.
+        final rangeCfg =
+            field.config is ZDateConfig ? field.config! as ZDateConfig : null;
         return ZDateRangeFieldWidget(
           field: field,
           value: value,
-          onChanged: (range) => widget.controller.setValue(field.name, range),
+          onChanged: (range) => _commitDateRange(context, field, rangeCfg, range),
+          firstDate: () =>
+              _resolveDateBound(rangeCfg?.minDateIso, rangeCfg?.firstDateKey),
+          lastDate: () =>
+              _resolveDateBound(rangeCfg?.maxDateIso, rangeCfg?.lastDateKey),
           // Croix d'effacement UNIQUEMENT pour un champ non requis et
           // éditable (retour à `null`).
           onCleared: (field.isRequired || field.readOnly)
@@ -790,6 +804,30 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
   /// `ZFormController.valueOf` (String ISO parsée ou `DateTime` accepté tel
   /// quel). Toute valeur absente/non parsable ⇒ `null` (le widget repliera sur
   /// 1900/2100). **Jamais de throw** (invariant AD-10).
+  /// Écrit la plage retenue dans la tranche — **sauf** si son amplitude sort de
+  /// ce que le champ déclare ([ZDateConfig.maxDays]/[ZDateConfig.minDays]).
+  ///
+  /// Le refus a lieu **à la sélection**, au retour du sélecteur : la plage
+  /// n'est pas écrite (la tranche conserve donc sa valeur précédente, et le
+  /// champ continue d'afficher la période d'avant), et le motif est présenté et
+  /// **annoncé** sur le champ concerné. Aucun report à la validation du
+  /// formulaire : l'utilisateur n'a pas à deviner quel champ corriger.
+  ///
+  /// Sans amplitude déclarée, le chemin est celui d'avant : écriture directe.
+  void _commitDateRange(
+    BuildContext context,
+    ZFieldSpec field,
+    ZDateConfig? config,
+    ZDateRange range,
+  ) {
+    final String? refusal = zDateSpanRefusalMessage(context, config, range);
+    if (refusal == null) {
+      widget.controller.setValue(field.name, range);
+      return;
+    }
+    zShowDateSpanRefusal(context, refusal);
+  }
+
   DateTime? _resolveDateBound(String? iso, String? key) {
     final literal = iso != null ? DateTime.tryParse(iso) : null;
     if (literal != null) return literal;

@@ -695,6 +695,76 @@ query: const ZListQueryPolicy(
 Le jeu est alors lu en entier à **chaque** requête, puis filtré, trié et paginé
 par le socle — à ne déclarer que sur un listing borné.
 
+#### Quand le périmètre n'est pas une requête
+
+Les trois lignes ci-dessus supposent que le périmètre de l'écran s'écrit en
+clauses. Sur un parc métier, c'est souvent faux : le dernier mot sur ce qui est
+montré appartient au métier, et il s'exprime **en Dart**. Deux déclarations
+prennent alors le relais, et elles se paient de la même façon.
+
+| Déclaration | Ce qu'elle dit | Ce que cela coûte |
+|---|---|---|
+| `baseFilters` | « ce listing ne montre jamais les archives » | rien : servi par la source, pagination curseur intacte |
+| `baseFilterGroups` | « cet état **ou** ce champ jamais renseigné » | une lecture non paginée du jeu, à chaque requête |
+| `itemFilter` | « ce que ce prédicat retient, et rien d'autre » | une lecture non paginée du jeu, à chaque requête |
+
+**La disjonction**, d'abord, parce que c'est le cas le plus courant d'un
+workflow : *l'état initial est l'absence d'état*. Un onglet « En attente »
+exprimé par la seule égalité se vide des dossiers fraîchement déposés, dont le
+champ n'a jamais été écrit — sans un message, sans une erreur.
+
+```dart
+ZListTab(
+  labelKey: 'enAttente',
+  baseFilterGroups: const <ZFilterGroup>[
+    ZFilterGroup.any(<ZFilter>[
+      ZFilter('etat', ZFilterOp.eq, 'enAttente'),
+      ZFilter('etat', ZFilterOp.isNull),
+    ]),
+  ],
+)
+```
+
+**Le post-filtre**, ensuite, pour ce qu'aucune clause ne dit : un croisement de
+droits, une fenêtre de dates calculée, une catégorie qui n'existe pas en base.
+
+```dart
+// Déclaré une fois, HORS du `build` (voir l'avertissement plus bas).
+bool _visiblePour(Dossier dossier) => dossier.habilitations.contains(agent);
+
+query: ZListQueryPolicy(itemFilter: ZItemFilter.of(_visiblePour)),
+```
+
+Le prédicat reçoit **l'entité**, jamais la ligne rendue : la règle se lit dans
+le vocabulaire du domaine, et renommer un champ devient une erreur de
+compilation au lieu d'un listing qui se met silencieusement à tout montrer. Il
+ne peut que **restreindre** — l'écran montre au plus ce qu'il montrait sans
+lui — et il s'applique **avant la pagination**, si bien qu'une page pleine
+reste pleine. Un onglet peut en déclarer un à son tour
+(`ZListTab.itemFilter`) : les deux s'appliquent, l'onglet retire, il ne rouvre
+pas ce que l'écran a écarté.
+
+**Ce que cela coûte, et pourquoi.** Ni une disjonction ni un prédicat Dart ne
+sont réputés traduisibles par la source. Le socle refuse de laisser une
+déclaration de périmètre être ignorée en silence par la pagination curseur —
+un écran qui montrerait plus que ce qu'on lui a déclaré est le pire des cas.
+Déclarer l'un ou l'autre **bascule donc le listing sur le chemin mémoire**, et
+le jeu entier est lu à chaque requête, pour toute la vie de l'écran (là où la
+bascule d'une recherche ne dure que le temps du terme saisi).
+
+**Quand ne PAS en déclarer** : dès que la règle est exprimable en clauses.
+`baseFilters` reste servi par la source, garde la pagination curseur et ne lit
+que la page affichée. Sur une collection sans borne, c'est la seule voie
+tenable : le post-filtre est fait pour ce qui n'est **pas** requêtable, jamais
+comme raccourci d'écriture. Un écran qui n'en déclare aucun ne change de rien —
+mêmes requêtes, même pagination serveur qu'auparavant.
+
+⚠️ **Déclarez le prédicat hors du `build`.** Deux politiques d'écran sont
+comparées par valeur, et changer de politique reconstruit les contrôleurs du
+listing. Une fonction nommée reste égale à elle-même d'une image à l'autre ;
+une lambda écrite dans `build` est une fonction neuve à chaque fois, et le
+listing se rechargerait sans fin.
+
 ### Présentation de l'édition
 
 Le formulaire est présenté via `presentEdition` : le mode (`page`/`sheet`/

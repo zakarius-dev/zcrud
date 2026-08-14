@@ -20,6 +20,15 @@
 /// emprunte déjà quand un curseur n'est pas honoré — et le filtrage devient
 /// exact. Le coût, assumé et borné à la durée de la recherche, est une lecture
 /// **non paginée** du jeu.
+///
+/// **Périmètre que la requête ne sait pas dire** : un listing peut déclarer un
+/// **post-filtre** (`itemFilter`, prédicat écrit sur l'entité) et des
+/// **disjonctions** (`baseFilterGroups`, « cette valeur ou ce champ absent »).
+/// Ni l'un ni l'autre n'est traduisible en clause par toutes les sources : les
+/// déclarer fait donc emprunter au listing le même chemin mémoire, pour toute
+/// sa vie. C'est délibéré — une déclaration de périmètre silencieusement
+/// ignorée par la pagination curseur montrerait à l'usager plus que ce que
+/// l'écran a autorisé.
 library;
 
 import 'dart:async';
@@ -99,6 +108,19 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   /// le mauvais ordre. Un `setSort` ultérieur **remplace** ce tri initial
   /// (même règle que pour les filtres utilisateur : un tri demandé remplace le
   /// tri par défaut). Défaut `const []` ⇒ comportement strictement inchangé.
+  ///
+  /// [baseFilterGroups] est le pendant **disjonctif** de [baseFilters] : chaque
+  /// [ZFilterGroup] est ANDé au reste, mais ses clauses sont en OR (« cette
+  /// valeur **ou** ce champ absent »). [itemFilter] est le **post-filtre**
+  /// d'écran : un prédicat écrit sur l'entité, appliqué aux entités lues avant
+  /// qu'elles ne deviennent des lignes. Tous deux sont `null`/vides par défaut
+  /// ⇒ comportement strictement inchangé.
+  ///
+  /// **Les déclarer impose la voie mémoire** : ni l'un ni l'autre ne se traduit
+  /// en requête — le socle ne peut les appliquer que sur un jeu déjà lu. Le
+  /// contrôleur lit alors le jeu **non paginé** à chaque requête, exactement
+  /// comme le mode [ZListPaginationMode.inMemory], plutôt que de laisser une
+  /// déclaration être silencieusement ignorée par la pagination curseur.
   ZListController({
     required this.repository,
     required this.toRow,
@@ -106,6 +128,8 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
     this.pageSize,
     this.mode = ZListPaginationMode.backendCursor,
     this.baseFilters = const <ZFilter>[],
+    this.baseFilterGroups = const <ZFilterGroup>[],
+    this.itemFilter,
     this.searchScope = ZSearchScope.searchableFields,
     this.searchFolding = ZSearchFolding.diacritics,
     List<ZSort> initialSorts = const <ZSort>[],
@@ -140,6 +164,27 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   /// **toujours ANDé en tête** des filtres utilisateur dans chaque requête ; jamais
   /// écrasé par `setFilters`. Défaut `const []` ⇒ rétro-compatible.
   final List<ZFilter> baseFilters;
+
+  /// Socle de **disjonctions** persistantes, ANDées au reste dans chaque
+  /// requête émise, chacune résolue en OR de ses clauses. Défaut `const []`
+  /// ⇒ rétro-compatible.
+  ///
+  /// Sert la règle que la conjonction ne sait pas dire — « cette valeur **ou**
+  /// ce champ absent », l'état initial d'un workflow. Un groupe **non inerte**
+  /// impose la voie mémoire (voir le constructeur).
+  final List<ZFilterGroup> baseFilterGroups;
+
+  /// **Post-filtre** d'écran : dernier mot sur ce qui est listé, écrit sur
+  /// l'entité `T` (`null` = aucun, défaut).
+  ///
+  /// Appliqué aux entités **lues**, après la lecture de la source et **avant**
+  /// la projection en lignes, donc avant la recherche, le tri et la
+  /// pagination : une page pleine reste pleine. Il ne peut que **restreindre**
+  /// — une entité que la requête n'a pas ramenée ne peut pas réapparaître.
+  ///
+  /// Le déclarer impose la voie mémoire (voir le constructeur) : un prédicat
+  /// Dart ne se traduit dans aucun langage de requête.
+  final bool Function(T item)? itemFilter;
 
   /// **Domaine de colonnes** de la recherche, porté par chaque requête émise.
   /// Défaut [ZSearchScope.searchableFields] ⇒ rétro-compatible.
@@ -203,6 +248,17 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   /// la bascule à la durée d'une recherche.
   bool get _searchNeedsMemory => _delegatesSearch && _hasActiveSearch;
 
+  /// Le périmètre déclaré est-il **hors de portée d'une requête** ?
+  ///
+  /// Vrai dès qu'un post-filtre est déclaré ou qu'une disjonction non inerte
+  /// est posée : ni l'un ni l'autre n'est garanti servi par la source. Le
+  /// listing part alors en mémoire — pour toutes ses requêtes, celles-là mêmes
+  /// que la pagination curseur aurait tronquées avant que la règle ne
+  /// s'applique. C'est la seule façon qu'une déclaration ne soit jamais
+  /// silencieusement ignorée.
+  late final bool _postFilterNeedsMemory = itemFilter != null ||
+      baseFilterGroups.any((group) => group.isNotEmpty);
+
   /// Remplace le terme de recherche, réinitialise la pagination et re-interroge.
   void setSearch(String? term) {
     _search = term;
@@ -253,6 +309,10 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
         filters: baseFilters.isEmpty
             ? _filters
             : <ZFilter>[...baseFilters, ..._filters],
+        // Les disjonctions déclarées voyagent dans la requête : un dépôt qui
+        // sait les traduire y gagne, un dépôt qui les ignore ne perd rien —
+        // le moteur du socle les applique de toute façon en mémoire.
+        filterGroups: baseFilterGroups,
         sorts: _sorts,
         search: _search,
         limit: pageSize,
@@ -269,11 +329,16 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
     if (!append) _emit(const ZListLoading());
     final request = _buildRequest(startAfter: startAfter);
 
-    // Deux raisons d'aller en mémoire, et une seule mécanique : le mode
-    // déclaré, ou une recherche active que le dépôt ne sait pas servir. Dans
-    // le second cas la bascule dure ce que dure la recherche — le terme effacé
-    // ramène la voie curseur.
-    if (mode == ZListPaginationMode.inMemory || _searchNeedsMemory) {
+    // Trois raisons d'aller en mémoire, et une seule mécanique : le mode
+    // déclaré, une recherche active que le dépôt ne sait pas servir, ou un
+    // périmètre déclaré hors de portée d'une requête (post-filtre,
+    // disjonction). Dans le deuxième cas la bascule dure ce que dure la
+    // recherche — le terme effacé ramène la voie curseur ; dans le troisième
+    // elle dure ce que dure le listing, puisque la déclaration, elle, ne
+    // s'efface pas.
+    if (mode == ZListPaginationMode.inMemory ||
+        _searchNeedsMemory ||
+        _postFilterNeedsMemory) {
       await _runInMemory(request, gen, append: append);
       return;
     }
@@ -321,7 +386,17 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
       return;
     }
     final items = result.getOrElse(() => const <Never>[]);
-    final allRows = <ZListRow>[for (final item in items) toRow(item)];
+    // Post-filtre AVANT la projection : la règle est écrite sur l'entité, et
+    // ce qu'elle écarte ne devient jamais une ligne (donc n'entre ni dans la
+    // recherche, ni dans le tri, ni dans le comptage d'une page).
+    final filter = itemFilter;
+    final kept = filter == null
+        ? items
+        : <T>[
+            for (final item in items)
+              if (filter(item)) item,
+          ];
+    final allRows = <ZListRow>[for (final item in kept) toRow(item)];
     // Le moteur applique filtres/recherche/tri/curseur/limit de façon
     // idempotente (une re-application sur un jeu déjà filtré donne le même
     // résultat) ; startAfter reprend le curseur accumulé sur un loadMore.

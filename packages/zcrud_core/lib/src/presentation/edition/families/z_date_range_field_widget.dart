@@ -29,6 +29,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show SemanticsService;
 
 import '../../../domain/edition/z_date_range.dart';
 import '../../../domain/edition/z_field_config.dart';
@@ -36,6 +37,73 @@ import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
 import '../z_decorated_field_trigger.dart';
 import '../z_read_only_value.dart';
+
+/// Message de **refus d'amplitude** d'une plage, ou `null` si la période est
+/// admise.
+///
+/// Confronte l'amplitude de [range] — son nombre de **jours couverts, bornes
+/// incluses** ([ZDateRange.spanDays]) — aux contraintes déclarées par le champ
+/// ([ZDateConfig.maxDays]/[ZDateConfig.minDays]). `config` à `null`, ou sans
+/// amplitude déclarée, rend toujours `null` : un champ qui ne déclare pas
+/// d'amplitude n'est jamais refusé.
+///
+/// Le message **nomme le nombre autorisé et son unité** — « La période ne doit
+/// pas dépasser 7 jours (bornes incluses) ». Le nombre affiché est exactement
+/// la valeur déclarée dans la config : aucun décalage entre ce que l'hôte écrit
+/// et ce que l'utilisateur lit. Libellés résolus par la chaîne l10n habituelle
+/// (`ZcrudScope.labels` → delegate → repli `en`), jamais un texte codé en dur.
+String? zDateSpanRefusalMessage(
+  BuildContext context,
+  ZDateConfig? config,
+  ZDateRange range,
+) {
+  if (config == null) return null;
+  switch (config.checkSpanDays(range.spanDays)) {
+    case ZDateSpanVerdict.accepted:
+      return null;
+    case ZDateSpanVerdict.tooLong:
+      return '${label(context, 'dateRangeTooLong')} '
+          '${config.effectiveMaxDays} ${label(context, 'daysInclusive')}';
+    case ZDateSpanVerdict.tooShort:
+      return '${label(context, 'dateRangeTooShort')} '
+          '${config.effectiveMinDays} ${label(context, 'daysInclusive')}';
+  }
+}
+
+/// Présente le refus d'amplitude [message] à l'utilisateur, **au moment de la
+/// sélection**.
+///
+/// Deux canaux, jamais le seul visuel (invariant AD-13) : une **annonce**
+/// lecteur d'écran immédiate (`SemanticsService`), puis une boîte de dialogue
+/// dont le texte est une **région vivante** (`liveRegion`) — la période refusée
+/// est donc énoncée, pas seulement montrée.
+///
+/// N'écrit rien : c'est l'appelant qui, en ne propageant pas la plage, laisse
+/// le champ **sur sa valeur précédente**.
+void zShowDateSpanRefusal(BuildContext context, String message) {
+  SemanticsService.sendAnnouncement(
+    View.of(context),
+    message,
+    Directionality.of(context),
+  );
+  showDialog<void>(
+    context: context,
+    builder: (BuildContext dialogContext) => AlertDialog(
+      title: Text(label(dialogContext, 'invalidValue')),
+      content: Semantics(
+        liveRegion: true,
+        container: true,
+        child: Text(message),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: Text(label(dialogContext, 'close')),
+        ),
+      ],
+    ),
+  );
+}
 
 /// Champ d'édition **plage de dates** (déclencheur de picker directionnel).
 ///
@@ -69,6 +137,14 @@ class ZDateRangeFieldWidget extends StatelessWidget {
   final Object? value;
 
   /// Notifié avec la [ZDateRange] choisie.
+  ///
+  /// **Amplitude** ([ZDateConfig.maxDays]/[ZDateConfig.minDays]) : comme les
+  /// bornes, la contrainte est honorée par le **dispatcher** de champ
+  /// (`ZFieldWidget`), seul point qui détient la déclaration ET l'écriture de
+  /// la tranche. Une période trop large ou trop courte n'est **pas écrite** —
+  /// le champ garde sa valeur précédente — et [zShowDateSpanRefusal] l'annonce.
+  /// Un hôte qui monte ce widget à la main garde donc la main sur ce qu'il
+  /// accepte : [zDateSpanRefusalMessage] lui rend le même verdict.
   final ValueChanged<ZDateRange> onChanged;
 
   /// Résolveur **paresseux** de la borne basse, évalué au tap. `null` ou retour
