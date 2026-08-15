@@ -163,6 +163,60 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
   /// (invariant AD-2).
   late final Listenable _revealAndRefs;
 
+  /// Tranches VOISINES qu'un widget hôte (champ `widget`/`custom`/`boolean`
+  /// servi par le registre, ou ornement `.widget`) a **réellement lues** via
+  /// `ZFieldWidgetContext.valueOf` — découvertes par un `valueOf` TRAÇANT
+  /// (même mécanique que l'abonnement aux tranches d'un `choicesResolver`).
+  ///
+  /// Invariant AD-2 : l'abonnement se limite aux noms lus. Une tranche que le
+  /// widget hôte ne lit jamais ne provoque aucun rebuild de ce champ, et aucun
+  /// abonnement n'est pris tant qu'aucune lecture n'a eu lieu (un champ sans
+  /// widget hôte est donc strictement inchangé).
+  final Map<String, VoidCallback> _readWatchers = <String, VoidCallback>{};
+
+  /// `valueOf` **traçant** remis aux widgets hôtes et aux ornements `.widget`
+  /// rendus SOUS le builder de tranche.
+  ///
+  /// La tranche propre du champ y est déjà la frontière de rebuild : la lire
+  /// ne prend donc aucun abonnement supplémentaire (aucun doublon dans la voie
+  /// de frappe). Toute autre tranche lue est abonnée à la PREMIÈRE lecture.
+  Object? _tracedValueOf(String name) =>
+      _traceRead(name, ownSliceCovered: true);
+
+  /// `valueOf` **traçant** des ornements HISSÉS hors du builder de tranche
+  /// (slots `leading`/`suffix` de la Card d'un champ `large`).
+  ///
+  /// Ceux-là ne bénéficient pas de la frontière de tranche : la tranche ornée
+  /// est donc abonnée elle aussi, faute de quoi l'ornement afficherait une
+  /// valeur figée.
+  Object? _hoistedValueOf(String name) =>
+      _traceRead(name, ownSliceCovered: false);
+
+  /// Lit la tranche [name] et, au passage, **abonne ce champ — et lui seul** —
+  /// à cette tranche si ce n'est pas déjà fait (invariant AD-2 : abonnement
+  /// ciblé, jamais global).
+  ///
+  /// L'abonnement est pris à la lecture (un simple `addListener`, jamais un
+  /// `setState`) parce qu'un builder hôte s'exécute au build de SON widget,
+  /// donc après le retour du dispatcher : une fenêtre de tracé fermée à la fin
+  /// du dispatch ne verrait jamais ces lectures. Il n'est jamais relâché tant
+  /// que le champ vit — une lecture conditionnelle ne se désabonne donc pas
+  /// d'elle-même au premier build où elle ne s'exécute pas.
+  ///
+  /// Nom inconnu ⇒ `null`, jamais d'exception (invariant AD-10).
+  Object? _traceRead(String name, {required bool ownSliceCovered}) {
+    if (!(ownSliceCovered && name == widget.field.name) &&
+        !_readWatchers.containsKey(name)) {
+      void watcher() {
+        if (mounted) setState(() {});
+      }
+
+      _readWatchers[name] = watcher;
+      widget.controller.fieldListenable(name).addListener(watcher);
+    }
+    return widget.controller.valueOf(name);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -262,6 +316,10 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
 
   @override
   void dispose() {
+    for (final entry in _readWatchers.entries) {
+      widget.controller.fieldListenable(entry.key).removeListener(entry.value);
+    }
+    _readWatchers.clear();
     _focus?.removeListener(_onFocusChange);
     _focus?.dispose();
     _text?.dispose();
@@ -383,13 +441,17 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       // Label enrichi (astérisque requis) + slots leading/suffix résolus
       // (statiquement, hors frontière de rebuild). Le `label` String reste porté
       // pour la sémantique conteneur de la Card (a11y).
+      // Ces deux ornements sont hissés HORS du builder de tranche : ils lisent
+      // par [_hoistedValueOf], qui abonne aussi la tranche ornée — faute de
+      // quoi un ornement `.widget` de champ `large` afficherait une valeur
+      // figée.
       return ZLargeFieldCard(
         label: resolvedLabel,
         labelWidget: ZFieldLabel(field: widget.field, large: true),
-        leading:
-            resolveAdornment(context, widget.field.leading, field: widget.field),
-        suffix:
-            resolveAdornment(context, widget.field.suffix, field: widget.field),
+        leading: resolveAdornment(context, widget.field.leading,
+            field: widget.field, valueOf: _hoistedValueOf),
+        suffix: resolveAdornment(context, widget.field.suffix,
+            field: widget.field, valueOf: _hoistedValueOf),
         child: reactive,
       );
     }
@@ -557,6 +619,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           validator: _validator,
           autovalidateMode: autovalidate,
           bare: bare,
+          valueOf: _tracedValueOf,
           onChanged: (v) => widget.controller.setValue(field.name, v),
         );
       case EditionFamily.number:
@@ -568,6 +631,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           validator: _validator,
           autovalidateMode: autovalidate,
           bare: bare,
+          valueOf: _tracedValueOf,
           onChanged: (parsed) => widget.controller.setValue(field.name, parsed),
         );
       case EditionFamily.date:
@@ -591,6 +655,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           onCleared: (field.isRequired || field.readOnly)
               ? null
               : () => widget.controller.setValue(field.name, null),
+          valueOf: _tracedValueOf,
         );
       case EditionFamily.dateRange:
         // Plage de dates (AD-47) : même chemin `ZFieldListenableBuilder`/
@@ -618,6 +683,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           onCleared: (field.isRequired || field.readOnly)
               ? null
               : () => widget.controller.setValue(field.name, null),
+          valueOf: _tracedValueOf,
         );
       case EditionFamily.boolean:
         // `boolean` consulte le MÊME seam de registre que les familles
@@ -653,6 +719,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           onCleared: (field.multiple || field.isRequired || field.readOnly)
               ? null
               : () => widget.controller.setValue(field.name, null),
+          valueOf: _tracedValueOf,
           onChanged: (sel) => widget.controller.setValue(field.name, sel),
         );
       case EditionFamily.relation:
@@ -693,6 +760,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           multiple: field.multiple,
           searchable: relCfg?.searchable ?? false,
           crudHandler: crudHandler,
+          valueOf: _tracedValueOf,
           onChanged: (sel) => widget.controller.setValue(field.name, sel),
         );
       case EditionFamily.tags:
@@ -764,6 +832,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
         return ZFreeWidgetFieldWidget(
           field: field,
           value: value,
+          valueOf: _tracedValueOf,
           onChanged: (v) => widget.controller.setValue(field.name, v),
         );
       case EditionFamily.file:
@@ -881,6 +950,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       ZFieldWidgetContext(
         field: field,
         value: value,
+        valueOf: _tracedValueOf,
         onChanged: (v) => widget.controller.setValue(field.name, v),
       ),
     );

@@ -26,6 +26,7 @@ import 'package:flutter/services.dart'
     show FilteringTextInputFormatter, TextInputFormatter;
 
 import '../../../domain/edition/edition_field_type.dart';
+import '../../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
@@ -43,6 +44,7 @@ class ZNumberFieldWidget extends StatelessWidget {
     this.validator,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
     this.bare = false,
+    this.valueOf,
     super.key,
   });
 
@@ -69,6 +71,11 @@ class ZNumberFieldWidget extends StatelessWidget {
   /// Rendu **bare** (borderless, sans label) pour le mode `large` : le
   /// décor est porté par la Card. Défaut `false`.
   final bool bare;
+
+  /// Lecteur **nommé** du formulaire hôte, transmis aux ornements `.widget`
+  /// (valeur du champ décoré + lecture d'un champ voisin). `null` ⇒ ornement
+  /// rendu sans valeur (comportement d'une composition hors formulaire).
+  final ZValueOf? valueOf;
 
   bool get _isInteger => field.type == EditionFieldType.integer;
 
@@ -117,7 +124,7 @@ class ZNumberFieldWidget extends StatelessWidget {
       // Label enrichi + hint/helper + ornements leading/prefix/suffix.
       // Suffixe devise/pourcentage NEUTRE lu depuis ZNumberConfig.
       decoration: zFieldDecoration(context, field,
-          bare: bare, suffixText: _suffixText(context)),
+          bare: bare, suffixText: _suffixText(context), valueOf: valueOf),
       onChanged: (raw) => onChanged(_parse(raw)),
     );
   }

@@ -29,6 +29,7 @@ library;
 
 import 'package:flutter/widgets.dart';
 
+import '../../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../../domain/edition/z_field_spec.dart';
 import '../../zcrud_scope.dart';
 import '../z_widget_registry.dart';
@@ -46,6 +47,7 @@ class ZFreeWidgetFieldWidget extends StatelessWidget {
     required this.field,
     required this.value,
     required this.onChanged,
+    this.valueOf,
     super.key,
   });
 
@@ -57,6 +59,12 @@ class ZFreeWidgetFieldWidget extends StatelessWidget {
 
   /// Écrit une nouvelle valeur dans la tranche (branché sur `setValue`).
   final ValueChanged<Object?> onChanged;
+
+  /// Lecteur **nommé** des autres champs du même formulaire, remis tel quel au
+  /// builder hôte (`ZFieldWidgetContext.valueOf`). `null` hors formulaire : le
+  /// builder doit prévoir le repli. Le dispatcher observe les noms lus pour
+  /// n'abonner ce champ qu'aux tranches réellement consultées (invariant AD-2).
+  final ZValueOf? valueOf;
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +81,12 @@ class ZFreeWidgetFieldWidget extends StatelessWidget {
     }
     return builder(
       context,
-      ZFieldWidgetContext(field: field, value: value, onChanged: onChanged),
+      ZFieldWidgetContext(
+        field: field,
+        value: value,
+        onChanged: onChanged,
+        valueOf: valueOf,
+      ),
     );
   }
 }

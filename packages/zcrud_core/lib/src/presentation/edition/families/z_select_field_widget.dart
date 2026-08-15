@@ -30,6 +30,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../domain/edition/edition_field_type.dart';
+import '../../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../../domain/edition/z_field_choice.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
@@ -60,6 +61,7 @@ class ZSelectFieldWidget extends StatelessWidget {
     this.choiceBuilder,
     this.choiceSecondaryBuilder,
     this.optionsLoader,
+    this.valueOf,
     super.key,
   });
 
@@ -89,6 +91,11 @@ class ZSelectFieldWidget extends StatelessWidget {
   /// Rendu **bare** (borderless, sans label) du dropdown pour le mode `large` :
   /// le décor est porté par la Card. Défaut `false`.
   final bool bare;
+
+  /// Lecteur **nommé** du formulaire hôte, transmis aux ornements `.widget`
+  /// (valeur du champ décoré + lecture d'un champ voisin). `null` ⇒ ornement
+  /// rendu sans valeur (comportement d'une composition hors formulaire).
+  final ZValueOf? valueOf;
 
   /// Rend un champ `radio` comme un **déclencheur modal** de choix unique au
   /// lieu des `RadioListTile` inline. Sans effet hors `radio`. Défaut `false`
@@ -235,7 +242,8 @@ class ZSelectFieldWidget extends StatelessWidget {
       isExpanded: true,
       initialValue: current,
       // Label enrichi + hint/helper + ornements leading/prefix/suffix.
-      decoration: zFieldDecoration(context, field, bare: bare),
+      decoration:
+          zFieldDecoration(context, field, bare: bare, valueOf: valueOf),
       items: <DropdownMenuItem<Object?>>[
         for (final choice in choices)
           DropdownMenuItem<Object?>(

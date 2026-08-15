@@ -31,6 +31,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show SemanticsService;
 
+import '../../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../../domain/edition/z_date_range.dart';
 import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
@@ -122,6 +123,7 @@ class ZDateRangeFieldWidget extends StatelessWidget {
     this.lastDate,
     this.onCleared,
     this.decorated,
+    this.valueOf,
     super.key,
   });
 
@@ -166,6 +168,11 @@ class ZDateRangeFieldWidget extends StatelessWidget {
   /// plus simple `OutlinedButton` ; `null` (défaut) ⇒ jeton de thème
   /// `ZcrudTheme.dateFieldDecorated`, lui-même à défaut `true`.
   final bool? decorated;
+
+  /// Lecteur **nommé** du formulaire hôte, transmis aux ornements `.widget`
+  /// (valeur du champ décoré + lecture d'un champ voisin). `null` ⇒ ornement
+  /// rendu sans valeur (comportement d'une composition hors formulaire).
+  final ZValueOf? valueOf;
 
   /// Plage courante typée, ou `null` si la graine n'est pas décodable.
   ///
@@ -234,6 +241,7 @@ class ZDateRangeFieldWidget extends StatelessWidget {
             hasValue: hasValue,
             onTap: onTap,
             trailingIcon: const Icon(Icons.date_range_outlined),
+            valueOf: valueOf,
           )
         // ── Échappatoire : rendu historique `OutlinedButton` ────────────────
         // UN SEUL nœud sémantique cohérent : le wrapper porte rôle bouton +

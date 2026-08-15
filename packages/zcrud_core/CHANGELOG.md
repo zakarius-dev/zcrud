@@ -3,6 +3,56 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.0.1 — 2026-08-15
+
+### Corrigé
+
+#### Un ornement `.widget` était rendu aveugle à la valeur du champ qu'il orne
+
+Un ornement `leading`/`prefix`/`suffix` de type `.widget` recevait `null` en
+guise de valeur, alors même que le socle tenait déjà celle du champ décoré. Le
+cas le plus naturel — un suffixe qui dépend de la saisie en cours, par exemple
+une action « Réauthentifier » qui n'a de sens qu'une fois l'ancien mot de passe
+renseigné — était donc hors d'atteinte, sauf à détenir l'état hors du
+formulaire.
+
+L'ornement reçoit désormais la **valeur courante** de la tranche qu'il orne
+(`ZFieldWidgetContext.value`) et la voit **changer** avec elle, y compris quand
+il est hissé dans la fiche d'un champ `large`. Il reste un **affichage** : son
+`onChanged` demeure inerte — lire n'est pas écrire.
+
+### Ajouté
+
+#### Lire un autre champ du même formulaire depuis un widget hôte
+
+`ZFieldWidgetContext` expose `valueOf` : une lecture **par nom** des autres
+champs du formulaire qui rend le champ. Elle sert aussi bien un champ
+`EditionFieldType.widget` (ou `custom`) qu'un ornement `.widget`, et couvre le
+besoin d'un widget monté **dans** la liste de champs, qui doit réagir à la
+saisie d'un voisin sans que l'application ait à détenir l'état elle-même.
+
+La lecture est **réactive et ciblée** : le socle observe les noms que le
+builder consulte réellement et ne reconstruit que ce champ quand l'une de ces
+valeurs change. Modifier un champ que le widget ne lit pas ne le reconstruit
+pas ; un widget qui ne lit rien n'est abonné à rien de plus qu'avant.
+
+La surface reste volontairement étroite : `valueOf` **ne fait que lire** — pas
+d'écriture, pas d'accès à l'état complet du formulaire, pas de contrôleur
+publié. Un nom inconnu rend `null` sans jamais lever. Hors formulaire
+(composition manuelle, prévisualisation), `valueOf` vaut `null` : appelez-le
+avec `?.call(...)` et prévoyez le repli.
+
+```dart
+registre.register('reauth', (context, ctx) {
+  final ancien = ctx.valueOf?.call('ancienMotDePasse');
+  final actif = ancien != null && '$ancien'.isNotEmpty;
+  return TextButton(
+    onPressed: actif ? _reauthentifier : null,
+    child: const Text('Réauthentifier'),
+  );
+});
+```
+
 ## 1.0.0 — 2026-08-14
 
 ### Corrigé

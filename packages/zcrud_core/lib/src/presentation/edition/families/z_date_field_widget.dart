@@ -35,6 +35,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../domain/edition/edition_field_type.dart';
+import '../../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
@@ -63,6 +64,7 @@ class ZDateFieldWidget extends StatelessWidget {
     this.lastDate,
     this.onCleared,
     this.decorated,
+    this.valueOf,
     super.key,
   });
 
@@ -102,6 +104,11 @@ class ZDateFieldWidget extends StatelessWidget {
   ///
   /// Chaîne **paramètre > jeton > référence** (référence du paquet = décoré).
   final bool? decorated;
+
+  /// Lecteur **nommé** du formulaire hôte, transmis aux ornements `.widget`
+  /// (valeur du champ décoré + lecture d'un champ voisin). `null` ⇒ ornement
+  /// rendu sans valeur (comportement d'une composition hors formulaire).
+  final ZValueOf? valueOf;
 
   /// Mode d'édition effectif — jamais `null`.
   ZDateMode get _mode {
@@ -169,6 +176,7 @@ class ZDateFieldWidget extends StatelessWidget {
                   ? Icons.access_time_outlined
                   : Icons.calendar_today_outlined,
             ),
+            valueOf: valueOf,
           )
         // ── Échappatoire : rendu simple `OutlinedButton` ────────────────────
         // UN SEUL nœud sémantique cohérent : le wrapper porte rôle bouton

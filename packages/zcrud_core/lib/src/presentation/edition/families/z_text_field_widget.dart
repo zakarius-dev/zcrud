@@ -22,6 +22,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show TextInputFormatter;
 
 import '../../../domain/edition/edition_field_type.dart';
+import '../../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../theme/z_theme.dart';
@@ -39,6 +40,7 @@ class ZTextFieldWidget extends StatelessWidget {
     this.validator,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
     this.bare = false,
+    this.valueOf,
     super.key,
   });
 
@@ -68,6 +70,11 @@ class ZTextFieldWidget extends StatelessWidget {
   /// décor est porté par la Card, le champ interne n'affiche aucune bordure ni
   /// label. Défaut `false` (rendu inline standard).
   final bool bare;
+
+  /// Lecteur **nommé** du formulaire hôte, transmis aux ornements `.widget`
+  /// (valeur du champ décoré + lecture d'un champ voisin). `null` ⇒ ornement
+  /// rendu sans valeur (comportement d'une composition hors formulaire).
+  final ZValueOf? valueOf;
 
   @override
   Widget build(BuildContext context) {
@@ -143,7 +150,8 @@ class ZTextFieldWidget extends StatelessWidget {
       validator: validator,
       // Label enrichi + hint/helper + ornements leading/prefix/suffix
       // (répartis par `zFieldDecoration` selon `ZAdornmentKind`).
-      decoration: zFieldDecoration(context, field, bare: bare),
+      decoration:
+          zFieldDecoration(context, field, bare: bare, valueOf: valueOf),
       onChanged: onChanged,
     );
   }

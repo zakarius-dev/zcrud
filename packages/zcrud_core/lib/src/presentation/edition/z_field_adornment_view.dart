@@ -12,10 +12,12 @@
 ///   `null` (jamais de throw) — aucun `IconData` ne fuit dans le domaine ;
 /// - `.widget` → builder host-fourni via `ZcrudScope.widgetRegistry`
 ///   (`tryBuilderFor(kind)`) ; `kind` non enregistré ⇒ `null` (dégradation
-///   propre). Couvre le cas état-dépendant d'un ornement qui doit lire un
-///   état applicatif : le widget host **lit l'état lui-même** via son
-///   `context`/scope — jamais une closure sérialisée dans le domaine
-///   (invariants AD-3/AD-14).
+///   propre). Couvre le cas état-dépendant d'un ornement qui **dépend du champ
+///   qu'il orne** ou d'un champ voisin : le dispatcher lui passe la **valeur
+///   courante** de la tranche ornée et le **lecteur nommé** `valueOf` (via
+///   `ZFieldWidgetContext`) — jamais une closure sérialisée dans le domaine
+///   (invariants AD-3/AD-14). L'ornement reste en **lecture seule** : son
+///   `onChanged` est inerte.
 ///
 /// Invariant AD-2 : ces résolutions sont des **fonctions pures cheap** (aucune
 /// allocation de `TextEditingController`/`FocusNode`, aucun `Listenable`) — elles
@@ -24,6 +26,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../domain/edition/z_field_adornment.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../l10n/z_localizations.dart';
@@ -81,6 +84,14 @@ IconData? zResolveAdornmentIcon(BuildContext context, String key) =>
 /// le [field] décoré. `null` (adornment absent OU clé non résolue) ⇒ aucun
 /// slot rendu.
 ///
+/// [valueOf] est le **lecteur nommé** du formulaire hôte (typiquement fourni
+/// par le dispatcher de champ). Il sert un ornement `.widget` de deux façons :
+/// la **valeur courante** du champ orné (`valueOf(field.name)`, exposée en
+/// `ZFieldWidgetContext.value`) et la lecture d'un **autre** champ. Omis
+/// (`null`), l'ornement est rendu sans valeur — c'est le cas d'une composition
+/// hors formulaire, et le comportement des ornements `.text`/`.icon` est
+/// inchangé dans tous les cas.
+///
 /// Aucune couleur en dur (invariant FR-26) : le texte hérite du `TextTheme`,
 /// l'icône du `IconTheme` ambiant. Les insets éventuels sont directionnels
 /// (invariant AD-13).
@@ -88,6 +99,7 @@ Widget? resolveAdornment(
   BuildContext context,
   ZFieldAdornment? adornment, {
   required ZFieldSpec field,
+  ZValueOf? valueOf,
 }) {
   if (adornment == null) return null;
   switch (adornment.kind) {
@@ -103,9 +115,9 @@ Widget? resolveAdornment(
       // Clé inconnue ⇒ slot omis (jamais de throw — invariant AD-10).
       return data == null ? null : Icon(data);
     case ZAdornmentKind.widget:
-      // Cas état-dépendant : le widget host lit l'état via son propre
-      // context/scope. `value`/`onChanged` ne portent pas de sémantique
-      // d'édition pour un ornement décoratif (display-only).
+      // Cas état-dépendant : l'ornement reçoit la valeur COURANTE du champ
+      // qu'il orne et le lecteur nommé des autres champs. `onChanged` reste
+      // inerte — un ornement est un affichage (display-only).
       final builder =
           ZcrudScope.maybeOf(context)?.widgetRegistry?.tryBuilderFor(adornment.value);
       if (builder == null) return null;
@@ -113,8 +125,9 @@ Widget? resolveAdornment(
         context,
         ZFieldWidgetContext(
           field: field,
-          value: null,
+          value: valueOf?.call(field.name),
           onChanged: _noop,
+          valueOf: valueOf,
         ),
       );
   }
@@ -134,6 +147,10 @@ void _noop(Object? _) {}
 /// `leading`/`suffix` sont **omis** (le dispatcher les branche sur les slots
 /// `ZLargeFieldCard.leading`/`.suffix`) ; seul le `prefix` **interne** subsiste.
 ///
+/// [valueOf] est transmis tel quel aux ornements `.widget` (voir
+/// [resolveAdornment]) : il leur donne la valeur du champ décoré et la lecture
+/// nommée de ses voisins. Omis, la décoration est exactement celle d'avant.
+///
 /// Résolution **statique** et **défensive** (invariants AD-2/AD-10) :
 /// fonctions pures cheap, aucune allocation de contrôleur/`Listenable`,
 /// aucune couleur en dur (invariant FR-26).
@@ -143,20 +160,23 @@ InputDecoration zFieldDecoration(
   bool bare = false,
   String? errorText,
   String? suffixText,
+  ZValueOf? valueOf,
 }) {
   final tokens = ZcrudTheme.of(context);
   String? l10n(String? key) =>
       key == null ? null : label(context, key, fallback: key);
 
   // `leading` → tête hors bordure (`icon`). Omis en `bare` (porté par la Card).
-  final leadingIcon =
-      bare ? null : resolveAdornment(context, field.leading, field: field);
+  final leadingIcon = bare
+      ? null
+      : resolveAdornment(context, field.leading,
+          field: field, valueOf: valueOf);
 
   Widget? prefix;
   Widget? prefixIcon;
   final p = field.prefix;
   if (p != null) {
-    final w = resolveAdornment(context, p, field: field);
+    final w = resolveAdornment(context, p, field: field, valueOf: valueOf);
     if (w != null) {
       if (p.kind == ZAdornmentKind.icon) {
         prefixIcon = w;
@@ -171,7 +191,7 @@ InputDecoration zFieldDecoration(
   // `suffix` interne en normal ; en `bare` il est porté par la Card (dispatcher).
   final s = bare ? null : field.suffix;
   if (s != null) {
-    final w = resolveAdornment(context, s, field: field);
+    final w = resolveAdornment(context, s, field: field, valueOf: valueOf);
     if (w != null) {
       if (s.kind == ZAdornmentKind.icon) {
         suffixIcon = w;

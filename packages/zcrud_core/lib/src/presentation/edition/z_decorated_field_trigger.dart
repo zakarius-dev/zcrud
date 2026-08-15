@@ -34,6 +34,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../domain/edition/z_field_size.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../theme/z_theme.dart';
@@ -54,6 +55,7 @@ class ZDecoratedFieldTrigger extends StatelessWidget {
     required this.hasValue,
     required this.onTap,
     this.trailingIcon,
+    this.valueOf,
     super.key,
   });
 
@@ -82,6 +84,11 @@ class ZDecoratedFieldTrigger extends StatelessWidget {
   /// [zFieldDecoration]) — un ornement déclaratif de l'hôte n'est jamais écrasé.
   final Widget? trailingIcon;
 
+  /// Lecteur **nommé** du formulaire hôte, transmis aux ornements `.widget`
+  /// (valeur du champ décoré + lecture d'un champ voisin). `null` ⇒ ornement
+  /// rendu sans valeur (comportement d'une composition hors formulaire).
+  final ZValueOf? valueOf;
+
   /// Rendu `bare` (le décor est porté par `ZLargeFieldCard`) — dérivé de la
   /// spec, exactement comme le fait le dispatcher (`fieldSize == large`).
   bool get _bare => field.fieldSize == ZFieldSize.large;
@@ -90,7 +97,8 @@ class ZDecoratedFieldTrigger extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bare = _bare;
-    var decoration = zFieldDecoration(context, field, bare: bare);
+    var decoration =
+        zFieldDecoration(context, field, bare: bare, valueOf: valueOf);
     if (trailingIcon != null &&
         decoration.suffixIcon == null &&
         decoration.suffix == null &&

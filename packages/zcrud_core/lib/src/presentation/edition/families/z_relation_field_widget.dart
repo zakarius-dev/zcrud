@@ -33,6 +33,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../../domain/edition/z_field_choice.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../../domain/ports/z_relation_crud.dart';
@@ -65,6 +66,7 @@ class ZRelationFieldWidget extends StatefulWidget {
     this.choiceBuilder,
     this.choiceSecondaryBuilder,
     this.optionsLoader,
+    this.valueOf,
     super.key,
   });
 
@@ -120,6 +122,11 @@ class ZRelationFieldWidget extends StatefulWidget {
   /// présentateur riche préfère alors le chargeur pour la liste du modal, et
   /// [source] continue d'alimenter la résolution du libellé sélectionné.
   final ZSelectOptionsLoader? optionsLoader;
+
+  /// Lecteur **nommé** du formulaire hôte, transmis aux ornements `.widget`
+  /// (valeur du champ orné + lecture d'un champ voisin). `null` ⇒ ornement
+  /// rendu sans valeur (comportement d'une composition hors formulaire).
+  final ZValueOf? valueOf;
 
   @override
   State<ZRelationFieldWidget> createState() => _ZRelationFieldWidgetState();
@@ -273,7 +280,8 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
       // Label enrichi (astérisque requis) + helper + leading.
       decoration: InputDecoration(
         label: ZFieldLabel(field: widget.field),
-        icon: resolveAdornment(context, widget.field.leading, field: widget.field),
+        icon: resolveAdornment(context, widget.field.leading,
+            field: widget.field, valueOf: widget.valueOf),
         hintText: label(context, loading ? 'loading' : 'select'),
         helperText: widget.field.helperText == null
             ? null

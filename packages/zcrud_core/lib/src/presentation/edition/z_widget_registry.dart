@@ -25,13 +25,58 @@ library;
 
 import 'package:flutter/widgets.dart';
 
+import '../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../domain/edition/z_field_spec.dart';
 import '../../domain/registry/z_registry_error.dart';
 
 /// Contexte passé à un [ZFieldWidgetBuilder] : la spec du champ, la valeur
-/// COURANTE de sa tranche et le callback d'écriture. Le builder **lit** [value]
+/// COURANTE de sa tranche, le callback d'écriture et un **lecteur nommé**
+/// ([valueOf]) des autres champs du même formulaire. Le builder **lit** [value]
 /// et **écrit** via [onChanged] — l'appel reste **dans** la frontière de rebuild
 /// du dispatcher (invariant AD-2 : aucune souscription élargie).
+///
+/// ## Lire un AUTRE champ du même formulaire ([valueOf])
+///
+/// Un widget hôte peut dépendre d'un champ voisin (afficher une action selon
+/// qu'un mot de passe a été saisi, résumer une date choisie plus haut…).
+/// [valueOf] donne cette lecture **par nom**, sans exposer le contrôleur :
+///
+/// ```dart
+/// registre.register('reauth', (context, ctx) {
+///   final ancien = ctx.valueOf?.call('ancienMotDePasse');
+///   return Text(ancien == null || '$ancien'.isEmpty ? '' : 'Réauthentifier');
+/// });
+/// ```
+///
+/// Ce que [valueOf] **garantit** :
+/// - **lecture nommée** de la valeur courante d'une tranche du MÊME formulaire,
+///   telle qu'elle s'y trouve (aucune conversion, aucune projection) ;
+/// - **abonnement ciblé** : le socle observe les noms que le builder a
+///   réellement lus et reconstruit ce champ — et lui seul — quand l'une de ces
+///   valeurs change. Un champ jamais lu ne provoque aucun rebuild
+///   (invariant AD-2) ;
+/// - **défensivité** (invariant AD-10) : un nom inconnu rend `null`, jamais une
+///   exception.
+///
+/// Ce que [valueOf] **ne fait pas** :
+/// - il **n'écrit rien** — c'est une lecture ; l'écriture passe par [onChanged],
+///   et un ornement (voir ci-dessous) n'écrit jamais ;
+/// - il **n'expose pas l'état complet** du formulaire : ni la liste des champs,
+///   ni le `ZFormController`, ni les canaux de validation/soumission. La
+///   surface se limite à une valeur par nom ;
+/// - il **ne traverse pas** les formulaires imbriqués : la lecture porte sur le
+///   formulaire qui rend le champ.
+///
+/// [valueOf] peut être `null` lorsque le widget est rendu **hors** d'un
+/// formulaire (composition manuelle, prévisualisation) : le builder doit donc
+/// l'appeler avec `?.call(...)` et prévoir le repli.
+///
+/// ## Ornements (`ZFieldAdornment.widget`)
+///
+/// Le même contexte sert les ornements `leading`/`prefix`/`suffix` de type
+/// `.widget`. Ils reçoivent [value] (la valeur du champ qu'ils ornent) et
+/// [valueOf], mais leur [onChanged] est **inerte** : un ornement est un
+/// affichage. Lire n'est pas écrire.
 ///
 /// ## Champ custom à valeur **STRUCTURÉE**
 ///
@@ -81,6 +126,7 @@ class ZFieldWidgetContext {
     required this.field,
     required this.value,
     required this.onChanged,
+    this.valueOf,
   });
 
   /// Spécification `const` du champ rendu (`name`/`type`/`label`/`config`…).
@@ -90,7 +136,21 @@ class ZFieldWidgetContext {
   final Object? value;
 
   /// Écrit une nouvelle valeur dans la tranche (branché sur `setValue`).
+  ///
+  /// **Inerte pour un ornement** `ZFieldAdornment.widget` : un ornement est un
+  /// affichage, il ne modifie jamais la tranche qu'il orne.
   final ValueChanged<Object?> onChanged;
+
+  /// Lecteur **nommé** des autres champs du même formulaire — `null` hors
+  /// formulaire.
+  ///
+  /// Rend la valeur courante de la tranche demandée (`null` si le nom est
+  /// inconnu, jamais d'exception — invariant AD-10) et **abonne** ce champ aux
+  /// seules tranches réellement lues : changer un champ que le builder ne lit
+  /// pas ne le reconstruit pas (invariant AD-2). Lecture seule : aucune
+  /// écriture, aucun accès à l'état complet du formulaire (voir la
+  /// documentation de [ZFieldWidgetContext]).
+  final ZValueOf? valueOf;
 }
 
 /// Construit le widget d'édition d'un champ à partir de son [ZFieldWidgetContext].
