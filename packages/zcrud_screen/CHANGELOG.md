@@ -3,6 +3,35 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.6.0 — 2026-08-16
+
+### Ajouté
+
+#### `drawer` / `endDrawer` — l'écran assemblé peut porter la navigation de l'hôte
+
+`ZPageScaffold` acceptait déjà `drawer` et `endDrawer` et les passait à son
+`Scaffold` ; `ZCrudScreen` **ne les exposait pas**. Une application dont la
+navigation entre modules passe par un menu latéral ne pouvait donc plus
+l'atteindre depuis un écran migré — sur un téléphone, ni bouton hamburger, ni
+ouverture par glissement.
+
+Les deux paramètres sont désormais relayés **tels quels**, et aux **deux**
+surfaces montées par l'écran : la coquille nominale **et** l'écran « accès
+refusé ». Ce second site était le plus grave — un refus d'ACL rendait un écran
+sans contenu *et* sans navigation.
+
+Défaut `null` ⇒ comportement **strictement inchangé**, aucune rupture.
+
+- Le paquet **ne fournit aucun menu** : la navigation appartient à
+  l'application, avec son ACL et son responsive.
+- Le bouton d'ouverture est inséré par **Material** (`automaticallyImplyLeading`),
+  jamais réimplémenté : un `leading` déclaré par l'hôte continue donc de primer,
+  comme partout ailleurs dans Flutter.
+- **En vue corbeille**, le bouton de retour occupe le `leading` : Material
+  n'insère pas le bouton de menu, et le tiroir reste ouvrable **par glissement
+  depuis le bord**. Sortir de la corbeille prime sur changer de module. Le bouton
+  de menu **revient** au retour aux vivants. Comportement documenté et gardé.
+
 ## 1.3.0 — 2026-08-16
 
 ### Ajouté

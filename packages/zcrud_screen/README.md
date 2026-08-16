@@ -1074,6 +1074,51 @@ Les états **vide / chargement / aucun résultat / erreur** du listing restent
 rendus par `DynamicList` (zcrud_core), qui les porte déjà avec `Semantics`,
 l10n et couleurs de thème : l'écran n'en **double** aucun.
 
+#### La navigation de l'application, portée par l'écran {#navigation}
+
+L'écran **construit** le `Scaffold` : sans relais, une application à modules
+n'avait aucun moyen d'attacher son menu à un écran migré — il fallait un second
+`Scaffold` imbriqué, un `GlobalKey<ScaffoldState>` et un `leading` qui ment sur
+son rôle. `drawer:` et `endDrawer:` sont donc **transmis tels quels** au
+`Scaffold` du socle :
+
+```dart
+ZCrudScreen<Navire>(
+  title: 'ships',
+  source: ZCrudSource<Navire>.repository(repo),
+  drawer: MonMenuLateral(), // votre menu, votre ACL, votre responsive
+);
+```
+
+**Le menu appartient à l'application.** Le paquet n'en fournit aucun, n'impose
+aucun responsive (tiroir sur mobile, colonne fixe sur desktop : c'est l'hôte
+qui tranche) et n'y applique aucune règle de droits.
+
+**Le bouton d'ouverture est inséré par Material, pas par zcrud** : un `Scaffold`
+porteur d'un tiroir dote son `AppBar` du bouton « hamburger » **si et seulement
+si** la place du `leading` est libre (`automaticallyImplyLeading` — comportement
+natif que le socle ne réimplémente pas). Trois conséquences **voulues** :
+
+| Situation | Bouton de menu | Tiroir atteignable ? |
+|---|---|---|
+| Vue normale, pas de `leading` | inséré par Material | oui (bouton + glissement) |
+| `leading:` déclaré par l'hôte | **absent** — le `leading` prime | oui, par **glissement** depuis le bord |
+| **Vue corbeille** | **absent** — le bouton de retour occupe la place | oui, par **glissement** depuis le bord |
+| **Recherche ouverte** | absent — le bouton de fermeture occupe la place | oui, par glissement |
+
+Le choix de la corbeille est **figé et gardé** : sortir de la corbeille prime
+sur changer de module. L'`endDrawer` obéit aux mêmes règles ; son bouton
+n'apparaît que si l'`AppBar` n'a aucune action — les actions de l'écran
+occupant cette place, on l'ouvre en pratique par glissement ou par un geste
+déclaré par l'hôte (`Scaffold.of(context).openEndDrawer()`).
+
+🔴 **L'état « accès refusé » porte lui aussi le tiroir** : c'est l'écran où la
+navigation manque le plus — sans elle, un refus d'ACL enferme l'usager sur une
+page qui ne lui offre ni contenu ni sortie.
+
+`drawer`/`endDrawer` nuls (défaut) ⇒ **aucun** tiroir, **aucun** bouton, rendu
+strictement identique à celui d'avant leur introduction.
+
 ### Grille de cartes métier
 
 Une liste ne se rend pas toujours en tableau. Pour une **grille de cartes**, il

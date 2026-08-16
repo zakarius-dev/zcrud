@@ -28,6 +28,11 @@
 /// portent la notification d'échec des actions de ligne. Les états
 /// vide/chargement/erreur du listing restent rendus par `DynamicList`
 /// lui-même (aucun état n'est doublé ici).
+///
+/// **La navigation de l'application, elle, reste à l'application** : l'écran
+/// ne fournit aucun menu, mais relaie `drawer`/`endDrawer` au `Scaffold` du
+/// socle — y compris sur l'état « accès refusé » —, pour qu'un écran migré ne
+/// devienne jamais un cul-de-sac dont on ne sort qu'en quittant l'app.
 library;
 
 import 'dart:async';
@@ -199,6 +204,8 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
     this.actions = const <ZAppBarAction>[],
     this.appBarActions = const <Widget>[],
     this.leading,
+    this.drawer,
+    this.endDrawer,
     this.rowAcl,
     this.actionAclMode = ZActionAclMode.hide,
     this.rowActionsPresentation = ZRowActionsPresentation.inline,
@@ -647,6 +654,60 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// Widget de tête de l'`AppBar` (remplacé par le bouton de sortie en vue
   /// corbeille).
   final Widget? leading;
+
+  /// **Navigation de l'application** — tiroir latéral de tête, relayé tel quel
+  /// au `Scaffold` du socle (`ZPageScaffold.drawer`).
+  ///
+  /// L'écran assemblé **construit** le `Scaffold` : sans ce relais, une
+  /// application à modules n'avait aucun moyen d'attacher son menu à un écran
+  /// migré — il fallait imbriquer un second `Scaffold` porteur du tiroir et un
+  /// `GlobalKey<ScaffoldState>` pour l'ouvrir.
+  ///
+  /// **Le menu appartient à l'application** : le paquet n'en fournit aucun, ne
+  /// décide d'aucun responsive (tiroir sur mobile, colonne fixe sur desktop :
+  /// c'est l'hôte qui tranche) et n'y applique aucune règle de droits. Il
+  /// transmet le widget, rien de plus.
+  ///
+  /// ```dart
+  /// ZCrudScreen<Navire>(
+  ///   title: 'ships',
+  ///   source: ZCrudSource<Navire>.repository(repo),
+  ///   drawer: MonMenuLateral(), // votre menu, votre ACL, votre responsive
+  /// );
+  /// ```
+  ///
+  /// **Le bouton d'ouverture est inséré par Material**, pas par zcrud : un
+  /// `Scaffold` porteur d'un tiroir voit son `AppBar` se doter du bouton
+  /// « hamburger » **si et seulement si** aucun `leading` n'occupe la place
+  /// (`automaticallyImplyLeading`, comportement natif que le socle ne
+  /// réimplémente pas). Trois conséquences **voulues** :
+  ///
+  /// * un [leading] déclaré par l'hôte **prime** sur le bouton de menu — le
+  ///   tiroir reste alors atteignable par **glissement depuis le bord** ;
+  /// * en **vue corbeille**, le socle impose son bouton de retour : le bouton
+  ///   de menu y est donc masqué, même avec un tiroir déclaré. C'est le
+  ///   comportement retenu — sortir de la corbeille prime sur changer de
+  ///   module, et le glissement depuis le bord reste offert ;
+  /// * pendant une **recherche ouverte**, le leading est le bouton de
+  ///   fermeture de la recherche : même règle, même repli.
+  ///
+  /// `null` (défaut) ⇒ **aucun** tiroir, aucun bouton, rendu strictement
+  /// identique à celui d'avant l'introduction du paramètre.
+  final Widget? drawer;
+
+  /// Tiroir latéral de **queue**, relayé tel quel au `Scaffold` du socle
+  /// (`ZPageScaffold.endDrawer`).
+  ///
+  /// Mêmes règles que [drawer] — le paquet ne fournit aucun contenu et ne
+  /// décide d'aucun responsive. Le bouton d'ouverture est inséré par Material
+  /// en **fin** d'`AppBar` quand aucune action n'y figure ; les actions de
+  /// l'écran (corbeille, création, export, actions déclarées) occupant cette
+  /// place, un tiroir de queue s'ouvre en pratique par **glissement depuis le
+  /// bord** ou par un geste que l'hôte déclare lui-même
+  /// (`Scaffold.of(context).openEndDrawer()`).
+  ///
+  /// `null` (défaut) ⇒ **aucun** tiroir de queue, rendu inchangé.
+  final Widget? endDrawer;
 
   /// **Gouvernance par ligne** : les droits propres à chaque entité, déclarés
   /// une seule fois pour tout l'écran.
@@ -3302,9 +3363,17 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   /// (jamais de littéral). Aucune action d'app-bar, aucune recherche : l'écran
   /// ne propose rien de ce qu'il refuse. **Aucune lecture de la source n'est
   /// déclenchée** — le contrôleur de listing n'est pas construit.
+  ///
+  /// 🔴 La **navigation de l'application y est conservée**
+  /// ([ZCrudScreen.drawer] / [ZCrudScreen.endDrawer]) : c'est l'écran où elle
+  /// manque le plus. Un refus d'ACL sans menu enfermerait l'usager sur une
+  /// page qui ne lui offre ni contenu ni sortie — il devrait quitter
+  /// l'application pour changer de module.
   Widget _buildAccessDenied(BuildContext context) => ZPageScaffold(
         title: label(context, widget.title),
         leading: widget.leading,
+        drawer: widget.drawer,
+        endDrawer: widget.endDrawer,
         body: ZErrorState(
           key: const ValueKey('zCrudAccessDenied'),
           icon: Icons.lock_outline,
@@ -3380,6 +3449,13 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
                     icon: const BackButtonIcon(),
                   )
                 : widget.leading,
+            // Navigation de l'application : relayée TELLE QUELLE au socle,
+            // dans les deux vues. En vue corbeille, le bouton de retour occupe
+            // le `leading` — Material n'y insère donc pas le bouton de menu
+            // (cf. doc de `drawer`) : le tiroir reste ouvrable par glissement
+            // depuis le bord.
+            drawer: widget.drawer,
+            endDrawer: widget.endDrawer,
             actions: _appBarActions(context, acl, trashCount),
             search: _searchOffered
                 ? ZAppBarSearchConfig(onQueryChanged: _onSearchChanged)

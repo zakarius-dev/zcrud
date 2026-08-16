@@ -252,6 +252,40 @@ d'écran, `ZRowTint.semanticLabel` la rend audible ; la rendre visible autrement
 (icône, pastille, mot d'état) reste l'affaire de la tuile
 ([invariant AD-13](../concepts/invariants.md#ad-13)).
 
+## Navigation de l'application {#navigation}
+
+L'écran **construit** le `Scaffold` : il relaie donc `drawer` et `endDrawer` au
+socle, tels quels, pour qu'une application à modules puisse attacher son menu à
+un écran assemblé sans imbriquer un second `Scaffold`.
+
+```dart
+ZCrudScreen<Navire>(
+  title: 'ships',
+  source: ZCrudSource<Navire>.repository(repo),
+  drawer: MonMenuLateral(), // votre menu, votre ACL, votre responsive
+);
+```
+
+**Le menu appartient à l'application** : le paquet n'en fournit aucun, n'impose
+aucun comportement responsive et n'y applique aucune règle de droits.
+
+**Le bouton d'ouverture est inséré par Material**, pas par zcrud : il n'apparaît
+que si la place du `leading` est libre (`automaticallyImplyLeading`, non
+réimplémenté ici).
+
+| Situation | Bouton de menu | Tiroir atteignable ? |
+|---|---|---|
+| Vue normale, pas de `leading` | inséré par Material | oui (bouton + glissement) |
+| `leading:` déclaré par l'hôte | absent — le `leading` prime | oui, par glissement depuis le bord |
+| Vue **corbeille** | absent — le bouton de retour occupe la place | oui, par glissement depuis le bord |
+| **Recherche ouverte** | absent — le bouton de fermeture occupe la place | oui, par glissement |
+
+La règle de la corbeille est **figée et gardée** : sortir de la corbeille prime
+sur changer de module. L'état **« accès refusé » porte lui aussi le tiroir** —
+c'est l'écran où la navigation manque le plus, l'usager n'y ayant ni contenu ni
+sortie. Sans `drawer`/`endDrawer` déclarés, le rendu est strictement celui
+d'avant leur introduction : aucun tiroir, aucun bouton.
+
 ## Types clés
 
 | Type | Rôle |
