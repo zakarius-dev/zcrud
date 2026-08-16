@@ -87,8 +87,18 @@ ZFormController _controller() => ZFormController(
         'sl': 5,
         'cl': null,
         'md': 'v',
+        // Une valeur de la longueur d'un MOT, et pas d'un caractère : le mode
+        // compact étant devenu le défaut, cette valeur est désormais rendue
+        // comme **texte de résumé** (elle vivait avant dans un champ de
+        // saisie, que `textContrastGuideline` ne mesure pas — un champ porte
+        // un `value`, pas un `label`). Or la garde de contraste mesure des
+        // PIXELS : sur un nœud pleine largeur, un glyphe unique est noyé dans
+        // son propre anticrénelage et la moyenne relevée descend à 4,33 — alors
+        // que la couleur DÉCLARÉE est `bodyMedium`/`onSurface` (#1D1B20) sur
+        // #FEF7FF, soit ~16:1. Ce n'est donc pas la couleur du socle qui est en
+        // cause, c'est la donnée de recette qui n'était pas représentative.
         'sub': const <Map<String, dynamic>>[
-          <String, dynamic>{'n': 'x'},
+          <String, dynamic>{'n': 'Nom de ligne'},
         ],
         'dyn': const <String, dynamic>{'n': 'y'},
         'sig': null,
@@ -104,6 +114,13 @@ Widget _app(
 }) =>
     MaterialApp(
       home: ZcrudScope(
+        // ACL permissive DÉCLARÉE : sans elle, le socle refuse tout et la
+        // sous-liste (compacte par défaut) ne rend AUCUNE action de ligne —
+        // c'est-à-dire le seul cas où un catalogue a11y n'a rien à mesurer sur
+        // cette famille. Avec elle, les trois actions natives entrent dans
+        // `androidTapTargetGuideline` : la garde en devient plus exigeante, pas
+        // moins.
+        acl: const ZAllowAllAcl(),
         widgetRegistry: registry,
         child: Directionality(
           textDirection: dir,

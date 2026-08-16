@@ -734,9 +734,9 @@ typedef ZSubItemCrudHook = Future<ZSubItemCrudOutcome> Function(
 /// |---|---|---|---|---|
 /// | [acl] | — | ✅ actions de ligne | — | — |
 /// | [itemTitleBuilder] | — | ✅ titre de ligne (sans `summaryFields`) + titre de dialogue | ✅ libellé de puce + titre de dialogue | — |
-/// | [itemBuilder] | — | ✅ remplace le contenu résumé | — | — |
+/// | [itemBuilder] | — | ✅ remplace le contenu résumé (**et sort de la table**) | — | — |
 /// | [itemActionsBuilder] | ✅ après retrait/réordonnancement | ✅ après les actions natives | — | ✅ après « effacer » |
-/// | [listViewBuilder] | — | ✅ remplace le conteneur de lignes | — | — |
+/// | [listViewBuilder] | — | ✅ remplace le conteneur de lignes (**et sort de la table**) | — | — |
 /// | [captionBuilder] | — | ✅ remplace l'en-tête | ✅ remplace l'en-tête | — |
 /// | [itemTransformer] | — | ✅ résumé + seams de rendu | ✅ libellé de puce | — |
 /// | [itemFieldsResolver] | — | — | — | ✅ sous-champs rendus |
@@ -749,6 +749,17 @@ typedef ZSubItemCrudHook = Future<ZSubItemCrudOutcome> Function(
 /// bord.** Un seam déclaré pour un mode qui ne le sert pas ne dégrade rien et
 /// ne lève rien (invariant AD-10) ; il ne fait simplement rien. Les raisons,
 /// mode par mode :
+///
+/// ⚠️ **« sort de la table »** — le mode `compact` rend par défaut une vraie
+/// `Table` (colonnes suivant le contenu, en-têtes solidaires). Deux seams sont
+/// **incompatibles avec elle**, non par choix mais par construction :
+/// [itemBuilder] rend un widget **opaque** que le socle ne peut pas découper en
+/// cellules, et [listViewBuilder] dispose les lignes lui-même. Déclarer l'un ou
+/// l'autre fait donc retomber la sous-liste sur le rendu **à colonnes de
+/// largeur égale** (`ListView.builder`) — le rendu de v1.4.1, inchangé. Aucun
+/// seam n'est **retiré** par la table : c'est la table qui cède, jamais le
+/// seam. Un hôte qui tenait à son rendu de ligne le garde sans rien déclarer de
+/// plus ; un hôte qui veut la table retire son seam.
 ///
 /// - **`inline`** déballe les sous-champs **éditables** de chaque item. Un
 ///   rendu libre, un conteneur libre ou une transformation d'affichage y

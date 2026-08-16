@@ -31,11 +31,16 @@ const _itemFields = <ZFieldSpec>[
   ZFieldSpec(name: 'f2', type: EditionFieldType.text, label: 'F2'),
 ];
 
+// `displayMode` DÉCLARÉ : son nom dit le mode qu'il teste, et depuis que
+// `compact` est le défaut, ne rien déclarer en rendrait un autre.
 const _inlineField = ZFieldSpec(
   name: 'items',
   type: EditionFieldType.subItems,
   label: 'Items',
-  config: ZSubListConfig(itemFields: _itemFields),
+  config: ZSubListConfig(
+    itemFields: _itemFields,
+    displayMode: ZSubListDisplayMode.inline,
+  ),
 );
 
 const _dynField = ZFieldSpec(

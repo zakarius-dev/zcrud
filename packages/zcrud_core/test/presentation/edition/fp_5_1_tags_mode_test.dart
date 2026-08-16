@@ -231,13 +231,16 @@ void main() {
   });
 
   group('tags : rétro-compat modes existants (AC-B3)', () {
-    testWidgets('config SANS displayMode → inline (déballage éditable inchangé)',
+    testWidgets('displayMode: inline DÉCLARÉ → déballage éditable inchangé',
         (tester) async {
       const inlineField = ZFieldSpec(
         name: 'items',
         type: EditionFieldType.subItems,
         label: 'Items',
-        config: ZSubListConfig(itemFields: _itemFields),
+        config: ZSubListConfig(
+          itemFields: _itemFields,
+          displayMode: ZSubListDisplayMode.inline,
+        ),
       );
       await tester.pumpWidget(_host(ZSubListFieldWidget(
         field: inlineField,

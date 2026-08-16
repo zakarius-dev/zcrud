@@ -36,20 +36,35 @@
 /// **directionnels** ; aucune couleur codée en dur (bordure dérivée du
 /// `ZcrudTheme` — invariant FR-26).
 ///
-/// **Mode compact** additif : lorsque `config.displayMode ==
-/// ZSubListDisplayMode.compact`, le widget rend une **liste résumé** (une
-/// ligne/valeurs de résumé par item, jamais les sous-champs éditables inline)
-/// + un **dialog d'édition PAR ITEM** (ajouter/consulter/modifier/supprimer),
-/// chaque action **filtrée par `ZAcl`**. Le mode `inline` (défaut) est
-/// **strictement préservé**. Dans le dialog : `ZFormController` PROPRE,
-/// `ZFieldWidget` réutilisé, aucun `Form` global.
+/// **Mode compact — le DÉFAUT** (`ZSubListConfig.displayMode`) : le widget rend
+/// une **table de résumé** (une ligne par item, une colonne par valeur de
+/// résumé, jamais les sous-champs éditables inline) + un **formulaire d'édition
+/// PAR ITEM** (ajouter/consulter/modifier/supprimer), chaque action **filtrée
+/// par `ZAcl`**. Dans le formulaire : `ZFormController` PROPRE, `ZFieldWidget`
+/// réutilisé, aucun `Form` global.
 ///
-/// **Le résumé se replie quand la place manque** : avec des en-têtes de
-/// colonnes, la table alignée n'est tenue que tant que chaque colonne garde la
-/// largeur minimale lisible du thème (marges et actions déduites). En deçà,
-/// chaque ligne s'empile en couples libellé/valeur et la ligne d'en-têtes
-/// disparaît — les deux décisions sortent du même calcul, de sorte qu'un
-/// en-tête ne surplombe jamais un empilement. Voir `_summaryIsStacked`.
+/// Le mode `inline` (sous-formulaires imbriqués empilés) est **strictement
+/// préservé** et reste à une ligne de déclaration : il ne partage aucun chemin
+/// de code avec le compact (`_buildInline`), il n'y a donc rien à faire diverger.
+///
+/// **Trois rendus, un seul mode compact** — décidés par mesure, jamais par
+/// déclaration :
+/// 1. **table** (`Table` à colonnes suivant le contenu, en-têtes solidaires,
+///    numériques cadrés en fin) — le cas nominal ; voir `_buildSummaryTable` ;
+/// 2. **colonnes de largeur égale** sous une ligne d'en-têtes de même géométrie
+///    (`ListView.builder`, lignes construites à la demande) — au-delà du budget
+///    de lignes, quand un conteneur ou un rendu de ligne de l'hôte reprend la
+///    main ; voir `ZSubListFieldWidget.summaryTableRowBudget` ;
+/// 3. **empilement libellé/valeur** — quand la place manque : la table n'est
+///    tenue que tant que chaque colonne garde la largeur minimale lisible du
+///    thème (marges et actions déduites). En deçà, chaque ligne s'empile et la
+///    ligne d'en-têtes disparaît — les deux décisions sortent du même calcul,
+///    de sorte qu'un en-tête ne surplombe jamais un empilement. Voir
+///    `_summaryIsStacked`.
+///
+/// `showSummaryHeaders: false` sort de ces trois rendus : c'est le **résumé
+/// défilant** historique (cellules de largeur intrinsèque, sans en-tête, sans
+/// alignement inter-lignes, sans repli), conservé pour l'hôte qui le déclare.
 ///
 /// ## Seams de présentation — résolus par le CHEMIN NOMINAL
 ///
@@ -231,6 +246,36 @@ class ZSubListFieldWidget extends StatefulWidget {
   /// résolveurs sont **inertes** et le socle retombe sur la config déclarée
   /// (invariant AD-10).
   final ZFormController? parentController;
+
+  /// **Budget de lignes** de la table de résumé (mode `compact` tabulaire) :
+  /// au-delà, le socle retombe sur un rendu **construit à la demande**.
+  ///
+  /// ## Pourquoi un budget, et pourquoi il est explicite
+  ///
+  /// Une table ne se **virtualise pas** : dimensionner une colonne sur son
+  /// contenu oblige à mesurer la largeur intrinsèque de **toutes** ses cellules,
+  /// donc à construire et à mesurer chaque ligne à chaque mise en page. C'est le
+  /// prix de l'alignement, et il est linéaire en nombre de lignes.
+  ///
+  /// Ce prix est parfaitement tenable sur ce à quoi une sous-liste **sert** :
+  /// les lignes d'un document, d'un bordereau, d'un procès-verbal — des
+  /// dizaines de lignes. Il ne l'est pas sur des milliers. Plutôt que de laisser
+  /// ce point implicite (et de le découvrir sur l'appareil d'un utilisateur), le
+  /// socle **choisit** : au-delà de ce nombre de lignes, il rend la sous-liste
+  /// par un `ListView.builder` (lignes construites à la demande, colonnes de
+  /// largeur **égale** sous une ligne d'en-têtes de même géométrie) — le rendu
+  /// de v1.4.1, conservé pour cela même.
+  ///
+  /// **La bascule est observable**, et c'est délibéré : `find.byType(Table)`
+  /// répond `findsOneWidget` à [summaryTableRowBudget] lignes et `findsNothing`
+  /// à [summaryTableRowBudget] + 1. Un seuil qu'on ne peut pas mesurer des deux
+  /// côtés n'est pas un seuil, c'est une intention.
+  ///
+  /// **Au-delà du budget, une sous-liste n'est plus une sous-liste** : une liste
+  /// de cette taille demande un tri, une pagination, une virtualisation — le
+  /// moteur de `zcrud_list` (invariant AD-8), pas une mise en page de
+  /// formulaire. Le repli est un **filet de sécurité**, pas une invitation.
+  static const int summaryTableRowBudget = 60;
 
   @override
   State<ZSubListFieldWidget> createState() => _ZSubListFieldWidgetState();
@@ -521,12 +566,20 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     return config is ZSubListConfig ? config.reorderable : true;
   }
 
-  /// Mode de rendu — `inline` (défaut) si config absente/non conforme.
+  /// Mode de rendu — `compact` (défaut) si config absente/non conforme.
+  ///
+  /// Ce repli suit le défaut de `ZSubListConfig.displayMode` **délibérément**,
+  /// et pas par symétrie décorative : le générateur (`@ZcrudModel`) émet un
+  /// champ `subItems` **sans aucune config** pour un sous-modèle. Laisser ce
+  /// repli sur `inline` ferait donc coexister deux « défauts » contradictoires
+  /// — `compact` pour qui écrit une config à la main, `inline` pour qui laisse
+  /// le générateur écrire la sienne — et le second est justement le cas où
+  /// l'hôte n'a rien choisi.
   ZSubListDisplayMode get _displayMode {
     final config = widget.field.config;
     return config is ZSubListConfig
         ? config.displayMode
-        : ZSubListDisplayMode.inline;
+        : ZSubListDisplayMode.compact;
   }
 
   /// **Colonnes de résumé effectives** du mode compact (et du libellé de puce
@@ -557,11 +610,16 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     return config is ZSubListConfig && config.summaryColumns.isNotEmpty;
   }
 
-  /// En-têtes de colonnes du résumé ? (**opt-in**, défaut `false` ⇒ mise en
-  /// page compacte strictement inchangée).
+  /// **Rendu tabulaire** du résumé (colonnes alignées + en-têtes) ?
+  ///
+  /// Défaut `true` (voir `ZSubListConfig.showSummaryHeaders`). `false` ⇒ résumé
+  /// **défilant** historique : cellules de largeur intrinsèque, sans en-tête,
+  /// sans alignement inter-lignes et sans repli mesuré.
+  ///
+  /// Une config absente/non conforme suit le défaut : `true`.
   bool get _showSummaryHeaders {
     final config = widget.field.config;
-    return config is ZSubListConfig && config.showSummaryHeaders;
+    return config is! ZSubListConfig || config.showSummaryHeaders;
   }
 
   /// Soft-delete actif ? (défaut `false`, config absente/non conf.)
@@ -1015,6 +1073,39 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     );
   }
 
+  /// Une colonne de résumé porte-t-elle une valeur **numérique** ?
+  ///
+  /// C'est la seule question qui gouverne le **cadrage de fin** d'une cellule,
+  /// et elle se répond sur des **déclarations**, jamais sur la donnée : lire la
+  /// valeur d'une ligne pour décider de l'alignement d'une **colonne** ferait
+  /// dépendre la géométrie du contenu, et une colonne dont la première ligne
+  /// est vide s'alignerait autrement que la même colonne remplie.
+  ///
+  /// Deux sources, dans cet ordre :
+  /// 1. `ZSubListSummaryColumn.decimals` — une colonne qui fixe ses décimales
+  ///    se déclare numérique. C'est le **seul** signal disponible pour une
+  ///    colonne **calculée** (hors sous-schéma) : elle n'a pas de `ZFieldSpec`.
+  /// 2. le **type déclaré** de l'`itemField` de même nom (`number`, `integer`,
+  ///    `float`).
+  ///
+  /// Pourquoi ces trois types et pas davantage : `rating`, `slider` ou `stepper`
+  /// portent bien un nombre, mais leur résumé se lit comme une **appréciation**,
+  /// pas comme une grandeur à comparer en colonne. Cadrer un montant en fin sert
+  /// à aligner les unités entre lignes ; cadrer une note de 1 à 5 n'aligne rien.
+  bool _isNumericColumn(ZSubListSummaryColumn column) {
+    if (column.decimals != null) return true;
+    final spec = _specOf(column.name);
+    if (spec == null) return false;
+    return spec.type == EditionFieldType.number ||
+        spec.type == EditionFieldType.integer ||
+        spec.type == EditionFieldType.float;
+  }
+
+  /// Cadrage **directionnel** d'une colonne (invariant AD-13) : fin pour une
+  /// colonne numérique, début sinon. Jamais `left`/`right`.
+  TextAlign _columnAlign(ZSubListSummaryColumn column) =>
+      _isNumericColumn(column) ? TextAlign.end : TextAlign.start;
+
   /// Familles dont le résumé est **projeté** : les familles à choix (libellé
   /// au lieu de la clé) et les familles de date (port d'affichage). Toute
   /// autre famille conserve son rendu brut d'origine.
@@ -1157,7 +1248,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                     _columnText(context, item, column, data),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.start,
+                    textAlign: _columnAlign(column),
                   ),
                 ),
               ),
@@ -1352,7 +1443,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                     _columnLabel(context, column),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.start,
+                    textAlign: _columnAlign(column),
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ),
@@ -1368,6 +1459,229 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// cible tactile ≥ 48 dp — invariant AD-13). Sert à réserver, sous
   /// l'en-tête, la même largeur que la zone d'actions.
   static const double _actionExtent = 48;
+
+  // ── Table de résumé (mode compact tabulaire) ────────────────────────────────
+
+  /// **Table de résumé** : une `Table` unique portant la ligne d'en-têtes ET
+  /// toutes les lignes d'items.
+  ///
+  /// ## Ce que « vraie table » veut dire ici, et ce que ça exclut
+  ///
+  /// Trois propriétés, qu'une pile de lignes indépendantes ne peut pas tenir :
+  ///
+  /// 1. **Largeurs suivant le contenu** — `IntrinsicColumnWidth` : chaque
+  ///    colonne se dimensionne sur la plus large de ses cellules, en-tête
+  ///    compris. La **première** colonne porte en plus un `flex` : elle absorbe
+  ///    la place restante quand la table est plus étroite que la surface, et
+  ///    elle cède la première quand elle est plus large. C'est la colonne de
+  ///    désignation d'une ligne de document — la seule dont l'élasticité ne
+  ///    dérange personne, et celle qu'on veut voir en entier.
+  /// 2. **En-têtes solidaires** — l'en-tête n'est pas une ligne qui *reproduit*
+  ///    la géométrie des cellules (ce que faisait le rendu de v1.4.1, en
+  ///    recopiant marges et réserve d'actions) : c'est **la même colonne**, dans
+  ///    la même `Table`. Il ne peut donc pas se désaligner : il n'y a rien à
+  ///    tenir d'accord.
+  /// 3. **Cadrage de fin des valeurs numériques** ([_columnAlign]) — sans lui,
+  ///    une colonne de montants ne se lit pas en colonne, et c'est tout l'objet
+  ///    d'une table de lignes de document.
+  ///
+  /// ## Où passe la frontière avec `zcrud_list` (invariant AD-8)
+  ///
+  /// Ceci est une **mise en page**, pas un moteur de liste. La distinction n'est
+  /// pas rhétorique, elle est vérifiable : cette table n'a **ni tri, ni
+  /// pagination, ni virtualisation, ni renderer interchangeable, ni source de
+  /// données** — elle reçoit les items déjà en mémoire du formulaire qui la
+  /// contient, et les dispose. Tout ce qui suppose que la liste est *grande*
+  /// (donc tout ce qui la rend paresseuse ou navigable) appartient à
+  /// `zcrud_list` et n'entrera jamais ici ; c'est aussi ce qui justifie le
+  /// budget de lignes ([ZSubListFieldWidget.summaryTableRowBudget]) plutôt
+  /// qu'une virtualisation maison. `zcrud_core` ne dépend d'aucun paquet zcrud
+  /// (invariant AD-1) : la table est bâtie sur les seules primitives Flutter.
+  ///
+  /// a11y (invariant AD-13) : chaque en-tête est un nœud `header` ; chaque
+  /// cellule est annoncée « libellé : valeur » (le libellé vit dans l'en-tête,
+  /// hors de portée d'un lecteur d'écran qui parcourt les lignes). Les actions
+  /// gardent leur cible de 48 dp, et aucun `left`/`right` n'apparaît : les
+  /// bordures verticales de la table sont **symétriques**, donc invariantes par
+  /// renversement.
+  Widget _buildSummaryTable(
+    BuildContext context, {
+    required ZcrudTheme theme,
+    required int actionCount,
+    required bool canView,
+    required bool canUpdate,
+    required bool canDelete,
+    required List<List<Widget>>? extras,
+    required List<List<ZSubItemMenuOption>>? optionsPerItem,
+  }) {
+    final columns = _summaryColumns;
+    final borderColor = theme.fieldBorderColor;
+    final labelStyle = Theme.of(context).textTheme.labelMedium;
+    // Une ligne soft-deleted porte TOUJOURS son action « restaurer » (elle
+    // n'est pas gatée : sans elle, la ligne serait un cul-de-sac). La colonne
+    // d'actions doit donc exister même quand l'ACL n'accorde rien.
+    final anyDeleted = _items.any((item) => item.deleted);
+    final hasActions = actionCount > 0 || anyDeleted;
+    final actionsIndex = columns.length;
+
+    Widget cell(Widget child, {required bool last}) => Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(12, 8, last ? 12 : 16, 8),
+          child: child,
+        );
+
+    final headerRow = TableRow(
+      decoration: borderColor == null
+          ? null
+          : BoxDecoration(
+              border: Border(bottom: BorderSide(color: borderColor)),
+            ),
+      children: <Widget>[
+        for (var c = 0; c < columns.length; c++)
+          cell(
+            Semantics(
+              // Même raison qu'en v1.4.1 : le bloc compact est enveloppé d'un
+              // `Semantics(container: true)` ; sans nœud propre, le drapeau
+              // `header` remonterait sur le bloc entier.
+              container: true,
+              header: true,
+              child: Text(
+                _columnLabel(context, columns[c]),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: _columnAlign(columns[c]),
+                style: labelStyle,
+              ),
+            ),
+            last: !hasActions && c == columns.length - 1,
+          ),
+        if (hasActions) const SizedBox.shrink(),
+      ],
+    );
+
+    final rows = <TableRow>[headerRow];
+    for (var i = 0; i < _items.length; i++) {
+      final item = _items[i];
+      final display = _displayDataOf(item);
+      final data = _columnData(item, display);
+      final last = i == _items.length - 1;
+      rows.add(
+        TableRow(
+          // Identité **stable** par item (invariant AD-2) : un retrait ou un
+          // réordonnancement ne vole pas l'état de ses voisines.
+          key: ValueKey<String>('subListRow_${item.id}'),
+          decoration: borderColor == null || last
+              ? null
+              : BoxDecoration(
+                  border: Border(bottom: BorderSide(color: borderColor)),
+                ),
+          children: <Widget>[
+            for (var c = 0; c < columns.length; c++)
+              cell(
+                _tableCell(context, item, columns[c], data),
+                last: !hasActions && c == columns.length - 1,
+              ),
+            if (hasActions)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (item.deleted)
+                    Padding(
+                      padding:
+                          const EdgeInsetsDirectional.fromSTEB(8, 0, 0, 0),
+                      child: Text(
+                        label(context, 'deletedItemBadge'),
+                        style: Theme.of(context).textTheme.bodySmall,
+                        textAlign: TextAlign.start,
+                      ),
+                    ),
+                  _RowActions(
+                    deleted: item.deleted,
+                    canView: canView,
+                    canUpdate: canUpdate,
+                    canDelete: canDelete,
+                    viewLabel: label(context, 'viewItem'),
+                    editLabel: label(context, 'editItem'),
+                    deleteLabel: label(context, 'deleteItem'),
+                    restoreLabel: label(context, 'restoreItem'),
+                    onView: () => _openViewDialog(item),
+                    onEdit: () => _openEditDialog(item),
+                    onDelete: () => _confirmDelete(item),
+                    onRestore: () => _restore(item),
+                    extraActions: extras == null || i >= extras.length
+                        ? const <Widget>[]
+                        : extras[i],
+                    menu: optionsPerItem == null ||
+                            i >= optionsPerItem.length ||
+                            optionsPerItem[i].isEmpty
+                        ? null
+                        : _buildItemMenu(context, item, optionsPerItem[i]),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 4),
+      child: Table(
+        // La première colonne absorbe le jeu (surplus ET déficit) ; les autres
+        // sont dimensionnées par leur contenu.
+        columnWidths: <int, TableColumnWidth>{
+          0: const IntrinsicColumnWidth(flex: 1),
+          if (hasActions) actionsIndex: const IntrinsicColumnWidth(),
+        },
+        defaultColumnWidth: const IntrinsicColumnWidth(),
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        border: borderColor == null
+            ? null
+            : TableBorder(
+                top: BorderSide(color: borderColor),
+                bottom: BorderSide(color: borderColor),
+                // Bordures verticales **symétriques** : invariantes par
+                // renversement, donc sans variante directionnelle à tenir.
+                left: BorderSide(color: borderColor),
+                right: BorderSide(color: borderColor),
+                borderRadius: BorderRadius.all(theme.radiusM),
+              ),
+        children: rows,
+      ),
+    );
+  }
+
+  /// Cellule de valeur d'une ligne de table : le texte projeté de la colonne,
+  /// cadré selon la nature de la colonne, barré si l'item est soft-deleted.
+  ///
+  /// a11y : le couple est annoncé « libellé : valeur ». Le `Text` en est exclu,
+  /// faute de quoi la valeur serait annoncée deux fois — même règle que le
+  /// résumé empilé, pour la même raison.
+  Widget _tableCell(
+    BuildContext context,
+    _SubItem item,
+    ZSubListSummaryColumn column,
+    Map<String, dynamic>? data,
+  ) {
+    final value = _columnText(context, item, column, data);
+    Widget text = Text(
+      value,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: _columnAlign(column),
+    );
+    if (item.deleted) {
+      text = DefaultTextStyle.merge(
+        style: const TextStyle(decoration: TextDecoration.lineThrough),
+        child: text,
+      );
+    }
+    return Semantics(
+      container: true,
+      label: _columnLabel(context, column),
+      value: value,
+      child: ExcludeSemantics(child: text),
+    );
+  }
 
   /// Ouvre le **formulaire d'édition** d'un item, sous la forme déclarée
   /// (`ZSubListConfig.itemFormPresentation` : dialogue, feuille ou page).
@@ -2182,6 +2496,25 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
           final stacked =
               _summaryIsStacked(theme, constraints.maxWidth, actionCount);
 
+          // Rendu **tabulaire** : une `Table` unique (en-têtes + lignes). Cinq
+          // conditions, toutes nécessaires, aucune cosmétique :
+          // - le rendu tabulaire est demandé (`showSummaryHeaders`) et il y a
+          //   des colonnes ET des lignes à disposer ;
+          // - la place suffit (sinon c'est l'empilement mesuré qui parle) ;
+          // - aucun conteneur hôte (`listViewBuilder`) : il dispose les lignes
+          //   comme il l'entend, aucune colonne ne peut plus être promise ;
+          // - aucun rendu libre de ligne (`itemBuilder`) : le socle reçoit un
+          //   widget OPAQUE qu'il ne peut pas découper en cellules ;
+          // - le budget de lignes est tenu (une table ne se virtualise pas —
+          //   voir `ZSubListFieldWidget.summaryTableRowBudget`).
+          final tabular = _showSummaryHeaders &&
+              !stacked &&
+              listSeam == null &&
+              _seams?.itemBuilder == null &&
+              _summaryColumns.isNotEmpty &&
+              _items.isNotEmpty &&
+              _items.length <= ZSubListFieldWidget.summaryTableRowBudget;
+
           // Une ligne, à l'indice demandé. Indice hors bornes ⇒
           // `SizedBox.shrink()` : un conteneur hôte qui redemande un item
           // disparu ne fait pas échouer le rendu (invariant AD-10).
@@ -2295,30 +2628,45 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               caption,
-              // En-têtes de colonnes, **opt-in** et rendus seulement s'il y a
-              // des colonnes ET des lignes à coiffer — et seulement tant que
-              // les lignes sont des colonnes : empilées, elles portent leur
-              // propre libellé et l'en-tête n'aurait plus rien à coiffer.
-              // Un conteneur hôte les efface aussi : il dispose ses lignes
-              // comme il l'entend, un en-tête ne pourrait plus promettre de
-              // tomber en face de quoi que ce soit.
-              if (_showSummaryHeaders &&
-                  listSeam == null &&
-                  !stacked &&
-                  _summaryColumns.isNotEmpty &&
-                  _items.isNotEmpty)
-                _summaryHeaderRow(context, actionCount),
-              if (_items.isEmpty)
-                Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
-                  child: Text(
-                    label(context, 'noItems'),
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.start,
-                  ),
+              if (tabular)
+                _buildSummaryTable(
+                  context,
+                  theme: theme,
+                  actionCount: actionCount,
+                  canView: canView,
+                  canUpdate: canUpdate,
+                  canDelete: canDelete,
+                  extras: extras,
+                  optionsPerItem: optionsPerItem,
                 )
-              else
-                buildListBody(),
+              else ...<Widget>[
+                // Hors table : la ligne d'en-têtes **reproduit** la géométrie
+                // des cellules (colonnes de largeur égale, même réserve
+                // d'actions). Rendue seulement s'il y a des colonnes ET des
+                // lignes à coiffer — et seulement tant que les lignes SONT des
+                // colonnes : empilées, elles portent leur propre libellé et
+                // l'en-tête n'aurait plus rien à coiffer. Un conteneur hôte les
+                // efface aussi : il dispose ses lignes comme il l'entend, un
+                // en-tête ne pourrait plus promettre de tomber en face de quoi
+                // que ce soit.
+                if (_showSummaryHeaders &&
+                    listSeam == null &&
+                    !stacked &&
+                    _summaryColumns.isNotEmpty &&
+                    _items.isNotEmpty)
+                  _summaryHeaderRow(context, actionCount),
+                if (_items.isEmpty)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
+                    child: Text(
+                      label(context, 'noItems'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                      textAlign: TextAlign.start,
+                    ),
+                  )
+                else
+                  buildListBody(),
+              ],
             ],
           );
         },
@@ -2540,39 +2888,111 @@ class _CompactRow extends StatelessWidget {
           child: Row(
             children: <Widget>[
               Expanded(child: summaryContent),
-              // Item soft-deleted : seule l'action **restaurer** est offerte.
-              if (deleted)
-                IconButton(
-                  icon: const Icon(Icons.restore_from_trash),
-                  tooltip: restoreLabel,
-                  onPressed: onRestore,
-                )
-              else ...<Widget>[
-                if (canView)
-                  IconButton(
-                    icon: const Icon(Icons.visibility),
-                    tooltip: viewLabel,
-                    onPressed: onView,
-                  ),
-                if (canUpdate)
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    tooltip: editLabel,
-                    onPressed: onEdit,
-                  ),
-                if (canDelete)
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    tooltip: deleteLabel,
-                    onPressed: onDelete,
-                  ),
-              ],
-              ...extraActions,
-              ?menu,
+              _RowActions(
+                deleted: deleted,
+                canView: canView,
+                canUpdate: canUpdate,
+                canDelete: canDelete,
+                viewLabel: viewLabel,
+                editLabel: editLabel,
+                deleteLabel: deleteLabel,
+                restoreLabel: restoreLabel,
+                onView: onView,
+                onEdit: onEdit,
+                onDelete: onDelete,
+                onRestore: onRestore,
+                extraActions: extraActions,
+                menu: menu,
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// **Actions de fin de ligne** d'un item (`IconButton` ≥ 48 dp, tooltips l10n),
+/// partagées par les DEUX rendus du mode compact : la ligne empilée/défilante
+/// (`_CompactRow`) et la cellule d'actions de la table.
+///
+/// Le partage n'est pas une économie de lignes : il rend **impossible** que les
+/// deux rendus n'offrent pas les mêmes gestes, dans le même ordre, sous la même
+/// ACL. Un budget de lignes franchi change la mise en page ; il ne doit pas
+/// changer ce qu'on peut faire d'une ligne.
+///
+/// Ordre **invariant** : actions natives (gatées ACL en amont), puis
+/// [extraActions] de l'hôte, puis le [menu] de débordement — aucun canal n'en
+/// masque un autre. Une ligne soft-deleted n'offre que « restaurer », qui n'est
+/// **pas** gatée : sans elle, la ligne serait un cul-de-sac.
+class _RowActions extends StatelessWidget {
+  const _RowActions({
+    required this.deleted,
+    required this.canView,
+    required this.canUpdate,
+    required this.canDelete,
+    required this.viewLabel,
+    required this.editLabel,
+    required this.deleteLabel,
+    required this.restoreLabel,
+    required this.onView,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onRestore,
+    this.extraActions = const <Widget>[],
+    this.menu,
+  });
+
+  final bool deleted;
+  final bool canView;
+  final bool canUpdate;
+  final bool canDelete;
+  final String viewLabel;
+  final String editLabel;
+  final String deleteLabel;
+  final String restoreLabel;
+  final VoidCallback onView;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onRestore;
+  final List<Widget> extraActions;
+  final Widget? menu;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        // Item soft-deleted : seule l'action **restaurer** est offerte.
+        if (deleted)
+          IconButton(
+            icon: const Icon(Icons.restore_from_trash),
+            tooltip: restoreLabel,
+            onPressed: onRestore,
+          )
+        else ...<Widget>[
+          if (canView)
+            IconButton(
+              icon: const Icon(Icons.visibility),
+              tooltip: viewLabel,
+              onPressed: onView,
+            ),
+          if (canUpdate)
+            IconButton(
+              icon: const Icon(Icons.edit),
+              tooltip: editLabel,
+              onPressed: onEdit,
+            ),
+          if (canDelete)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: deleteLabel,
+              onPressed: onDelete,
+            ),
+        ],
+        ...extraActions,
+        ?menu,
+      ],
     );
   }
 }

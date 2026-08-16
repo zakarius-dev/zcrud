@@ -52,11 +52,17 @@ const _tagsField = ZFieldSpec(
   ),
 );
 
+// `displayMode` DÉCLARÉ : `compact` étant devenu le défaut, l'omettre ferait
+// de ce champ « inline » un champ compact — et le contre-témoin de structure
+// mesurerait alors le mauvais rendu.
 const _inlineField = ZFieldSpec(
   name: 'items',
   type: EditionFieldType.subItems,
   label: 'Items',
-  config: ZSubListConfig(itemFields: _itemFields),
+  config: ZSubListConfig(
+    itemFields: _itemFields,
+    displayMode: ZSubListDisplayMode.inline,
+  ),
 );
 
 const _dynamicField = ZFieldSpec(
@@ -105,6 +111,12 @@ Widget _host(
 Finder _subListView() => find.descendant(
       of: find.byType(ZSubListFieldWidget),
       matching: find.byType(ListView),
+    );
+
+/// La **table de résumé** native du mode compact (rendu par défaut).
+Finder _subListTable() => find.descendant(
+      of: find.byType(ZSubListFieldWidget),
+      matching: find.byType(Table),
     );
 
 /// **Chemin NOMINAL** : le champ traverse `DynamicEdition` → `ZFieldWidget` →
@@ -253,7 +265,9 @@ void main() {
   group('B. Contre-témoin : sans seam, la STRUCTURE est inchangée', () {
     /// Compte les widgets structurants d'une sous-liste compacte de 2 items.
     Map<String, int> structure() => <String, int>{
-          'ListView': _subListView().evaluate().length,
+          // Le mode compact rend une vraie `Table` (une seule, en-têtes +
+          // lignes) : c'est ELLE le conteneur natif dont on mesure l'unicité.
+          'Table': _subListTable().evaluate().length,
           'ConstrainedBox': find.byType(ConstrainedBox).evaluate().length,
           'IconButton': find.byType(IconButton).evaluate().length,
           'visibility': find.byIcon(Icons.visibility).evaluate().length,
@@ -274,7 +288,7 @@ void main() {
       final sansCanal = structure();
 
       // Anti-vacuité : la mesure doit observer quelque chose.
-      expect(sansCanal['ListView'], 1);
+      expect(sansCanal['Table'], 1);
       expect(sansCanal['visibility'], 2);
       expect(sansCanal['edit'], 2);
       expect(sansCanal['delete'], 2);

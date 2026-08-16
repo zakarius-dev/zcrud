@@ -147,6 +147,9 @@ void main() {
           label: 'Items',
           config: ZSubListConfig(
             itemFields: _itemFields,
+            // Mode inline DÉCLARÉ (le nom du test le dit) : `compact` étant
+            // devenu le défaut, l'omettre changerait le mode sous le test.
+            displayMode: ZSubListDisplayMode.inline,
             defaultNewItem: <String, Object?>{'f1': 'D'},
             createNewTextKey: 'create',
           ),

@@ -783,9 +783,12 @@ void main() {
       expect(find.byType(PopupMenuButton<ZSubItemMenuOption>), findsNothing);
       expect(find.byType(SnackBar), findsNothing);
       expect(find.byType(EditableText), findsNothing);
-      // Textes rendus : le libellé de section, les deux cellules. Aucun
-      // en-tête (opt-in non déclaré), aucun badge.
-      expect(find.byType(Text), findsNWidgets(3));
+      // Textes rendus : le libellé de section, les deux EN-TÊTES de colonnes
+      // (le rendu tabulaire est le défaut depuis que `compact` l'est) et les
+      // deux cellules. Aucun badge, aucun texte de plus.
+      expect(find.byType(Text), findsNWidgets(5));
+      expect(find.text('Désignation'), findsOneWidget);
+      expect(find.text('Quantité'), findsOneWidget);
       expect(find.text('Lignes de commande'), findsOneWidget);
       expect(find.text('Ciment'), findsOneWidget);
       expect(find.text('3'), findsOneWidget);

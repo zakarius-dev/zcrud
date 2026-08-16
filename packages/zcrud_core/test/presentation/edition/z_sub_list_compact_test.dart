@@ -12,7 +12,8 @@
 //  - AC8 : repli summaryFields vide → titre dérivé ;
 //  - AC18 : défensif (item corrompu → sûr) ;
 //  - AC17 : a11y ≥ 48 dp + RTL sans overflow ;
-//  - AC19 : mode inline strictement préservé (config sans displayMode).
+//  - AC19 : mode inline strictement préservé (`displayMode` DÉCLARÉ — depuis
+//    que `compact` est le défaut, l'omettre rendrait un autre mode).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
@@ -512,13 +513,16 @@ void main() {
   });
 
   // ── AC19 : mode inline strictement préservé ────────────────────────────────
-  testWidgets('config sans displayMode → mode inline (sous-champs inline) '
-      '(AC19)', (tester) async {
+  testWidgets('displayMode: inline DÉCLARÉ → sous-champs inline (AC19)',
+      (tester) async {
     const inlineField = ZFieldSpec(
       name: 'items',
       type: EditionFieldType.subItems,
       label: 'Items',
-      config: ZSubListConfig(itemFields: _itemFields),
+      config: ZSubListConfig(
+        itemFields: _itemFields,
+        displayMode: ZSubListDisplayMode.inline,
+      ),
     );
     await tester.pumpWidget(_host(ZSubListFieldWidget(
       field: inlineField,

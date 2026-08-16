@@ -3,6 +3,68 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2.0.0 — 2026-08-16
+
+### ⚠️ Modifié — RUPTURE
+
+#### Le mode `compact` devient le défaut, avec un vrai rendu tabulaire
+
+Mesuré sur le moteur legacy : un item y est rendu par
+`itemBuilder?.call(item) ?? Container()` — **sans builder, un item legacy
+s'affiche vide** — et l'édition passe par une fenêtre. Le mode qui correspond au
+legacy est donc **`compact`** (résumé + fenêtre), jamais `inline`
+(sous-formulaires imbriqués à champs vivants, mode natif zcrud sans contrepartie
+legacy). **Le défaut était le mauvais** pour tout hôte qui migre.
+
+Trois défauts inversés, et le troisième compte autant que les deux autres :
+`displayMode` → `compact` ; `showSummaryHeaders` → `true` ; **et le repli du
+widget quand la config est absente** → `compact`. Ce dernier couvre le cas du
+générateur `@ZcrudModel`, qui émet un `ZFieldSpec(type: subItems)` **sans
+config** pour un sous-modèle : le laisser sur `inline` aurait fait coexister deux
+défauts contradictoires, le second visant justement l'hôte qui n'a rien choisi.
+
+**Retour arrière en une ligne : `displayMode: ZSubListDisplayMode.inline`.** Il
+est *prouvé*, pas promis — le rendu `inline` est **octet pour octet** celui de la
+v1.9.0 (sha identique).
+
+#### Le rendu tabulaire
+
+Une **seule** `Table` porte l'en-tête et les lignes. Conséquence structurelle :
+l'en-tête ne *reproduit* plus la géométrie des cellules — **c'est la même
+colonne**, il ne peut donc plus se désaligner. Les largeurs **suivent le
+contenu** (la colonne de désignation absorbe le surplus et cède la première),
+là où le rendu précédent imposait des colonnes **égales** puis tronquait.
+
+Les valeurs numériques sont cadrées en **fin** (`TextAlign.end`, jamais `right` —
+AD-13) : une colonne de montants qui ne s'aligne pas ne se lit pas. Sont
+numériques les colonnes portant `decimals` ou dont le type déclaré est
+`number`/`integer`/`float` ; `rating`/`slider`/`stepper` sont exclus — un nombre
+qui se lit comme une appréciation n'aligne rien.
+
+Aucune dépendance nouvelle : primitives Material seules, aucun `pubspec` touché.
+La frontière **AD-8** est écrite en dartdoc — tri, pagination et virtualisation
+restent au moteur de liste ; rendre quelques lignes embarquées dans un formulaire
+est une mise en page.
+
+#### Ce qui NE change pas
+
+- **Le repli responsive de la v1.4.1 est intact** (même formule, même seuil
+  dérivé) : sous le seuil, aucune table n'est construite et la ligne s'empile en
+  couples libellé/valeur.
+- `showSummaryHeaders: false` rend le résumé défilant historique **au byte
+  près** : aucune déclaration existante ne change de sens, seul le défaut est
+  inversé.
+- Les seams des v1.8.0/v1.9.0 gardent leur applicabilité. **La table cède, jamais
+  le seam** : `listViewBuilder`, `itemBuilder` et le repli responsive sortent du
+  rendu tabulaire plutôt que de le contraindre.
+
+### Ajouté
+
+`ZSubListFieldWidget.summaryTableRowBudget` (**60**, public) : au-delà, le rendu
+retombe sur une liste construite à la demande — une table ne virtualise pas. Le
+seuil est **asserté des deux côtés**, et volontairement **non réglable** : un
+seuil négociable ne s'asserte plus.
+
 ## 1.9.0 — 2026-08-16
 
 ### Ajouté

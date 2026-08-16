@@ -18,11 +18,18 @@ const _itemFields = <ZFieldSpec>[
   ZFieldSpec(name: 'f2', type: EditionFieldType.text, label: 'F2'),
 ];
 
+// `displayMode` DÉCLARÉ : ce fichier garde le mode **inline** (sous-formulaires
+// imbriqués, add/remove/reorder, granularité AD-2). Depuis que `compact` est le
+// défaut, ne rien déclarer testerait un autre mode — et le laisserait passer
+// pour de l'inline.
 const _subListField = ZFieldSpec(
   name: 'items',
   type: EditionFieldType.subItems,
   label: 'Items',
-  config: ZSubListConfig(itemFields: _itemFields),
+  config: ZSubListConfig(
+    itemFields: _itemFields,
+    displayMode: ZSubListDisplayMode.inline,
+  ),
 );
 
 Widget _host(Widget child, {TextDirection dir = TextDirection.ltr}) =>

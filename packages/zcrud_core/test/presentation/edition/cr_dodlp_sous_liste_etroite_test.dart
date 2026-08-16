@@ -158,6 +158,18 @@ void main() {
           isFalse,
           reason: 'valeur TRONQUÉE sur un téléphone : $valeur',
         );
+        // 🔴 …et elle tient dans l'écran. Cette seconde assertion a été AJOUTÉE
+        // avec le rendu tabulaire, et elle n'est pas décorative : mesurée, la
+        // seule assertion de troncature ne mord PLUS contre la perte du repli.
+        // Une `Table` privée de son repli ne tronque pas — elle DÉBORDE (ses
+        // colonnes se déploient au-delà de la surface), et le texte, lui, reste
+        // entier. La garde d'origine restait donc verte en laissant l'écran
+        // illisible : c'est le mode de défaillance qui a changé, pas le défaut.
+        expect(
+          tester.getRect(find.text(valeur)).right,
+          lessThanOrEqualTo(360.5),
+          reason: 'valeur rejetée HORS DE L’ÉCRAN sur un téléphone : $valeur',
+        );
       }
 
       // Le libellé qui la coiffe est lui aussi rendu en entier.
@@ -177,8 +189,19 @@ void main() {
   );
 
   // ── (b) ──────────────────────────────────────────────────────────────────
+  //
+  // 🔴 Cette garde a CHANGÉ d'assertion, et il faut dire laquelle : elle
+  // exigeait des **colonnes de largeur ÉGALE**. C'était le rendu de v1.4.1 —
+  // et c'était précisément le défaut que la table corrige (une colonne de
+  // dates et une colonne d'intitulés n'ont aucune raison d'avoir la même
+  // largeur). Ce qu'elle établit désormais : la table tient (elle ne se replie
+  // pas), chaque cellule tombe EXACTEMENT sous son en-tête — ce qui reste la
+  // propriété qui compte, et qui est maintenant structurelle : en-tête et
+  // cellules sont les MÊMES colonnes d'une même `Table` — et les largeurs
+  // **suivent le contenu**.
   testWidgets(
-    '(b) contre-témoin : à largeur suffisante, la table alignée est inchangée',
+    '(b) contre-témoin : à largeur suffisante, la table tient et ses colonnes '
+    'suivent le contenu',
     (WidgetTester tester) async {
       await _monter(tester, largeur: 1400);
 
@@ -207,16 +230,30 @@ void main() {
         );
       }
 
-      // Colonnes de largeur ÉGALE : les pas entre colonnes sont constants.
-      final double pas = debutsEnTete[1] - debutsEnTete[0];
-      expect(pas, greaterThan(0));
-      for (int i = 1; i < 4; i++) {
-        expect(
-          debutsEnTete[i] - debutsEnTete[i - 1],
-          closeTo(pas, 0.5),
-          reason: 'colonnes de largeurs inégales',
-        );
+      // Largeurs SUIVANT LE CONTENU : le pas entre deux en-têtes est la
+      // largeur de la colonne de gauche. La colonne « Nom » (« Amivi Koffi »)
+      // est plus étroite que la colonne « Date de fin » (« lundi 30 septembre
+      // 2024 ») — mesure de GÉOMÉTRIE, pas d'apparence.
+      final List<double> largeurs = <double>[
+        for (int i = 1; i < 4; i++) debutsEnTete[i] - debutsEnTete[i - 1],
+      ];
+      for (final double l in largeurs) {
+        expect(l, greaterThan(0));
       }
+      expect(
+        largeurs[2], // colonne « Nom »
+        lessThan(largeurs[1] - 20), // colonne « Date de fin »
+        reason: 'les colonnes ne suivent pas leur contenu (largeurs uniformes)',
+      );
+      // …et ce n'est pas un hasard de deux colonnes : au moins deux pas
+      // DIFFÈRENT franchement, ce qu'une table à colonnes égales ne peut pas
+      // produire.
+      expect(
+        largeurs.reduce((double a, double b) => a > b ? a : b) -
+            largeurs.reduce((double a, double b) => a < b ? a : b),
+        greaterThan(20),
+        reason: 'toutes les colonnes ont la même largeur',
+      );
     },
   );
 

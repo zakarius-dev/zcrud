@@ -295,7 +295,13 @@ void main() {
             name: 'items',
             type: EditionFieldType.subItems,
             label: 'Items',
-            config: ZSubListConfig(itemFields: _itemFields),
+            // Mode inline DÉCLARÉ : ces gardes descendent dans les sous-champs
+            // **déballés**. `compact` étant devenu le défaut, ne rien déclarer
+            // les ferait porter sur une table de résumé.
+            config: ZSubListConfig(
+              itemFields: _itemFields,
+              displayMode: ZSubListDisplayMode.inline,
+            ),
           ),
         ],
         controller: controller,
@@ -361,7 +367,13 @@ void main() {
             name: 'items',
             type: EditionFieldType.subItems,
             label: 'Items',
-            config: ZSubListConfig(itemFields: _itemFields),
+            // Mode inline DÉCLARÉ : ces gardes descendent dans les sous-champs
+            // **déballés**. `compact` étant devenu le défaut, ne rien déclarer
+            // les ferait porter sur une table de résumé.
+            config: ZSubListConfig(
+              itemFields: _itemFields,
+              displayMode: ZSubListDisplayMode.inline,
+            ),
           ),
         ],
         controller: controller,

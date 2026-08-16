@@ -27,23 +27,27 @@ import 'z_field_spec.dart';
 /// Extension **additive** `const` (invariant AD-4, jamais `sealed`) : ajoute
 /// un mode sans rien retirer. Valeurs en **camelCase**.
 ///
-/// - [inline] (**défaut**, rétro-compat) : chaque item déballe TOUS ses
-///   sous-champs en **sous-formulaire imbriqué** (mini-CRUD inline). Aucun
-///   changement pour les configs existantes.
-/// - [compact] : **liste résumé** (une ligne/valeurs de résumé par item) +
-///   **dialog d'édition par item** (ajouter/consulter/modifier/supprimer),
-///   chaque action **filtrée par `ZAcl`** — sans imposer le déballage inline
-///   de tous les items.
+/// - [compact] (**défaut** depuis la rupture assumée décrite sur
+///   [ZSubListConfig.displayMode]) : **table de résumé** (une ligne par item,
+///   une colonne par valeur de résumé) + **formulaire d'édition par item**
+///   (ajouter/consulter/modifier/supprimer), chaque action **filtrée par
+///   `ZAcl`** — sans imposer le déballage inline de tous les items.
+/// - [inline] : chaque item déballe TOUS ses sous-champs en **sous-formulaire
+///   imbriqué** (mini-CRUD inline). C'est un mode **natif zcrud** — le moteur
+///   legacy n'a pas d'équivalent — et il reste **pleinement disponible** : une
+///   ligne de déclaration (`displayMode: ZSubListDisplayMode.inline`) rend
+///   exactement ce que rendait l'ancien défaut.
 /// - [tags] : **rangée de puces** (`Wrap`/`InputChip`) présentant le résumé de
 ///   chaque item + bouton d'ajout réutilisant la machinerie de création
 ///   (dialog par item). **Rendu natif minimal zéro-dépendance** — additif,
-///   opt-in : jamais atteint sans `displayMode: ZSubListDisplayMode.tags`
-///   (`inline` reste le défaut, rétro-compat stricte).
+///   opt-in : jamais atteint sans `displayMode: ZSubListDisplayMode.tags`.
 enum ZSubListDisplayMode {
-  /// Sous-formulaires imbriqués empilés (comportement par défaut).
+  /// Sous-formulaires imbriqués empilés (mode natif zcrud, sans contrepartie
+  /// legacy — déclaratif, plus le défaut).
   inline,
 
-  /// Liste résumé + dialog d'édition par item, actions filtrées par `ZAcl`.
+  /// Table de résumé + formulaire d'édition par item, actions filtrées par
+  /// `ZAcl` (**défaut**).
   compact,
 
   /// Rangée de puces `InputChip` (résumé par item) + ajout par dialog — rendu
@@ -101,7 +105,7 @@ enum ZSubItemFormPresentation {
 /// (monter/descendre) de la sous-liste ; sans effet pour `dynamicItem`
 /// (cardinalité ≤ 1).
 ///
-/// Additif, rétro-compat : [displayMode] choisit inline (défaut) vs compact ;
+/// [displayMode] choisit compact (**défaut**) vs inline vs tags ;
 /// [summaryFields] liste **ordonnée** de `name` de sous-champs projetés en
 /// colonnes/valeurs de résumé en mode compact (pur-données ; un titre/rendu
 /// personnalisé passe par un **seam de présentation**, jamais par une closure
@@ -112,7 +116,7 @@ class ZSubListConfig extends ZFieldConfig {
   const ZSubListConfig({
     this.itemFields = const <ZFieldSpec>[],
     this.reorderable = true,
-    this.displayMode = ZSubListDisplayMode.inline,
+    this.displayMode = ZSubListDisplayMode.compact,
     this.summaryFields = const <String>[],
     this.summaryColumns = const <ZSubListSummaryColumn>[],
     this.softDelete = false,
@@ -120,7 +124,7 @@ class ZSubListConfig extends ZFieldConfig {
     this.defaultNewItem = const <String, Object?>{},
     this.createNewTextKey,
     this.aclCollectionId,
-    this.showSummaryHeaders = false,
+    this.showSummaryHeaders = true,
     this.itemFormPresentation = ZSubItemFormPresentation.dialog,
   });
 
@@ -130,8 +134,32 @@ class ZSubListConfig extends ZFieldConfig {
   /// Autorise le réordonnancement (monter/descendre) des items (`subItems`).
   final bool reorderable;
 
-  /// Mode de rendu : [ZSubListDisplayMode.inline] (défaut, rétro-compat) ou
-  /// [ZSubListDisplayMode.compact] (liste résumé + dialog par item).
+  /// Mode de rendu : [ZSubListDisplayMode.compact] (**défaut** — table de
+  /// résumé + formulaire par item), [ZSubListDisplayMode.inline]
+  /// (sous-formulaires imbriqués) ou [ZSubListDisplayMode.tags].
+  ///
+  /// ## 🔴 Le défaut est passé de `inline` à `compact` — rupture assumée
+  ///
+  /// **Ce que voit un hôte passif** : un champ `subItems` qui ne déclarait pas
+  /// [displayMode] rendait une **pile de sous-formulaires à champs vivants** ;
+  /// il rend désormais une **table de résumé + un formulaire par item**.
+  ///
+  /// **Pourquoi ce n'est pas un caprice de présentation.** Le moteur legacy
+  /// dont ces sous-listes sont l'extraction rendait chaque item par
+  /// `itemBuilder?.call(item) ?? Container()` — **sans builder, un item legacy
+  /// s'affiche vide** — et éditait par une **fenêtre**. Le mode legacy est donc
+  /// `compact` (résumé + fenêtre), et **pas** `inline` : `inline` est un mode
+  /// **natif zcrud**, sans contrepartie legacy. Un hôte qui migre depuis le
+  /// moteur legacy et ne déclare rien recevait donc, jusqu'ici, le mode qui
+  /// ressemble le moins à ce qu'il rendait avant.
+  ///
+  /// **Le geste de retour arrière tient en une ligne**, et il est exact :
+  /// `displayMode: ZSubListDisplayMode.inline` rend ce que rendait l'ancien
+  /// défaut — même code, même structure, aucun chemin dérivé (garde :
+  /// « `inline` rend exactement l'ancien défaut »).
+  ///
+  /// **Ce qui ne bouge pas** : tout hôte qui **déclarait** [displayMode] — quel
+  /// que soit le mode — est strictement inchangé de ce fait.
   final ZSubListDisplayMode displayMode;
 
   /// Liste **ordonnée** des `name` de sous-champs affichés comme colonnes/
@@ -242,24 +270,50 @@ class ZSubListConfig extends ZFieldConfig {
   /// d'actions gatées).
   final String? aclCollectionId;
 
-  /// **En-têtes de colonnes** du résumé (mode compact).
+  /// **Rendu tabulaire** du résumé, en-têtes de colonnes compris (mode
+  /// compact). **`true` est désormais le défaut** — c'est l'interrupteur de la
+  /// table, pas seulement de sa première ligne.
   ///
-  /// **Opt-in**, et c'est délibéré : activer les en-têtes change la **hauteur**
-  /// de la table ET la **mise en page des cellules** chez tout hôte en mode
-  /// compact. `false` (**défaut**) ⇒ rendu strictement inchangé.
+  /// Le nom est resté celui de v0.x (le renommer casserait les hôtes qui le
+  /// déclarent) mais il gouverne **deux** propriétés indissociables : des
+  /// colonnes alignées, et les en-têtes qui les nomment. Elles sont
+  /// indissociables par construction — des cellules de largeur intrinsèque
+  /// défilant chacune pour son compte ne tomberaient JAMAIS sous un en-tête,
+  /// qui mentirait.
   ///
-  /// `true` ⇒ (1) une ligne d'en-tête reprenant le `label` (résolu l10n) de
-  /// chaque `ZFieldSpec` de [summaryFields] est rendue au-dessus des lignes ;
-  /// (2) les cellules passent d'un défilement horizontal **par ligne** à des
-  /// **colonnes de largeur égale** (`Expanded` + ellipse). Ce second point n'est
-  /// pas cosmétique : des cellules de largeur intrinsèque défilant chacune
-  /// indépendamment ne s'alignent JAMAIS sous un en-tête — l'en-tête mentirait.
-  /// Le texte tronqué reste atteignable par le dialog consulter/modifier.
+  /// `true` (**défaut**) ⇒ une vraie `Table` : **une** géométrie de colonnes
+  /// partagée par la ligne d'en-têtes et par toutes les cellules (elles ne
+  /// s'alignent pas, elles sont *les mêmes colonnes*), largeurs **suivant le
+  /// contenu**, valeurs **numériques cadrées en fin** de colonne. Les en-têtes
+  /// reprennent le `label` l10n de chaque colonne. Une cellule plus large que
+  /// sa colonne est coupée à l'ellipse — et reste atteignable par le formulaire
+  /// consulter/modifier.
+  ///
+  /// `false` ⇒ **résumé défilant** : les cellules d'une ligne défilent
+  /// horizontalement, sans en-tête, sans alignement inter-lignes et sans repli.
+  /// C'est le rendu historique de v0.x, **conservé au byte près** pour l'hôte
+  /// qui le déclare — la sortie de la table, pas une dégradation subie.
+  ///
+  /// ## 🔴 Le défaut est passé de `false` à `true` — rupture assumée
+  ///
+  /// Elle ne concerne que les hôtes en mode `compact` qui ne déclaraient pas ce
+  /// drapeau : leur résumé défilant devient une table. Un hôte qui déclarait
+  /// `true` **ou** `false` garde exactement le sens qu'il avait déclaré.
+  ///
+  /// ## Au-delà d'un budget de lignes, les colonnes redeviennent égales
+  ///
+  /// Une table ne se virtualise pas : mesurer la largeur intrinsèque d'une
+  /// colonne oblige à visiter **toutes** ses cellules. Au-delà de
+  /// `ZSubListFieldWidget.summaryTableRowBudget` lignes, le socle retombe donc
+  /// sur un rendu **construit à la demande** (`ListView.builder`, colonnes de
+  /// largeur égale sous une ligne d'en-têtes de même géométrie) — le rendu de
+  /// v1.4.1, inchangé. Voir cette constante pour le budget et sa justification.
   ///
   /// ## Sur une surface étroite, la table se replie
   ///
-  /// Des colonnes de largeur égale ne tiennent que si la largeur suffit. En
-  /// deçà, la sous-liste **empile** chaque ligne en couples libellé/valeur : la
+  /// Des colonnes ne tiennent que si la largeur suffit — qu'elles suivent le
+  /// contenu ou non. En deçà, la sous-liste **empile** chaque ligne en couples
+  /// libellé/valeur (aucune `Table` n'est alors construite) : la
   /// valeur est alors rendue en entier (elle revient à la ligne au lieu d'être
   /// coupée) et le libellé qui coiffait la colonne **descend dans la ligne**,
   /// la ligne d'en-têtes s'effaçant avec elle — il n'y a donc jamais d'en-tête
@@ -336,7 +390,11 @@ class ZSubListConfig extends ZFieldConfig {
 /// « 1500.0 » à côté d'une quantité rendue « 3 » n'apprend pas grand-chose. Deux
 /// réglages, pas trois :
 /// - [decimals] — nombre de décimales **fixe** (`toStringAsFixed`), appliqué au
-///   seul cas où la valeur est un `num` ;
+///   seul cas où la valeur est un `num`. Il vaut **aussi** déclaration de
+///   nature : une colonne qui fixe ses décimales est tenue pour **numérique**
+///   et cadrée en fin de colonne dans la table — c'est le seul signal dont
+///   dispose une colonne **calculée**, qui n'a pas de `ZFieldSpec` d'où lire
+///   son type ;
 /// - [suffixKey] — **clé l10n** d'un suffixe accolé à la valeur (« % », un
 ///   symbole monétaire, une unité). Jamais un libellé codé en dur (FR-26).
 ///
@@ -349,8 +407,12 @@ class ZSubListConfig extends ZFieldConfig {
 ///   lisait l'unité de stock d'une ligne) : c'est une closure, elle ne peut pas
 ///   vivre dans le domaine. Une colonne dont le suffixe varie par item se rend
 ///   par le canal de seams (`itemTransformer` ou `itemBuilder`) ;
-/// - aucun **alignement de colonne** ni largeur : la géométrie du résumé reste
-///   celle du socle (colonnes égales ou empilement mesuré).
+/// - aucun **alignement ni largeur déclarés par colonne** : la géométrie reste
+///   décidée par le socle. Elle n'est plus pour autant uniforme — la table
+///   dimensionne chaque colonne **sur son contenu** et cadre **en fin** les
+///   colonnes numériques (voir [decimals]) —, mais rien de tout cela ne se
+///   déclare ici : une colonne ne choisit pas sa largeur, elle la subit de ce
+///   qu'elle contient.
 class ZSubListSummaryColumn {
   /// Construit une colonne de résumé `const`.
   const ZSubListSummaryColumn({
