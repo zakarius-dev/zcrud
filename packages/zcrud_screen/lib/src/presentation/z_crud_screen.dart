@@ -934,6 +934,10 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   void _onActiveTabChanged() {
     _clearSelection();
     _followSearchToActiveTab();
+    // Les pages d'onglets sont keep-alive : rejoindre un onglet déjà construit
+    // ne le reconstruit pas, donc ne repasse pas par le relevé des lignes. Sans
+    // cette publication, la lecture notifiée resterait sur l'onglet quitté.
+    _publishEntitiesInView();
   }
 
   /// Aligne le contrôleur de sélection sur la politique déclarée : il n'existe
@@ -996,6 +1000,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     _trashController?.dispose();
     _disposeTabControllers();
     _selection?.dispose();
+    _entitiesInViewNotifier?.dispose();
     _activeTabIndex.removeListener(_onActiveTabChanged);
     _activeTabIndex.dispose();
     super.dispose();
@@ -2314,6 +2319,93 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
         const <ZListRow>[];
   }
 
+  // ── Lecture publique du listing (ZCrudScreenActions) ──────────────────────
+  //
+  // L'écran relève déjà, pour son propre export, la matière exacte de ce qu'il
+  // peint (`_visibleRows`, `_rowsInView`, `_exportRows`) et l'index typé qui la
+  // résout (`_entities`). Ces trois membres n'ajoutent aucun mécanisme : ils
+  // rendent PUBLIC celui-là, pour qu'un document métier construit par
+  // l'application soit fait de la même matière, au même instant, que la liste
+  // qu'il prétend imprimer.
+
+  /// Résout [rows] en entités par l'index de projection, dans l'ordre reçu.
+  ///
+  /// L'index est alimenté par [_project], la voie unique par laquelle une ligne
+  /// naît — les deux comptes sont donc égaux par construction : une ligne
+  /// rendue a toujours son entité.
+  List<ZEntity> _entitiesOf(List<ZListRow> rows) => <ZEntity>[
+        for (final row in rows)
+          if (_entities[row.id] case final T entity) entity,
+      ];
+
+  @override
+  List<ZEntity> get entitiesInView => _entitiesOf(_rowsInView);
+
+  @override
+  List<ZEntity> get entitiesSelectedOrInView => _entitiesOf(_exportRows());
+
+  /// Notifieur de [entitiesInViewListenable], créé au **premier accès** et
+  /// jamais avant.
+  ///
+  /// Tant qu'il est `null`, [_publishEntitiesInView] est un test de nullité :
+  /// un écran qui ne lit pas le listing ne relève rien, ne compare rien et ne
+  /// pose aucun rappel de fin de trame — il se comporte exactement comme si
+  /// cette lecture n'existait pas.
+  ValueNotifier<List<ZEntity>>? _entitiesInViewNotifier;
+
+  /// Une publication est déjà armée pour la fin de la trame courante : plusieurs
+  /// relevés dans la même trame (listing d'écran, pages d'onglets) n'en
+  /// produisent qu'une.
+  bool _entitiesInViewPending = false;
+
+  @override
+  ValueListenable<List<ZEntity>> get entitiesInViewListenable {
+    final existing = _entitiesInViewNotifier;
+    if (existing != null) return existing;
+    // Semé à la valeur COURANTE : un abonné qui arrive après le premier rendu
+    // lit ce qui est à l'écran, pas une liste vide qu'aucune notification ne
+    // viendrait corriger si rien ne changeait ensuite.
+    final notifier = ValueNotifier<List<ZEntity>>(entitiesInView);
+    _entitiesInViewNotifier = notifier;
+    return notifier;
+  }
+
+  /// Publie la lecture notifiée, **en fin de trame** et **seulement si elle a
+  /// changé**.
+  ///
+  /// Deux précautions, qui sont la raison d'être de cette méthode (invariant
+  /// AD-2) :
+  ///
+  /// * **fin de trame** — le relevé se fait pendant la construction du listing ;
+  ///   notifier là serait demander une reconstruction au milieu d'une
+  ///   construction. Le rappel de fin de trame notifie une fois le rendu posé,
+  ///   et n'atteint que ce qui écoute ;
+  /// * **seulement si elle a changé** — la comparaison porte sur le **contenu**,
+  ///   pas sur l'identité de la liste : reconstruire l'écran sans que le listing
+  ///   bouge produit une nouvelle liste d'entités identiques, et n'émet rien.
+  void _publishEntitiesInView() {
+    final notifier = _entitiesInViewNotifier;
+    if (notifier == null || _entitiesInViewPending) return;
+    _entitiesInViewPending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _entitiesInViewPending = false;
+      if (!mounted) return;
+      final next = entitiesInView;
+      if (_sameEntities(notifier.value, next)) return;
+      notifier.value = next;
+    });
+  }
+
+  /// Deux lectures portent-elles les **mêmes entités, dans le même ordre** ?
+  static bool _sameEntities(List<ZEntity> a, List<ZEntity> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
   /// Produit le fichier du format [exporter] et le remet à l'application.
   ///
   /// Rien ici ne peut emporter l'écran (invariant AD-10) : une liste vide
@@ -2789,6 +2881,9 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       // ferait exporter ce que l'utilisateur ne voit plus.
       _visibleRows = const <ZListRow>[];
     }
+    // Lecture notifiée : armée seulement si quelqu'un l'a demandée, honorée en
+    // fin de trame et seulement si le contenu a changé (AD-2).
+    _publishEntitiesInView();
     final list = DynamicList<T>(
       fields: _listFields,
       state: state,

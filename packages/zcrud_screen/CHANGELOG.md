@@ -3,6 +3,79 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.3.0 — 2026-08-16
+
+### Ajouté
+
+#### L'écran assemblé dit enfin ce qu'il liste
+
+Sur la voie `items`, l'application détient la liste : ce qu'elle imprime et ce
+que l'écran rend sont la même variable, au même instant. Sur la voie
+`repository`, ce lien se coupait — l'écran lit, filtre, cherche, trie et
+pagine, et rien ne revenait. Une application dont la liste alimente autre chose
+que l'écran — un document signé, un compte, un tableau de bord — n'avait qu'un
+recours : relire la source en parallèle. Deux lectures, deux instants, deux
+règles de filtrage à tenir d'accord ; et un document qui contredit la liste
+qu'il prétend imprimer quitte l'écran et circule.
+
+`ZCrudScreenActions` publie désormais la lecture que l'écran faisait déjà pour
+son propre export :
+
+```dart
+final actions = ZCrudScreenScope.maybeOf(context);
+final demandes =
+    actions!.entitiesSelectedOrInView.whereType<DemandeDepotage>().toList();
+await imprimerListeDesDemandes(demandes); // votre moteur, vos en-têtes
+```
+
+| Membre | Ce qu'il rend |
+|---|---|
+| `entitiesInView` | Les entités **actuellement listées**, dans l'ordre peint. |
+| `entitiesInViewListenable` | La même lecture, **notifiée** quand elle change réellement. |
+| `entitiesSelectedOrInView` | Les entités **cochées** si la sélection porte, celles listées sinon — la règle exacte de l'export intégré. |
+
+**Ce que la lecture garantit** : l'ordre **peint** (tri demandé ou déclaré) ; la
+**portée** (les supprimés en vue corbeille, l'onglet **actif** en mode onglets) ;
+ce que la recherche et les filtres ont retenu, filtres permanents et post-filtre
+compris ; les **pages chargées** — autant d'entités lues que de lignes rendues,
+jamais plus, jamais moins, exactement la définition qu'emploie déjà l'export
+intégré. **Écran qui ne montre rien** (chargement, erreur, liste vide, aucun
+résultat) ⇒ lecture **vide**, jamais le rendu précédent.
+
+**Ce qu'elle n'est pas** : ni un flux de données (elle ne va pas chercher ce que
+l'écran n'a pas lu), ni un accès au contrôleur de liste — c'est une lecture, pas
+une prise ; le tri et les filtres se demandent toujours par `sortBy` et
+`filterBy`.
+
+`entitiesInViewListenable` n'entraîne pas le corps de l'écran : rien n'est
+notifié tant que personne n'écoute, la notification n'est émise que si le
+**contenu** diffère du précédent (pas l'identité de la liste), et seul ce qui
+écoute se reconstruit (invariant AD-2). Mesuré : un écran abonné construit
+**exactement autant** de tuiles qu'un écran qui ne lit rien, au repos comme sur
+un changement réel de la liste.
+
+Voir la section **Lire ce qui est listé** du README.
+
+### Impact sur votre code
+
+**Ajout pur.** Aucun écran existant ne change de comportement : un écran qui ne
+lit pas ces membres construit le même nombre de widgets qu'avant, n'arme aucune
+notification et n'expose rien de plus. L'export intégré (`ZExportPolicy`,
+`ZListExporter`) est **inchangé**, la voie `items` aussi.
+
+Si vous **compensiez** ce manque en relisant le dépôt en parallèle de l'écran —
+un `StreamProvider`, un cas d'usage « périmètre courant », une requête doublée
+pour vos exports — cette compensation est désormais **en trop**, et c'est elle
+qui portait le risque de divergence : retirez-la au profit de `entitiesInView`.
+Un point d'attention : votre lecture parallèle ignorait probablement la
+recherche plein texte et la page courante, que seule la lecture de l'écran
+connaît — les chiffres peuvent donc **changer** en migrant, dans le sens de la
+justesse.
+
+`ZCrudScreenActions` gagne trois membres. C'est une interface **implémentée par
+l'écran**, jamais par une application : si vous en aviez fait une implémentation
+maison (un double de test, par exemple), complétez-la.
+
 ## 1.1.0 — 2026-08-16
 
 ### Ajouté

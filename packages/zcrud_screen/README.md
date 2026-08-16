@@ -1542,6 +1542,85 @@ tables `en`/`fr` du socle, surchargeables par `ZcrudScope(labels:)`. Le nom d'un
 format (`CSV`, `Excel`, `PDF`) est le `labelKey` de son exporteur : un sigle ne
 se traduit pas, et une clé inconnue des tables est rendue telle quelle.
 
+### Lire ce qui est listé {#lecture-du-listing}
+
+L'export intégré couvre le cas courant : les colonnes du schéma, formatées
+comme à l'écran. Il ne sait pas produire **votre** document — en-tête maison,
+regroupements par agent ou par déclarant, colonnes calculées, moteur de rendu
+propre. Pour cela, il ne vous manque qu'une chose : **savoir ce que l'écran
+liste**.
+
+Sur la voie `items`, vous le savez déjà — c'est votre variable. Sur la voie
+`repository`, c'est l'écran qui lit, filtre, cherche, trie et pagine. Relire la
+source en parallèle donnerait **deux lectures, deux instants, deux règles de
+filtrage à tenir d'accord** — et un document qui contredit la liste qu'il
+prétend imprimer. `ZCrudScreenActions` publie donc la lecture que l'écran fait
+déjà pour lui-même :
+
+| Membre | Ce qu'il rend |
+|---|---|
+| `entitiesInView` | Les entités **actuellement listées**, dans l'ordre peint. |
+| `entitiesInViewListenable` | La même lecture, **notifiée** quand elle change réellement. |
+| `entitiesSelectedOrInView` | Les entités **cochées** si la sélection porte, celles listées sinon — la règle exacte de l'export intégré. |
+
+#### Un document métier maison
+
+```dart
+IconButton(
+  icon: const Icon(Icons.picture_as_pdf_outlined),
+  tooltip: 'Imprimer la liste',
+  onPressed: () async {
+    // Depuis n'importe quel widget DESCENDANT de l'écran : une carte, un
+    // en-tête (`header:`), un bouton de la barre d'actions.
+    final actions = ZCrudScreenScope.maybeOf(context);
+    if (actions == null) return;
+    final demandes =
+        actions.entitiesSelectedOrInView.whereType<DemandeDepotage>().toList();
+    if (demandes.isEmpty) return;
+    await imprimerListeDesDemandes(demandes); // votre moteur, vos en-têtes
+  },
+)
+```
+
+Un compteur qui suit la liste :
+
+```dart
+ValueListenableBuilder<List<ZEntity>>(
+  valueListenable: actions.entitiesInViewListenable,
+  builder: (context, entites, _) => Text('${entites.length} dossiers'),
+)
+```
+
+#### Ce que la lecture garantit
+
+- l'**ordre peint** — le tri demandé (`sortBy`) ou celui déclaré, tel qu'il est
+  à l'écran ;
+- la **portée** — les vivants en vue normale, les **supprimés** en vue
+  corbeille, et l'**onglet actif** quand l'écran en assemble ;
+- ce que la **recherche** et les **filtres** ont retenu, filtres permanents et
+  post-filtre déclaré compris ;
+- les **pages chargées** — « ce qui est listé » veut dire ce qui est listé :
+  autant d'entités lues que de lignes rendues, jamais plus, jamais moins.
+  C'est la même définition que celle de l'export intégré ;
+- **écran qui ne montre rien** — chargement, erreur, liste vide, aucun
+  résultat : la lecture est **vide**, jamais le rendu précédent. Un document ne
+  part pas sur ce que l'utilisateur ne voit plus.
+
+#### Ce qu'elle n'est pas
+
+- **Pas un flux de données** : elle ne va pas chercher ce que l'écran n'a pas
+  lu. Une page non chargée n'y est pas.
+- **Pas un accès au contrôleur de liste** : c'est une **lecture**, pas une
+  prise. Le tri et les filtres se demandent par `sortBy` et `filterBy`.
+- **Pas une rétro-lecture du filtrage** : elle dit *ce qui* est retenu, jamais
+  *pourquoi*.
+
+`entitiesInViewListenable` n'entraîne pas le corps de l'écran : rien n'est
+notifié tant que personne n'écoute, la notification n'est émise que si le
+contenu **diffère** du précédent, et seul ce qui écoute se reconstruit
+(invariant AD-2). Un écran qui ne lit rien se comporte exactement comme avant.
+Le `ValueListenable` appartient à l'écran — ne le libérez pas.
+
 ### Formulaire seul et édition en fenêtre {#formulaire-seul}
 
 L'écran assemblé n'est pas toujours la bonne maille. Deux besoins reviennent :
@@ -1736,6 +1815,7 @@ lève — `bodyBuilder`, puis `steps`, puis le formulaire à plat.
 | `ZCrudEditionScope` | Transport du drapeau de lecture jusqu'au formulaire — `ZCrudEditionScope.readOnlyOf(context)` dans un `editionBuilder`. |
 | `ZCrudScreenScope` | Contexte posé autour du corps de l'écran — `ZCrudScreenScope.maybeOf(context)` donne ses gestes à n'importe quelle carte descendante (`null` hors écran). |
 | `ZCrudScreenActions` | Les gestes de l'écran : `canOpenEdition`/`openEdition`/`editionOpener`, `canOpenUpdate`/`openUpdate`/`updateOpener`, `canOpenCreation`/`openCreation`/`creationOpener`, plus `sortBy` (remplace le tri par défaut) et `filterBy` (s'ajoute aux filtres permanents). Aucun ne lève ; un geste refusé est `false`, `null` ou une ouverture inerte. |
+| `entitiesInView` / `entitiesInViewListenable` / `entitiesSelectedOrInView` | La **lecture du listing** (`ZCrudScreenActions`) : ce que l'écran liste, dans l'ordre peint, portée et pages chargées comprises — synchrone, notifiée, ou restreinte par la sélection comme l'export intégré. Écran vidé ⇒ lecture vide. Voir [Lire ce qui est listé](#lecture-du-listing). |
 | `zCrudEditionOpener(context, entity)` | Raccourci du cas courant : le rappel d'ouverture, ou `null` si le geste n'est pas possible. |
 | `ZCrudOpener` | `Future<void> Function()` — une ouverture déjà liée à son élément. |
 | `ZTrashMode` | Activation de la corbeille : `auto` (dès que la source la supporte) / `none`. |

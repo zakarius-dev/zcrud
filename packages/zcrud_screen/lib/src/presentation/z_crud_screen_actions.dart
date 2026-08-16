@@ -44,6 +44,7 @@
 /// en un seul scope les rendrait mutuellement inatteignables.
 library;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart' show ZEntity, ZFilter, ZSort;
 
@@ -191,6 +192,90 @@ abstract interface class ZCrudScreenActions {
   /// règle du listing en filtrant. Une liste vide retire les seuls filtres
   /// demandés.
   void filterBy(List<ZFilter> filters);
+
+  /// Les entités **actuellement listées**, dans l'ordre où elles sont peintes.
+  ///
+  /// C'est la lecture qui manque à une application dont la liste alimente
+  /// autre chose que l'écran — un document métier, un compte, un tableau de
+  /// bord. Sans elle, il faut relire la source en parallèle : deux lectures,
+  /// deux instants, deux règles de filtrage à tenir d'accord. Ici, la matière
+  /// rendue et la matière lue sont **la même**, relevée au même endroit que
+  /// celle de l'export intégré.
+  ///
+  /// **Ce qu'elle garantit** :
+  ///
+  /// * l'**ordre peint** — le tri demandé (`sortBy`) ou celui déclaré sur
+  ///   l'écran, tel qu'il est à l'écran ;
+  /// * la **portée** — les vivants en vue normale, les supprimés en vue
+  ///   corbeille, et l'onglet **actif** quand l'écran en assemble ;
+  /// * ce que la **recherche** et les **filtres** ont retenu, y compris les
+  ///   filtres permanents du listing et son post-filtre déclaré ;
+  /// * les **pages chargées** — « ce qui est listé » veut dire ce qui est
+  ///   listé : ni plus, ni moins que les lignes rendues.
+  ///
+  /// **Ce qu'elle n'est pas** : ni un flux de données (elle ne va pas chercher
+  /// ce que l'écran n'a pas lu), ni un accès au contrôleur de liste (elle
+  /// **lit**, elle ne pilote pas — le tri et les filtres se demandent par
+  /// [sortBy] et [filterBy]).
+  ///
+  /// **Écran qui ne montre rien** — chargement, erreur, liste vide, aucun
+  /// résultat — la lecture est **vide**, jamais le rendu précédent : un
+  /// document ne part pas sur ce que l'utilisateur ne voit plus.
+  ///
+  /// Le type est `ZEntity`, comme partout sur cette interface : l'appelant
+  /// connaît le sien et le retrouve par `whereType`.
+  ///
+  /// ```dart
+  /// final actions = ZCrudScreenScope.maybeOf(context);
+  /// final demandes =
+  ///     actions?.entitiesInView.whereType<DemandeDepotage>().toList() ??
+  ///         const <DemandeDepotage>[];
+  /// await imprimerListeDesDemandes(demandes);
+  /// ```
+  ///
+  /// Hors d'un `ZCrudScreen` — [ZCrudScreenScope.maybeOf] rend `null` — il n'y
+  /// a pas de listing, donc rien à lire.
+  List<ZEntity> get entitiesInView;
+
+  /// La même lecture que [entitiesInView], **notifiée** quand ce qui est listé
+  /// change réellement.
+  ///
+  /// À préférer quand une vue doit **refléter** le listing en continu — un
+  /// compteur, un en-tête « 42 dossiers », un total. Pour un geste ponctuel
+  /// (le tap d'un bouton d'export), [entitiesInView] suffit : un document est
+  /// un geste, pas un flux.
+  ///
+  /// **Elle ne reconstruit pas l'écran.** Rien n'est notifié tant que personne
+  /// n'écoute, et la notification n'est émise que si le contenu **diffère**
+  /// du précédent : un simple rendu de l'écran, une frappe qui ne change pas
+  /// le résultat, un changement d'onglet qui revient au même — aucun d'eux
+  /// n'émet. Ce qui écoute se reconstruit ; le corps du listing, lui, est
+  /// construit par l'écran et ne l'est pas une fois de plus (invariant AD-2).
+  ///
+  /// Même contrat que [entitiesInView] pour l'ordre, la portée, les pages
+  /// chargées et l'écran vide.
+  ///
+  /// ```dart
+  /// ValueListenableBuilder<List<ZEntity>>(
+  ///   valueListenable: actions.entitiesInViewListenable,
+  ///   builder: (context, entites, _) => Text('${entites.length} dossiers'),
+  /// )
+  /// ```
+  ///
+  /// Elle appartient à l'écran : ne la libérez pas, il s'en charge.
+  ValueListenable<List<ZEntity>> get entitiesInViewListenable;
+
+  /// Les entités **cochées** si la sélection porte, celles listées sinon.
+  ///
+  /// C'est mot pour mot la règle de l'export intégré : un utilisateur qui a
+  /// coché des éléments puis demandé un document veut ceux-là, pas la page
+  /// entière. La sélection **restreint**, elle ne réordonne pas — l'ordre reste
+  /// celui peint, et les cochés qui ne sont plus listés n'y figurent pas.
+  ///
+  /// Sans politique de sélection déclarée sur l'écran, ou sélection vide, c'est
+  /// exactement [entitiesInView]. À utiliser pour qu'un document maison se
+  /// comporte comme celui du socle, sans réécrire la règle.
+  List<ZEntity> get entitiesSelectedOrInView;
 }
 
 /// Contexte posé par `ZCrudScreen` autour de son corps, portant les gestes
