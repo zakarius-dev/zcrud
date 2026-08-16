@@ -11,10 +11,16 @@
 /// d'édition — attachée au `ZFormController`, jamais au schéma statique.
 library;
 
+import 'z_condition.dart';
+
 /// Famille de validateurs déclaratifs (discriminant de [ZValidatorSpec]).
 enum ZValidatorKind {
   /// Valeur requise (non nulle / non vide).
   required,
+
+  /// Valeur requise **quand une condition tient** — voir
+  /// `ZValidatorSpec.requiredIf` et `ZValidatorSpec.condition`.
+  requiredIf,
 
   /// Longueur minimale (chaîne/collection) — voir `ZValidatorSpec.length`.
   minLength,
@@ -90,8 +96,10 @@ enum ZValidatorKind {
 /// valeur doit ressembler **quand il y en a une**. Il laisse donc passer un
 /// champ laissé vide.
 ///
-/// La **présence** est exigée par [ZValidatorSpec.required], et par lui seul.
-/// Un champ obligatoire ET contraint dans sa forme déclare les deux :
+/// La **présence** est exigée par la famille « requis », et par elle seule :
+/// [ZValidatorSpec.required] l'exige toujours, [ZValidatorSpec.requiredIf]
+/// l'exige quand sa condition tient. Un champ obligatoire ET contraint dans sa
+/// forme déclare les deux :
 ///
 /// ```dart
 /// // Téléphone facultatif, mais valide dès qu'il est rempli :
@@ -99,6 +107,9 @@ enum ZValidatorKind {
 ///
 /// // E-mail obligatoire ET bien formé :
 /// validators: [ZValidatorSpec.required(), ZValidatorSpec.email()],
+///
+/// // Motif obligatoire seulement si le dossier est marqué « contentieux » :
+/// validators: [ZValidatorSpec.requiredIf(ZCondition.truthy('contentieux'))],
 /// ```
 class ZValidatorSpec {
   const ZValidatorSpec._(
@@ -119,12 +130,68 @@ class ZValidatorSpec {
     this.enforceRange,
     this.rangeMin,
     this.rangeMax,
+    this.condition,
   });
 
   /// Valeur requise — le **seul** validateur qui exige une présence : un champ
   /// vide n'est refusé que s'il le déclare.
   const ZValidatorSpec.required({String? errorText})
       : this._(ZValidatorKind.required, errorText: errorText);
+
+  /// Valeur requise **seulement quand [condition] tient** — la présence
+  /// devient une exigence conditionnelle, sans cesser d'être portée par un
+  /// validateur (jamais par un validateur de forme).
+  ///
+  /// [condition] est une [ZCondition] : la même donnée déclarative que celle
+  /// d'un `displayCondition`, évaluée contre l'état **courant** du formulaire.
+  ///
+  /// ```dart
+  /// // Recherche par au moins un critère : chacun des trois champs est requis
+  /// // tant que les deux autres sont vides.
+  /// const ZFieldSpec(
+  ///   name: 'nts',
+  ///   type: EditionFieldType.text,
+  ///   validators: <ZValidatorSpec>[
+  ///     ZValidatorSpec.requiredIf(
+  ///       ZCondition.and(<ZCondition>[
+  ///         ZCondition.isEmpty('cst'),
+  ///         ZCondition.isEmpty('marque'),
+  ///       ]),
+  ///       errorText: 'Renseignez au moins un critère',
+  ///     ),
+  ///   ],
+  /// )
+  /// ```
+  ///
+  /// **Articulation avec [ZValidatorSpec.required]** — la présence reste
+  /// portée par la seule famille « requis » : `required` l'exige toujours,
+  /// `requiredIf` l'exige quand sa condition tient. Les validateurs de
+  /// **forme** ne changent pas de rôle : quand la condition ne tient pas, un
+  /// champ laissé vide est **accepté**, exactement comme un champ sans
+  /// `required` ; quand il est rempli, ses validateurs de forme gardent leur
+  /// verrou. Les deux se cumulent sans se contredire — déclarer `required`
+  /// **et** `requiredIf` sur un même champ revient à `required`.
+  ///
+  /// **Astérisque de label** : `ZFieldSpec.isRequired` reste `false` pour un
+  /// champ qui ne déclare que `requiredIf` — l'exigence dépend de l'état, elle
+  /// n'est pas une propriété du schéma. Le label n'affiche donc pas
+  /// d'astérisque ; le message d'erreur, lui, apparaît dès que la condition
+  /// tient et que le champ est vide.
+  ///
+  /// **Sources lues** : les feuilles de source [ZValueSource.state] (défaut) et
+  /// [ZValueSource.persisted] sont honorées — l'état courant et la valeur
+  /// d'origine sont l'un et l'autre lisibles là où le validateur s'exécute. Une
+  /// feuille de source [ZValueSource.context] résout `null` (lecture défensive)
+  /// : le contexte d'édition n'est pas accessible sous le champ, et une règle
+  /// qui trancherait à la soumission sans jamais s'afficher sous le champ serait
+  /// une impasse. Pour conditionner un requis sur un drapeau applicatif,
+  /// exposez-le comme un champ du formulaire.
+  const ZValidatorSpec.requiredIf(ZCondition condition, {String? errorText})
+      : this._(
+          ZValidatorKind.requiredIf,
+          condition: condition,
+          errorText: errorText,
+        );
 
   /// Longueur minimale [length].
   const ZValidatorSpec.minLength(int length, {String? errorText})
@@ -308,6 +375,10 @@ class ZValidatorSpec {
   /// Borne haute de la plage `percentage` quand [enforceRange] (défaut `100`).
   final num? rangeMax;
 
+  /// Condition d'exigence de [ZValidatorKind.requiredIf] ; `null` pour toutes
+  /// les autres familles.
+  final ZCondition? condition;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -329,7 +400,8 @@ class ZValidatorSpec {
           enforceFormat == other.enforceFormat &&
           enforceRange == other.enforceRange &&
           rangeMin == other.rangeMin &&
-          rangeMax == other.rangeMax;
+          rangeMax == other.rangeMax &&
+          condition == other.condition;
 
   @override
   int get hashCode => Object.hashAll(<Object?>[
@@ -351,6 +423,7 @@ class ZValidatorSpec {
         enforceRange,
         rangeMin,
         rangeMax,
+        condition,
       ]);
 
   @override

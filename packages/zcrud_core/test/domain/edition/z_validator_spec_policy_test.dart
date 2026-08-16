@@ -70,12 +70,15 @@ void main() {
   });
 
   group('ZValidatorKind — catalogue FERMÉ (AD-3, AC6)', () {
-    test('20 valeurs, ensemble de noms inchangé', () {
-      expect(ZValidatorKind.values, hasLength(20));
+    test('21 valeurs, ensemble de noms inchangé', () {
+      expect(ZValidatorKind.values, hasLength(21));
       expect(
         ZValidatorKind.values.map((k) => k.name).toSet(),
         <String>{
           'required',
+          // Variante CONDITIONNELLE de la présence : la seule famille ajoutée
+          // au catalogue depuis sa fermeture.
+          'requiredIf',
           'minLength',
           'maxLength',
           'min',

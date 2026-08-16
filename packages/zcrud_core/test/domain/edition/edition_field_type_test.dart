@@ -119,6 +119,9 @@ void main() {
     test('chaque variante est const-constructible et porte sa donnée', () {
       const variants = <ZValidatorSpec>[
         ZValidatorSpec.required(),
+        // Porte une `ZCondition` — elle-même `const` : la nature pur-données
+        // du catalogue est préservée.
+        ZValidatorSpec.requiredIf(ZCondition.truthy('flag')),
         ZValidatorSpec.minLength(3),
         ZValidatorSpec.maxLength(100),
         ZValidatorSpec.min(0),

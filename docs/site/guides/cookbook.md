@@ -101,6 +101,46 @@ const ZFieldSpec(
 Voir l'écran de démo : `example/lib/demos/reference_form.dart` (champs `active` /
 `premiumCode`).
 
+## Afficher un champ selon une option cochée {#champ-selon-option}
+
+Le champ observé porte une **sélection multiple** (multi-`select`, `tags`, cases groupées,
+relation multiple…) et le champ dépendant ne concerne qu'une des options retenues :
+
+```dart
+const ZFieldSpec(
+  name: 'quotaLome',
+  type: EditionFieldType.number,
+  label: 'Quota de Lomé',
+  condition: ZCondition.contains('bureaux', 'lome'),
+);
+```
+
+`ZCondition.contains` répond à « cette valeur est-elle retenue ? ». Seule une collection
+(`List`, `Set`…) peut la contenir : un champ absent, `null`, un nombre, une `Map` ou **une
+chaîne** rendent `false`, sans jamais lever. Pour un champ à valeur unique, la question est
+« est-ce cette valeur ? » — c'est `ZCondition.equals`.
+
+## Exiger au moins un critère parmi plusieurs {#requis-conditionnel}
+
+Un écran de recherche porte trois critères, dont **au moins un** doit être renseigné. Chaque
+champ est requis tant que les autres sont vides :
+
+```dart
+const ZValidatorSpec.requiredIf(
+  ZCondition.and(<ZCondition>[
+    ZCondition.isEmpty('cst'),
+    ZCondition.isEmpty('marque'),
+  ]),
+  errorText: 'Renseignez au moins un critère',
+);
+```
+
+Quand la condition ne tient pas, le champ vide est accepté comme un champ sans `required` —
+la présence reste portée par la seule famille « requis », jamais par un validateur de forme.
+Le champ dépendant s'abonne aux seuls champs que la condition observe : le message apparaît
+et disparaît sans qu'il faille retoucher le champ lui-même
+([AD-2](../concepts/invariants.md#ad-2)).
+
 ## Découper un formulaire en étapes {#stepper}
 
 Un formulaire de 30 champs est plus lisible en assistant qu'en un seul écran.

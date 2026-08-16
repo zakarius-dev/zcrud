@@ -1,6 +1,6 @@
 /// Validateurs **inter-champs** : `match(refKey)`, `minKey(refKey)`,
-/// `maxKey(refKey)` — déférés par [ZValidatorCompiler] car ils dépendent de
-/// l'ÉTAT RUNTIME d'un AUTRE champ.
+/// `maxKey(refKey)`, `requiredIf(condition)` — déférés par [ZValidatorCompiler]
+/// car ils dépendent de l'ÉTAT RUNTIME d'un AUTRE champ.
 ///
 /// `ZValidatorCompiler` ne compile que les validateurs **champ-locaux** et
 /// renvoie `null` pour les variantes `refKey`. Ce fichier les complète par
@@ -22,10 +22,18 @@
 ///   de **dates** (couvre l'exemple normatif `dateFin.minKey('dateDebut')`,
 ///   qui rejette une plage inversée) ; sinon (types non comparables) ⇒ **non
 ///   bloquant** (référence indéterminée), SANS `throw`.
+/// - `requiredIf` exige la **présence** quand sa condition tient, et rien du
+///   tout quand elle ne tient pas : le vide reste alors accepté, comme pour
+///   tout champ qui ne déclare pas `required`. La condition est évaluée par
+///   [evaluateZCondition] contre l'état courant du controller capturé
+///   (`valueOf`) et sa baseline (`baselineValueOf`).
 library;
 
 import 'package:flutter/widgets.dart' show FormFieldValidator;
+import 'package:form_builder_validators/form_builder_validators.dart';
 
+import '../../domain/edition/z_condition.dart';
+import '../../domain/edition/z_condition_evaluator.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../../domain/edition/z_validator_spec.dart';
 import '../z_form_controller.dart';
@@ -34,11 +42,14 @@ import 'z_validator_compiler.dart';
 /// Compilateur des validateurs **inter-champs** d'un champ, capturant le
 /// [ZFormController] pour lire la valeur des champs référencés à l'invocation.
 abstract final class ZCrossFieldValidator {
-  /// Compile les seules specs **inter-champs** (`refKey != null`) de [specs] en
-  /// un unique `FormFieldValidator<String>` **mémoïsable**, ou `null` si aucune.
+  /// Compile les seules specs **inter-champs** de [specs] — celles qui
+  /// référencent un autre champ (`refKey`) et celles qui portent une condition
+  /// (`requiredIf`) — en un unique `FormFieldValidator<String>` **mémoïsable**,
+  /// ou `null` si aucune.
   ///
-  /// Chaque closure lit `c.valueOf(refKey)` à l'invocation (jamais capturée en
-  /// dur). Le message d'erreur est `spec.errorText` (repli littéral minimal).
+  /// Chaque closure lit l'état du formulaire à l'invocation (jamais capturé en
+  /// dur). Le message d'erreur est `spec.errorText` (repli littéral minimal,
+  /// ou message localisé de `required` pour `requiredIf`).
   static FormFieldValidator<String>? compile(
     List<ZValidatorSpec> specs,
     ZFormController c,
@@ -73,12 +84,22 @@ abstract final class ZCrossFieldValidator {
     return (value) => local(value) ?? cross(value);
   }
 
-  /// Ensemble des `refKey` référencés par les specs inter-champs de [specs] —
-  /// alimente l'abonnement CIBLÉ du champ dépendant (`fieldListenable(refKey)`),
+  /// Ensemble des **champs observés** par les specs inter-champs de [specs] —
+  /// alimente l'abonnement CIBLÉ du champ dépendant (`fieldListenable(nom)`),
   /// jamais un abonnement global.
+  ///
+  /// Réunit les `refKey` (`match`/`minKey`/`maxKey`) et les champs de garde des
+  /// conditions de `requiredIf` (les feuilles de source `state`, seules
+  /// susceptibles de changer sous une frappe) : sans eux, le message « requis »
+  /// n'apparaîtrait ni ne disparaîtrait tant que l'usager n'aurait pas
+  /// retouché le champ lui-même.
   static Set<String> refKeysOf(List<ZValidatorSpec> specs) => <String>{
         for (final s in specs)
           if (_isCrossField(s) && s.refKey != null) s.refKey!,
+        ...zGuardFieldsOf(<ZCondition?>[
+          for (final s in specs)
+            if (s.kind == ZValidatorKind.requiredIf) s.condition,
+        ]),
       };
 
   static bool _isCrossField(ZValidatorSpec s) =>
@@ -91,6 +112,24 @@ abstract final class ZCrossFieldValidator {
     ZValidatorSpec spec,
     ZFormController c,
   ) {
+    // Présence exigée SOUS CONDITION : la condition est lue à l'invocation,
+    // contre l'état courant du controller capturé — jamais figée à la
+    // compilation. Condition satisfaite ⇒ exactement `required` (même règle de
+    // vacuité, même message localisé) ; sinon ⇒ aucun verrou, le vide passe.
+    if (spec.kind == ZValidatorKind.requiredIf) {
+      final condition = spec.condition;
+      // Spec incomplète (non atteignable par le constructeur public) ⇒ inerte.
+      if (condition == null) return null;
+      final required =
+          FormBuilderValidators.required<String>(errorText: spec.errorText);
+      return (value) => evaluateZCondition(
+            condition,
+            c.valueOf,
+            persistedValueOf: c.baselineValueOf,
+          )
+              ? required(value)
+              : null;
+    }
     final refKey = spec.refKey;
     if (refKey == null) return null; // littéral → géré par ZValidatorCompiler.
     final message = spec.errorText;

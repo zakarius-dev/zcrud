@@ -3,6 +3,87 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.2.0 — 2026-08-16
+
+### Ajouté
+
+#### Un champ qui suit une case cochée
+
+Une condition d'affichage savait comparer une valeur, tester une vacuité,
+mesurer une longueur — mais pas répondre à « cette sélection multiple
+contient-elle telle option ? ». Un formulaire qui s'adapte à une sélection
+multiple devait donc fabriquer ses champs au rendu, un jeu variable là où le
+catalogue est figé.
+
+`ZCondition.contains` répond à cette question :
+
+```dart
+const ZFieldSpec(
+  name: 'quotaLome',
+  type: EditionFieldType.number,
+  condition: ZCondition.contains('bureaux', 'lome'),
+)
+```
+
+Le champ apparaît dès que `'lome'` figure parmi les valeurs retenues par
+`bureaux`, et disparaît dès qu'il en sort. L'opérateur se compose comme tous
+les autres : `ZCondition.not(...)` pour l'inverse, `and`/`or` pour le combiner,
+`source:` pour lire la valeur d'origine plutôt que la saisie en cours.
+
+**Ce qui compte comme collection** : un `Iterable` (`List`, `Set`…), et lui
+seul. Un champ absent, `null`, un nombre, une `Map` — et **une chaîne** —
+rendent `false`, sans jamais lever. Le cas de la chaîne est un choix délibéré :
+`'lome-port'.contains('lome')` est vrai en Dart, si bien qu'une condition
+pointée par erreur sur un champ à valeur unique aurait semblé fonctionner puis
+surpris. Cet opérateur répond à « cette valeur est-elle retenue ? » ; pour
+« est-ce cette valeur ? », c'est `ZCondition.equals`.
+
+#### Un champ requis seulement quand une condition tient
+
+`ZValidatorSpec.required` exige une valeur en toutes circonstances. Une règle
+comme « au moins un de ces trois critères » n'avait donc pas de traduction :
+trois `required` interdisent la recherche par un seul critère, aucun laisse
+soumettre un formulaire vide.
+
+`ZValidatorSpec.requiredIf` porte la même exigence, sous condition :
+
+```dart
+const ZFieldSpec(
+  name: 'nts',
+  type: EditionFieldType.text,
+  validators: <ZValidatorSpec>[
+    ZValidatorSpec.requiredIf(
+      ZCondition.and(<ZCondition>[
+        ZCondition.isEmpty('cst'),
+        ZCondition.isEmpty('marque'),
+      ]),
+      errorText: 'Renseignez au moins un critère',
+    ),
+  ],
+)
+```
+
+Déclarée ainsi sur chacun des trois champs, la règle refuse la soumission tant
+que les trois sont vides et l'accepte dès qu'un seul est renseigné.
+
+La frontière **forme / présence** est inchangée : quand la condition ne tient
+pas, le champ vide est accepté exactement comme un champ sans `required`, et
+ses validateurs de forme gardent leur verrou dès qu'il est rempli. Déclarer
+`required` **et** `requiredIf` sur un même champ revient à `required`.
+
+La condition est évaluée là où le champ est validé — à la frappe comme à la
+soumission — contre l'état courant du formulaire et sa valeur d'origine
+(`ZValueSource.persisted`). Le champ dépendant s'abonne aux seuls champs que sa
+condition observe : le message apparaît et disparaît sans qu'il faille
+retoucher le champ lui-même, et une frappe ailleurs ne reconstruit rien.
+
+Deux points à connaître : une feuille de source `ZValueSource.context` n'est
+pas honorée par `requiredIf` (le contexte d'édition n'est pas lisible sous le
+champ) — exposez le drapeau comme un champ du formulaire ; et
+`ZFieldSpec.isRequired` reste `false` pour un champ qui ne déclare que
+`requiredIf`, l'astérisque du label restant réservé à une exigence qui ne
+dépend pas de l'état.
+
 ## 1.1.0 — 2026-08-16
 
 ### Ajouté

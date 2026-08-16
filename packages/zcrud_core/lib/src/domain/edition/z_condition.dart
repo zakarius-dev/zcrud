@@ -94,12 +94,19 @@ enum ZConditionOp {
 
   /// La longueur de la valeur est **inférieure ou égale** à [ZCondition.length].
   lengthLte,
+
+  /// La valeur est une **collection** (`Iterable`) qui contient
+  /// [ZCondition.value] — appartenance à une sélection multiple.
+  contains,
 }
 
 /// Expression `const` de visibilité conditionnelle (pur-données).
 ///
 /// Feuilles (dépendent d'un champ) : [ZCondition.equals], [ZCondition.notEquals],
-/// [ZCondition.isNull], [ZCondition.notNull], [ZCondition.truthy].
+/// [ZCondition.isNull], [ZCondition.notNull], [ZCondition.truthy],
+/// [ZCondition.isEmpty], [ZCondition.isNotEmpty], les opérateurs de longueur
+/// ([ZCondition.lengthEquals] et ses variantes) et [ZCondition.contains]
+/// (appartenance à une sélection multiple).
 /// Combinateurs : [ZCondition.and], [ZCondition.or], [ZCondition.not].
 class ZCondition {
   const ZCondition._(
@@ -178,6 +185,55 @@ class ZCondition {
       {ZValueSource source = ZValueSource.state})
       : this._(ZConditionOp.lengthLte,
             field: field, length: length, source: source);
+
+  /// Vrai si la valeur du champ [field] (lue sur [source]) est une
+  /// **collection contenant** [value] — « cette option est-elle cochée ? ».
+  ///
+  /// C'est l'opérateur d'**appartenance à une sélection multiple** : le champ
+  /// observé porte une liste (multi-`select`, `tags`, `rowChips`, cases à
+  /// cocher groupées, relation multiple…) et la condition est vraie tant que
+  /// [value] figure parmi les valeurs retenues.
+  ///
+  /// ```dart
+  /// // Le champ n'apparaît que si le bureau de Lomé est coché :
+  /// const ZFieldSpec(
+  ///   name: 'quotaLome',
+  ///   type: EditionFieldType.number,
+  ///   condition: ZCondition.contains('bureaux', 'lome'),
+  /// )
+  /// ```
+  ///
+  /// **Ce qui compte comme collection** : uniquement un `Iterable` (`List`,
+  /// `Set`…). Les autres valeurs rendent **`false`**, sans jamais lever :
+  ///
+  /// | Valeur du champ | `contains('f', 'a')` |
+  /// |---|---|
+  /// | `['a', 'b']` | `true` |
+  /// | `['b']`, `[]` | `false` |
+  /// | champ absent, `null` | `false` |
+  /// | `'abc'` (chaîne) | **`false`** |
+  /// | `{'a': 1}` (map), `12`, `true` | `false` |
+  ///
+  /// **Une chaîne n'est pas une collection ici** — c'est un choix délibéré.
+  /// `'abc'.contains('b')` est vrai en Dart (recherche de **sous-chaîne**),
+  /// et une condition d'appartenance pointée par erreur sur un champ à valeur
+  /// unique aurait alors semblé fonctionner : `contains('bureau', 'lome')`
+  /// serait vrai pour `'lome-port'` comme pour `'lome'`. Cet opérateur répond
+  /// à « cette valeur est-elle **retenue** ? », jamais à « ce texte
+  /// **contient-il** ce fragment ? ». Sur un champ à valeur unique, comparez
+  /// la valeur entière avec [ZCondition.equals].
+  ///
+  /// L'appartenance se juge par `==`, comme [ZCondition.equals] : les valeurs
+  /// comparées doivent être écrites dans la **même convention** que celles que
+  /// le champ retient (valeurs d'énumération en camelCase, cf. la convention
+  /// de persistance du dépôt).
+  ///
+  /// La condition inverse s'obtient par [ZCondition.not], et celle-ci se
+  /// compose avec [ZCondition.and]/[ZCondition.or] comme toutes les autres.
+  const ZCondition.contains(String field, Object? value,
+      {ZValueSource source = ZValueSource.state})
+      : this._(ZConditionOp.contains,
+            field: field, value: value, source: source);
 
   /// Conjonction (`ET`) de [operands].
   const ZCondition.and(List<ZCondition> operands)

@@ -46,6 +46,9 @@ typedef ZValueOf = Object? Function(String field);
 ///   `(str ?? '').isEmpty` ;
 /// - [ZConditionOp.lengthEquals]/`lengthGt`/`lengthGte`/`lengthLt`/`lengthLte` :
 ///   comparaison de [zLengthOf] au seuil `condition.length` (`null` ⇒ `0`) ;
+/// - [ZConditionOp.contains] : **appartenance** — la valeur du champ est un
+///   `Iterable` contenant `condition.value` (cf. [zContainsValue]) ; toute
+///   valeur qui n'est pas une collection (y compris une **chaîne**) ⇒ `false` ;
 /// - [ZConditionOp.and] : conjonction de TOUS les `operands` (vide ⇒ `true`) ;
 /// - [ZConditionOp.or] : disjonction d'AU MOINS un `operand` (vide ⇒ `false`) ;
 /// - [ZConditionOp.not] : négation de l'unique `operand`.
@@ -111,6 +114,8 @@ bool evaluateZCondition(
       return zLengthOf(leafValue()) < (condition.length ?? 0);
     case ZConditionOp.lengthLte:
       return zLengthOf(leafValue()) <= (condition.length ?? 0);
+    case ZConditionOp.contains:
+      return zContainsValue(leafValue(), condition.value);
     case ZConditionOp.and:
       final operands = condition.operands;
       if (operands == null || operands.isEmpty) return true;
@@ -164,6 +169,32 @@ int zLengthOf(Object? value) {
   if (value is Iterable) return value.length;
   if (value is Map) return value.length;
   return 0;
+}
+
+/// **Appartenance** pure et **totale** d'une valeur à une collection, pour
+/// l'opérateur [ZConditionOp.contains] : `true` si [container] est un
+/// `Iterable` dont l'un des éléments est égal (`==`) à [value].
+///
+/// Seul un `Iterable` (`List`, `Set`…) compte comme collection :
+///
+/// - `null`, valeur absente, scalaire (`num`/`bool`/objet) ⇒ `false` ;
+/// - `Map` ⇒ `false` — « contenir » y désignerait tantôt une clé, tantôt une
+///   valeur ; l'ambiguïté est écartée plutôt que tranchée en silence ;
+/// - `String` ⇒ **`false`** — une chaîne répondrait par une recherche de
+///   **sous-chaîne** (`'lome-port'.contains('lome')`), qui n'est pas une
+///   appartenance. Voir [ZCondition.contains] pour le détail de ce choix.
+///
+/// **Ne lève jamais** (invariant AD-10) : une collection dont un élément jette
+/// à la comparaison ne fait pas échouer l'évaluation, elle rend `false`.
+bool zContainsValue(Object? container, Object? value) {
+  if (container is! Iterable) return false;
+  try {
+    return container.contains(value);
+  } catch (_) {
+    // Collection paresseuse dont le parcours échoue : indéterminé ⇒ `false`,
+    // jamais une exception qui remonterait au rendu d'un formulaire.
+    return false;
+  }
 }
 
 /// Extrait l'**ensemble des champs de garde** d'un ensemble de conditions :

@@ -17,7 +17,8 @@
 /// - Liste **vide** ⇒ `null` (aucune surcharge sur le `TextFormField`).
 ///
 /// FRONTIÈRE — validateurs **inter-champs** (`min`/`max` référençant un autre
-/// champ via `refKey`, et `match` = égalité à un autre champ) : ils dépendent de
+/// champ via `refKey`, `match` = égalité à un autre champ, et `requiredIf` =
+/// présence exigée sous condition) : ils dépendent de
 /// l'ÉTAT RUNTIME d'un AUTRE champ, hors du contrat champ-local de ce
 /// compilateur. Ils sont **DÉFÉRÉS** au niveau formulaire (closures mémoïsées
 /// capturant le `ZFormController`, lisant `valueOf(refKey)` à l'invocation).
@@ -29,6 +30,9 @@
 /// quoi une valeur doit ressembler **quand il y en a une** ; il n'exige jamais
 /// qu'il y en ait une. L'exigence de présence est portée par un seul
 /// validateur — `ZValidatorKind.required` — et un champ qui la veut le déclare.
+/// `ZValidatorKind.requiredIf` est la variante **conditionnelle** de cette même
+/// exigence (déférée ci-dessous) : elle n'ajoute pas une seconde règle de
+/// présence, elle soumet la première à une condition.
 /// C'est ce qui rend exprimable la forme la plus courante d'un champ de
 /// contact : *facultatif, mais valide s'il est rempli*.
 library;
@@ -79,6 +83,11 @@ abstract final class ZValidatorCompiler {
         // SEULE famille qui porte la présence : ici, et seulement ici, une
         // valeur vide ou absente est une erreur.
         return FormBuilderValidators.required<String>(errorText: e);
+      case ZValidatorKind.requiredIf:
+        // Porte la présence, mais sous condition d'un AUTRE champ : hors du
+        // contrat champ-local. DÉFÉRÉ au niveau formulaire
+        // (`ZCrossFieldValidator`), qui seul peut lire l'état complet.
+        return null;
       case ZValidatorKind.minLength:
         final n = spec.length;
         return n == null
