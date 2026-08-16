@@ -147,8 +147,25 @@ class ZSubListConfig extends ZFieldConfig {
   /// indépendamment ne s'alignent JAMAIS sous un en-tête — l'en-tête mentirait.
   /// Le texte tronqué reste atteignable par le dialog consulter/modifier.
   ///
-  /// ⇒ à réserver à un petit nombre de colonnes. Une vraie grille (colonnes
-  /// dimensionnées, tri, défilement synchronisé) relève de `zcrud_list`.
+  /// ## Sur une surface étroite, la table se replie
+  ///
+  /// Des colonnes de largeur égale ne tiennent que si la largeur suffit. En
+  /// deçà, la sous-liste **empile** chaque ligne en couples libellé/valeur : la
+  /// valeur est alors rendue en entier (elle revient à la ligne au lieu d'être
+  /// coupée) et le libellé qui coiffait la colonne **descend dans la ligne**,
+  /// la ligne d'en-têtes s'effaçant avec elle — il n'y a donc jamais d'en-tête
+  /// au-dessus d'un empilement.
+  ///
+  /// Le basculement est **mesuré**, pas déclaré : la table est conservée tant
+  /// que la largeur restante — actions de ligne et marges déduites — laisse à
+  /// chaque colonne au moins la largeur minimale lisible du thème
+  /// (`ZcrudTheme.subListColumnMinWidth`, dérivée de `readRowLabelWidth`, 160
+  /// par défaut). Le repli vaut en consultation **comme** en saisie : il ne se
+  /// déclenche que là où la table ne délivrait plus rien.
+  ///
+  /// ⇒ à réserver à un petit nombre de colonnes : au-delà, la table se repliera
+  /// sur la plupart des téléphones. Une vraie grille (colonnes dimensionnées,
+  /// tri, défilement synchronisé) relève de `zcrud_list`.
   final bool showSummaryHeaders;
 
   @override

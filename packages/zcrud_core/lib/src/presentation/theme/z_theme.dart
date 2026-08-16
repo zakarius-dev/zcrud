@@ -381,6 +381,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.readCardMinHeight,
     this.readRowLabelWidth,
     this.readRowMinWidth,
+    this.subListColumnMinWidth,
     this.accentBarHeight,
     this.gradientBegin,
     this.gradientEnd,
@@ -830,6 +831,22 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// présentation empilée. `null` (défaut) ⇒ `360` : sur téléphone, une ligne à
   /// deux colonnes n'a plus la place de le rester.
   final double? readRowMinWidth;
+
+  /// Largeur minimale qu'une **colonne de résumé de sous-liste** doit garder
+  /// pour rester lisible, gouttière comprise.
+  ///
+  /// C'est ce jeton qui décide quand une sous-liste à en-têtes abandonne sa
+  /// table alignée pour empiler chaque ligne en couples libellé/valeur : la
+  /// table est conservée tant que la largeur restante, actions de ligne
+  /// déduites, laisse à **chaque** colonne au moins cette largeur.
+  ///
+  /// `null` (défaut) ⇒ la valeur est **dérivée** de [readRowLabelWidth] (160
+  /// par défaut) : une colonne est coiffée par le libellé de son champ, elle
+  /// doit donc être au moins aussi large que la colonne de libellés qu'un
+  /// champ consulté en ligne se réserve déjà. Le poser ici permet de régler le
+  /// repli des sous-listes **sans** toucher à la présentation des champs
+  /// consultés en ligne.
+  final double? subListColumnMinWidth;
 
   /// Hauteur future de la barre d'accent. `null` conserve v0.19.3 inchangé.
   final double? accentBarHeight;
@@ -2233,6 +2250,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? readCardMinHeight,
     double? readRowLabelWidth,
     double? readRowMinWidth,
+    double? subListColumnMinWidth,
     double? accentBarHeight,
     AlignmentGeometry? gradientBegin,
     AlignmentGeometry? gradientEnd,
@@ -2426,6 +2444,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     readCardMinHeight: readCardMinHeight ?? this.readCardMinHeight,
     readRowLabelWidth: readRowLabelWidth ?? this.readRowLabelWidth,
     readRowMinWidth: readRowMinWidth ?? this.readRowMinWidth,
+    subListColumnMinWidth:
+        subListColumnMinWidth ?? this.subListColumnMinWidth,
     accentBarHeight: accentBarHeight ?? this.accentBarHeight,
     gradientBegin: gradientBegin ?? this.gradientBegin,
     gradientEnd: gradientEnd ?? this.gradientEnd,
@@ -2783,6 +2803,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       readRowMinWidth: _lerpNullableDouble(
         readRowMinWidth,
         other.readRowMinWidth,
+        t,
+      ),
+      subListColumnMinWidth: _lerpNullableDouble(
+        subListColumnMinWidth,
+        other.subListColumnMinWidth,
         t,
       ),
       accentBarHeight: _lerpNullableDouble(

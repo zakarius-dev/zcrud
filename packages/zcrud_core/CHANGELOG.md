@@ -3,6 +3,50 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.4.1 — 2026-08-16
+
+### Corrigé
+
+#### Sur un téléphone, une sous-liste ne délivrait aucune information lisible
+
+Une sous-liste à en-têtes de colonnes présentait ses items en table alignée :
+autant de colonnes de largeur égale que de champs de résumé, chacune coupée à
+une ligne. Sur la largeur d'un téléphone, quatre colonnes laissent moins de
+soixante-dix points à chacune — marges déduites, il ne reste rien. En
+consultation, l'agent lisait donc une table dont **les en-têtes eux-mêmes**
+étaient tronqués (« Date … », « Poste … ») au-dessus de lignes qui l'étaient
+tout autant (« ven. … ») : ni la période, ni le poste, ni rien d'autre. Et sur
+une fiche qu'on consulte et qu'on imprime, « ouvrir l'item pour lire »
+n'est pas une réponse.
+
+La table alignée est conservée — c'est un bon rendu, et il ne changera pas d'un
+pixel là où la place suffit. Mais **en deçà de la largeur qu'elle exige**, la
+sous-liste empile désormais chaque ligne en couples libellé/valeur : la valeur
+est rendue en entier, sur autant de lignes qu'il le faut, et le libellé qui
+coiffait la colonne descend dans la ligne. La ligne d'en-têtes s'efface avec
+elle : il n'y a jamais un en-tête au-dessus d'un empilement auquel il ne
+correspondrait plus. Chaque couple est annoncé comme un couple aux lecteurs
+d'écran.
+
+Le seuil n'est pas un nombre choisi : il se calcule à chaque mise en page. La
+table est gardée tant que la largeur restante — marges de ligne et boutons
+d'action déduits — laisse à **chaque** colonne au moins la largeur minimale
+lisible du thème. Les boutons entrent dans le calcul parce qu'ils prennent
+réellement la largeur au texte : la même surface peut donc porter une table en
+consultation, où une seule action est offerte, et l'empiler en saisie, où il y
+en a trois. Le repli vaut dans les deux cas — il ne se déclenche que là où la
+table ne délivrait plus rien.
+
+### Ajouté
+
+* `ZcrudTheme.subListColumnMinWidth` — largeur minimale qu'une colonne de
+  résumé de sous-liste doit garder pour rester lisible, et donc seuil de repli
+  de la table. `null` (défaut) ⇒ **dérivée** de `readRowLabelWidth` (160 par
+  défaut) : une colonne est coiffée par le libellé de son champ, elle doit être
+  au moins aussi large que la colonne de libellés qu'un champ consulté en ligne
+  se réserve déjà. Le déclarer permet de régler le repli des sous-listes sans
+  toucher à la présentation des champs consultés en ligne.
+
 ## 1.4.0 — 2026-08-16
 
 ### Corrigé

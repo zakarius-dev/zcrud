@@ -43,6 +43,13 @@
 /// chaque action **filtrée par `ZAcl`**. Le mode `inline` (défaut) est
 /// **strictement préservé**. Dans le dialog : `ZFormController` PROPRE,
 /// `ZFieldWidget` réutilisé, aucun `Form` global.
+///
+/// **Le résumé se replie quand la place manque** : avec des en-têtes de
+/// colonnes, la table alignée n'est tenue que tant que chaque colonne garde la
+/// largeur minimale lisible du thème (marges et actions déduites). En deçà,
+/// chaque ligne s'empile en couples libellé/valeur et la ligne d'en-têtes
+/// disparaît — les deux décisions sortent du même calcul, de sorte qu'un
+/// en-tête ne surplombe jamais un empilement. Voir `_summaryIsStacked`.
 library;
 
 import 'package:flutter/material.dart';
@@ -616,13 +623,29 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
 
   /// Contenu résumé d'une ligne (mode compact) : les `summaryFields` en lecture
   /// (défilement horizontal encapsulé) ou le titre dérivé.
-  Widget _summaryCells(BuildContext context, _SubItem item) {
+  ///
+  /// [replie] ne concerne que le mode **en-têtes** : `true` ⇒ la ligne
+  /// abandonne ses colonnes pour un **empilement de couples libellé/valeur**
+  /// (voir [_stackedSummary]), parce que la place manque pour que des colonnes
+  /// disent encore quelque chose. Le calcul de ce basculement appartient à
+  /// [_summaryIsStacked] ; la cellule, elle, ne mesure rien.
+  Widget _summaryCells(
+    BuildContext context,
+    _SubItem item, {
+    required bool replie,
+  }) {
     final summaryFields = _summaryFields;
     if (summaryFields.isNotEmpty) {
       // Mode EN-TÊTES (opt-in) : colonnes de largeur égale, ellipse, aucun
       // défilement horizontal — sans quoi des cellules de largeur intrinsèque
       // défilant chacune pour son compte ne s'aligneraient jamais sous
-      // l'en-tête. Le texte tronqué reste atteignable par consulter/modifier.
+      // l'en-tête. Le texte tronqué reste atteignable par consulter/modifier…
+      // …tant que les colonnes ont la place d'exister : en deçà, la ligne
+      // s'empile (le seul régime où l'ellipse ne cachait plus un détail mais
+      // la totalité de l'information).
+      if (_showSummaryHeaders && replie) {
+        return _stackedSummary(context, item, summaryFields);
+      }
       if (_showSummaryHeaders) {
         return Row(
           children: <Widget>[
@@ -663,6 +686,137 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       overflow: TextOverflow.ellipsis,
       textAlign: TextAlign.start,
     );
+  }
+
+  /// Résumé **empilé** d'une ligne : un couple libellé/valeur par colonne, le
+  /// libellé au-dessus de sa valeur.
+  ///
+  /// C'est la forme que prend le résumé quand les colonnes n'ont plus la place
+  /// d'être lisibles. Le libellé est celui-là même qui coiffait la colonne : il
+  /// **descend dans la ligne** au lieu de rester en en-tête, de sorte qu'aucun
+  /// en-tête ne surplombe un empilement auquel il ne correspondrait plus. La
+  /// valeur, elle, n'est ni limitée en nombre de lignes ni tronquée : elle
+  /// revient à la ligne autant qu'il le faut.
+  ///
+  /// Un couple dont la **valeur est vide** n'est pas rendu : un libellé seul
+  /// n'apprend rien et coûterait deux lignes de hauteur là où la place est
+  /// justement comptée. Une ligne dont toutes les valeurs sont vides ne rend
+  /// donc rien — comme la table alignée, dont les cellules seraient toutes
+  /// blanches.
+  ///
+  /// a11y (invariant AD-13) : chaque couple forme **un** nœud annoncé
+  /// « libellé : valeur ». Les deux textes en sont exclus, faute de quoi la
+  /// valeur serait annoncée deux fois et le libellé, isolé, passerait pour un
+  /// contenu.
+  Widget _stackedSummary(
+    BuildContext context,
+    _SubItem item,
+    List<String> summaryFields,
+  ) {
+    final labelStyle = Theme.of(context).textTheme.labelMedium;
+    final couples = <Widget>[];
+    for (final name in summaryFields) {
+      final value = _displayText(context, item, name);
+      if (value.isEmpty) continue;
+      final spec = _specOf(name);
+      final resolved = label(
+        context,
+        spec?.label ?? name,
+        fallback: spec?.label ?? name,
+      );
+      couples.add(
+        Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(
+            0,
+            couples.isEmpty ? 0 : _stackedPairGap,
+            0,
+            0,
+          ),
+          child: Semantics(
+            container: true,
+            label: resolved,
+            value: value,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                ExcludeSemantics(
+                  child: Text(
+                    resolved,
+                    style: labelStyle,
+                    textAlign: TextAlign.start,
+                  ),
+                ),
+                ExcludeSemantics(
+                  child: Text(value, textAlign: TextAlign.start),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    if (couples.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        0,
+        _stackedPairGap,
+        0,
+        _stackedPairGap,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: couples,
+      ),
+    );
+  }
+
+  /// Écart vertical entre deux couples empilés (et marge haute/basse du bloc).
+  static const double _stackedPairGap = 8;
+
+  /// Emprise horizontale d'une ligne de résumé **hors colonnes**, actions
+  /// exclues : les marges externes de `_CompactRow` (16 de chaque côté) et ses
+  /// marges internes (12 au début, 4 à la fin). La ligne d'en-têtes reproduit
+  /// exactement la même emprise — c'est ce qui fait tomber les colonnes en face.
+  static const double _rowChromeExtent = 16 + 16 + 12 + 4;
+
+  /// Largeur minimale qu'une colonne de résumé doit conserver pour rester
+  /// lisible, **gouttière comprise**.
+  ///
+  /// Elle n'est pas choisie : elle est **déclarée** par le thème
+  /// (`subListColumnMinWidth`) ou, à défaut, **dérivée** de `readRowLabelWidth`
+  /// (160 par défaut). La dérivation a une raison : une colonne est coiffée par
+  /// le libellé de son champ, elle doit donc être au moins aussi large que la
+  /// colonne de libellés qu'un champ consulté en ligne se réserve déjà. En deçà,
+  /// c'est l'en-tête lui-même qui se tronque.
+  double _minColumnWidth(ZcrudTheme tokens) =>
+      tokens.subListColumnMinWidth ?? tokens.readRowLabelWidth ?? 160;
+
+  /// Le résumé doit-il s'**empiler** sur une surface de [width] logique ?
+  ///
+  /// Le seuil n'est pas un nombre : il se calcule à chaque mise en page, à
+  /// partir de ce que la ligne doit réellement loger.
+  ///
+  /// ```text
+  /// disponible = largeur − marges de ligne (48) − actions × 48
+  /// empilé     ⇔ disponible < nombre de colonnes × largeur minimale de colonne
+  /// ```
+  ///
+  /// Les actions entrent dans le calcul parce qu'elles prennent la largeur aux
+  /// colonnes : la même surface peut donc porter une table en consultation
+  /// (une seule action) et l'empiler en édition (trois). C'est voulu — dans les
+  /// deux cas, ce qui est mesuré est la place qui reste au texte.
+  ///
+  /// Deux cas ne s'empilent jamais : le résumé **sans** en-têtes (qui défile
+  /// horizontalement et ne tronque donc rien) et une largeur non bornée (une
+  /// surface qui ne se prononce pas ne peut pas déclencher un repli).
+  bool _summaryIsStacked(ZcrudTheme tokens, double width, int actionCount) {
+    if (!_showSummaryHeaders || !width.isFinite) return false;
+    final columns = _summaryFields.length;
+    if (columns == 0) return false;
+    final available = width - _rowChromeExtent - actionCount * _actionExtent;
+    return available < columns * _minColumnWidth(tokens);
   }
 
   /// Ligne d'**en-têtes de colonnes** (opt-in). Reprend le
@@ -862,6 +1016,12 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   }
 
   /// Rendu **compact** : en-tête + liste résumé keyée + actions gated ACL.
+  ///
+  /// La table de résumé à en-têtes est mesurée à chaque mise en page
+  /// ([_summaryIsStacked]) : au-dessus du seuil elle reste une table alignée,
+  /// en dessous elle devient un empilement de couples libellé/valeur et la
+  /// ligne d'en-têtes s'efface avec elle. Les deux décisions sortent du **même**
+  /// calcul : il ne peut donc pas y avoir d'en-tête sans colonnes en face.
   Widget _buildCompact(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     final resolvedLabel = label(
@@ -883,77 +1043,91 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     final canDelete =
         !readOnly && acl.can(ZCrudAction.delete, collectionId: cid);
 
+    final actionCount =
+        (canView ? 1 : 0) + (canUpdate ? 1 : 0) + (canDelete ? 1 : 0);
+
     // a11y : pas de `label:` sur le conteneur — le `Text` visible
     // (en-tête) porte déjà le nom de section ; un `label:` doublerait l'annonce.
     return Semantics(
       container: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
-            child: Row(
-              children: <Widget>[
-                Expanded(
+      // La largeur réellement offerte à la table est connue ICI, et nulle part
+      // ailleurs : ni la config ni le thème ne savent sur quelle surface la
+      // sous-liste est posée. Ce `LayoutBuilder` ne reconstruit qu'à un
+      // changement de contraintes — jamais à une frappe (invariant AD-2).
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final stacked =
+              _summaryIsStacked(theme, constraints.maxWidth, actionCount);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        resolvedLabel,
+                        style: Theme.of(context).textTheme.titleMedium,
+                        textAlign: TextAlign.start,
+                      ),
+                    ),
+                    if (canCreate) _buildAddControl(context),
+                  ],
+                ),
+              ),
+              // En-têtes de colonnes, **opt-in** et rendus seulement s'il y a
+              // des colonnes ET des lignes à coiffer — et seulement tant que
+              // les lignes sont des colonnes : empilées, elles portent leur
+              // propre libellé et l'en-tête n'aurait plus rien à coiffer.
+              if (_showSummaryHeaders &&
+                  !stacked &&
+                  _summaryFields.isNotEmpty &&
+                  _items.isNotEmpty)
+                _summaryHeaderRow(context, actionCount),
+              if (_items.isEmpty)
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
                   child: Text(
-                    resolvedLabel,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    label(context, 'noItems'),
+                    style: Theme.of(context).textTheme.bodySmall,
                     textAlign: TextAlign.start,
                   ),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _items.length,
+                  itemBuilder: (context, i) {
+                    final item = _items[i];
+                    return KeyedSubtree(
+                      key: ValueKey<String>(item.id),
+                      child: _CompactRow(
+                        borderColor: theme.fieldBorderColor,
+                        radius: theme.radiusM,
+                        summary:
+                            _summaryCells(context, item, replie: stacked),
+                        deleted: item.deleted,
+                        canView: canView,
+                        canUpdate: canUpdate,
+                        canDelete: canDelete,
+                        viewLabel: label(context, 'viewItem'),
+                        editLabel: label(context, 'editItem'),
+                        deleteLabel: label(context, 'deleteItem'),
+                        restoreLabel: label(context, 'restoreItem'),
+                        deletedBadge: label(context, 'deletedItemBadge'),
+                        onView: () => _openViewDialog(item),
+                        onEdit: () => _openEditDialog(item),
+                        onDelete: () => _confirmDelete(item),
+                        onRestore: () => _restore(item),
+                      ),
+                    );
+                  },
                 ),
-                if (canCreate) _buildAddControl(context),
-              ],
-            ),
-          ),
-          // En-têtes de colonnes, **opt-in** et rendus seulement s'il y a
-          // des colonnes ET des lignes à coiffer.
-          if (_showSummaryHeaders &&
-              _summaryFields.isNotEmpty &&
-              _items.isNotEmpty)
-            _summaryHeaderRow(
-              context,
-              (canView ? 1 : 0) + (canUpdate ? 1 : 0) + (canDelete ? 1 : 0),
-            ),
-          if (_items.isEmpty)
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
-              child: Text(
-                label(context, 'noItems'),
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.start,
-              ),
-            )
-          else
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _items.length,
-              itemBuilder: (context, i) {
-                final item = _items[i];
-                return KeyedSubtree(
-                  key: ValueKey<String>(item.id),
-                  child: _CompactRow(
-                    borderColor: theme.fieldBorderColor,
-                    radius: theme.radiusM,
-                    summary: _summaryCells(context, item),
-                    deleted: item.deleted,
-                    canView: canView,
-                    canUpdate: canUpdate,
-                    canDelete: canDelete,
-                    viewLabel: label(context, 'viewItem'),
-                    editLabel: label(context, 'editItem'),
-                    deleteLabel: label(context, 'deleteItem'),
-                    restoreLabel: label(context, 'restoreItem'),
-                    deletedBadge: label(context, 'deletedItemBadge'),
-                    onView: () => _openViewDialog(item),
-                    onEdit: () => _openEditDialog(item),
-                    onDelete: () => _confirmDelete(item),
-                    onRestore: () => _restore(item),
-                  ),
-                );
-              },
-            ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
