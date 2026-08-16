@@ -3,6 +3,24 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.7.0 — 2026-08-16
+
+### Ajouté
+
+#### `ZStepperEdition.collapseStore` — le pli des sections survit aux étapes
+
+L'assistant à étapes montait `DynamicEdition` sans lui passer le seam de pli
+persisté des sections. Une section repliée dans une étape se rouvrait à chaque
+ouverture de l'écran.
+
+**Portée dérivée par étape**, et c'est mesuré, pas décoré : `saveCollapsed`
+remplace la portée **entière**. Deux étapes partageant un `formId` s'effaçaient
+donc mutuellement — un relais naïf aurait été un défaut par construction.
+Chaque étape reçoit `"<formId>/étape:<titre>"` ; un sous-assistant dérive
+par-dessus.
+
+Défaut `null` ⇒ comportement strictement inchangé.
+
 ## 1.5.0 — 2026-08-16
 
 ### Modifié

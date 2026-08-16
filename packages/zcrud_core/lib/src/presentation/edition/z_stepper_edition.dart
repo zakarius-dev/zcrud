@@ -68,6 +68,7 @@ import 'dynamic_edition.dart';
 import 'z_field_widget.dart';
 import 'z_read_mode_scope.dart';
 import 'z_responsive_grid.dart';
+import 'z_section_collapse_store.dart';
 import 'z_step_index_store.dart';
 import 'z_stepper_config.dart';
 import 'z_validator_compiler.dart';
@@ -295,6 +296,7 @@ class ZStepperEdition extends StatefulWidget {
     this.depth = 0,
     this.unbounded = false,
     this.stepStore,
+    this.collapseStore,
     this.formId,
     super.key,
   });
@@ -302,12 +304,37 @@ class ZStepperEdition extends StatefulWidget {
   /// Seam de **reprise** : persiste/restaure l'étape courante.
   /// `null` (défaut) ⇒ aucune persistance, comportement inchangé.
   ///
-  /// Même patron que `DynamicEdition.collapseStore` — un hôte branche le même
-  /// stockage pour les deux, et le cœur n'en dépend pas (AD-1).
+  /// Même patron que [collapseStore] — un hôte branche le même stockage pour
+  /// les deux, et le cœur n'en dépend pas (AD-1).
   final ZStepIndexStore? stepStore;
 
-  /// Clé de portée opaque du formulaire pour [stepStore] (`null` ⇒ portée
-  /// « globale »). Ignoré si [stepStore] est `null`.
+  /// Seam de **persistance du repli des sections** d'étape.
+  ///
+  /// Une `ZEditionStep` porte ses propres `sections` : celles qui sont
+  /// déclarées `collapsible` se replient, et ce repli se perd à chaque
+  /// fermeture tant qu'aucun store n'est branché. Ce paramètre est relayé à la
+  /// `DynamicEdition` de **chaque** étape ; `null` (défaut) ⇒ aucune lecture,
+  /// aucune écriture, comportement strictement inchangé.
+  ///
+  /// **Chaque étape a sa propre portée.** Le store n'échange qu'un ensemble de
+  /// titres repliés par portée, et une écriture remplace la portée entière :
+  /// sous une portée commune, replier une section de l'étape 2 **effacerait**
+  /// le repli enregistré à l'étape 1. La portée transmise à chaque étape est
+  /// donc dérivée de [formId] **et du titre de l'étape** (`"<formId>/étape:<titre>"`,
+  /// ou `"étape:<titre>"` quand [formId] est `null`) — même convention que le
+  /// reste du seam, qui est titre-adressé de bout en bout. Un sous-stepper
+  /// imbriqué reçoit à son tour la portée de l'étape qui le porte, et dérive
+  /// la sienne par-dessus.
+  ///
+  /// Conséquence pratique : **renommer une étape** repart d'un repli neuf pour
+  /// ses sections, comme renommer une section repart d'un repli neuf pour
+  /// elle-même. Réordonner les étapes, en revanche, ne perd rien.
+  final ZSectionCollapseStore? collapseStore;
+
+  /// Clé de portée opaque du formulaire (`null` ⇒ portée « globale »), lue par
+  /// [stepStore] telle quelle et par [collapseStore] comme **préfixe** de la
+  /// portée par étape (cf. [collapseStore]). Sans aucun des deux stores, elle
+  /// n'a aucun effet.
   final String? formId;
 
   /// Contrôleur **unique** détenant l'état (créé/possédé par l'hôte ; jamais
@@ -1387,6 +1414,19 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     );
   }
 
+  /// Portée du repli propre à [step] : `"<formId>/étape:<titre>"`, ou
+  /// `"étape:<titre>"` en l'absence de [ZStepperEdition.formId].
+  ///
+  /// Chaque étape range ses sections repliées sous SA clé — sans quoi la
+  /// dernière étape repliée effacerait le repli de toutes les autres, le store
+  /// n'échangeant qu'un ensemble de titres par portée. Adressage par **titre**,
+  /// comme le reste du seam (la section elle-même est adressée par son titre) :
+  /// réordonner les étapes ne perd donc rien.
+  String _collapseScope(ZEditionStep step) {
+    final String? scope = widget.formId;
+    return scope == null ? 'étape:${step.title}' : '$scope/étape:${step.title}';
+  }
+
   Widget _stepContent(int index, bool reveal, {bool? bounded}) {
     final bool isBounded = bounded ?? !widget.unbounded;
     final step = _steps[index];
@@ -1412,6 +1452,12 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
       readOnly: widget.readOnly,
       layout: widget.layout,
       gridGutter: widget.gridGutter,
+      // Le repli des sections de CETTE étape, sous SA portée : une écriture
+      // remplace la portée entière, donc une portée commune à toutes les
+      // étapes ferait effacer par la dernière repliée ce que les autres
+      // avaient enregistré (mesuré). `null` ⇒ aucun accès au store.
+      collapseStore: widget.collapseStore,
+      formId: widget.collapseStore == null ? null : _collapseScope(step),
       fieldBuilder: (context, ctrl, field) => custom != null
           ? custom(context, ctrl, field, mode)
           : ZFieldWidget(
@@ -1449,6 +1495,14 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
             unbounded: !isBounded,
             onNestedWindowChanged: (w) => _onChildWindow(index, w),
             revealTrigger: _childRevealTick,
+            // Le sous-stepper hérite du store et prend pour préfixe la portée
+            // de l'étape qui le porte : ses propres sous-étapes dérivent la
+            // leur par-dessus, sans jamais retomber sur la portée d'une autre
+            // branche. `stepStore` reste non relayé (la reprise d'étape est
+            // pilotée par le stepper RACINE) : `formId` n'y sert donc qu'au
+            // repli.
+            collapseStore: widget.collapseStore,
+            formId: widget.collapseStore == null ? null : _collapseScope(step),
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

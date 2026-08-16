@@ -22,6 +22,7 @@ import 'package:zcrud_core/zcrud_core.dart'
         ZFieldSpec,
         ZFormController,
         ZResponsiveSpan,
+        ZSectionCollapseStore,
         zNormalizeFormValues,
         zValidateFormFields;
 
@@ -194,6 +195,8 @@ class ZFormOnly extends StatefulWidget {
     this.sections = const <ZEditionSection>[],
     this.layout = const <String, ZResponsiveSpan>{},
     this.interFieldGap,
+    this.collapseStore,
+    this.formId,
   }) : assert(
           controller != null || fields != null,
           'ZFormOnly : fournissez `controller` (pilotage détenu par la page) '
@@ -236,6 +239,37 @@ class ZFormOnly extends StatefulWidget {
   /// Espacement entre deux champs. `null` ⇒ le jeton d'aération du thème.
   final double? interFieldGap;
 
+  /// **Où le repli des sections est conservé** — d'une ouverture à la suivante,
+  /// et d'un lancement de l'application au suivant.
+  ///
+  /// Sans lui (`null`, le défaut), replier une section n'engage que la vie du
+  /// widget : le formulaire rouvre toutes ses sections dépliées, comme avant.
+  /// Le comportement est alors **strictement inchangé** — ni lecture ni
+  /// écriture ne sont tentées.
+  ///
+  /// Le stockage **appartient à l'application** : ce paquet n'en fournit aucun
+  /// et n'en impose aucun (invariant AD-1). Vous branchez le vôtre —
+  /// `SharedPreferences`, `GetStorage`, Hive, une table — derrière le contrat
+  /// `ZSectionCollapseStore` (deux méthodes, synchrones, qui ne lèvent jamais).
+  /// `ZInMemorySectionCollapseStore` existe pour les tests et pour une portée
+  /// de session.
+  ///
+  /// L'unité persistée est le **titre** de la section repliée.
+  final ZSectionCollapseStore? collapseStore;
+
+  /// **Portée** du repli dans [collapseStore] — la clé sous laquelle ce
+  /// formulaire-ci range ses sections repliées.
+  ///
+  /// Deux formulaires qui partagent un titre de section (« Finances » sur une
+  /// fiche agent et sur une fiche fournisseur) se marcheraient dessus sous une
+  /// portée commune : un [formId] distinct les **isole**. `null` (défaut) ⇒
+  /// portée globale — le bon choix quand un titre de section ne désigne qu'une
+  /// seule chose dans toute l'application.
+  ///
+  /// Valeur **opaque**, transmise telle quelle au store. Sans [collapseStore],
+  /// elle n'a aucun effet.
+  final String? formId;
+
   @override
   State<ZFormOnly> createState() => _ZFormOnlyState();
 }
@@ -270,5 +304,10 @@ class _ZFormOnlyState extends State<ZFormOnly> {
         shrinkWrap: widget.shrinkWrap,
         physics: widget.physics,
         readOnly: widget.readOnly,
+        // Relayés TELS QUELS : le seam de persistance du repli vit dans
+        // `DynamicEdition`, ce widget n'en est que le passage. `null` ⇒ le
+        // socle ne lit ni n'écrit rien.
+        collapseStore: widget.collapseStore,
+        formId: widget.formId,
       );
 }

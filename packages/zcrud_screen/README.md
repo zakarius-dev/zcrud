@@ -1850,6 +1850,61 @@ porte ses propres sections) : ces combinaisons sont **refusées par une
 assertion** en développement. En production la préséance est définie et rien ne
 lève — `bodyBuilder`, puis `steps`, puis le formulaire à plat.
 
+#### Le repli des sections qui survit à la fermeture
+
+Une section déclarée `collapsible` se replie. Sans rien de plus, ce repli meurt
+avec la fenêtre : un agent qui replie « Finances » sur une fiche qu'il ouvre
+trente fois par jour la retrouve dépliée à chaque ouverture.
+
+`collapseStore` est l'endroit où ce repli est **conservé**. Le stockage
+appartient à l'application — le socle n'en fournit ni n'en impose aucun : vous
+branchez le vôtre derrière `ZSectionCollapseStore`, deux méthodes synchrones
+qui ne lèvent jamais. L'unité persistée est le **titre** de la section repliée.
+
+```dart
+class ReplisPersistants extends ZSectionCollapseStore {
+  @override
+  Set<String> loadCollapsed(String? formId) => …; // les titres repliés
+  @override
+  void saveCollapsed(String? formId, Set<String> collapsed) => …;
+}
+
+await presentFormEdition(
+  context,
+  fields: ficheAgentFields,
+  sections: const <ZEditionSection>[
+    ZEditionSection(
+      title: 'Finances',
+      fields: <String>['salaire', 'prime'],
+      collapsible: true,
+    ),
+  ],
+  collapseStore: ReplisPersistants(),
+  formId: 'fiche-agent',
+);
+```
+
+`formId` est la **portée**. L'unité persistée étant le titre, deux formulaires
+qui nomment tous deux une section « Finances » se marcheraient dessus sous une
+portée commune ; un `formId` distinct les isole. `null` (défaut) ⇒ portée
+globale, ce qui convient tant qu'un titre ne désigne qu'une seule chose dans
+l'application. La valeur est opaque, transmise telle quelle à votre store.
+
+Les deux paramètres existent à l'identique sur `ZFormOnly`, et suivent le corps
+réellement monté : le formulaire à plat **et** l'assistant `steps` — chaque
+étape recevant alors **sa propre portée**, dérivée de `formId` et du titre de
+l'étape (une écriture remplaçant la portée entière, une portée commune ferait
+effacer par la dernière étape repliée ce que les autres avaient enregistré). Un
+`bodyBuilder`, lui, compose son corps : c'est à lui de les passer au `ZFormOnly`
+ou au `DynamicEdition` qu'il monte.
+
+Sans `collapseStore` (le défaut), **rien ne change** : ni lecture, ni écriture,
+et le repli reste celui de la vie du widget.
+
+⚠️ La surface d'édition de `ZCrudScreen` ne porte pas ces paramètres, et c'est
+délibéré : son formulaire ne déclare aucune section, donc rien n'y est
+repliable et un store n'y serait jamais ni lu ni écrit.
+
 ## API principale {#api-principale}
 
 | Type | Rôle |
@@ -1880,9 +1935,9 @@ lève — `bodyBuilder`, puis `steps`, puis le formulaire à plat.
 | `batchActions` (`ZCrudBatchActions<T>?`) | Actions de masse supplémentaires de l'application, construites avec les entités sélectionnées. |
 | `export` (`ZExportPolicy?`) | Export du listing : `exporters` (les formats offerts, ordre conservé, dédoublonnés par `id`), `onExported` (remise du fichier — requis), `fileBaseName`. `null` (défaut) ⇒ aucune entrée d'export, aucune dépendance tirée. |
 | `ZCrudExportDelivery` | `FutureOr<void> Function(BuildContext, ZExportedBytes)` — la remise du fichier produit à l'application. |
-| `ZFormOnly` | Le formulaire déclaratif **nu** : les champs, sans coquille ni bouton. `controller` (pilotage de la page) ou `fields` (pilotage possédé et libéré par le widget). |
+| `ZFormOnly` | Le formulaire déclaratif **nu** : les champs, sans coquille ni bouton. `controller` (pilotage de la page) ou `fields` (pilotage possédé et libéré par le widget). `collapseStore` + `formId` conservent le repli des sections d'une ouverture à la suivante ; `null` (défaut) ⇒ aucune lecture, aucune écriture. |
 | `ZFormOnlyController` | Pilotage extérieur d'un `ZFormOnly` : `validate()`, `isValid`, `revealErrors()`, `values` (normalisées), `submit()` (valeurs ou `null`), `isDirty`, `form` (le `ZFormController` sous-jacent). |
-| `presentFormEdition(...)` | Présente un formulaire en page/feuille/dialogue et rend `Map<String, dynamic>?` — les valeurs validées et normalisées, ou `null` si l'utilisateur renonce. Trois corps possibles : `fields` seuls (formulaire à plat), `fields` + `steps` (assistant multi-étapes, `stepperConfig` pour sa présentation), ou `bodyBuilder` (corps composé par l'appelant). |
+| `presentFormEdition(...)` | Présente un formulaire en page/feuille/dialogue et rend `Map<String, dynamic>?` — les valeurs validées et normalisées, ou `null` si l'utilisateur renonce. Trois corps possibles : `fields` seuls (formulaire à plat), `fields` + `steps` (assistant multi-étapes, `stepperConfig` pour sa présentation), ou `bodyBuilder` (corps composé par l'appelant). `collapseStore` + `formId` (facultatifs) conservent le repli des sections — voir [Le repli des sections qui survit à la fermeture](#le-repli-des-sections-qui-survit-à-la-fermeture). |
 | `ZFormBodyBuilder` | `Widget Function(BuildContext, ZFormOnlyController)` — le corps que vous composez pour `presentFormEdition`, sur le contrôleur que la soumission lira. |
 | `ZRowPermissions` | Ce qu'une ligne **retire** : `.unrestricted()`, `.locked()`, `.denying({…})`, avec `reasonKey` facultatif. Aucun vocabulaire d'autorisation — un résolveur ne peut jamais élargir. |
 

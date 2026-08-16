@@ -28,6 +28,7 @@ import 'package:zcrud_core/zcrud_core.dart'
         ZFieldSpec,
         ZFormController,
         ZResponsiveSpan,
+        ZSectionCollapseStore,
         ZStepperConfig,
         ZStepperEdition,
         kZStepperMaxNestingDepth;
@@ -179,6 +180,57 @@ typedef ZFormBodyBuilder = Widget Function(
 /// assistant (`ZStepperEdition` défile lui-même et veut une hauteur bornée).
 /// Un [bodyBuilder] qui monte un corps défilant déclare
 /// `bodyFit: ZEditionBodyFit.scrollable`.
+///
+/// ## Le repli des sections qui SURVIT ([collapseStore], [formId])
+///
+/// Une section déclarée `collapsible` se replie ; sans rien de plus, ce repli
+/// meurt avec la fenêtre. Sur une fiche ouverte trente fois par jour, replier
+/// « Finances » est pourtant une habitude de travail, pas un confort : elle doit
+/// tenir d'une ouverture à la suivante, et d'un lancement au suivant.
+///
+/// [collapseStore] est l'endroit où ce repli est conservé. **Le stockage
+/// appartient à l'application** : le socle n'en fournit ni n'en impose aucun
+/// (invariant AD-1) — vous branchez le vôtre derrière le contrat
+/// `ZSectionCollapseStore`, qui tient en deux méthodes synchrones.
+///
+/// ```dart
+/// class ReplisPersistants extends ZSectionCollapseStore {
+///   @override
+///   Set<String> loadCollapsed(String? formId) => …; // titres repliés
+///   @override
+///   void saveCollapsed(String? formId, Set<String> collapsed) => …;
+/// }
+///
+/// await presentFormEdition(
+///   context,
+///   fields: ficheAgentFields,
+///   sections: const <ZEditionSection>[
+///     ZEditionSection(
+///       title: 'Finances',
+///       fields: <String>['salaire', 'prime'],
+///       collapsible: true,
+///     ),
+///   ],
+///   collapseStore: ReplisPersistants(),
+///   formId: 'fiche-agent',
+/// );
+/// ```
+///
+/// [formId] est la **portée** : l'unité persistée étant le *titre* de la
+/// section, deux formulaires qui nomment tous deux une section « Finances » se
+/// marcheraient dessus sous une portée commune. Un [formId] distinct les
+/// isole ; `null` (défaut) ⇒ portée globale, ce qui convient tant qu'un titre
+/// ne désigne qu'une seule chose dans l'application. La valeur est **opaque**,
+/// transmise telle quelle au store.
+///
+/// `null` (défaut) ⇒ **rien ne change** : ni lecture, ni écriture, et le repli
+/// reste celui de la vie du widget.
+///
+/// Les deux paramètres suivent le corps réellement monté : le formulaire à plat
+/// ([ZFormOnly]) et l'assistant ([steps] — chaque étape reçoit alors **sa
+/// propre portée**, dérivée de [formId] et du titre de l'étape). Un
+/// [bodyBuilder], lui, compose son corps : c'est à lui de les passer au
+/// `ZFormOnly` ou au `DynamicEdition` qu'il monte.
 Future<Map<String, dynamic>?> presentFormEdition(
   BuildContext context, {
   required List<ZFieldSpec> fields,
@@ -200,6 +252,8 @@ Future<Map<String, dynamic>?> presentFormEdition(
   ZEditionBodyFit? bodyFit,
   Map<String, ZResponsiveSpan> layout = const <String, ZResponsiveSpan>{},
   EdgeInsetsGeometry? padding,
+  ZSectionCollapseStore? collapseStore,
+  String? formId,
 }) {
   assert(
     bodyBuilder == null || steps.isEmpty,
@@ -278,6 +332,12 @@ Future<Map<String, dynamic>?> presentFormEdition(
           padding: padding,
           readOnly: readOnly,
           layout: layout,
+          // Une étape porte ses propres sections repliables : le seam la suit
+          // jusque-là. Le stepper donne à chaque étape SA portée (dérivée de
+          // `formId`), sinon la dernière étape repliée effacerait le repli des
+          // autres.
+          collapseStore: collapseStore,
+          formId: formId,
           // Le bouton final de la dernière étape soumet par la MÊME voie que le
           // bouton d'enregistrement du chrome — une seconde voie de soumission
           // finirait par diverger de la première.
@@ -291,6 +351,9 @@ Future<Map<String, dynamic>?> presentFormEdition(
         layout: layout,
         padding: padding,
         shrinkWrap: true,
+        // Relayés tels quels jusqu'à `DynamicEdition`, qui porte le seam.
+        collapseStore: collapseStore,
+        formId: formId,
       );
     },
   ).whenComplete(controller.dispose);

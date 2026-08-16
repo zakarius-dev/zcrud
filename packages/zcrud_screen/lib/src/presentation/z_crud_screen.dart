@@ -3810,6 +3810,15 @@ class _ZCrudEditionFormState extends State<_ZCrudEditionForm> {
               controller: _controller,
               fields: widget.fields,
               shrinkWrap: true,
+              // PAS de `collapseStore` ici, et c'est mesuré, pas oublié : ce
+              // formulaire ne déclare AUCUNE section (`sections` n'est pas
+              // passé, et `ZCrudScreen` n'expose nulle part de quoi en
+              // déclarer). Sans section, rien n'est repliable ; un store
+              // branché ici ne serait jamais ni lu ni écrit. Le jour où
+              // l'écran assemblé acceptera des sections, le relais devra
+              // suivre dans le même geste — c'est la seule surface d'édition
+              // du socle qui ne le porte pas.
+
               // Dernier maillon de la chaîne : le drapeau atteint enfin le
               // rendu des champs, où toutes les familles le respectent déjà.
               readOnly: widget.readOnly,

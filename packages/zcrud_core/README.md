@@ -109,7 +109,7 @@ Widget buildForm() => DynamicEdition(
 | **Édition** | |
 | `DynamicEdition` | Formulaire de référence, dispatché par `EditionFieldType`, place stable pour les champs conditionnels. |
 | `ZEditionField` / `ZFieldWidget` | Champ hôte scellé sur sa tranche ; dispatcher de widget par famille. |
-| `ZStepperEdition` | Assistant multi-étapes sur le même `ZFormController`, validation par étape. |
+| `ZStepperEdition` | Assistant multi-étapes sur le même `ZFormController`, validation par étape. `stepStore` reprend l'étape courante ; `collapseStore` conserve le repli des sections d'étape (chaque étape sous **sa** portée, dérivée de `formId` et du titre de l'étape). `null` (défaut) ⇒ aucune lecture, aucune écriture. |
 | `ZEditionSubmitController` / `ZSubmitButton` | Soumission agrégée (`Either<ZFailure,T>`) et chrome accessible scellé sur l'état. |
 | **Liste** | |
 | `DynamicList` | Hôte de liste dispatché par `ZListLayout`, délègue le rendu grille à `ZListRenderer`. |

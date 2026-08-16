@@ -3,6 +3,28 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.7.0 — 2026-08-16
+
+### Ajouté
+
+#### `collapseStore` / `formId` relayés par les présentateurs de formulaire
+
+`DynamicEdition` portait le seam complet du **pli persisté des sections** ;
+aucun présentateur ne l'exposait (`grep` → RC=1 sur tout `lib/`). Le seam était
+inatteignable depuis l'application : un agent repliant « Finances » sur une
+fiche ouverte trente fois par jour la revoyait à chaque ouverture.
+
+- `presentFormEdition` : les deux paramètres, relayés aux **deux** corps qu'il
+  monte — `ZFormOnly` à plat **et** `ZStepperEdition` en étapes.
+- `ZFormOnly` : deux champs publics, relayés tels quels.
+- `ZCrudScreen` : **délibérément non relayé**, justification portée au point de
+  montage. Son `DynamicEdition` ne reçoit pas de `sections` et l'écran n'expose
+  nulle part de quoi en déclarer : rien n'y est repliable, un store n'y serait
+  jamais ni lu ni écrit. Le commentaire porte aussi la condition de réouverture.
+
+Défaut `null` ⇒ comportement strictement inchangé : aucune lecture, aucune
+écriture (gardé par assertion d'absence d'appel sur les quatre voies).
+
 ## 1.6.0 — 2026-08-16
 
 ### Ajouté
