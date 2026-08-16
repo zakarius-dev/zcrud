@@ -133,6 +133,14 @@ export 'src/presentation/edition/z_select_presenter.dart';
 export 'src/presentation/edition/z_step_partition.dart';
 export 'src/presentation/edition/z_stepper_config.dart';
 export 'src/presentation/edition/z_stepper_edition.dart';
+// Canal déclaratif des **seams de présentation** des sous-listes et des items
+// dynamiques (invariant AD-4) : `ZSubListSeamRegistry` (instanciable,
+// chaînable, jamais un singleton statique) + `ZSubListSeams` et ses signatures.
+// Rend atteignables PAR LE CHEMIN NOMINAL (aucun `fieldBuilder` de
+// remplacement) le titre d'item, le rendu libre de ligne, les actions
+// supplémentaires, le conteneur de liste, l'habillage d'en-tête, la
+// transformation d'affichage, les sous-champs dynamiques et l'ACL du champ.
+export 'src/presentation/edition/z_sub_list_seams.dart';
 export 'src/presentation/edition/z_submission.dart';
 export 'src/presentation/edition/z_submit_button.dart';
 // Compilateur mémoïsable `ZValidatorSpec[] → FormFieldValidator` (invariant

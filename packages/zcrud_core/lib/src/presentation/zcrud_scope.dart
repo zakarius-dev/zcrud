@@ -21,6 +21,7 @@ import 'edition/families/z_color_field_widget.dart';
 import 'edition/z_field_adornment_view.dart';
 import 'edition/z_file_picker.dart';
 import 'edition/z_select_presenter.dart';
+import 'edition/z_sub_list_seams.dart';
 import 'edition/z_widget_registry.dart';
 import 'l10n/z_labels.dart';
 import 'list/z_list_renderer.dart';
@@ -79,6 +80,7 @@ class ZcrudScope extends InheritedWidget {
     this.labels,
     this.theme,
     this.widgetRegistry,
+    this.subListSeamRegistry,
     this.relationSourceRegistry,
     this.choicesSourceRegistry,
     this.relationCrudRegistry,
@@ -118,6 +120,22 @@ class ZcrudScope extends InheritedWidget {
   /// `null` → repli `ZUnsupportedFieldWidget`). Instanciable, injecté (jamais
   /// un singleton statique mutable).
   final ZWidgetRegistry? widgetRegistry;
+
+  /// Registre des **seams de présentation** des sous-listes (`subItems`) et des
+  /// items dynamiques (`dynamicItem`) — AD-4 ; défaut `null` ⇒ rendu natif
+  /// **strictement** inchangé pour un hôte passif.
+  ///
+  /// C'est le canal par lequel un hôte déclare un titre d'item, un rendu libre
+  /// de ligne, des actions supplémentaires, un conteneur de liste, un habillage
+  /// d'en-tête, une transformation d'affichage ou une ACL propre au champ —
+  /// **sans** remplacer le champ par un `fieldBuilder`, donc sans renoncer à
+  /// l'agrégation vers la tranche parente, à la granularité (invariant AD-2),
+  /// aux dialogues ni au soft-delete. Voir `ZSubListSeams` pour la matrice
+  /// d'applicabilité par mode d'affichage.
+  ///
+  /// Chaînable (`ZSubListSeamRegistry(parent: …)`, ombrage enfant > parent),
+  /// instanciable, injecté (jamais un singleton statique mutable).
+  final ZSubListSeamRegistry? subListSeamRegistry;
 
   /// Registre de sources dynamiques du champ `relation` (AD-4 ;
   /// défaut `null` → tout champ `relation` retombe sur le **dropdown statique**
@@ -300,6 +318,7 @@ class ZcrudScope extends InheritedWidget {
     Object? labels = _zScopeUndefined,
     Object? theme = _zScopeUndefined,
     Object? widgetRegistry = _zScopeUndefined,
+    Object? subListSeamRegistry = _zScopeUndefined,
     Object? relationSourceRegistry = _zScopeUndefined,
     Object? choicesSourceRegistry = _zScopeUndefined,
     Object? relationCrudRegistry = _zScopeUndefined,
@@ -330,6 +349,9 @@ class ZcrudScope extends InheritedWidget {
         widgetRegistry: identical(widgetRegistry, _zScopeUndefined)
             ? this.widgetRegistry
             : widgetRegistry as ZWidgetRegistry?,
+        subListSeamRegistry: identical(subListSeamRegistry, _zScopeUndefined)
+            ? this.subListSeamRegistry
+            : subListSeamRegistry as ZSubListSeamRegistry?,
         relationSourceRegistry:
             identical(relationSourceRegistry, _zScopeUndefined)
                 ? this.relationSourceRegistry
@@ -414,6 +436,7 @@ class ZcrudScope extends InheritedWidget {
     Object? labels = _zScopeUndefined,
     Object? theme = _zScopeUndefined,
     Object? widgetRegistry = _zScopeUndefined,
+    Object? subListSeamRegistry = _zScopeUndefined,
     Object? relationSourceRegistry = _zScopeUndefined,
     Object? choicesSourceRegistry = _zScopeUndefined,
     Object? relationCrudRegistry = _zScopeUndefined,
@@ -439,6 +462,7 @@ class ZcrudScope extends InheritedWidget {
       labels: labels,
       theme: theme,
       widgetRegistry: widgetRegistry,
+      subListSeamRegistry: subListSeamRegistry,
       relationSourceRegistry: relationSourceRegistry,
       choicesSourceRegistry: choicesSourceRegistry,
       relationCrudRegistry: relationCrudRegistry,
@@ -486,6 +510,7 @@ class ZcrudScope extends InheritedWidget {
       !identical(labels, oldWidget.labels) ||
       !identical(theme, oldWidget.theme) ||
       !identical(widgetRegistry, oldWidget.widgetRegistry) ||
+      !identical(subListSeamRegistry, oldWidget.subListSeamRegistry) ||
       !identical(relationSourceRegistry, oldWidget.relationSourceRegistry) ||
       !identical(choicesSourceRegistry, oldWidget.choicesSourceRegistry) ||
       !identical(relationCrudRegistry, oldWidget.relationCrudRegistry) ||

@@ -3,6 +3,94 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.8.0 — 2026-08-16
+
+### Ajouté
+
+#### Les sous-listes deviennent personnalisables — canal de seams, menu par item, cycle CRUD
+
+Portage de l'ensemble des capacités du moteur de sous-listes legacy (DODLP), en
+trois passes. Rien de déclaré ⇒ rendu et données **identiques**, à une rupture
+près, isolée et documentée plus bas.
+
+**Le canal.** `ZSubListSeams` + `ZSubListSeamRegistry`, injectés par
+`ZcrudScope.subListSeamRegistry`, résolus **par les widgets eux-mêmes** (clé
+`widgetKind` → `name` → `type.name`, chaînage `parent:`, ombrage enfant > parent).
+
+Ce choix règle un défaut de fond : `itemTitleBuilder` et `acl` existaient déjà
+sur le widget, mais **n'étaient jamais transmis** par le constructeur de champ —
+donc inatteignables sans `fieldBuilder` de remplacement. Un relais est une liste
+qu'il faut penser à tenir à jour ; c'est précisément ce qui a été oublié quatre
+fois. En faisant **résoudre** plutôt que **relayer**, le chemin nominal et la
+construction directe servent les mêmes seams par construction. Un troisième seam
+inatteignable a été trouvé au passage : `ZDynamicItemFieldWidget.fieldsResolver`.
+
+Seams : `acl`, `itemTitleBuilder`, `itemBuilder`, `itemActionsBuilder`,
+`listViewBuilder`, `captionBuilder`, `itemTransformer`, `itemFieldsResolver`.
+`itemActionsBuilder` **ajoute** des actions, ne les remplace jamais, et ses
+actions entrent dans le calcul de repli du résumé — sinon l'en-tête mentirait.
+`itemTitleBuilder` garde son contrat « donnée brute » : un titre sert à retrouver
+un item, l'habiller le rendrait introuvable.
+
+**Le menu par item.** `ZSubItemMenuOption` (`const`) : clé l10n + repli, icône,
+prédicat de visibilité par item, charge utile opaque, marquage destructif,
+permission. Le défaut de permission est **restrictif** (`delete` si destructive,
+sinon `update`) — un défaut permissif aurait fait du canal une porte dérobée.
+**L'ACL décide d'abord, le prédicat ensuite**, jamais fusionnés : le prédicat
+n'est pas même appelé quand l'ACL refuse.
+
+**Le crochet CRUD.** `Future<ZSubItemCrudOutcome> Function(ZSubItemCrudRequest)`,
+issues `proceed` / `replace(data)` / `veto`, appelé **avant** la mutation. Il
+n'imite pas le `Future<Map?>` du legacy : mesuré, ce `null` servait à la fois de
+véto et de retour normal — le legacy retourne `null` sur toutes ses branches, y
+compris après avoir appliqué la mutation. Un crochet qui **lève** est traité
+comme un **véto**, et son erreur est signalée : ici « traité comme absent »
+voudrait dire « la mutation passe ».
+
+**Le cycle porté par le champ.** Sous-schéma et gabarits de création **dérivés de
+l'état du formulaire parent** (résolveurs recevant une lecture par nom, pas la
+`Map` de l'état — ce qui permet l'abonnement **ciblé** aux seules tranches lues,
+invariant AD-2) ; identité du gabarit choisi transmise au crochet
+(`ZSubItemCrudRequest.template`) ; `ZSubItemFormPresentation { dialog, sheet,
+page }` pour la forme du formulaire d'item, défaut inchangé, avec assertion
+croisée que les trois formes rendent la **même** donnée.
+
+Le sous-schéma dérivé **ne recrée pas** les `ZFormController` des champs
+inchangés (AD-2, comptes assertés), et la tranche du champ lui-même n'est jamais
+abonnée : s'y abonner relancerait la résolution à chaque agrégation d'item —
+exactement le rafraîchissement global que zcrud existe pour supprimer.
+
+**Ni `ZMapEntity`, ni adossement à un `ZRepository`** (décision d'owner) : un
+sac de clés n'a pas de schéma déclaré, or la chaîne défensive (AD-3, AD-10)
+présuppose un modèle typé ; et les sous-items vivent dans le document parent, pas
+dans une collection. Le champ porte le cycle sur des `Map`, l'hôte branche sa
+persistance derrière le crochet.
+
+### Modifié
+
+#### Les clés hors sous-schéma survivent désormais à la création
+
+⚠️ **Rupture au périmètre étroit.** Un hôte qui déclare `defaultNewItem` ou
+`creationTemplates` **avec au moins une clé absente des `itemFields`**, en mode
+`compact` ou `tags`, à la **création** : cette clé était perdue, elle est
+maintenant conservée. Hors de cette intersection, la donnée est identique.
+
+Ce n'était pas académique : l'usage réel porte une charge `{"type": …}` qui n'a
+aucune raison d'être un champ éditable du sous-schéma.
+
+### Non porté, délibérément
+
+Le `DataTable` du legacy (c'est un moteur de liste — AD-8, `zcrud_list` ; le
+dupliquer dans un champ recréerait la divergence combattue), son surlignage en
+couleur codée en dur lisant un `Timestamp` Firestore dans un widget (FR-26 **et**
+AD-5), `flutter_tags` (AD-1), et quatre blocs de code mort ou commenté.
+
+Trois **gestes morts** du legacy ont été mesurés et non portés : la sérialisation
+d'une closure et d'un `Type` en JSON ; un prédicat d'option qui n'a **aucun**
+appelant dans les dépôts hôtes ; et le menu d'ajout d'une timeline qui n'est
+jamais rendu, le bouton étant sous `readOnly == false` alors que le champ déclare
+`readOnly: true`.
+
 ## 1.7.0 — 2026-08-16
 
 ### Ajouté

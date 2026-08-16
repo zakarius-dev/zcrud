@@ -15,6 +15,23 @@
 /// a11y/RTL (invariant AD-13) : boutons add/clear = `IconButton`/`TextButton`
 /// (≥ 48 dp) + `Semantics`/tooltips ; insets **directionnels** ; bordure
 /// dérivée du `ZcrudTheme` (invariant FR-26).
+///
+/// ## Seams de présentation — résolus par le CHEMIN NOMINAL
+///
+/// Comme la sous-liste, cette famille lit ses seams dans le **canal**
+/// `ZSubListSeamRegistry` (`ZcrudScope.subListSeamRegistry`), résolu **ici**
+/// plutôt que relayé par `ZFieldWidget`. Le motif est le même : [fieldsResolver]
+/// existait en paramètre mais le dispatcher ne le transmettait pas — le seam
+/// n'était donc atteignable qu'en remplaçant le champ entier par un
+/// `fieldBuilder`.
+///
+/// Deux seams seulement ont un sens ici (cardinalité ≤ 1, item toujours
+/// déballé, ni liste ni résumé ni en-tête à habiller) :
+/// - `itemFieldsResolver` → sous-champs rendus (équivalent de [fieldsResolver]) ;
+/// - `itemActionsBuilder` → actions **supplémentaires**, après « effacer ».
+///
+/// Les autres seams du bundle sont **ignorés** silencieusement (invariant
+/// AD-10). Priorité : paramètre du constructeur > seam du registre > défaut.
 library;
 
 import 'package:flutter/material.dart';
@@ -24,7 +41,9 @@ import '../../../domain/edition/z_sub_list_config.dart';
 import '../../l10n/z_localizations.dart';
 import '../../theme/z_theme.dart';
 import '../../z_form_controller.dart';
+import '../../zcrud_scope.dart';
 import '../z_field_widget.dart';
+import '../z_sub_list_seams.dart';
 import 'z_sub_list_field_widget.dart' show ZSubItemFieldBuilder;
 
 /// **Seam de champs dynamiques** : calcule la **liste des sous-champs à
@@ -33,6 +52,9 @@ import 'z_sub_list_field_widget.dart' show ZSubItemFieldBuilder;
 /// garde `domain_purity_test`). Défensif (invariant AD-10) : le résultat est
 /// **intersecté** avec `itemFields` de la config (par `name`) — un champ hors
 /// config est ignoré (aucune tranche orpheline, invariant AD-2).
+///
+/// Alias historique de [ZSubItemFieldsResolver], porté par le canal
+/// `ZSubListSeams.itemFieldsResolver` : même signature, même contrat.
 typedef ZDynamicItemFieldsResolver = List<ZFieldSpec> Function(
   Map<String, dynamic> state,
 );
@@ -66,7 +88,9 @@ class ZDynamicItemFieldWidget extends StatefulWidget {
   final ZSubItemFieldBuilder? itemFieldBuilder;
 
   /// Seam de champs dynamiques (voir [ZDynamicItemFieldsResolver]).
-  /// `null` (défaut) ⇒ rendu de tous les `itemFields` de la config (rétro-compat).
+  /// `null` (défaut) ⇒ le seam `itemFieldsResolver` du registre
+  /// (`ZcrudScope.subListSeamRegistry`) est consulté ; à défaut, rendu de tous
+  /// les `itemFields` de la config (rétro-compat).
   final ZDynamicItemFieldsResolver? fieldsResolver;
 
   @override
@@ -154,8 +178,66 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
   /// s'il est fourni (intersecté défensivement avec `itemFields` par `name` —
   /// aucune tranche orpheline, invariants AD-10/AD-2), sinon tous les
   /// `itemFields`.
+  /// **Seams de présentation** résolus dans le `ZcrudScope` ambiant pour CE
+  /// champ (cascade `widgetKind` → `name` → `type.name`). `null` ⇒ rendu natif,
+  /// inchangé (invariant AD-10).
+  ZSubListSeams? get _seams =>
+      ZcrudScope.maybeOf(context)?.subListSeamRegistry?.resolve(widget.field);
+
+  /// Invoque un seam hôte **défensivement** (invariant AD-10) : un seam qui
+  /// lève est traité comme un seam **absent**.
+  static T? _safe<T>(T Function() run) {
+    try {
+      return run();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Snapshot **complet** de l'item (résidu hors schéma d'abord, tranches
+  /// ensuite — même ordre que `_syncToParent`). C'est la donnée servie aux
+  /// seams : un identifiant technique non déclaré au sous-schéma y figure.
+  Map<String, dynamic> _rawItemData(ZFormController controller) =>
+      <String, dynamic>{
+        ..._unmapped,
+        for (final f in _itemFields) f.name: controller.valueOf(f.name),
+      };
+
+  /// **Actions supplémentaires** de l'item ([ZSubListSeams.itemActionsBuilder])
+  /// — rendues **après** « effacer », jamais à sa place. Chaque action est
+  /// contrainte à ≥ 48 dp (invariant AD-13) : le socle ne peut pas garantir la
+  /// cible tactile d'un widget qu'il ne construit pas, il garantit la place
+  /// qu'il lui réserve. Seam absent ou qui lève ⇒ liste vide (invariant AD-10),
+  /// donc le rendu d'avant.
+  List<Widget> _extraActions(
+    BuildContext context,
+    ZFormController controller,
+  ) {
+    final builder = _seams?.itemActionsBuilder;
+    if (builder == null) return const <Widget>[];
+    final built = _safe(() => builder(
+          context,
+          ZSubListItemView(
+            field: widget.field,
+            data: _rawItemData(controller),
+            index: 0,
+            itemId: _itemId ?? '',
+            readOnly: widget.field.readOnly,
+          ),
+        ));
+    if (built == null || built.isEmpty) return const <Widget>[];
+    return <Widget>[
+      for (final action in built)
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          child: action,
+        ),
+    ];
+  }
+
   List<ZFieldSpec> _renderFields(ZFormController controller) {
-    final resolver = widget.fieldsResolver;
+    // Priorité : paramètre du constructeur > seam du registre > config.
+    final resolver = widget.fieldsResolver ?? _seams?.itemFieldsResolver;
     if (resolver == null) return _itemFields;
     final known = <String>{for (final f in _itemFields) f.name};
     List<ZFieldSpec> resolved;
@@ -314,6 +396,10 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
                           tooltip: label(context, 'clearItem'),
                           onPressed: _clearItem,
                         ),
+                      // Actions supplémentaires de l'hôte — **après** effacer,
+                      // jamais à sa place. Aucun seam ⇒ liste vide, donc aucun
+                      // widget ajouté : structure inchangée.
+                      ..._extraActions(context, controller),
                     ],
                   ),
                 ),

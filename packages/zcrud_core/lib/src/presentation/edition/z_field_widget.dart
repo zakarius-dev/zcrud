@@ -418,6 +418,12 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           field: widget.field,
           initialValue: widget.controller.valueOf(widget.field.name),
           collectionId: aclCid,
+          // Capacité STRUCTURELLE, pas un seam relayé : les résolveurs dérivés
+          // du canal (`subSchemaResolver`, `creationTemplatesResolver`) lisent
+          // le formulaire parent et s'abonnent aux SEULES tranches qu'ils
+          // lisent. Aucun `InheritedWidget` ne publie le contrôleur d'édition,
+          // et la sous-liste n'y écrit jamais — l'agrégation reste `onChanged`.
+          parentController: widget.controller,
           onChanged: (list) =>
               widget.controller.setValue(widget.field.name, list),
         );

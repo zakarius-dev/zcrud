@@ -50,11 +50,59 @@
 /// chaque ligne s'empile en couples libellé/valeur et la ligne d'en-têtes
 /// disparaît — les deux décisions sortent du même calcul, de sorte qu'un
 /// en-tête ne surplombe jamais un empilement. Voir `_summaryIsStacked`.
+///
+/// ## Seams de présentation — résolus par le CHEMIN NOMINAL
+///
+/// Titre d'item, rendu libre de ligne, actions supplémentaires, conteneur de
+/// liste, habillage d'en-tête, transformation d'affichage et ACL du champ sont
+/// déclarés par le **canal** `ZSubListSeamRegistry`, injecté au
+/// `ZcrudScope.subListSeamRegistry` et résolu **ici**, dans le widget — pas
+/// relayé par le dispatcher.
+///
+/// C'est une décision, pas une commodité. Ces seams existaient déjà en
+/// paramètres (`acl`, `itemTitleBuilder`) mais `ZFieldWidget` ne les
+/// transmettait pas : ils n'étaient atteignables qu'en **remplaçant le champ**
+/// par un `fieldBuilder`, donc en renonçant à l'agrégation vers la tranche
+/// parente, à la granularité (invariant AD-2), aux dialogues, à l'ACL et au
+/// soft-delete. Ajouter un paramètre de plus au dispatcher aurait reproduit le
+/// défaut au seam suivant — un relais est une liste qu'il faut penser à tenir à
+/// jour. Résoudre **au point d'usage** supprime le relais : le chemin nominal
+/// (`DynamicEdition`) et la construction directe du widget servent exactement
+/// les mêmes seams, et le widget lisait déjà le scope pour son ACL.
+///
+/// **Priorité** : paramètre du constructeur > seam du registre > défaut natif.
+/// Un hôte qui construit le widget à la main garde donc le dernier mot.
+///
+/// **Rétro-compatibilité stricte** : aucun seam déclaré ⇒ **aucun** widget
+/// supplémentaire, aucune structure modifiée, aucun appel supplémentaire. Voir
+/// `ZSubListSeams` pour l'applicabilité mode par mode.
+///
+/// ## Options d'item et arbitrage des mutations
+///
+/// Deux seams du même canal donnent un **geste** à l'hôte, et se répartissent
+/// les rôles sans se recouvrir :
+///
+/// - `itemMenuOptions` ([ZSubItemMenuOption]) — entrées **déclaratives** par
+///   item, rendues dans un menu de débordement en fin de ligne (`compact`),
+///   **après** les actions natives et **après** `itemActionsBuilder`. Trois
+///   canaux d'affordance coexistent donc, et c'est délibéré : les actions
+///   natives sont gouvernées par l'ACL du socle ; `itemActionsBuilder` livre des
+///   widgets **opaques** que le socle ne peut ni lire ni filtrer ; les options,
+///   elles, sont des **déclarations** que le socle filtre lui-même — ACL
+///   d'abord, prédicat de l'hôte ensuite. Une option ne peut donc jamais élargir
+///   un droit refusé, ce qu'un `itemActionsBuilder` pourrait faire (et ce
+///   pourquoi il reste, lui, sous la responsabilité de l'hôte).
+/// - `onCrud` ([ZSubItemCrudHook]) — arbitre **avant** toute écriture
+///   (`create`/`update`/`delete` natifs **et** option choisie) : refuser,
+///   transformer, laisser passer. Un crochet qui lève **refuse** et son erreur
+///   est signalée à `FlutterError.reportError` (jamais avalée, jamais fatale au
+///   rendu — invariant AD-10).
 library;
 
 import 'package:flutter/material.dart';
 
 import '../../../domain/edition/edition_field_type.dart';
+import '../../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../../domain/edition/z_sub_list_config.dart';
@@ -67,6 +115,7 @@ import '../z_field_widget.dart';
 import '../z_read_mode_scope.dart';
 import '../z_read_only_value.dart';
 import '../z_select_choices_resolver.dart';
+import '../z_sub_list_seams.dart';
 import '../z_value_emptiness.dart';
 
 /// Seam (usage de test) : construit le widget d'édition d'un **sous-champ**
@@ -81,23 +130,25 @@ typedef ZSubItemFieldBuilder = Widget Function(
   String itemId,
 );
 
-/// Seam de **présentation** : dérive un **titre/résumé** lisible d'un item
-/// (`Map`) — titre du dialog d'édition et repli de résumé de ligne en mode
-/// compact. Vit en couche widget (JAMAIS dans la config domaine — garde
-/// `domain_purity_test`).
-typedef ZSubItemTitleBuilder = String Function(Map<String, dynamic> item);
-
 /// Champ d'édition d'une **sous-liste** d'items (`List<Map>` en tranche parente).
 class ZSubListFieldWidget extends StatefulWidget {
   /// Construit le champ sous-liste pour [field], valeur initiale [initialValue]
   /// (`List<Map>` ou `null`), agrégeant vers la tranche parente via [onChanged].
   ///
-  /// [acl] filtre les actions du mode compact. `null` (défaut) ⇒ l'ACL du
-  /// `ZcrudScope` ambiant est consultée ; sans scope, le repli est **refusant**
+  /// [acl] filtre les actions du mode compact. `null` (défaut) ⇒ le seam `acl`
+  /// du registre (`ZcrudScope.subListSeamRegistry`) est consulté, puis l'ACL du
+  /// `ZcrudScope` ambiant ; sans scope, le repli est **refusant**
   /// (`ZDenyAllAcl`) : aucune action d'item n'est offerte. [collectionId] est
   /// transmis à `ZAcl.can(..., collectionId:)` ;
-  /// [itemTitleBuilder] dérive le titre du dialog / résumé de ligne. Ces
-  /// paramètres sont **ignorés** en mode `inline` (comportement inchangé).
+  /// [itemTitleBuilder] dérive le titre du dialog / résumé de ligne — `null`
+  /// (défaut) ⇒ le seam `itemTitleBuilder` du registre est consulté. Ces deux
+  /// paramètres sont **ignorés** en mode `inline` (comportement inchangé) ;
+  /// `itemTitleBuilder` vaut en revanche aussi en mode `tags`.
+  ///
+  /// Priorité, pour l'un comme pour l'autre : **paramètre > registre > défaut**.
+  /// Les autres seams (rendu libre, actions supplémentaires, conteneur,
+  /// en-tête, transformation d'affichage) n'ont **pas** de paramètre : ils se
+  /// déclarent uniquement par le registre — un canal, pas vingt paramètres.
   const ZSubListFieldWidget({
     required this.field,
     required this.initialValue,
@@ -106,6 +157,7 @@ class ZSubListFieldWidget extends StatefulWidget {
     this.acl,
     this.collectionId,
     this.itemTitleBuilder,
+    this.parentController,
     super.key,
   });
 
@@ -140,6 +192,26 @@ class ZSubListFieldWidget extends StatefulWidget {
   /// `summaryFields`/champs + libellé du champ.
   final ZSubItemTitleBuilder? itemTitleBuilder;
 
+  /// Contrôleur du formulaire **PARENT**, transmis par `ZFieldWidget` sur le
+  /// chemin nominal — **en LECTURE seule**.
+  ///
+  /// Il ne sert qu'aux deux résolveurs dérivés du canal de seams
+  /// ([ZSubListSeams.subSchemaResolver],
+  /// [ZSubListSeams.creationTemplatesResolver]) : lire la valeur d'une tranche
+  /// parente et **s'abonner** aux seules tranches que le résolveur a réellement
+  /// lues (invariant AD-2). Ce widget n'y **écrit jamais** — l'agrégation vers
+  /// la tranche parente passe, comme avant, par [onChanged] et par lui seul.
+  ///
+  /// Ce n'est pas un seam relayé (la classe de défaut que le canal a supprimée)
+  /// mais une **capacité structurelle**, au même titre que [collectionId] : un
+  /// résolveur ne peut pas aller chercher le formulaire parent tout seul, et
+  /// aucun `InheritedWidget` ne publie le contrôleur d'édition.
+  ///
+  /// `null` (construction directe du widget, hors formulaire) ⇒ les deux
+  /// résolveurs sont **inertes** et le socle retombe sur la config déclarée
+  /// (invariant AD-10).
+  final ZFormController? parentController;
+
   @override
   State<ZSubListFieldWidget> createState() => _ZSubListFieldWidgetState();
 }
@@ -170,10 +242,18 @@ class _SubItem {
   ///   et il est fusionné **AVANT** les tranches dans `_syncToParent` : un champ
   ///   que l'utilisateur **efface** reste effacé, il ne ressuscite pas depuis la
   ///   graine ;
-  /// - il n'est peuplé que depuis la graine du parent (`initState`). Un item
-  ///   **ajouté** n'a pas de graine : son résidu reste vide et son comportement
-  ///   est inchangé.
-  final Map<String, dynamic> unmapped;
+  /// - il n'est peuplé que depuis la graine du parent (`initState`) **ou** par
+  ///   une donnée de remplacement rendue par le crochet CRUD de l'hôte
+  ///   (`ZSubItemCrudOutcome.replace`) — qui est, elle aussi, une graine venue
+  ///   de l'extérieur, et le seul moyen pour un hôte d'attribuer un `id` que le
+  ///   sous-schéma ne déclare pas. Un item **ajouté** sans crochet n'a pas de
+  ///   graine : son résidu reste vide et son comportement est inchangé.
+  ///
+  /// **Non `final`** pour cette seule raison : un remplacement issu du crochet
+  /// **fusionne** dans le résidu (`{...ancien, ...nouveau}`), il ne l'écrase
+  /// pas — sans quoi un crochet qui ne renvoie qu'un sous-ensemble détruirait
+  /// l'identifiant qu'il vient de poser.
+  Map<String, dynamic> unmapped;
 
   /// Soft-delete : `true` ⇒ item **marqué supprimé** (exclu de l'agrégation
   /// parent) mais conservé pour **restauration** en session.
@@ -198,7 +278,21 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Les seams vivent dans un `InheritedWidget` : ils ne sont PAS lisibles en
+    // `initState`. C'est ici — et seulement ici — que les résolveurs dérivés
+    // sont installés, et ré-installés si le registre injecté change.
+    _installParentSubscription();
+    final resolved = _resolveSchema();
+    if (resolved != null && !_sameFields(resolved, _itemFields)) {
+      _applySchema(resolved);
+    }
+  }
+
+  @override
   void dispose() {
+    _dropParentSubscription();
     for (final item in _items) {
       _detach(item);
       item.controller.dispose();
@@ -206,8 +300,198 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     super.dispose();
   }
 
-  /// Sous-schéma `const` de l'item (vide si config absente/non conforme).
+  // ── Sous-schéma et gabarits DÉRIVÉS de l'état du formulaire parent ─────────
+
+  /// Sous-schéma **résolu** par [ZSubListSeams.subSchemaResolver], ou `null`
+  /// quand aucun résolveur n'est déclaré (⇒ `config.itemFields`, à l'identique).
+  List<ZFieldSpec>? _derivedItemFields;
+
+  /// Tranches parentes auxquelles ce champ est abonné — l'**union** des noms
+  /// que les deux résolveurs ont lus lors de l'appel traçant. Jamais toutes les
+  /// tranches du parent : c'est là que se joue l'invariant AD-2.
+  final Map<String, VoidCallback> _parentSubs = <String, VoidCallback>{};
+
+  /// Exécute [run] en **traçant** les noms de tranches parentes lues.
+  ///
+  /// Le lecteur passé au résolveur est un [ZValueOf] pur : il **lit**, il
+  /// n'écrit pas. Le contrôleur parent lui-même n'est jamais exposé à l'hôte —
+  /// un seam de présentation ne prend pas la main sur le formulaire qui le
+  /// contient.
+  T? _traced<T>(T Function(ZValueOf parent) run, Set<String>? trace) {
+    final parent = widget.parentController;
+    if (parent == null) return null;
+    Object? read(String name) {
+      trace?.add(name);
+      return parent.valueOf(name);
+    }
+
+    // Invariant AD-10 : un résolveur qui lève est traité comme absent, et les
+    // noms déjà lus AVANT l'erreur restent abonnés (même règle que
+    // `choicesResolver` dans `ZFieldWidget`) — sinon une branche qui échoue une
+    // fois figerait le champ sur un schéma mort.
+    return _safe(() => run(read));
+  }
+
+  /// Sous-schéma dérivé, ou `null` (aucun résolveur / pas de parent / résolveur
+  /// en erreur).
+  List<ZFieldSpec>? _resolveSchema({Set<String>? trace}) {
+    final resolver = _seams?.subSchemaResolver;
+    if (resolver == null) return null;
+    return _traced<List<ZFieldSpec>>(resolver, trace);
+  }
+
+  /// Gabarits dérivés, ou `null` (aucun résolveur / pas de parent / résolveur
+  /// en erreur ⇒ `config.creationTemplates`).
+  List<ZSubListItemTemplate>? _resolveTemplates({Set<String>? trace}) {
+    final resolver = _seams?.creationTemplatesResolver;
+    if (resolver == null) return null;
+    return _traced<List<ZSubListItemTemplate>>(resolver, trace);
+  }
+
+  /// Installe l'abonnement **ciblé** aux tranches parentes lues par les
+  /// résolveurs — appel traçant, puis une souscription par nom lu.
+  ///
+  /// 🔴 **La tranche du champ lui-même est EXCLUE**, même si un résolveur la
+  /// lit (et il en a le droit : elle porte la liste d'items agrégée). S'y
+  /// abonner ferait re-résoudre le schéma à chaque `_syncToParent`, donc à
+  /// chaque frappe dans un sous-champ — exactement le rafraîchissement global
+  /// que ce canal existe pour éviter.
+  void _installParentSubscription() {
+    final parent = widget.parentController;
+    final wanted = <String>{};
+    if (parent != null &&
+        (_seams?.subSchemaResolver != null ||
+            _seams?.creationTemplatesResolver != null)) {
+      _resolveSchema(trace: wanted);
+      _resolveTemplates(trace: wanted);
+      wanted.remove(widget.field.name);
+    }
+    if (wanted.length == _parentSubs.length &&
+        wanted.every(_parentSubs.containsKey)) {
+      return; // Jeu d'abonnements inchangé — rien à défaire ni à refaire.
+    }
+    _dropParentSubscription();
+    if (parent == null) return;
+    for (final name in wanted) {
+      void listener() => _onParentChanged();
+      parent.fieldListenable(name).addListener(listener);
+      _parentSubs[name] = listener;
+    }
+  }
+
+  void _dropParentSubscription() {
+    final parent = widget.parentController;
+    if (parent != null) {
+      _parentSubs.forEach((name, listener) {
+        parent.fieldListenable(name).removeListener(listener);
+      });
+    }
+    _parentSubs.clear();
+  }
+
+  /// Une tranche parente **suivie** a changé : re-résoudre, et ne reconstruire
+  /// que si quelque chose a réellement bougé.
+  ///
+  /// Un `setState` inconditionnel serait tentant et faux : le résolveur peut
+  /// lire une tranche dont seule une partie l'intéresse, et rendre le même
+  /// schéma. Comparer d'abord garde le compte de reconstructions au plancher
+  /// (invariant AD-2) — c'est ce que la garde de granularité assère.
+  void _onParentChanged() {
+    if (!mounted) return;
+    final nextFields = _resolveSchema();
+    final schemaChanged =
+        nextFields != null && !_sameFields(nextFields, _itemFields);
+    final nextTemplates = _resolveTemplates();
+    final templatesChanged = nextTemplates != null &&
+        !_sameTemplates(nextTemplates, _creationTemplates);
+    if (!schemaChanged && !templatesChanged) return;
+    if (schemaChanged) _applySchema(nextFields);
+    setState(() {});
+  }
+
+  /// Applique un nouveau sous-schéma **sans jamais recréer un
+  /// `ZFormController`** (invariant AD-2).
+  ///
+  /// Pour chaque item, la donnée complète est relue **avec l'ancien schéma**,
+  /// puis :
+  /// - un champ **apparu** reçoit une tranche amorcée de la valeur que l'item
+  ///   portait déjà (dans son résidu hors schéma, typiquement) ;
+  /// - un champ **disparu** voit sa valeur **descendre dans le résidu** — elle
+  ///   n'est pas détruite, elle reste agrégée vers le parent, et elle remonte
+  ///   dans une tranche si le champ revient ;
+  /// - un champ **inchangé** n'est pas touché du tout : ni `setValue`, ni
+  ///   réabonnement, ni réamorçage. Son `TextEditingController`, son focus et
+  ///   sa position de curseur survivent — c'est ce que la garde mesure.
+  void _applySchema(List<ZFieldSpec> next) {
+    final oldFields = _itemFields;
+    final oldNames = <String>{for (final f in oldFields) f.name};
+    final newNames = <String>{for (final f in next) f.name};
+    for (final item in _items) {
+      final full = _rawItemData(item);
+      _detachFields(item, oldFields);
+      item.unmapped = <String, dynamic>{
+        for (final entry in full.entries)
+          if (!newNames.contains(entry.key)) entry.key: entry.value,
+      };
+      for (final f in next) {
+        if (!oldNames.contains(f.name)) {
+          // `setValue` pose la même valeur qu'une tranche déjà à `null` sans
+          // notifier (no-op natif de `ValueNotifier`) : aucun réveil parasite.
+          item.controller.setValue(f.name, full[f.name]);
+        }
+      }
+    }
+    _derivedItemFields = next;
+    for (final item in _items) {
+      _attachFields(item, next);
+    }
+    // La donnée agrégée peut avoir changé de FORME (une clé passée de tranche à
+    // résidu garde sa valeur, mais l'ordre d'émission suit le nouveau schéma) :
+    // republier est la seule façon de ne pas laisser le parent sur une vue
+    // périmée. Hors voie de rebuild, comme toute agrégation.
+    _syncToParent();
+  }
+
+  /// Deux jeux de specs décrivent-ils le **même** sous-schéma ? (`ZFieldSpec`
+  /// porte une égalité de valeur : un `label` ou un `readOnly` qui change
+  /// compte comme un changement, car il change le rendu.)
+  static bool _sameFields(List<ZFieldSpec> a, List<ZFieldSpec> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  static bool _sameTemplates(
+    List<ZSubListItemTemplate> a,
+    List<ZSubListItemTemplate> b,
+  ) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  /// **Seams de présentation** résolus dans le `ZcrudScope` ambiant pour CE
+  /// champ (cascade `widgetKind` → `name` → `type.name`).
+  ///
+  /// Lu à chaque usage plutôt que mémorisé dans l'état : un registre injecté à
+  /// chaud (ou un scope dérivé qui l'ombre) doit être vu immédiatement, et la
+  /// lecture d'un `InheritedWidget` déjà consulté pour l'ACL n'ajoute ni
+  /// souscription ni allocation. `null` ⇒ rendu natif, inchangé (AD-10).
+  ZSubListSeams? get _seams =>
+      ZcrudScope.maybeOf(context)?.subListSeamRegistry?.resolve(widget.field);
+
+  /// Sous-schéma **effectif** de l'item : le schéma dérivé du formulaire parent
+  /// s'il est résolu ([ZSubListSeams.subSchemaResolver]), sinon le sous-schéma
+  /// `const` de la config (vide si config absente/non conforme).
   List<ZFieldSpec> get _itemFields {
+    final derived = _derivedItemFields;
+    if (derived != null) return derived;
     final config = widget.field.config;
     return config is ZSubListConfig ? config.itemFields : const <ZFieldSpec>[];
   }
@@ -244,12 +528,29 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     return config is ZSubListConfig && config.softDelete;
   }
 
-  /// Gabarits de création (vide si config absente/non conforme).
+  /// Gabarits de création **effectifs** : ceux dérivés de l'état du formulaire
+  /// parent quand [ZSubListSeams.creationTemplatesResolver] est déclaré et
+  /// résout, sinon ceux de la config (vide si config absente/non conforme).
+  ///
+  /// Résolu **à chaque lecture** plutôt que mémorisé : ce n'est qu'une liste de
+  /// données `const`, aucune tranche n'en dépend, et un cache aurait une
+  /// seconde source de vérité à invalider. Le résolveur n'est appelé que là où
+  /// un menu d'ajout est réellement construit (modes `compact`/`tags`).
   List<ZSubListItemTemplate> get _creationTemplates {
+    final derived = _resolveTemplates();
+    if (derived != null) return derived;
     final config = widget.field.config;
     return config is ZSubListConfig
         ? config.creationTemplates
         : const <ZSubListItemTemplate>[];
+  }
+
+  /// Forme de présentation du formulaire d'item (défaut : dialogue).
+  ZSubItemFormPresentation get _itemFormPresentation {
+    final config = widget.field.config;
+    return config is ZSubListConfig
+        ? config.itemFormPresentation
+        : ZSubItemFormPresentation.dialog;
   }
 
   /// Valeurs par défaut d'un nouvel item (vide si config absente).
@@ -315,14 +616,22 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// de valeur d'un sous-champ ne reconstruit PAS le conteneur (non souscrit à
   /// la tranche parente) — il se contente d'agréger vers le parent (invariant
   /// AD-2 préservé).
-  void _attach(_SubItem item) {
-    for (final f in _itemFields) {
+  void _attach(_SubItem item) => _attachFields(item, _itemFields);
+
+  void _detach(_SubItem item) => _detachFields(item, _itemFields);
+
+  /// Abonnement/désabonnement sur un jeu de champs **explicite** — nécessaire
+  /// dès lors que le sous-schéma peut changer : se désabonner du schéma
+  /// *courant* après l'avoir remplacé laisserait des listeners orphelins sur
+  /// les tranches de l'ancien.
+  void _attachFields(_SubItem item, List<ZFieldSpec> fields) {
+    for (final f in fields) {
       item.controller.fieldListenable(f.name).addListener(_syncToParent);
     }
   }
 
-  void _detach(_SubItem item) {
-    for (final f in _itemFields) {
+  void _detachFields(_SubItem item, List<ZFieldSpec> fields) {
+    for (final f in fields) {
       item.controller.fieldListenable(f.name).removeListener(_syncToParent);
     }
   }
@@ -383,7 +692,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// seraient gatés — les champs internes resteraient **éditables et
   /// focalisables**. La règle est la MÊME pour les trois modes (le mode
   /// `compact` la couvre dans son dialogue,
-  /// `_ZSubItemEditDialog._buildField`).
+  /// `_ZSubItemForm._buildField`).
   ///
   /// Le **mode de présentation**, lui, n'a pas à être relayé : il descend par
   /// le contexte (`ZReadModeScope`). En consultation, les champs internes d'un
@@ -460,6 +769,14 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                 onRemove: () => _removeAt(i),
                 onMoveUp: () => _move(i, -1),
                 onMoveDown: () => _move(i, 1),
+                // Seul seam servi en `inline` : des actions **en plus** des
+                // contrôles de la carte. Les autres seams remplaceraient ou
+                // désynchroniseraient des sous-champs vivants (état, focus —
+                // invariant AD-2) ; ceux-là s'ajoutent sans y toucher. Le
+                // transformateur d'affichage ne vaut pas ici : ce mode affiche
+                // la donnée éditée, pas son habillage.
+                extraActions:
+                    _extraActions(context, _items[i], i, readOnly: readOnly),
                 fields: <Widget>[
                   for (final f in _itemFields)
                     KeyedSubtree(
@@ -532,11 +849,24 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// Un hôte passif ne bouge donc QUE là où c'est exigé (libellés de choix)
   /// ou là où il a injecté un port (dates).
   ///
+  /// **Transformation d'affichage** ([ZSubListSeams.itemTransformer]) : quand
+  /// un [display] est fourni, la valeur brute est lue **dans lui** au lieu de
+  /// la tranche. Le reste de la chaîne (choix, orphelin, port de date) est
+  /// strictement le même — le transformateur change la valeur, jamais les
+  /// règles de sa mise en forme. `display == null` (aucun seam) ⇒ chemin
+  /// d'origine, à l'identique.
+  ///
   /// Invariant AD-2 : lecture de la seule tranche du sous-champ, aucun objet
   /// coûteux alloué, aucune souscription — la cellule ne reconstruit rien
   /// au-delà d'elle.
-  String _displayText(BuildContext context, _SubItem item, String name) {
-    final raw = item.controller.valueOf(name);
+  String _displayText(
+    BuildContext context,
+    _SubItem item,
+    String name, [
+    Map<String, dynamic>? display,
+  ]) {
+    final raw =
+        display == null ? item.controller.valueOf(name) : display[name];
     if (zIsEmptyValue(raw)) return '';
     final spec = _specOf(name);
     if (spec == null || !_projectedTypes.contains(spec.type)) {
@@ -577,43 +907,83 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         for (final f in _itemFields) f.name: item.controller.valueOf(f.name),
       };
 
-  /// Applique **défensivement** le seam de titre (invariant AD-10 : un
-  /// builder hôte qui throw ne fait jamais échouer le parent → repli `null`).
-  String? _safeTitle(ZSubItemTitleBuilder builder, Map<String, dynamic> data) {
+  /// Snapshot **complet** d'un item, tel qu'il serait agrégé vers le parent :
+  /// le résidu hors sous-schéma de la graine **d'abord** (donc `id` et toute
+  /// clé annexe non déclarée), les tranches ensuite — dans le MÊME ordre que
+  /// `_syncToParent`, de sorte qu'un champ déclaré effacé reste effacé.
+  ///
+  /// C'est la donnée **BRUTE** servie aux seams de présentation : un titre ou
+  /// une transformation d'affichage ont besoin de l'identifiant technique, que
+  /// le sous-schéma ne déclare presque jamais.
+  Map<String, dynamic> _rawItemData(_SubItem item) => <String, dynamic>{
+        ...item.unmapped,
+        for (final f in _itemFields) f.name: item.controller.valueOf(f.name),
+      };
+
+  /// Invoque un seam hôte **défensivement** (invariant AD-10) : un seam qui
+  /// lève est traité comme un seam **absent** — `null`, donc repli sur le rendu
+  /// natif. Jamais d'exception remontée au rendu du formulaire.
+  static T? _safe<T>(T Function() run) {
     try {
-      return builder(data);
+      return run();
     } catch (_) {
       return null;
     }
   }
 
+  /// Applique **défensivement** le seam de titre : paramètre du constructeur
+  /// d'abord, seam du registre ensuite (priorité paramètre > registre), puis
+  /// `null` ⇒ repli dérivé.
+  String? _safeTitle(Map<String, dynamic> data) {
+    final builder = widget.itemTitleBuilder ?? _seams?.itemTitleBuilder;
+    if (builder == null) return null;
+    return _safe(() => builder(data));
+  }
+
+  /// Données d'**AFFICHAGE** d'un item : `null` quand aucun transformateur
+  /// n'est déclaré — et ce `null` n'est pas une commodité, c'est la garantie de
+  /// rétro-compatibilité : sans seam, aucune `Map` n'est allouée et la lecture
+  /// reste celle des tranches, à l'identique.
+  ///
+  /// Le transformateur reçoit la donnée **brute** ([_rawItemData]) et son
+  /// résultat ne sert **qu'à l'affichage** : ni l'agrégation parente, ni la
+  /// graine des dialogues, ni l'entrée du builder de titre n'en dépendent.
+  Map<String, dynamic>? _displayDataOf(_SubItem item) {
+    final transformer = _seams?.itemTransformer;
+    if (transformer == null) return null;
+    return _safe(() => transformer(context, _rawItemData(item)));
+  }
+
   /// Titre de résumé d'une ligne quand aucun `summaryFields` :
   /// `itemTitleBuilder` s'il est fourni, sinon **concaténation lisible** des
   /// valeurs non nulles des `itemFields` (jamais un déballage éditable).
-  String _defaultTitle(BuildContext context, _SubItem item) {
-    final data = _itemData(item);
-    final builder = widget.itemTitleBuilder;
-    if (builder != null) {
-      final t = _safeTitle(builder, data);
-      if (t != null && t.isNotEmpty) return t;
-    }
-    // Le `itemTitleBuilder` reçoit toujours la donnée BRUTE (contrat inchangé) ;
-    // seul le repli dérivé est projeté (mêmes règles que `_displayText`).
+  String _defaultTitle(
+    BuildContext context,
+    _SubItem item, [
+    Map<String, dynamic>? display,
+  ]) {
+    // Le builder de titre reçoit toujours la donnée BRUTE — jamais la donnée
+    // transformée. Un titre se dérive de ce qui EST, pas de son habillage : si
+    // les deux venaient de la même source, un transformateur qui masque une
+    // valeur masquerait aussi le titre qui sert à retrouver l'item.
+    final t = _safeTitle(_rawItemData(item));
+    if (t != null && t.isNotEmpty) return t;
+    // Seul le repli dérivé est projeté (mêmes règles que `_displayText`) — et
+    // c'est LUI, non le builder, qui honore la transformation d'affichage.
+    final data = display ?? _itemData(item);
     return <String>[
       for (final f in _itemFields)
-        if (data[f.name] != null && _displayText(context, item, f.name).isNotEmpty)
-          _displayText(context, item, f.name),
+        if (data[f.name] != null &&
+            _displayText(context, item, f.name, display).isNotEmpty)
+          _displayText(context, item, f.name, display),
     ].join(' — ');
   }
 
   /// Titre du dialog d'édition : `itemTitleBuilder(data)` s'il est fourni
   /// et non vide, sinon le libellé du champ.
   String _dialogTitle(BuildContext context, Map<String, dynamic> data) {
-    final builder = widget.itemTitleBuilder;
-    if (builder != null) {
-      final t = _safeTitle(builder, data);
-      if (t != null && t.isNotEmpty) return t;
-    }
+    final t = _safeTitle(data);
+    if (t != null && t.isNotEmpty) return t;
     return label(
       context,
       widget.field.label ?? widget.field.name,
@@ -633,6 +1003,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     BuildContext context,
     _SubItem item, {
     required bool replie,
+    Map<String, dynamic>? display,
   }) {
     final summaryFields = _summaryFields;
     if (summaryFields.isNotEmpty) {
@@ -644,7 +1015,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       // s'empile (le seul régime où l'ellipse ne cachait plus un détail mais
       // la totalité de l'information).
       if (_showSummaryHeaders && replie) {
-        return _stackedSummary(context, item, summaryFields);
+        return _stackedSummary(context, item, summaryFields, display);
       }
       if (_showSummaryHeaders) {
         return Row(
@@ -654,7 +1025,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                 child: Padding(
                   padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 16, 0),
                   child: Text(
-                    _displayText(context, item, name),
+                    _displayText(context, item, name, display),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.start,
@@ -672,7 +1043,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 16, 0),
                 child: Text(
-                  _displayText(context, item, name),
+                  _displayText(context, item, name, display),
                   textAlign: TextAlign.start,
                 ),
               ),
@@ -681,7 +1052,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       );
     }
     return Text(
-      _defaultTitle(context, item),
+      _defaultTitle(context, item, display),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       textAlign: TextAlign.start,
@@ -711,12 +1082,13 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   Widget _stackedSummary(
     BuildContext context,
     _SubItem item,
-    List<String> summaryFields,
-  ) {
+    List<String> summaryFields, [
+    Map<String, dynamic>? display,
+  ]) {
     final labelStyle = Theme.of(context).textTheme.labelMedium;
     final couples = <Widget>[];
     for (final name in summaryFields) {
-      final value = _displayText(context, item, name);
+      final value = _displayText(context, item, name, display);
       if (value.isEmpty) continue;
       final spec = _specOf(name);
       final resolved = label(
@@ -877,61 +1249,281 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// l'en-tête, la même largeur que la zone d'actions.
   static const double _actionExtent = 48;
 
-  /// Ouvre le dialog d'édition d'un item. `initial` amorce le `ZFormController`
-  /// propre du dialog ; retourne le `Map` agrégé à la validation, `null` à
-  /// l'annulation/consultation.
-  Future<Map<String, dynamic>?> _showItemDialog(
+  /// Ouvre le **formulaire d'édition** d'un item, sous la forme déclarée
+  /// (`ZSubListConfig.itemFormPresentation` : dialogue, feuille ou page).
+  /// `initial` amorce le `ZFormController` propre du formulaire ; retourne le
+  /// `Map` agrégé à la validation, `null` à l'annulation/consultation.
+  ///
+  /// ## Les trois formes rendent la MÊME donnée
+  ///
+  /// Ce n'est pas une convention à tenir mais une propriété de structure : les
+  /// trois formes montent **le même** `_ZSubItemForm`, avec les **mêmes**
+  /// `itemFields` et la **même** graine ; seule l'enveloppe diffère, et la
+  /// `Map` rendue est construite par un unique `_save`. Il n'existe pas de
+  /// second chemin de sortie de données à faire diverger.
+  ///
+  /// ## Défensivité (invariant AD-10)
+  ///
+  /// Les trois formes ont besoin d'un `Navigator`. Sans lui, aucune n'est
+  /// montable : le socle **n'ouvre rien**, **ne lève pas**, et signale
+  /// l'incident à `FlutterError.reportError` — le formulaire parent reste
+  /// utilisable, et l'erreur n'est pas avalée pour autant. Une forme qui
+  /// échoue à s'ouvrir pour une autre raison **retombe sur le dialogue**, la
+  /// seule forme dont ce socle garantit le montage depuis toujours.
+  Future<Map<String, dynamic>?> _showItemForm(
     Map<String, dynamic> initial, {
     required bool readOnly,
-  }) {
+  }) async {
     // Forme héritée de la surface, relevée ICI (sous le scope) : la route du
-    // dialogue naîtra hors de cet arbre et ne l'hériterait pas.
+    // formulaire naîtra hors de cet arbre et ne l'hériterait pas.
     final formeHeritee = ZReadModeScope.maybeOf(context)?.layout;
-    return showDialog<Map<String, dynamic>>(
-      context: context,
-      // Le dialogue vit dans une AUTRE branche de l'arbre (une route) : le mode
-      // de présentation de la surface ne l'atteint pas par héritage. Il est
-      // donc REPOSÉ ici, avec le mode du dialogue lui-même — consultation d'un
-      // item ⇒ fiches, édition ⇒ champs de saisie, même à l'intérieur d'un
-      // formulaire ouvert en lecture — ET avec la forme de la surface, faute de
-      // quoi les fiches du dialogue retomberaient sur la forme par défaut.
-      builder: (dialogContext) => ZReadModeScope(
-        readMode: readOnly,
-        layout: formeHeritee,
-        child: _ZSubItemEditDialog(
-          title: _dialogTitle(dialogContext, initial),
-          itemFields: _itemFields,
-          initial: initial,
-          readOnly: readOnly,
-          itemFieldBuilder: widget.itemFieldBuilder,
+    final presentation = _itemFormPresentation;
+
+    // La route naît dans une AUTRE branche de l'arbre : le mode de présentation
+    // de la surface ne l'atteint pas par héritage. Il est donc REPOSÉ ici, avec
+    // le mode du formulaire lui-même — consultation d'un item ⇒ fiches, édition
+    // ⇒ champs de saisie, même à l'intérieur d'un formulaire ouvert en lecture
+    // — ET avec la forme de la surface, faute de quoi les fiches retomberaient
+    // sur la forme par défaut.
+    Widget body(BuildContext routeContext) => ZReadModeScope(
+          readMode: readOnly,
+          layout: formeHeritee,
+          child: _ZSubItemForm(
+            title: _dialogTitle(routeContext, initial),
+            itemFields: _itemFields,
+            initial: initial,
+            readOnly: readOnly,
+            presentation: presentation,
+            itemFieldBuilder: widget.itemFieldBuilder,
+          ),
+        );
+
+    final navigator = Navigator.maybeOf(context);
+    if (navigator == null) {
+      _reportUnmountableForm(presentation, 'aucun Navigator au-dessus du champ');
+      return null;
+    }
+    try {
+      switch (presentation) {
+        case ZSubItemFormPresentation.dialog:
+          return await showDialog<Map<String, dynamic>>(
+            context: context,
+            builder: body,
+          );
+        case ZSubItemFormPresentation.sheet:
+          return await showModalBottomSheet<Map<String, dynamic>>(
+            context: context,
+            // Un sous-formulaire n'est pas une liste d'options : il doit
+            // pouvoir occuper la hauteur disponible et remonter au-dessus du
+            // clavier, sinon la feuille est la PIRE des trois formes.
+            isScrollControlled: true,
+            useSafeArea: true,
+            builder: body,
+          );
+        case ZSubItemFormPresentation.page:
+          return await navigator.push<Map<String, dynamic>>(
+            MaterialPageRoute<Map<String, dynamic>>(builder: body),
+          );
+      }
+    } catch (error, stack) {
+      // La forme demandée n'a pas pu être montée. Replier sur le dialogue est
+      // préférable à ne rien ouvrir : l'utilisateur a demandé à éditer un item,
+      // et la forme n'est qu'un habillage. L'incident reste signalé.
+      _reportUnmountableForm(presentation, '$error', stack: stack);
+      if (presentation == ZSubItemFormPresentation.dialog || !mounted) {
+        return null;
+      }
+      return _safeAsync(
+        () => showDialog<Map<String, dynamic>>(context: context, builder: body),
+      );
+    }
+  }
+
+  /// Signale une forme non montable — jamais avalée (rapporteur de crash,
+  /// `FlutterError.onError`, `tester.takeException()`), jamais fatale au rendu.
+  void _reportUnmountableForm(
+    ZSubItemFormPresentation presentation,
+    String reason, {
+    StackTrace? stack,
+  }) {
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: StateError(
+          'La forme « ${presentation.name} » du formulaire d\'item du champ '
+          '« ${widget.field.name} » n\'a pas pu être montée : $reason.',
+        ),
+        stack: stack,
+        library: 'zcrud_core',
+        context: ErrorDescription(
+          'lors de l\'ouverture du formulaire d\'item '
+          '(ZSubListConfig.itemFormPresentation). Le formulaire parent reste '
+          'intact : le socle ne casse pas un écran pour un habillage.',
         ),
       ),
     );
   }
 
-  /// Ajout via dialog. L'item est amorcé de `defaultNewItem`
-  /// **fusionné** avec les [templateDefaults] d'un gabarit de création —
-  /// les valeurs du gabarit priment. Item vide par défaut.
-  Future<void> _openAddDialog({
-    Map<String, Object?> templateDefaults = const <String, Object?>{},
-  }) async {
+  /// Pendant asynchrone de [_safe] — un repli qui échoue à son tour ne remonte
+  /// pas (invariant AD-10).
+  static Future<T?> _safeAsync<T>(Future<T?> Function() run) async {
+    try {
+      return await run();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Crochet CRUD de l'hôte (`ZSubListSeams.onCrud`) — `null` ⇒ chemins natifs
+  /// strictement inchangés (aucun `await` supplémentaire, aucune bifurcation).
+  ZSubItemCrudHook? get _crudHook => _seams?.onCrud;
+
+  /// Soumet une mutation au crochet CRUD **avant** de l'appliquer.
+  ///
+  /// **Défensivité asymétrique, et c'est délibéré** : contrairement aux seams de
+  /// rendu (`_safe` → repli natif silencieux), un crochet qui **lève** ne peut
+  /// pas être « traité comme absent ». Absent, il laisserait passer la
+  /// mutation ; or l'hôte vient d'échouer à l'arbitrer, et personne ne sait si
+  /// elle est légitime. Le socle prend donc la seule décision sûre — **véto** —
+  /// et **signale** l'erreur à `FlutterError.reportError` : elle remonte à
+  /// `FlutterError.onError`, donc au rapporteur de crash de l'application (et,
+  /// en test, à `tester.takeException()`). Elle n'est jamais avalée, et le
+  /// rendu n'est jamais cassé (invariant AD-10).
+  Future<ZSubItemCrudOutcome> _arbitrate(
+    ZSubItemCrudHook hook,
+    ZSubItemCrudRequest request,
+  ) async {
+    try {
+      return await hook(request);
+    } catch (error, stack) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stack,
+          library: 'zcrud_core',
+          context: ErrorDescription(
+            'lors de l\'appel du crochet CRUD (ZSubListSeams.onCrud) pour '
+            'l\'action « ${request.action.name} » du champ '
+            '« ${widget.field.name} ». La mutation a été REFUSÉE : le socle ne '
+            'la laisse pas passer sur un arbitrage en échec.',
+          ),
+        ),
+      );
+      return const ZSubItemCrudOutcome.veto();
+    }
+  }
+
+  /// Vue d'un item pour le crochet — l'indice est **relu** au moment de
+  /// l'appel (un `await` a pu passer entre-temps) et retombe sur `0` si l'item
+  /// n'est plus dans la liste, plutôt que sur un `-1` que l'hôte lirait comme
+  /// une position (invariant AD-10).
+  ZSubListItemView _hookView(_SubItem item) {
+    final index = _items.indexOf(item);
+    return _viewOf(
+      item,
+      index < 0 ? 0 : index,
+      _displayDataOf(item),
+      readOnly: widget.field.readOnly,
+    );
+  }
+
+  /// Ajout via le formulaire d'item. L'item est amorcé de `defaultNewItem`
+  /// **fusionné** avec les `defaults` du [template] de création choisi — les
+  /// valeurs du gabarit priment. Item vide par défaut.
+  ///
+  /// Le crochet CRUD, s'il est déclaré, arbitre **avant** l'insertion : il peut
+  /// refuser (rien n'est ajouté) ou remplacer la donnée validée. Un
+  /// remplacement est traité comme une **graine** (résidu hors sous-schéma
+  /// conservé) — c'est ainsi qu'un hôte attribue un `id` à la création.
+  ///
+  /// ## 🔴 Le résidu de la GRAINE survit désormais à la création
+  ///
+  /// Le formulaire d'item ne rend, et ne renvoie, que les `itemFields`. Les
+  /// clés de la graine que le sous-schéma **ne déclare pas** étaient donc
+  /// **perdues** — y compris la charge utile d'un gabarit, qui est justement
+  /// la donnée qui distingue « ajouter un événement de type X » de « ajouter un
+  /// événement ». Elles sont maintenant conservées dans le résidu du nouvel
+  /// item, exactement comme celui d'un item venu du parent, et **transmises au
+  /// crochet** dans `data` — sans quoi l'hôte arbitrerait une donnée amputée de
+  /// ce qu'il vient lui-même de déclarer.
+  ///
+  /// Voir la note de rupture sur `ZSubListConfig.defaultNewItem` pour le
+  /// périmètre exact. Sans clé étrangère dans la graine, `_unmappedOf` rend la
+  /// constante vide : le chemin est identique à l'octet près.
+  Future<void> _openAddDialog({ZSubListItemTemplate? template}) async {
     final seed = <String, dynamic>{
       ..._defaultNewItem,
-      ...templateDefaults,
+      ...?template?.defaults,
     };
-    final result = await _showItemDialog(seed, readOnly: false);
+    // Gabarit **sans saisie** (`opensForm: false`) : la graine EST la donnée
+    // proposée. C'est le geste du menu d'ajout legacy, qui appelait le crochet
+    // sans ouvrir quoi que ce soit.
+    final Map<String, dynamic>? result = template != null && !template.opensForm
+        ? <String, dynamic>{
+            for (final f in _itemFields) f.name: seed[f.name],
+          }
+        : await _showItemForm(seed, readOnly: false);
     if (!mounted || result == null) return;
-    setState(() => _items.add(_makeItem(result)));
+    // Résidu de la GRAINE : les clés hors sous-schéma que l'hôte a déclarées et
+    // que le formulaire ne pouvait pas rendre. Écrit AVANT le résultat saisi :
+    // une clé déclarée l'emporte toujours sur son homonyme du gabarit.
+    var data = <String, dynamic>{..._unmappedOf(seed), ...result};
+    final hook = _crudHook;
+    if (hook != null) {
+      final outcome = await _arbitrate(
+        hook,
+        ZSubItemCrudRequest(
+          field: widget.field,
+          action: ZCrudAction.create,
+          data: data,
+          // Le gabarit CHOISI — l'équivalent du `{option}` legacy sur `create`.
+          // `null` pour un ajout par simple bouton `+` : rien n'a été choisi.
+          template: template,
+        ),
+      );
+      if (!mounted || outcome.vetoed) return;
+      final replacement = outcome.data;
+      if (replacement != null) data = replacement;
+    }
+    setState(() => _items.add(_makeItem(data, preserveUnmapped: true)));
     _syncToParent();
   }
 
   /// Édition via dialog (remplace **à sa place** — identité stable
   /// conservée en réécrivant les tranches du contrôleur de l'item).
   Future<void> _openEditDialog(_SubItem item) async {
-    final result = await _showItemDialog(_itemData(item), readOnly: false);
+    // Graine BRUTE (résidu hors schéma compris) : le dialogue n'en lit que les
+    // `itemFields`, mais le titre, lui, peut avoir besoin de l'identifiant.
+    // La donnée **transformée** n'entre jamais ici : on édite ce qui est
+    // stocké, pas son habillage.
+    final result = await _showItemForm(_rawItemData(item), readOnly: false);
     if (!mounted || result == null) return;
+    var data = result;
+    final hook = _crudHook;
+    if (hook != null) {
+      final outcome = await _arbitrate(
+        hook,
+        ZSubItemCrudRequest(
+          field: widget.field,
+          action: ZCrudAction.update,
+          // Donnée PROPOSÉE : le résidu hors sous-schéma d'abord (donc `id`),
+          // les tranches saisies ensuite — MÊME ordre que `_syncToParent`, de
+          // sorte que le crochet voie exactement ce qui serait agrégé.
+          data: <String, dynamic>{...item.unmapped, ...result},
+          item: _hookView(item),
+        ),
+      );
+      if (!mounted || outcome.vetoed) return;
+      final replacement = outcome.data;
+      if (replacement != null) {
+        data = replacement;
+        item.unmapped = <String, dynamic>{
+          ...item.unmapped,
+          ..._unmappedOf(replacement),
+        };
+      }
+    }
     for (final f in _itemFields) {
-      item.controller.setValue(f.name, result[f.name]);
+      item.controller.setValue(f.name, data[f.name]);
     }
     setState(() {});
     _syncToParent();
@@ -939,7 +1531,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
 
   /// Consultation (dialog `readOnly`, sans Enregistrer).
   Future<void> _openViewDialog(_SubItem item) async {
-    await _showItemDialog(_itemData(item), readOnly: true);
+    await _showItemForm(_rawItemData(item), readOnly: true);
   }
 
   /// Suppression avec **dialog de confirmation** puis retrait. En mode
@@ -963,6 +1555,21 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       ),
     );
     if (!mounted || confirmed != true) return;
+    final hook = _crudHook;
+    if (hook != null) {
+      final outcome = await _arbitrate(
+        hook,
+        ZSubItemCrudRequest(
+          field: widget.field,
+          action: ZCrudAction.delete,
+          data: _rawItemData(item),
+          item: _hookView(item),
+        ),
+      );
+      // Un remplacement n'a pas de destinataire ici : l'item s'en va. Seul le
+      // véto a un effet — et c'est le seul moyen de le retenir.
+      if (!mounted || outcome.vetoed) return;
+    }
     if (_softDelete) {
       setState(() => item.deleted = true);
       _syncToParent();
@@ -1002,17 +1609,236 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     return PopupMenuButton<ZSubListItemTemplate>(
       icon: const Icon(Icons.add),
       tooltip: _addLabel(context),
-      onSelected: (template) =>
-          _openAddDialog(templateDefaults: template.defaults),
+      onSelected: (template) => _openAddDialog(template: template),
       itemBuilder: (context) => <PopupMenuEntry<ZSubListItemTemplate>>[
         for (final template in templates)
           PopupMenuItem<ZSubListItemTemplate>(
             value: template,
-            child: Text(label(context, template.labelKey,
-                fallback: template.labelKey)),
+            child: Text(label(
+              context,
+              template.labelKey,
+              fallback: template.labelFallback ?? template.labelKey,
+            )),
           ),
       ],
     );
+  }
+
+  /// Vue immuable d'un item telle qu'un seam de présentation la reçoit.
+  ///
+  /// [display] est le résultat du transformateur d'affichage quand il est
+  /// déclaré ; sinon la donnée **brute**. Un seam voit donc toujours ce que
+  /// l'utilisateur voit — c'est ce qui rend cohérents un rendu libre et les
+  /// cellules de résumé qu'il remplace.
+  ZSubListItemView _viewOf(
+    _SubItem item,
+    int index,
+    Map<String, dynamic>? display, {
+    required bool readOnly,
+  }) =>
+      ZSubListItemView(
+        field: widget.field,
+        data: display ?? _rawItemData(item),
+        index: index,
+        itemId: item.id,
+        deleted: item.deleted,
+        readOnly: readOnly,
+      );
+
+  /// **Actions supplémentaires** d'un item ([ZSubListSeams.itemActionsBuilder])
+  /// — rendues **en plus** des actions natives, jamais à leur place.
+  ///
+  /// Chaque action est contrainte à **≥ 48 dp** (invariant AD-13) : le socle ne
+  /// peut pas garantir la cible tactile d'un widget qu'il ne construit pas, il
+  /// peut en revanche garantir la **place** qu'il lui réserve. Un seam absent
+  /// ou qui lève rend une liste vide (invariant AD-10) — donc, structurellement,
+  /// le rendu d'avant.
+  ///
+  /// [display] est la donnée d'affichage **quand le mode courant honore le
+  /// transformateur** (compact). En `inline`, l'appelant passe `null` : ce mode
+  /// n'applique pas le transformateur, et une action ne doit pas voir une
+  /// donnée que la ligne d'à côté n'affiche pas.
+  List<Widget> _extraActions(
+    BuildContext context,
+    _SubItem item,
+    int index, {
+    required bool readOnly,
+    Map<String, dynamic>? display,
+  }) {
+    final builder = _seams?.itemActionsBuilder;
+    if (builder == null) return const <Widget>[];
+    final built = _safe(() => builder(
+          context,
+          _viewOf(item, index, display, readOnly: readOnly),
+        ));
+    if (built == null || built.isEmpty) return const <Widget>[];
+    return <Widget>[
+      for (final action in built)
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          child: action,
+        ),
+    ];
+  }
+
+  /// **Options de menu VISIBLES** pour cet item — `const []` si aucune ne
+  /// survit au filtrage.
+  ///
+  /// 🔴 **ACL D'ABORD, PRÉDICAT ENSUITE.** L'ordre n'est pas une préférence de
+  /// style : une option est une **déclaration de l'hôte de présentation**, pas
+  /// une source de droit. Le prédicat n'est même pas consulté quand l'ACL a dit
+  /// non — il ne peut donc, structurellement, que **restreindre**. Si le
+  /// filtrage était inversé (ou fusionné en un `||`), une option permissive
+  /// offrirait un geste sur un formulaire où l'ACL refuse tout.
+  ///
+  /// La lecture seule est appliquée **avec** l'ACL, et par la même règle que les
+  /// actions natives : une action qui écrit ([ZCrudActionMutation.mutatesData])
+  /// n'est pas offerte sur un champ en lecture seule, quoi qu'en dise l'ACL.
+  ///
+  /// Un prédicat qui **lève** masque l'option (`_safe` → `null` ≠ `true`) : le
+  /// repli d'un doute de visibilité est de ne pas offrir le geste, jamais de
+  /// l'offrir (invariant AD-10).
+  List<ZSubItemMenuOption> _visibleOptions(
+    List<ZSubItemMenuOption> declared,
+    _SubItem item,
+    int index, {
+    required ZAcl acl,
+    required String? cid,
+    required bool readOnly,
+    Map<String, dynamic>? display,
+  }) {
+    if (declared.isEmpty) return const <ZSubItemMenuOption>[];
+    final view = _viewOf(item, index, display, readOnly: readOnly);
+    final kept = <ZSubItemMenuOption>[];
+    for (final option in declared) {
+      final action = option.effectivePermission;
+      // 1. ACL (et lecture seule) — jamais contournables.
+      if (readOnly && action.mutatesData) continue;
+      if (!acl.can(action, collectionId: cid)) continue;
+      // 2. Prédicat de l'hôte — il ne peut que retirer.
+      final predicate = option.isVisible;
+      if (predicate != null && _safe(() => predicate(view)) != true) continue;
+      kept.add(option);
+    }
+    return kept.isEmpty ? const <ZSubItemMenuOption>[] : kept;
+  }
+
+  /// Menu de **débordement** d'une ligne : rendu **après** les actions natives
+  /// et après les actions ajoutées par `itemActionsBuilder` — il n'en remplace
+  /// aucune et n'en double aucune.
+  ///
+  /// Rendu **uniquement** si [options] n'est pas vide : jamais un déclencheur
+  /// qui ouvrirait un menu vide, jamais un widget de plus quand rien n'est
+  /// déclaré. Contraint à ≥ 48 dp (invariant AD-13), nom accessible `moreActions`
+  /// (clé l10n déjà servie par le socle). L'option est portée comme **valeur**
+  /// du `PopupMenuItem` : résolution par identité, jamais par position.
+  Widget _buildItemMenu(
+    BuildContext context,
+    _SubItem item,
+    List<ZSubItemMenuOption> options,
+  ) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      child: PopupMenuButton<ZSubItemMenuOption>(
+        key: ValueKey<String>('itemMenu_${item.id}'),
+        icon: const Icon(Icons.more_vert),
+        tooltip: label(context, 'moreActions'),
+        onSelected: (option) => _onOptionSelected(item, option),
+        itemBuilder: (menuContext) => <PopupMenuEntry<ZSubItemMenuOption>>[
+          for (final option in options)
+            PopupMenuItem<ZSubItemMenuOption>(
+              value: option,
+              child: _optionEntry(menuContext, option),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Contenu d'une entrée de menu : icône optionnelle + libellé **localisé**
+  /// (`labelKey` → repli `labelFallback` → la clé). Une option destructive
+  /// emprunte la couleur d'erreur du **thème** — jamais une couleur codée en
+  /// dur (invariant FR-26). Directionnel (`TextAlign.start`, `Row` qui suit la
+  /// `Directionality`).
+  Widget _optionEntry(BuildContext context, ZSubItemMenuOption option) {
+    final Color? tint =
+        option.destructive ? Theme.of(context).colorScheme.error : null;
+    final text = Text(
+      label(context, option.labelKey,
+          fallback: option.labelFallback ?? option.labelKey),
+      style: tint == null ? null : TextStyle(color: tint),
+      textAlign: TextAlign.start,
+    );
+    final icon = option.icon;
+    if (icon == null) return text;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Icon(icon, color: tint),
+        const SizedBox(width: 12),
+        Flexible(child: text),
+      ],
+    );
+  }
+
+  /// Une option a été choisie : elle est **arbitrée par le crochet CRUD**, comme
+  /// une action native — même ordre (avant toute écriture), même véto, même
+  /// signalement d'erreur.
+  ///
+  /// `proceed` applique « la donnée de la requête telle quelle » : pour une
+  /// option, cette donnée **est** l'item courant — c'est donc, par construction,
+  /// un non-événement. Seul `replace` écrit. Cette symétrie est voulue : le
+  /// socle n'invente aucune sémantique particulière selon le déclencheur.
+  Future<void> _onOptionSelected(
+    _SubItem item,
+    ZSubItemMenuOption option,
+  ) async {
+    final hook = _crudHook;
+    if (hook == null) return;
+    final outcome = await _arbitrate(
+      hook,
+      ZSubItemCrudRequest(
+        field: widget.field,
+        action: option.effectivePermission,
+        data: _rawItemData(item),
+        item: _hookView(item),
+        option: option,
+      ),
+    );
+    if (!mounted || outcome.vetoed) return;
+    final replacement = outcome.data;
+    if (replacement == null) return;
+    item.unmapped = <String, dynamic>{
+      ...item.unmapped,
+      ..._unmappedOf(replacement),
+    };
+    for (final f in _itemFields) {
+      item.controller.setValue(f.name, replacement[f.name]);
+    }
+    setState(() {});
+    _syncToParent();
+  }
+
+  /// Contenu résumé d'une ligne compacte : le **rendu libre**
+  /// ([ZSubListSeams.itemBuilder]) s'il est déclaré et n'a pas levé, sinon les
+  /// cellules natives. Le seam ne remplace QUE ce contenu : les actions de fin
+  /// de ligne, le badge de soft-delete et l'ACL restent au socle.
+  Widget _rowSummary(
+    BuildContext context,
+    _SubItem item,
+    int index,
+    Map<String, dynamic>? display, {
+    required bool stacked,
+    required bool readOnly,
+  }) {
+    final builder = _seams?.itemBuilder;
+    if (builder != null) {
+      final built = _safe(
+        () => builder(context, _viewOf(item, index, display, readOnly: readOnly)),
+      );
+      if (built != null) return built;
+    }
+    return _summaryCells(context, item, replie: stacked, display: display);
   }
 
   /// Rendu **compact** : en-tête + liste résumé keyée + actions gated ACL.
@@ -1022,6 +1848,12 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// en dessous elle devient un empilement de couples libellé/valeur et la
   /// ligne d'en-têtes s'efface avec elle. Les deux décisions sortent du **même**
   /// calcul : il ne peut donc pas y avoir d'en-tête sans colonnes en face.
+  ///
+  /// **Seams** (tous optionnels ; aucun déclaré ⇒ structure d'avant, à
+  /// l'identique) : `captionBuilder` remplace la ligne d'en-tête, `itemBuilder`
+  /// le contenu résumé d'une ligne, `itemActionsBuilder` ajoute des actions de
+  /// fin de ligne, `listViewBuilder` remplace le conteneur de lignes,
+  /// `itemTransformer` habille les valeurs affichées.
   Widget _buildCompact(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     final resolvedLabel = label(
@@ -1031,8 +1863,13 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     );
     final readOnly = widget.field.readOnly;
     final cid = widget.collectionId;
-    // Priorité : paramètre du champ > ACL du scope ambiant > refus.
+    final seams = _seams;
+    // Priorité : paramètre du champ > seam du registre > ACL du scope ambiant
+    // > refus. Le seam s'intercale AVANT le scope : une ACL déclarée pour CE
+    // champ est plus spécifique que celle de l'écran, et un hôte qui n'en
+    // déclare pas retrouve exactement la chaîne d'avant.
     final ZAcl acl = widget.acl ??
+        seams?.acl ??
         ZcrudScope.maybeOf(context)?.acl ??
         const ZDenyAllAcl();
     final canCreate =
@@ -1043,8 +1880,82 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     final canDelete =
         !readOnly && acl.can(ZCrudAction.delete, collectionId: cid);
 
-    final actionCount =
-        (canView ? 1 : 0) + (canUpdate ? 1 : 0) + (canDelete ? 1 : 0);
+    // Actions supplémentaires : précalculées **UNIQUEMENT** si le seam est
+    // déclaré. La réserve de fin sous l'en-tête doit connaître leur NOMBRE
+    // avant que les lignes ne soient bâties, et ce nombre peut différer d'un
+    // item à l'autre — c'est le maximum qui gouverne l'alignement des colonnes.
+    // Sans seam : `null`, aucune allocation, aucune perte de paresse, aucun
+    // appel — le rendu est celui d'avant, à la structure près comme au compte
+    // de widgets près.
+    final List<List<Widget>>? extras = _seams?.itemActionsBuilder == null
+        ? null
+        : <List<Widget>>[
+            for (var i = 0; i < _items.length; i++)
+              _extraActions(
+                context,
+                _items[i],
+                i,
+                readOnly: readOnly,
+                display: _displayDataOf(_items[i]),
+              ),
+          ];
+    var extraCount = 0;
+    if (extras != null) {
+      for (final e in extras) {
+        if (e.length > extraCount) extraCount = e.length;
+      }
+    }
+
+    // Options de menu par item — mêmes règles de gratuité que les actions
+    // supplémentaires : rien de déclaré (ou aucun crochet pour les recevoir)
+    // ⇒ `null`, aucune allocation, aucun appel de prédicat, aucun widget.
+    final declaredOptions =
+        seams?.itemMenuOptions ?? const <ZSubItemMenuOption>[];
+    final hook = seams?.onCrud;
+    // Une option n'a **aucun destinataire** sans crochet : le socle ne rend pas
+    // une affordance inerte. C'est une erreur de configuration — signalée en
+    // debug/test, jamais un plantage en production (invariant AD-10).
+    assert(
+      declaredOptions.isEmpty || hook != null,
+      'ZSubListSeams.itemMenuOptions déclaré sans ZSubListSeams.onCrud : '
+      'les options seraient inertes (aucun destinataire). Déclarez `onCrud`, '
+      'ou retirez les options.',
+    );
+    final List<List<ZSubItemMenuOption>>? optionsPerItem =
+        declaredOptions.isEmpty || hook == null
+            ? null
+            : <List<ZSubItemMenuOption>>[
+                for (var i = 0; i < _items.length; i++)
+                  _visibleOptions(
+                    declaredOptions,
+                    _items[i],
+                    i,
+                    acl: acl,
+                    cid: cid,
+                    readOnly: readOnly,
+                    display: _displayDataOf(_items[i]),
+                  ),
+              ];
+    // Le déclencheur est UN widget, quel que soit le nombre d'options ; il
+    // n'occupe une place de colonne que si au moins une ligne en porte un.
+    var menuCount = 0;
+    if (optionsPerItem != null) {
+      for (final options in optionsPerItem) {
+        if (options.isNotEmpty) {
+          menuCount = 1;
+          break;
+        }
+      }
+    }
+
+    final actionCount = (canView ? 1 : 0) +
+        (canUpdate ? 1 : 0) +
+        (canDelete ? 1 : 0) +
+        extraCount +
+        menuCount;
+
+    final listSeam = _seams?.listViewBuilder;
+    final captionSeam = _seams?.captionBuilder;
 
     // a11y : pas de `label:` sur le conteneur — le `Text` visible
     // (en-tête) porte déjà le nom de section ; un `label:` doublerait l'annonce.
@@ -1058,29 +1969,129 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         builder: (context, constraints) {
           final stacked =
               _summaryIsStacked(theme, constraints.maxWidth, actionCount);
+
+          // Une ligne, à l'indice demandé. Indice hors bornes ⇒
+          // `SizedBox.shrink()` : un conteneur hôte qui redemande un item
+          // disparu ne fait pas échouer le rendu (invariant AD-10).
+          Widget buildRow(BuildContext rowContext, int i) {
+            if (i < 0 || i >= _items.length) return const SizedBox.shrink();
+            final item = _items[i];
+            final display = _displayDataOf(item);
+            return KeyedSubtree(
+              key: ValueKey<String>(item.id),
+              child: _CompactRow(
+                borderColor: theme.fieldBorderColor,
+                radius: theme.radiusM,
+                summary: _rowSummary(
+                  rowContext,
+                  item,
+                  i,
+                  display,
+                  stacked: stacked,
+                  readOnly: readOnly,
+                ),
+                extraActions: extras == null || i >= extras.length
+                    ? const <Widget>[]
+                    : extras[i],
+                menu: optionsPerItem == null ||
+                        i >= optionsPerItem.length ||
+                        optionsPerItem[i].isEmpty
+                    ? null
+                    : _buildItemMenu(rowContext, item, optionsPerItem[i]),
+                deleted: item.deleted,
+                canView: canView,
+                canUpdate: canUpdate,
+                canDelete: canDelete,
+                viewLabel: label(rowContext, 'viewItem'),
+                editLabel: label(rowContext, 'editItem'),
+                deleteLabel: label(rowContext, 'deleteItem'),
+                restoreLabel: label(rowContext, 'restoreItem'),
+                deletedBadge: label(rowContext, 'deletedItemBadge'),
+                onView: () => _openViewDialog(item),
+                onEdit: () => _openEditDialog(item),
+                onDelete: () => _confirmDelete(item),
+                onRestore: () => _restore(item),
+              ),
+            );
+          }
+
+          // Corps de liste — évalué **seulement** s'il y a des lignes : sur une
+          // sous-liste vide, c'est l'état vide natif qui parle, et le seam
+          // n'est pas appelé pour rien (le moteur legacy faisait le même
+          // choix).
+          Widget buildListBody() {
+            final Widget nativeList = ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _items.length,
+              itemBuilder: buildRow,
+            );
+            if (listSeam == null) return nativeList;
+            // Conteneur libre : il reçoit les données d'affichage, les lignes
+            // déjà bâties ET le builder de ligne (mêmes trois entrées que le
+            // moteur legacy). S'il lève, la liste native reprend la main.
+            final custom = _safe(
+              () => listSeam(
+                context,
+                ZSubListViewData(
+                  field: widget.field,
+                  items: <Map<String, dynamic>>[
+                    for (final item in _items)
+                      _displayDataOf(item) ?? _rawItemData(item),
+                  ],
+                  children: <Widget>[
+                    for (var i = 0; i < _items.length; i++)
+                      buildRow(context, i),
+                  ],
+                  itemBuilder: buildRow,
+                ),
+              ),
+            );
+            return custom ?? nativeList;
+          }
+
+          // En-tête : soit l'habillage hôte (qui reçoit le contrôle d'ajout
+          // **déjà filtré par l'ACL** — un `SizedBox.shrink()` quand la
+          // création est refusée : ce seam n'ouvre aucun geste), soit la ligne
+          // native, inchangée.
+          Widget caption = Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    resolvedLabel,
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.start,
+                  ),
+                ),
+                if (canCreate) _buildAddControl(context),
+              ],
+            ),
+          );
+          if (captionSeam != null) {
+            final custom = _safe(
+              () => captionSeam(
+                context,
+                canCreate ? _buildAddControl(context) : const SizedBox.shrink(),
+              ),
+            );
+            if (custom != null) caption = custom;
+          }
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        resolvedLabel,
-                        style: Theme.of(context).textTheme.titleMedium,
-                        textAlign: TextAlign.start,
-                      ),
-                    ),
-                    if (canCreate) _buildAddControl(context),
-                  ],
-                ),
-              ),
+              caption,
               // En-têtes de colonnes, **opt-in** et rendus seulement s'il y a
               // des colonnes ET des lignes à coiffer — et seulement tant que
               // les lignes sont des colonnes : empilées, elles portent leur
               // propre libellé et l'en-tête n'aurait plus rien à coiffer.
+              // Un conteneur hôte les efface aussi : il dispose ses lignes
+              // comme il l'entend, un en-tête ne pourrait plus promettre de
+              // tomber en face de quoi que ce soit.
               if (_showSummaryHeaders &&
+                  listSeam == null &&
                   !stacked &&
                   _summaryFields.isNotEmpty &&
                   _items.isNotEmpty)
@@ -1095,36 +2106,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                   ),
                 )
               else
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _items.length,
-                  itemBuilder: (context, i) {
-                    final item = _items[i];
-                    return KeyedSubtree(
-                      key: ValueKey<String>(item.id),
-                      child: _CompactRow(
-                        borderColor: theme.fieldBorderColor,
-                        radius: theme.radiusM,
-                        summary:
-                            _summaryCells(context, item, replie: stacked),
-                        deleted: item.deleted,
-                        canView: canView,
-                        canUpdate: canUpdate,
-                        canDelete: canDelete,
-                        viewLabel: label(context, 'viewItem'),
-                        editLabel: label(context, 'editItem'),
-                        deleteLabel: label(context, 'deleteItem'),
-                        restoreLabel: label(context, 'restoreItem'),
-                        deletedBadge: label(context, 'deletedItemBadge'),
-                        onView: () => _openViewDialog(item),
-                        onEdit: () => _openEditDialog(item),
-                        onDelete: () => _confirmDelete(item),
-                        onRestore: () => _restore(item),
-                      ),
-                    );
-                  },
-                ),
+                buildListBody(),
             ],
           );
         },
@@ -1161,6 +2143,33 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         if (!item.deleted) item,
     ];
 
+    // En-tête : habillage hôte s'il est déclaré (il reçoit le contrôle d'ajout
+    // natif, ou un `SizedBox.shrink()` en lecture seule), sinon la ligne
+    // native — inchangée.
+    Widget caption = Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              resolvedLabel,
+              style: Theme.of(context).textTheme.titleMedium,
+              textAlign: TextAlign.start,
+            ),
+          ),
+          if (!readOnly) _buildAddControl(context),
+        ],
+      ),
+    );
+    final captionSeam = _seams?.captionBuilder;
+    if (captionSeam != null) {
+      final custom = _safe(() => captionSeam(
+            context,
+            readOnly ? const SizedBox.shrink() : _buildAddControl(context),
+          ));
+      if (custom != null) caption = custom;
+    }
+
     // a11y : pas de `label:` sur le conteneur — le `Text` visible
     // (en-tête) porte déjà le nom de section ; un `label:` doublerait l'annonce.
     return Semantics(
@@ -1168,21 +2177,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    resolvedLabel,
-                    style: Theme.of(context).textTheme.titleMedium,
-                    textAlign: TextAlign.start,
-                  ),
-                ),
-                if (!readOnly) _buildAddControl(context),
-              ],
-            ),
-          ),
+          caption,
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 8),
             child: Wrap(
@@ -1214,17 +2209,21 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
 
   /// Libellé lisible d'une puce : résumé dérivé (`summaryFields`/titre)
   /// ou, à défaut, le libellé du champ (jamais une puce vide/illisible).
+  ///
+  /// Le transformateur d'affichage vaut ici comme dans le résumé compact : une
+  /// puce est un résumé, elle en suit les règles.
   String _chipLabel(_SubItem item) {
+    final display = _displayDataOf(item);
     final summaryFields = _summaryFields;
     if (summaryFields.isNotEmpty) {
       final parts = <String>[
         for (final name in summaryFields)
-          if (_displayText(context, item, name).isNotEmpty)
-            _displayText(context, item, name),
+          if (_displayText(context, item, name, display).isNotEmpty)
+            _displayText(context, item, name, display),
       ];
       if (parts.isNotEmpty) return parts.join(' — ');
     }
-    final title = _defaultTitle(context, item);
+    final title = _defaultTitle(context, item, display);
     if (title.isNotEmpty) return title;
     return label(
       context,
@@ -1256,11 +2255,28 @@ class _CompactRow extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onRestore,
+    this.extraActions = const <Widget>[],
+    this.menu,
   });
 
   final Color? borderColor;
   final Radius radius;
   final Widget summary;
+
+  /// Actions **supplémentaires** de l'hôte (seam `itemActionsBuilder`), déjà
+  /// contraintes à ≥ 48 dp. Rendues **après** les actions natives — jamais à
+  /// leur place, y compris sur une ligne soft-deleted (l'hôte sait qu'elle
+  /// l'est : `ZSubListItemView.deleted`).
+  final List<Widget> extraActions;
+
+  /// Menu de **débordement** des options d'item (`itemMenuOptions`), ou `null`
+  /// quand aucune option n'est visible pour cette ligne.
+  ///
+  /// Rendu **en dernier**, après les actions natives ET après [extraActions] :
+  /// les trois canaux coexistent, aucun n'est masqué ni doublé. Il est offert
+  /// aussi sur une ligne soft-deleted — la vue passée au prédicat porte
+  /// `deleted`, l'hôte décide donc lui-même ce qui a du sens dans cet état.
+  final Widget? menu;
 
   /// Item soft-deleted → résumé barré + badge + action restaurer.
   final bool deleted;
@@ -1338,6 +2354,8 @@ class _CompactRow extends StatelessWidget {
                     onPressed: onDelete,
                   ),
               ],
+              ...extraActions,
+              ?menu,
             ],
           ),
         ),
@@ -1346,21 +2364,40 @@ class _CompactRow extends StatelessWidget {
   }
 }
 
-/// Dialog d'édition PAR ITEM — héberge un `ZFormController`
+/// Formulaire d'édition PAR ITEM — héberge un `ZFormController`
 /// **PROPRE** amorcé du `Map` de l'item et rend les sous-champs via le
 /// dispatcher `ZFieldWidget` (réutilisation intégrale de la machinerie
 /// d'édition). **Aucun `Form` global** (invariant AD-2). Le contrôleur est
 /// `dispose` à la fermeture (aucune fuite). Invariant AD-2 : taper dans un
 /// sous-champ ne reconstruit QUE ce champ (`ZFieldWidget`/
-/// `ZFieldListenableBuilder`), jamais le dialog ni la liste résumé. En lecture
-/// (`readOnly`) : chaque spec `copyWith(readOnly: true)`, pas de bouton
+/// `ZFieldListenableBuilder`), jamais le formulaire ni la liste résumé. En
+/// lecture (`readOnly`) : chaque spec `copyWith(readOnly: true)`, pas de bouton
 /// Enregistrer (seul **Fermer**).
-class _ZSubItemEditDialog extends StatefulWidget {
-  const _ZSubItemEditDialog({
+///
+/// ## Une seule donnée, trois enveloppes
+///
+/// [presentation] ne choisit **que le chrome** : la boîte de dialogue, la
+/// feuille modale ou la page. Le **corps** ([_fields]) et la **sortie**
+/// ([_save]) sont partagés, si bien que la même saisie rend structurellement la
+/// même `Map` dans les trois formes. Faire diverger les trois demanderait
+/// d'écrire trois `_save` — c'est précisément ce que cette classe interdit.
+///
+/// ## a11y (invariant AD-13)
+///
+/// Les trois formes portent le titre comme **en-tête annoncé**
+/// (`Semantics(header: true)`), une cible tactile ≥ 48 dp sur chaque bouton
+/// (épinglée à `padded` — un thème en `shrinkWrap` ne peut pas la faire tomber)
+/// et un chemin de **retour clavier/système** : la boîte et la feuille se
+/// referment par `Échap`/retour arrière (route modale barrée), la page par le
+/// bouton de retour de sa barre de titre. Aucune de ces sorties n'enregistre :
+/// annuler rend `null`, comme le fait déjà la boîte de dialogue.
+class _ZSubItemForm extends StatefulWidget {
+  const _ZSubItemForm({
     required this.title,
     required this.itemFields,
     required this.initial,
     required this.readOnly,
+    required this.presentation,
     this.itemFieldBuilder,
   });
 
@@ -1368,14 +2405,15 @@ class _ZSubItemEditDialog extends StatefulWidget {
   final List<ZFieldSpec> itemFields;
   final Map<String, dynamic> initial;
   final bool readOnly;
+  final ZSubItemFormPresentation presentation;
   final ZSubItemFieldBuilder? itemFieldBuilder;
 
   @override
-  State<_ZSubItemEditDialog> createState() => _ZSubItemEditDialogState();
+  State<_ZSubItemForm> createState() => _ZSubItemFormState();
 }
 
-class _ZSubItemEditDialogState extends State<_ZSubItemEditDialog> {
-  /// Contrôleur PROPRE au dialog (create/dispose) — jamais partagé avec le
+class _ZSubItemFormState extends State<_ZSubItemForm> {
+  /// Contrôleur PROPRE au formulaire (create/dispose) — jamais partagé avec le
   /// conteneur : taper ici n'affecte le parent qu'à **Enregistrer**.
   late final ZFormController _controller;
 
@@ -1405,40 +2443,160 @@ class _ZSubItemEditDialogState extends State<_ZSubItemEditDialog> {
     return ZFieldWidget(controller: _controller, field: spec);
   }
 
+  /// **VOIE UNIQUE de sortie des données**, quelle que soit la forme. Les clés
+  /// et leur ordre sont ceux du sous-schéma — ni le chrome, ni la route, ni la
+  /// hauteur de la surface n'entrent dans cette carte.
   void _save() {
     Navigator.of(context).pop(<String, dynamic>{
       for (final f in widget.itemFields) f.name: _controller.valueOf(f.name),
     });
   }
 
+  void _cancel() => Navigator.of(context).pop();
+
+  /// **Corps commun** aux trois formes : un sous-champ par `itemField`, à place
+  /// stable (`KeyedSubtree`). La clé de place reste `dialog/<name>` dans les
+  /// trois formes — la changer aurait rebattu l'identité des sous-champs chez
+  /// tout hôte existant, pour un gain nul.
+  List<Widget> get _fields => <Widget>[
+        for (final f in widget.itemFields)
+          KeyedSubtree(
+            key: ValueKey<String>('dialog/${f.name}'),
+            child: _buildField(f),
+          ),
+      ];
+
+  /// Cible tactile ≥ 48 dp **indépendamment du thème ambiant** (invariant
+  /// AD-13) — même précaution que la puce du mode `tags`.
+  static final ButtonStyle _touchTarget = TextButton.styleFrom(
+    tapTargetSize: MaterialTapTargetSize.padded,
+    minimumSize: const Size(64, 48),
+  );
+
+  Widget _cancelButton(BuildContext context, {bool styled = false}) =>
+      TextButton(
+        style: styled ? _touchTarget : null,
+        onPressed: _cancel,
+        child: Text(label(context, widget.readOnly ? 'close' : 'cancel')),
+      );
+
+  Widget _saveButton(BuildContext context, {bool styled = false}) => TextButton(
+        style: styled ? _touchTarget : null,
+        onPressed: _save,
+        child: Text(label(context, 'save')),
+      );
+
   @override
   Widget build(BuildContext context) {
+    switch (widget.presentation) {
+      case ZSubItemFormPresentation.dialog:
+        return _buildDialog(context);
+      case ZSubItemFormPresentation.sheet:
+        return _buildSheet(context);
+      case ZSubItemFormPresentation.page:
+        return _buildPage(context);
+    }
+  }
+
+  /// Forme **par défaut** — rendue à l'identique de ce qu'elle a toujours été
+  /// (aucun `Semantics` ajouté, aucun style de bouton posé) : c'est ce que
+  /// voit un hôte qui ne déclare rien, et il ne doit rien voir bouger. Le titre
+  /// d'un `AlertDialog` est **déjà** annoncé comme en-tête par Material.
+  Widget _buildDialog(BuildContext context) {
     return AlertDialog(
       title: Text(widget.title),
       content: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            for (final f in widget.itemFields)
-              KeyedSubtree(
-                key: ValueKey<String>('dialog/${f.name}'),
-                child: _buildField(f),
-              ),
-          ],
+          children: _fields,
         ),
       ),
       actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(label(context, widget.readOnly ? 'close' : 'cancel')),
-        ),
-        if (!widget.readOnly)
-          TextButton(
-            onPressed: _save,
-            child: Text(label(context, 'save')),
-          ),
+        _cancelButton(context),
+        if (!widget.readOnly) _saveButton(context),
       ],
+    );
+  }
+
+  /// Feuille modale — hauteur bornée à 90 % de la surface pour que le geste de
+  /// fermeture reste atteignable, et **remontée au-dessus du clavier**
+  /// (`viewInsets`) : une feuille qui laisse le clavier recouvrir ses champs
+  /// est inutilisable là où elle sert précisément.
+  Widget _buildSheet(BuildContext context) {
+    final media = MediaQuery.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: media.size.height * 0.9),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 8),
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    widget.title,
+                    style: Theme.of(context).textTheme.titleLarge,
+                    textAlign: TextAlign.start,
+                  ),
+                ),
+              ),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding:
+                      const EdgeInsetsDirectional.fromSTEB(0, 0, 0, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: _fields,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    _cancelButton(context, styled: true),
+                    if (!widget.readOnly) _saveButton(context, styled: true),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Page entière — barre de titre (avec le bouton de retour natif, qui **ne
+  /// sauvegarde pas**) et actions en fin de barre. `Scaffold` propre : la page
+  /// vit sur sa propre route, elle ne partage rien avec l'écran parent.
+  Widget _buildPage(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Semantics(
+          header: true,
+          child: Text(widget.title, textAlign: TextAlign.start),
+        ),
+        actions: <Widget>[
+          if (!widget.readOnly) _saveButton(context, styled: true),
+        ],
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: _fields,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1460,7 +2618,12 @@ class _SubItemCard extends StatelessWidget {
     required this.onMoveUp,
     required this.onMoveDown,
     required this.fields,
+    this.extraActions = const <Widget>[],
   });
+
+  /// Actions **supplémentaires** de l'hôte (seam `itemActionsBuilder`), déjà
+  /// contraintes à ≥ 48 dp, rendues **après** retrait/réordonnancement.
+  final List<Widget> extraActions;
 
   final Color? borderColor;
   final Radius radius;
@@ -1509,6 +2672,7 @@ class _SubItemCard extends StatelessWidget {
                     tooltip: removeLabel,
                     onPressed: onRemove,
                   ),
+                ...extraActions,
               ],
             ),
           ],
