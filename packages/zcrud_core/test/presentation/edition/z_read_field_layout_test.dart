@@ -168,10 +168,16 @@ void main() {
     });
 
     testWidgets('definition — la valeur DOMINE le libellé (hiérarchie '
-        'inversée), sans aucun chrome', (tester) async {
+        'inversée), sans aucun chrome TANT QU\'AUCUN JETON N\'EST DÉCLARÉ',
+        (tester) async {
       await tester.pumpWidget(_fiche(ZReadFieldLayout.definition));
       await tester.pumpAndSettle();
 
+      // 🔴 Qualifiée (CR DODLP « forme-de-lecture-sans-encadre », 2026-08-16) :
+      // l'absence de chrome est le DÉFAUT de la forme, pas une propriété de la
+      // forme. Déclarer `readFillColor`/`readBorderWidth` lui donne le même
+      // conteneur qu'à `card` — c'est le pendant positif juste en dessous. Sans
+      // cette qualification, la garde défendrait le défaut qu'elle mesure.
       expect(find.byType(Card), findsNothing);
       expect(find.byType(ListTile), findsNothing);
       final libelle = _styleLibelle(tester)!.fontSize!;
@@ -182,6 +188,35 @@ void main() {
       // Empilée : la valeur commence SOUS le libellé.
       expect(tester.getRect(find.text('Ada')).top,
           greaterThanOrEqualTo(tester.getRect(find.text('Nom')).bottom));
+    });
+
+    testWidgets('definition — PENDANT POSITIF : deux jetons déclarés lui '
+        'donnent le conteneur, sans toucher à sa hiérarchie ni à sa hauteur',
+        (tester) async {
+      final scheme = ThemeData().colorScheme;
+      await tester.pumpWidget(_fiche(
+        ZReadFieldLayout.definition,
+        cle: 'def-encadre',
+        theme: ZcrudTheme(
+          readFillColor: scheme.surfaceContainerLow,
+          readBorderWidth: 1,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Card), findsOneWidget);
+      final carte = _carte(tester);
+      expect(carte.color, scheme.surfaceContainerLow);
+      final side = (carte.shape! as RoundedRectangleBorder).side;
+      expect(side.style, BorderStyle.solid);
+      expect(side.width, 1);
+      // Ce que l'encadré n'apporte PAS : ni la hauteur minimale de `card`, ni
+      // son bouton de copie (§5 du CR — « aucun bouton de copie dans les formes
+      // denses »), ni sa hiérarchie typographique.
+      expect(_hauteurDe(tester), _hauteurs[ZReadFieldLayout.definition]);
+      expect(find.byType(IconButton), findsNothing);
+      expect(_styleLibelle(tester)!.fontSize, 12);
+      expect(_styleValeur(tester).fontSize, 16);
     });
 
     testWidgets('inlineRow — deux colonnes : libellé de largeur FIXE au début, '

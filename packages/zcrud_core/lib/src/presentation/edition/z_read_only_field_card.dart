@@ -25,14 +25,27 @@
 /// les **remplacent** — les styles de texte par fusion (un style sans couleur
 /// garde la couleur dérivée), les mesures par substitution.
 ///
-/// **Sans aucun réglage, la forme par défaut est posée à plat** : ni fond ni
-/// filet, libellé en corps de texte au-dessus d'une valeur en gris, rang de 72
-/// — la présentation d'un document qu'on lit et qu'on imprime. Une application
-/// qui veut la **fiche encadrée** la retrouve en déclarant deux jetons :
+/// **Sans aucun réglage, les cinq formes sont posées à plat** : ni fond ni
+/// filet. La forme par défaut ajoute un libellé en corps de texte au-dessus
+/// d'une valeur en gris, rang de 72 — la présentation d'un document qu'on lit
+/// et qu'on imprime. Une application qui veut la **fiche encadrée** la retrouve
+/// en déclarant deux jetons :
 ///
 /// ```dart
 /// ZcrudTheme(readFillColor: scheme.surfaceContainerLow, readBorderWidth: 1)
 /// ```
+///
+/// **L'encadré est une propriété de la fiche, pas de la forme** : ces jetons
+/// portent dans les **cinq** formes, `listTile` et formes denses comprises —
+/// même fond, même filet, même rayon (`inputRadius`). Ce qui reste propre à
+/// [ZReadFieldLayout.card] : sa hauteur minimale (`readCardMinHeight`) et son
+/// bouton de copie ; encadrer une forme dense ne lui apporte ni l'une ni
+/// l'autre, et ne déplace donc aucune hauteur.
+///
+/// Le conteneur n'est monté que s'il a **quelque chose à peindre** —
+/// `readFillColor` déclaré, ou `readBorderWidth` strictement positif.
+/// `readBorderColor` **seul** ne déclenche rien : sans largeur, le filet
+/// retombe à `BorderSide.none`, et le conteneur serait invisible.
 ///
 /// Les champs de **saisie** ne bougent dans aucun cas : leur filet reste
 /// gouverné par `inputBorderWidth`, distinct de celui de la fiche.
@@ -207,6 +220,16 @@ class ZReadOnlyFieldCard extends StatelessWidget {
         );
     }
 
+    // Le fond et le filet sont une propriété de la **fiche**, pas de la
+    // **forme** : les quatre formes qui ne construisent pas elles-mêmes de
+    // conteneur le reçoivent ici, au niveau de l'aiguillage — `listTile`
+    // comprise, qui ne passe pas par `_dense`. [ZReadFieldLayout.card] le porte
+    // déjà dans [_card] (avec sa hauteur minimale et son bouton, qui restent
+    // propres à elle) : l'enrober une seconde fois le doublerait.
+    final encadre = form == ZReadFieldLayout.card
+        ? visual
+        : _encadre(tokens, scheme, visual);
+
     final margin = tokens.readCardMargin ?? EdgeInsetsDirectional.zero;
     return Semantics(
       container: true,
@@ -222,8 +245,70 @@ class ZReadOnlyFieldCard extends StatelessWidget {
             }
           : null,
       child: margin == EdgeInsetsDirectional.zero
-          ? visual
-          : Padding(padding: margin, child: visual),
+          ? encadre
+          : Padding(padding: margin, child: encadre),
+    );
+  }
+
+  // ── Encadré de la fiche (commun aux CINQ formes) ─────────────────────────
+
+  /// Fond **de la fiche** : le jeton, à défaut une dérivée du `ColorScheme`
+  /// rendue totalement translucide — aucune couleur en dur (invariant FR-26),
+  /// et une fiche posée à plat par défaut.
+  static Color _fond(ZcrudTheme tokens, ColorScheme scheme) =>
+      tokens.readFillColor ?? scheme.surface.withAlpha(0);
+
+  /// Contour **de la fiche** : le rayon des champs de saisie ([inputRadius],
+  /// pour que l'encadré soit homogène avec le reste de la surface) et le filet
+  /// gouverné par le couple `readBorderWidth`/`readBorderColor`.
+  static RoundedRectangleBorder _contour(
+    ZcrudTheme tokens,
+    ColorScheme scheme,
+  ) =>
+      RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(tokens.inputRadius),
+        // Largeur `0` ⇒ **aucun** filet (`BorderSide.none`), et non le filet
+        // d'un pixel physique que dessinerait une largeur nulle.
+        side: _side(tokens.readBorderWidth ?? 0,
+            tokens.readBorderColor ?? scheme.outline),
+      );
+
+  /// Enrobage **de la fiche** — fond et filet — pour les formes qui ne
+  /// construisent pas leur propre conteneur ([ZReadFieldLayout.listTile],
+  /// [ZReadFieldLayout.definition], [ZReadFieldLayout.inlineRow],
+  /// [ZReadFieldLayout.compact]).
+  ///
+  /// Il partage avec [_card] son fond ([_fond]) et son contour ([_contour]) :
+  /// déclarer les jetons donne donc **le même encadré** dans les cinq formes.
+  /// Il n'emprunte ni `readCardMinHeight` ni le bouton de copie, qui restent
+  /// propres à [ZReadFieldLayout.card] — les hauteurs des formes denses (54 /
+  /// 36 / 28) ne bougent pas en s'encadrant.
+  ///
+  /// **Rien n'est monté tant qu'il n'y a rien à peindre** : le défaut des cinq
+  /// formes reste strictement inchangé, posé à plat. Deux déclencheurs, et deux
+  /// seulement :
+  ///
+  /// * [ZcrudTheme.readFillColor] **déclaré** — quelle que soit sa
+  ///   transparence : c'est une déclaration d'intention, on la sert ;
+  /// * [ZcrudTheme.readBorderWidth] **strictement positif**.
+  ///
+  /// [ZcrudTheme.readBorderColor] **seul ne déclenche rien** : sans largeur, le
+  /// filet retombe à `BorderSide.none` et le conteneur ne peindrait rien —
+  /// poser une surface invisible n'ajouterait qu'un nœud à l'arbre.
+  Widget _encadre(ZcrudTheme tokens, ColorScheme scheme, Widget child) {
+    final aPeindre =
+        tokens.readFillColor != null || (tokens.readBorderWidth ?? 0) > 0;
+    if (!aPeindre) return child;
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      color: _fond(tokens, scheme),
+      shape: _contour(tokens, scheme),
+      // L'enfant garde son geste : dans les formes denses c'est le
+      // `GestureDetector` opaque de [_dense], de la taille exacte du contenu —
+      // donc de la surface peinte. Aucun `InkWell` n'est ajouté ici : peindre
+      // un fond ne fait pas d'un texte un contrôle (invariant AD-13).
+      child: child,
     );
   }
 
@@ -266,18 +351,14 @@ class ZReadOnlyFieldCard extends StatelessWidget {
       margin: EdgeInsets.zero,
       // Fond et filet **de la fiche** : jetons dédiés, posés à plat par défaut
       // (aucun fond, aucun filet). Une application qui veut la fiche encadrée
-      // déclare `readFillColor` et `readBorderWidth`, sans toucher aux champs
-      // de saisie (invariant FR-26).
-      // Défaut **dérivé** du `ColorScheme` et rendu totalement translucide :
-      // aucune couleur en dur (invariant FR-26), et une fiche posée à plat.
-      color: tokens.readFillColor ?? scheme.surface.withAlpha(0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(tokens.inputRadius),
-        // Largeur `0` ⇒ **aucun** filet (`BorderSide.none`), et non le filet
-        // d'un pixel physique que dessinerait une largeur nulle.
-        side: _side(tokens.readBorderWidth ?? 0,
-            tokens.readBorderColor ?? scheme.outline),
-      ),
+      // déclare `readFillColor` et/ou `readBorderWidth`, sans toucher aux
+      // champs de saisie (invariant FR-26) — et l'obtient dans les CINQ formes,
+      // celle-ci par ce conteneur-ci, les quatre autres par [_encadre]. C'est
+      // le MÊME fond et le MÊME contour : ils sont partagés, pas recopiés.
+      // Ce conteneur-ci, en revanche, est monté **inconditionnellement** : la
+      // fiche a toujours eu sa `Card`, la retirer serait une rupture.
+      color: _fond(tokens, scheme),
+      shape: _contour(tokens, scheme),
       child: InkWell(
         // `onLongPress` : copie la valeur textuelle. No-op si non copiable
         // (placeholder / valeur-Widget).

@@ -32,8 +32,10 @@ enum ZReadFieldLayout {
   /// `read*` de `ZcrudTheme`.
   ///
   /// C'est la forme **par défaut**, et la seule entièrement paramétrable : les
-  /// autres formes empruntent les mêmes jetons quand ils sont déclarés, mais
-  /// leur structure, elle, ne se règle pas.
+  /// autres formes empruntent les mêmes jetons quand ils sont déclarés — fond,
+  /// filet et rayon compris — mais leur structure, elle, ne se règle pas. Deux
+  /// réglages restent propres à cette forme-ci : sa hauteur minimale
+  /// (`readCardMinHeight`) et son bouton de copie.
   ///
   /// **Quand l'employer** : partout où la consultation doit rester réglable par
   /// le thème de l'application — c'est-à-dire par défaut. Sans aucun réglage,
@@ -53,6 +55,10 @@ enum ZReadFieldLayout {
   /// ```dart
   /// ZcrudTheme(readFillColor: scheme.surfaceContainerLow, readBorderWidth: 1)
   /// ```
+  ///
+  /// Ces deux jetons ne sont **pas** l'apanage de cette forme : ils encadrent
+  /// les cinq de la même façon. Choisir [definition] ou [compact] n'oblige donc
+  /// pas à revenir ici pour retrouver un cadre.
   card,
 
   /// **Ligne Material** : un `ListTile` dont le `title` porte le libellé et le
@@ -64,12 +70,15 @@ enum ZReadFieldLayout {
   /// d'un moteur d'édition antérieur bâti sur `ListTile`.
   ///
   /// **Ce qu'elle coûte** : la structure appartient à Material. Les jetons de
-  /// mesure `read*` ne s'y appliquent pas — seuls les styles de texte sont
-  /// suivis s'ils sont déclarés. C'est un choix de conformité, pas de réglage.
+  /// **mesure** `read*` ne s'y appliquent pas — seuls les styles de texte, et
+  /// le fond/filet de la fiche (`readFillColor`, `readBorderColor`,
+  /// `readBorderWidth`), sont suivis s'ils sont déclarés. C'est un choix de
+  /// conformité, pas de réglage.
   listTile,
 
   /// **Liste de définitions** : le libellé, discret et menu, au-dessus d'une
-  /// valeur mise en avant. Aucun cadre, aucun fond.
+  /// valeur mise en avant. Aucun cadre ni fond **par défaut** — les jetons
+  /// `readFillColor`/`readBorderWidth` lui en donnent un, comme à [card].
   ///
   /// La hiérarchie y est **inversée** par rapport à [card] : c'est la valeur
   /// qui porte le corps de texte et le libellé qui s'efface. La forme vient des

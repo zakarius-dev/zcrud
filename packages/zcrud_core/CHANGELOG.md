@@ -3,6 +3,50 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.5.0 — 2026-08-16
+
+### Modifié
+
+#### Le fond et le filet de la fiche appartiennent à la fiche, plus à la forme
+
+Les jetons `readFillColor` / `readBorderColor` / `readBorderWidth` étaient
+**inertes** dans quatre des cinq formes de `ZReadFieldLayout` : seule `card`
+construisait un conteneur où les peindre. Déclarés sur `definition`,
+`inlineRow`, `compact` ou `listTile`, ils étaient posés, valides, lus — et sans
+effet. Mesuré au pixel par l'hôte : la fiche peignait **exactement le fond de
+l'écran**.
+
+L'encadré est désormais appliqué **au niveau de l'aiguillage**, donc aux cinq
+formes, et partage littéralement son fond et son contour avec `card` (helpers
+`_fond` / `_contour`) : déclarer les jetons donne le **même** encadré partout.
+
+`readCardMinHeight` et le bouton de copie **restent propres à `card`** : les
+hauteurs des formes denses (54 / 36 / 28) ne bougent pas en s'encadrant.
+
+⚠️ **Rupture pour un hôte qui déclarait déjà ces jetons.** Une application ayant
+posé `readFillColor` ou `readBorderWidth` au thème **et** employant une forme
+dense verra apparaître un encadré qu'elle n'avait pas. C'est la correction
+demandée ; elle est visible.
+
+### Ajouté
+
+- Deux déclencheurs, et deux seulement, font naître le conteneur :
+  `readFillColor` **déclaré** (quelle que soit sa transparence — c'est une
+  déclaration d'intention) **ou** `readBorderWidth` **strictement positif**.
+  `readBorderColor` seul ne déclenche rien : sans largeur le filet retombe à
+  `BorderSide.none`, et poser une surface invisible n'ajouterait qu'un nœud à
+  l'arbre. **Le défaut des cinq formes est strictement inchangé**, posé à plat.
+- Aucun `InkWell` n'est ajouté par l'encadré : peindre un fond ne fait pas d'un
+  texte un contrôle, et rien n'y impose donc de cible de 48 dp (AD-13). Les
+  formes denses gardent leur copie par appui long, sans bouton.
+
+### Documentation
+
+- La dartdoc de `readFillColor` **perd sa restriction** à `ZReadFieldLayout.card`,
+  qui était la cause directe de la méprise ; `readBorderColor` porte désormais
+  l'avertissement « seul, ne peint rien » ; `readCardMinHeight` est signalé comme
+  le **seul** jeton de fiche encore propre à `card`.
+
 ## 1.4.1 — 2026-08-16
 
 ### Corrigé

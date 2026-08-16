@@ -795,32 +795,54 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// la forme.
   final TextStyle? readValueTextStyle;
 
-  /// Fond de la fiche de lecture ([ZReadFieldLayout.card]). `null` (défaut) ⇒
+  /// Fond de la fiche de lecture, dans les **cinq** formes. `null` (défaut) ⇒
   /// **transparent** : la fiche est posée à plat sur le fond de la page, à la
   /// manière d'une ligne de liste — la présentation que suivent les
   /// consultations imprimables.
   ///
   /// Poser `scheme.surfaceContainerLow` pour retrouver une fiche **remplie**.
+  ///
+  /// C'est une propriété de la **fiche**, pas de la **forme** : le fond peint
+  /// est le même en [ZReadFieldLayout.card], en [ZReadFieldLayout.listTile] et
+  /// dans les trois formes denses. Déclaré, il fait naître le conteneur de la
+  /// fiche là où la forme n'en construit pas (voir [readBorderWidth]) ;
+  /// non déclaré, aucun conteneur n'est monté et le défaut reste intact.
   final Color? readFillColor;
 
-  /// Couleur du filet de la fiche de lecture. `null` (défaut) ⇒ `outline`.
+  /// Couleur du filet de la fiche de lecture, dans les **cinq** formes. `null`
+  /// (défaut) ⇒ `outline`.
   ///
   /// Sert avec [readBorderWidth] : c'est ce couple, et non celui des champs de
   /// saisie, qui décide si une fiche est **encadrée**. Avant ces deux jetons,
   /// la fiche empruntait la largeur de filet des champs de saisie
   /// ([inputBorderWidth]) : la retirer de la fiche retirait aussi celle des
   /// champs, donc c'était impraticable.
+  ///
+  /// ⚠️ **Seul, ce jeton ne peint rien** : sans [readBorderWidth] la largeur
+  /// retombe à `0`, donc `BorderSide.none`. Il ne fait donc pas naître à lui
+  /// seul le conteneur des formes qui n'en construisent pas.
   final Color? readBorderColor;
 
-  /// Épaisseur du filet de la fiche de lecture. `null` (défaut) ⇒ **`0`, donc
-  /// aucun filet**. Poser `1` (avec [readBorderColor] si besoin) pour retrouver
-  /// une fiche cernée.
+  /// Épaisseur du filet de la fiche de lecture, dans les **cinq** formes.
+  /// `null` (défaut) ⇒ **`0`, donc aucun filet**. Poser `1` (avec
+  /// [readBorderColor] si besoin) pour retrouver une fiche cernée.
+  ///
+  /// Strictement positif, il fait naître le conteneur de la fiche dans les
+  /// formes qui n'en construisent pas ([ZReadFieldLayout.listTile] et les trois
+  /// formes denses), au même rayon ([inputRadius]) qu'en
+  /// [ZReadFieldLayout.card]. Ce conteneur n'apporte ni [readCardMinHeight] ni
+  /// bouton de copie : les hauteurs propres à chaque forme ne bougent pas.
   final double? readBorderWidth;
 
-  /// Hauteur minimale d'un rang en [ZReadFieldLayout.card]. `null` (défaut) ⇒
-  /// `72`, la hauteur d'une ligne Material à deux lignes : c'est elle qui donne
-  /// à la consultation le même rythme vertical qu'une liste. `0` la supprime
-  /// (le rang prend alors la hauteur de son contenu).
+  /// Hauteur minimale d'un rang — **propre à [ZReadFieldLayout.card]**, et
+  /// désormais le seul jeton de fiche à l'être : [readFillColor],
+  /// [readBorderColor] et [readBorderWidth] portent, eux, dans les cinq formes.
+  /// Le déclarer ne touche donc pas aux hauteurs des formes denses (54 / 36 /
+  /// 28), encadrées ou non.
+  ///
+  /// `null` (défaut) ⇒ `72`, la hauteur d'une ligne Material à deux lignes :
+  /// c'est elle qui donne à la consultation le même rythme vertical qu'une
+  /// liste. `0` la supprime (le rang prend alors la hauteur de son contenu).
   final double? readCardMinHeight;
 
   /// Largeur de la colonne des libellés en [ZReadFieldLayout.inlineRow].
