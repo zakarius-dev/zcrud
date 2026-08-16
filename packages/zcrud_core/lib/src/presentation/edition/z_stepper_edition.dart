@@ -58,6 +58,7 @@ import 'package:flutter/material.dart';
 import '../../domain/edition/z_condition.dart';
 import '../../domain/edition/z_condition_evaluator.dart';
 import '../../domain/edition/z_field_spec.dart';
+import '../../domain/edition/z_read_field_layout.dart';
 import '../l10n/z_localizations.dart';
 import '../theme/z_theme.dart';
 import '../z_form_controller.dart';
@@ -65,6 +66,7 @@ import '../z_rich_text_renderer.dart';
 import '../zcrud_scope.dart';
 import 'dynamic_edition.dart';
 import 'z_field_widget.dart';
+import 'z_read_mode_scope.dart';
 import 'z_responsive_grid.dart';
 import 'z_step_index_store.dart';
 import 'z_stepper_config.dart';
@@ -277,6 +279,7 @@ class ZStepperEdition extends StatefulWidget {
     this.padding,
     this.physics,
     this.readOnly = false,
+    this.readLayout,
     this.layout = const <String, ZResponsiveSpan>{},
     this.gridGutter = 8,
     this.fieldBuilder,
@@ -331,8 +334,20 @@ class ZStepperEdition extends StatefulWidget {
   /// `ScrollPhysics` de la zone d'étape.
   final ScrollPhysics? physics;
 
-  /// Mode lecture global propagé à chaque étape ([DynamicEdition.readOnly]).
+  /// **Mode lecture global** propagé à chaque étape
+  /// ([DynamicEdition.readOnly]) et posé pour tous les champs de l'assistant
+  /// ([ZReadModeScope]) : en consultation, un assistant rend des **fiches**,
+  /// exactement comme un formulaire à plat.
   final bool readOnly;
+
+  /// **Forme** des champs présentés en consultation, pour tout l'assistant —
+  /// posée sur le même canal que le mode lui-même ([ZReadModeScope]), donc
+  /// atteinte par les champs de chaque étape sans que le `fieldBuilder` des
+  /// étapes ait à la connaître.
+  ///
+  /// `null` (défaut) ⇒ le jeton `ZcrudTheme.readLayout`, à défaut
+  /// [ZReadFieldLayout.card]. **Inerte hors consultation.**
+  final ZReadFieldLayout? readLayout;
 
   /// Grille 12 colonnes (span par nom de champ) propagée à chaque étape.
   final Map<String, ZResponsiveSpan> layout;
@@ -1055,6 +1070,19 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   @override
   Widget build(BuildContext context) {
     if (_steps.isEmpty) return const SizedBox.shrink();
+    // Mode de présentation posé pour TOUT l'assistant — y compris le
+    // `fieldBuilder` que chaque étape passe à sa `DynamicEdition` (lequel
+    // remplace justement le dispatcher qui, autrefois, portait seul le
+    // drapeau). Sans ce scope, la consultation se perdrait entre l'assistant et
+    // ses champs, alors même que `readOnly` est propagé étape par étape.
+    return ZReadModeScope(
+      readMode: widget.readOnly,
+      layout: widget.readLayout,
+      child: _buildChrome(context),
+    );
+  }
+
+  Widget _buildChrome(BuildContext context) {
     // Chrome scellé sur les canaux STRUCTURELS uniquement (invariant AD-2).
     return ListenableBuilder(
       listenable: _structural,

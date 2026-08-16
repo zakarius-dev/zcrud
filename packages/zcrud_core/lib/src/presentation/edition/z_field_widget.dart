@@ -25,6 +25,11 @@
 ///   (repli contrôlé, jamais une exception).
 /// - **Place stable** : l'assembleur ([DynamicEdition]) enveloppe la sortie dans
 ///   `KeyedSubtree(key: ValueKey(field.name))` — non contournable.
+/// - **Mode de présentation par le CONTEXTE** : consultation ou saisie se lit
+///   dans [ZReadModeScope] (posé par la surface) quand le paramètre `readMode`
+///   n'est pas donné. Un champ monté par un builder de remplacement, dans une
+///   étape ou au fond d'une sous-liste, obtient donc le bon rendu sans que
+///   personne ait à recopier le drapeau.
 ///
 /// Aucun gestionnaire d'état (invariant AD-15) : primitives Flutter uniquement.
 library;
@@ -67,6 +72,7 @@ import 'z_cross_field_validator.dart';
 import 'z_field_adornment_view.dart';
 import 'z_field_label.dart';
 import 'z_large_field_card.dart';
+import 'z_read_mode_scope.dart';
 import 'z_read_only_field_card.dart';
 import 'z_read_only_value.dart';
 import 'z_select_choices_resolver.dart';
@@ -84,7 +90,7 @@ class ZFieldWidget extends StatefulWidget {
     required this.controller,
     required this.field,
     this.autovalidateMode,
-    this.readMode = false,
+    this.readMode,
     this.onInit,
     this.onBuild,
     super.key,
@@ -103,13 +109,26 @@ class ZFieldWidget extends StatefulWidget {
   /// jamais introduire un `Form`/`FormBuilder` global (invariant AD-2).
   final AutovalidateMode? autovalidateMode;
 
-  /// **Mode lecture GLOBAL** — drapeau de PRÉSENTATION **additif**
-  /// (défaut `false`), signal DISTINCT de `ZFieldSpec.readOnly`. Quand `true` et
-  /// que la famille est « fiche-able » ([zReadModeCardable]), le champ est rendu
-  /// en **fiche de consultation** ([ZReadOnlyFieldCard]) au lieu du widget
-  /// d'édition grisé. Les familles non fiche-ables conservent leur rendu
-  /// `readOnly` existant (jamais régressé). Propagé par `DynamicEdition.readOnly`.
-  final bool readMode;
+  /// **Mode de présentation** de ce champ — signal DISTINCT de
+  /// `ZFieldSpec.readOnly` (qui dit « ce champ-ci n'est pas modifiable », jamais
+  /// comment le présenter).
+  ///
+  /// `true` et famille « fiche-able » ([zReadModeCardable]) ⇒ le champ est rendu
+  /// en **fiche de consultation** ([ZReadOnlyFieldCard]) : libellé au-dessus de
+  /// la valeur, ni bordure, ni libellé flottant, ni ornement. Les familles non
+  /// fiche-ables (sous-liste, item dynamique, signature, fichier…) conservent
+  /// leur rendu `readOnly` existant.
+  ///
+  /// **`null` (défaut) ⇒ le mode de la surface environnante** ([ZReadModeScope],
+  /// posé par `DynamicEdition`/`ZStepperEdition` d'après leur `readOnly`) ;
+  /// `false` hors de toute surface. Le passer explicitement **prime** sur cette
+  /// surface, dans les deux sens : `false` force la saisie au milieu d'une
+  /// fiche, `true` force la fiche au milieu d'un formulaire.
+  ///
+  /// Le mode est arrêté au **montage** du champ (une fiche n'alloue ni
+  /// contrôleur de texte ni clavier) : le faire changer suppose de remonter le
+  /// champ, ce que fait l'écran assemblé en keyant la place sur le mode.
+  final bool? readMode;
 
   /// Hook d'instrumentation : appelé UNE FOIS en [State.initState] (preuve
   /// « State/contrôleur non recréés » via compteur == 1, invariant AD-2).
@@ -129,9 +148,10 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
   /// Famille de rendu résolue UNE FOIS (le `type` d'un champ ne change pas).
   late final EditionFamily _family;
 
-  /// `true` si ce champ est rendu en **fiche de lecture** : `readMode`
-  /// global ET famille fiche-able. Aucun contrôleur de texte n'est alloué dans
-  /// ce cas (pas de clavier — invariant AD-2). Résolu UNE FOIS.
+  /// `true` si ce champ est rendu en **fiche de lecture** : mode de
+  /// présentation effectif ET famille fiche-able. Aucun contrôleur de texte
+  /// n'est alloué dans ce cas (pas de clavier — invariant AD-2). Résolu UNE
+  /// FOIS, au montage.
   late final bool _readModeCard;
 
   /// `TextEditingController` interne — alloué UNIQUEMENT pour les familles
@@ -221,7 +241,12 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
   void initState() {
     super.initState();
     _family = familyOf(widget.field.type);
-    _readModeCard = widget.readMode && zReadModeCardable(_family);
+    // Mode de présentation effectif : le paramètre s'il est donné, sinon celui
+    // de la surface environnante. C'est ce second canal qui rend le mode
+    // indépendant du builder qui a monté ce champ — un builder de
+    // remplacement n'a rien à recopier.
+    final readMode = widget.readMode ?? ZReadModeScope.of(context);
+    _readModeCard = readMode && zReadModeCardable(_family);
     // Validateur combiné (champ-local + inter-champs) pour toutes les familles.
     _validator =
         ZCrossFieldValidator.compileField(widget.field, widget.controller);
@@ -458,9 +483,18 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     return reactive;
   }
 
-  /// Rend la **fiche de lecture** : formate la [value] de la tranche
-  /// (défensif, invariant AD-10) et compose [ZReadOnlyFieldCard] (label +
-  /// valeur + copie).
+  /// Rend le **champ consulté** : formate la [value] de la tranche (défensif,
+  /// invariant AD-10) et compose [ZReadOnlyFieldCard] (libellé + valeur +
+  /// copie).
+  ///
+  /// La **forme** n'est pas décidée ici : seule la surcharge déclarée champ par
+  /// champ (`ZFieldSpec.readLayout`) est transmise ; à défaut, la fiche prend
+  /// celle de la surface (`ZReadModeScope.layout`) puis celle du thème.
+  ///
+  /// Le texte est passé en `valueSemantics` **même lorsqu'il n'est pas
+  /// copiable** : une valeur affichée doit être annoncée, que la copie soit
+  /// offerte ou non. Aucun `textAlign` n'est forcé sur la valeur — c'est la
+  /// forme qui l'oriente (alignée à la fin dans la ligne à deux colonnes).
   Widget _buildReadCard(BuildContext context, Object? value) {
     final resolvedLabel = label(
       context,
@@ -468,12 +502,13 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       fallback: widget.field.label ?? widget.field.name,
     );
     final rov = zReadOnlyValueOf(context, widget.field, value);
-    final valueWidget = rov.widget ??
-        Text(rov.text ?? '', textAlign: TextAlign.start);
+    final valueWidget = rov.widget ?? Text(rov.text ?? '');
     return ZReadOnlyFieldCard(
       label: resolvedLabel,
       value: valueWidget,
       copyText: rov.copyable ? rov.text : null,
+      valueSemantics: rov.text,
+      layout: widget.field.readLayout,
     );
   }
 

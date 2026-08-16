@@ -90,9 +90,17 @@ export 'src/presentation/edition/z_form_values.dart';
 // Décorateur Card de la variante `ZFieldSize.large` : label au-dessus, champ
 // interne bare, mesures pilotées par les tokens `large*` de `ZcrudTheme`.
 export 'src/presentation/edition/z_large_field_card.dart';
-// Fiche de consultation du mode lecture : `ZReadOnlyFieldCard` (label/valeur +
-// copie presse-papier accessible). Les helpers de formatage/politique
-// (`zReadOnlyValueOf`/`zReadModeCardable`) restent privés au paquet.
+// Mode de présentation d'une surface d'édition : `ZReadModeScope`. Posé par
+// `DynamicEdition`/`ZStepperEdition` d'après leur `readOnly`, lu par chaque
+// champ — la consultation ne se perd donc pas au premier builder de
+// remplacement. Le paramètre `ZFieldWidget.readMode` prime quand il est donné.
+// Le MÊME scope porte la FORME de la consultation (`ZReadFieldLayout`, exporté
+// depuis la couche domaine) : un seul canal, jamais deux.
+export 'src/presentation/edition/z_read_mode_scope.dart';
+// Rendu d'un champ consulté : `ZReadOnlyFieldCard` (libellé/valeur + copie
+// presse-papier accessible), dans l'une des cinq formes de `ZReadFieldLayout`.
+// Les helpers de formatage/politique (`zReadOnlyValueOf`/`zReadModeCardable`)
+// restent privés au paquet.
 export 'src/presentation/edition/z_read_only_field_card.dart';
 // Grille responsive 12 colonnes du moteur d'édition (invariant AD-13) :
 // descripteur de span par breakpoint `ZResponsiveSpan`, seuils `ZBreakpoint`/

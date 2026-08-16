@@ -246,12 +246,14 @@ void main() {
     // Dialog ouvert, pas de bouton Enregistrer, un bouton Fermer.
     expect(find.text('Save'), findsNothing);
     expect(find.text('Close'), findsOneWidget);
-    // Champs en lecture seule : le sous-champ texte est monté mais readOnly
-    // (spec copyWith(readOnly: true)) → aucune mutation possible.
-    final editables =
-        tester.widgetList<EditableText>(find.byType(EditableText));
-    expect(editables, isNotEmpty);
-    expect(editables.every((e) => e.readOnly), isTrue);
+    // Consultation d'un item : les sous-champs sont des FICHES (libellé
+    // au-dessus de la valeur), pas des champs de saisie neutralisés. Aucune
+    // surface de saisie n'est montée du tout — propriété plus forte que
+    // « montée mais readOnly ».
+    expect(find.byType(EditableText), findsNothing);
+    expect(find.byType(ZReadOnlyFieldCard), findsNWidgets(2));
+    // La valeur reste rendue : une fiche vide n'est pas une fiche.
+    expect(find.text('Voir'), findsWidgets);
     await tester.tap(find.text('Close'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);

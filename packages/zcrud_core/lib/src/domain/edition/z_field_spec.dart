@@ -24,6 +24,7 @@ import 'z_field_adornment.dart';
 import 'z_field_choice.dart';
 import 'z_field_config.dart';
 import 'z_field_size.dart';
+import 'z_read_field_layout.dart';
 import 'z_validator_spec.dart';
 
 /// Résolveur de **choix conscients de l'état** d'un champ à choix
@@ -64,6 +65,7 @@ class ZFieldSpec {
     this.multiple = false,
     this.isId = false,
     this.fieldSize = ZFieldSize.normal,
+    this.readLayout,
     this.leading,
     this.prefix,
     this.suffix,
@@ -138,6 +140,18 @@ class ZFieldSpec {
   /// rétro-compatible : une spec sans `fieldSize` conserve le rendu inline
   /// par défaut.
   final ZFieldSize fieldSize;
+
+  /// **Forme de ce champ en consultation**, quand elle doit différer de celle
+  /// de la surface qui l'entoure. `null` (défaut) ⇒ la forme de la surface.
+  ///
+  /// La surface décide pour tous ses champs (`DynamicEdition.readLayout`, ou le
+  /// jeton `readLayout` du thème) ; ce membre est l'exception déclarée champ par
+  /// champ — un commentaire long qu'on veut voir empilé
+  /// ([ZReadFieldLayout.definition]) au milieu d'une fiche présentée en lignes
+  /// à deux colonnes, par exemple.
+  ///
+  /// **Inerte hors consultation** : la saisie n'en dépend jamais.
+  final ZReadFieldLayout? readLayout;
 
   /// Ornement de **tête** — rendu hors bordure (`InputDecoration.icon` en
   /// normal, slot `ZLargeFieldCard.leading` en large). `null` par défaut
@@ -232,6 +246,7 @@ class ZFieldSpec {
     bool? multiple,
     bool? isId,
     ZFieldSize? fieldSize,
+    ZReadFieldLayout? readLayout,
     ZFieldAdornment? leading,
     ZFieldAdornment? prefix,
     ZFieldAdornment? suffix,
@@ -256,6 +271,7 @@ class ZFieldSpec {
         multiple: multiple ?? this.multiple,
         isId: isId ?? this.isId,
         fieldSize: fieldSize ?? this.fieldSize,
+        readLayout: readLayout ?? this.readLayout,
         leading: leading ?? this.leading,
         prefix: prefix ?? this.prefix,
         suffix: suffix ?? this.suffix,
@@ -283,6 +299,7 @@ class ZFieldSpec {
           multiple == other.multiple &&
           isId == other.isId &&
           fieldSize == other.fieldSize &&
+          readLayout == other.readLayout &&
           leading == other.leading &&
           prefix == other.prefix &&
           suffix == other.suffix &&
@@ -307,6 +324,7 @@ class ZFieldSpec {
         multiple,
         isId,
         fieldSize,
+        readLayout,
         leading,
         prefix,
         suffix,

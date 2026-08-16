@@ -3,6 +3,152 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.4.0 — 2026-08-16
+
+### Corrigé
+
+#### La consultation ne ressemblait pas à une consultation
+
+Un formulaire ouvert en lecture rend ses champs en **fiches** : le libellé
+au-dessus de la valeur, sans bordure de saisie, sans libellé flottant, sans
+icône de préfixe. C'était vrai d'un formulaire à plat. Ce ne l'était pas d'une
+**fenêtre à étapes**, ni des champs **à l'intérieur d'une sous-liste** ou d'un
+**item dynamique** : là, la consultation donnait à lire un formulaire de saisie
+désactivé — un champ encadré et étiqueté en flottant, ce qui annonce une saisie
+possible sur un document qu'on ne fait que consulter et imprimer.
+
+La cause n'était pas le rendu, qui existait déjà, mais le chemin qu'empruntait
+le mode de lecture : un paramètre de constructeur, que seul le rendu de champ
+**par défaut** transmettait. Toute surface fournissant son propre rendu de
+champ — ce que fait la fenêtre à étapes — remplaçait le seul endroit qui le
+portait, et le mode retombait à « édition », en silence.
+
+Le mode de présentation descend désormais **par le contexte**
+(`ZReadModeScope`) : `DynamicEdition` et `ZStepperEdition` le posent d'après
+leur `readOnly`, chaque champ le lit. Plus rien à recopier — ni pour un
+`fieldBuilder` fourni, ni pour un champ au fond d'une sous-liste, ni pour le
+dialogue de consultation d'un item, qui vit pourtant dans une autre branche de
+l'arbre.
+
+`ZFieldWidget.readMode` **prime toujours** quand il est donné : une surface en
+lecture peut forcer un champ en saisie, et réciproquement. Il reste distinct de
+`ZFieldSpec.readOnly`, qui dit « ce champ-ci n'est pas modifiable » et n'a
+jamais dit comment le présenter.
+
+Effet de bord attendu : les ornements déclarés (`leading`/`suffix`) ne sont plus
+rendus en consultation dans ces surfaces — une fiche n'en porte pas.
+
+### Ajouté
+
+#### Une fiche de consultation encadrée, ou posée à plat
+
+Le fond et le filet de la fiche de lecture étaient figés : fond
+`surfaceContainerLow`, filet d'un point emprunté à la largeur de bordure des
+**champs de saisie**. Une application qui voulait une consultation posée à plat,
+à la manière d'une liste de lignes, ne pouvait pas retirer ce filet sans retirer
+aussi celui de tous ses champs de saisie.
+
+Trois jetons de thème le rendent réglable :
+
+```dart
+ZcrudTheme(
+  readFillColor: ...,
+  readBorderWidth: 0, // 0 ⇒ aucun filet
+  readBorderColor: ...,
+)
+```
+
+Ces trois jetons **ont désormais pour défaut la fiche posée à plat** (aucun
+fond, aucun filet) — voir la rupture visuelle décrite plus bas.
+
+#### Cinq formes de consultation, déclarables
+
+Une consultation ne se présente pas de la même façon selon qu'on lit un dossier
+de cinq champs sur un grand écran, qu'on parcourt une fiche de trente champs sur
+un téléphone, ou qu'on imprime un document. Le socle n'offrait qu'une seule
+présentation.
+
+`ZReadFieldLayout` en offre cinq, et l'application choisit :
+
+| Forme | Hauteur d'un champ court | Ce qu'elle apporte | Ce qu'elle coûte |
+|---|---|---|---|
+| `card` (défaut) | 72 | la présentation de référence, entièrement pilotée par les jetons `read*` | la plus haute des cinq |
+| `listTile` | 72 | la ligne Material native — densités, retraits et RTL compris | structure figée par Material |
+| `definition` | 54 | la valeur domine le libellé : la lecture d'un dossier rempli | libellés discrets, moins repérables |
+| `inlineRow` | 36 | deux colonnes alignées, excellentes à l'impression | une largeur fixe prise par les libellés |
+| `compact` | 28 | la densité maximale pour une fiche longue | pas de bouton de copie visible |
+
+Elle se déclare là où elle a du sens, et se surcharge du plus lointain au plus
+proche : jeton de thème `ZcrudTheme(readLayout: …)` pour toute l'application,
+`DynamicEdition(readLayout: …)` / `ZStepperEdition(readLayout: …)` pour une
+surface, `ZFieldSpec(readLayout: …)` pour un champ isolé.
+
+```dart
+// Toute l'application en lignes à deux colonnes, sauf le commentaire.
+ZcrudTheme(readLayout: ZReadFieldLayout.inlineRow)
+
+const ZFieldSpec(
+  name: 'commentaire',
+  type: EditionFieldType.text,
+  readLayout: ZReadFieldLayout.definition,
+)
+```
+
+La forme emprunte **le canal du mode de consultation lui-même** : rien à
+recopier pour un rendu de champ fourni, une fenêtre à étapes, une sous-liste,
+ni même le dialogue de consultation d'un item, qui vit pourtant dans une autre
+branche de l'arbre.
+
+Trois précisions qui se paient à l'usage :
+
+* `inlineRow` **se replie** en présentation empilée sous 360 de large (jeton
+  `readRowMinWidth`) : sur téléphone, deux colonnes n'ont plus la place de le
+  rester ;
+* `definition`, `inlineRow` et `compact` **n'affichent pas** le bouton de copie.
+  Le garder aurait imposé une cible tactile de 48 à chaque rang, c'est-à-dire
+  annulé leur densité. La copie reste offerte par appui long et par une action
+  annoncée aux lecteurs d'écran ;
+* dans toutes les formes, le libellé et la valeur sont annoncés **ensemble**,
+  y compris quand la valeur n'est pas copiable — un champ vide affiché se dit
+  désormais « vide » au lieu de rester muet.
+
+### Changé
+
+#### 🔴 Rupture visuelle : la consultation est posée à plat par défaut
+
+**Ce qui change sans que vous fassiez rien.** La fiche de consultation était
+une carte **remplie** (`surfaceContainerLow`) **cernée d'un filet d'un point**,
+occupant 92 de hauteur, libellé de 12 en demi-gras au-dessus d'une valeur de 14
+en demi-gras. Elle est désormais **posée à plat** : aucun fond, aucun filet,
+rang de 72, libellé de 16 en corps de texte et valeur de 14 en gris —
+c'est-à-dire, hauteur et typographie mesurées côte à côte, la présentation d'un
+`ListTile(title: libellé, subtitle: valeur)`.
+
+Disons-le sans détour : **une application qui ne déclare rien verra ses fiches
+de consultation changer d'aspect.** Le fond et le filet disparaissent, la
+hauteur d'un rang passe de 92 à 72, la typographie change. Ce n'est pas un
+effet de bord, c'est la décision : la consultation doit ressembler à un document
+qu'on lit et qu'on imprime, pas à un formulaire désactivé.
+
+**Le retour se déclare en une ligne**, sans changer de forme :
+
+```dart
+ZcrudTheme(
+  readFillColor: scheme.surfaceContainerLow,
+  readBorderWidth: 1,
+)
+```
+
+Et si c'est la **hauteur** ou la **typographie** d'avant qui vous manquent, les
+jetons `readCardMinHeight`, `readPadding`, `readLabelGap`,
+`readLabelTextStyle` et `readValueTextStyle` les reprennent un à un.
+
+**Trois jetons changent de type** — `readCardMargin`, `readPadding` et
+`readLabelGap` passent de valeur obligatoire à valeur **facultative** (`null` =
+« la valeur propre à la forme rendue »). Les déclarer continue de compiler et de
+primer ; seul un code qui **lisait** l'un de ces trois jetons en attendant une
+valeur non nulle est concerné.
+
 ## 1.2.0 — 2026-08-16
 
 ### Ajouté

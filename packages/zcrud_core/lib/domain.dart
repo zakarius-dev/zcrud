@@ -59,6 +59,7 @@ export 'src/domain/edition/z_field_rename.dart';
 export 'src/domain/edition/z_field_size.dart';
 export 'src/domain/edition/z_field_spec.dart';
 export 'src/domain/edition/z_path_values.dart';
+export 'src/domain/edition/z_read_field_layout.dart';
 export 'src/domain/edition/z_sub_list_config.dart';
 export 'src/domain/edition/z_time_codec.dart';
 export 'src/domain/edition/z_validator_spec.dart';

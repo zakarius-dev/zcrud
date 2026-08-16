@@ -45,6 +45,7 @@ import 'package:flutter/material.dart';
 import '../../domain/edition/edition_field_type.dart';
 import '../../domain/edition/z_condition_evaluator.dart';
 import '../../domain/edition/z_field_spec.dart';
+import '../../domain/edition/z_read_field_layout.dart';
 import '../../domain/ports/z_acl.dart';
 import '../l10n/z_localizations.dart';
 import '../theme/z_theme.dart';
@@ -52,6 +53,7 @@ import '../z_form_controller.dart';
 import '../zcrud_scope.dart';
 import 'z_derivation_engine.dart';
 import 'z_field_widget.dart';
+import 'z_read_mode_scope.dart';
 import 'z_responsive_grid.dart';
 import 'z_section_collapse_store.dart';
 import 'z_value_emptiness.dart';
@@ -218,6 +220,7 @@ class DynamicEdition extends StatefulWidget {
     this.physics,
     this.fieldBuilder,
     this.readOnly = false,
+    this.readLayout,
     this.layout = const <String, ZResponsiveSpan>{},
     this.gridGutter = 8,
     this.gridRunGutter,
@@ -254,12 +257,36 @@ class DynamicEdition extends StatefulWidget {
 
   /// Seam de rendu de champ. À défaut : le dispatcher par type [ZFieldWidget].
   /// La place stable est garantie par [DynamicEdition] (KeyedSubtree).
+  ///
+  /// Le builder fourni **ne perd pas** le mode de consultation : celui-ci
+  /// descend par le contexte ([ZReadModeScope]), pas par le paramètre du champ.
   final ZEditionFieldBuilder? fieldBuilder;
 
-  /// **Mode lecture global** : quand `true`, chaque champ est rendu non
-  /// éditable via une spec effective `readOnly: true` (le per-champ reste
-  /// respecté hors mode global). Active aussi le filtre `showIfNull`.
+  /// **Mode lecture global** : quand `true`, le formulaire est une
+  /// **consultation**.
+  ///
+  /// Trois effets, tous portés par ce seul drapeau :
+  /// * chaque champ est rendu non éditable via une spec effective
+  ///   `readOnly: true` (le per-champ reste respecté hors mode global) ;
+  /// * le mode de **présentation** est posé pour tous les champs du sous-arbre
+  ///   ([ZReadModeScope]) : les familles qui savent se présenter en **fiche**
+  ///   (libellé au-dessus de la valeur, sans bordure ni libellé flottant ni
+  ///   ornement) le font — y compris les champs montés par un `fieldBuilder`
+  ///   fourni, par une fenêtre à étapes ou au fond d'une sous-liste ;
+  /// * le filtre `showIfNull` est actif (un champ vide n'occupe pas la fiche).
   final bool readOnly;
+
+  /// **Forme** des champs présentés en consultation, pour ce formulaire.
+  ///
+  /// `null` (défaut) ⇒ le jeton `ZcrudTheme.readLayout`, à défaut
+  /// [ZReadFieldLayout.card]. Elle descend par le **même canal** que le mode de
+  /// consultation ([ZReadModeScope]) : un `fieldBuilder` fourni, une fenêtre à
+  /// étapes ou une sous-liste n'ont rien à recopier. Un champ garde le dernier
+  /// mot (`ZFieldSpec.readLayout`).
+  ///
+  /// **Inerte hors consultation** : déclarée sur un formulaire de saisie, elle
+  /// ne change rien tant que [readOnly] est `false`.
+  final ZReadFieldLayout? readLayout;
 
   /// **Grille 12 colonnes** : span responsif par nom de champ. Vide = pas
   /// de grille (disposition en colonne pleine largeur — compat ascendante).
@@ -813,6 +840,23 @@ class _DynamicEditionState extends State<DynamicEdition> {
 
   @override
   Widget build(BuildContext context) {
+    // Mode de présentation POSÉ pour tous les champs de ce formulaire, à
+    // quelque profondeur qu'ils soient et quel que soit le builder qui les
+    // monte (`fieldBuilder` fourni, étape d'une fenêtre à étapes, champ interne
+    // d'une sous-liste). Posé dans les DEUX modes : un formulaire d'édition
+    // imbriqué dans une fiche remplace bien le mode hérité.
+    return ZReadModeScope(
+      readMode: widget.readOnly,
+      // Forme : celle qu'on déclare, à défaut celle de la surface qui nous
+      // entoure. Sans ce repli, un formulaire imbriqué (une étape d'assistant,
+      // un mini-CRUD) EFFACERAIT la forme de son hôte en reposant le scope avec
+      // un `null` — alors qu'il n'a rien voulu dire de la forme.
+      layout: widget.readLayout ?? ZReadModeScope.layoutOf(context),
+      child: _buildSurface(context),
+    );
+  }
+
+  Widget _buildSurface(BuildContext context) {
     // Canaux STRUCTURELS uniquement : ce builder ne se ré-exécute que lorsque
     // l'ensemble visible OU l'état de repli change (jamais sur une frappe). Le
     // gate ACL + la barre d'actions vivent DANS cette voie structurelle : une
@@ -1054,10 +1098,15 @@ class _DynamicEditionState extends State<DynamicEdition> {
   Widget _fieldChild(BuildContext context, ZFieldSpec spec) {
     final builder = widget.fieldBuilder;
     return builder != null
+        // Un builder fourni n'a RIEN à recopier : le mode de présentation est
+        // posé dans le contexte (`ZReadModeScope`) et lu par le champ qu'il
+        // monte. C'est ce qui empêche la consultation de se perdre au premier
+        // builder de remplacement.
         ? builder(context, widget.controller, spec)
-        // Propage le mode lecture global → fiche de consultation pour les
-        // familles fiche-ables. `_effective` conserve `readOnly:true` (repli sûr
-        // des familles non fiche-ables). Le `fieldBuilder` custom reste prioritaire.
+        // Le dispatcher par défaut reçoit le mode en clair — même valeur que
+        // celle du contexte, mais explicite là où elle est décidée.
+        // `_effective` conserve `readOnly:true` (repli sûr des familles non
+        // fiche-ables).
         : ZFieldWidget(
             controller: widget.controller,
             field: spec,

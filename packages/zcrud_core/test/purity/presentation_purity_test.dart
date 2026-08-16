@@ -58,7 +58,13 @@ const _allowedServicesSymbols = <String>[
 const _semanticsUri = 'package:flutter/semantics.dart';
 
 /// Symboles PURS autorisés en `show` sur `semantics.dart` (DP-13).
+///
+/// `CustomSemanticsAction` : **valeur** pure décrivant une action offerte aux
+/// lecteurs d'écran (les formes denses de consultation y publient la copie,
+/// faute d'un bouton visible). Aucun état, aucune dépendance lourde — même
+/// justification que `SemanticsService`.
 const _allowedSemanticsSymbols = <String>[
+  'CustomSemanticsAction',
   'SemanticsService',
 ];
 
@@ -336,6 +342,19 @@ void main() {
       _semanticsImportAllowed("import 'package:flutter/semantics.dart' "
           'show SemanticsService;'),
       isTrue,
+    );
+    // CustomSemanticsAction admis, seul comme en compagnie.
+    expect(
+      _semanticsImportAllowed("import 'package:flutter/semantics.dart' "
+          'show CustomSemanticsAction, SemanticsService;'),
+      isTrue,
+    );
+    // Un symbole hors allowlist REJETTE tout l'import, même accompagné d'un
+    // symbole admis.
+    expect(
+      _semanticsImportAllowed("import 'package:flutter/semantics.dart' "
+          'show CustomSemanticsAction, SemanticsNode;'),
+      isFalse,
     );
     // semantics.dart NU → REJETÉ.
     expect(

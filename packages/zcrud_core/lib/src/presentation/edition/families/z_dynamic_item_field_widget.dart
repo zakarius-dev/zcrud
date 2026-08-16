@@ -241,6 +241,10 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
   /// parcourus. Sans ce report, un item ouvert en mode lecture globale
   /// resterait **entièrement éditable et focalisable**. Même mécanisme que
   /// celui appliqué au dialogue de la sous-liste compacte.
+  ///
+  /// Le **mode de présentation** n'a pas à être relayé : il descend par le
+  /// contexte (`ZReadModeScope`). En consultation, les champs de l'item sont
+  /// donc rendus en **fiches**.
   Widget _buildItemField(ZFormController controller, ZFieldSpec field) {
     final spec = widget.field.readOnly && !field.readOnly
         ? field.copyWith(readOnly: true)

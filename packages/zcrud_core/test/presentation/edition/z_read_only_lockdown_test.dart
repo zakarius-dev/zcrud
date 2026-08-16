@@ -303,9 +303,14 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      final field = tester.widget<TextField>(find.byType(TextField).first);
-      expect(field.readOnly, isTrue,
+      // En consultation, les sous-champs ne sont pas des champs de saisie
+      // neutralisés : ce sont des FICHES. La propriété gardée — aucune
+      // mutation possible — est donc affirmée sur l'absence TOTALE de surface
+      // de saisie, ce qui est strictement plus fort que `readOnly: true`.
+      expect(find.byType(TextField), findsNothing,
           reason: 'un item consulté en lecture seule n\'est pas éditable');
+      expect(find.byType(ZReadOnlyFieldCard), findsNWidgets(_itemFields.length));
+      expect(find.text('valeur'), findsOneWidget);
     });
 
     testWidgets('dynamicItem : les sous-champs deviennent readOnly',
@@ -332,8 +337,10 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      final field = tester.widget<TextField>(find.byType(TextField).first);
-      expect(field.readOnly, isTrue);
+      // Même règle que pour la sous-liste : fiche, et aucune surface de saisie.
+      expect(find.byType(TextField), findsNothing);
+      expect(find.byType(ZReadOnlyFieldCard), findsNWidgets(_itemFields.length));
+      expect(find.text('valeur'), findsOneWidget);
     });
 
     testWidgets('en ÉDITION, les sous-champs restent éditables (non-régression)',

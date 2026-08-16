@@ -15,6 +15,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../domain/edition/z_read_field_layout.dart';
 import '../zcrud_scope.dart';
 import 'z_gradient_resolver.dart';
 
@@ -368,11 +369,18 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.largeLeadingIconSize = 22,
     this.largeLeadingGap = 12,
     this.largeLabelGap = 4,
-    this.readCardMargin = const EdgeInsetsDirectional.only(bottom: 12),
-    this.readPadding = const EdgeInsetsDirectional.all(16),
-    this.readLabelGap = 8,
+    this.readLayout,
+    this.readCardMargin,
+    this.readPadding,
+    this.readLabelGap,
     this.readLabelTextStyle,
-    this.readValueTextStyle = const TextStyle(fontWeight: FontWeight.w500),
+    this.readValueTextStyle,
+    this.readFillColor,
+    this.readBorderColor,
+    this.readBorderWidth,
+    this.readCardMinHeight,
+    this.readRowLabelWidth,
+    this.readRowMinWidth,
     this.accentBarHeight,
     this.gradientBegin,
     this.gradientEnd,
@@ -748,27 +756,80 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Écart vertical entre le label et le champ en `large` (défaut `4`).
   final double largeLabelGap;
 
-  // ── Tokens du mode LECTURE (fiche `ZReadOnlyFieldCard`,
-  //    `readOnlyWidget`). Aucune couleur : fond/bordure DÉRIVÉS du `ColorScheme`
-  //    (invariant FR-26). Réutilise `inputRadius`/`inputBorderWidth` pour la forme. ─
+  // ── Tokens du mode LECTURE (`ZReadOnlyFieldCard`, `readOnlyWidget`).
+  //    Aucune couleur : fond/filet/styles DÉRIVÉS du `ColorScheme`/`TextTheme`
+  //    (invariant FR-26), et chaque jeton `null` par défaut ⇒ « la valeur propre
+  //    à la forme rendue » ([ZReadFieldLayout]). Un jeton déclaré s'applique à
+  //    TOUTES les formes. ─
 
-  /// Marge basse **directionnelle** entre deux fiches de lecture (défaut
-  /// `only(bottom: 12)` — parité `margin: only(bottom:12)`).
-  final EdgeInsetsDirectional readCardMargin;
+  /// **Forme** des champs présentés en consultation, pour toute l'application.
+  ///
+  /// `null` (défaut) ⇒ [ZReadFieldLayout.card]. Une surface d'édition la
+  /// surcharge (`DynamicEdition.readLayout`), un champ aussi
+  /// (`ZFieldSpec.readLayout`) ; la priorité va du plus proche au plus
+  /// lointain : champ > surface > ce jeton > défaut.
+  final ZReadFieldLayout? readLayout;
 
-  /// Padding interne **directionnel** de la fiche de lecture (défaut `all(16)`).
-  final EdgeInsetsDirectional readPadding;
+  /// Marge **directionnelle** autour d'un champ consulté. `null` (défaut) ⇒
+  /// aucune marge : les rangs se suivent, leur propre padding les aère.
+  final EdgeInsetsDirectional? readCardMargin;
 
-  /// Écart vertical entre le label et la valeur dans la fiche (défaut `8`).
-  final double readLabelGap;
+  /// Padding interne **directionnel** d'un champ consulté. `null` (défaut) ⇒ le
+  /// padding propre à la forme rendue (`16`/`8` en fiche, `16`/`4` en ligne
+  /// dense) ; [ZReadFieldLayout.listTile] garde le retrait de Material.
+  final EdgeInsetsDirectional? readPadding;
 
-  /// Style **non-couleur** du label de la fiche (`color == null` → dérivé
-  /// `labelMedium`). Défaut `null`.
+  /// Écart entre le libellé et la valeur. `null` (défaut) ⇒ l'écart propre à la
+  /// forme rendue (`0` en fiche — libellé et valeur sur deux lignes contiguës,
+  /// `2` en liste de définitions, `8` à l'horizontale).
+  final double? readLabelGap;
+
+  /// Style du libellé, **fusionné par-dessus** celui de la forme rendue : un
+  /// style sans couleur garde la couleur dérivée. `null` (défaut) ⇒ le style de
+  /// la forme.
   final TextStyle? readLabelTextStyle;
 
-  /// Style **non-couleur** de la valeur de la fiche (`color == null` → dérivé ;
-  /// défaut poids `w500`).
+  /// Style de la valeur, **fusionné par-dessus** celui de la forme rendue : un
+  /// style sans couleur garde la couleur dérivée. `null` (défaut) ⇒ le style de
+  /// la forme.
   final TextStyle? readValueTextStyle;
+
+  /// Fond de la fiche de lecture ([ZReadFieldLayout.card]). `null` (défaut) ⇒
+  /// **transparent** : la fiche est posée à plat sur le fond de la page, à la
+  /// manière d'une ligne de liste — la présentation que suivent les
+  /// consultations imprimables.
+  ///
+  /// Poser `scheme.surfaceContainerLow` pour retrouver une fiche **remplie**.
+  final Color? readFillColor;
+
+  /// Couleur du filet de la fiche de lecture. `null` (défaut) ⇒ `outline`.
+  ///
+  /// Sert avec [readBorderWidth] : c'est ce couple, et non celui des champs de
+  /// saisie, qui décide si une fiche est **encadrée**. Avant ces deux jetons,
+  /// la fiche empruntait la largeur de filet des champs de saisie
+  /// ([inputBorderWidth]) : la retirer de la fiche retirait aussi celle des
+  /// champs, donc c'était impraticable.
+  final Color? readBorderColor;
+
+  /// Épaisseur du filet de la fiche de lecture. `null` (défaut) ⇒ **`0`, donc
+  /// aucun filet**. Poser `1` (avec [readBorderColor] si besoin) pour retrouver
+  /// une fiche cernée.
+  final double? readBorderWidth;
+
+  /// Hauteur minimale d'un rang en [ZReadFieldLayout.card]. `null` (défaut) ⇒
+  /// `72`, la hauteur d'une ligne Material à deux lignes : c'est elle qui donne
+  /// à la consultation le même rythme vertical qu'une liste. `0` la supprime
+  /// (le rang prend alors la hauteur de son contenu).
+  final double? readCardMinHeight;
+
+  /// Largeur de la colonne des libellés en [ZReadFieldLayout.inlineRow].
+  /// `null` (défaut) ⇒ `160`.
+  final double? readRowLabelWidth;
+
+  /// Largeur en deçà de laquelle [ZReadFieldLayout.inlineRow] se **replie** en
+  /// présentation empilée. `null` (défaut) ⇒ `360` : sur téléphone, une ligne à
+  /// deux colonnes n'a plus la place de le rester.
+  final double? readRowMinWidth;
 
   /// Hauteur future de la barre d'accent. `null` conserve v0.19.3 inchangé.
   final double? accentBarHeight;
@@ -2160,11 +2221,18 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? largeLeadingIconSize,
     double? largeLeadingGap,
     double? largeLabelGap,
+    ZReadFieldLayout? readLayout,
     EdgeInsetsDirectional? readCardMargin,
     EdgeInsetsDirectional? readPadding,
     double? readLabelGap,
     TextStyle? readLabelTextStyle,
     TextStyle? readValueTextStyle,
+    Color? readFillColor,
+    Color? readBorderColor,
+    double? readBorderWidth,
+    double? readCardMinHeight,
+    double? readRowLabelWidth,
+    double? readRowMinWidth,
     double? accentBarHeight,
     AlignmentGeometry? gradientBegin,
     AlignmentGeometry? gradientEnd,
@@ -2346,11 +2414,18 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     largeLeadingIconSize: largeLeadingIconSize ?? this.largeLeadingIconSize,
     largeLeadingGap: largeLeadingGap ?? this.largeLeadingGap,
     largeLabelGap: largeLabelGap ?? this.largeLabelGap,
+    readLayout: readLayout ?? this.readLayout,
     readCardMargin: readCardMargin ?? this.readCardMargin,
     readPadding: readPadding ?? this.readPadding,
     readLabelGap: readLabelGap ?? this.readLabelGap,
     readLabelTextStyle: readLabelTextStyle ?? this.readLabelTextStyle,
     readValueTextStyle: readValueTextStyle ?? this.readValueTextStyle,
+    readFillColor: readFillColor ?? this.readFillColor,
+    readBorderColor: readBorderColor ?? this.readBorderColor,
+    readBorderWidth: readBorderWidth ?? this.readBorderWidth,
+    readCardMinHeight: readCardMinHeight ?? this.readCardMinHeight,
+    readRowLabelWidth: readRowLabelWidth ?? this.readRowLabelWidth,
+    readRowMinWidth: readRowMinWidth ?? this.readRowMinWidth,
     accentBarHeight: accentBarHeight ?? this.accentBarHeight,
     gradientBegin: gradientBegin ?? this.gradientBegin,
     gradientEnd: gradientEnd ?? this.gradientEnd,
@@ -2673,13 +2748,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       largeLeadingGap:
           largeLeadingGap + (other.largeLeadingGap - largeLeadingGap) * t,
       largeLabelGap: largeLabelGap + (other.largeLabelGap - largeLabelGap) * t,
+      readLayout: t < 0.5 ? readLayout : other.readLayout,
       readCardMargin:
-          EdgeInsetsDirectional.lerp(readCardMargin, other.readCardMargin, t) ??
-          readCardMargin,
-      readPadding:
-          EdgeInsetsDirectional.lerp(readPadding, other.readPadding, t) ??
-          readPadding,
-      readLabelGap: readLabelGap + (other.readLabelGap - readLabelGap) * t,
+          EdgeInsetsDirectional.lerp(readCardMargin, other.readCardMargin, t),
+      readPadding: EdgeInsetsDirectional.lerp(readPadding, other.readPadding, t),
+      readLabelGap: _lerpNullableDouble(readLabelGap, other.readLabelGap, t),
       readLabelTextStyle: TextStyle.lerp(
         readLabelTextStyle,
         other.readLabelTextStyle,
@@ -2688,6 +2761,28 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       readValueTextStyle: TextStyle.lerp(
         readValueTextStyle,
         other.readValueTextStyle,
+        t,
+      ),
+      readFillColor: Color.lerp(readFillColor, other.readFillColor, t),
+      readBorderColor: Color.lerp(readBorderColor, other.readBorderColor, t),
+      readBorderWidth: _lerpNullableDouble(
+        readBorderWidth,
+        other.readBorderWidth,
+        t,
+      ),
+      readCardMinHeight: _lerpNullableDouble(
+        readCardMinHeight,
+        other.readCardMinHeight,
+        t,
+      ),
+      readRowLabelWidth: _lerpNullableDouble(
+        readRowLabelWidth,
+        other.readRowLabelWidth,
+        t,
+      ),
+      readRowMinWidth: _lerpNullableDouble(
+        readRowMinWidth,
+        other.readRowMinWidth,
         t,
       ),
       accentBarHeight: _lerpNullableDouble(

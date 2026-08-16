@@ -57,6 +57,7 @@ import '../../theme/z_theme.dart';
 import '../../z_form_controller.dart';
 import '../../zcrud_scope.dart';
 import '../z_field_widget.dart';
+import '../z_read_mode_scope.dart';
 import '../z_read_only_value.dart';
 import '../z_select_choices_resolver.dart';
 import '../z_value_emptiness.dart';
@@ -376,6 +377,11 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// focalisables**. La règle est la MÊME pour les trois modes (le mode
   /// `compact` la couvre dans son dialogue,
   /// `_ZSubItemEditDialog._buildField`).
+  ///
+  /// Le **mode de présentation**, lui, n'a pas à être relayé : il descend par
+  /// le contexte (`ZReadModeScope`). En consultation, les champs internes d'un
+  /// item — du texte, un nombre, une date — sont donc rendus en **fiches**,
+  /// jamais en cadres de saisie imbriqués dans des cadres.
   Widget _buildItemField(_SubItem item, ZFieldSpec field) {
     final spec = widget.field.readOnly && !field.readOnly
         ? field.copyWith(readOnly: true)
@@ -724,14 +730,27 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     Map<String, dynamic> initial, {
     required bool readOnly,
   }) {
+    // Forme héritée de la surface, relevée ICI (sous le scope) : la route du
+    // dialogue naîtra hors de cet arbre et ne l'hériterait pas.
+    final formeHeritee = ZReadModeScope.maybeOf(context)?.layout;
     return showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (dialogContext) => _ZSubItemEditDialog(
-        title: _dialogTitle(dialogContext, initial),
-        itemFields: _itemFields,
-        initial: initial,
-        readOnly: readOnly,
-        itemFieldBuilder: widget.itemFieldBuilder,
+      // Le dialogue vit dans une AUTRE branche de l'arbre (une route) : le mode
+      // de présentation de la surface ne l'atteint pas par héritage. Il est
+      // donc REPOSÉ ici, avec le mode du dialogue lui-même — consultation d'un
+      // item ⇒ fiches, édition ⇒ champs de saisie, même à l'intérieur d'un
+      // formulaire ouvert en lecture — ET avec la forme de la surface, faute de
+      // quoi les fiches du dialogue retomberaient sur la forme par défaut.
+      builder: (dialogContext) => ZReadModeScope(
+        readMode: readOnly,
+        layout: formeHeritee,
+        child: _ZSubItemEditDialog(
+          title: _dialogTitle(dialogContext, initial),
+          itemFields: _itemFields,
+          initial: initial,
+          readOnly: readOnly,
+          itemFieldBuilder: widget.itemFieldBuilder,
+        ),
       ),
     );
   }
