@@ -3,6 +3,53 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.9.0 — 2026-08-16
+
+### Ajouté
+
+#### Les sous-listes deviennent des lignes de document
+
+Relecture d'un cinquième dépôt hôte portant le même moteur legacy : l'intention
+de `subItems`, ce sont **les lignes d'un document** (master-detail
+intra-formulaire). Trois manques en découlaient.
+
+- **`ZSubListSummaryColumn` / `ZSubListConfig.summaryColumns`** — une colonne de
+  résumé peut désigner une valeur **non éditable**. Une colonne dont le `name`
+  n'est pas un `itemField` lit la donnée de l'item : elle **s'affiche sans
+  devenir saisissable**. C'est le cas réel — « Montant HT », « Montant TTC » sont
+  calculés par le crochet, jamais tapés. Porte `decimals` et un suffixe
+  localisable. Non vide, `summaryColumns` **remplace** `summaryFields`.
+- **`ZSubItemCrudOutcome.veto(reasonKey:, reasonFallback:)`** — le véto peut
+  enfin dire pourquoi. Le motif est **localisable** et rendu par le socle
+  (annonce aux lecteurs d'écran comprise). Auparavant, un crochet refusait en
+  silence.
+- **`parentPatch`** sur `proceed`/`replace`, et **`ZSubItemCrudRequest.parent`**
+  (lecture non tracée de l'état parent) — le crochet peut maintenir une tranche
+  voisine du formulaire, ce que fait l'usage réel à chaque ligne ajoutée.
+
+**Trois arbitrages, et leurs raisons.** Le motif et le correctif sont portés par
+l'**issue**, non par un `BuildContext` ni par le `ZFormController` parent : le
+crochet est `async`, donc un contexte capturé serait employé après un `await`,
+et un contrôleur exposé ouvrirait la réentrance depuis un crochet appelé en
+pleine mutation. **Une seule** liste de colonnes, jamais deux à tenir d'accord —
+c'est la dérive du legacy, qui déclare un schéma de colonnes *et* un schéma de
+formulaire. Enfin **un véto n'applique aucun correctif** : dans l'usage réel,
+refuser et mettre à jour l'état voisin sont deux branches distinctes.
+
+Tout est **additif** : les crochets écrits pour la v1.8.0 compilent et se
+comportent à l'identique. La lecture d'une valeur hors sous-schéma reste
+gouvernée par l'opt-in — un `summaryFields` nommant une clé absente rend vide
+depuis toujours, l'afficher d'office déplacerait un hôte passif.
+
+### Non livré, délibérément
+
+Le formatage **monétaire localisé** du legacy (`isCurrency`) : il exige un port
+de formatage que le cœur n'a pas, et l'inventer ici serait le mauvais endroit —
+`decimals` et un suffixe localisable sont livrés à la place. Le
+`suffixBuilder(item)` : une closure n'entre pas dans le domaine `const`, le
+chemin passe par `itemTransformer` (documenté). L'alignement et la largeur de
+colonne : ils relèvent du rendu tabulaire, traité séparément.
+
 ## 1.8.0 — 2026-08-16
 
 ### Ajouté

@@ -84,6 +84,26 @@
 /// {option})` du moteur legacy, sans reprendre ce que ce dernier faisait mal —
 /// voir les dartdoc de ces deux types.
 ///
+/// ## Le crochet CRUD comme NORMALISATEUR MÉTIER (lignes d'un document)
+///
+/// Le cas mesuré chez les hôtes n'est pas « une liste d'items isolée » : ce sont
+/// les **lignes d'un document** (master-detail intra-formulaire), où le parent
+/// **agrège** ce que les lignes produisent. Trois capacités le rendent
+/// atteignable, toutes portées par la requête et l'issue — jamais par un
+/// contexte ni un contrôleur exposés :
+///
+/// | Besoin réel | Canal |
+/// |---|---|
+/// | lire le taux de taxe / la devise du document | [ZSubItemCrudRequest.parent] ([ZValueOf]) |
+/// | dire **pourquoi** on refuse (« X existe déjà ») | [ZSubItemCrudOutcome.veto] + `reasonKey` |
+/// | mettre à jour les **totaux** du document | [ZSubItemCrudOutcome.parentPatch] |
+/// | afficher un montant **calculé, jamais saisi** | `ZSubListConfig.summaryColumns` (domaine) |
+///
+/// La quatrième ligne ne relève **pas** de ce canal, et c'est délibéré : une
+/// colonne de résumé est une **décision de données statique**, elle se déclare
+/// `const` avec le reste de la config. Le canal ne porte que ce que le domaine
+/// ne peut pas porter.
+///
 /// ## Ce que le canal ne fait pas
 ///
 /// Il ne porte **aucune** décision de données **statique** : un mode
@@ -447,6 +467,7 @@ class ZSubItemCrudRequest {
     this.item,
     this.option,
     this.template,
+    this.parent,
   });
 
   /// Spécification du champ **conteneur** (`subItems`).
@@ -502,6 +523,33 @@ class ZSubItemCrudRequest {
   /// }
   /// ```
   final ZSubListItemTemplate? template;
+
+  /// **Lecture de l'état du formulaire PARENT**, par nom de champ — `null`
+  /// quand la sous-liste est construite hors formulaire (aucun parent).
+  ///
+  /// ## Pourquoi une lecture, et pas le `ZFormController` parent
+  ///
+  /// C'est le même vocabulaire que les deux résolveurs dérivés du canal
+  /// ([ZSubListSeams.subSchemaResolver],
+  /// [ZSubListSeams.creationTemplatesResolver]) : un [ZValueOf] **lit**, il
+  /// n'écrit pas. Exposer le contrôleur ouvrirait la réentrance — un crochet
+  /// appelé en pleine mutation pourrait écrire dans le formulaire qui l'a
+  /// appelé, et rien n'empêcherait plus de casser l'invariant AD-2 depuis un
+  /// seam de présentation. Pour **écrire**, il y a
+  /// [ZSubItemCrudOutcome.parentPatch] : le crochet **décrit**, le socle
+  /// applique.
+  ///
+  /// C'est le besoin mesuré du cas réel : les lignes d'une commande lisent le
+  /// taux de taxe global, la devise et les options du document parent pour
+  /// normaliser la ligne saisie.
+  ///
+  /// ## Aucun abonnement n'en découle
+  ///
+  /// Contrairement aux résolveurs, cette lecture n'est **pas tracée** : elle a
+  /// lieu au moment d'un geste utilisateur, une fois, et ne crée aucune
+  /// souscription. Un crochet ne « suit » donc pas une tranche parente — il en
+  /// prend une photo à l'instant où il arbitre.
+  final ZValueOf? parent;
 }
 
 /// Issue d'un appel de [ZSubListSeams.onCrud].
@@ -536,12 +584,33 @@ class ZSubItemCrudRequest {
 /// `FlutterError.reportError` — donc à `FlutterError.onError`, à la zone, au
 /// rapporteur de crash de l'application. Elle n'est **jamais** avalée, et elle
 /// ne casse **jamais** le rendu (invariant AD-10).
+///
+/// ## Deux pouvoirs de plus, portés par l'ISSUE
+///
+/// - **Dire pourquoi** ([ZSubItemCrudOutcome.veto] + `reasonKey`) : un véto muet
+///   laisse l'utilisateur devant un geste qui « n'a rien fait ». L'usage réel
+///   affiche « X existe déjà dans la liste » **avant** de refuser.
+/// - **Corriger le formulaire parent** ([parentPatch]) : le crochet **décrit**
+///   les tranches parentes à écrire, le socle les applique **en une fois**.
+///
+/// Les deux sont portés par l'issue plutôt que par la requête, et c'est la même
+/// raison dans les deux cas : le crochet **décrit** ce qu'il veut, il ne le fait
+/// pas lui-même. Un `BuildContext` capturé dans la requête serait employé
+/// **après un `await`** (le crochet est asynchrone) — le piège classique du
+/// widget démonté ; et un `ZFormController` parent exposé ouvrirait la
+/// réentrance en pleine mutation.
 @immutable
 class ZSubItemCrudOutcome {
   /// Applique la donnée de la requête **telle quelle** (comportement natif).
-  const ZSubItemCrudOutcome.proceed()
+  ///
+  /// [parentPatch] (`null` par défaut ⇒ comportement d'avant, à l'identique)
+  /// décrit les tranches du **formulaire parent** à écrire une fois la mutation
+  /// appliquée — voir [parentPatch].
+  const ZSubItemCrudOutcome.proceed({this.parentPatch})
       : vetoed = false,
-        data = null;
+        data = null,
+        reasonKey = null,
+        reasonFallback = null;
 
   /// Applique [replacement] **à la place** de la donnée proposée.
   ///
@@ -553,20 +622,81 @@ class ZSubItemCrudOutcome {
   ///
   /// **Ignoré pour [ZCrudAction.delete]** : il n'y a rien à écrire sur un item
   /// qui disparaît. Un hôte qui veut le conserver **véto**.
-  const ZSubItemCrudOutcome.replace(Map<String, dynamic> replacement)
-      : vetoed = false,
-        data = replacement;
+  const ZSubItemCrudOutcome.replace(
+    Map<String, dynamic> replacement, {
+    this.parentPatch,
+  })  : vetoed = false,
+        data = replacement,
+        reasonKey = null,
+        reasonFallback = null;
 
   /// **N'applique rien** — la voie de véto explicite.
-  const ZSubItemCrudOutcome.veto()
+  ///
+  /// [reasonKey] (`null` par défaut ⇒ véto **muet**, comportement d'avant à
+  /// l'identique) est la **clé l10n** du motif rendu à l'utilisateur — voir
+  /// [reasonKey].
+  const ZSubItemCrudOutcome.veto({this.reasonKey, this.reasonFallback})
       : vetoed = true,
-        data = null;
+        data = null,
+        parentPatch = null;
 
   /// `true` ⇒ aucune mutation n'est appliquée.
   final bool vetoed;
 
   /// Donnée de remplacement, ou `null` (proceed/veto).
   final Map<String, dynamic>? data;
+
+  /// **Clé l10n du motif** d'un véto — `null` ⇒ véto muet (défaut).
+  ///
+  /// Résolue par le canal habituel (`ZcrudScope.labels` → locale → table `en` →
+  /// [reasonFallback] → la clé), invariant FR-26 : **jamais un libellé codé en
+  /// dur**, y compris ici, où le texte vient pourtant d'une règle métier de
+  /// l'hôte.
+  ///
+  /// Le socle le rend **lui-même**, une fois, au retour du crochet : annonce au
+  /// lecteur d'écran (invariant AD-13) **et** `SnackBar` si un
+  /// `ScaffoldMessenger` est disponible — la même mécanique best-effort que le
+  /// retour de copie d'une fiche de lecture. Sans `ScaffoldMessenger`, l'annonce
+  /// a tout de même lieu et **rien n'est levé** (invariant AD-10).
+  ///
+  /// Il n'est pas rendu pour `proceed`/`replace` : un motif explique un refus.
+  /// Un crochet qui veut informer sans refuser dispose de ses propres moyens —
+  /// il est, lui, dans le code de l'application.
+  final String? reasonKey;
+
+  /// Repli affiché quand [reasonKey] n'est résolue nulle part.
+  final String? reasonFallback;
+
+  /// **Correctif du formulaire PARENT** : les tranches à écrire (`nom → valeur`)
+  /// une fois la mutation appliquée. `null` (défaut) ⇒ rien n'est écrit,
+  /// comportement d'avant à l'identique.
+  ///
+  /// ## Pourquoi un correctif décrit, et pas le contrôleur parent
+  ///
+  /// C'est le besoin mesuré des **lignes d'un document** : le crochet recalcule
+  /// les totaux (« total HT », « total TVA », « total TTC ») et les dépose dans
+  /// des tranches **voisines** du formulaire parent, que des champs calculés
+  /// affichent. Sans ce canal, l'hôte n'a aucun moyen de le faire depuis un
+  /// crochet — il devrait remplacer le champ entier.
+  ///
+  /// Exposer le `ZFormController` parent l'aurait permis aussi, et bien plus :
+  /// écrire pendant une mutation en cours, déclencher une re-résolution qui
+  /// rappelle le crochet, casser l'invariant AD-2 depuis un seam de
+  /// présentation. Le correctif **décrit** ; c'est le socle qui écrit, **une
+  /// seule fois**, après l'agrégation de la sous-liste — de sorte que le parent
+  /// voit la liste à jour **et** ses totaux dans le même état cohérent.
+  ///
+  /// **Trois bornes, à connaître avant d'écrire un crochet :**
+  /// 1. **un véto n'applique rien**, correctif compris — c'est le sens même du
+  ///    véto (le constructeur de véto ne l'accepte donc pas) ;
+  /// 2. **la tranche de la sous-liste elle-même est ignorée** : une entrée
+  ///    nommée comme le champ conteneur écraserait l'agrégation que le socle
+  ///    vient de publier. Pour changer les items, il y a
+  ///    [ZSubItemCrudOutcome.replace] ;
+  /// 3. l'écriture passe par le canal **granulaire** du contrôleur parent (une
+  ///    tranche à la fois) : seuls les champs nommés se reconstruisent, jamais
+  ///    le formulaire entier (invariant AD-2).
+  final Map<String, Object?>? parentPatch;
 }
 
 /// **Crochet CRUD** d'une sous-liste — l'équivalent de `onCrud(item, crud,

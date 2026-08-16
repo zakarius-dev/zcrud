@@ -97,9 +97,29 @@
 ///   transformer, laisser passer. Un crochet qui lève **refuse** et son erreur
 ///   est signalée à `FlutterError.reportError` (jamais avalée, jamais fatale au
 ///   rendu — invariant AD-10).
+///
+/// ## Lignes d'un document : ce que le socle rend, et ce qu'il applique
+///
+/// Trois mécaniques servent le cas master-detail réel — un document dont les
+/// lignes alimentent des champs calculés du parent :
+///
+/// - **colonnes de résumé déclarées** (`ZSubListConfig.summaryColumns`) : une
+///   colonne peut désigner une valeur **hors sous-schéma** (un montant calculé,
+///   déposé dans l'item par le crochet). Elle s'affiche **sans** rendre le champ
+///   saisissable — le formulaire d'item ne monte que les `itemFields`. Elle
+///   porte sa mise en forme (décimales, suffixe l10n) et son libellé d'en-tête ;
+/// - **motif de véto** ([ZSubItemCrudOutcome.reasonKey]) : le socle le résout
+///   par le canal l10n et le rend lui-même (annonce a11y + `SnackBar`) — le
+///   crochet ne reçoit **jamais** de `BuildContext`, qu'il emploierait après un
+///   `await` ;
+/// - **correctif de parent** ([ZSubItemCrudOutcome.parentPatch]) : le crochet
+///   **décrit** les tranches parentes à écrire, le socle les applique **une
+///   fois**, après l'agrégation, par le canal granulaire (invariant AD-2). La
+///   tranche du champ lui-même est ignorée : elle appartient à l'agrégation.
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show SemanticsService;
 
 import '../../../domain/edition/edition_field_type.dart';
 import '../../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
@@ -509,10 +529,32 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         : ZSubListDisplayMode.inline;
   }
 
-  /// Champs résumé du mode compact — vide si config absente/non conforme.
-  List<String> get _summaryFields {
+  /// **Colonnes de résumé effectives** du mode compact (et du libellé de puce
+  /// en mode `tags`) — vide si config absente/non conforme.
+  ///
+  /// `ZSubListConfig.summaryColumns` **remplace** `summaryFields` quand elle est
+  /// déclarée ; sinon chaque `summaryFields` est promu en colonne **nue** (aucun
+  /// libellé propre, aucune mise en forme) — donc le rendu d'avant, à
+  /// l'identique.
+  List<ZSubListSummaryColumn> get _summaryColumns {
     final config = widget.field.config;
-    return config is ZSubListConfig ? config.summaryFields : const <String>[];
+    if (config is! ZSubListConfig) return const <ZSubListSummaryColumn>[];
+    if (config.summaryColumns.isNotEmpty) return config.summaryColumns;
+    return <ZSubListSummaryColumn>[
+      for (final name in config.summaryFields) ZSubListSummaryColumn(name: name),
+    ];
+  }
+
+  /// L'hôte a-t-il **déclaré** ses colonnes (`summaryColumns`) ?
+  ///
+  /// C'est l'interrupteur de la lecture **hors sous-schéma**, et c'est délibéré.
+  /// Un `summaryFields` nommant une clé absente des `itemFields` rend une
+  /// cellule vide **depuis toujours** ; se mettre à y afficher le résidu
+  /// déplacerait un hôte qui n'a rien demandé. La valeur non éditable ne
+  /// s'affiche donc que là où une colonne la **désigne**.
+  bool get _hasDeclaredColumns {
+    final config = widget.field.config;
+    return config is ZSubListConfig && config.summaryColumns.isNotEmpty;
   }
 
   /// En-têtes de colonnes du résumé ? (**opt-in**, défaut `false` ⇒ mise en
@@ -889,6 +931,90 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     return rov.text ?? _stringOf(raw);
   }
 
+  /// Carte de lecture des **colonnes** d'une ligne, ou `null` ⇒ lecture des
+  /// tranches (chemin d'origine, à l'identique).
+  ///
+  /// Non `null` dans deux cas seulement : un transformateur d'affichage est
+  /// déclaré (la carte est son résultat) ou l'hôte a **déclaré ses colonnes**
+  /// (la carte est la donnée BRUTE de l'item). Cette seconde carte est la seule
+  /// qui porte les valeurs **non éditables** : le résidu hors sous-schéma, où
+  /// vivent les montants qu'un crochet CRUD a calculés.
+  ///
+  /// Les valeurs des champs **déclarés** y sont identiques à celles des
+  /// tranches ([_rawItemData] les lit précisément dans les tranches) : router
+  /// toutes les cellules par cette carte ne change donc rien pour elles.
+  Map<String, dynamic>? _columnData(
+    _SubItem item,
+    Map<String, dynamic>? display,
+  ) =>
+      display ?? (_hasDeclaredColumns ? _rawItemData(item) : null);
+
+  /// Texte d'une **colonne de résumé** : la valeur projetée ([_displayText]),
+  /// puis la mise en forme **déclarée** par la colonne.
+  ///
+  /// Une cellule vide reste vide — ni décimales, ni suffixe : un « 0,00 F » ou
+  /// un « % » solitaire inventerait une donnée que l'item n'a pas.
+  String _columnText(
+    BuildContext context,
+    _SubItem item,
+    ZSubListSummaryColumn column,
+    Map<String, dynamic>? data,
+  ) {
+    final text = _displayText(context, item, column.name, data);
+    if (text.isEmpty) return '';
+    final Object? raw =
+        data == null ? item.controller.valueOf(column.name) : data[column.name];
+    return _formatColumn(context, column, raw, text);
+  }
+
+  /// Mise en forme **bornée** d'une cellule : décimales fixes (sur un `num`
+  /// seulement) puis suffixe l10n, séparé par une espace **insécable** (une
+  /// valeur et son unité ne se coupent pas en fin de ligne).
+  ///
+  /// Une valeur qui n'est pas un `num` traverse `decimals` **inchangée**
+  /// (invariant AD-10 : une donnée d'une autre forme s'affiche, elle ne fait
+  /// pas échouer la cellule).
+  String _formatColumn(
+    BuildContext context,
+    ZSubListSummaryColumn column,
+    Object? raw,
+    String text,
+  ) {
+    var out = text;
+    final decimals = column.decimals;
+    if (decimals != null && decimals >= 0 && raw is num) {
+      out = raw.toStringAsFixed(decimals);
+    }
+    final suffixKey = column.suffixKey;
+    if (suffixKey != null) {
+      final suffix = label(
+        context,
+        suffixKey,
+        fallback: column.suffixFallback ?? suffixKey,
+      );
+      if (suffix.isNotEmpty) out = '$out $suffix';
+    }
+    return out;
+  }
+
+  /// Libellé d'en-tête d'une colonne : sa **clé l10n** déclarée si elle en a
+  /// une, sinon le `label` de l'`itemField` de même nom, sinon le nom.
+  ///
+  /// L'ordre importe : une colonne **calculée** n'a pas de `ZFieldSpec` d'où
+  /// tirer un libellé — sans sa clé, l'en-tête afficherait un nom technique.
+  String _columnLabel(BuildContext context, ZSubListSummaryColumn column) {
+    final key = column.labelKey;
+    if (key != null) {
+      return label(context, key, fallback: column.labelFallback ?? key);
+    }
+    final spec = _specOf(column.name);
+    return label(
+      context,
+      spec?.label ?? column.name,
+      fallback: spec?.label ?? column.name,
+    );
+  }
+
   /// Familles dont le résumé est **projeté** : les familles à choix (libellé
   /// au lieu de la clé) et les familles de date (port d'affichage). Toute
   /// autre famille conserve son rendu brut d'origine.
@@ -1005,8 +1131,11 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     required bool replie,
     Map<String, dynamic>? display,
   }) {
-    final summaryFields = _summaryFields;
-    if (summaryFields.isNotEmpty) {
+    final summaryColumns = _summaryColumns;
+    if (summaryColumns.isNotEmpty) {
+      // Carte de lecture des cellules — `null` (aucune colonne déclarée, aucun
+      // transformateur) ⇒ lecture des tranches, chemin d'origine.
+      final data = _columnData(item, display);
       // Mode EN-TÊTES (opt-in) : colonnes de largeur égale, ellipse, aucun
       // défilement horizontal — sans quoi des cellules de largeur intrinsèque
       // défilant chacune pour son compte ne s'aligneraient jamais sous
@@ -1015,17 +1144,17 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       // s'empile (le seul régime où l'ellipse ne cachait plus un détail mais
       // la totalité de l'information).
       if (_showSummaryHeaders && replie) {
-        return _stackedSummary(context, item, summaryFields, display);
+        return _stackedSummary(context, item, summaryColumns, data);
       }
       if (_showSummaryHeaders) {
         return Row(
           children: <Widget>[
-            for (final name in summaryFields)
+            for (final column in summaryColumns)
               Expanded(
                 child: Padding(
                   padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 16, 0),
                   child: Text(
-                    _displayText(context, item, name, display),
+                    _columnText(context, item, column, data),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.start,
@@ -1039,11 +1168,11 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: <Widget>[
-            for (final name in summaryFields)
+            for (final column in summaryColumns)
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 16, 0),
                 child: Text(
-                  _displayText(context, item, name, display),
+                  _columnText(context, item, column, data),
                   textAlign: TextAlign.start,
                 ),
               ),
@@ -1082,20 +1211,15 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   Widget _stackedSummary(
     BuildContext context,
     _SubItem item,
-    List<String> summaryFields, [
-    Map<String, dynamic>? display,
+    List<ZSubListSummaryColumn> summaryColumns, [
+    Map<String, dynamic>? data,
   ]) {
     final labelStyle = Theme.of(context).textTheme.labelMedium;
     final couples = <Widget>[];
-    for (final name in summaryFields) {
-      final value = _displayText(context, item, name, display);
+    for (final column in summaryColumns) {
+      final value = _columnText(context, item, column, data);
       if (value.isEmpty) continue;
-      final spec = _specOf(name);
-      final resolved = label(
-        context,
-        spec?.label ?? name,
-        fallback: spec?.label ?? name,
-      );
+      final resolved = _columnLabel(context, column);
       couples.add(
         Padding(
           padding: EdgeInsetsDirectional.fromSTEB(
@@ -1185,7 +1309,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// surface qui ne se prononce pas ne peut pas déclencher un repli).
   bool _summaryIsStacked(ZcrudTheme tokens, double width, int actionCount) {
     if (!_showSummaryHeaders || !width.isFinite) return false;
-    final columns = _summaryFields.length;
+    final columns = _summaryColumns.length;
     if (columns == 0) return false;
     final available = width - _rowChromeExtent - actionCount * _actionExtent;
     return available < columns * _minColumnWidth(tokens);
@@ -1205,14 +1329,14 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// réellement en face. Une ligne **soft-deleted** n'expose qu'une action
   /// (restaurer) + un badge : ses colonnes sont donc décalées de la différence.
   Widget _summaryHeaderRow(BuildContext context, int actionCount) {
-    final summaryFields = _summaryFields;
+    final summaryColumns = _summaryColumns;
     return Padding(
       // Reproduit la géométrie de `_CompactRow` : marge externe 16, marge
       // interne de début 12, réserve de fin = actions + marge interne 4.
       padding: const EdgeInsetsDirectional.fromSTEB(28, 8, 16, 0),
       child: Row(
         children: <Widget>[
-          for (final name in summaryFields)
+          for (final column in summaryColumns)
             Expanded(
               child: Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 16, 0),
@@ -1225,11 +1349,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                   container: true,
                   header: true,
                   child: Text(
-                    label(
-                      context,
-                      _specOf(name)?.label ?? name,
-                      fallback: _specOf(name)?.label ?? name,
-                    ),
+                    _columnLabel(context, column),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.start,
@@ -1393,7 +1513,11 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     ZSubItemCrudRequest request,
   ) async {
     try {
-      return await hook(request);
+      final outcome = await hook(request);
+      // Un véto MOTIVÉ parle à l'utilisateur — ici, et une seule fois, pour les
+      // quatre déclencheurs (création, édition, suppression, option de menu).
+      if (outcome.vetoed) _announceVeto(outcome);
+      return outcome;
     } catch (error, stack) {
       FlutterError.reportError(
         FlutterErrorDetails(
@@ -1409,6 +1533,71 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         ),
       );
       return const ZSubItemCrudOutcome.veto();
+    }
+  }
+
+  /// **Rend le motif d'un véto** à l'utilisateur — annonce au lecteur d'écran
+  /// (invariant AD-13) **et** `SnackBar` si un `ScaffoldMessenger` est
+  /// disponible, sinon rien de plus (aucun `throw` — invariant AD-10). Même
+  /// mécanique best-effort que le retour de copie d'une fiche de lecture.
+  ///
+  /// Le libellé passe par le canal l10n habituel (`ZcrudScope.labels` → locale
+  /// → table `en` → repli → la clé) : **jamais** un libellé codé en dur
+  /// (invariant FR-26), y compris quand il vient d'une règle métier de l'hôte.
+  ///
+  /// Appelé **après** un `await` : `mounted` est vérifié — le geste a pu
+  /// démonter le champ pendant que le crochet arbitrait. C'est aussi la raison
+  /// pour laquelle le socle rend le motif lui-même au lieu de confier un
+  /// `BuildContext` au crochet : un contexte capturé dans une requête et employé
+  /// après un `await` est le piège classique du widget démonté.
+  void _announceVeto(ZSubItemCrudOutcome outcome) {
+    final key = outcome.reasonKey;
+    if (key == null || !mounted) return;
+    final message = label(context, key, fallback: outcome.reasonFallback ?? key);
+    if (message.isEmpty) return;
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      message,
+      Directionality.of(context),
+    );
+    ScaffoldMessenger.maybeOf(context)
+        ?.showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// **Lecture** de l'état du formulaire parent offerte au crochet CRUD
+  /// ([ZSubItemCrudRequest.parent]) — `null` hors formulaire (construction
+  /// directe du widget), auquel cas le crochet le voit et s'en passe.
+  ///
+  /// Lecture **non tracée**, et c'est une différence assumée avec les résolveurs
+  /// dérivés : elle a lieu au moment d'un geste, une fois, et n'ouvre **aucun**
+  /// abonnement. Un crochet ne suit pas une tranche parente, il en prend une
+  /// photo.
+  ZValueOf? get _parentReader => widget.parentController?.valueOf;
+
+  /// Applique le **correctif de parent** décrit par une issue de crochet
+  /// ([ZSubItemCrudOutcome.parentPatch]) — **une seule fois**, après
+  /// l'agrégation de la sous-liste.
+  ///
+  /// L'écriture passe par le canal **granulaire** du contrôleur parent : chaque
+  /// tranche nommée notifie ses seuls abonnés, jamais le `ChangeNotifier`
+  /// global (invariant AD-2). Un champ parent que le correctif ne nomme pas ne
+  /// se reconstruit donc pas.
+  ///
+  /// 🔴 **La tranche de la sous-liste elle-même est IGNORÉE.** Elle vient d'être
+  /// publiée par `_syncToParent` ; l'écraser depuis un correctif détruirait
+  /// l'agrégation que le socle garantit. Un hôte qui veut changer l'item rend
+  /// une issue `replace`.
+  ///
+  /// **Aucune boucle possible** : ce champ n'est abonné qu'aux tranches lues par
+  /// ses résolveurs, jamais à la sienne ; et un résolveur relancé ne rappelle
+  /// pas le crochet — seul un geste de l'utilisateur le fait.
+  void _applyParentPatch(Map<String, Object?>? patch) {
+    if (patch == null || patch.isEmpty) return;
+    final parent = widget.parentController;
+    if (parent == null) return;
+    for (final entry in patch.entries) {
+      if (entry.key == widget.field.name) continue;
+      parent.setValue(entry.key, entry.value);
     }
   }
 
@@ -1467,6 +1656,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     // que le formulaire ne pouvait pas rendre. Écrit AVANT le résultat saisi :
     // une clé déclarée l'emporte toujours sur son homonyme du gabarit.
     var data = <String, dynamic>{..._unmappedOf(seed), ...result};
+    Map<String, Object?>? patch;
     final hook = _crudHook;
     if (hook != null) {
       final outcome = await _arbitrate(
@@ -1478,14 +1668,19 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
           // Le gabarit CHOISI — l'équivalent du `{option}` legacy sur `create`.
           // `null` pour un ajout par simple bouton `+` : rien n'a été choisi.
           template: template,
+          parent: _parentReader,
         ),
       );
       if (!mounted || outcome.vetoed) return;
       final replacement = outcome.data;
       if (replacement != null) data = replacement;
+      patch = outcome.parentPatch;
     }
     setState(() => _items.add(_makeItem(data, preserveUnmapped: true)));
     _syncToParent();
+    // APRÈS l'agrégation : le parent voit la liste à jour ET son correctif dans
+    // le même état cohérent (un total qui précéderait sa ligne serait faux).
+    _applyParentPatch(patch);
   }
 
   /// Édition via dialog (remplace **à sa place** — identité stable
@@ -1498,6 +1693,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     final result = await _showItemForm(_rawItemData(item), readOnly: false);
     if (!mounted || result == null) return;
     var data = result;
+    Map<String, Object?>? patch;
     final hook = _crudHook;
     if (hook != null) {
       final outcome = await _arbitrate(
@@ -1505,6 +1701,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         ZSubItemCrudRequest(
           field: widget.field,
           action: ZCrudAction.update,
+          parent: _parentReader,
           // Donnée PROPOSÉE : le résidu hors sous-schéma d'abord (donc `id`),
           // les tranches saisies ensuite — MÊME ordre que `_syncToParent`, de
           // sorte que le crochet voie exactement ce qui serait agrégé.
@@ -1521,12 +1718,14 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
           ..._unmappedOf(replacement),
         };
       }
+      patch = outcome.parentPatch;
     }
     for (final f in _itemFields) {
       item.controller.setValue(f.name, data[f.name]);
     }
     setState(() {});
     _syncToParent();
+    _applyParentPatch(patch);
   }
 
   /// Consultation (dialog `readOnly`, sans Enregistrer).
@@ -1555,6 +1754,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       ),
     );
     if (!mounted || confirmed != true) return;
+    Map<String, Object?>? patch;
     final hook = _crudHook;
     if (hook != null) {
       final outcome = await _arbitrate(
@@ -1564,19 +1764,24 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
           action: ZCrudAction.delete,
           data: _rawItemData(item),
           item: _hookView(item),
+          parent: _parentReader,
         ),
       );
       // Un remplacement n'a pas de destinataire ici : l'item s'en va. Seul le
-      // véto a un effet — et c'est le seul moyen de le retenir.
+      // véto a un effet — et c'est le seul moyen de le retenir. Le correctif de
+      // parent, lui, en a un : un retrait de ligne change les totaux.
       if (!mounted || outcome.vetoed) return;
+      patch = outcome.parentPatch;
     }
     if (_softDelete) {
       setState(() => item.deleted = true);
       _syncToParent();
+      _applyParentPatch(patch);
       return;
     }
     final index = _items.indexOf(item);
     if (index >= 0) _removeAt(index);
+    _applyParentPatch(patch);
   }
 
   /// Restaure un item soft-deleted (réintègre l'agrégation parent).
@@ -1803,11 +2008,17 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         data: _rawItemData(item),
         item: _hookView(item),
         option: option,
+        parent: _parentReader,
       ),
     );
     if (!mounted || outcome.vetoed) return;
     final replacement = outcome.data;
-    if (replacement == null) return;
+    if (replacement == null) {
+      // Aucune donnée d'item à écrire — le correctif de parent, lui, reste dû :
+      // une option peut n'agir QUE sur le formulaire parent.
+      _applyParentPatch(outcome.parentPatch);
+      return;
+    }
     item.unmapped = <String, dynamic>{
       ...item.unmapped,
       ..._unmappedOf(replacement),
@@ -1817,6 +2028,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     }
     setState(() {});
     _syncToParent();
+    _applyParentPatch(outcome.parentPatch);
   }
 
   /// Contenu résumé d'une ligne compacte : le **rendu libre**
@@ -2093,7 +2305,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
               if (_showSummaryHeaders &&
                   listSeam == null &&
                   !stacked &&
-                  _summaryFields.isNotEmpty &&
+                  _summaryColumns.isNotEmpty &&
                   _items.isNotEmpty)
                 _summaryHeaderRow(context, actionCount),
               if (_items.isEmpty)
@@ -2214,12 +2426,13 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// puce est un résumé, elle en suit les règles.
   String _chipLabel(_SubItem item) {
     final display = _displayDataOf(item);
-    final summaryFields = _summaryFields;
-    if (summaryFields.isNotEmpty) {
+    final summaryColumns = _summaryColumns;
+    if (summaryColumns.isNotEmpty) {
+      final data = _columnData(item, display);
       final parts = <String>[
-        for (final name in summaryFields)
-          if (_displayText(context, item, name, display).isNotEmpty)
-            _displayText(context, item, name, display),
+        for (final column in summaryColumns)
+          if (_columnText(context, item, column, data).isNotEmpty)
+            _columnText(context, item, column, data),
       ];
       if (parts.isNotEmpty) return parts.join(' — ');
     }

@@ -114,6 +114,7 @@ class ZSubListConfig extends ZFieldConfig {
     this.reorderable = true,
     this.displayMode = ZSubListDisplayMode.inline,
     this.summaryFields = const <String>[],
+    this.summaryColumns = const <ZSubListSummaryColumn>[],
     this.softDelete = false,
     this.creationTemplates = const <ZSubListItemTemplate>[],
     this.defaultNewItem = const <String, Object?>{},
@@ -136,7 +137,46 @@ class ZSubListConfig extends ZFieldConfig {
   /// Liste **ordonnée** des `name` de sous-champs affichés comme colonnes/
   /// valeurs de résumé en mode compact. Vide (défaut) → repli titre dérivé
   /// côté widget.
+  ///
+  /// Un `name` qui ne correspond à **aucun** `itemField` rend une cellule
+  /// **vide** — comportement historique, délibérément **conservé**. La colonne
+  /// qui doit afficher une valeur non saisie se déclare en [summaryColumns].
   final List<String> summaryFields;
+
+  /// **Colonnes de résumé déclarées** (modes `compact` et `tags`).
+  ///
+  /// Vide (**défaut**) ⇒ ce sont les [summaryFields] qui gouvernent le résumé,
+  /// **à l'identique** : aucune colonne déclarée, aucune allocation, aucun
+  /// changement de rendu.
+  ///
+  /// Non vide ⇒ cette liste **remplace** [summaryFields] (elle ne s'y ajoute
+  /// pas) : deux sources de colonnes qui fusionneraient rendraient impossible
+  /// de **retirer** une colonne, et feraient d'un même résumé deux
+  /// déclarations à tenir d'accord.
+  ///
+  /// ## Ce qu'elle apporte, et pourquoi ce n'est PAS un second sous-schéma
+  ///
+  /// Une colonne n'est pas un champ : elle **désigne une valeur de l'item** et
+  /// dit comment l'afficher. C'est la différence avec le moteur legacy, qui
+  /// tenait deux listes parallèles (`subItemsFieldsBuilder` pour les colonnes,
+  /// `subItemsFormFieldsBuilder` pour les champs) et pouvait donc les laisser
+  /// diverger.
+  ///
+  /// Deux cas, un seul mécanisme :
+  /// - [ZSubListSummaryColumn.name] **est** un `itemField` ⇒ la valeur vient de
+  ///   sa tranche, projetée exactement comme aujourd'hui (libellé de choix,
+  ///   port de date) ;
+  /// - [ZSubListSummaryColumn.name] n'est **pas** un `itemField` ⇒ la valeur
+  ///   est lue dans la **donnée de l'item** (le résidu hors sous-schéma, celui
+  ///   que la graine du parent ou une issue `replace` du crochet CRUD y ont
+  ///   déposé). La colonne s'affiche donc **sans** que le champ devienne
+  ///   saisissable : le formulaire d'item ne rend que les `itemFields`, et
+  ///   aucune tranche n'est allouée pour elle.
+  ///
+  /// C'est le cas mesuré des **lignes d'un document** : « Montant HT » et
+  /// « Montant TTC » sont calculés par le crochet CRUD, déposés dans l'item, et
+  /// **affichés sans jamais être saisis**.
+  final List<ZSubListSummaryColumn> summaryColumns;
 
   /// **Soft-delete/restore** : quand `true`, la suppression d'un item (mode
   /// compact) le **marque supprimé** (exclu de l'agrégation parent) **sans le
@@ -259,6 +299,7 @@ class ZSubListConfig extends ZFieldConfig {
           itemFormPresentation == other.itemFormPresentation &&
           _listEquals(itemFields, other.itemFields) &&
           _listEquals(summaryFields, other.summaryFields) &&
+          _listEquals(summaryColumns, other.summaryColumns) &&
           _listEquals(creationTemplates, other.creationTemplates) &&
           _mapEquals(defaultNewItem, other.defaultNewItem);
 
@@ -274,10 +315,107 @@ class ZSubListConfig extends ZFieldConfig {
         itemFormPresentation,
         Object.hashAll(itemFields),
         Object.hashAll(summaryFields),
+        Object.hashAll(summaryColumns),
         Object.hashAll(creationTemplates),
         Object.hashAllUnordered(
           defaultNewItem.entries.map((e) => Object.hash(e.key, e.value)),
         ),
+      );
+}
+
+/// **Colonne de résumé** d'une sous-liste — pur-données `const` (invariants
+/// AD-3/AD-14 : aucune closure), déclarée dans `ZSubListConfig.summaryColumns`.
+///
+/// Elle **désigne une valeur** de l'item ([name]) et dit comment l'afficher.
+/// Elle ne déclare **pas un champ** : rien n'est saisissable de son fait, aucune
+/// tranche n'est allouée, le formulaire d'item reste celui des `itemFields`.
+///
+/// ## Périmètre de mise en forme — BORNÉ, et volontairement
+///
+/// Une colonne calculée sans mise en forme est à moitié utile : un montant rendu
+/// « 1500.0 » à côté d'une quantité rendue « 3 » n'apprend pas grand-chose. Deux
+/// réglages, pas trois :
+/// - [decimals] — nombre de décimales **fixe** (`toStringAsFixed`), appliqué au
+///   seul cas où la valeur est un `num` ;
+/// - [suffixKey] — **clé l10n** d'un suffixe accolé à la valeur (« % », un
+///   symbole monétaire, une unité). Jamais un libellé codé en dur (FR-26).
+///
+/// **Ce qui n'est PAS livré, et qu'il ne faut pas croire livré** :
+/// - aucun **formatage monétaire localisé** (séparateur de milliers, position du
+///   symbole, cadrage comptable) : cela demande un port de formatage, que ce
+///   socle n'a pas — le `isCurrency` du moteur legacy n'est donc **pas** porté,
+///   seulement son effet visible le plus simple (décimales + suffixe) ;
+/// - aucun **suffixe dérivé de l'item** (le `suffixBuilder(item)` legacy, qui
+///   lisait l'unité de stock d'une ligne) : c'est une closure, elle ne peut pas
+///   vivre dans le domaine. Une colonne dont le suffixe varie par item se rend
+///   par le canal de seams (`itemTransformer` ou `itemBuilder`) ;
+/// - aucun **alignement de colonne** ni largeur : la géométrie du résumé reste
+///   celle du socle (colonnes égales ou empilement mesuré).
+class ZSubListSummaryColumn {
+  /// Construit une colonne de résumé `const`.
+  const ZSubListSummaryColumn({
+    required this.name,
+    this.labelKey,
+    this.labelFallback,
+    this.decimals,
+    this.suffixKey,
+    this.suffixFallback,
+  });
+
+  /// Clé de la valeur affichée, dans l'item.
+  ///
+  /// Si elle nomme un `itemField`, la valeur vient de sa **tranche** (et garde
+  /// toutes les projections d'affichage : libellé de choix, port de date). Sinon
+  /// elle est lue dans la **donnée de l'item** — une valeur **non éditable**,
+  /// typiquement calculée par le crochet CRUD.
+  final String name;
+
+  /// Clé l10n du **libellé d'en-tête** de la colonne (repli [labelFallback],
+  /// puis le `label` de l'`itemField` de même nom, puis [name]).
+  ///
+  /// Indispensable pour une colonne **calculée** : n'ayant pas de `ZFieldSpec`,
+  /// elle n'a pas de libellé à emprunter — sans cette clé, l'en-tête afficherait
+  /// le nom technique.
+  final String? labelKey;
+
+  /// Repli affiché quand [labelKey] n'est résolue nulle part.
+  final String? labelFallback;
+
+  /// Nombre **fixe** de décimales (`toStringAsFixed`). `null` (défaut) ⇒ la
+  /// valeur est rendue telle quelle, exactement comme aujourd'hui. Sans effet
+  /// sur une valeur qui n'est pas un `num` (invariant AD-10 : une donnée d'une
+  /// autre forme s'affiche, elle ne fait pas échouer la cellule).
+  final int? decimals;
+
+  /// Clé l10n du **suffixe** accolé à la valeur, séparé par une espace
+  /// insécable (« 1 500,00 F », « 12 % »). `null` (défaut) ⇒ aucun suffixe.
+  /// Non appliqué à une cellule **vide** : un suffixe seul n'apprend rien.
+  final String? suffixKey;
+
+  /// Repli affiché quand [suffixKey] n'est résolue nulle part.
+  final String? suffixFallback;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZSubListSummaryColumn &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          labelKey == other.labelKey &&
+          labelFallback == other.labelFallback &&
+          decimals == other.decimals &&
+          suffixKey == other.suffixKey &&
+          suffixFallback == other.suffixFallback;
+
+  @override
+  int get hashCode => Object.hash(
+        runtimeType,
+        name,
+        labelKey,
+        labelFallback,
+        decimals,
+        suffixKey,
+        suffixFallback,
       );
 }
 
