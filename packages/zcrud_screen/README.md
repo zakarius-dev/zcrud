@@ -1624,6 +1624,108 @@ C'est la **même** normalisation que celle de la sauvegarde de `ZCrudScreen`
 (`zNormalizeFormValues`, de `zcrud_core`) : la forme des données ne dépend pas
 de l'écran qui les a produites.
 
+#### La même fenêtre, présentée en ÉTAPES
+
+Un formulaire long se présente en assistant : `steps` déclare les étapes,
+`fields` reste le **catalogue** complet. Les deux se **complètent** — une étape
+ne porte pas de champs à elle, elle nomme ceux du catalogue qu'elle regroupe :
+
+```dart
+final escale = await presentFormEdition(
+  context,
+  fields: escaleFields, // le catalogue COMPLET, toutes étapes confondues
+  steps: const <ZEditionStep>[
+    ZEditionStep(title: 'Navire', fields: <String>['nom', 'pavillon']),
+    ZEditionStep(title: 'Escale', fields: <String>['quai', 'arrivee']),
+  ],
+  title: 'Escale',
+);
+```
+
+`stepperConfig` règle la présentation de l'assistant — bande verticale, toutes
+les étapes dépliées, accordéon, gate de navigation :
+
+```dart
+stepperConfig: const ZStepperConfig(
+  stepsDisplay: ZStepsDisplay.allExpanded, // toutes les étapes dépliées
+  orientation: ZStepOrientation.vertical,
+),
+```
+
+##### Quand le nombre d'étapes dépend des données
+
+`steps` est une liste ordinaire, construite à l'appel comme n'importe quelle
+autre — rien n'oblige à la connaître à la compilation. Une étape par type de
+document présent s'écrit donc directement :
+
+```dart
+final documents = await presentFormEdition(
+  context,
+  fields: <ZFieldSpec>[
+    for (final type in typesPresents)
+      ZFieldSpec(
+        name: 'doc_${type.code}',
+        type: EditionFieldType.text,
+        label: type.libelle,
+      ),
+  ],
+  steps: <ZEditionStep>[
+    for (final type in typesPresents)
+      ZEditionStep(title: type.libelle, fields: <String>['doc_${type.code}']),
+  ],
+  title: 'Pièces du dossier',
+);
+```
+
+##### Ce que les étapes ne changent PAS
+
+La soumission valide et normalise le **catalogue entier**, pas l'étape
+affichée. Concrètement :
+
+- les valeurs de **toutes** les étapes sont rendues, y compris celles d'une
+  étape que l'utilisateur n'a jamais ouverte ;
+- un champ invalide dans une étape **non visitée** empêche l'enregistrement —
+  rien n'est rendu, la fenêtre reste ouverte ;
+- le bouton d'enregistrement du chrome reste disponible à tout moment, et le
+  bouton final de la dernière étape soumet par la même voie ;
+- renoncer rend `null`, étapes ou pas.
+
+⚠️ Un champ du catalogue qu'**aucune** étape ne nomme n'est jamais affiché, mais
+reste validé : s'il porte un validateur qui échoue, la fenêtre devient
+insoumissible sans message visible. Le cas est signalé en mode développement —
+ajoutez le champ à une étape, ou retirez son validateur.
+
+#### Le corps composé par vos soins
+
+Quand la présentation sort de ces deux formes — un corps mêlant formulaire et
+contenu applicatif, un assistant maison, un récapitulatif en tête —
+`bodyBuilder` rend la main. Vous montez le corps ; le socle garde le conteneur
+adaptatif, le garde d'abandon, le chrome et le **contrat de sortie** :
+
+```dart
+final valeurs = await presentFormEdition(
+  context,
+  fields: escaleFields,
+  bodyBuilder: (context, controller) => Column(
+    children: <Widget>[
+      const RappelReglementaire(),
+      // Le MÊME contrôleur : c'est lui que la soumission lira.
+      Expanded(child: ZFormOnly(controller: controller)),
+    ],
+  ),
+  bodyFit: ZEditionBodyFit.scrollable, // votre corps défile lui-même
+);
+```
+
+Tout ce que vous montez doit écrire dans **ce** contrôleur — un second
+contrôleur ne serait jamais lu au moment d'enregistrer.
+
+`bodyBuilder` et `steps` déclarent deux corps concurrents, et `sections` décrit
+la mise en page d'un formulaire à plat (sous des étapes, chaque `ZEditionStep`
+porte ses propres sections) : ces combinaisons sont **refusées par une
+assertion** en développement. En production la préséance est définie et rien ne
+lève — `bodyBuilder`, puis `steps`, puis le formulaire à plat.
+
 ## API principale {#api-principale}
 
 | Type | Rôle |
@@ -1655,7 +1757,8 @@ de l'écran qui les a produites.
 | `ZCrudExportDelivery` | `FutureOr<void> Function(BuildContext, ZExportedBytes)` — la remise du fichier produit à l'application. |
 | `ZFormOnly` | Le formulaire déclaratif **nu** : les champs, sans coquille ni bouton. `controller` (pilotage de la page) ou `fields` (pilotage possédé et libéré par le widget). |
 | `ZFormOnlyController` | Pilotage extérieur d'un `ZFormOnly` : `validate()`, `isValid`, `revealErrors()`, `values` (normalisées), `submit()` (valeurs ou `null`), `isDirty`, `form` (le `ZFormController` sous-jacent). |
-| `presentFormEdition(...)` | Présente un formulaire en page/feuille/dialogue et rend `Map<String, dynamic>?` — les valeurs validées et normalisées, ou `null` si l'utilisateur renonce. |
+| `presentFormEdition(...)` | Présente un formulaire en page/feuille/dialogue et rend `Map<String, dynamic>?` — les valeurs validées et normalisées, ou `null` si l'utilisateur renonce. Trois corps possibles : `fields` seuls (formulaire à plat), `fields` + `steps` (assistant multi-étapes, `stepperConfig` pour sa présentation), ou `bodyBuilder` (corps composé par l'appelant). |
+| `ZFormBodyBuilder` | `Widget Function(BuildContext, ZFormOnlyController)` — le corps que vous composez pour `presentFormEdition`, sur le contrôleur que la soumission lira. |
 | `ZRowPermissions` | Ce qu'une ligne **retire** : `.unrestricted()`, `.locked()`, `.denying({…})`, avec `reasonKey` facultatif. Aucun vocabulaire d'autorisation — un résolveur ne peut jamais élargir. |
 
 Paramètres notables hérités du socle : `actions` (`List<ZAppBarAction>` de

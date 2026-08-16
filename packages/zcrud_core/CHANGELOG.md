@@ -3,6 +3,87 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.1.0 — 2026-08-16
+
+### Ajouté
+
+#### Un champ fichier retient ce que l'usager a retiré
+
+La tranche d'un champ `file`/`image`/`document` ne porte que ce qui **reste**
+attaché. Ce que l'usager détachait — une photo supprimée, un document remplacé
+— disparaissait au moment même où il le produisait : plus rien ne désignait le
+fichier à effacer pour de bon, et rien ne le signalait. Un formulaire pouvait
+donc paraître enregistré alors que les pièces retirées restaient en base
+indéfiniment.
+
+Les valeurs normalisées d'une soumission portent désormais, à côté de chaque
+champ de la famille fichier, une entrée **compagne** nommée par
+`zRemovedFilesKey('nom du champ')` :
+
+```dart
+final valeurs = formulaire.submit();
+final restants = valeurs?['photos'] as List<Object>?;
+final retires  = valeurs?[zRemovedFilesKey('photos')] as List<Object>?;
+// `retires` : ce qu'il faut effacer réellement.
+```
+
+Les entrées retirées sont rendues **sous la forme que le champ tenait** :
+l'objet `AppFile` quand il le connaît — y compris pour une référence opaque que
+le résolveur de fichiers avait résolue —, la référence opaque sinon. C'est bien
+un objet résolu qui ressort, pas un identifiant à relire.
+
+La clé est **toujours présente** pour un champ fichier soumis : liste **vide**
+quand rien n'a été retiré, jamais `null`. Elle suit exactement les règles de la
+soumission — un champ en lecture seule ou masqué par une condition n'en produit
+aucune —, et elle ne recouvre jamais un champ que vous auriez réellement
+déclaré sous ce nom. Un formulaire sans champ fichier rend exactement les mêmes
+clés qu'avant.
+
+Un remplacement compte comme un retrait : sur un champ à valeur unique, choisir
+un nouveau fichier détache l'ancien. Une simple transition d'état d'envoi
+(`en attente → en cours → envoyé`), elle, n'est jamais un retrait.
+
+Deux points d'accès plus fins restent disponibles pour qui compose ses propres
+briques : `ZFormController.removedFilesOf('nom du champ')` (et le snapshot
+`removedFiles`), remis à zéro par `reset` / `reseed` / `markPristine` ; et
+`ZAppFileField.onRemoved`, notifié à chaque retrait.
+
+### Corrigé
+
+#### Un motif ne rend plus le champ obligatoire
+
+Poser `ZValidatorSpec.pattern` sur un champ le rendait **obligatoire** : la
+valeur vide était refusée par le motif lui-même. Un champ de contact facultatif
+mais valide quand il est rempli — un numéro de téléphone qu'on ne saisit pas
+toujours — était donc inexprimable : poser le motif imposait la saisie, ne pas
+le poser perdait le verrou de format.
+
+**Forme et présence sont désormais deux exigences distinctes.** Un validateur
+de forme décrit ce à quoi une valeur doit ressembler *quand il y en a une* ; la
+présence est exigée par `ZValidatorSpec.required`, et par lui seul :
+
+```dart
+// Facultatif, mais valide s'il est rempli :
+validators: [ZValidatorSpec.pattern(r'^\+228[0-9]{8}$')],
+
+// Obligatoire ET bien formé :
+validators: [ZValidatorSpec.required(), ZValidatorSpec.email()],
+```
+
+La même incohérence affectait **tous** les autres validateurs de forme, qui
+refusaient eux aussi le vide : `email` (que nous avons instruit et confirmé),
+`url`, `ip`, `creditCard`, `phone`, `numeric`, `integer`, `dateString`,
+`minLength`, `maxLength`, `min`, `max`, `equal`, `notEqual`, ainsi que
+`address(enforceFormat: true)` et `percentage(enforceRange: true)`. Tous
+acceptent désormais une valeur absente. `password` se comportait déjà ainsi ;
+`required` est inchangé.
+
+**Rupture douce à vérifier.** Si vous vous appuyiez sur l'effet de bord « poser
+un motif (ou un format) rend le champ obligatoire », ce champ est maintenant
+soumissible à vide : **ajoutez-lui `ZValidatorSpec.required()`**. Le verrou de
+format, lui, est intact — une valeur non conforme reste refusée. Les champs qui
+déclaraient déjà `required` ne changent pas de comportement.
+
 ## 1.0.1 — 2026-08-15
 
 ### Corrigé

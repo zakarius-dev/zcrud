@@ -153,6 +153,52 @@ class ZFormController extends ChangeNotifier {
   /// écritures viennent de LUI (`derived: true`) ; tout le reste est une saisie.
   bool isTouched(String name) => _touched.contains(name);
 
+  /// Registre des **retraits** de la famille fichier : `nom du champ → entrées
+  /// que l'utilisateur a détachées du champ depuis l'ouverture du formulaire`.
+  ///
+  /// Vidé par [reset] / [reseed] / [markPristine], comme la baseline dont il
+  /// est le pendant : ce qui n'est plus en cours d'édition n'a plus de retrait
+  /// en attente.
+  final Map<String, List<Object>> _removedFiles = <String, List<Object>>{};
+
+  /// Consigne que [entry] a été **retirée** du champ [name].
+  ///
+  /// [entry] est ce que le champ tenait au moment du retrait : l'objet fichier
+  /// (`AppFile`) quand il est connu — y compris pour une référence que le
+  /// résolveur avait résolue —, sinon la **référence opaque** telle qu'elle
+  /// était persistée. C'est cette forme-là qui est utile à l'appelant : elle
+  /// désigne le fichier à effacer réellement.
+  ///
+  /// Écriture **pure** : aucun canal réactif n'est notifié (ni tranche, ni
+  /// `notifyListeners()` global — invariant AD-2). Un retrait déjà consigné
+  /// n'est pas dupliqué.
+  ///
+  /// Appelé par le champ fichier du moteur d'édition ; un hôte n'a normalement
+  /// pas à l'appeler lui-même.
+  void recordRemovedFile(String name, Object entry) {
+    final list = _removedFiles.putIfAbsent(name, () => <Object>[]);
+    if (list.contains(entry)) return;
+    list.add(entry);
+  }
+
+  /// Entrées **retirées** du champ [name] depuis l'ouverture du formulaire,
+  /// dans l'ordre des retraits. Liste **vide** quand rien n'a été retiré —
+  /// jamais `null`.
+  ///
+  /// Lecture **pure** (aucun canal réactif, rebuild ciblé intact). La liste
+  /// rendue est immuable.
+  List<Object> removedFilesOf(String name) =>
+      List<Object>.unmodifiable(_removedFiles[name] ?? const <Object>[]);
+
+  /// Snapshot **immuable** de tous les retraits en attente
+  /// (`nom du champ → entrées retirées`). Les champs sans retrait en sont
+  /// absents.
+  Map<String, List<Object>> get removedFiles =>
+      Map<String, List<Object>>.unmodifiable(<String, List<Object>>{
+        for (final e in _removedFiles.entries)
+          if (e.value.isNotEmpty) e.key: List<Object>.unmodifiable(e.value),
+      });
+
   /// Met à jour **exclusivement** la tranche du champ [name].
   ///
   /// Notifie UNIQUEMENT les listeners de `fieldListenable(name)` ; les autres
@@ -216,7 +262,8 @@ class ZFormController extends ChangeNotifier {
 
   /// Re-capture la **baseline** depuis les valeurs courantes ⇒ [isDirty] repasse
   /// à `false`. Appelé après une soumission réussie (`onSubmit` → `Right`).
-  /// N'affecte NI la révélation NI la révision de re-seed.
+  /// N'affecte NI la révélation NI la révision de re-seed. Les retraits de
+  /// fichiers ([removedFilesOf]) sont **oubliés** : ils ont été soumis.
   void markPristine() {
     _baseline
       ..clear()
@@ -225,11 +272,13 @@ class ZFormController extends ChangeNotifier {
       );
     _dirtyFields.clear();
     _touched.clear();
+    _removedFiles.clear();
     if (_isDirty.value) _isDirty.value = false;
   }
 
   /// **Réinitialise** le formulaire à sa baseline courante : restaure la
-  /// valeur baseline de chaque tranche, efface l'état *dirty* et la révélation,
+  /// valeur baseline de chaque tranche, efface l'état *dirty*, la révélation et
+  /// les retraits de fichiers en attente ([removedFilesOf]),
   /// puis incrémente [reseedRevision] pour re-amorcer les widgets bufferisés
   /// **hors focus**. Une saisie en cours (champ focalisé) n'est pas écrasée : le
   /// re-amorçage est différé à la perte de focus par le widget.
@@ -239,6 +288,7 @@ class ZFormController extends ChangeNotifier {
     }
     _dirtyFields.clear();
     _touched.clear();
+    _removedFiles.clear();
     if (_isDirty.value) _isDirty.value = false;
     _reveal.value = 0;
     _reseedRevision.value = _reseedRevision.value + 1;
@@ -248,6 +298,8 @@ class ZFormController extends ChangeNotifier {
   /// [values] dans les tranches, **re-définit la baseline** sur ces valeurs
   /// (⇒ non-dirty), puis incrémente [reseedRevision] pour re-amorcer les widgets
   /// bufferisés hors focus. Sert le chargement asynchrone d'un enregistrement.
+  /// Les retraits de fichiers en attente ([removedFilesOf]) sont effacés : ils
+  /// portaient sur l'état remplacé.
   void reseed(Map<String, Object?> values) {
     values.forEach((name, value) {
       _slice(name).value = value;
@@ -255,6 +307,7 @@ class ZFormController extends ChangeNotifier {
     });
     _dirtyFields.clear();
     _touched.clear();
+    _removedFiles.clear();
     if (_isDirty.value) _isDirty.value = false;
     _reseedRevision.value = _reseedRevision.value + 1;
   }
@@ -283,6 +336,7 @@ class ZFormController extends ChangeNotifier {
       slice.dispose();
     }
     _slices.clear();
+    _removedFiles.clear();
     _visibleFields.dispose();
     _isDirty.dispose();
     _reveal.dispose();

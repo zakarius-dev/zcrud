@@ -838,11 +838,16 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       case EditionFamily.file:
         // Famille fichier : value-in-slice, seams picker/storage injectés
         // via `ZcrudScope` (défaut `null` → dégradation propre).
+        // Ce que l'utilisateur DÉTACHE ne tient pas dans la tranche (qui ne
+        // porte que ce qui reste) : le champ le remonte, le contrôleur le
+        // consigne, et la normalisation le ressort à la soumission.
         return ZAppFileField(
           field: field,
           value: value,
           liveValue: () => widget.controller.valueOf(field.name),
           onChanged: (v) => widget.controller.setValue(field.name, v),
+          onRemoved: (entry) =>
+              widget.controller.recordRemovedFile(field.name, entry),
         );
       case EditionFamily.registryOrFallback:
         return _dispatchRegistry(context, field, value);

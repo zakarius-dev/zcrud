@@ -23,6 +23,14 @@
 /// capturant le `ZFormController`, lisant `valueOf(refKey)` à l'invocation).
 /// Ici ils sont **ignorés** (le compilateur ne produit aucun validateur pour
 /// eux). Ce fichier ne couvre que les validateurs **locaux au champ**.
+///
+/// FRONTIÈRE — **forme** et **présence** sont deux exigences distinctes. Un
+/// validateur de forme (motif, e-mail, longueur, borne, égalité…) décrit ce à
+/// quoi une valeur doit ressembler **quand il y en a une** ; il n'exige jamais
+/// qu'il y en ait une. L'exigence de présence est portée par un seul
+/// validateur — `ZValidatorKind.required` — et un champ qui la veut le déclare.
+/// C'est ce qui rend exprimable la forme la plus courante d'un champ de
+/// contact : *facultatif, mais valide s'il est rempli*.
 library;
 
 import 'package:flutter/widgets.dart' show FormFieldValidator;
@@ -59,70 +67,116 @@ abstract final class ZValidatorCompiler {
 
   /// Projette UNE spec en validateur, ou `null` si la famille est **déférée**
   /// (inter-champs) ou incomplète (paramètre requis absent).
+  ///
+  /// Toutes les familles de **forme** sont compilées avec
+  /// `checkNullOrEmpty: false` : une saisie vide les traverse sans erreur, la
+  /// présence n'étant exigée que par [ZValidatorKind.required] (voir la
+  /// frontière *forme / présence* en tête de fichier).
   static FormFieldValidator<String>? _compileOne(ZValidatorSpec spec) {
     final e = spec.errorText;
     switch (spec.kind) {
       case ZValidatorKind.required:
+        // SEULE famille qui porte la présence : ici, et seulement ici, une
+        // valeur vide ou absente est une erreur.
         return FormBuilderValidators.required<String>(errorText: e);
       case ZValidatorKind.minLength:
         final n = spec.length;
         return n == null
             ? null
-            : FormBuilderValidators.minLength<String>(n, errorText: e);
+            : FormBuilderValidators.minLength<String>(
+                n,
+                checkNullOrEmpty: false,
+                errorText: e,
+              );
       case ZValidatorKind.maxLength:
         final n = spec.length;
         return n == null
             ? null
-            : FormBuilderValidators.maxLength<String>(n, errorText: e);
+            : FormBuilderValidators.maxLength<String>(
+                n,
+                checkNullOrEmpty: false,
+                errorText: e,
+              );
       case ZValidatorKind.min:
         // Littérale seulement ; `refKey` (inter-champs) ⇒ déféré au niveau
         // formulaire.
         final b = spec.bound;
         return b == null
             ? null
-            : FormBuilderValidators.min<String>(b, errorText: e);
+            : FormBuilderValidators.min<String>(
+                b,
+                checkNullOrEmpty: false,
+                errorText: e,
+              );
       case ZValidatorKind.max:
         final b = spec.bound;
         return b == null
             ? null
-            : FormBuilderValidators.max<String>(b, errorText: e);
+            : FormBuilderValidators.max<String>(
+                b,
+                checkNullOrEmpty: false,
+                errorText: e,
+              );
       case ZValidatorKind.equal:
         final v = spec.value;
         return v == null
             ? null
-            : FormBuilderValidators.equal<String>(v, errorText: e);
+            : FormBuilderValidators.equal<String>(
+                v,
+                checkNullOrEmpty: false,
+                errorText: e,
+              );
       case ZValidatorKind.notEqual:
         final v = spec.value;
         return v == null
             ? null
-            : FormBuilderValidators.notEqual<String>(v, errorText: e);
+            : FormBuilderValidators.notEqual<String>(
+                v,
+                checkNullOrEmpty: false,
+                errorText: e,
+              );
       case ZValidatorKind.match:
         // `match` = égalité à la valeur d'un AUTRE champ (`refKey`) ⇒ inter-
         // champs, déféré au niveau formulaire. (Le `pattern` regex, lui, est
         // `pattern`.)
         return null;
       case ZValidatorKind.email:
-        return FormBuilderValidators.email(errorText: e);
+        return FormBuilderValidators.email(checkNullOrEmpty: false, errorText: e);
       case ZValidatorKind.url:
-        return FormBuilderValidators.url(errorText: e);
+        return FormBuilderValidators.url(checkNullOrEmpty: false, errorText: e);
       case ZValidatorKind.ip:
-        return FormBuilderValidators.ip(errorText: e);
+        return FormBuilderValidators.ip(checkNullOrEmpty: false, errorText: e);
       case ZValidatorKind.creditCard:
-        return FormBuilderValidators.creditCard(errorText: e);
+        return FormBuilderValidators.creditCard(
+          checkNullOrEmpty: false,
+          errorText: e,
+        );
       case ZValidatorKind.phone:
-        return FormBuilderValidators.phoneNumber(errorText: e);
+        return FormBuilderValidators.phoneNumber(
+          checkNullOrEmpty: false,
+          errorText: e,
+        );
       case ZValidatorKind.numeric:
-        return FormBuilderValidators.numeric<String>(errorText: e);
+        return FormBuilderValidators.numeric<String>(
+          checkNullOrEmpty: false,
+          errorText: e,
+        );
       case ZValidatorKind.integer:
-        return FormBuilderValidators.integer(errorText: e);
+        return FormBuilderValidators.integer(
+          checkNullOrEmpty: false,
+          errorText: e,
+        );
       case ZValidatorKind.dateString:
-        return FormBuilderValidators.date(errorText: e);
+        return FormBuilderValidators.date(checkNullOrEmpty: false, errorText: e);
       case ZValidatorKind.address:
         // **no-op par défaut** (rôle indice de clavier ; aucune surcharge de
         // format). Format vérifié UNIQUEMENT en opt-in (`enforceFormat: true`
         // ⇒ `street`, comportement historique).
         return (spec.enforceFormat ?? false)
-            ? FormBuilderValidators.street(errorText: e)
+            ? FormBuilderValidators.street(
+                checkNullOrEmpty: false,
+                errorText: e,
+              )
             : null;
       case ZValidatorKind.percentage:
         // **no-op par défaut** (saisie numérique libre). Plage vérifiée
@@ -132,6 +186,7 @@ abstract final class ZValidatorCompiler {
         return FormBuilderValidators.between<String>(
           spec.rangeMin ?? 0,
           spec.rangeMax ?? 100,
+          checkNullOrEmpty: false,
           errorText: e,
         );
       case ZValidatorKind.password:
@@ -155,9 +210,16 @@ abstract final class ZValidatorCompiler {
       case ZValidatorKind.pattern:
         final p = spec.pattern;
         // `FormBuilderValidators.match` prend un RegExp (correspondance motif).
+        // `checkNullOrEmpty: false` : un motif décrit la FORME d'une valeur,
+        // jamais son existence — un champ de contact facultatif reste
+        // soumissible à vide, et garde son verrou dès qu'il est rempli.
         return p == null
             ? null
-            : FormBuilderValidators.match(RegExp(p), errorText: e);
+            : FormBuilderValidators.match(
+                RegExp(p),
+                checkNullOrEmpty: false,
+                errorText: e,
+              );
     }
   }
 }

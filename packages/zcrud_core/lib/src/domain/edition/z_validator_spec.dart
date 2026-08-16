@@ -82,6 +82,24 @@ enum ZValidatorKind {
 /// `const` ; les paramètres non pertinents restent `null`. `errorText`
 /// (optionnel, partout) porte un message d'erreur littéral ou une clé l10n
 /// (résolu côté UI en E3).
+///
+/// ## Forme et présence sont deux exigences distinctes
+///
+/// Un validateur de **forme** — [ZValidatorSpec.pattern], [ZValidatorSpec.email],
+/// [ZValidatorSpec.minLength], [ZValidatorSpec.min]… — décrit ce à quoi une
+/// valeur doit ressembler **quand il y en a une**. Il laisse donc passer un
+/// champ laissé vide.
+///
+/// La **présence** est exigée par [ZValidatorSpec.required], et par lui seul.
+/// Un champ obligatoire ET contraint dans sa forme déclare les deux :
+///
+/// ```dart
+/// // Téléphone facultatif, mais valide dès qu'il est rempli :
+/// validators: [ZValidatorSpec.pattern(r'^\+228[0-9]{8}$')],
+///
+/// // E-mail obligatoire ET bien formé :
+/// validators: [ZValidatorSpec.required(), ZValidatorSpec.email()],
+/// ```
 class ZValidatorSpec {
   const ZValidatorSpec._(
     this.kind, {
@@ -103,7 +121,8 @@ class ZValidatorSpec {
     this.rangeMax,
   });
 
-  /// Valeur requise.
+  /// Valeur requise — le **seul** validateur qui exige une présence : un champ
+  /// vide n'est refusé que s'il le déclare.
   const ZValidatorSpec.required({String? errorText})
       : this._(ZValidatorKind.required, errorText: errorText);
 
@@ -228,6 +247,9 @@ class ZValidatorSpec {
         );
 
   /// Correspondance à l'expression régulière [pattern].
+  ///
+  /// Décrit une **forme**, pas une présence : un champ laissé vide reste
+  /// valide. Ajoutez [ZValidatorSpec.required] pour le rendre obligatoire.
   const ZValidatorSpec.pattern(String pattern, {String? errorText})
       : this._(ZValidatorKind.pattern, pattern: pattern, errorText: errorText);
 

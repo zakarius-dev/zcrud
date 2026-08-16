@@ -3,6 +3,96 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 1.1.0 — 2026-08-16
+
+### Ajouté
+
+#### Une fenêtre de formulaire peut enfin être un assistant à étapes
+
+`presentFormEdition` ne savait présenter que des champs **à plat**. L'assistant
+multi-étapes existait pourtant dans le socle (`ZStepperEdition`), mais comme
+widget à monter soi-même : il n'était pas atteignable depuis la présentation de
+formulaire, celle-là même que les migrations d'édition emploient partout. Un
+écran à étapes restait donc sur son moteur d'origine — non pas faute de brique,
+faute de chemin.
+
+`steps` ouvre ce chemin. Le catalogue reste `fields` ; les étapes n'en nomment
+que des sous-ensembles :
+
+```dart
+final escale = await presentFormEdition(
+  context,
+  fields: escaleFields, // le catalogue COMPLET, toutes étapes confondues
+  steps: const <ZEditionStep>[
+    ZEditionStep(title: 'Navire', fields: <String>['nom', 'pavillon']),
+    ZEditionStep(title: 'Escale', fields: <String>['quai', 'arrivee']),
+  ],
+  title: 'Escale',
+);
+```
+
+`steps` et `fields` se **complètent**, ils ne s'excluent pas : une étape est une
+mise en page, pas une seconde déclaration de champs. `stepperConfig` règle la
+présentation de l'assistant — bande verticale, toutes les étapes dépliées,
+accordéon, gate de navigation.
+
+**Le nombre d'étapes peut dépendre des données.** `steps` est une liste
+ordinaire, construite à l'appel : une étape par type de document présent
+s'écrit sans détour, et rien n'exige de connaître le compte à la compilation.
+
+**Le contrat de sortie ne bouge pas d'un iota.** La soumission valide et
+normalise le **catalogue entier**, jamais la seule étape affichée : les valeurs
+de toutes les étapes sont rendues, et un champ invalide dans une étape **que
+l'utilisateur n'a jamais ouverte** empêche l'enregistrement. Renoncer rend
+toujours `null`.
+
+⚠️ Un champ du catalogue qu'**aucune** étape ne nomme n'est jamais affiché mais
+reste validé : s'il porte un validateur qui échoue, la fenêtre devient
+insoumissible sans message visible. Le cas est signalé en mode développement.
+
+#### Un corps de fenêtre composé par l'appelant
+
+Pour tout ce qui sort de ces deux formes — un corps mêlant formulaire et contenu
+applicatif, un assistant maison, un récapitulatif en tête — `bodyBuilder` rend
+la main sans faire perdre le reste :
+
+```dart
+final valeurs = await presentFormEdition(
+  context,
+  fields: escaleFields,
+  bodyBuilder: (context, controller) => Column(
+    children: <Widget>[
+      const RappelReglementaire(),
+      // Le MÊME contrôleur : c'est lui que la soumission lira.
+      Expanded(child: ZFormOnly(controller: controller)),
+    ],
+  ),
+  bodyFit: ZEditionBodyFit.scrollable, // votre corps défile lui-même
+);
+```
+
+Le conteneur adaptatif, le garde d'abandon, le chrome et le contrat de sortie
+restent ceux du socle. `bodyFit` déclare comment votre corps veut être placé —
+`null` (défaut) le **dérive** : `intrinsic` pour un formulaire à plat et pour un
+`bodyBuilder`, `scrollable` pour un assistant.
+
+`bodyBuilder` et `steps` déclarent deux corps concurrents, et `sections` décrit
+la mise en page d'un formulaire à plat : ces combinaisons sont **refusées par
+une assertion** en développement. En production la préséance est définie et rien
+ne lève — `bodyBuilder`, puis `steps`, puis le formulaire à plat.
+
+### Impact sur votre code
+
+**Hôte passif** : rien à faire. Sans `steps` ni `bodyBuilder`, `presentFormEdition`
+rend le même arbre qu'avant, avec le même `bodyFit` — un test le vérifie.
+
+**Hôte qui avait contourné le manque** : si vous montiez vous-même un
+`ZStepperEdition` dans un `presentEdition` maison pour obtenir un assistant qui
+rende une carte de valeurs, `steps` remplace ce montage — et surtout sa
+soumission, qui devait re-valider le catalogue entier à la main. Vérifiez que
+votre contournement n'ajoute plus sa propre validation par-dessus celle du
+socle : les deux ensemble révéleraient les erreurs deux fois.
+
 ## 1.0.0 — 2026-08-14
 
 ### Ajouté

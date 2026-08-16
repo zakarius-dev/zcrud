@@ -31,6 +31,7 @@ import '../../domain/edition/z_date_range.dart';
 import '../../domain/edition/z_field_config.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../z_form_controller.dart';
+import 'edition_field_family.dart';
 import 'z_cross_field_validator.dart';
 import 'z_value_emptiness.dart';
 
@@ -208,6 +209,24 @@ ZDateMode _dateModeOf(ZFieldSpec spec) {
 String _hhmm(int hour, int minute) =>
     '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 
+/// Clé **compagne** sous laquelle les valeurs normalisées portent les fichiers
+/// que l'utilisateur a **retirés** du champ [fieldName].
+///
+/// Un champ fichier ne persiste que ce qui lui reste attaché ; ce que
+/// l'utilisateur a détaché — une photo supprimée, un document remplacé — n'a
+/// plus de place nulle part, alors que c'est justement ce qu'il faut effacer
+/// pour de bon. Cette clé lui en donne une :
+///
+/// ```dart
+/// final valeurs = formulaire.submit();
+/// final retires = valeurs?[zRemovedFilesKey('photos')] as List<Object>?;
+/// // → les fichiers à effacer réellement, sous la forme que le champ tenait.
+/// ```
+///
+/// Utilisez toujours cette fonction plutôt qu'une chaîne écrite à la main : la
+/// convention appartient au socle.
+String zRemovedFilesKey(String fieldName) => '${fieldName}_removed';
+
 /// Snapshot **normalisé** des valeurs de [controller], restreint aux champs
 /// de [fields] qui ont le droit d'être écrits.
 ///
@@ -220,6 +239,17 @@ String _hhmm(int hour, int minute) =>
 /// Chaque valeur retenue passe par [zNormalizeFieldValue]. Le résultat est une
 /// carte **immuable** de données pures, prête à être persistée ou rendue à
 /// l'appelant — jamais l'état brut des contrôleurs de saisie.
+///
+/// **Champs fichier** — chaque champ de la famille fichier
+/// (`file`/`image`/`document`) retenu ci-dessus ajoute une entrée compagne
+/// [zRemovedFilesKey] portant ce que l'utilisateur a **retiré** du champ : les
+/// objets fichier que le champ tenait, ou leur référence opaque quand il ne les
+/// avait pas résolus. La clé est **toujours présente** pour ces champs — liste
+/// **vide** quand rien n'a été retiré, jamais `null` — de sorte que l'appelant
+/// n'ait pas à distinguer « rien retiré » de « pas suivi ». Un formulaire sans
+/// champ fichier rend exactement les mêmes clés qu'auparavant. Une clé
+/// compagne qui entrerait en collision avec un champ réellement déclaré ne
+/// l'écrase jamais : le champ déclaré fait foi.
 Map<String, dynamic> zNormalizeFormValues({
   required List<ZFieldSpec> fields,
   required ZFormController controller,
@@ -227,6 +257,7 @@ Map<String, dynamic> zNormalizeFormValues({
   ZValueOf? contextValueOf,
 }) {
   final out = <String, dynamic>{};
+  final removed = <String, List<Object>>{};
   for (final field in fields) {
     if (field.readOnly) continue;
     if (!zIsFieldActive(
@@ -239,6 +270,15 @@ Map<String, dynamic> zNormalizeFormValues({
     }
     out[field.name] =
         zNormalizeFieldValue(field, controller.valueOf(field.name));
+    if (familyOf(field.type) == EditionFamily.file) {
+      removed[zRemovedFilesKey(field.name)] =
+          controller.removedFilesOf(field.name);
+    }
   }
+  // Écrites APRÈS les champs : un champ réellement déclaré sous ce nom garde sa
+  // valeur — une convention du socle ne recouvre pas une déclaration de l'hôte.
+  removed.forEach((key, value) {
+    if (!out.containsKey(key)) out[key] = value;
+  });
   return Map<String, dynamic>.unmodifiable(out);
 }

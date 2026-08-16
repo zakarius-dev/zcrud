@@ -27,6 +27,25 @@
 ///   (dérivée du mime) + nom (rendu binaire local **déféré** ; `dart:io` hors
 ///   whitelist de pureté).
 ///
+/// ## Ce qui a été RETIRÉ
+///
+/// La tranche ne porte que ce qui **reste** attaché au champ. Ce que
+/// l'utilisateur a détaché — une photo supprimée, un document remplacé —
+/// disparaîtrait sans trace au moment même où il le produit, alors que c'est
+/// précisément l'information dont l'appelant a besoin pour effacer réellement
+/// le fichier.
+///
+/// [ZAppFileField.onRemoved] la rend disponible : à chaque retrait, le champ
+/// notifie **ce qu'il tenait** — l'objet fichier (`AppFile`) quand il le
+/// connaît, y compris pour une référence opaque que le résolveur avait
+/// résolue ; la référence elle-même sinon. Le moteur d'édition la consigne dans
+/// `ZFormController.removedFilesOf`, d'où elle ressort à la soumission sous la
+/// clé compagne `zRemovedFilesKey(nom du champ)`.
+///
+/// Un changement d'état d'upload (`pending → uploading → uploaded`) n'est
+/// **pas** un retrait : l'identité du fichier est suivie à travers ces
+/// transitions.
+///
 /// ## a11y / RTL (invariant AD-13)
 ///
 /// `Semantics` explicites + cibles ≥ 48 dp (`IconButton`) sur chaque action /
@@ -58,6 +77,7 @@ class ZAppFileField extends StatefulWidget {
     required this.value,
     required this.onChanged,
     this.liveValue,
+    this.onRemoved,
     super.key,
   });
 
@@ -76,6 +96,19 @@ class ZAppFileField extends StatefulWidget {
   /// encore propagé [value] pendant une rafale de `setValue`). `null` en usage
   /// autonome ⇒ repli sur [value].
   final Object? Function()? liveValue;
+
+  /// Notifie qu'une entrée a été **détachée** du champ : suppression par
+  /// l'utilisateur, ou remplacement du fichier d'un champ à valeur unique.
+  ///
+  /// L'entrée remise est ce que le champ tenait : l'objet fichier (`AppFile`)
+  /// quand il le connaît — y compris pour une référence opaque déjà résolue —,
+  /// sinon la référence opaque telle qu'elle était persistée. C'est la forme
+  /// utile à l'appelant, celle qui désigne le fichier à effacer réellement.
+  ///
+  /// N'est **jamais** appelé pour un simple changement d'état d'upload d'un
+  /// fichier qui reste attaché. `null` (usage autonome) ⇒ aucun suivi des
+  /// retraits ; le champ se comporte alors exactement comme auparavant.
+  final ValueChanged<Object>? onRemoved;
 
   @override
   State<ZAppFileField> createState() => _ZAppFileFieldState();
@@ -237,6 +270,31 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
   /// puis `name`.
   String _identity(AppFile f) => f.localPath ?? f.id ?? f.name;
 
+  /// Clé d'identité d'une entrée de la tranche, fichier **ou** référence
+  /// opaque. Une référence et le fichier qu'elle désigne partagent leur clé
+  /// (l'identifiant), de sorte qu'une résolution ne passe jamais pour un
+  /// retrait.
+  String _entryKey(Object entry) =>
+      entry is AppFile ? _identity(entry) : entry as String;
+
+  /// Forme **utile** d'une entrée retirée : l'objet fichier quand il est connu
+  /// (une référence déjà résolue le remet, pas son identifiant), la référence
+  /// opaque sinon.
+  Object _removedForm(Object entry) =>
+      entry is String ? (_resolved[entry] ?? entry) : entry;
+
+  /// Signale à [ZAppFileField.onRemoved] toute entrée présente **avant** et
+  /// absente **après** l'écriture, comparée par identité — un fichier dont
+  /// seul l'état d'upload change garde la sienne et n'est donc jamais signalé.
+  void _reportRemovals(List<Object> before, List<Object> after) {
+    final onRemoved = widget.onRemoved;
+    if (onRemoved == null || before.isEmpty) return;
+    final kept = <String>{for (final e in after) _entryKey(e)};
+    for (final entry in before) {
+      if (!kept.contains(_entryKey(entry))) onRemoved(_removedForm(entry));
+    }
+  }
+
   /// Écrit la tranche selon la multiplicité (single ⇒ élément/`null` ;
   /// multiple ⇒ `List<Object>`).
   ///
@@ -245,7 +303,16 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
   /// silencieusement les identifiants que l'hôte a persistés. Sans port injecté,
   /// [_entries] ne contient que des `AppFile` ⇒ écriture strictement identique à
   /// l'historique.
-  void _commitEntries(List<Object> entries) {
+  ///
+  /// `trackRemovals` à `false` déclare une écriture qui ne DÉTACHE rien (mise à
+  /// jour d'un fichier en place) : aucun retrait n'est alors signalé.
+  void _commitEntries(List<Object> entries, {bool trackRemovals = true}) {
+    // Ce que l'écriture détache est signalé AVANT d'être perdu : la tranche,
+    // une fois écrite, ne porte plus que ce qui reste. Une écriture qui
+    // REMPLACE un fichier par lui-même (transition d'upload) n'est pas un
+    // retrait et le dit explicitement — l'identité rendue par le transport
+    // n'est pas la nôtre.
+    if (trackRemovals) _reportRemovals(_entries, entries);
     if (!widget.field.multiple) {
       widget.onChanged(entries.isEmpty ? null : entries.first);
       return;
@@ -267,10 +334,13 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
   /// sur la tranche COURANTE — `widget.value` reflète le dernier état).
   void _replace(AppFile oldFile, AppFile updated) {
     final id = _identity(oldFile);
-    _commitEntries(<Object>[
-      for (final e in _entries)
-        if (e is AppFile && _identity(e) == id) updated else e,
-    ]);
+    _commitEntries(
+      <Object>[
+        for (final e in _entries)
+          if (e is AppFile && _identity(e) == id) updated else e,
+      ],
+      trackRemovals: false,
+    );
   }
 
   Future<void> _pick(ZFileSource source) async {
