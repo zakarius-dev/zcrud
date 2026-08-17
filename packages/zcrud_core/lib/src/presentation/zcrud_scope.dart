@@ -20,6 +20,7 @@ import 'dnd/z_drop_region_renderer.dart';
 import 'edition/families/z_color_field_widget.dart';
 import 'edition/z_field_adornment_view.dart';
 import 'edition/z_file_picker.dart';
+import 'edition/z_select_choice_builder_registry.dart';
 import 'edition/z_select_presenter.dart';
 import 'edition/z_sub_list_seams.dart';
 import 'edition/z_widget_registry.dart';
@@ -83,6 +84,7 @@ class ZcrudScope extends InheritedWidget {
     this.subListSeamRegistry,
     this.relationSourceRegistry,
     this.choicesSourceRegistry,
+    this.selectChoiceBuilderRegistry,
     this.relationCrudRegistry,
     this.filePicker,
     this.cloudStorage,
@@ -152,6 +154,10 @@ class ZcrudScope extends InheritedWidget {
   /// de `ZChoicesSource` (calcul métier des options depuis l'état) vit hors du
   /// cœur (binding/app), jamais ici (AD-1).
   final ZChoicesSourceRegistry? choicesSourceRegistry;
+
+  /// Registre des rendus riches d'options de sélection, indexés par
+  /// `ZSelectConfig.choiceBuilderKey`. `null` ou clé absente ⇒ repli natif.
+  final ZSelectChoiceBuilderRegistry? selectChoiceBuilderRegistry;
 
   /// Registre de handlers **CRUD inline** du champ `relation` (AD-4 ;
   /// défaut `null` → aucun bouton créer/modifier/copier — comportement du
@@ -321,6 +327,7 @@ class ZcrudScope extends InheritedWidget {
     Object? subListSeamRegistry = _zScopeUndefined,
     Object? relationSourceRegistry = _zScopeUndefined,
     Object? choicesSourceRegistry = _zScopeUndefined,
+    Object? selectChoiceBuilderRegistry = _zScopeUndefined,
     Object? relationCrudRegistry = _zScopeUndefined,
     Object? filePicker = _zScopeUndefined,
     Object? cloudStorage = _zScopeUndefined,
@@ -359,7 +366,11 @@ class ZcrudScope extends InheritedWidget {
         choicesSourceRegistry:
             identical(choicesSourceRegistry, _zScopeUndefined)
                 ? this.choicesSourceRegistry
-                : choicesSourceRegistry as ZChoicesSourceRegistry?,
+            : choicesSourceRegistry as ZChoicesSourceRegistry?,
+        selectChoiceBuilderRegistry:
+            identical(selectChoiceBuilderRegistry, _zScopeUndefined)
+                ? this.selectChoiceBuilderRegistry
+                : selectChoiceBuilderRegistry as ZSelectChoiceBuilderRegistry?,
         relationCrudRegistry: identical(relationCrudRegistry, _zScopeUndefined)
             ? this.relationCrudRegistry
             : relationCrudRegistry as ZRelationCrudRegistry?,
@@ -439,6 +450,7 @@ class ZcrudScope extends InheritedWidget {
     Object? subListSeamRegistry = _zScopeUndefined,
     Object? relationSourceRegistry = _zScopeUndefined,
     Object? choicesSourceRegistry = _zScopeUndefined,
+    Object? selectChoiceBuilderRegistry = _zScopeUndefined,
     Object? relationCrudRegistry = _zScopeUndefined,
     Object? filePicker = _zScopeUndefined,
     Object? cloudStorage = _zScopeUndefined,
@@ -465,6 +477,7 @@ class ZcrudScope extends InheritedWidget {
       subListSeamRegistry: subListSeamRegistry,
       relationSourceRegistry: relationSourceRegistry,
       choicesSourceRegistry: choicesSourceRegistry,
+      selectChoiceBuilderRegistry: selectChoiceBuilderRegistry,
       relationCrudRegistry: relationCrudRegistry,
       filePicker: filePicker,
       cloudStorage: cloudStorage,
@@ -513,6 +526,8 @@ class ZcrudScope extends InheritedWidget {
       !identical(subListSeamRegistry, oldWidget.subListSeamRegistry) ||
       !identical(relationSourceRegistry, oldWidget.relationSourceRegistry) ||
       !identical(choicesSourceRegistry, oldWidget.choicesSourceRegistry) ||
+      !identical(selectChoiceBuilderRegistry,
+          oldWidget.selectChoiceBuilderRegistry) ||
       !identical(relationCrudRegistry, oldWidget.relationCrudRegistry) ||
       !identical(filePicker, oldWidget.filePicker) ||
       !identical(cloudStorage, oldWidget.cloudStorage) ||

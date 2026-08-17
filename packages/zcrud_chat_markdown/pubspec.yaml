@@ -23,7 +23,7 @@
 #    de l'hôte.
 name: zcrud_chat_markdown
 description: "Rich Markdown/LaTeX rendering backend for zcrud chat, isolated behind the neutral ZChatRenderer seam and backed by zcrud_markdown."
-version: 2.0.0
+version: 2.1.0
 publish_to: none
 resolution: workspace
 
@@ -48,10 +48,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  zcrud_chat: ^2.0.0
-  zcrud_chat_kernel: ^2.0.0
-  zcrud_core: ^2.0.0
-  zcrud_markdown: ^2.0.0
+  zcrud_chat: ^2.1.0
+  zcrud_chat_kernel: ^2.1.0
+  zcrud_core: ^2.1.0
+  zcrud_markdown: ^2.1.0
 
 dev_dependencies:
   flutter_test:

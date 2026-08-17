@@ -3,6 +3,42 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2.1.0 — 2026-08-17
+
+### Ajouté
+
+#### `actionsBuilder` — des actions d'app-bar qui dépendent de l'état
+
+`ZAppBarActionsBuilder` rend des `ZAppBarAction`, **jamais des widgets** : la
+conditionnalité est gagnée **sans** perdre ce que la déclaration en données
+apporte — chaque geste garde son libellé accessible, sa sémantique et sa cible
+tactile. Le contexte porte l'ACL **déjà restreinte à l'onglet actif**, l'index
+d'onglet, le nombre d'éléments de la vue, l'état corbeille et la vacuité.
+
+**Exclusif** avec `actions`, gardé par assertion — posée dans `initState` et non
+dans le constructeur, `List.isEmpty` n'étant pas évaluable en contexte `const`.
+
+Granularité tenue et **mesurée** (AD-2) : l'abonnement est posé au-dessus de la
+seule coquille, le corps passé en enfant, et **seulement si** un builder est
+déclaré. Sans builder, aucun abonnement n'est monté et rien n'est payé.
+
+#### `tabsStore` — l'onglet actif et son défilement survivent à la fermeture
+
+Port `ZListTabsStore` (+ `ZInMemoryListTabsStore`), sur le patron du seam de pli
+des sections : le stockage appartient à l'application, le paquet n'en fournit
+aucun.
+
+**Un offset par onglet**, pas un offset global — c'est la moitié qu'on oublie en
+lisant « persistance d'onglet ». La clé de portée est **dérivée** (type d'entité,
+identité d'écran, jeu d'onglets) : deux écrans ne se marchent jamais dessus, et
+un changement de jeu d'onglets invalide naturellement l'ancienne préférence.
+
+Lecture **tolérante** (AD-10) : index absent ⇒ premier onglet, index **hors
+bornes** ⇒ repli sûr (un jeu d'onglets peut avoir rétréci depuis la dernière
+session), store qui lève ⇒ traité comme absent. L'offset est rendu **nullable** :
+un `double` non nullable aurait forcé à inventer `0.0`, donc à confondre « jamais
+enregistré » et « en haut de liste ».
+
 ## 1.7.0 — 2026-08-16
 
 ### Ajouté

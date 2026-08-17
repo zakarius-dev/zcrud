@@ -32,6 +32,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/edition/edition_field_type.dart';
 import '../../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../../domain/edition/z_field_choice.dart';
+import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
 import '../../zcrud_scope.dart';
@@ -152,7 +153,18 @@ class ZSelectFieldWidget extends StatelessWidget {
     // Si un présentateur riche est injecté au scope, on lui DÉLÈGUE la
     // présentation via un DTO NEUTRE (jamais le controller — invariant AD-2).
     // Défaut `null` ⇒ rendu natif ci-dessous strictement conservé.
-    final presenter = ZcrudScope.maybeOf(context)?.selectPresenter;
+    final scope = ZcrudScope.maybeOf(context);
+    final config = field.config is ZSelectConfig ? field.config as ZSelectConfig : null;
+    final registeredBuilders = config?.choiceBuilderKey == null
+        ? null
+        : scope?.selectChoiceBuilderRegistry
+            ?.tryBuildersFor(config!.choiceBuilderKey!);
+    // Résolution ICI, et non au dispatcher : comme les seams de sous-listes,
+    // le widget consommateur possède la liste exhaustive de ses slots.
+    final effectiveChoiceBuilder = choiceBuilder ?? registeredBuilders?.choiceBuilder;
+    final effectiveChoiceSecondaryBuilder =
+        choiceSecondaryBuilder ?? registeredBuilders?.choiceSecondaryBuilder;
+    final presenter = scope?.selectPresenter;
     if (presenter != null) {
       return presenter.present(
         context,
@@ -169,8 +181,8 @@ class ZSelectFieldWidget extends StatelessWidget {
           // de chargement — ses choix sont résolus SYNCHRONEMENT par le
           // dispatcher (`_resolveSelectChoices`). Poser autre chose que le
           // défaut `false` serait une donnée inventée.
-          choiceBuilder: choiceBuilder,
-          choiceSecondaryBuilder: choiceSecondaryBuilder,
+          choiceBuilder: effectiveChoiceBuilder,
+          choiceSecondaryBuilder: effectiveChoiceSecondaryBuilder,
           optionsLoader: optionsLoader,
         ),
       );

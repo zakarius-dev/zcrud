@@ -44,6 +44,29 @@ d'implémentation (`create-story` → `dev-story` → `code-review` → sprint-s
 story, pas de transition de statut, pas de Workflow multi-agent à lentilles : le CR **est** la
 spécification, et il porte déjà ses constats mesurés côté hôte.
 
+🔴 **Exécution déléguée à CODEX (consigne owner, 2026-08-17)** : les lots exécutés en arrière-plan
+partent désormais aux **sous-agents codex** (`subagent_type: 'codex:codex-rescue'`), et non plus au
+`general-purpose`. L'orchestrateur, lui, ne change pas de rôle : c'est toujours **lui** qui vérifie
+les constats du CR sur disque avant de déléguer, qui rejoue la vérif verte **au repos**, qui édite
+le sprint-status, qui rédige le handoff et qui publie. Un rapport d'agent codex n'est pas plus une
+preuve que celui d'un autre agent.
+Les garde-fous de concurrence sont **inchangés** et s'appliquent identiquement : un seul rédacteur
+par paquet, scratchpads distincts, aucune mesure d'un paquet pendant qu'un agent y écrit
+(`.dart_tool/package_config` est partagé), health-check des agents en vol.
+
+⚠️ **Le sous-agent codex ne fait PAS le travail : il DISPATCHE.** Mesuré le 2026-08-17 : l'agent
+lance une tâche Codex de fond, rend la main en ~50 s, et le travail réel vit sous un
+**identifiant de tâche séparé** (`task-…`). Conséquence : **aucune notification de complétion
+n'arrive** par le canal habituel pour le travail réel.
+
+🔴 **Et `/codex:status` n'est PAS invocable par l'orchestrateur** (mesuré : `disable-model-invocation`
+— la commande est réservée à une invocation explicite du owner). La surveillance d'un lot codex
+repose donc **entièrement sur l'activité disque** : `git status <paquet>` et horodatages de
+`lib/`+`test/` (`find … -newermt`). C'est de toute façon la meilleure preuve — un rapport n'en est
+pas une, un fichier modifié si. Seuil d'inactivité ~5 min avant de considérer un lot planté ; en
+cas de doute, demander au owner de lancer `/codex:status <task-id>`. Toujours **retenir
+l'identifiant `task-…`** rendu au lancement : sans lui, ni statut ni annulation ne sont possibles.
+
 **Veille et publication (consigne owner, 2026-08-14)** : cycle permanent — **toutes les 30 min**,
 vérifier si l'un des quatre dépôts hôtes a **émis ou modifié** un CR (un CR *modifié* compte
 autant qu'un CR neuf : le pilote réécrit ses CR, cf. le retour de pilote passé de 7 à 8 écarts

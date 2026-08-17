@@ -612,6 +612,7 @@ class ZSelectConfig extends ZFieldConfig {
     this.modalThreshold,
     this.choicesFromKey,
     this.choicesSourceKey,
+    this.choiceBuilderKey,
     this.filterKeys = const <String>[],
     this.radioAsModal = false,
   });
@@ -637,6 +638,11 @@ class ZSelectConfig extends ZFieldConfig {
   /// `field.choices`.
   final String? choicesSourceKey;
 
+  /// Clé d'un rendu riche d'option résolu à l'exécution dans
+  /// `ZSelectChoiceBuilderRegistry`. `null` conserve le rendu précédent;
+  /// une clé absente du registre retombe silencieusement sur ce même rendu.
+  final String? choiceBuilderKey;
+
   /// Clés des champs formant le `filterContext` cross-champ passé à
   /// `ZChoicesSource.options(...)`. Vide ⇒ aucun filtre. L'abonnement à ces
   /// tranches est **ciblé**.
@@ -657,6 +663,7 @@ class ZSelectConfig extends ZFieldConfig {
           modalThreshold == other.modalThreshold &&
           choicesFromKey == other.choicesFromKey &&
           choicesSourceKey == other.choicesSourceKey &&
+          choiceBuilderKey == other.choiceBuilderKey &&
           radioAsModal == other.radioAsModal &&
           _listEquals(filterKeys, other.filterKeys);
 
@@ -667,6 +674,7 @@ class ZSelectConfig extends ZFieldConfig {
         modalThreshold,
         choicesFromKey,
         choicesSourceKey,
+        choiceBuilderKey,
         radioAsModal,
         Object.hashAll(filterKeys),
       );

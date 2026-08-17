@@ -113,6 +113,10 @@ export 'src/presentation/edition/z_section_collapse_store.dart';
 // concrète (awesome_select) vit dans `zcrud_select`, jamais dans le cœur
 // (invariant AD-1).
 export 'src/presentation/edition/z_select_presenter.dart';
+// Registre injecté des builders riches d'options : clé `const` dans
+// `ZSelectConfig.choiceBuilderKey`, fermeture dans l'hôte, repli natif si la
+// clé ne résout rien.
+export 'src/presentation/edition/z_select_choice_builder_registry.dart';
 // Assistant multi-étapes (invariants AD-2/AD-13) : `ZStepperEdition`
 // partitionne le MÊME `ZFormController` en étapes séquencées (réutilise
 // `DynamicEdition` par étape) ; validation PAR ÉTAPE (gate « suivant » sur les

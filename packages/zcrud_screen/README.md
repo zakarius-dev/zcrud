@@ -532,6 +532,70 @@ retombe sur celui de l'écran, puis sur le libellé l10n générique. Le
 **compteur** est une `ValueListenable<int>` — la pastille se redessine seule,
 la page de l'onglet n'est pas reconstruite.
 
+#### L'onglet et son défilement qui survivent à la fermeture {#persistance-onglets}
+
+Un écran de travail quotidien se rouvre des dizaines de fois par jour. Sans
+rien de déclaré, il rouvre **toujours sur le premier onglet, en haut de
+liste** : rien ne plante, l'écran est simplement plus long à parcourir qu'il ne
+devrait.
+
+**Deux choses sont perdues, pas une** — l'index de l'onglet, et le
+**défilement de chaque onglet**. C'est la moitié qu'on oublie en lisant
+« persistance d'onglet ».
+
+Déclarez un `ZListTabsStore` et l'écran retrouve les deux. Le paquet ne connaît
+pas votre stockage : il ne connaît que le port (même patron que
+`ZSectionCollapseStore`, quatre méthodes synchrones qui ne lèvent jamais).
+
+```dart
+class OngletsPersistants extends ZListTabsStore {
+  const OngletsPersistants(this._box);
+  final GetStorage _box;
+
+  @override
+  int? loadTabIndex(String scopeKey) => _box.read<int>('$scopeKey/index');
+
+  @override
+  void saveTabIndex(String scopeKey, int index) =>
+      _box.write('$scopeKey/index', index);
+
+  @override
+  double? loadScrollOffset(String scopeKey, int tabIndex) =>
+      _box.read<double>('$scopeKey/offset/$tabIndex');
+
+  @override
+  void saveScrollOffset(String scopeKey, int tabIndex, double offset) =>
+      _box.write('$scopeKey/offset/$tabIndex', offset);
+}
+
+ZCrudScreen<Convocation>(
+  title: 'convocations',
+  source: source,
+  tabs: kConvocationTabs,
+  tabsStore: OngletsPersistants(box),   // ← tout est là
+);
+```
+
+**L'écriture est par emplacement, jamais par portée entière** : mémoriser
+l'offset d'un onglet n'efface ni l'index, ni l'offset du voisin. Une signature
+qui remettrait la portée complète à chaque geste ferait qu'un relais naïf
+effacerait les préférences d'à côté.
+
+**La clé de portée est dérivée, pas demandée** : type d'entité + identité de
+l'écran (`collectionId`, à défaut `title`) + **jeu d'onglets** (clés de page,
+dans l'ordre). Deux écrans à onglets ne se marchent donc jamais dessus, et un
+**changement de jeu d'onglets invalide naturellement** l'ancienne préférence.
+`tabsScopeKey` reste la voie d'échappement quand deux instances du même écran
+(deux dossiers, deux services) doivent mémoriser des onglets **différents**.
+
+**Lecture tolérante** : index absent ⇒ premier onglet, index **hors bornes** ⇒
+premier onglet (un jeu d'onglets a pu rétrécir depuis la dernière session),
+offsets absents ⇒ zéros, store qui lève ⇒ traité comme absent. Rien de ce que
+le store rend ne peut emporter l'écran.
+
+**Sans `tabsStore`, rien n'est payé** : aucune lecture, aucune écriture, et pas
+un widget de plus dans l'arbre — comportement strictement antérieur.
+
 ### Tri, filtres de base et pagination
 
 Un listing s'ouvre rarement « dans l'ordre de la source » : il s'ouvre trié par
@@ -1047,6 +1111,63 @@ l'`AppBar`. Le titre, le `leading` et les actions déclarées (`actions:`,
 `List<ZAppBarAction>`) y sont propagés ; les actions **assemblées** (bascule
 corbeille, création) s'y ajoutent après. Une action `isOverflow: true` part
 dans le menu de débordement du socle — l'écran n'a pas de menu propre.
+
+#### Une action de barre qui dépend de l'état {#actions-conditionnelles}
+
+`actions` ne sait exprimer qu'une action **constante**. Un bouton « Filtres »
+n'a pourtant aucun sens tant qu'aucune donnée n'est chargée : déclaré en
+constante, il resterait offert — et cliquable — sur une liste vide.
+
+`actionsBuilder` est le complément, **exclusif** avec `actions` : il rend des
+`ZAppBarAction`, **jamais des widgets**, donc chaque geste garde son
+`semanticLabel`, sa cible tactile et son débordement.
+
+```dart
+ZCrudScreen<Bep>(
+  title: 'beps',
+  source: source,
+  actionsBuilder: (state) => <ZAppBarAction>[
+    if (!state.isEmpty)                       // ← dépend de l'ÉTAT
+      ZAppBarAction(
+        icon: Icons.filter_alt_off_outlined,
+        semanticLabel: label(context, 'filters'),
+        tooltip: label(context, 'filters'),
+        onPressed: _showFilterDialog,
+      ),
+    if (state.acl.can(ZCrudAction.validate))  // ← dépend de l'ACL de l'ONGLET
+      ZAppBarAction(
+        icon: Icons.verified_outlined,
+        semanticLabel: label(context, 'validate'),
+        onPressed: _validate,
+      ),
+  ],
+);
+```
+
+Le `ZAppBarActionsContext` reçu porte cinq lectures, et rien d'autre :
+
+| Lecture | Ce qu'elle dit |
+|---|---|
+| `acl` | l'ACL **résolue** de l'écran, restriction de l'onglet actif **déjà composée** (cascade `onglet ∩ écran ∩ scope`) |
+| `tabIndex` | l'onglet actif (`0` hors mode onglets) |
+| `itemCount` | la taille de la **vue courante** — portée, filtres, recherche, tri et pages chargées compris ; jamais la taille de la source |
+| `isEmpty` | strictement `itemCount == 0` |
+| `isTrashView` | `true` en vue corbeille |
+
+L'état **interne** de l'écran n'est pas exposé : ce serait un couplage que ni
+l'hôte ni le paquet ne souhaitent.
+
+> **Granularité (AD-2)** — le builder est réévalué quand l'onglet, le comptage
+> ou la portée changent, et **seule la coquille** est rebâtie : le corps est
+> construit une fois, au-dessus des abonnements, et transmis tel quel. Un
+> changement de comptage ne reconstruit ni la liste, ni les tuiles (mesuré :
+> comptes de constructions de tuiles identiques avec et sans builder).
+> Le comptage vient de `entitiesInViewListenable` (publication en fin de trame,
+> comparaison par contenu), dont le notifieur n'est créé qu'au **premier
+> accès** : **un écran sans `actionsBuilder` ne paie rien.**
+
+Un builder qui lève ne peut pas emporter l'app-bar (AD-10) : il est traité
+comme n'ayant rien produit.
 
 La **recherche** est celle de l'app-bar (`ZAppBarSearchConfig`) : la loupe
 morphe le titre en champ, la query est propagée telle quelle à
@@ -1922,6 +2043,8 @@ repliable et un store n'y serait jamais ni lu ni écrit.
 | `ZTrashPolicy` | Gestes offerts par la corbeille : `full` (défaut), `withoutPurge`, `readOnly`, ou combinaison libre ; plus `showCount` (pastille de comptage) et `visibleWhenEmpty` (accès masqué à corbeille vide). |
 | `trashCount` (`ValueListenable<int>?`) | Nombre d'éléments en corbeille fourni par l'application : pastille sur le bouton d'accès, et condition de visibilité. Dérivé gratuitement sur la voie `items`. |
 | `ZListQueryPolicy` (`query`) | Tri par défaut (`sort`), filtres permanents (`baseFilters`), taille de page (`pageSize`) et sémantique de recherche (`searchScope`, `searchFolding` ; raccourci `ZListQueryPolicy.legacySearch()`) et voie de pagination (`paginationMode`) du listing. `filtersWith` ajoute, `sortFor` remplace ; `ZListQueryPolicy.of(context)` la rend aux vues que l'application pose sous l'écran (page d'onglet). Rien de déclaré ⇒ requêtes strictement inchangées. |
+| `ZAppBarActionsBuilder` / `ZAppBarActionsContext` (`actionsBuilder`) | Actions d'app-bar **dépendantes de l'état**, toujours rendues en **données** (`ZAppBarAction`, donc `semanticLabel` conservé). Le contexte porte `acl` (résolue, onglet actif composé), `tabIndex`, `itemCount`, `isEmpty`, `isTrashView`. **Exclusif avec `actions`** (assertion). Voir [Une action de barre qui dépend de l'état](#actions-conditionnelles). |
+| `ZListTabsStore` (`tabsStore`) / `tabsScopeKey` | Persistance de l'**onglet actif** et du **défilement par onglet** entre deux ouvertures — `loadTabIndex`/`saveTabIndex`/`loadScrollOffset`/`saveScrollOffset`, synchrones, qui ne lèvent jamais. Écriture **par emplacement** (jamais par portée entière). Clé de portée **dérivée** (entité + identité d'écran + jeu d'onglets), `tabsScopeKey` en voie d'échappement. `null` (défaut) ⇒ aucune lecture, aucune écriture. `ZInMemoryListTabsStore` sert les tests. Voir [L'onglet et son défilement qui survivent à la fermeture](#persistance-onglets). |
 | `ZListTab` (`tabs`) | Onglet de catégorisation : `labelKey`, `builder`, `pageKey`, `canCreate`, `defaultItemBuilder`, plus `acl` (restriction du segment), `titles` (intitulés du formulaire) et `countOf` (pastille de comptage). |
 | `ZRestrictedAcl` / `zRestrictAcl` | Composition **conjonctive** de deux `ZAcl` — la cascade onglet > écran > scope. L'élargissement y est inexprimable. |
 | `ZPurgeable<T>` | Mixin optionnel du dépôt déclarant la **suppression définitive** (hors du port `ZRepository`). |
@@ -1947,6 +2070,12 @@ Paramètres notables hérités du socle : `actions` (`List<ZAppBarAction>` de
 `actions` : un widget opaque ne peut être transmis à l'app-bar du socle
 qu'emballé, ce qui masque sa sémantique propre et élargit sa boîte
 (48 → 64 dp) — le tap, lui, reste fonctionnel (mesuré).
+
+> **Si vous empruntiez `appBarActions` faute d'alternative** — parce que vos
+> boutons dépendaient de l'état de la liste — `actionsBuilder` est désormais la
+> voie : même conditionnalité, actions en **données**, donc sans le coût
+> d'accessibilité documenté ci-dessus. C'est le dernier motif légitime
+> d'employer le chemin déprécié qui disparaît.
 
 ## Cas limites et invariants {#cas-limites}
 

@@ -175,6 +175,42 @@ Depuis n'importe quelle vue posée sous l'écran,
 tri demandé remplace le tri par défaut, des filtres demandés s'**ajoutent** aux
 filtres permanents, qu'aucun appel ne peut lever.
 
+`tabsStore` (`ZListTabsStore`) fait **survivre l'onglet actif et le défilement
+de chaque onglet** à la fermeture de l'écran — deux choses, pas une : un onglet
+retrouvé en haut de sa liste n'a restitué que la moitié du geste. Le paquet ne
+connaît pas le stockage, seulement le port (quatre méthodes synchrones qui ne
+lèvent jamais, même patron que `ZSectionCollapseStore`). L'écriture est **par
+emplacement**, jamais par portée entière : mémoriser l'offset d'un onglet
+n'efface ni l'index, ni l'offset du voisin. La **clé de portée est dérivée** —
+type d'entité, identité de l'écran (`collectionId`, à défaut le titre) et jeu
+d'onglets —, si bien que deux écrans ne se marchent jamais dessus et qu'un
+changement de jeu d'onglets invalide naturellement l'ancienne préférence
+(`tabsScopeKey` reste la voie d'échappement). Lecture tolérante
+([AD-10](../concepts/invariants.md#ad-10)) : index absent ou **hors bornes** ⇒
+premier onglet, offsets absents ⇒ zéros, store qui lève ⇒ traité comme absent.
+Sans `tabsStore`, ni lecture, ni écriture, ni widget supplémentaire.
+
+## Actions d'app-bar dépendantes de l'état
+
+`actions` (`List<ZAppBarAction>`) est le bon défaut : une action déclarée en
+**données** porte son `semanticLabel`, sa cible tactile et son débordement, là
+où le chemin déprécié `appBarActions` transmet des widgets muets pour un
+lecteur d'écran. Mais une liste figée ne sait exprimer qu'une action
+**constante**.
+
+`actionsBuilder` la complète — **exclusif** avec elle (assertion au montage) —
+et rend lui aussi des `ZAppBarAction`, jamais des widgets : la conditionnalité
+sans rien perdre de l'accessibilité. Il reçoit un `ZAppBarActionsContext`
+portant l'**ACL résolue** (restriction de l'onglet actif déjà composée), le
+**tabIndex**, l'**itemCount** de la vue courante, `isEmpty` et `isTrashView` —
+et rien de l'état interne de l'écran.
+
+Le builder est réévalué quand l'onglet, le comptage ou la portée changent, et
+**seule la coquille est rebâtie** ([AD-2](../concepts/invariants.md#ad-2)) : le
+corps est construit une fois, au-dessus des abonnements, et transmis tel quel.
+Le comptage vient de `entitiesInViewListenable`, dont le notifieur n'est créé
+qu'au premier accès — **un écran sans `actionsBuilder` ne paie rien**.
+
 ## Sélection multiple et actions de masse
 
 `selection` (`ZSelectionPolicy`) câble la case à cocher par ligne et la barre
@@ -295,6 +331,8 @@ d'avant leur introduction : aucun tiroir, aucun bouton.
 | `ZScreenMode` | Portée de l'écran : `full` / `details` / `locked`. |
 | `ZTrashMode` / `ZTrashPolicy` | Existence de la corbeille / gestes qu'elle offre. |
 | `ZListQueryPolicy` | Tri, filtres permanents, pagination et sémantique de recherche du listing. |
+| `ZListTabsStore` | Persistance de l'onglet actif **et** du défilement par onglet — port neutre, écriture par emplacement, clé de portée dérivée. `ZInMemoryListTabsStore` sert les tests. |
+| `ZAppBarActionsBuilder` / `ZAppBarActionsContext` | Actions d'app-bar dépendantes de l'état, rendues en données (`ZAppBarAction`). Exclusif avec `actions`. |
 | `ZRowAclResolver<T>` / `ZRowPermissions` | Droits effectifs d'une ligne, en intersection avec l'ACL de l'écran. |
 | `ZSelectionPolicy` | Sélection multiple et barre d'actions de masse. |
 | `ZExportPolicy` | Formats d'export offerts et remise du fichier à l'application. |

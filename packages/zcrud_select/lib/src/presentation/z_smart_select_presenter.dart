@@ -227,8 +227,22 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     // actions à `readOnly`. Ici elles suivent `enabled`, comme **Créer** — les
     // trois écrivent la sélection (auto-sélection du résultat), et une écriture
     // sur un champ en lecture seule n'a pas de sens.
+    // Les droits sont lus UNE fois pour ce rendu, jamais dans le builder de
+    // chaque option : l'ACL de l'hôte reste hors du chemin de défilement
+    // (AD-2/SM-1). `offers*` est la lecture défensive AD-10 du port : un
+    // getter qui lève ferme seulement le geste concerné.
+    final ZRelationCrudHandler? crud = presentation.crudHandler;
+    final bool offersCreate = crud?.offersCreate ?? false;
+    final bool offersEdit = crud?.offersEdit ?? false;
+    final bool offersCopy = crud?.offersCopy ?? false;
+
+    // Ce booléen gouverne le SLOT SECONDAIRE des options (pas le
+    // déclencheur). Un handler sans aucun geste offert n'ajoute donc aucune
+    // surface. Le déclencheur, lui, reste réactivable en lecture seule par le
+    // seul `choiceBuilder`, conformément à sa règle documentée ci-dessus :
+    // ouvrir une feuille sans action CRUD serait une affordance vide.
     final bool crudRowActions = presentation.choiceSecondaryBuilder == null &&
-        presentation.crudHandler != null &&
+        (offersEdit || offersCopy) &&
         enabled;
 
     // FR-26 — infobulles RÉSOLUES ICI, dans le `context` du CHAMP, et
@@ -321,6 +335,8 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
                       presentation,
                       choice,
                       multiple: true,
+                      offersEdit: offersEdit,
+                      offersCopy: offersCopy,
                       editTooltip: editTooltip,
                       copyTooltip: copyTooltip,
                     )
@@ -340,6 +356,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
                   state,
                   presentation,
                   multiple: true,
+                  offersCreate: offersCreate,
                   withFilterToggle: !presentation.searchable,
                 )
             : null,
@@ -428,6 +445,8 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
                     presentation,
                     choice,
                     multiple: false,
+                    offersEdit: offersEdit,
+                    offersCopy: offersCopy,
                     editTooltip: editTooltip,
                     copyTooltip: copyTooltip,
                   )
@@ -441,6 +460,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
                 state,
                 presentation,
                 multiple: false,
+                offersCreate: offersCreate,
                 withFilterToggle: true,
               )
           : null,
@@ -538,7 +558,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
   ///
   /// | Action | Condition de référence | Ici |
   /// |---|---|---|
-  /// | **Créer** | `crudDataSelect && allowErpRessourceCrud` | `crudHandler != null` et champ éditable |
+  /// | **Créer** | `crudDataSelect && allowErpRessourceCrud` | `offersCreate` et champ éditable |
   /// | **Confirmer** | `state.confirmButton` (mono) / `IconButton(check_circle_outline)` (multi) | une seule affordance, mêmes icônes |
   /// | **Réinitialiser** | `state.selection?.choice != null` | une valeur est sélectionnée, et le champ est éditable |
   /// | **Rechercher** (loupe) | `filter != null && !filter.activated` | idem, **sauf** en multi searchable (le champ est permanent) |
@@ -565,6 +585,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     S2State<dynamic> state,
     ZSelectPresentation presentation, {
     required bool multiple,
+    required bool offersCreate,
     required bool withFilterToggle,
   }) {
     // invariant AD-10 : teste `state.mounted` en tête — un modal en cours de
@@ -582,10 +603,11 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     // Pendant la recherche, la barre masque TOUTES les actions sauf la bascule :
     // elle est alors occupée par le champ de saisie.
     if (!filtering) {
-      if (presentation.crudHandler != null && editable) {
+      if (offersCreate && editable) {
         actions.add(
           IconButton(
             tooltip: label(context, 'create'),
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             icon: const Icon(Icons.add),
             onPressed: () => _crudThenSelect(
               state,
@@ -700,6 +722,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
                   state,
                   presentation,
                   multiple: true,
+                  offersCreate: presentation.crudHandler?.offersCreate ?? false,
                   withFilterToggle: false,
                 )
               : const <Widget>[],
@@ -744,33 +767,39 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     ZSelectPresentation presentation,
     S2Choice<dynamic> choice, {
     required bool multiple,
+    required bool offersEdit,
+    required bool offersCopy,
     required String editTooltip,
     required String copyTooltip,
   }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        IconButton(
-          tooltip: editTooltip,
-          icon: const Icon(Icons.edit),
-          onPressed: () => _crudThenSelect(
-            state,
-            presentation,
-            () => presentation.crudHandler!.edit(choice.value),
-            multiple: multiple,
-            replaced: choice.value,
+        if (offersEdit)
+          IconButton(
+            tooltip: editTooltip,
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            icon: const Icon(Icons.edit),
+            onPressed: () => _crudThenSelect(
+              state,
+              presentation,
+              () => presentation.crudHandler!.edit(choice.value),
+              multiple: multiple,
+              replaced: choice.value,
+            ),
           ),
-        ),
-        IconButton(
-          tooltip: copyTooltip,
-          icon: const Icon(Icons.copy),
-          onPressed: () => _crudThenSelect(
-            state,
-            presentation,
-            () => presentation.crudHandler!.copy(choice.value),
-            multiple: multiple,
+        if (offersCopy)
+          IconButton(
+            tooltip: copyTooltip,
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            icon: const Icon(Icons.copy),
+            onPressed: () => _crudThenSelect(
+              state,
+              presentation,
+              () => presentation.crudHandler!.copy(choice.value),
+              multiple: multiple,
+            ),
           ),
-        ),
       ],
     );
   }

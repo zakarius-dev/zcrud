@@ -3,6 +3,25 @@
 Toutes les modifications notables de `zcrud_select` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2.1.0 — 2026-08-17
+
+### Ajouté
+
+#### Le présentateur riche gouverne lui aussi les trois gestes séparément
+
+Pendant exact du correctif livré dans `zcrud_core` : `ZSmartSelectPresenter`
+portait la **même** garde tout-ou-rien. Un hôte enrôlant ce présentateur
+globalement n'atteignait jamais le rendu natif du cœur — le correctif du cœur
+seul ne l'aurait donc pas débloqué.
+
+Les trois gestes suivent désormais `offersCreate` / `offersEdit` / `offersCopy`,
+avec le même repli **fermant** et la même doctrine : un geste refusé est
+**absent**, jamais inerte.
+
+Le site qui gouverne le slot d'actions des options a été tranché après mesure :
+un gestionnaire n'offrant aucun geste n'ajoute aucune surface — le ré-activer
+ouvrirait une feuille sans action.
+
 ## [0.86.0] — Chantier documentation
 
 ### Ajouté

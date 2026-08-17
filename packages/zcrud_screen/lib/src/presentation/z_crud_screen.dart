@@ -56,11 +56,13 @@ import 'package:zcrud_ui_kit/zcrud_ui_kit.dart'
         showZConfirmDialog,
         zToast;
 
+import 'z_app_bar_actions_builder.dart';
 import 'z_crud_edition_scope.dart';
 import 'z_crud_screen_actions.dart';
 import 'z_crud_source.dart';
 import 'z_export_policy.dart';
 import 'z_list_query_policy.dart';
+import 'z_list_tabs_store.dart';
 import 'z_row_action_menu.dart';
 import 'z_row_actions_presentation.dart';
 import 'z_row_tint.dart';
@@ -176,6 +178,8 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
     this.itemBuilder,
     this.tabs,
     this.tabsScrollable = false,
+    this.tabsStore,
+    this.tabsScopeKey,
     this.query = const ZListQueryPolicy(),
     this.header,
     this.canCreate = true,
@@ -202,6 +206,7 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
     this.columnPolicy,
     this.collectionId,
     this.actions = const <ZAppBarAction>[],
+    this.actionsBuilder,
     this.appBarActions = const <Widget>[],
     this.leading,
     this.drawer,
@@ -326,6 +331,58 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// barre fixe les tronque, une barre défilante les laisse entiers. Sans
   /// [tabs], le réglage est sans effet.
   final bool tabsScrollable;
+
+  /// **Persistance de l'onglet actif et du défilement de chaque onglet**, entre
+  /// deux ouvertures de l'écran.
+  ///
+  /// `null` (défaut) ⇒ aucune persistance : **aucune lecture, aucune
+  /// écriture**, l'écran rouvre sur le premier onglet en haut de liste, comme
+  /// avant. Déclarer un [ZListTabsStore] suffit à ce que l'écran retrouve
+  /// l'onglet quitté **et** la position de défilement **de chacun** de ses
+  /// onglets — le paquet ne connaît pas le stockage, il ne connaît que le port.
+  ///
+  /// ```dart
+  /// class OngletsPersistants extends ZListTabsStore {
+  ///   const OngletsPersistants(this._box);
+  ///   final GetStorage _box;
+  ///
+  ///   @override
+  ///   int? loadTabIndex(String scopeKey) => _box.read<int>('$scopeKey/index');
+  ///
+  ///   @override
+  ///   void saveTabIndex(String scopeKey, int index) =>
+  ///       _box.write('$scopeKey/index', index);
+  ///
+  ///   @override
+  ///   double? loadScrollOffset(String scopeKey, int tabIndex) =>
+  ///       _box.read<double>('$scopeKey/offset/$tabIndex');
+  ///
+  ///   @override
+  ///   void saveScrollOffset(String scopeKey, int tabIndex, double offset) =>
+  ///       _box.write('$scopeKey/offset/$tabIndex', offset);
+  /// }
+  /// ```
+  ///
+  /// **Lecture tolérante** (AD-10) : index absent ⇒ premier onglet, offsets
+  /// absents ⇒ zéros, index hors bornes ⇒ premier onglet (un jeu d'onglets a
+  /// pu rétrécir depuis la dernière session), store qui lève ⇒ traité comme
+  /// absent. Rien de ce que le store rend ne peut emporter l'écran.
+  ///
+  /// Sans [tabs], le réglage est sans effet.
+  final ZListTabsStore? tabsStore;
+
+  /// **Voie d'échappement** de la clé de portée passée à [tabsStore].
+  ///
+  /// `null` (défaut) ⇒ la clé est **dérivée** : type d'entité, identité de
+  /// l'écran ([collectionId], à défaut [title]) et jeu d'onglets (clés de page
+  /// dans l'ordre). C'est ce qui garantit que deux écrans à onglets ne se
+  /// marchent jamais dessus, et qu'un **changement de jeu d'onglets invalide
+  /// naturellement** l'ancienne préférence.
+  ///
+  /// À déclarer seulement quand deux écrans distincts partagent les trois — ou
+  /// quand deux instances du même écran (deux dossiers, deux services) doivent
+  /// mémoriser des onglets **différents**.
+  final String? tabsScopeKey;
 
   /// **Tri par défaut, filtres permanents, taille de page et sémantique de
   /// recherche** du listing.
@@ -628,6 +685,39 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// débordement** (`isOverflow: true`) — mécanisme du socle, pas une
   /// réinvention locale.
   final List<ZAppBarAction> actions;
+
+  /// Actions additionnelles de l'app-bar **dépendantes de l'état**, toujours
+  /// déclarées en **données** — le builder rend des [ZAppBarAction], jamais des
+  /// widgets.
+  ///
+  /// **Exclusif avec [actions]** (assertion de construction) : le builder sait
+  /// rendre les actions constantes en plus des conditionnelles, deux sources à
+  /// la même place rendraient l'ordre de l'app-bar indécidable.
+  ///
+  /// Il reçoit un [ZAppBarActionsContext] portant l'**ACL résolue** (restriction
+  /// de l'onglet actif déjà composée), l'**onglet actif**, le **nombre
+  /// d'éléments de la vue courante**, la **vacuité** et l'**état corbeille** —
+  /// et rien d'autre : l'état interne de l'écran n'est pas exposé.
+  ///
+  /// ```dart
+  /// actionsBuilder: (state) => <ZAppBarAction>[
+  ///   if (!state.isEmpty)
+  ///     ZAppBarAction(
+  ///       icon: Icons.filter_alt_off_outlined,
+  ///       semanticLabel: label(context, 'filters'),
+  ///       onPressed: _showFilterDialog,
+  ///     ),
+  /// ],
+  /// ```
+  ///
+  /// **Granularité (AD-2)** : le builder est réévalué quand l'onglet, le
+  /// comptage ou la portée changent, et **seule la coquille** est rebâtie — le
+  /// corps de l'écran est construit une fois et transmis tel quel. Le comptage
+  /// vient de la lecture notifiée du listing
+  /// ([ZCrudScreenActions.entitiesInViewListenable], publication en fin de
+  /// trame, comparaison par contenu) ; son notifieur n'est créé qu'au premier
+  /// accès, donc **un écran sans builder ne paie rien**.
+  final ZAppBarActionsBuilder? actionsBuilder;
 
   /// Boutons additionnels de l'`AppBar` sous forme de **widgets déjà
   /// construits** (avant les boutons assemblés).
@@ -983,15 +1073,34 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   @override
   void initState() {
     super.initState();
+    // Exclusivité `actions` / `actionsBuilder` — attrapée AU MONTAGE, avec un
+    // message actionnable, plutôt que par une app-bar dont l'ordre serait
+    // silencieusement indécidable. L'assertion vit ici et non dans le
+    // constructeur : `List.length`/`isEmpty` n'est pas évaluable en contexte
+    // constant, et `ZCrudScreen` doit rester constructible en `const` (même
+    // patron que l'unicité des clés de page dans `ZTabbedList.initState`).
+    assert(
+      widget.actions.isEmpty || widget.actionsBuilder == null,
+      'ZCrudScreen : `actions` et `actionsBuilder` sont EXCLUSIFS. Deux '
+      'sources d\'actions additionnelles à la même place rendraient l\'ordre '
+      'de l\'app-bar indécidable — déclarez la liste figée (`actions`) OU le '
+      'builder (`actionsBuilder`), qui sait rendre les actions constantes en '
+      'plus des conditionnelles.',
+    );
     _syncSelectionController(null);
+    // L'onglet mémorisé est SEMÉ ici, avant tout rendu : le notifieur porte
+    // déjà la bonne valeur quand `ZTabbedList` se monte, donc rien n'est
+    // notifié en trop et `_onActiveTabChanged` ne se déclenche pas à faux.
+    _restoredTabIndex = _readStoredTabIndex();
+    if (_restoredTabIndex != 0) _activeTabIndex.value = _restoredTabIndex;
     // Changer d'onglet change ce qui est listé : garder une sélection faite
     // sur l'onglet précédent laisserait un lot invisible s'exécuter sur des
     // éléments que l'utilisateur ne voit plus.
     _activeTabIndex.addListener(_onActiveTabChanged);
   }
 
-  /// Changement d'onglet actif : la sélection est vidée, et la recherche
-  /// partagée **suit** l'onglet devenu actif.
+  /// Changement d'onglet actif : la sélection est vidée, la recherche partagée
+  /// **suit** l'onglet devenu actif, et l'onglet est **mémorisé**.
   void _onActiveTabChanged() {
     _clearSelection();
     _followSearchToActiveTab();
@@ -999,6 +1108,101 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     // ne le reconstruit pas, donc ne repasse pas par le relevé des lignes. Sans
     // cette publication, la lecture notifiée resterait sur l'onglet quitté.
     _publishEntitiesInView();
+    _writeStoredTabIndex(_activeTabIndex.value);
+  }
+
+  // ── Persistance des onglets (seam `ZListTabsStore`) ───────────────────────
+  //
+  // Tout passe par les quatre helpers ci-dessous, et par eux seuls : chacun
+  // absorbe l'exception d'une implémentation fautive (invariant AD-10 — un
+  // store qui lève est traité comme absent) et chacun est un NO-OP strict tant
+  // qu'aucun store n'est déclaré. Aucun autre point du fichier n'appelle le
+  // port.
+
+  /// Index d'onglet **restauré** au montage (0 quand rien n'est mémorisé) —
+  /// c'est l'`initialIndex` donné à `ZTabbedList`.
+  int _restoredTabIndex = 0;
+
+  /// Clé de portée du store : celle déclarée, sinon **dérivée** du type
+  /// d'entité, de l'identité de l'écran et du jeu d'onglets.
+  ///
+  /// Le jeu d'onglets entre dans la clé pour deux raisons, pas une : deux
+  /// écrans à onglets ne se marchent jamais dessus, **et** un changement de jeu
+  /// d'onglets invalide naturellement l'ancienne préférence — un index
+  /// mémorisé pour d'autres onglets ne peut pas être réappliqué aux nouveaux.
+  String get _tabsScopeKey {
+    final declared = widget.tabsScopeKey;
+    if (declared != null) return declared;
+    final tabs = widget.tabs ?? const <ZListTab>[];
+    final identity = widget.collectionId ?? widget.title;
+    final pageKeys = <String>[for (final tab in tabs) tab.resolvedPageKey];
+    return '$T/$identity/${pageKeys.join(',')}';
+  }
+
+  /// Le store est-il **atteignable** ? (déclaré, et des onglets à mémoriser).
+  ZListTabsStore? get _tabsStore {
+    final store = widget.tabsStore;
+    if (store == null) return null;
+    final tabs = widget.tabs;
+    if (tabs == null || tabs.isEmpty) return null;
+    return store;
+  }
+
+  /// Onglet mémorisé, **borné au jeu d'onglets courant**.
+  ///
+  /// Trois replis, tous sur le premier onglet : rien de mémorisé, index hors
+  /// bornes (le jeu d'onglets a pu rétrécir depuis la dernière session), ou
+  /// store qui lève.
+  int _readStoredTabIndex() {
+    final store = _tabsStore;
+    if (store == null) return 0;
+    final int? stored;
+    try {
+      stored = store.loadTabIndex(_tabsScopeKey);
+    } catch (_) {
+      return 0;
+    }
+    if (stored == null) return 0;
+    final count = widget.tabs!.length;
+    if (stored < 0 || stored >= count) return 0;
+    return stored;
+  }
+
+  void _writeStoredTabIndex(int index) {
+    final store = _tabsStore;
+    if (store == null) return;
+    try {
+      store.saveTabIndex(_tabsScopeKey, index);
+    } catch (_) {
+      // Un store fautif ne casse pas l'écran (AD-10) : la préférence est
+      // simplement perdue.
+    }
+  }
+
+  /// Défilement mémorisé de l'onglet [tabIndex] — `0` quand rien n'est
+  /// mémorisé, quand la valeur n'est pas un réel exploitable (négatif, NaN,
+  /// infini) ou quand le store lève.
+  double _readStoredScrollOffset(int tabIndex) {
+    final store = _tabsStore;
+    if (store == null) return 0;
+    final double? stored;
+    try {
+      stored = store.loadScrollOffset(_tabsScopeKey, tabIndex);
+    } catch (_) {
+      return 0;
+    }
+    if (stored == null || !stored.isFinite || stored < 0) return 0;
+    return stored;
+  }
+
+  void _writeStoredScrollOffset(int tabIndex, double offset) {
+    final store = _tabsStore;
+    if (store == null) return;
+    try {
+      store.saveScrollOffset(_tabsScopeKey, tabIndex, offset);
+    } catch (_) {
+      // Idem : la position est perdue, l'écran reste debout.
+    }
   }
 
   /// Aligne le contrôleur de sélection sur la politique déclarée : il n'existe
@@ -3065,6 +3269,9 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
         header: _trashView ? null : widget.header,
         isScrollable: widget.tabsScrollable,
         activeIndexNotifier: _activeTabIndex,
+        // Onglet mémorisé (0 sans store, ou hors bornes) — le notifieur porte
+        // déjà cette valeur depuis `initState`, donc rien n'est renotifié.
+        initialIndex: _restoredTabIndex,
       );
       final acl = widget.acl;
       if (acl == null) return tabbed;
@@ -3288,10 +3495,16 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     BuildContext context,
     ZAcl acl,
     int? trashCount,
+    int activeTabIndex,
+    int itemCount,
   ) {
     final trashLabel = label(context, 'trash', fallback: 'Trash');
     return <ZAppBarAction>[
+      // Voie DÉCLARÉE (liste figée) et voie CONDITIONNELLE (builder) occupent
+      // la même place, et sont exclusives par assertion : l'une des deux est
+      // toujours vide.
       ...widget.actions,
+      ..._builtActions(acl, activeTabIndex, itemCount),
       // Chemin DÉPRÉCIÉ : widget déjà construit, emballé inerte
       // (`onPressed: null`) — c'est le bouton de l'hôte qui reçoit le tap.
       // ignore: deprecated_member_use_from_same_package
@@ -3310,7 +3523,7 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       // Export : une entrée par format déclaré, dans le menu de débordement.
       // Aucun format déclaré ⇒ liste vide ⇒ app-bar strictement inchangée.
       ..._exportEntries(context, acl),
-      if (_createOffered(acl, _activeTabIndex.value))
+      if (_createOffered(acl, activeTabIndex))
         ZAppBarAction.widget(
           semanticLabel: label(context, 'create'),
           tooltip: label(context, 'create'),
@@ -3318,6 +3531,32 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
           child: const Icon(Icons.add, key: ValueKey('zCrudCreate')),
         ),
     ];
+  }
+
+  /// Actions rendues par [ZCrudScreen.actionsBuilder], ou rien.
+  ///
+  /// L'ACL transmise est celle que l'écran interroge pour ses propres gestes,
+  /// **restreinte par l'onglet actif** (cascade `onglet ∩ écran ∩ scope`) : une
+  /// action gouvernée par elle suit le segment courant sans que l'appelant ne
+  /// recompose quoi que ce soit.
+  ///
+  /// Un builder qui lève ne peut pas emporter l'app-bar (invariant AD-10) : il
+  /// est traité comme n'ayant rien produit.
+  List<ZAppBarAction> _builtActions(ZAcl acl, int activeTabIndex, int count) {
+    final builder = widget.actionsBuilder;
+    if (builder == null) return const <ZAppBarAction>[];
+    try {
+      return builder(
+        ZAppBarActionsContext(
+          acl: _tabScopedAcl(acl, activeTabIndex),
+          tabIndex: activeTabIndex,
+          itemCount: count,
+          isTrashView: _trashView,
+        ),
+      );
+    } catch (_) {
+      return const <ZAppBarAction>[];
+    }
   }
 
   /// `true` si la **pastille de comptage** doit accompagner l'accès à la
@@ -3428,7 +3667,68 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       // Le scope des gestes est posé ICI, au-dessus de la coquille : le corps
       // (donc chaque carte) en est descendant, et le changement d'onglet actif
       // rafraîchit l'empreinte des capacités (la création dépend de l'onglet).
-      builder: (context, activeTabIndex, child) => ZCrudScreenScope(
+      builder: (context, activeTabIndex, child) => _buildScope(
+        context,
+        acl,
+        child!,
+        trashCount,
+        activeTabIndex,
+      ),
+    );
+  }
+
+  /// Le scope des gestes et, dessous, la coquille — sous l'abonnement au
+  /// **comptage** quand (et seulement quand) un `actionsBuilder` est déclaré.
+  ///
+  /// 🔴 **Granularité (AD-2)** : l'abonnement est posé ICI, au-dessus de la
+  /// seule coquille, avec le corps **déjà construit** passé en `child:`. Un
+  /// changement de comptage rebâtit donc la barre d'actions et rien d'autre —
+  /// le sous-arbre du corps est l'instance IDENTIQUE, que Flutter ne
+  /// reconstruit pas. Poser l'abonnement plus haut (dans `build`) rendrait
+  /// chaque changement de comptage responsable d'une reconstruction du listing,
+  /// c'est-à-dire exactement le rafraîchissement global que ce paquet existe
+  /// pour supprimer — et, le relevé des lignes republiant en fin de trame, la
+  /// boucle serait sans fin.
+  ///
+  /// 🔴 **Un écran sans builder ne paie rien** : `entitiesInViewListenable`
+  /// n'est **pas** touché, donc son notifieur n'est pas créé, donc
+  /// `_publishEntitiesInView` reste un test de nullité — aucun relevé, aucune
+  /// comparaison, aucun rappel de fin de trame.
+  Widget _buildScope(
+    BuildContext context,
+    ZAcl acl,
+    Widget body,
+    int? trashCount,
+    int activeTabIndex,
+  ) {
+    if (widget.actionsBuilder == null) {
+      return _buildScopeAndScaffold(context, acl, body, trashCount,
+          activeTabIndex, 0);
+    }
+    return ValueListenableBuilder<List<ZEntity>>(
+      valueListenable: entitiesInViewListenable,
+      child: body,
+      builder: (context, entities, child) => _buildScopeAndScaffold(
+        context,
+        acl,
+        child!,
+        trashCount,
+        activeTabIndex,
+        entities.length,
+      ),
+    );
+  }
+
+  Widget _buildScopeAndScaffold(
+    BuildContext context,
+    ZAcl acl,
+    Widget body,
+    int? trashCount,
+    int activeTabIndex,
+    int itemCount,
+  ) {
+    final child = body;
+    return ZCrudScreenScope(
         actions: this,
         signature: _actionsSignature(_createOffered(acl, activeTabIndex)),
         // La politique de requête est OFFERTE aux vues que l'application
@@ -3456,14 +3756,19 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
             // depuis le bord.
             drawer: widget.drawer,
             endDrawer: widget.endDrawer,
-            actions: _appBarActions(context, acl, trashCount),
+            actions: _appBarActions(
+              context,
+              acl,
+              trashCount,
+              activeTabIndex,
+              itemCount,
+            ),
             search: _searchOffered
                 ? ZAppBarSearchConfig(onQueryChanged: _onSearchChanged)
                 : null,
             body: child,
           ),
         ),
-      ),
     );
   }
 
@@ -3490,29 +3795,55 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   /// Un onglet à builder sans socle, sous un écran sans politique, est rendu
   /// **tel quel** — aucun `InheritedWidget` de plus dans son arbre.
   List<ZListTab> _composedTabs(List<ZListTab> tabs) => <ZListTab>[
-        for (final tab in tabs) _composedTab(tab),
+        for (var i = 0; i < tabs.length; i++) _composedTab(tabs[i], i),
       ];
 
-  ZListTab _composedTab(ZListTab tab) {
+  ZListTab _composedTab(ZListTab tab, int index) {
     final declared = tab.builder;
     if (declared == null) {
       return tab.copyWith(
-        builder: (context) => _wrapTabQueryScope(
-          tab,
-          widget.source.repository != null
-              ? _buildRepositoryBody(context, tab: tab)
-              : _buildItemsBody(context, tab: tab),
+        builder: (context) => _wrapTabScrollMemory(
+          index,
+          _wrapTabQueryScope(
+            tab,
+            widget.source.repository != null
+                ? _buildRepositoryBody(context, tab: tab)
+                : _buildItemsBody(context, tab: tab),
+          ),
         ),
       );
     }
     // Rien à offrir à la page : ni l'écran ni l'onglet ne déclarent quoi que
-    // ce soit (la politique composée est la mesure des deux à la fois).
-    if (_tabPolicy(tab).declaresNothing) return tab;
+    // ce soit (la politique composée est la mesure des deux à la fois) — et
+    // aucun store d'onglets n'est déclaré.
+    if (_tabPolicy(tab).declaresNothing && _tabsStore == null) return tab;
     return tab.copyWith(
       // La page doit être construite SOUS la portée, sinon elle lirait
       // l'ancienne (ou aucune).
-      builder: (context) =>
-          _wrapTabQueryScope(tab, Builder(builder: declared)),
+      builder: (context) => _wrapTabScrollMemory(
+        index,
+        _wrapTabQueryScope(tab, Builder(builder: declared)),
+      ),
+    );
+  }
+
+  /// Enveloppe la page de l'onglet [index] de sa **mémoire de défilement** —
+  /// **uniquement** quand un store est déclaré.
+  ///
+  /// Sans store, [child] est rendu tel quel : pas un widget de plus dans
+  /// l'arbre, pas un écouteur de plus sur les notifications de défilement.
+  ///
+  /// La mémoire est posée **par onglet**, à l'intérieur de la page keep-alive :
+  /// chaque onglet a donc sa propre position, et rejoindre un onglet déjà
+  /// monté ne rejoue rien. C'est la moitié du geste qu'un index d'onglet seul
+  /// ne restitue pas.
+  Widget _wrapTabScrollMemory(int index, Widget child) {
+    if (_tabsStore == null) return child;
+    return _ZTabScrollMemory(
+      key: ValueKey<String>('zCrudTabScroll_${_tabsScopeKey}_$index'),
+      initialOffset: _readStoredScrollOffset(index),
+      onOffsetChanged: (offset) => _writeStoredScrollOffset(index, offset),
+      child: child,
     );
   }
 
@@ -3532,6 +3863,136 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     if (policy.declaresNothing) return child;
     return ZListQueryScope(policy: policy, child: child);
   }
+}
+
+/// **Mémoire de défilement d'une page d'onglet** — restaure la position au
+/// montage, relève chaque déplacement, et n'existe que si un `ZListTabsStore`
+/// est déclaré.
+///
+/// ## Pourquoi une observation, et pas un `ScrollController` injecté
+///
+/// Les listes du cœur (`ListView.builder` de `DynamicList`) ne prennent **pas**
+/// de `ScrollController` : il n'existe aucun seam pour leur en donner un, et en
+/// ouvrir un dans `zcrud_core` dépasserait de loin ce qu'un écran assemblé doit
+/// se permettre. Un `PrimaryScrollController` posé au-dessus s'y attacherait
+/// bien, mais **exploserait** dès qu'une page rendrait deux zones défilantes
+/// verticales (assertion « attached to multiple scroll views ») — un
+/// `itemBuilder` d'application suffit à provoquer le cas.
+///
+/// L'observation par notification n'a aucun de ces deux défauts : elle ne
+/// s'attache à rien, elle **écoute** ce que la page dispatche déjà.
+/// `ScrollNotification` porte le déplacement, `ScrollMetricsNotification` porte
+/// le moment où la liste connaît enfin ses dimensions — c'est-à-dire le moment
+/// où une position mémorisée redevient atteignable (avant, la liste charge
+/// encore : sauter alors ne ferait rien).
+///
+/// ## Ce qui est filtré, et pourquoi
+///
+/// * `depth == 0` — seule la zone défilante **la plus proche** compte : un
+///   défilement imbriqué (carrousel dans une tuile) n'est pas la position de la
+///   liste ;
+/// * `axis == Axis.vertical` — une barre horizontale n'est pas une position de
+///   lecture ;
+/// * la restauration n'a lieu **qu'une fois**, et seulement si un offset non
+///   nul est mémorisé : un écran qui rouvre en haut ne provoque aucun saut.
+class _ZTabScrollMemory extends StatefulWidget {
+  const _ZTabScrollMemory({
+    required this.initialOffset,
+    required this.onOffsetChanged,
+    required this.child,
+    super.key,
+  });
+
+  /// Position mémorisée à rejoindre (`0` ⇒ rien à restaurer).
+  final double initialOffset;
+
+  /// Notifié à chaque déplacement relevé — c'est la voie d'écriture unique.
+  final ValueChanged<double> onOffsetChanged;
+
+  /// La page de l'onglet, rendue telle quelle.
+  final Widget child;
+
+  @override
+  State<_ZTabScrollMemory> createState() => _ZTabScrollMemoryState();
+}
+
+class _ZTabScrollMemoryState extends State<_ZTabScrollMemory> {
+  /// La position mémorisée a-t-elle déjà été rejointe ? Une seule fois, sans
+  /// quoi le premier défilement de l'usager serait aussitôt défait.
+  bool _restored = false;
+
+  /// Un saut est déjà programmé pour la fin de la trame courante.
+  bool _pendingJump = false;
+
+  /// Dernière position ÉCRITE — la comparaison évite d'écrire à chaque pixel
+  /// une valeur que le store a déjà.
+  double? _lastWritten;
+
+  bool _onScroll(ScrollNotification notification) {
+    if (notification.depth != 0) return false;
+    if (notification.metrics.axis != Axis.vertical) return false;
+    // Un `ScrollStartNotification` sur une position mémorisée non encore
+    // rejointe signifie que l'usager a pris la main : la restauration n'a plus
+    // lieu d'être, elle lui reprendrait son geste.
+    if (notification is ScrollStartNotification) _restored = true;
+    if (notification is ScrollUpdateNotification ||
+        notification is ScrollEndNotification) {
+      _record(notification.metrics.pixels);
+    }
+    return false;
+  }
+
+  bool _onMetrics(ScrollMetricsNotification notification) {
+    if (notification.depth != 0) return false;
+    if (notification.metrics.axis != Axis.vertical) return false;
+    _maybeRestore(notification.context, notification.metrics);
+    return false;
+  }
+
+  void _record(double pixels) {
+    if (!pixels.isFinite) return;
+    final normalized = pixels < 0 ? 0.0 : pixels;
+    if (_lastWritten == normalized) return;
+    _lastWritten = normalized;
+    widget.onOffsetChanged(normalized);
+  }
+
+  /// Rejoint la position mémorisée dès que la liste a des dimensions qui la
+  /// rendent atteignable — et jamais pendant la construction en cours.
+  void _maybeRestore(BuildContext scrollContext, ScrollMetrics metrics) {
+    if (_restored || _pendingJump) return;
+    final target = widget.initialOffset;
+    if (target <= 0) {
+      _restored = true;
+      return;
+    }
+    if (metrics.maxScrollExtent <= 0) return;
+    _pendingJump = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pendingJump = false;
+      if (!mounted || _restored) return;
+      final position = Scrollable.maybeOf(scrollContext)?.position;
+      if (position == null || !position.hasContentDimensions) return;
+      _restored = true;
+      final clamped = target.clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      );
+      position.jumpTo(clamped);
+      // La valeur rejointe est celle que le store porte déjà : la noter évite
+      // une réécriture immédiate par le `ScrollEndNotification` du saut.
+      _lastWritten = clamped;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: NotificationListener<ScrollMetricsNotification>(
+          onNotification: _onMetrics,
+          child: widget.child,
+        ),
+      );
 }
 
 /// Décorateur **corbeille** d'un `ZRepository` : force

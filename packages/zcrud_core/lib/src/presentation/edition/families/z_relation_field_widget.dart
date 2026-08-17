@@ -193,6 +193,18 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
   /// invariant AD-10).
   bool get _isLoading => widget.source != null && _liveChoices == null;
 
+  /// `true` si un handler CRUD est résolu **et** offre encore au moins un
+  /// geste (`offersAnyGesture`, lecture défensive AD-10).
+  ///
+  /// Un handler dont les trois droits sont refusés n'a **rien** à montrer : il
+  /// ne doit donc plus imposer la surface qui portait ses boutons (le modal
+  /// mono). Aucun handler existant n'est concerné — les trois droits valent
+  /// `true` par défaut.
+  bool get _hasCrudAffordance {
+    final crud = widget.crudHandler;
+    return crud != null && crud.offersAnyGesture;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Présentateur riche injecté au scope → DÉLÉGATION via DTO NEUTRE
@@ -237,8 +249,9 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
     if (widget.multiple) return _buildMulti(context, choices);
     // Un handler CRUD inline impose le chemin MODAL (mono searchable), seul
     // endroit exposant les boutons Créer/Modifier/Copier. Sans handler ni
-    // `searchable`, le dropdown reste inchangé.
-    if (widget.searchable || widget.crudHandler != null) {
+    // `searchable`, le dropdown reste inchangé — de même si le handler
+    // n'offre plus AUCUN geste (rien à montrer ⇒ rien à imposer).
+    if (widget.searchable || _hasCrudAffordance) {
       return _buildSearchableMono(context, choices);
     }
     return _buildDropdown(context, choices, loading: _isLoading);
@@ -455,8 +468,9 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
         choices: choices,
         multiple: multiple,
         // Un handler CRUD force la recherche (modal riche), même si la
-        // config `searchable` est absente.
-        searchable: widget.searchable || widget.crudHandler != null,
+        // config `searchable` est absente — sauf s'il n'offre plus aucun
+        // geste (voir `_hasCrudAffordance`).
+        searchable: widget.searchable || _hasCrudAffordance,
         initialSelection: initial,
         labelOf: (c) => label(sheetContext, c.label, fallback: c.label),
         subtitleOf: (c) => c.subtitle == null
@@ -680,6 +694,12 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
   Widget build(BuildContext context) {
     final filtered = _filtered;
     final crud = widget.crudHandler;
+    // Droits lus **une fois par construction** (jamais dans l'`itemBuilder` :
+    // le code d'ACL de l'hôte ne doit pas s'exécuter à chaque frame de
+    // défilement — invariant AD-2/SM-1). Lecture défensive AD-10 : un getter
+    // hôte qui lève **ferme** le geste.
+    final bool crudEdit = crud != null && crud.offersEdit;
+    final bool crudCopy = crud != null && crud.offersCopy;
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
@@ -698,8 +718,10 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
                         textAlign: TextAlign.start,
                         style: Theme.of(context).textTheme.titleMedium),
                   ),
-                  // Action **Créer**.
-                  if (crud != null)
+                  // Action **Créer** — rendue seulement si le handler
+                  // l'offre (`offersCreate`, lecture défensive AD-10 de la
+                  // déclaration hôte). Refusé ⇒ **absent**, jamais inerte.
+                  if (crud != null && crud.offersCreate)
                     ConstrainedBox(
                       constraints:
                           const BoxConstraints(minHeight: 48, minWidth: 48),
@@ -750,16 +772,23 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
                             title: Text(widget.labelOf(choice),
                                 textAlign: TextAlign.start),
                             subtitle: _subtitleWidget(context, choice),
-                            // Affordances Modifier/Copier par option.
-                            secondary: crud == null
+                            // Affordances Modifier/Copier par option, chacune
+                            // gouvernée par SON droit : un geste refusé n'a
+                            // aucune icône, l'autre garde la sienne. Les deux
+                            // refusés ⇒ aucune colonne d'actions du tout.
+                            secondary: crud == null || !(crudEdit || crudCopy)
                                 ? null
                                 : _CrudRowActions(
-                                    onEdit: () => _runCrud(
-                                      () => crud.edit(choice.value),
-                                      replaced: choice.value,
-                                    ),
-                                    onCopy: () =>
-                                        _runCrud(() => crud.copy(choice.value)),
+                                    onEdit: !crudEdit
+                                        ? null
+                                        : () => _runCrud(
+                                              () => crud.edit(choice.value),
+                                              replaced: choice.value,
+                                            ),
+                                    onCopy: !crudCopy
+                                        ? null
+                                        : () => _runCrud(
+                                            () => crud.copy(choice.value)),
                                   ),
                             // Une option `disabled` (dont l'option
                             // synthétique d'un orphelin) est visible et lue,
@@ -801,27 +830,37 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
 /// Affordances **Modifier/Copier** par option : icônes accessibles,
 /// cibles ≥ 48 dp, `Tooltip`/`Semantics`, l10n. Directionnel (invariant
 /// AD-13).
+///
+/// Un callback `null` ⇒ l'icône correspondante n'est **pas construite** —
+/// absente, donc ni cliquable, ni tabulable, ni annoncée. Jamais un
+/// `IconButton(onPressed: null)` : un bouton grisé et muet est précisément ce
+/// que le port refuse (cf. `ZRelationCrudHandler.canCreate`). L'icône restante
+/// garde sa cible ≥ 48 dp et son annotation.
 class _CrudRowActions extends StatelessWidget {
-  const _CrudRowActions({required this.onEdit, required this.onCopy});
+  const _CrudRowActions({this.onEdit, this.onCopy});
 
-  final VoidCallback onEdit;
-  final VoidCallback onCopy;
+  final VoidCallback? onEdit;
+  final VoidCallback? onCopy;
 
   @override
   Widget build(BuildContext context) {
+    final VoidCallback? edit = onEdit;
+    final VoidCallback? copy = onCopy;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        IconButton(
-          icon: const Icon(Icons.edit),
-          tooltip: label(context, 'edit'),
-          onPressed: onEdit,
-        ),
-        IconButton(
-          icon: const Icon(Icons.copy),
-          tooltip: label(context, 'copy'),
-          onPressed: onCopy,
-        ),
+        if (edit != null)
+          IconButton(
+            icon: const Icon(Icons.edit),
+            tooltip: label(context, 'edit'),
+            onPressed: edit,
+          ),
+        if (copy != null)
+          IconButton(
+            icon: const Icon(Icons.copy),
+            tooltip: label(context, 'copy'),
+            onPressed: copy,
+          ),
       ],
     );
   }

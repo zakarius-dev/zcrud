@@ -80,6 +80,91 @@ Widget _selectField(
       searchable: searchable,
     );
 
+Widget _relationPresentation({
+  required ZRelationCrudHandler handler,
+}) =>
+    Builder(
+      builder: (context) => const ZSmartSelectPresenter().present(
+        context,
+        ZSelectPresentation(
+          field: ZFieldSpec(
+            name: 'relation',
+            type: EditionFieldType.relation,
+            label: 'Relation',
+            choices: _abc,
+          ),
+          options: _abc,
+          selected: null,
+          onChanged: _ignoreRelationChange,
+          multiple: false,
+          searchable: false,
+          readOnly: false,
+          crudHandler: handler,
+        ),
+      ),
+    );
+
+void _ignoreRelationChange(Object? _) {}
+
+class _DefaultCrudHandler extends ZRelationCrudHandler {
+  const _DefaultCrudHandler();
+
+  @override
+  Future<ZFieldChoice?> create(Map<String, Object?> context) async => _a;
+
+  @override
+  Future<ZFieldChoice?> edit(Object? value) async => _a;
+
+  @override
+  Future<ZFieldChoice?> copy(Object? value) async => _a;
+}
+
+class _CreateDeniedCrudHandler extends _DefaultCrudHandler {
+  const _CreateDeniedCrudHandler();
+
+  @override
+  bool get canCreate => false;
+}
+
+class _EditDeniedCrudHandler extends _DefaultCrudHandler {
+  const _EditDeniedCrudHandler();
+
+  @override
+  bool get canEdit => false;
+}
+
+class _CopyDeniedCrudHandler extends _DefaultCrudHandler {
+  const _CopyDeniedCrudHandler();
+
+  @override
+  bool get canCopy => false;
+}
+
+class _ThrowingCreateCrudHandler extends _DefaultCrudHandler {
+  const _ThrowingCreateCrudHandler();
+
+  @override
+  bool get canCreate => throw StateError('ACL indisponible');
+}
+
+class _AllDeniedCrudHandler extends _DefaultCrudHandler {
+  const _AllDeniedCrudHandler();
+
+  @override
+  bool get canCreate => false;
+
+  @override
+  bool get canEdit => false;
+
+  @override
+  bool get canCopy => false;
+}
+
+Future<void> _openRelationModal(WidgetTester tester) async {
+  await tester.tap(_trigger);
+  await tester.pumpAndSettle();
+}
+
 /// Le **déclencheur** rendu par le présentateur — le `ListTile` que porte le
 /// `Card` de l'apparence DODLP.
 ///
@@ -145,6 +230,96 @@ void main() {
       await tester.pumpAndSettle();
       // La tranche reçoit la VALEUR MÉTIER 'b' (jamais un type S2).
       expect(captured, 'b');
+    });
+  });
+
+  group('🔴 CR-RELATION-ACL — gestes CRUD inline gouvernés séparément', () {
+    Future<void> expectActions(
+      WidgetTester tester,
+      ZRelationCrudHandler handler, {
+      required int create,
+      required int edit,
+      required int copy,
+    }) async {
+      await tester.pumpWidget(_host(
+        presenter: presenter,
+        child: _relationPresentation(handler: handler),
+      ));
+      await _openRelationModal(tester);
+      // Comptes absolus : aucun geste refusé ne subsiste dans le modal, son
+      // slot secondaire, ni son arbre sémantique (les tooltips nomment les
+      // seuls boutons CRUD construits).
+      expect(find.byTooltip('Create'), findsNWidgets(create));
+      expect(find.byTooltip('Edit'), findsNWidgets(edit));
+      expect(find.byTooltip('Copy'), findsNWidgets(copy));
+      expect(find.byIcon(Icons.add), findsNWidgets(create));
+      expect(find.byIcon(Icons.edit), findsNWidgets(edit));
+      expect(find.byIcon(Icons.copy), findsNWidgets(copy));
+    }
+
+    testWidgets('canCreate=false : Créer est absent, Modifier/Copier restent',
+        (tester) async {
+      await expectActions(tester, const _CreateDeniedCrudHandler(),
+          create: 0, edit: 3, copy: 3);
+    });
+
+    testWidgets('canEdit=false : Modifier est absent, Créer/Copier restent',
+        (tester) async {
+      await expectActions(tester, const _EditDeniedCrudHandler(),
+          create: 1, edit: 0, copy: 3);
+    });
+
+    testWidgets('canCopy=false : Copier est absent, Créer/Modifier restent',
+        (tester) async {
+      await expectActions(tester, const _CopyDeniedCrudHandler(),
+          create: 1, edit: 3, copy: 0);
+    });
+
+    testWidgets('rétrocompat : handler sans override affiche les trois gestes',
+        (tester) async {
+      await expectActions(tester, const _DefaultCrudHandler(),
+          create: 1, edit: 3, copy: 3);
+    });
+
+    testWidgets('AD-10 : getter canCreate qui lève ferme Créer seulement',
+        (tester) async {
+      await expectActions(tester, const _ThrowingCreateCrudHandler(),
+          create: 0, edit: 3, copy: 3);
+    });
+
+    testWidgets('adversarial : aucun geste refusé ne survit dans la sémantique',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await expectActions(tester, const _AllDeniedCrudHandler(),
+          create: 0, edit: 0, copy: 0);
+      expect(find.bySemanticsLabel('Create'), findsNothing);
+      expect(find.bySemanticsLabel('Edit'), findsNothing);
+      expect(find.bySemanticsLabel('Copy'), findsNothing);
+      handle.dispose();
+    });
+
+    testWidgets('actions CRUD restantes : contraintes explicites >= 48 dp',
+        (tester) async {
+      await tester.pumpWidget(_host(
+        presenter: presenter,
+        child: _relationPresentation(handler: const _DefaultCrudHandler()),
+      ));
+      await _openRelationModal(tester);
+      final create = tester.widget<IconButton>(find.ancestor(
+        of: find.byTooltip('Create'), matching: find.byType(IconButton),
+      ));
+      final edit = tester.widget<IconButton>(find.ancestor(
+        of: find.byTooltip('Edit').first, matching: find.byType(IconButton),
+      ));
+      final copy = tester.widget<IconButton>(find.ancestor(
+        of: find.byTooltip('Copy').first, matching: find.byType(IconButton),
+      ));
+      expect(create.constraints?.minWidth, greaterThanOrEqualTo(48));
+      expect(create.constraints?.minHeight, greaterThanOrEqualTo(48));
+      expect(edit.constraints?.minWidth, greaterThanOrEqualTo(48));
+      expect(edit.constraints?.minHeight, greaterThanOrEqualTo(48));
+      expect(copy.constraints?.minWidth, greaterThanOrEqualTo(48));
+      expect(copy.constraints?.minHeight, greaterThanOrEqualTo(48));
     });
   });
 

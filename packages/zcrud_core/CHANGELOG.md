@@ -3,6 +3,54 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2.1.0 — 2026-08-17
+
+### Ajouté
+
+#### Le CRUD inline d'une relation se gouverne geste par geste
+
+`ZRelationCrudHandler` porte `canCreate` / `canEdit` / `canCopy` (getters, défaut
+`true`) et une extension `ZRelationCrudOffer` (`offersCreate`/`offersEdit`/
+`offersCopy`/`offersAnyGesture`) qui centralise le repli **AD-10 fermant** : un
+getter qui lève masque le geste, il ne l'offre jamais.
+
+Auparavant, enregistrer un gestionnaire affichait les trois boutons et ne pas
+l'enregistrer n'en affichait aucun — impossible d'exprimer « peut modifier, ne
+peut pas créer », qui est le cas le plus courant d'un modèle d'autorité par rôle
+et par poste.
+
+**Un geste refusé est ABSENT, jamais inerte.** Rendre `null` depuis l'opération
+laissait un bouton qui ne fait rien : l'usager clique et ne comprend pas. Les
+icônes refusées ne sont pas construites (jamais un `onPressed: null`), et un
+gestionnaire qui n'offre plus rien ne force plus l'ouverture de la feuille.
+
+**`ZActionAclMode.disable` a été délibérément écarté** ici : ce mode n'est
+défendable que là où l'action porte un motif annoncé aux lecteurs d'écran. La
+feuille de relation n'a aucun canal de motif — `disable` y produirait le bouton
+inerte et muet que ce lot supprime. La condition de levée est écrite en dartdoc.
+
+La frontière ne bouge pas : **zcrud ne connaît pas l'ACL de l'hôte**. Les
+booléens sont calculés par l'implémentation du port ; le paquet ne fait que les
+lire.
+
+#### Un rendu de choix personnalisé devient déclarable
+
+Nouveau `ZSelectChoiceBuilderRegistry` (chaînable, ombrage enfant > parent,
+collision locale ⇒ `throw`) injecté par `ZcrudScope`, et une **clé** portée par
+`ZSelectConfig`. `choiceBuilder` **et** `choiceSecondaryBuilder` étaient acceptés
+par le widget et transmis au présentateur, mais absents de toute la couche
+domaine et jamais renseignés par le dispatcher : un hôte instanciant le widget à
+la main obtenait tout, un hôte **déclarant** ses champs — le mode d'emploi normal
+du paquet — n'obtenait jamais rien.
+
+Le canal **résout** plutôt qu'il ne **relaie**, comme le canal de seams des
+sous-listes : un relais est une liste qu'on oublie de tenir à jour, et c'est ce
+qui a produit quatre signalements successifs. La spec reste `const` — aucune
+closure n'entre dans le domaine.
+
+Clé déclarée mais absente du registre ⇒ repli sur le rendu par défaut, jamais
+d'exception (AD-10).
+
 ## 2.0.0 — 2026-08-16
 
 ### ⚠️ Modifié — RUPTURE

@@ -220,6 +220,18 @@ class ZSelectPresentation {
   /// celui-ci est donc alimenté **de bout en bout, par le dispatcher
   /// déclaratif** — un présentateur riche ne doit pas perdre une capacité que
   /// le rendu natif possède déjà.
+  ///
+  /// 🔴 **Un handler non `null` n'autorise pas les trois gestes.** Depuis que
+  /// le port les gouverne séparément, un présentateur DOIT gouverner chaque
+  /// affordance par `offersCreate` / `offersEdit` / `offersCopy`
+  /// (`ZRelationCrudOffer`, lecture défensive AD-10) — jamais par le seul
+  /// `crudHandler != null`, qui rendrait des boutons que l'ACL de l'hôte
+  /// refuse. Un geste refusé est **absent**, jamais grisé :
+  ///
+  /// ```dart
+  /// if (presentation.crudHandler case final crud? when crud.offersCreate)
+  ///   monBoutonCreer(),
+  /// ```
   final ZRelationCrudHandler? crudHandler;
 }
 
