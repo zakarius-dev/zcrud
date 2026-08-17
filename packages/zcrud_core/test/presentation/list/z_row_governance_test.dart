@@ -322,7 +322,13 @@ void main() {
       expect(find.text('Edit'), findsOneWidget);
       expect(find.text('Delete'), findsOneWidget);
       // Lecture : offerte sur les DEUX lignes, y compris la clôturée.
-      expect(find.text('history'), findsNWidgets(2));
+      //
+      // On asserte le libellé **rendu**, pas la clé. Cette garde cherchait
+      // autrefois le texte brut `history` — ce qui ne marchait que tant que la
+      // clé n'était PAS traduite : elle mesurait donc l'absence de traduction
+      // autant que la gouvernance. Depuis que `history` est au catalogue l10n,
+      // c'est « History » qui s'affiche, et c'est bien ce que l'usager voit.
+      expect(find.text('History'), findsNWidgets(2));
     });
 
     testWidgets('suppression conditionnelle par item (canBeDeleted)',

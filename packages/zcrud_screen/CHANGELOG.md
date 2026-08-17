@@ -3,6 +3,30 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2.2.0 — 2026-08-17
+
+### Ajouté
+
+#### Une action de ligne ouvre le journal de l'entité
+
+Rendu date / opération / auteur, avec **diff entre versions**, gouverné par
+`ZCrudAction.history`.
+
+**Contrat de diff, explicite parce qu'un mauvais appariement afficherait des
+changements FAUX** — pire que pas de diff du tout : la première entrée est
+comparée à l'**état courant**, puis chaque entrée au `previousValue` de l'entrée
+**plus récente**. Clés modifiées, **ajoutées** et **retirées** sont rendues ; les
+structures imbriquées sont traitées comme **atomiques**.
+
+⚠️ **Le socle ne trie pas** : l'ordre antichronologique du flux est une
+obligation de l'hôte.
+
+**Sans source déclarée, rien n'est payé** : aucune action, aucun rendu, aucun
+nœud ajouté (contre-témoin à comptes absolus).
+
+Défensif (AD-10) : une source qui **lève** laisse l'arbre intact ; une entrée
+sans date est **ignorée**, jamais datée de l'instant courant.
+
 ## 2.1.0 — 2026-08-17
 
 ### Ajouté

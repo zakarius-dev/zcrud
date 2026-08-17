@@ -104,6 +104,7 @@ export 'src/domain/ports/z_choices_source.dart';
 // `zDateModeOf`. Sans port injecté, toute voie de lecture rend la chaîne
 // brute — l'affichage par défaut, en l'absence d'hôte actif.
 export 'src/domain/ports/z_date_display_formatter.dart';
+export 'src/domain/ports/z_entity_history_source.dart';
 // Ports bas-niveau offline-first : `ZLocalStore`/`ZRemoteStore` neutres.
 export 'src/domain/ports/z_local_store.dart';
 // Capacité optionnelle de suppression DÉFINITIVE : mixin `ZPurgeable<T>`

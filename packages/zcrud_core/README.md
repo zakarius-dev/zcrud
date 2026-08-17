@@ -105,6 +105,7 @@ Widget buildForm() => DynamicEdition(
 | `ZFieldChoice` / `ZFieldAdornment` / `ZFieldRename` | Option de sélection, ornement (leading/prefix/suffix), stratégie de renommage de clé. |
 | **État réactif** | |
 | `ZFormController` | Contrôleur `ChangeNotifier` du formulaire — une `ValueListenable` par champ. |
+| `ZEntityHistorySource` / `ZHistoryEntry` | Port de lecture optionnel d'un journal d'entité : flux nu, action CRUD localisable ou libellé métier hôte, jamais de backend ni d'écriture dans zcrud. |
 | `ZDependencyResolver` / `ZcrudScope` | Seam d'injection et son `InheritedWidget` par défaut (resolver, l10n, thème, registres). |
 | **Édition** | |
 | `DynamicEdition` | Formulaire de référence, dispatché par `EditionFieldType`, place stable pour les champs conditionnels. |

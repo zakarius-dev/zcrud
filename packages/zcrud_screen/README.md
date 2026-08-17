@@ -14,6 +14,11 @@ zcrud fournit d'excellentes briques — `DynamicList`/`ZTabbedList` (rendu),
 (données et corbeille). Ce paquet fournit **la pièce qui les assemble**, pour
 que chaque application n'ait plus à recoudre le cycle complet écran par écran.
 
+Un journal optionnel se déclare par `ZCrudScreen(history: source)` : l'hôte
+fournit un `ZEntityHistorySource<T>` (flux nu, sans backend imposé), tandis que
+l'écran offre l'action ACL `ZCrudAction.history` et rend date/opération/auteur.
+Sans source, aucun geste, abonnement ou nœud supplémentaire n'est créé.
+
 L'écran est **bâti sur `zcrud_ui_kit`** : il ne refabrique ni sa coquille de
 page, ni sa confirmation, ni sa notification. Concrètement, sans une ligne de
 code hôte, il hérite :

@@ -30,6 +30,7 @@ export 'src/presentation/z_crud_source.dart';
 export 'src/presentation/z_crud_titles.dart';
 export 'src/presentation/z_export_policy.dart';
 export 'src/presentation/z_form_only.dart';
+export 'src/presentation/z_history_sheet.dart';
 export 'src/presentation/z_list_query_policy.dart';
 export 'src/presentation/z_list_tabs_store.dart';
 export 'src/presentation/z_row_action_menu.dart';

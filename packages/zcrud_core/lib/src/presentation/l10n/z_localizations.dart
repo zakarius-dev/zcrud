@@ -30,6 +30,12 @@ const _enLabels = <String, String>{
   // CRUD inline sur relation (créer une entité liée). `copy`/`edit`
   // réutilisés (déjà présents).
   'create': 'Create',
+  'history': 'History',
+  'date': 'Date',
+  'operation': 'Operation',
+  'author': 'Author',
+  'update': 'Update',
+  'view': 'View',
   'add': 'Add',
   'confirm': 'Confirm',
   'search': 'Search',
@@ -115,7 +121,8 @@ const _enLabels = <String, String>{
   'fileUploading': 'Uploading…',
   'fileUploadFailed': 'Upload failed',
   'filePreviewAlt': 'File preview',
-  'fileMaxReached': 'Maximum number of files reached; extra files were not added',
+  'fileMaxReached':
+      'Maximum number of files reached; extra files were not added',
   // Résolution des RÉFÉRENCES opaques de fichiers (port `ZAppFileResolver`) :
   // états VISIBLES d'une référence non encore résolue (AD-10).
   'fileResolving': 'Loading file…',
@@ -150,7 +157,7 @@ const _enLabels = <String, String>{
   'accessDenied': 'Access denied',
   'accessDeniedMessage':
       'You are not allowed to view this content. Contact an administrator if '
-          'you think this is a mistake.',
+      'you think this is a mistake.',
   // Valeur SÉLECTIONNÉE mais absente des options du moment (cascade).
   // Même règle que `fileRefUnresolved` : une identité non résolue se montre par
   // un libellé, JAMAIS par sa clé technique. La valeur, elle, est conservée.
@@ -191,6 +198,12 @@ const _frLabels = <String, String>{
   'edit': 'Modifier',
   // CRUD inline sur relation (créer une entité liée).
   'create': 'Créer',
+  'history': 'Historique',
+  'date': 'Date',
+  'operation': 'Opération',
+  'author': 'Auteur',
+  'update': 'Modifier',
+  'view': 'Consulter',
   'add': 'Ajouter',
   'confirm': 'Confirmer',
   'search': 'Rechercher',
@@ -302,7 +315,7 @@ const _frLabels = <String, String>{
   'accessDenied': 'Accès refusé',
   'accessDeniedMessage':
       'Vous n\'êtes pas autorisé à consulter ce contenu. Contactez un '
-          'administrateur si vous pensez qu\'il s\'agit d\'une erreur.',
+      'administrateur si vous pensez qu\'il s\'agit d\'une erreur.',
   // Cf. commentaire de la table `en`.
   'choiceUnresolved': 'Option indisponible',
   // Cf. commentaires de la table `en`.
@@ -324,10 +337,7 @@ const _frLabels = <String, String>{
 };
 
 /// Tables de libellés génériques par `languageCode` (baseline `en`/`fr`).
-const _tables = <String, Map<String, String>>{
-  'en': _enLabels,
-  'fr': _frLabels,
-};
+const _tables = <String, Map<String, String>>{'en': _enLabels, 'fr': _frLabels};
 
 /// Porteur immuable des **libellés génériques** d'une locale (aucun terme
 /// métier). Résolution locale-aware ; les surcharges/libellés métier passent
@@ -383,8 +393,8 @@ class ZcrudLocalizationsDelegate
 
   @override
   Future<ZcrudLocalizations> load(Locale locale) => SynchronousFuture(
-        ZcrudLocalizations(locale, _tables[locale.languageCode] ?? _enLabels),
-      );
+    ZcrudLocalizations(locale, _tables[locale.languageCode] ?? _enLabels),
+  );
 
   @override
   bool shouldReload(ZcrudLocalizationsDelegate old) => false;

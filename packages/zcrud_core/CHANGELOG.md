@@ -3,6 +3,28 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2.2.0 — 2026-08-17
+
+### Ajouté
+
+#### Le journal d'une entité devient consultable
+
+Port `ZEntityHistorySource` : un **flux nu** (AD-5) d'entrées de journal, fourni
+par l'hôte. **zcrud ne lit jamais le backend** — la forme du journal, la
+résolution de l'auteur et l'écriture restent métier, et aucun type
+`cloud_firestore` n'approche le domaine (AD-16).
+
+`ZCrudAction.history` **existait déjà** dans l'énum ACL, et y était déjà classé
+comme action de **lecture** : la gouvernance était en place, seule la capacité
+manquait. L'énum n'a pas été touchée.
+
+L'opération est portée par une **action typée**, donc localisable par le socle,
+avec un libellé libre en échappatoire pour les opérations métier que l'énum ne
+couvre pas. Un libellé fabriqué par l'hôte ne pourrait pas être traduit (FR-26).
+
+Nouvelles entrées de catalogue l10n : `history`, `date`, `operation`, `author`,
+`update`, `view`.
+
 ## 2.1.0 — 2026-08-17
 
 ### Ajouté
