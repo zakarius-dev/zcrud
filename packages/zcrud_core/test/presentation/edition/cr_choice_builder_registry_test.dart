@@ -37,6 +37,37 @@ class _RenderingPresenter extends ZSelectPresenter {
   }
 }
 
+class _ReadOnlyChoice extends StatelessWidget {
+  const _ReadOnlyChoice({required this.choice});
+
+  final ZSelectChoiceContext choice;
+
+  @override
+  Widget build(BuildContext context) => FilledButton(
+    key: const ValueKey<String>('rich-read-only-choice'),
+    onPressed: choice.enabled ? () => choice.select(true) : null,
+    child: Text('rich:${ZReadModeScope.of(context)}'),
+  );
+}
+
+class _ReadOnlyRecordingPresenter extends ZSelectPresenter {
+  bool? receivedReadOnly;
+
+  @override
+  Widget present(BuildContext context, ZSelectPresentation presentation) {
+    receivedReadOnly = presentation.readOnly;
+    final choice = presentation.options.single;
+    final choiceContext = ZSelectChoiceContext(
+      choice: choice,
+      selected: presentation.selected == choice.value,
+      enabled: !presentation.readOnly && !choice.disabled,
+      select: (selected) =>
+          presentation.onChanged(selected ? choice.value : null),
+    );
+    return presentation.choiceBuilder!(context, choiceContext);
+  }
+}
+
 const ZFieldSpec _plain = ZFieldSpec(
   name: 'permission',
   type: EditionFieldType.select,
@@ -52,19 +83,29 @@ const ZFieldSpec _declared = ZFieldSpec(
   choices: <ZFieldChoice>[ZFieldChoice(value: 'read', label: 'Lire')],
 );
 
+ZFormController _readController() => ZFormController(
+  initialValues: const <String, Object?>{'permission': 'read'},
+);
+
 Widget _form({
   required ZFieldSpec field,
   ZSelectChoiceBuilderRegistry? registry,
+  ZSelectPresenter? presenter,
+  ZFormController? controller,
+  bool readOnly = false,
 }) => MaterialApp(
   home: ZcrudScope(
-    selectPresenter: _RenderingPresenter(),
+    selectPresenter: presenter ?? _RenderingPresenter(),
     selectChoiceBuilderRegistry: registry,
     child: Scaffold(
       body: SizedBox(
         height: 600,
         child: DynamicEdition(
-          controller: ZFormController(initialValues: const <String, Object?>{}),
+          controller:
+              controller ??
+              ZFormController(initialValues: const <String, Object?>{}),
           fields: <ZFieldSpec>[field],
+          readOnly: readOnly,
         ),
       ),
     ),
@@ -210,6 +251,109 @@ void main() {
       );
       expect(constrained.constraints.minWidth, 48);
       semantics.dispose();
+    });
+
+    testWidgets(
+      'G6 — lecture : le rendu riche résolu remplace la fiche générique',
+      (tester) async {
+        final registry = ZSelectChoiceBuilderRegistry()
+          ..register('acl-matrix', _aclBuilders());
+        final controller = _readController();
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          _form(
+            field: _declared,
+            registry: registry,
+            controller: controller,
+            readOnly: true,
+          ),
+        );
+
+        expect(find.byType(ZSelectFieldWidget), findsOneWidget);
+        expect(find.text('personnalise:Lire'), findsOneWidget);
+        expect(find.byType(ZReadOnlyFieldCard), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'G7 — lecture : le builder reçoit le mode et ne peut pas écrire',
+      (tester) async {
+        final registry = ZSelectChoiceBuilderRegistry()
+          ..register(
+            'acl-matrix',
+            ZSelectChoiceBuilders(
+              choiceBuilder: (context, choice) =>
+                  _ReadOnlyChoice(choice: choice),
+            ),
+          );
+        final presenter = _ReadOnlyRecordingPresenter();
+        final controller = ZFormController(
+          initialValues: const <String, Object?>{'permission': 'read'},
+        );
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          _form(
+            field: _declared,
+            registry: registry,
+            presenter: presenter,
+            controller: controller,
+            readOnly: true,
+          ),
+        );
+
+        expect(find.byType(ZSelectFieldWidget), findsOneWidget);
+        expect(find.byType(_ReadOnlyChoice), findsOneWidget);
+        expect(presenter.receivedReadOnly, isTrue);
+        expect(find.text('rich:true'), findsOneWidget);
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.byKey(const ValueKey<String>('rich-read-only-choice')),
+              )
+              .onPressed,
+          isNull,
+        );
+        await tester.tap(
+          find.byKey(const ValueKey<String>('rich-read-only-choice')),
+        );
+        await tester.pump();
+        expect(controller.valueOf('permission'), 'read');
+      },
+    );
+
+    testWidgets(
+      'G8 — lecture : clé non résolue retombe sur la fiche sans exception',
+      (tester) async {
+        final controller = _readController();
+        addTearDown(controller.dispose);
+        await tester.pumpWidget(
+          _form(
+            field: _declared,
+            registry: ZSelectChoiceBuilderRegistry(),
+            controller: controller,
+            readOnly: true,
+          ),
+        );
+
+        expect(find.byType(ZReadOnlyFieldCard), findsOneWidget);
+        expect(find.byType(ZSelectFieldWidget), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('G9 — lecture sans clé : compte ABSOLU de fiches historique', (
+      tester,
+    ) async {
+      final controller = _readController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        _form(field: _plain, controller: controller, readOnly: true),
+      );
+
+      expect(find.byType(ZReadOnlyFieldCard), findsNWidgets(1));
+      expect(find.byType(ZSelectFieldWidget), findsNothing);
     });
   });
 }

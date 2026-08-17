@@ -12,7 +12,7 @@
 # Syncfusion du port `ZListRenderer`), jamais l'écran de liste.
 name: zcrud_screen
 description: "Assembled declarative CRUD screen for zcrud: ZCrudScreen wires DynamicList, presentEdition, ZRepository trash scopes and ZAcl into a single declaration."
-version: 2.2.0
+version: 2.3.0
 publish_to: none
 resolution: workspace
 
@@ -44,10 +44,10 @@ environment:
 # socle, au lieu de les réinventer. ⛔ AUCUN autre `zcrud_*`, AUCUN
 # gestionnaire d'état, AUCUN routeur, AUCUN Syncfusion/Firebase/Quill.
 dependencies:
-  zcrud_core: ^2.2.0
-  zcrud_menu: ^2.2.0
-  zcrud_navigation: ^2.2.0
-  zcrud_ui_kit: ^2.2.0
+  zcrud_core: ^2.3.0
+  zcrud_menu: ^2.3.0
+  zcrud_navigation: ^2.3.0
+  zcrud_ui_kit: ^2.3.0
   flutter:
     sdk: flutter
 

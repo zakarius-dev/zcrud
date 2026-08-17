@@ -3,6 +3,45 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2.3.0 — 2026-08-17
+
+### Modifié
+
+#### Un champ qui a déclaré son propre rendu le conserve en consultation
+
+Le canal déclaratif de rendu de choix ouvert en 2.1.0 fonctionnait **en édition**
+et disparaissait **en lecture** : la décision de poser une fiche de consultation
+était une fonction **pure sur la famille**, sans échappatoire. Une matrice
+d'autorisations, portée sur `select` + rendu déclaré, redevenait donc en
+consultation une ligne de texte énumérant des clés — sur l'écran même par lequel
+l'autorité d'une application se lit.
+
+La règle cède désormais **uniquement** là où l'hôte a explicitement pris la main :
+
+```dart
+_readModeCard =
+    readMode && zReadModeCardable(_family) && !hasResolvedChoiceBuilder;
+```
+
+Elle reste inchangée pour tous les champs ordinaires.
+
+**Aucun canal n'a été ajouté** : le présentateur recevait déjà son drapeau de
+lecture seule et le constructeur de choix est déjà monté sous `ZReadModeScope`.
+C'est le canal de contexte livré en 1.4.0 qui rend ce correctif si petit.
+
+🔴 **Ne plus poser de fiche ne rend PAS le champ modifiable** — et ce n'est pas
+une supposition : la lecture seule est appliquée en amont
+(`spec.copyWith(readOnly: true)`) et respectée par la famille. La propriété est
+**gardée**, et l'injection qui la neutralise fait rougir la garde
+(`Expected: true / Actual: <false>`). Sans elle, rien ne garantirait qu'une
+matrice d'autorisations ne devienne éditable en consultation.
+
+**Défensif (AD-10)** : une clé déclarée mais **absente** du registre replie sur
+la fiche générique — jamais d'écran vide, jamais d'exception.
+
+**Rétrocompatibilité stricte** : un champ **sans** clé déclarée garde exactement
+le comportement actuel, fiche comprise (contre-témoin à compte absolu).
+
 ## 2.2.0 — 2026-08-17
 
 ### Ajouté

@@ -246,7 +246,24 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     // indépendant du builder qui a monté ce champ — un builder de
     // remplacement n'a rien à recopier.
     final readMode = widget.readMode ?? ZReadModeScope.of(context);
-    _readModeCard = readMode && zReadModeCardable(_family);
+    // Un `select` ordinaire reste fiche-able en consultation. En revanche, une
+    // clé de rendu riche explicitement déclarée et effectivement résolue dans
+    // le registre signifie que l'hôte a pris la main sur ce rendu : conserver
+    // alors le `ZSelectFieldWidget` lui laisse afficher cette vue, toujours
+    // verrouillée par la spec effective de `DynamicEdition`. Une clé absente
+    // garde le repli défensif historique vers la fiche (AD-10).
+    final selectConfig =
+        widget.field.config is ZSelectConfig ? widget.field.config! as ZSelectConfig : null;
+    final choiceBuilderKey = selectConfig?.choiceBuilderKey;
+    final hasResolvedChoiceBuilder =
+        choiceBuilderKey != null &&
+        context
+                .getInheritedWidgetOfExactType<ZcrudScope>()
+                ?.selectChoiceBuilderRegistry
+                ?.tryBuildersFor(choiceBuilderKey) !=
+            null;
+    _readModeCard =
+        readMode && zReadModeCardable(_family) && !hasResolvedChoiceBuilder;
     // Validateur combiné (champ-local + inter-champs) pour toutes les familles.
     _validator =
         ZCrossFieldValidator.compileField(widget.field, widget.controller);
