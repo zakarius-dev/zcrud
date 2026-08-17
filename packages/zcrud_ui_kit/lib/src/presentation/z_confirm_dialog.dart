@@ -15,23 +15,31 @@ import '../domain/z_confirm_tone.dart';
 /// Cible tactile minimale (Material / AD-13) pour les actions du dialog.
 const double _kMinTouchTarget = 48;
 
+const Key _kNoTitleSemanticsKey = ValueKey<String>(
+  'z_confirm_dialog_no_title_semantics',
+);
+
 /// Dialog de confirmation (`AlertDialog`) à thème injecté, dark-mode-aware.
 ///
-/// Expose un titre, un message et deux actions (confirmer / annuler). La couleur
+/// Expose un titre optionnel, un message et deux actions (confirmer / annuler). La couleur
 /// du bouton de confirmation est **dérivée** du `ColorScheme` courant selon
 /// [tone] (`destructive` → `ColorScheme.error`; `neutral` → `ColorScheme.primary`)
 /// — jamais un littéral hex. Les labels par défaut proviennent de
 /// `MaterialLocalizations.of(context)` (jamais de chaîne « Confirmer »/« Annuler »
 /// codée en dur). Confirmer → `Navigator.pop(context, true)`; annuler →
-/// `Navigator.pop(context, false)`.
+/// `Navigator.pop(context, false)`. Avec `title: null`, le titre est retiré
+/// entièrement de l'arbre du `AlertDialog` : ce widget n'invente délibérément
+/// aucun titre par défaut ou localisé.
 ///
 /// Généralement affiché via [showZConfirmDialog], mais utilisable directement
 /// avec `showDialog<bool>`.
 class ZConfirmDialog extends StatelessWidget {
-  /// Construit le dialog. [title] et [message] sont requis; les labels et la
-  /// [tone] ont des défauts sûrs (l10n Flutter + `neutral`).
+  /// Construit le dialog. [message] est requis; les labels et la [tone] ont des
+  /// défauts sûrs (l10n Flutter + `neutral`). `title: null` retire entièrement
+  /// le titre de l'arbre du `AlertDialog`, sans titre par défaut ou localisé
+  /// inventé par ce widget.
   const ZConfirmDialog({
-    required this.title,
+    this.title,
     required this.message,
     this.confirmLabel,
     this.cancelLabel,
@@ -39,8 +47,8 @@ class ZConfirmDialog extends StatelessWidget {
     super.key,
   });
 
-  /// Titre du dialog.
-  final String title;
+  /// Titre optionnel du dialog.
+  final String? title;
 
   /// Message / question de confirmation.
   final String message;
@@ -66,8 +74,8 @@ class ZConfirmDialog extends StatelessWidget {
     final resolvedConfirm = confirmLabel ?? materialL10n.okButtonLabel;
     final resolvedCancel = cancelLabel ?? materialL10n.cancelButtonLabel;
 
-    return AlertDialog(
-      title: Text(title),
+    final dialog = AlertDialog(
+      title: title == null ? null : Text(title!),
       content: Text(message),
       // `actions` disposées par le framework de façon directionnelle (RTL-safe).
       actions: <Widget>[
@@ -92,6 +100,19 @@ class ZConfirmDialog extends StatelessWidget {
         ),
       ],
     );
+
+    if (title != null) {
+      return dialog;
+    }
+
+    return Semantics(
+      key: _kNoTitleSemanticsKey,
+      label: message,
+      scopesRoute: true,
+      namesRoute: true,
+      explicitChildNodes: true,
+      child: dialog,
+    );
   }
 }
 
@@ -101,9 +122,13 @@ class ZConfirmDialog extends StatelessWidget {
 /// dialog par le barrier / un pop sans valeur (`showDialog<bool>(...) ?? false` —
 /// défaut sûr AD-10, jamais de throw). N'utilise **aucun** gestionnaire d'état:
 /// uniquement `showDialog` + `Navigator.pop` (invariant AD-2).
+///
+/// Avec `title: null`, le titre est retiré entièrement de l'arbre du
+/// `AlertDialog`; cette fonction n'invente délibérément aucun titre par défaut
+/// ou localisé.
 Future<bool> showZConfirmDialog(
   BuildContext context, {
-  required String title,
+  String? title,
   required String message,
   String? confirmLabel,
   String? cancelLabel,

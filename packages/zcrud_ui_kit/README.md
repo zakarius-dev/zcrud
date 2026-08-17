@@ -122,7 +122,7 @@ Widget page() => const ZPageScaffold(
 | `ZContentStateView` | Aiguilleur `switch` exhaustif de `ZContentState` vers le bon widget, replis sûrs. |
 | **Confirmation** | |
 | `ZConfirmTone` | Tonalité de confirmation en enum (`neutral`/`destructive`). |
-| `ZConfirmDialog` / `showZConfirmDialog` | Dialog de confirmation dark-mode-aware, `Future<bool>`, sans gestionnaire d'état. |
+| `ZConfirmDialog` / `showZConfirmDialog` | Dialog de confirmation dark-mode-aware, `Future<bool>`, sans gestionnaire d'état ; `title` est optionnel et `null` retire entièrement le titre (sans défaut inventé ou localisé). |
 | **Notification** | |
 | `ZToastSeverity` | Sévérité d'un toast en enum (`info`/`success`/`warning`/`error`). |
 | `ZToaster` / `ZToasterScope` / `zToast` | Port de notification pluggable et son seam d'injection par l'app. |
