@@ -3,6 +3,29 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2.5.0 — 2026-08-18
+
+### Ajouté
+
+#### L'accès à la vue corbeille devient déclarable
+
+`ZTrashPolicy` porte désormais une **condition d'accès** qui remplace le critère
+par défaut. `null` (défaut) ⇒ comportement **strictement inchangé**.
+
+Le défaut `restore || clear` reste juste pour la plupart des écrans, et son
+raisonnement est conservé : qui peut *supprimer* sans pouvoir ni restaurer ni
+purger n'a rien à faire dans la corbeille. La déclaration n'existe que pour les
+règles d'autorité que ce critère ne sait pas exprimer.
+
+🔴 **La condition gouverne l'ACCÈS À LA VUE, jamais les actions dedans.**
+Restaurer et purger restent gouvernés par l'ACL, individuellement : une condition
+permissive **n'élargit aucun droit**. La propriété est **gardée
+adversairement**, et l'injection qui l'ouvre fait rougir la garde.
+
+**Défensif (AD-10)** : une condition qui **lève** ⇒ accès **refusé**, jamais
+accordé. `visibleWhenEmpty` s'applique **après** la condition — une corbeille
+vide masquée le reste, quelle que soit la règle déclarée.
+
 ## 2.3.0 — 2026-08-17
 
 ### Modifié

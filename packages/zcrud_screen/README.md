@@ -368,7 +368,21 @@ irréversibilité. Annuler — bouton, barrière ou retour arrière — n'écrit
 L'accès à la corbeille est offert à qui peut **restaurer** ou **purger**.
 Supprimer n'en fait pas partie : *mettre* à la corbeille n'est pas *y entrer*,
 et un usager qui ne sait ni restaurer ni purger n'a rien à y faire — il verrait
-une vue où aucun geste ne lui est possible.
+une vue où aucun geste ne lui est possible. C'est le défaut, juste pour la
+plupart des écrans. Une règle d'ACL que ce critère ne peut pas exprimer peut le
+remplacer avec `viewAccess`, qui reçoit l'ACL résolue et `collectionId` :
+
+```dart
+trashPolicy: ZTrashPolicy(
+  viewAccess: (acl, collectionId) =>
+      monAclDeRoleAutoriseCorbeille(acl, collectionId),
+),
+```
+
+Cette échappatoire ne gouverne que la **vue** : restaurer et purger restent
+chacun soumis à leur droit ACL. Toute exception de la condition ferme l'accès.
+Enfin, `visibleWhenEmpty: false` est vérifié **après** la condition : une
+corbeille vide reste masquée même si celle-ci l'autorise.
 
 Le bouton peut afficher le **nombre d'éléments** que la corbeille contient, et
 disparaître quand elle est vide :
@@ -2045,7 +2059,7 @@ repliable et un store n'y serait jamais ni lu ni écrit.
 | `zCrudEditionOpener(context, entity)` | Raccourci du cas courant : le rappel d'ouverture, ou `null` si le geste n'est pas possible. |
 | `ZCrudOpener` | `Future<void> Function()` — une ouverture déjà liée à son élément. |
 | `ZTrashMode` | Activation de la corbeille : `auto` (dès que la source la supporte) / `none`. |
-| `ZTrashPolicy` | Gestes offerts par la corbeille : `full` (défaut), `withoutPurge`, `readOnly`, ou combinaison libre ; plus `showCount` (pastille de comptage) et `visibleWhenEmpty` (accès masqué à corbeille vide). |
+| `ZTrashPolicy` | Gestes offerts par la corbeille : `full` (défaut), `withoutPurge`, `readOnly`, ou combinaison libre ; plus `showCount` (pastille), `visibleWhenEmpty` (accès masqué à vide) et `viewAccess` (condition d'accès à la vue, sans ouvrir les gestes). |
 | `trashCount` (`ValueListenable<int>?`) | Nombre d'éléments en corbeille fourni par l'application : pastille sur le bouton d'accès, et condition de visibilité. Dérivé gratuitement sur la voie `items`. |
 | `ZListQueryPolicy` (`query`) | Tri par défaut (`sort`), filtres permanents (`baseFilters`), taille de page (`pageSize`) et sémantique de recherche (`searchScope`, `searchFolding` ; raccourci `ZListQueryPolicy.legacySearch()`) et voie de pagination (`paginationMode`) du listing. `filtersWith` ajoute, `sortFor` remplace ; `ZListQueryPolicy.of(context)` la rend aux vues que l'application pose sous l'écran (page d'onglet). Rien de déclaré ⇒ requêtes strictement inchangées. |
 | `ZAppBarActionsBuilder` / `ZAppBarActionsContext` (`actionsBuilder`) | Actions d'app-bar **dépendantes de l'état**, toujours rendues en **données** (`ZAppBarAction`, donc `semanticLabel` conservé). Le contexte porte `acl` (résolue, onglet actif composé), `tabIndex`, `itemCount`, `isEmpty`, `isTrashView`. **Exclusif avec `actions`** (assertion). Voir [Une action de barre qui dépend de l'état](#actions-conditionnelles). |

@@ -3,6 +3,20 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2.5.0 — 2026-08-18
+
+### Ajouté
+
+#### `_trashToggleOffered` consulte la condition déclarée
+
+Le critère `restore || clear` n'est plus codé en dur : `ZTrashPolicy` peut porter
+une condition d'accès qui le remplace. Sans déclaration, l'écran se comporte
+exactement comme avant (contre-témoin à comptes absolus).
+
+Point de sûreté **gardé** : la condition ouvre la **vue**, jamais les **gestes**.
+Une corbeille rendue visible sans droit de restaurer ni de purger n'offre aucun
+de ces deux gestes.
+
 ## 2.2.0 — 2026-08-17
 
 ### Ajouté

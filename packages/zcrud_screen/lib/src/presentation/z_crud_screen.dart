@@ -458,6 +458,8 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// Un geste apparaît quand il est **voulu** (ici), **possible** (la source
   /// sait le servir) et **autorisé** (`ZAcl` : `delete`, `restore`, `clear`).
   /// Déclarer un geste ici n'accorde jamais un droit refusé par l'ACL.
+  /// [ZTrashPolicy.viewAccess] peut remplacer le critère d'accès à la vue,
+  /// mais ne modifie jamais les droits de restauration et de purge.
   ///
   /// ```dart
   /// // Corbeille consultable et restaurable, dont rien ne disparaît jamais :
@@ -3361,18 +3363,31 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
   /// Trois conditions, toutes nécessaires :
   ///
   /// * la corbeille **existe** pour cet écran, et on n'y est pas déjà ;
-  /// * l'usager a de quoi y **faire quelque chose** : restaurer ou purger.
-  ///   Le droit de *supprimer* n'en fait pas partie — il ouvre la mise à la
-  ///   corbeille, pas la corbeille elle-même. Qui peut supprimer sans pouvoir
-  ///   ni restaurer ni purger n'a rien à y faire ;
-  /// * la corbeille n'est pas **vide**, si la déclaration l'exige
+  /// * l'usager a de quoi y **faire quelque chose** : restaurer ou purger,
+  ///   sauf si [ZTrashPolicy.viewAccess] remplace explicitement ce critère.
+  ///   Le défaut reste juste pour la plupart des écrans : le droit de
+  ///   *supprimer* ouvre la mise à la corbeille, pas la corbeille elle-même ;
+  ///   qui peut supprimer sans pouvoir ni restaurer ni purger n'a rien à y
+  ///   faire. La condition sert seulement aux règles d'ACL que ce défaut ne
+  ///   sait pas exprimer et ne gouverne jamais les gestes dans la corbeille ;
+  /// * **après** ce contrôle, la corbeille n'est pas **vide**, si la déclaration l'exige
   ///   (`ZTrashPolicy.visibleWhenEmpty: false`). Compte inconnu ⇒ l'accès
   ///   reste offert : une corbeille non comptée n'est pas une corbeille vide.
   bool _trashToggleOffered(ZAcl acl, int? count) {
     if (!_trashEnabled || _trashView) return false;
-    final allowed =
-        acl.can(ZCrudAction.restore, collectionId: widget.collectionId) ||
-        acl.can(ZCrudAction.clear, collectionId: widget.collectionId);
+    final viewAccess = widget.trashPolicy.viewAccess;
+    final bool allowed;
+    if (viewAccess == null) {
+      allowed =
+          acl.can(ZCrudAction.restore, collectionId: widget.collectionId) ||
+          acl.can(ZCrudAction.clear, collectionId: widget.collectionId);
+    } else {
+      try {
+        allowed = viewAccess(acl, widget.collectionId);
+      } catch (_) {
+        return false;
+      }
+    }
     if (!allowed) return false;
     if (!widget.trashPolicy.visibleWhenEmpty && count != null && count <= 0) {
       return false;

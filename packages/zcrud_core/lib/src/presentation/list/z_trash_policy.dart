@@ -17,6 +17,16 @@ library;
 
 import 'package:flutter/foundation.dart' show immutable;
 
+import '../../domain/ports/z_acl.dart';
+
+/// Règle applicative qui décide si la **vue** corbeille est accessible.
+///
+/// Elle reçoit l'ACL déjà résolue et le discriminant de collection déjà
+/// disponible à l'écran. Elle ne gouverne jamais les gestes dans la corbeille :
+/// restaurer et purger restent vérifiés individuellement par [ZAcl].
+typedef ZTrashViewAccessCondition =
+    bool Function(ZAcl acl, String? collectionId);
+
 /// Gestes de corbeille **voulus** par la déclaration.
 ///
 /// Par défaut, les trois gestes sont offerts ([full]) : la corbeille complète
@@ -36,6 +46,7 @@ class ZTrashPolicy {
     this.purge = true,
     this.showCount = true,
     this.visibleWhenEmpty = true,
+    this.viewAccess,
   });
 
   /// Les trois gestes : mettre, restaurer, purger. C'est le défaut.
@@ -86,6 +97,19 @@ class ZTrashPolicy {
   /// corbeille non comptée n'est pas une corbeille vide).
   final bool visibleWhenEmpty;
 
+  /// Condition applicative optionnelle d'accès à la **vue** corbeille.
+  ///
+  /// `null` conserve le critère historique, juste pour la plupart des écrans :
+  /// l'ACL doit autoriser à restaurer ou à purger. Déclarez cette condition
+  /// uniquement pour une règle d'ACL que ce critère ne peut pas exprimer (par
+  /// exemple une règle de rôle propre à une collection). Si elle est fournie,
+  /// elle **remplace** ce critère de visibilité, sans jamais ouvrir les gestes
+  /// de restauration ou de purge, qui restent chacun gouvernés par l'ACL.
+  ///
+  /// L'écran traite toute exception comme un refus. Après cette condition,
+  /// [visibleWhenEmpty] reste appliqué : une corbeille vide masquée le reste.
+  final ZTrashViewAccessCondition? viewAccess;
+
   /// `true` si aucun geste n'est offert (corbeille en consultation seule).
   bool get isEmpty => !softDelete && !restore && !purge;
 
@@ -96,14 +120,15 @@ class ZTrashPolicy {
     bool? purge,
     bool? showCount,
     bool? visibleWhenEmpty,
-  }) =>
-      ZTrashPolicy(
-        softDelete: softDelete ?? this.softDelete,
-        restore: restore ?? this.restore,
-        purge: purge ?? this.purge,
-        showCount: showCount ?? this.showCount,
-        visibleWhenEmpty: visibleWhenEmpty ?? this.visibleWhenEmpty,
-      );
+    ZTrashViewAccessCondition? viewAccess,
+  }) => ZTrashPolicy(
+    softDelete: softDelete ?? this.softDelete,
+    restore: restore ?? this.restore,
+    purge: purge ?? this.purge,
+    showCount: showCount ?? this.showCount,
+    visibleWhenEmpty: visibleWhenEmpty ?? this.visibleWhenEmpty,
+    viewAccess: viewAccess ?? this.viewAccess,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -113,14 +138,22 @@ class ZTrashPolicy {
           other.restore == restore &&
           other.purge == purge &&
           other.showCount == showCount &&
-          other.visibleWhenEmpty == visibleWhenEmpty;
+          other.visibleWhenEmpty == visibleWhenEmpty &&
+          other.viewAccess == viewAccess;
 
   @override
-  int get hashCode =>
-      Object.hash(softDelete, restore, purge, showCount, visibleWhenEmpty);
+  int get hashCode => Object.hash(
+    softDelete,
+    restore,
+    purge,
+    showCount,
+    visibleWhenEmpty,
+    viewAccess,
+  );
 
   @override
-  String toString() => 'ZTrashPolicy(softDelete: $softDelete, '
+  String toString() =>
+      'ZTrashPolicy(softDelete: $softDelete, '
       'restore: $restore, purge: $purge, showCount: $showCount, '
-      'visibleWhenEmpty: $visibleWhenEmpty)';
+      'visibleWhenEmpty: $visibleWhenEmpty, viewAccess: $viewAccess)';
 }

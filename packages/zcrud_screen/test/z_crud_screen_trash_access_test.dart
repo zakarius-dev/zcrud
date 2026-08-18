@@ -66,16 +66,18 @@ Future<FakeItemRepo> pumpTrashScreen(
 void main() {
   group('Critère de visibilité de l\'accès à la corbeille', () {
     testWidgets(
-        'SUPPRIMER seul ⇒ AUCUN accès : mettre à la corbeille n\'est pas y '
-        'entrer', (tester) async {
-      await pumpTrashScreen(
-        tester,
-        acl: const ViewPlusAcl(<ZCrudAction>{ZCrudAction.delete}),
-      );
-      expect(trashToggle, findsNothing);
-      // Le geste de mise à la corbeille, lui, reste offert sur la ligne.
-      expect(find.byIcon(Icons.delete_outline), findsOneWidget);
-    });
+      'SUPPRIMER seul ⇒ AUCUN accès : mettre à la corbeille n\'est pas y '
+      'entrer',
+      (tester) async {
+        await pumpTrashScreen(
+          tester,
+          acl: const ViewPlusAcl(<ZCrudAction>{ZCrudAction.delete}),
+        );
+        expect(trashToggle, findsNothing);
+        // Le geste de mise à la corbeille, lui, reste offert sur la ligne.
+        expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+      },
+    );
 
     testWidgets('RESTAURER seul ⇒ accès offert', (tester) async {
       await pumpTrashScreen(
@@ -94,31 +96,94 @@ void main() {
     });
 
     testWidgets('ni restaurer ni purger ⇒ aucun accès', (tester) async {
+      await pumpTrashScreen(tester, acl: const ViewPlusAcl(<ZCrudAction>{}));
+      expect(trashToggle, findsNothing);
+    });
+
+    testWidgets('condition refusante ⇒ aucun accès malgré RESTAURER', (
+      tester,
+    ) async {
       await pumpTrashScreen(
         tester,
-        acl: const ViewPlusAcl(<ZCrudAction>{}),
+        acl: const ViewPlusAcl(<ZCrudAction>{ZCrudAction.restore}),
+        trashPolicy: ZTrashPolicy(viewAccess: (_, _) => false),
       );
       expect(trashToggle, findsNothing);
+    });
+
+    testWidgets(
+      'condition accordante ⇒ vue offerte sans RESTAURER ni PURGER, sans '
+      'ouvrir leurs gestes',
+      (tester) async {
+        final repo = FakePurgeableItemRepo(const <Item>[
+          Item(id: 'i1', name: 'Alpha'),
+        ]);
+        addTearDown(repo.dispose);
+        await repo.softDelete('i1');
+        await pumpScreen(
+          tester,
+          ZCrudScreen<Item>(
+            title: 'Items',
+            source: ZCrudSource<Item>.repository(repo),
+            registry: buildItemRegistry(),
+            trashPolicy: ZTrashPolicy(viewAccess: (_, _) => true),
+          ),
+          acl: const ViewPlusAcl(<ZCrudAction>{}),
+        );
+
+        expect(trashToggle, findsOneWidget);
+        await openTrashView(tester);
+        expect(find.byIcon(Icons.restore_from_trash), findsNothing);
+        expect(find.byIcon(Icons.delete_forever), findsNothing);
+      },
+    );
+
+    testWidgets('sans condition : le défaut garde ses comptes absolus', (
+      tester,
+    ) async {
+      await pumpTrashScreen(
+        tester,
+        acl: const ViewPlusAcl(<ZCrudAction>{ZCrudAction.restore}),
+      );
+      expect(trashToggle, findsOneWidget);
+      expect(find.byType(IconButton), findsNWidgets(2));
+    });
+
+    testWidgets('condition qui lève ⇒ accès refusé sans exception au rendu', (
+      tester,
+    ) async {
+      await pumpTrashScreen(
+        tester,
+        acl: const ZAllowAllAcl(),
+        trashPolicy: ZTrashPolicy(
+          viewAccess: (_, _) => throw StateError('condition injectée'),
+        ),
+      );
+      expect(trashToggle, findsNothing);
+      expect(tester.takeException(), isNull);
     });
   });
 
   group('Corbeille vide', () {
     testWidgets(
-        'visibleWhenEmpty: false + compte NUL ⇒ pas de bouton vers une page '
-        'vide', (tester) async {
-      final counter = ValueNotifier<int>(0);
-      addTearDown(counter.dispose);
-      await pumpTrashScreen(
-        tester,
-        acl: const ZAllowAllAcl(),
-        trashPolicy: const ZTrashPolicy(visibleWhenEmpty: false),
-        trashCount: counter,
-      );
-      expect(trashToggle, findsNothing);
-    });
+      'visibleWhenEmpty: false + compte NUL ⇒ pas de bouton vers une page '
+      'vide',
+      (tester) async {
+        final counter = ValueNotifier<int>(0);
+        addTearDown(counter.dispose);
+        await pumpTrashScreen(
+          tester,
+          acl: const ZAllowAllAcl(),
+          trashPolicy: const ZTrashPolicy(visibleWhenEmpty: false),
+          trashCount: counter,
+        );
+        expect(trashToggle, findsNothing);
+      },
+    );
 
-    testWidgets('le bouton REVIENT dès que la corbeille se remplit',
-        (tester) async {
+    testWidgets('le bouton REVIENT dès que la corbeille se remplit', (
+      tester,
+    ) async {
       final counter = ValueNotifier<int>(0);
       addTearDown(counter.dispose);
       await pumpTrashScreen(
@@ -135,9 +200,9 @@ void main() {
       expect(find.text('2'), findsOneWidget);
     });
 
-    testWidgets(
-        'compte INCONNU : l\'accès reste offert (non compté ≠ vide)',
-        (tester) async {
+    testWidgets('compte INCONNU : l\'accès reste offert (non compté ≠ vide)', (
+      tester,
+    ) async {
       await pumpTrashScreen(
         tester,
         acl: const ZAllowAllAcl(),
@@ -147,17 +212,38 @@ void main() {
     });
 
     testWidgets(
-        'CONTRE-TÉMOIN : par défaut (visibleWhenEmpty), l\'accès reste offert '
-        'à zéro élément', (tester) async {
-      final counter = ValueNotifier<int>(0);
-      addTearDown(counter.dispose);
-      await pumpTrashScreen(
-        tester,
-        acl: const ZAllowAllAcl(),
-        trashCount: counter,
-      );
-      expect(trashToggle, findsOneWidget);
-    });
+      'CONTRE-TÉMOIN : par défaut (visibleWhenEmpty), l\'accès reste offert '
+      'à zéro élément',
+      (tester) async {
+        final counter = ValueNotifier<int>(0);
+        addTearDown(counter.dispose);
+        await pumpTrashScreen(
+          tester,
+          acl: const ZAllowAllAcl(),
+          trashCount: counter,
+        );
+        expect(trashToggle, findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'visibleWhenEmpty: false masque une corbeille vide après condition '
+      'accordante',
+      (tester) async {
+        final counter = ValueNotifier<int>(0);
+        addTearDown(counter.dispose);
+        await pumpTrashScreen(
+          tester,
+          acl: const ViewPlusAcl(<ZCrudAction>{}),
+          trashPolicy: ZTrashPolicy(
+            visibleWhenEmpty: false,
+            viewAccess: (_, _) => true,
+          ),
+          trashCount: counter,
+        );
+        expect(trashToggle, findsNothing);
+      },
+    );
   });
 
   group('Pastille de comptage de la corbeille', () {
@@ -178,44 +264,48 @@ void main() {
     });
 
     testWidgets(
-        'AD-2 : changer le compte redessine la PASTILLE, pas le corps de '
-        'l\'écran', (tester) async {
-      final counter = ValueNotifier<int>(1);
-      addTearDown(counter.dispose);
-      final projections = <int>[];
-      await pumpScreen(
-        tester,
-        ZCrudScreen<Item>(
-          title: 'Items',
-          source: const ZCrudSource<Item>.items(
-            <Item>[Item(id: 'i1', name: 'Alpha')],
-            isDeleted: _neverDeleted,
-            onRestore: _noRestore,
+      'AD-2 : changer le compte redessine la PASTILLE, pas le corps de '
+      'l\'écran',
+      (tester) async {
+        final counter = ValueNotifier<int>(1);
+        addTearDown(counter.dispose);
+        final projections = <int>[];
+        await pumpScreen(
+          tester,
+          ZCrudScreen<Item>(
+            title: 'Items',
+            source: const ZCrudSource<Item>.items(
+              <Item>[Item(id: 'i1', name: 'Alpha')],
+              isDeleted: _neverDeleted,
+              onRestore: _noRestore,
+            ),
+            registry: buildItemRegistry(),
+            listFields: itemSpecs,
+            cellsOf: countingCells(projections),
+            trashCount: counter,
           ),
-          registry: buildItemRegistry(),
-          listFields: itemSpecs,
-          cellsOf: countingCells(projections),
-          trashCount: counter,
-        ),
-      );
-      expect(find.text('1'), findsOneWidget);
-      final before = projections.length;
-      expect(before, greaterThan(0));
+        );
+        expect(find.text('1'), findsOneWidget);
+        final before = projections.length;
+        expect(before, greaterThan(0));
 
-      counter.value = 9;
-      await tester.pump();
+        counter.value = 9;
+        await tester.pump();
 
-      expect(find.text('9'), findsOneWidget);
-      expect(
-        projections.length,
-        before,
-        reason: 'le corps de l\'écran a été reconstruit alors que SEUL le '
-            'compte de la corbeille a changé',
-      );
-    });
+        expect(find.text('9'), findsOneWidget);
+        expect(
+          projections.length,
+          before,
+          reason:
+              'le corps de l\'écran a été reconstruit alors que SEUL le '
+              'compte de la corbeille a changé',
+        );
+      },
+    );
 
-    testWidgets('showCount: false ⇒ aucune pastille, accès inchangé',
-        (tester) async {
+    testWidgets('showCount: false ⇒ aucune pastille, accès inchangé', (
+      tester,
+    ) async {
       final counter = ValueNotifier<int>(4);
       addTearDown(counter.dispose);
       await pumpTrashScreen(
@@ -230,35 +320,38 @@ void main() {
     });
 
     testWidgets(
-        'voie items : le compte est DÉRIVÉ de la liste, sans rien déclarer',
-        (tester) async {
-      await pumpScreen(
-        tester,
-        ZCrudScreen<Item>(
-          title: 'Items',
-          source: ZCrudSource<Item>.items(
-            const <Item>[
-              Item(id: 'i1', name: 'Alpha'),
-              Item(id: 'i2', name: 'Beta'),
-              Item(id: 'i3', name: 'Gamma'),
-            ],
-            isDeleted: (item) => item.id != 'i1',
-            onSave: (_) async {},
-            onRestore: (context, item) async {},
+      'voie items : le compte est DÉRIVÉ de la liste, sans rien déclarer',
+      (tester) async {
+        await pumpScreen(
+          tester,
+          ZCrudScreen<Item>(
+            title: 'Items',
+            source: ZCrudSource<Item>.items(
+              const <Item>[
+                Item(id: 'i1', name: 'Alpha'),
+                Item(id: 'i2', name: 'Beta'),
+                Item(id: 'i3', name: 'Gamma'),
+              ],
+              isDeleted: (item) => item.id != 'i1',
+              onSave: (_) async {},
+              onRestore: (context, item) async {},
+            ),
+            registry: buildItemRegistry(),
           ),
-          registry: buildItemRegistry(),
-        ),
-      );
-      expect(trashToggle, findsOneWidget);
-      expect(find.text('2'), findsOneWidget);
-    });
+        );
+        expect(trashToggle, findsOneWidget);
+        expect(find.text('2'), findsOneWidget);
+      },
+    );
 
     testWidgets(
-        'CONTRE-TÉMOIN : sans compte déclaré ni dérivable, aucune pastille '
-        '(comportement strictement antérieur)', (tester) async {
-      await pumpTrashScreen(tester, acl: const ZAllowAllAcl());
-      expect(trashToggle, findsOneWidget);
-      expect(find.byType(ZCountBadge), findsNothing);
-    });
+      'CONTRE-TÉMOIN : sans compte déclaré ni dérivable, aucune pastille '
+      '(comportement strictement antérieur)',
+      (tester) async {
+        await pumpTrashScreen(tester, acl: const ZAllowAllAcl());
+        expect(trashToggle, findsOneWidget);
+        expect(find.byType(ZCountBadge), findsNothing);
+      },
+    );
   });
 }
