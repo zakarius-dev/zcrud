@@ -106,11 +106,17 @@ void main() {
     await tester.pumpAndSettle();
 
     final itemSize = tester.getSize(find.text(kOpenLabel).first);
-    // La ligne d'action (via PopupMenuItem + ConstrainedBox) couvre ≥ 48 dp.
-    final rowSize = tester.getSize(
-      find.ancestor(of: find.text(kOpenLabel), matching: find.byType(Row)).first,
+    // La cellule du socle, et non le plancher implicite de PopupMenuItem,
+    // couvre ≥ 48 dp dans la grille devenue défaut en CR-IFFD-82.
+    final tileSize = tester.getSize(
+      find
+          .ancestor(
+            of: find.text(kOpenLabel),
+            matching: find.byType(ZMenuEntryTile),
+          )
+          .first,
     );
-    expect(rowSize.height, greaterThanOrEqualTo(48.0));
+    expect(tileSize.height, greaterThanOrEqualTo(48.0));
     expect(itemSize.height, greaterThan(0));
   });
 }

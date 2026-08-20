@@ -7,11 +7,9 @@
 /// [ZActionMenu]. Deux implémentations de menu ne vivent jamais côte à côte
 /// dans le socle — une garde dédiée le mesure sur disque.
 ///
-/// Ce qui NE change pas pour un appelant qui n'utilise aucune capacité neuve :
-/// la surface publique ([ZItemAction], [ZItemActionKind], [ZItemActionsMenu],
-/// [ZItemActionsMenuBuilder]) est INCHANGÉE, et le rendu est celui d'avant
-/// (même déclencheur `PopupMenuButton` sous le repli [ZDefaultMenuRenderer],
-/// même colonne de `PopupMenuItem`, même info-bulle, mêmes `Semantics`).
+/// CR-IFFD-82 change explicitement le défaut de contenu : [menuBuilder] nul
+/// rend une grille à trois colonnes. Le déclencheur reste celui du renderer et
+/// la colonne reste atteignable par `crossAxisCount: 1`.
 ///
 /// Ce que la délégation REND ACCESSIBLE, en ADDITIF :
 /// * [ZItemAction.permitted] — le **droit** séparé de l'**effet**, deux
@@ -33,6 +31,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_menu/zcrud_menu.dart';
+
+import 'z_readable_tint.dart';
 
 /// Couture de menu RÉEXPORTÉE : un hôte qui compose un [menuBuilder] a besoin de
 /// [ZMenuEntryTile] (cellule a11y) et de [ZMenuEntryIds] (identités partagées)
@@ -95,19 +95,35 @@ enum ZItemActionKind {
   custom,
 }
 
+/// État de l'artefact produit ou ouvert par une [ZItemAction].
+///
+/// Cet état est distinct de l'état d'interaction de l'entrée
+/// (actionnable/désactivée/absente du menu) : une action [absent] peut être
+/// actionnable précisément pour créer l'artefact manquant.
+enum ZItemActionState {
+  /// L'artefact n'existe pas encore.
+  absent,
+
+  /// Sa création ou sa mise à jour est en cours.
+  inProgress,
+
+  /// L'artefact existe déjà.
+  present,
+}
+
 /// Identité PARTAGÉE ([ZMenuEntryIds]) correspondant à une [ZItemActionKind].
 ///
 /// [ZItemActionKind.custom] n'a pas d'identité canonique : l'appelant fournit la
 /// sienne via [ZItemAction.id] (pendant exact du variant `custom`).
 String zMenuEntryIdForKind(ZItemActionKind kind) => switch (kind) {
-      ZItemActionKind.open => ZMenuEntryIds.open,
-      ZItemActionKind.rename => ZMenuEntryIds.rename,
-      ZItemActionKind.move => ZMenuEntryIds.move,
-      ZItemActionKind.share => ZMenuEntryIds.share,
-      ZItemActionKind.duplicate => ZMenuEntryIds.duplicate,
-      ZItemActionKind.delete => ZMenuEntryIds.delete,
-      ZItemActionKind.custom => 'custom',
-    };
+  ZItemActionKind.open => ZMenuEntryIds.open,
+  ZItemActionKind.rename => ZMenuEntryIds.rename,
+  ZItemActionKind.move => ZMenuEntryIds.move,
+  ZItemActionKind.share => ZMenuEntryIds.share,
+  ZItemActionKind.duplicate => ZMenuEntryIds.duplicate,
+  ZItemActionKind.delete => ZMenuEntryIds.delete,
+  ZItemActionKind.custom => 'custom',
+};
 
 /// Une action d'item — data-class de présentation immuable (`const`).
 ///
@@ -151,13 +167,29 @@ class ZItemAction {
     this.id,
     this.permitted = true,
     this.disabledReason,
+    this.state,
+    this.stateSemanticLabel,
+    this.count,
   }) : assert(
-          onSelected == null || disabledReason == null,
-          'ZItemAction: une action ACTIONNABLE (onSelected non nul) ne peut pas '
-          'porter un disabledReason — les deux états sont exclusifs. Pour une '
-          'action désactivée, laisser onSelected nul et fournir le motif ; pour '
-          'une action absente, laisser les deux nuls.',
-        );
+         onSelected == null || disabledReason == null,
+         'ZItemAction: une action ACTIONNABLE (onSelected non nul) ne peut pas '
+         'porter un disabledReason — les deux états sont exclusifs. Pour une '
+         'action désactivée, laisser onSelected nul et fournir le motif ; pour '
+         'une action absente, laisser les deux nuls.',
+       ),
+       assert(
+         (state == null && stateSemanticLabel == null) ||
+             (state != null &&
+                 stateSemanticLabel != null &&
+                 stateSemanticLabel != ''),
+         'ZItemAction: state et stateSemanticLabel vont ensemble. Le libellé '
+         "d'état doit être localisé et non vide afin que l'état ne soit "
+         'jamais porté par la seule couleur.',
+       ),
+       assert(
+         count == null || count >= 0,
+         'ZItemAction: count doit être positif ou nul.',
+       );
 
   /// Nature de l'action ([ZItemActionKind]).
   final ZItemActionKind kind;
@@ -181,6 +213,24 @@ class ZItemAction {
   /// Motif LOCALISÉ INJECTÉ de désactivation (`null` ⇒ pas de désactivation).
   final String? disabledReason;
 
+  /// État optionnel de l'artefact associé à l'action.
+  ///
+  /// `null` préserve strictement le rendu historique de l'action : aucune
+  /// teinte, aucun nœud sémantique et aucun badge ne sont ajoutés.
+  final ZItemActionState? state;
+
+  /// Libellé LOCALISÉ annoncé pour [state].
+  ///
+  /// Requis et non vide quand [state] est renseigné ; interdit sans état. Le
+  /// socle ne fabrique ainsi aucune chaîne d'interface (FR-26/AD-13).
+  final String? stateSemanticLabel;
+
+  /// Compte absolu optionnel associé à l'artefact.
+  ///
+  /// Une valeur strictement positive rend un badge ; `null` ou `0` n'ajoute
+  /// aucun nœud. Les valeurs négatives sont rejetées en debug.
+  final int? count;
+
   /// Identité effective de l'action ([id], à défaut dérivée de [kind]).
   String get entryId => id ?? zMenuEntryIdForKind(kind);
 
@@ -193,14 +243,14 @@ class ZItemAction {
   /// [ZMenuEntry.isDestructive] est dérivé de [kind] : c'est une **donnée**, pas
   /// un style (FR-26 — le socle ne lui associe aucune couleur).
   ZMenuEntry toMenuEntry() => ZMenuEntry(
-        id: entryId,
-        label: label,
-        icon: icon,
-        onSelected: onSelected,
-        disabledReason: disabledReason,
-        permitted: permitted,
-        isDestructive: kind == ZItemActionKind.delete,
-      );
+    id: entryId,
+    label: label,
+    icon: icon,
+    onSelected: onSelected,
+    disabledReason: disabledReason,
+    permitted: permitted,
+    isDestructive: kind == ZItemActionKind.delete,
+  );
 }
 
 /// Présentation INJECTÉE du contenu du menu.
@@ -215,17 +265,18 @@ class ZItemAction {
 /// * `select` — invoque l'action ET ferme la surface, par le **MÊME chemin** que
 ///   le rendu par défaut. L'hôte n'a ni à fermer à la main, ni à appeler
 ///   `action.onSelected` : une présentation alternative ne peut pas diverger du
-///   comportement de la colonne par défaut. Sans effet sur une action
+///   comportement du rendu par défaut. Sans effet sur une action
 ///   DÉSACTIVÉE (garanti par `ZMenuRequest.select`, pas par la bonne volonté de
 ///   l'hôte).
 ///
 /// Le socle **n'impose rien** sur la forme rendue (grille bornée, colonnes
 /// multiples, sections…) : c'est précisément l'objet du slot.
-typedef ZItemActionsMenuBuilder = Widget Function(
-  BuildContext context,
-  List<ZItemAction> actions,
-  void Function(ZItemAction action) select,
-);
+typedef ZItemActionsMenuBuilder =
+    Widget Function(
+      BuildContext context,
+      List<ZItemAction> actions,
+      void Function(ZItemAction action) select,
+    );
 
 /// Menu d'actions par item paramétrique — façade sur [ZActionMenu].
 class ZItemActionsMenu extends StatelessWidget {
@@ -233,8 +284,8 @@ class ZItemActionsMenu extends StatelessWidget {
   ///
   /// [icon] : glyphe INJECTÉ du déclencheur (`null` ⇒ repli neutre documenté).
   /// [tooltip] : label a11y LOCALISÉ INJECTÉ du déclencheur (optionnel).
-  /// [menuBuilder] : présentation INJECTÉE du contenu (`null` ⇒ **colonne
-  /// unique**, rendu strictement inchangé).
+  /// [menuBuilder] : présentation INJECTÉE du contenu (`null` ⇒ grille dont
+  /// [crossAxisCount] vaut 3 par défaut).
   /// [renderer] : surcharge PONCTUELLE du [ZMenuRenderer] (prioritaire sur
   /// [ZMenuScope]). `null` ⇒ scope de l'hôte, puis repli `ZDefaultMenuRenderer`.
   const ZItemActionsMenu({
@@ -242,9 +293,13 @@ class ZItemActionsMenu extends StatelessWidget {
     this.icon,
     this.tooltip,
     this.menuBuilder,
+    this.crossAxisCount = 3,
     this.renderer,
     super.key,
-  });
+  }) : assert(
+         crossAxisCount > 0,
+         'ZItemActionsMenu: crossAxisCount doit être strictement positif.',
+       );
 
   /// Actions candidates. Celles qui ne sont ni actionnables ni motivées, et
   /// celles non [ZItemAction.permitted], sont FILTRÉES (absentes, AD-4).
@@ -264,8 +319,8 @@ class ZItemActionsMenu extends StatelessWidget {
 
   /// Présentation INJECTÉE du contenu du menu.
   ///
-  /// `null` (défaut) ⇒ **colonne unique** de `PopupMenuItem` — rendu
-  /// **strictement inchangé** pour tout hôte qui ne renseigne pas ce slot.
+  /// `null` (défaut) ⇒ grille de [ZMenuEntryTile] gouvernée par
+  /// [crossAxisCount].
   ///
   /// Non-null ⇒ la surface flottante ne contient plus qu'UNE entrée, dont le
   /// contenu est celui rendu par l'hôte. Ce qui reste **la propriété du socle**,
@@ -273,13 +328,9 @@ class ZItemActionsMenu extends StatelessWidget {
   /// la règle d'absence (AD-4), et la sélection passe par le même chemin que le
   /// rendu par défaut.
   ///
-  /// **Pourquoi un SLOT et pas une option de grille** : au-delà de six ou
-  /// sept entrées, une colonne unique impose un balayage
-  /// vertical long sur une surface flottante — le plafond de lisibilité est
-  /// réel. Mais y répondre par un `crossAxisMaxColumns` figerait dans le socle
-  /// *une* ergonomie de menu flottant (largeur de panneau, ordre de lecture,
-  /// parcours clavier, position du séparateur destructif) alors que ces
-  /// décisions dépendent de l'hôte.
+  /// Le slot reste l'échappatoire complète pour les sections, séparateurs ou
+  /// dispositions adaptatives propres à l'hôte ; [crossAxisCount] ne gouverne
+  /// que le défaut du socle.
   ///
   /// **A11y (AD-13) — le renoncement est LEVÉ.** La cellule
   /// [ZMenuEntryTile] est offerte à l'hôte : `ZMenuEntryTile(entry:
@@ -288,6 +339,13 @@ class ZItemActionsMenu extends StatelessWidget {
   /// réécrire. La DISPOSITION reste sa liberté ; la CELLULE reste la propriété
   /// du socle. S'il rend autre chose, l'a11y de ce qu'il rend est à sa charge.
   final ZItemActionsMenuBuilder? menuBuilder;
+
+  /// Nombre de colonnes de la grille rendue quand [menuBuilder] est `null`.
+  ///
+  /// Le défaut est **3**. Un hôte qui veut retrouver une colonne la déclare en
+  /// une ligne avec `crossAxisCount: 1`; `2` reproduit notamment la géométrie
+  /// legacy d'IFFD. Ignoré quand [menuBuilder] est fourni.
+  final int crossAxisCount;
 
   /// Surcharge ponctuelle du renderer de menu (prioritaire sur [ZMenuScope]).
   final ZMenuRenderer? renderer;
@@ -311,6 +369,11 @@ class ZItemActionsMenu extends StatelessWidget {
     }
 
     final hote = menuBuilder;
+    // Un builder par défaut ne doit pas rendre actionnable un déclencheur dont
+    // toutes les entrées seront filtrées par ZActionMenu. Cette lecture ne
+    // produit ni ne transmet une seconde liste filtrée : ZActionMenu reste le
+    // site unique qui applique effectivement la règle d'absence.
+    final hasVisibleAction = zVisibleMenuEntries(entries).isNotEmpty;
     return ZActionMenu(
       entries: entries,
       renderer: renderer,
@@ -324,20 +387,32 @@ class ZItemActionsMenu extends StatelessWidget {
         // info-bulle qu'avant : rendu INCHANGÉ pour un appelant sans tooltip.
         tooltip: tooltip,
       ),
-      contentBuilder: hote == null
+      contentBuilder: hote == null && !hasVisibleAction
           ? null
-          : (surfaceContext, visibles, select) => hote(
-                surfaceContext,
-                <ZItemAction>[
+          : (surfaceContext, visibles, select) {
+              if (hote != null) {
+                return hote(
+                  surfaceContext,
+                  <ZItemAction>[
+                    for (final entry in visibles) versAction[entry]!,
+                  ],
+                  // MÊME chemin de sortie que le défaut : l'hôte ne peut ni
+                  // oublier de fermer, ni invoquer deux fois, ni diverger.
+                  (action) {
+                    final entry = versEntree[action];
+                    if (entry != null) select(entry);
+                  },
+                );
+              }
+              return _ZDefaultItemActionGrid(
+                actions: <ZItemAction>[
                   for (final entry in visibles) versAction[entry]!,
                 ],
-                // MÊME chemin de sortie que la colonne par défaut : l'hôte ne
-                // peut ni oublier de fermer, ni invoquer deux fois, ni diverger.
-                (action) {
-                  final entry = versEntree[action];
-                  if (entry != null) select(entry);
-                },
-              ),
+                entries: visibles,
+                crossAxisCount: crossAxisCount,
+                onSelected: select,
+              );
+            },
     );
   }
 
@@ -348,4 +423,130 @@ class ZItemActionsMenu extends StatelessWidget {
   /// était nul. Le contrat d'échec est donc inchangé, pas relâché.
   String _defaultTooltip(BuildContext context) =>
       MaterialLocalizations.of(context).showMenuTooltip;
+}
+
+/// Grille par défaut : la DISPOSITION et la CELLULE réutilisent les deux
+/// mécanismes structurels de `zcrud_menu`; ce paquet n'en redéclare aucun.
+class _ZDefaultItemActionGrid extends StatelessWidget {
+  const _ZDefaultItemActionGrid({
+    required this.actions,
+    required this.entries,
+    required this.crossAxisCount,
+    required this.onSelected,
+  });
+
+  final List<ZItemAction> actions;
+  final List<ZMenuEntry> entries;
+  final int crossAxisCount;
+  final void Function(ZMenuEntry entry) onSelected;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    // `PopupMenuRoute` mesure son contenu avec `IntrinsicWidth`. Une largeur
+    // serrée empêche ce calcul de descendre dans le viewport (qui, à raison,
+    // refuse les dimensions intrinsèques) et donne à chaque colonne deux fois
+    // le plancher tactile avant la borne de largeur appliquée par Material.
+    width: crossAxisCount * kZMenuMinTapTarget * 2,
+    child: GridView.builder(
+      shrinkWrap: true,
+      padding: EdgeInsets.zero,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: ZMenuEntryTile.gridDelegate(
+        crossAxisCount: crossAxisCount,
+        mainAxisExtent: kZMenuMinTapTarget * 2,
+      ),
+      itemCount: entries.length,
+      itemBuilder: (context, index) => _ZItemActionGridTile(
+        action: actions[index],
+        entry: entries[index],
+        onSelected: () => onSelected(entries[index]),
+      ),
+    ),
+  );
+}
+
+/// Traduction VISUELLE et SÉMANTIQUE de l'état optionnel d'une action.
+class _ZItemActionGridTile extends StatelessWidget {
+  const _ZItemActionGridTile({
+    required this.action,
+    required this.entry,
+    required this.onSelected,
+  });
+
+  final ZItemAction action;
+  final ZMenuEntry entry;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget tile = ZMenuEntryTile(
+      entry: entry,
+      direction: Axis.vertical,
+      onSelected: onSelected,
+    );
+    // Une grille borne la hauteur de sa cellule : les libellés et motifs longs
+    // restent sur une ligne visuelle (le nœud sémantique conserve les chaînes
+    // complètes), sans jamais déborder dans la ligne suivante.
+    tile = DefaultTextStyle.merge(
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      child: tile,
+    );
+
+    // En release les asserts du modèle disparaissent : une donnée invalide
+    // échoue donc FERMÉE. Sans libellé réellement annonçable, aucune teinte
+    // d'état n'est appliquée et l'information ne peut pas devenir visuelle
+    // seulement.
+    final String? declaredStateLabel = action.stateSemanticLabel;
+    final String? stateLabel =
+        declaredStateLabel != null && declaredStateLabel.trim().isNotEmpty
+        ? declaredStateLabel
+        : null;
+    final ZItemActionState? state = stateLabel == null ? null : action.state;
+    final Color? tint = switch (state) {
+      ZItemActionState.inProgress => _readableStateTint(
+        context,
+        Theme.of(context).colorScheme.secondary,
+      ),
+      ZItemActionState.present => _readableStateTint(
+        context,
+        Theme.of(context).colorScheme.primary,
+      ),
+      ZItemActionState.absent || null => null,
+    };
+    if (tint != null) {
+      tile = IconTheme.merge(
+        data: IconThemeData(color: tint),
+        child: tile,
+      );
+    }
+
+    final int? count = action.count;
+    final bool hasCount = count != null && count > 0;
+    if (hasCount) {
+      tile = Badge.count(count: count, maxCount: count, child: tile);
+    }
+
+    if (stateLabel == null && !hasCount) return tile;
+
+    // L'état et/ou le compte rejoignent le MÊME nœud que le bouton. Le libellé
+    // d'action reste porté une seule fois par ZMenuEntryTile.
+    return MergeSemantics(
+      child: stateLabel == null
+          ? tile
+          : Semantics(value: stateLabel, child: tile),
+    );
+  }
+
+  Color _readableStateTint(BuildContext context, Color base) {
+    final ThemeData material = Theme.of(context);
+    final Color surface =
+        PopupMenuTheme.of(context).color ??
+        material.colorScheme.surfaceContainer;
+    return zReadableTintOn(
+      base,
+      surface: surface,
+      minContrast: kZNonTextMinContrast,
+    );
+  }
 }

@@ -54,10 +54,8 @@ enum ZChatConversationListStatus {
 /// par le contenu des messages sans surlignage. Le socle ne peut pas faire
 /// mieux par défaut (il n'a pas les corps de messages sous la main), mais il
 /// ne fige pas le défaut : un hôte qui indexe autre chose passe le sien.
-typedef ZChatConversationMatcher = bool Function(
-  ZChatConversation conversation,
-  String term,
-);
+typedef ZChatConversationMatcher =
+    bool Function(ZChatConversation conversation, String term);
 
 /// Prédicat par défaut — le titre, insensible à la casse.
 bool zChatDefaultConversationMatcher(ZChatConversation c, String term) =>
@@ -68,19 +66,73 @@ bool zChatDefaultConversationMatcher(ZChatConversation c, String term) =>
 /// Un hôte qui veut décorer une ligne selon un état qui lui est propre (par
 /// exemple une animation tant qu'une génération est en cours) n'a pas à
 /// réécrire la tuile entière pour l'entourer.
-typedef ZChatConversationItemWrapper = Widget Function(
-  BuildContext context,
-  ZChatConversation conversation,
-  Widget child,
-);
+typedef ZChatConversationItemWrapper =
+    Widget Function(
+      BuildContext context,
+      ZChatConversation conversation,
+      Widget child,
+    );
 
 /// Construit l'en-tête d'un groupe. `null` ⇒ aucun en-tête (et donc aucun
 /// repliement : on ne replie pas ce qu'on ne montre pas).
-typedef ZChatGroupHeaderBuilder = Widget? Function(
-  BuildContext context,
-  Object? groupKey,
-  int count,
-);
+typedef ZChatGroupHeaderBuilder =
+    Widget? Function(BuildContext context, Object? groupKey, int count);
+
+/// Groupe de conversations transmis aux actions déclarées par l'hôte.
+///
+/// [key] reste opaque : le socle ne suppose ni dossier, ni matière, ni module.
+/// [count] décrit le nombre de conversations du groupe avant un éventuel
+/// repliement visuel.
+@immutable
+class ZChatConversationGroup {
+  /// Construit le contexte immuable d'un groupe.
+  const ZChatConversationGroup({required this.key, required this.count});
+
+  /// Clé opaque produite par [ZChatConversationList.groupKeyOf].
+  final Object? key;
+
+  /// Nombre de conversations appartenant au groupe.
+  final int count;
+}
+
+/// Action d'en-tête de groupe entièrement décrite par l'hôte.
+///
+/// Le socle ne fabrique ni icône, ni libellé, ni info-bulle. [icon] est rendu
+/// tel quel, [label] est reporté tel quel dans la sémantique, [tooltip] est
+/// affiché et annoncé tel quel, et [onInvoke] reçoit le groupe exact auquel
+/// appartient l'en-tête.
+@immutable
+class ZChatGroupAction {
+  /// Construit une action de groupe sans valeur visuelle implicite.
+  const ZChatGroupAction({
+    required this.icon,
+    required this.label,
+    required this.onInvoke,
+    this.tooltip,
+  });
+
+  /// Icône ou contenu visuel fourni par l'hôte, rendu sans transformation.
+  final Widget icon;
+
+  /// Libellé d'accessibilité déjà localisé par l'hôte.
+  final String label;
+
+  /// Info-bulle déjà localisée par l'hôte, ou `null`.
+  final String? tooltip;
+
+  /// Callback recevant le groupe exact de l'action invoquée.
+  final ValueChanged<ZChatConversationGroup> onInvoke;
+}
+
+/// Construit les actions d'un [group] donné.
+///
+/// Une liste vide signifie « aucune action ». Si le callback lève pour un
+/// groupe, ce groupe seul se replie défensivement sur une liste vide.
+typedef ZChatGroupActionsBuilder =
+    List<ZChatGroupAction> Function(
+      BuildContext context,
+      ZChatConversationGroup group,
+    );
 
 /// Extrait la clé de groupe opaque d'une conversation.
 ///
@@ -106,6 +158,7 @@ class ZChatConversationList extends StatelessWidget {
     this.tileBuilder,
     this.groupKeyOf,
     this.groupHeaderBuilder,
+    this.groupActionsBuilder,
     this.groupExpansion,
     this.selection,
     this.onRetireSelected,
@@ -160,6 +213,16 @@ class ZChatConversationList extends StatelessWidget {
 
   /// En-tête de groupe, ou `null`.
   final ZChatGroupHeaderBuilder? groupHeaderBuilder;
+
+  /// Actions déclarées par groupe, ou `null` pour conserver exactement le
+  /// rendu historique sans conteneur ni action supplémentaire.
+  ///
+  /// Le builder reçoit la clé opaque et le compte via
+  /// [ZChatConversationGroup]. Une exception se replie sur aucune action pour
+  /// le groupe concerné uniquement ; elle ne casse jamais la liste.
+  /// Sans [groupKeyOf], sans [groupHeaderBuilder], ou lorsque l'en-tête du
+  /// groupe vaut `null`, le builder n'est pas appelé.
+  final ZChatGroupActionsBuilder? groupActionsBuilder;
 
   /// Contrôleur de repliement externe. `null` signifie groupes toujours
   /// dépliés. Le socle n'en crée jamais : un contrôleur créé dans `build`
@@ -232,10 +295,7 @@ class ZChatConversationList extends StatelessWidget {
     // repliement retire des lignes, la sélection change l'état de chacune) :
     // ils sont donc écoutés au-dessus de l'aplatissement, jamais dedans. Un
     // abonnement pris sous `_flatten` verrait l'ancienne liste.
-    final List<Listenable> sources = <Listenable>[
-      ?selection,
-      ?groupExpansion,
-    ];
+    final List<Listenable> sources = <Listenable>[?selection, ?groupExpansion];
     final Widget content = sources.isEmpty
         ? _content(context, theme, pad)
         : ListenableBuilder(
@@ -249,7 +309,10 @@ class ZChatConversationList extends StatelessWidget {
       child: header == null
           ? content
           : Column(
-              children: <Widget>[header!, Expanded(child: content)],
+              children: <Widget>[
+                header!,
+                Expanded(child: content),
+              ],
             ),
     );
   }
@@ -292,11 +355,7 @@ class ZChatConversationList extends StatelessWidget {
             onCreate: searching ? null : onCreate,
           );
     }
-    return _ZRows(
-      list: this,
-      rows: _flatten(rendered),
-      padding: pad,
-    );
+    return _ZRows(list: this, rows: _flatten(rendered), padding: pad);
   }
 
   /// Aplatit la liste rendue en **lignes** : en-têtes de groupe, éléments des
@@ -406,7 +465,10 @@ class _ZRow {
     : conversation = null,
       isLoadMore = false;
 
-  _ZRow.item(this.conversation) : groupKey = null, count = 0, isLoadMore = false;
+  _ZRow.item(this.conversation)
+    : groupKey = null,
+      count = 0,
+      isLoadMore = false;
 
   const _ZRow.loadMore()
     : conversation = null,
@@ -424,11 +486,7 @@ class _ZRow {
 
 /// Le corps virtualisé.
 class _ZRows extends StatelessWidget {
-  const _ZRows({
-    required this.list,
-    required this.rows,
-    required this.padding,
-  });
+  const _ZRows({required this.list, required this.rows, required this.padding});
 
   final ZChatConversationList list;
   final List<_ZRow> rows;
@@ -454,7 +512,11 @@ class _ZRows extends StatelessWidget {
       );
     }
     if (row.isHeader) {
-      return _ZGroupHeader(list: list, groupKey: row.groupKey, count: row.count);
+      return _ZGroupHeader(
+        list: list,
+        groupKey: row.groupKey,
+        count: row.count,
+      );
     }
     final ZChatConversation c = row.conversation!;
     final Widget tile =
@@ -520,29 +582,119 @@ class _ZGroupHeader extends StatelessWidget {
     );
     if (built == null) return const SizedBox.shrink();
     final ZChatGroupExpansion? expansion = list.groupExpansion;
-    if (expansion == null) return built;
-    return Semantics(
+    final Widget header = expansion == null
+        ? built
+        : Semantics(
+            button: true,
+            expanded: expansion.isExpanded(groupKey),
+            onTap: () => expansion.toggle(groupKey),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => expansion.toggle(groupKey),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: kZChatMinTapTarget,
+                ),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: built,
+                ),
+              ),
+            ),
+          );
+    final ZChatGroupActionsBuilder? actionsBuilder = list.groupActionsBuilder;
+    if (actionsBuilder == null) return header;
+    final ZChatConversationGroup group = ZChatConversationGroup(
+      key: groupKey,
+      count: count,
+    );
+    final List<ZChatGroupAction> actions;
+    try {
+      actions = actionsBuilder(context, group);
+    } on Object {
+      return header;
+    }
+    if (actions.isEmpty) return header;
+    return Row(
+      children: <Widget>[
+        Expanded(child: header),
+        for (final ZChatGroupAction action in actions)
+          _ZGroupActionButton(action: action, group: group),
+      ],
+    );
+  }
+}
+
+/// Bouton neutre d'action de groupe — clavier, sémantique et cible de 48 dp.
+class _ZGroupActionButton extends StatelessWidget {
+  const _ZGroupActionButton({required this.action, required this.group});
+
+  final ZChatGroupAction action;
+  final ZChatConversationGroup group;
+
+  void _invoke() => action.onInvoke(group);
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget button = Semantics(
+      container: true,
       button: true,
-      expanded: expansion.isExpanded(groupKey),
-      onTap: () => expansion.toggle(groupKey),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => expansion.toggle(groupKey),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: kZChatMinTapTarget),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: built,
+      label: action.label,
+      tooltip: action.tooltip,
+      onTap: _invoke,
+      excludeSemantics: true,
+      child: FocusableActionDetector(
+        mouseCursor: SystemMouseCursors.click,
+        actions: <Type, Action<Intent>>{
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (ActivateIntent intent) {
+              _invoke();
+              return null;
+            },
+          ),
+          ButtonActivateIntent: CallbackAction<ButtonActivateIntent>(
+            onInvoke: (ButtonActivateIntent intent) {
+              _invoke();
+              return null;
+            },
+          ),
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _invoke,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: kZChatMinTapTarget,
+              minHeight: kZChatMinTapTarget,
+            ),
+            child: Align(
+              alignment: AlignmentDirectional.center,
+              child: action.icon,
+            ),
           ),
         ),
       ),
+    );
+    final String? tooltip = action.tooltip;
+    if (tooltip == null) return button;
+    return RawTooltip(
+      semanticsTooltip: tooltip,
+      tooltipBuilder: (BuildContext context, Animation<double> animation) =>
+          FadeTransition(
+            opacity: animation,
+            child: Text(tooltip, textAlign: TextAlign.start),
+          ),
+      child: button,
     );
   }
 }
 
 /// La barre de sélection multiple : compte, sortie explicite, retrait par lot.
 class _ZSelectionBar extends StatelessWidget {
-  const _ZSelectionBar({required this.selection, required this.onRetireSelected});
+  const _ZSelectionBar({
+    required this.selection,
+    required this.onRetireSelected,
+  });
 
   final ZChatConversationSelection selection;
   final void Function(Set<String> ids)? onRetireSelected;
@@ -614,7 +766,10 @@ class _ZBarButton extends StatelessWidget {
           ),
           child: Align(
             alignment: AlignmentDirectional.center,
-            child: Text(zChatLabel(context, labelKey), textAlign: TextAlign.start),
+            child: Text(
+              zChatLabel(context, labelKey),
+              textAlign: TextAlign.start,
+            ),
           ),
         ),
       ),
@@ -778,10 +933,7 @@ class _ZEmptyState extends StatelessWidget {
             ),
           ),
           if (onCreate != null)
-            _ZBarButton(
-              labelKey: kZChatLabelNewConversation,
-              onTap: onCreate!,
-            ),
+            _ZBarButton(labelKey: kZChatLabelNewConversation, onTap: onCreate!),
         ],
       ),
     );

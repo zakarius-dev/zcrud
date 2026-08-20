@@ -1,11 +1,10 @@
-// CR-IFFD-32 — `ZItemActionsMenu` imposait une COLONNE UNIQUE (`PopupMenuItem`
-// empilés), sans aucune couture de disposition. Au-delà de six ou sept entrées,
-// une colonne impose un balayage vertical long sur une surface flottante.
+// CR-IFFD-32 — `ZItemActionsMenu` exposait un slot de disposition. CR-IFFD-82
+// conserve ce slot tout en faisant de la grille le nouveau défaut.
 //
 // Forme retenue (arbitrée, cf. doc de `menuBuilder`) : un **SLOT** de
 // présentation, pas une option de grille — le socle n'a pas à figer l'ergonomie
 // d'un menu flottant. Ce qui reste sa propriété, et que ces gardes verrouillent :
-//   1. `menuBuilder == null` ⇒ colonne par défaut STRICTEMENT inchangée ;
+//   1. `menuBuilder == null` ⇒ grille par défaut ;
 //   2. la liste transmise au slot est DÉJÀ filtrée par « `onSelected == null` ⇒
 //      action ABSENTE » (AD-4) — la règle est INOPPOSABLE à l'hôte ;
 //   3. `select` invoque l'action EXACTEMENT une fois ET ferme la surface, par le
@@ -53,8 +52,8 @@ Widget _hostGrid(
     );
 
 void main() {
-  group('CR-IFFD-32 — défaut : colonne unique STRICTEMENT inchangée', () {
-    testWidgets('menuBuilder null ⇒ un PopupMenuItem par action visible',
+  group('CR-IFFD-32 + CR-IFFD-82 — défaut désormais en grille', () {
+    testWidgets('menuBuilder null ⇒ une cellule de grille par action visible',
         (tester) async {
       await tester.pumpWidget(_wrap(ZItemActionsMenu(
         actions: <ZItemAction>[
@@ -75,15 +74,14 @@ void main() {
       await tester.tap(find.byType(ZItemActionsMenu));
       await tester.pumpAndSettle();
 
-      // ⚠️ CHAT-4b : le paramètre de type est passé de `ZItemAction` à
-      // `ZMenuEntry` — `ZItemActionsMenu` DÉLÈGUE désormais à `ZActionMenu`
-      // (`zcrud_menu`), dont la colonne par défaut porte l'entrée neutre. Le
-      // pouvoir discriminant est INCHANGÉ : c'est toujours « une, et une seule,
-      // cellule de socle par action visible » qui est mesurée.
-      expect(find.byType(PopupMenuItem<ZMenuEntry>), findsNWidgets(2),
-          reason: 'le rendu par défaut reste la colonne de PopupMenuItem');
+      expect(find.byType(ZMenuEntryTile), findsNWidgets(2));
       expect(find.text(kOpen), findsOneWidget);
       expect(find.text(kRename), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text(kOpen)).dy,
+        closeTo(tester.getTopLeft(find.text(kRename)).dy, 0.5),
+        reason: 'le nouveau défaut place les deux actions sur la même ligne',
+      );
     });
   });
 

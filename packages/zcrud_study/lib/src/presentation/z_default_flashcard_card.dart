@@ -1079,6 +1079,13 @@ class _ZFlashcardRichText extends StatelessWidget {
         richTextRenderer: scope.richTextRenderer,
         // v0.69.0 : port de formatage des dates, même motif.
         dateDisplayFormatter: scope.dateDisplayFormatter,
+        // v1.8.0 puis v2.1.0 : canaux de seams des SOUS-LISTES et du RENDU DE
+        // CHOIX. Site JUMEAU de `z_subfolder_selector_bar` — la garde de
+        // structure ne lit que celui-là, donc ce défaut-ci ne serait signalé
+        // par rien. Trouvé en cherchant le jumeau plutôt qu'en attendant qu'il
+        // se manifeste.
+        subListSeamRegistry: scope.subListSeamRegistry,
+        selectChoiceBuilderRegistry: scope.selectChoiceBuilderRegistry,
         listRenderer: scope.listRenderer,
         reorderRenderer: scope.reorderRenderer,
         dropRegionRenderer: scope.dropRegionRenderer,

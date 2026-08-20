@@ -117,9 +117,18 @@ class ZSfAssistShellRenderer extends ZChatShellRenderer {
 
   /// Traduit un style résolu en réglages Syncfusion. `shape` n'est posé que
   /// si un rayon existe (invariant AD-4 : rien de nul n'entre dans l'arbre).
+  ///
+  /// La géométrie directionnelle est résolue **avant** de franchir la couture :
+  /// `syncfusion_flutter_chat` 34.1.31 peint son `ShapeBorder` par
+  /// `getOuterPath(bounds)`/`paint(canvas, bounds)` sans transmettre de
+  /// `TextDirection`. Lui remettre un `BorderRadiusDirectional` interrompt
+  /// donc la peinture avant même `paintChild`, bien que le contenu soit monté
+  /// et dimensionné. Résoudre ici conserve la décision RTL de l'hôte tout en
+  /// donnant au backend tiers une forme autonome à la peinture.
   AssistMessageSettings _settings({
     required ZChatNotebookStyle style,
     required Radius? radius,
+    required TextDirection textDirection,
   }) => AssistMessageSettings(
     widthFactor: style.bubbleWidthFactor,
     showAuthorAvatar: style.showAuthorAvatar,
@@ -127,17 +136,20 @@ class ZSfAssistShellRenderer extends ZChatShellRenderer {
     showTimestamp: style.showTimestamp,
     shape: radius == null
         ? null
-        // Invariant AD-13 : rayon directionnel, jamais un rayon symétrique
-        // par défaut.
         : RoundedRectangleBorder(
-            borderRadius: BorderRadiusDirectional.all(radius),
+            borderRadius: BorderRadiusDirectional.all(
+              radius,
+            ).resolve(textDirection),
           ),
   );
 
   @override
   Widget? buildShell(BuildContext context, ZChatShellRenderRequest request) {
     final String userName = zSfAssistLabel(context, kZSfAssistLabelUserAuthor);
-    final String assistantName = zSfAssistLabel(context, kZSfAssistLabelAssistantAuthor);
+    final String assistantName = zSfAssistLabel(
+      context,
+      kZSfAssistLabelAssistantAuthor,
+    );
 
     final List<AssistMessage> assistMessages = <AssistMessage>[
       for (final ZChatMessage m in request.messages)
@@ -174,10 +186,18 @@ class ZSfAssistShellRenderer extends ZChatShellRenderer {
       messages: assistMessages,
       requestMessageSettings: style == null
           ? const AssistMessageSettings()
-          : _settings(style: style, radius: style.requestBubbleRadius),
+          : _settings(
+              style: style,
+              radius: style.requestBubbleRadius,
+              textDirection: Directionality.of(context),
+            ),
       responseMessageSettings: style == null
           ? const AssistMessageSettings()
-          : _settings(style: style, radius: style.responseBubbleRadius),
+          : _settings(
+              style: style,
+              radius: style.responseBubbleRadius,
+              textDirection: Directionality.of(context),
+            ),
       composer: composerBuilder == null
           ? null
           : AssistComposer.builder(builder: composerBuilder!),

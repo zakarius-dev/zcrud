@@ -186,10 +186,9 @@ void main() {
         // C'est le jumeau exact que `chat4b_item_actions_menu_delegation_test`
         // avait resserré chez lui sans reporter le resserrement ici.
         //
-        // On mesure donc les DEUX, chacune pour ce qu'elle prouve :
-        //  - la CELLULE (`ZMenuEntryTile`) — notre plancher, seul mordant ;
-        //  - l'ITEM (`PopupMenuItem`) — la composition de bout en bout, qui
-        //    resterait fausse si un jour l'item rétrécissait sous sa cellule.
+        // Depuis CR-IFFD-82, la cellule vit dans la grille par défaut : on
+        // mesure directement `ZMenuEntryTile`, sans le plancher tautologique
+        // de l'ancien `PopupMenuItem`.
         //
         // ⚠️ `.first` porte sur le RÉSULTAT de `find.ancestor` (l'ancêtre le
         // plus PROCHE), jamais sur le finder `matching:` — l'y mettre le
@@ -209,16 +208,6 @@ void main() {
                   '${tailleCellule.height} dp < 48 dp — son plancher propre a '
                   'disparu (le 48 dp de PopupMenuItem le masquerait).');
 
-          final item = find
-              .ancestor(
-                of: find.text(label),
-                matching: find.byType(PopupMenuItem<ZMenuEntry>),
-              )
-              .first;
-          final size = tester.getSize(item);
-          expect(size.height, greaterThanOrEqualTo(_kMinTapTarget),
-              reason: '🔴 « $label » : ${size.height} dp < 48 dp — un item de '
-                  'menu trop petit est intappable au doigt');
         }
       },
     );
@@ -288,14 +277,12 @@ void main() {
       // Le menu est un OVERLAY : il n'est PAS sous `ZFlashcardListView` dans
       // l'arbre. On lit donc la sémantique de chaque item, pas celle de la vue.
       for (final label in <String>['Ouvrir', 'Dupliquer', 'Monter', 'Supprimer']) {
-        // ⚠️ On vise le nœud du **PopupMenuItem** (la *merge boundary*), et non
-        // `find.text(label)` : `excludeSemantics: true` retire la sémantique du
-        // `Text`, si bien que `getSemantics(find.text(…))` remonterait à un
-        // nœud trompeur.
+        // On vise la cellule du socle : `excludeSemantics: true` retire la
+        // sémantique propre du `Text` au profit de ce nœud unique.
         final node = tester.getSemantics(find
             .ancestor(
               of: find.text(label),
-              matching: find.byType(PopupMenuItem<ZMenuEntry>),
+              matching: find.byType(ZMenuEntryTile),
             )
             .first);
 

@@ -564,6 +564,14 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
       // celui-ci). Le motif est clair : tout port ajouté à `ZcrudScope` doit
       // être re-posé ici, et c'est la garde — pas la vigilance — qui le tient.
       dateDisplayFormatter: scope.dateDisplayFormatter,
+      // v1.8.0 puis v2.1.0 : les deux canaux de seams déclaratifs — celui des
+      // SOUS-LISTES, puis celui du RENDU DE CHOIX. QUATRIÈME et CINQUIÈME ports
+      // signalés par cette même garde. Le motif ne varie pas : un canal ajouté
+      // au scope et non re-posé ici disparaîtrait sous l'Overlay, et l'hôte
+      // verrait son rendu déclaré s'évanouir dans la feuille — sans rien qui
+      // l'annonce. C'est la garde, jamais la vigilance, qui tient cette liste.
+      subListSeamRegistry: scope.subListSeamRegistry,
+      selectChoiceBuilderRegistry: scope.selectChoiceBuilderRegistry,
       listRenderer: scope.listRenderer,
       reorderRenderer: scope.reorderRenderer,
       dropRegionRenderer: scope.dropRegionRenderer,

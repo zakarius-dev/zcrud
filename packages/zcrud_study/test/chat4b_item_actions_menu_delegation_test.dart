@@ -1,8 +1,8 @@
 /// CHAT-4b — `ZItemActionsMenu` est un CONSOMMATEUR de la couture `zcrud_menu`.
 ///
 /// Ce que ces gardes verrouillent, dans l'ordre du risque :
-///   1. **non-régression** : un appelant qui n'utilise AUCUNE capacité neuve
-///      obtient le rendu d'avant (colonne, glyphe de repli, info-bulle du SDK) ;
+///   1. **CR-IFFD-82** : le défaut est désormais une grille, tandis que le
+///      glyphe de repli et l'info-bulle du SDK restent inchangés ;
 ///   2. **absorption** : le déclencheur et la surface appartiennent au
 ///      `ZMenuRenderer` — un renderer injecté les remplace RÉELLEMENT, preuve
 ///      qu'aucun `PopupMenuButton` n'est plus construit en dur ici ;
@@ -68,10 +68,9 @@ class _RendererEspion extends ZMenuRenderer {
     return const Text('RENDU-SUBSTITUE');
   }
 }
-
 void main() {
-  group('1. NON-RÉGRESSION — l\'appelant historique voit le rendu d\'avant', () {
-    testWidgets('colonne par défaut : un PopupMenuItem par action visible, '
+  group('1. DÉFAUT CR-IFFD-82 et replis historiques', () {
+    testWidgets('grille par défaut : une cellule par action visible, '
         'libellé et glyphe INJECTÉS', (tester) async {
       await tester.pumpWidget(_app(ZItemActionsMenu(
         actions: <ZItemAction>[
@@ -93,7 +92,7 @@ void main() {
       await tester.tap(find.byType(ZItemActionsMenu));
       await tester.pumpAndSettle();
 
-      expect(find.byType(PopupMenuItem<ZMenuEntry>), findsNWidgets(2));
+      expect(find.byType(ZMenuEntryTile), findsNWidgets(2));
       expect(find.text(kOuvrir), findsOneWidget);
       expect(find.byIcon(Icons.open_in_new), findsOneWidget);
       expect(find.text(kSupprimer), findsNothing,
@@ -266,7 +265,7 @@ void main() {
           .getSemantics(find
               .ancestor(
                 of: find.text(kRenommer),
-                matching: find.byType(PopupMenuItem<ZMenuEntry>),
+                matching: find.byType(ZMenuEntryTile),
               )
               .first)
           .getSemanticsData();
@@ -473,7 +472,7 @@ void main() {
         final cible = find
             .ancestor(
               of: find.text(label),
-              matching: find.byType(PopupMenuItem<ZMenuEntry>),
+              matching: find.byType(ZMenuEntryTile),
             )
             .first;
         expect(tester.getSize(cible).height, greaterThanOrEqualTo(48.0),
@@ -535,38 +534,42 @@ void main() {
   });
 
   group('5. RTL RÉEL — mesuré sur la surface flottante', () {
-    /// Écart signé glyphe→libellé DANS LA SURFACE OUVERTE.
+    /// Écart signé entre les deux premières cellules DANS LA SURFACE OUVERTE.
     Future<double> ecart(WidgetTester tester, TextDirection direction) async {
       await tester.pumpWidget(_appDirectionnelle(
-        ZItemActionsMenu(actions: <ZItemAction>[_ouvrir()]),
+        ZItemActionsMenu(actions: <ZItemAction>[
+          _ouvrir(),
+          ZItemAction(
+            kind: ZItemActionKind.rename,
+            label: kRenommer,
+            icon: Icons.edit,
+            onSelected: () {},
+          ),
+        ]),
         direction,
       ));
       await tester.tap(find.byType(ZItemActionsMenu));
       await tester.pumpAndSettle();
 
-      // 🔴 SONDE ANTI-PIÈGE : la direction doit avoir atteint l'OVERLAY. Lue
-      // depuis le contexte du libellé (dans la surface), pas depuis celui du
-      // déclencheur — c'est exactement ce que le piège rendrait faux.
       final directionSurface =
           Directionality.of(tester.element(find.text(kOuvrir)));
       expect(directionSurface, direction,
           reason: '🔴 la surface flottante n\'a PAS reçu la direction : la '
               'garde mesurerait le déclencheur et resterait verte à tort.');
 
-      final xIcone =
-          tester.getCenter(find.byIcon(Icons.open_in_new).last).dx;
-      final xTexte = tester.getCenter(find.text(kOuvrir)).dx;
-      return xTexte - xIcone;
+      return tester.getCenter(find.text(kRenommer)).dx -
+          tester.getCenter(find.text(kOuvrir)).dx;
     }
 
-    testWidgets('LTR : le glyphe précède le libellé', (tester) async {
+    testWidgets('LTR : la première cellule précède la seconde', (tester) async {
       expect(await ecart(tester, TextDirection.ltr), greaterThan(0));
     });
 
-    testWidgets('🔴 RTL : l\'ordre est INVERSÉ dans la surface', (tester) async {
+    testWidgets('🔴 RTL : l\'ordre des colonnes est INVERSÉ dans la surface',
+        (tester) async {
       expect(await ecart(tester, TextDirection.rtl), lessThan(0),
-          reason: '🔴 en RTL le glyphe doit passer à DROITE du libellé — une '
-              'Row non directionnelle laisserait cet écart POSITIF');
+          reason: '🔴 en RTL la première cellule doit passer à DROITE de la '
+              'seconde — une grille non directionnelle resterait positive');
     });
   });
 }

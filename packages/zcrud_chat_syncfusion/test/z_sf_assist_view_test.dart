@@ -102,9 +102,16 @@ ZChatMessage assistant(List<ZContentBlock> blocks, {String id = 'm1'}) =>
       contentBlocks: blocks,
     );
 
+ZChatMessage user(List<ZContentBlock> blocks, {String id = 'u1'}) =>
+    ZChatMessage(
+      id: id,
+      conversationId: 'c1',
+      role: ZChatRole.user,
+      contentBlocks: blocks,
+    );
+
 List<String> texts(WidgetTester tester) => <String>[
-  for (final Text t in tester.widgetList<Text>(find.byType(Text)))
-    t.data ?? '',
+  for (final Text t in tester.widgetList<Text>(find.byType(Text))) t.data ?? '',
 ];
 
 /// Contrôleur minimal + son port piloté par le test.
@@ -122,8 +129,10 @@ SfRig controllerWith(List<ZChatMessage> messages) {
     actionExecutor: _NoExecutor(),
     confirm: (ZChatActionPlan _) async => true,
     newRequestId: () => 'r${n++}',
-    buildRequest: (ZChatDraft d) =>
-        ZChatGenerationRequest(style: ZChatGenerationStyle.converse, subject: d.text),
+    buildRequest: (ZChatDraft d) => ZChatGenerationRequest(
+      style: ZChatGenerationStyle.converse,
+      subject: d.text,
+    ),
     conversationId: 'c1',
     initialMessages: messages,
   );
@@ -176,6 +185,31 @@ class _HostRenderer extends ZChatRenderer {
   }
 }
 
+/// Renderer de la reproduction IFFD : il décline la requête et prend en
+/// charge la réponse, comme le défaut de `ZChatMarkdownRenderer`.
+class _UserDecliningRenderer extends ZChatRenderer {
+  const _UserDecliningRenderer();
+
+  @override
+  Widget? buildBlock(BuildContext context, ZChatBlockRenderRequest request) {
+    if (request.message.role == ZChatRole.user) return null;
+    return const Text('REPONSE-RICHE');
+  }
+}
+
+/// Renderer de contrôle : les deux rôles sont pris en charge par l'hôte.
+class _AllRolesRenderer extends ZChatRenderer {
+  const _AllRolesRenderer();
+
+  @override
+  Widget buildBlock(BuildContext context, ZChatBlockRenderRequest request) =>
+      Text(
+        request.message.role == ZChatRole.user
+            ? 'REQUETE-HOTE'
+            : 'REPONSE-HOTE',
+      );
+}
+
 void main() {
   testWidgets('la coquille rend bien le CADRE : `SfAIAssistView` est monté et '
       'la liste NEUTRE ne l\'est plus', (WidgetTester tester) async {
@@ -199,13 +233,15 @@ void main() {
         matching: find.byType(SfAIAssistView),
       ),
       findsOneWidget,
-      reason: '🔴 la coquille n\'enveloppe pas le contenu du socle : elle n\'a '
+      reason:
+          '🔴 la coquille n\'enveloppe pas le contenu du socle : elle n\'a '
           'pas remplacé le conteneur, ou elle a construit son propre corps',
     );
   });
 
-  testWidgets('le CONTENU vient de zcrud_chat, pas de `AssistMessage.data`',
-      (WidgetTester tester) async {
+  testWidgets('le CONTENU vient de zcrud_chat, pas de `AssistMessage.data`', (
+    WidgetTester tester,
+  ) async {
     final SfRig rig = controllerWith(<ZChatMessage>[
       assistant(const <ZContentBlock>[
         ZTextBlock(text: 'Premier bloc'),
@@ -224,8 +260,9 @@ void main() {
   });
 
   testWidgets('🔴 LA GARDE DU LOT · sous la coquille, l\'hôte ne perd NI la '
-      'région live, NI le dépli inline, NI la tuile',
-      (WidgetTester tester) async {
+      'région live, NI le dépli inline, NI la tuile', (
+    WidgetTester tester,
+  ) async {
     final SemanticsHandle handle = tester.ensureSemantics();
     final SfRig rig = controllerWith(<ZChatMessage>[
       assistant(<ZContentBlock>[longText(20)]),
@@ -234,9 +271,7 @@ void main() {
     addTearDown(rig.port.closeAll);
     final ZChatController c = rig.controller;
     await tester.pumpWidget(
-      host(
-        ZChatConversationView(controller: c, collapsedMaxHeight: 60),
-      ),
+      host(ZChatConversationView(controller: c, collapsedMaxHeight: 60)),
     );
     await tester.pumpAndSettle();
 
@@ -244,14 +279,22 @@ void main() {
 
     // (1) LA RÉGION LIVE — perdue par la vue parallèle de C6 dès lors qu'elle
     //     ne recevait pas de contrôleur ; ici elle enveloppe le seam.
-    expect(find.bySemanticsLabel('Conversation'), findsOneWidget,
-        reason: '🔴 sous la coquille, une réponse qui arrive serait MUETTE au '
-            'lecteur d\'écran');
+    expect(
+      find.bySemanticsLabel('Conversation'),
+      findsOneWidget,
+      reason:
+          '🔴 sous la coquille, une réponse qui arrive serait MUETTE au '
+          'lecteur d\'écran',
+    );
 
     // (2) LA TUILE du socle.
-    expect(find.byType(ZChatMessageTile), findsOneWidget,
-        reason: '🔴 la coquille construit son propre corps de message : le '
-            'doublon de C6 est de retour');
+    expect(
+      find.byType(ZChatMessageTile),
+      findsOneWidget,
+      reason:
+          '🔴 la coquille construit son propre corps de message : le '
+          'doublon de C6 est de retour',
+    );
 
     // (3) LE DÉPLI INLINE, réel.
     final Finder tile = find.byType(ZChatMessageTile);
@@ -259,14 +302,18 @@ void main() {
     expect(find.text('Afficher plus'), findsOneWidget);
     await tester.tap(find.text('Afficher plus'));
     await tester.pumpAndSettle();
-    expect(tester.getSize(tile).height, greaterThan(collapsed),
-        reason: '🔴 « Afficher plus » ne déplie pas sous la coquille');
+    expect(
+      tester.getSize(tile).height,
+      greaterThan(collapsed),
+      reason: '🔴 « Afficher plus » ne déplie pas sous la coquille',
+    );
     expect(find.text('Afficher moins'), findsOneWidget);
     handle.dispose();
   });
 
-  testWidgets('le seam de BLOC de l\'hôte reste ATTEIGNABLE sous la coquille',
-      (WidgetTester tester) async {
+  testWidgets('le seam de BLOC de l\'hôte reste ATTEIGNABLE sous la coquille', (
+    WidgetTester tester,
+  ) async {
     final SfRig rig = controllerWith(<ZChatMessage>[
       assistant(<ZContentBlock>[
         ZCustomContentBlock('legalReference', const <String, dynamic>{}),
@@ -287,6 +334,145 @@ void main() {
     expect(texts(tester), contains('RENDU-HOTE'));
     // …et le bloc connu garde le rendu neutre : prise en charge PARTIELLE.
     expect(texts(tester), contains('neutre'));
+  });
+
+  testWidgets('CR-IFFD-80 · renderer partiel : requête neutre et réponse riche '
+      'sont peintes sous la coquille Syncfusion', (WidgetTester tester) async {
+    final SfRig rig = controllerWith(<ZChatMessage>[
+      user(const <ZContentBlock>[ZTextBlock(text: 'QUESTION-NEUTRE')]),
+      assistant(const <ZContentBlock>[
+        ZTextBlock(text: 'réponse source'),
+      ], id: 'a1'),
+    ]);
+    addTearDown(rig.controller.dispose);
+    addTearDown(rig.port.closeAll);
+
+    await tester.pumpWidget(
+      host(
+        ZChatConversationView(controller: rig.controller),
+        renderer: const _UserDecliningRenderer(),
+        shell: const ZSfAssistShellRenderer(notebookSkin: ZChatNotebookSkin()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(SfAIAssistView), findsOneWidget);
+    expect(find.text('QUESTION-NEUTRE'), findsOneWidget);
+    expect(find.text('REPONSE-RICHE'), findsOneWidget);
+    final Rect question = tester.getRect(find.text('QUESTION-NEUTRE'));
+    expect(question.width, greaterThan(0));
+    expect(question.height, greaterThan(0));
+  });
+
+  testWidgets('CR-IFFD-80 · a11y : la requête garde le résumé explicitement '
+      'déclaré par la tuile', (WidgetTester tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+    final SfRig rig = controllerWith(<ZChatMessage>[
+      user(const <ZContentBlock>[ZTextBlock(text: 'QUESTION-NEUTRE')]),
+      assistant(const <ZContentBlock>[
+        ZTextBlock(text: 'réponse source'),
+      ], id: 'a1'),
+    ]);
+    addTearDown(rig.controller.dispose);
+    addTearDown(rig.port.closeAll);
+
+    await tester.pumpWidget(
+      host(
+        ZChatConversationView(controller: rig.controller),
+        renderer: const _UserDecliningRenderer(),
+        shell: const ZSfAssistShellRenderer(notebookSkin: ZChatNotebookSkin()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // A11y : on garde la contrainte déclarée par `ZChatMessageTile`, pas une
+    // sémantique implicite que le SDK pourrait produire à partir du `Text`.
+    final Finder announcedQuestion = find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is Semantics &&
+          widget.container &&
+          widget.excludeSemantics &&
+          widget.properties.label == 'QUESTION-NEUTRE',
+    );
+    expect(announcedQuestion, findsOneWidget);
+    expect(
+      semanticsWhere(tester, (SemanticsNode node) => node.label == 'QUESTION-NEUTRE'),
+      isNotNull,
+      reason: 'le contrat déclaré doit aussi survivre dans l\'arbre fusionné',
+    );
+    handle.dispose();
+  });
+
+  testWidgets(
+    'CR-IFFD-80 · contre-témoin : le même renderer partiel peint déjà '
+    'les deux rôles sans coquille',
+    (WidgetTester tester) async {
+      final SfRig rig = controllerWith(<ZChatMessage>[
+        user(const <ZContentBlock>[ZTextBlock(text: 'QUESTION-NEUTRE')]),
+        assistant(const <ZContentBlock>[
+          ZTextBlock(text: 'réponse source'),
+        ], id: 'a1'),
+      ]);
+      addTearDown(rig.controller.dispose);
+      addTearDown(rig.port.closeAll);
+
+      await tester.pumpWidget(
+        host(
+          ZChatConversationView(controller: rig.controller),
+          renderer: const _UserDecliningRenderer(),
+          shell: null,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SfAIAssistView), findsNothing);
+      expect(find.text('QUESTION-NEUTRE'), findsOneWidget);
+      expect(find.text('REPONSE-RICHE'), findsOneWidget);
+    },
+  );
+
+  testWidgets('CR-IFFD-80 · rétrocompat : un renderer des deux rôles conserve '
+      'les comptes absolus avec ou sans coquille', (WidgetTester tester) async {
+    final SfRig rig = controllerWith(<ZChatMessage>[
+      user(const <ZContentBlock>[ZTextBlock(text: 'question source')]),
+      assistant(const <ZContentBlock>[
+        ZTextBlock(text: 'réponse source'),
+      ], id: 'a1'),
+    ]);
+    addTearDown(rig.controller.dispose);
+    addTearDown(rig.port.closeAll);
+
+    Future<({int blocks, int requests, int responses})> counts(
+      ZChatShellRenderer? shell,
+    ) async {
+      await tester.pumpWidget(
+        host(
+          ZChatConversationView(controller: rig.controller),
+          renderer: const _AllRolesRenderer(),
+          shell: shell,
+        ),
+      );
+      await tester.pumpAndSettle();
+      return (
+        blocks: find.byType(ZChatBlockView).evaluate().length,
+        requests: find.text('REQUETE-HOTE').evaluate().length,
+        responses: find.text('REPONSE-HOTE').evaluate().length,
+      );
+    }
+
+    final withoutShell = await counts(null);
+    expect(withoutShell.blocks, 2);
+    expect(withoutShell.requests, 1);
+    expect(withoutShell.responses, 1);
+
+    final withShell = await counts(
+      const ZSfAssistShellRenderer(notebookSkin: ZChatNotebookSkin()),
+    );
+    expect(withShell.blocks, 2);
+    expect(withShell.requests, 1);
+    expect(withShell.responses, 1);
+    expect(withShell, withoutShell);
   });
 
   testWidgets('🔴 `AssistMessage.data` porte le résumé ACCESSIBLE du kernel — '
@@ -314,7 +500,8 @@ void main() {
     expect(
       view.messages.first.data,
       allOf(contains('0101'), contains('droit')),
-      reason: '🔴 LE défaut C6 : le résumé local ne connaissait que '
+      reason:
+          '🔴 LE défaut C6 : le résumé local ne connaissait que '
           '`ZTextBlock`, donc un TABLEAU n\'était annoncé nulle part. Le '
           'résumé vient désormais de `ZContentBlock.accessibleText` — `switch` '
           'exhaustif sur l\'union scellée.',
@@ -337,14 +524,16 @@ void main() {
             n.label.contains('0101') && n.label.contains('droit'),
       ),
       isNotNull,
-      reason: '🔴 le résumé exhaustif du kernel n\'est ANNONCÉ nulle part : '
+      reason:
+          '🔴 le résumé exhaustif du kernel n\'est ANNONCÉ nulle part : '
           'il est calculé, rangé dans `AssistMessage.data`, et perdu.',
     );
     handle.dispose();
   });
 
-  testWidgets('AD-13 · la tuile en cours fait AU MOINS 48 dp de haut',
-      (WidgetTester tester) async {
+  testWidgets('AD-13 · la tuile en cours fait AU MOINS 48 dp de haut', (
+    WidgetTester tester,
+  ) async {
     final SfRig rig = controllerWith(const <ZChatMessage>[]);
     addTearDown(rig.controller.dispose);
     addTearDown(rig.port.closeAll);
@@ -357,7 +546,8 @@ void main() {
     // première rédaction du test (C6) mesurait l'un des leurs (0 dp) — un rouge
     // qui ne disait rien du code sous garde.
     final Finder tuile = find.byWidgetPredicate(
-      (Widget w) => w is Semantics && w.properties.label == 'Rédaction en cours',
+      (Widget w) =>
+          w is Semantics && w.properties.label == 'Rédaction en cours',
     );
     expect(tuile, findsOneWidget);
     final Finder box = find
@@ -368,8 +558,9 @@ void main() {
     expect(tester.getSize(box).height, greaterThanOrEqualTo(48.0));
   });
 
-  testWidgets('SM-1 · un jeton ne reconstruit QUE la tuile en cours',
-      (WidgetTester tester) async {
+  testWidgets('SM-1 · un jeton ne reconstruit QUE la tuile en cours', (
+    WidgetTester tester,
+  ) async {
     final SfRig rig = controllerWith(<ZChatMessage>[
       assistant(const <ZContentBlock>[ZTextBlock(text: 'stable')]),
     ]);
@@ -392,16 +583,21 @@ void main() {
       const Right<ZFailure, ZChatStreamEvent>(ZChatTokenEvent(content: 'b')),
     );
     await tester.pump();
-    expect(c.streamText(requestId).value, 'b',
-        reason: '🔴 le jeton n\'a pas atteint la tranche : la mesure '
-            'ci-dessous serait vraie par VACUITÉ');
+    expect(
+      c.streamText(requestId).value,
+      'b',
+      reason:
+          '🔴 le jeton n\'a pas atteint la tranche : la mesure '
+          'ci-dessous serait vraie par VACUITÉ',
+    );
     // Si l'abonnement au texte était pris AU-DESSUS de la liste, ce compteur
     // bougerait à chaque jeton — le bug historique du dépôt.
     expect(blockBuilds, before);
   });
 
-  testWidgets('RTL · la coquille se monte et rend en `TextDirection.rtl`',
-      (WidgetTester tester) async {
+  testWidgets('RTL · la coquille se monte et rend en `TextDirection.rtl`', (
+    WidgetTester tester,
+  ) async {
     // 🔴 LA TUILE EN COURS EST MONTÉE ICI DÉLIBÉRÉMENT (leçon C6 : sans flux
     // ouvert, le seul `Align` sous garde n'existait pas dans l'arbre et la
     // boucle restait VERTE après injection de `Alignment.centerLeft`).
@@ -415,23 +611,34 @@ void main() {
       host(
         ZChatConversationView(controller: c),
         direction: TextDirection.rtl,
+        shell: const ZSfAssistShellRenderer(
+          notebookSkin: ZChatNotebookSkin(),
+        ),
       ),
     );
     await startTurn(tester, rig);
+    expect(tester.takeException(), isNull);
     expect(texts(tester), contains('مرحبا'));
 
     final Finder tuile = find.byWidgetPredicate(
-      (Widget w) => w is Semantics && w.properties.label == 'Rédaction en cours',
+      (Widget w) =>
+          w is Semantics && w.properties.label == 'Rédaction en cours',
     );
     final Finder aligns = find.descendant(
       of: tuile,
       matching: find.byType(Align),
     );
-    expect(aligns, findsWidgets,
-        reason: 'sans Align sous garde, la boucle ci-dessous ne prouve rien');
+    expect(
+      aligns,
+      findsWidgets,
+      reason: 'sans Align sous garde, la boucle ci-dessous ne prouve rien',
+    );
     for (final Align a in tester.widgetList<Align>(aligns)) {
-      expect(a.alignment, isNot(Alignment.centerLeft),
-          reason: 'AD-13 : bord figé — utiliser AlignmentDirectional');
+      expect(
+        a.alignment,
+        isNot(Alignment.centerLeft),
+        reason: 'AD-13 : bord figé — utiliser AlignmentDirectional',
+      );
       expect(a.alignment, isNot(Alignment.centerRight));
     }
   });
@@ -460,26 +667,32 @@ void main() {
     expect(
       find.bySemanticsLabel(kZChatLabelFallbacks[kZChatLabelLiveRegion]!),
       findsOneWidget,
-      reason: '🔴 la région live annonce autre chose que son repli — la clé '
+      reason:
+          '🔴 la région live annonce autre chose que son repli — la clé '
           'brute `zchat.liveRegion` était énoncée telle quelle.',
     );
-    expect(find.bySemanticsLabel(kZChatLabelLiveRegion), findsNothing,
-        reason: '🔴 CLÉ BRUTE ANNONCÉE.');
+    expect(
+      find.bySemanticsLabel(kZChatLabelLiveRegion),
+      findsNothing,
+      reason: '🔴 CLÉ BRUTE ANNONCÉE.',
+    );
     final SfAIAssistView view = tester.widget<SfAIAssistView>(
       find.byType(SfAIAssistView),
     );
     expect(
       view.messages.first.author?.name,
       kZSfAssistLabelFallbacks[kZSfAssistLabelAssistantAuthor],
-      reason: '🔴 un nom d\'auteur inventé HORS de la table du paquet — FR-26 — '
+      reason:
+          '🔴 un nom d\'auteur inventé HORS de la table du paquet — FR-26 — '
           'ou bien la clé brute affichée telle quelle — HIGH-1',
     );
     handle.dispose();
   });
 
   testWidgets('AD-57 · la coquille est OPTIONNELLE : sans elle, le socle rend '
-      'sa liste neutre et rien de Syncfusion n\'est monté',
-      (WidgetTester tester) async {
+      'sa liste neutre et rien de Syncfusion n\'est monté', (
+    WidgetTester tester,
+  ) async {
     final SfRig rig = controllerWith(<ZChatMessage>[
       assistant(const <ZContentBlock>[ZTextBlock(text: 'x')]),
     ]);
@@ -491,8 +704,11 @@ void main() {
     );
     await tester.pump();
     expect(find.byType(SfAIAssistView), findsNothing);
-    expect(find.byType(ListView), findsOneWidget,
-        reason: '🔴 le défaut zéro-dépendance d\'AD-57 doit rester fonctionnel');
+    expect(
+      find.byType(ListView),
+      findsOneWidget,
+      reason: '🔴 le défaut zéro-dépendance d\'AD-57 doit rester fonctionnel',
+    );
     expect(texts(tester), contains('x'));
   });
 
@@ -519,9 +735,13 @@ void main() {
     final SfAIAssistView view = tester.widget<SfAIAssistView>(
       find.byType(SfAIAssistView),
     );
-    expect(view.messages.first.data, 'reference juridique',
-        reason: '🔴 sans ce seam, un bloc d\'hôte ne serait annonçable que par '
-            'son discriminant machine, et JAMAIS localisable');
+    expect(
+      view.messages.first.data,
+      'reference juridique',
+      reason:
+          '🔴 sans ce seam, un bloc d\'hôte ne serait annonçable que par '
+          'son discriminant machine, et JAMAIS localisable',
+    );
   });
 
   testWidgets('🔴 HIGH-2 — le seam d\'annonce injecté par SCOPE est réellement '
@@ -552,16 +772,21 @@ void main() {
     final SfAIAssistView view = tester.widget<SfAIAssistView>(
       find.byType(SfAIAssistView),
     );
-    expect(view.messages.first.data, 'reference juridique',
-        reason: '🔴 le résolveur du SCOPE n\'atteint pas `data` : deux '
-            'résumés distincts, promis à diverger.');
+    expect(
+      view.messages.first.data,
+      'reference juridique',
+      reason:
+          '🔴 le résolveur du SCOPE n\'atteint pas `data` : deux '
+          'résumés distincts, promis à diverger.',
+    );
     expect(
       semanticsWhere(
         tester,
         (SemanticsNode n) => n.label.contains('reference juridique'),
       ),
       isNotNull,
-      reason: '🔴 le résumé de l\'hôte n\'est ÉNONCÉ nulle part sous '
+      reason:
+          '🔴 le résumé de l\'hôte n\'est ÉNONCÉ nulle part sous '
           'Syncfusion — le défaut HIGH-2 exactement.',
     );
     handle.dispose();
@@ -601,8 +826,9 @@ class _CountingRenderer extends ZChatRenderer {
 /// atteignait un par mégarde, elle rougirait sur une failure lisible et non sur
 /// une exception qui ne dirait pas d'où elle vient (AD-5/AD-10).
 class _NoExecutor implements ZChatActionExecutor {
-  static ZResult<T> _no<T>() =>
-      Left<ZFailure, T>(const ZDomainFailure('executor not wired in this test'));
+  static ZResult<T> _no<T>() => Left<ZFailure, T>(
+    const ZDomainFailure('executor not wired in this test'),
+  );
 
   @override
   Future<ZResult<ZChatActionImpact>> estimateImpact(ZChatAction action) async =>
@@ -612,8 +838,7 @@ class _NoExecutor implements ZChatActionExecutor {
   Future<ZResult<List<String>>> editAndResend({
     required String messageId,
     required String newText,
-  }) async =>
-      _no<List<String>>();
+  }) async => _no<List<String>>();
 
   @override
   Future<ZResult<List<String>>> regenerate({required String messageId}) async =>
@@ -623,8 +848,7 @@ class _NoExecutor implements ZChatActionExecutor {
   Future<ZResult<List<String>>> softDeleteMessages({
     required String messageId,
     required bool cascadeToPair,
-  }) async =>
-      _no<List<String>>();
+  }) async => _no<List<String>>();
 
   @override
   Future<ZResult<Unit>> cancelRequest(String requestId) async => _no<Unit>();
@@ -633,8 +857,7 @@ class _NoExecutor implements ZChatActionExecutor {
   Future<ZResult<String>> renderForCopy({
     required String messageId,
     required ZChatCopyFormat format,
-  }) async =>
-      _no<String>();
+  }) async => _no<String>();
 
   @override
   Future<ZResult<List<String>>> executeCustom(ZChatCustomAction action) async =>
