@@ -27,7 +27,7 @@ import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
-import 'support/z_sources.dart' show strippedCrossPackage, strippedOf;
+import 'support/z_sources.dart' show strippedOf;
 import 'package:zcrud_study/zcrud_study.dart';
 
 import 'support/suf3_harness.dart';
@@ -889,6 +889,84 @@ void main() {
   // 8. SURVIE DU SCOPE SOUS L'OVERLAY
   // -------------------------------------------------------------------------
   group('CR-IFFD-41 — le `ZcrudScope` de l\'hôte SURVIT dans la feuille', () {
+    testWidgets('les seams hôte survivent par IDENTITÉ sous l\'Overlay',
+        (tester) async {
+      await setScreen(tester, 500, 800);
+      const ZcrudTheme theme = _kIffdPreset;
+      final ZcrudLabels labels = ZcrudLabels(<String, String>{'probe': 'hôte'});
+      final ZWidgetRegistry widgetRegistry = ZWidgetRegistry();
+      final ZSubListSeamRegistry subListSeamRegistry =
+          ZSubListSeamRegistry();
+      final ZSelectChoiceBuilderRegistry selectChoiceBuilderRegistry =
+          ZSelectChoiceBuilderRegistry();
+      final ZRelationSourceRegistry relationSourceRegistry =
+          ZRelationSourceRegistry();
+      final ZChoicesSourceRegistry choicesSourceRegistry =
+          ZChoicesSourceRegistry();
+      final ZRelationCrudRegistry relationCrudRegistry =
+          ZRelationCrudRegistry();
+      ZcrudScope? observed;
+
+      await pumpDetail(
+        tester,
+        nav: _spec(
+          itemBuilder: (BuildContext context, ZSubfolderRef ref, bool selected) {
+            if (ZSubfolderSurface.maybeOf(context) ==
+                ZSubfolderSurface.selectorSheet) {
+              observed = ZcrudScope.of(context);
+            }
+            return Text(ref.label);
+          },
+        ),
+        wrap: (Widget child) => ZcrudScope(
+          labels: labels,
+          theme: theme,
+          widgetRegistry: widgetRegistry,
+          subListSeamRegistry: subListSeamRegistry,
+          relationSourceRegistry: relationSourceRegistry,
+          choicesSourceRegistry: choicesSourceRegistry,
+          selectChoiceBuilderRegistry: selectChoiceBuilderRegistry,
+          relationCrudRegistry: relationCrudRegistry,
+          child: child,
+        ),
+      );
+      observed = null;
+      await _open(tester);
+
+      final ZcrudScope actual = observed!;
+      expect(actual.theme, same(theme));
+      expect(actual.labels, same(labels));
+      expect(actual.widgetRegistry, same(widgetRegistry));
+      expect(actual.subListSeamRegistry, same(subListSeamRegistry));
+      expect(actual.relationSourceRegistry, same(relationSourceRegistry));
+      expect(actual.choicesSourceRegistry, same(choicesSourceRegistry));
+      expect(actual.selectChoiceBuilderRegistry,
+          same(selectChoiceBuilderRegistry));
+      expect(actual.relationCrudRegistry, same(relationCrudRegistry));
+    });
+
+    testWidgets('sans scope ambiant, la feuille n\'en fabrique toujours aucun',
+        (tester) async {
+      await setScreen(tester, 500, 800);
+      ZcrudScope? observed;
+      await pumpDetail(
+        tester,
+        nav: _spec(
+          itemBuilder: (BuildContext context, ZSubfolderRef ref, bool selected) {
+            if (ZSubfolderSurface.maybeOf(context) ==
+                ZSubfolderSurface.selectorSheet) {
+              observed = ZcrudScope.maybeOf(context);
+            }
+            return Text(ref.label);
+          },
+        ),
+      );
+      observed = null;
+      await _open(tester);
+
+      expect(observed, isNull);
+    });
+
     testWidgets('le résolveur de `colorKey` s\'applique aux items de la feuille',
         (tester) async {
       // `ZcrudScope` est un `InheritedWidget` NU : `showModalBottomSheet` ne
@@ -922,42 +1000,44 @@ void main() {
       expect(find.byKey(ZSubfolderSelectorBar.triggerChromeKey), findsOneWidget);
     });
 
-    test('🔴 STRUCTURE : chaque paramètre de `ZcrudScope` est propagé', () {
-      // Garde de CONSTRUCTION, pas de rendu : la re-pose recopie champ par
-      // champ (aucun `copyWith` n'existe). Un champ AJOUTÉ à `ZcrudScope` et
-      // oublié dans la re-pose serait perdu SILENCIEUSEMENT dans la feuille.
-      // On lit donc la liste RÉELLE des paramètres dans la source de
-      // `zcrud_core` — jamais une liste recopiée ici, qui dériverait avec elle.
-      // Source DÉPOUILLÉE des commentaires : une dartdoc peut légitimement
-      // documenter CHAQUE paramètre re-posé (patron per-param `///`) sans que
-      // sa prose (parenthèses/points d'un exemple, `this.x` cité en contre-
-      // exemple) ne fausse l'extraction positionnelle ci-dessous.
-      final String src =
-          strippedCrossPackage('packages/zcrud_core/lib/src/presentation/zcrud_scope.dart');
-      final int start = src.indexOf('const ZcrudScope({');
-      expect(start, greaterThan(-1));
-      final int end = src.indexOf('});', start);
-      final List<String> params = RegExp(r'this\.(\w+)')
-          .allMatches(src.substring(start, end))
-          .map((Match m) => m.group(1)!)
-          .toList();
-      // Le compteur DOIT pouvoir varier : un ensemble à un seul élément serait
-      // vert sur tout défaut.
-      expect(params.length, greaterThan(5));
-
+    test('🔴 STRUCTURE : les DEUX re-poses délèguent à `copyWith`', () {
+      // La complétude de `copyWith` est gardée dans zcrud_core. Ici, la
+      // propriété à tenir est que chacun des deux sites satellite emploie ce
+      // mécanisme exhaustif au lieu de rouvrir une liste manuelle susceptible
+      // d'oublier le seam suivant.
       final String bar =
           strippedOf('lib/src/presentation/z_subfolder_selector_bar.dart');
       final int from = bar.indexOf('Widget _rePoseScope(');
       expect(from, greaterThan(-1));
       final String body = bar.substring(from, bar.indexOf('\n  }', from));
-      for (final String p in params) {
-        expect(
-          body.contains('$p: scope.$p'),
-          isTrue,
-          reason: '🔴 `$p` n\'est PAS re-posé dans la feuille : le seam de '
-              'l\'hôte disparaîtrait sous l\'Overlay',
-        );
-      }
+      expect(
+        body.contains('return scope.copyWith(child: child);'),
+        isTrue,
+        reason: '🔴 la feuille n\'emploie plus `scope.copyWith` : une '
+            'énumération manuelle peut perdre silencieusement un seam hôte.',
+      );
+
+      final String card =
+          strippedOf('lib/src/presentation/z_default_flashcard_card.dart');
+      final int cardFrom = card.indexOf('final ZcrudScope? scope =');
+      expect(cardFrom, greaterThan(-1));
+      final int cardEnd = card.indexOf('final ThemeData material', cardFrom);
+      expect(cardEnd, greaterThan(cardFrom));
+      final String cardBody = card.substring(cardFrom, cardEnd);
+      final int copyWithStart = cardBody.indexOf('return scope.copyWith(');
+      expect(copyWithStart, greaterThan(-1));
+      final int copyWithEnd = cardBody.indexOf(');', copyWithStart);
+      expect(copyWithEnd, greaterThan(copyWithStart));
+      final Set<String> overridden = RegExp(r'(\w+):')
+          .allMatches(cardBody.substring(copyWithStart, copyWithEnd))
+          .map((Match match) => match.group(1)!)
+          .toSet();
+      expect(
+        overridden,
+        <String>{'theme', 'child'},
+        reason: '🔴 la carte n\'emploie plus `scope.copyWith` avec le SEUL '
+            'thème neutralisé : une recopie manuelle peut perdre un seam hôte.',
+      );
     });
   });
 }

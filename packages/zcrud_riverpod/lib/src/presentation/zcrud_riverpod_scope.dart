@@ -3,10 +3,12 @@
 /// Équivalent de `ZcrudScope` pour l'idiome Riverpod. Le scope (a) possède un
 /// `ProviderContainer` (monté via `UncontrolledProviderScope`, équivalent
 /// d'un `ProviderScope`), (b) expose le `ZFormController` par un provider
-/// AUTO-DISPOSE (`ref.onDispose(controller.dispose)`), puis (c) enveloppe
-/// l'enfant dans un `ZcrudScope` porteur d'un `ZRiverpodResolver`
-/// manager-backed. Le binding ne réimplémente pas la réactivité : il
-/// réutilise `ZFormController` (invariant AD-2) tel quel.
+/// AUTO-DISPOSE (`ref.onDispose(controller.dispose)`), puis (c) complète le
+/// `ZcrudScope` ambiant avec un `ZRiverpodResolver` manager-backed et l'ACL
+/// déclarée par le binding. Les autres seams hôte restent hérités ; sans scope
+/// ambiant, les défauts zéro-config du cœur s'appliquent. Le binding ne
+/// réimplémente pas la réactivité : il réutilise `ZFormController` (invariant
+/// AD-2) tel quel.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -33,6 +35,8 @@ final zFormControllerProvider = Provider.autoDispose<ZFormController>((ref) {
 });
 
 /// Scope Flutter branchant l'injection/lifecycle sur Riverpod.
+///
+/// Il dérive le [ZcrudScope] ambiant et le complète ; il ne le remplace pas.
 class ZcrudRiverpodScope extends StatefulWidget {
   /// Construit le scope.
   ///
@@ -89,11 +93,12 @@ class _ZcrudRiverpodScopeState extends State<ZcrudRiverpodScope> {
 
   @override
   Widget build(BuildContext context) => UncontrolledProviderScope(
-        container: _container,
-        child: ZcrudScope(
-          resolver: _resolver,
-          acl: widget.acl,
-          child: widget.child,
-        ),
-      );
+    container: _container,
+    child: ZcrudScope.derive(
+      context,
+      resolver: _resolver,
+      acl: widget.acl,
+      child: widget.child,
+    ),
+  );
 }

@@ -3,10 +3,12 @@
 /// Équivalent de `ZcrudScope` pour l'idiome `provider`. Il (a) monte un
 /// `ChangeNotifierProvider<ZFormController>` (dont `provider` gère le `dispose()`
 /// automatiquement au démontage), (b) expose les seams applicatifs via des
-/// providers additionnels, puis (c) enveloppe l'enfant dans un `ZcrudScope`
-/// porteur d'un `ZProviderResolver` manager-backed (construit sous les
-/// providers). Le binding ne réimplémente pas la réactivité : il réutilise
-/// `ZFormController` (invariant AD-2) tel quel.
+/// providers additionnels, puis (c) complète le `ZcrudScope` ambiant avec un
+/// `ZProviderResolver` manager-backed (construit sous les providers) et l'ACL
+/// déclarée par le binding. Les autres seams hôte restent hérités ; sans scope
+/// ambiant, les défauts zéro-config du cœur s'appliquent. Le binding ne
+/// réimplémente pas la réactivité : il réutilise `ZFormController` (invariant
+/// AD-2) tel quel.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -24,7 +26,10 @@ import 'z_provider_resolver.dart';
 /// n'oblige jamais les consommateurs de `ZcrudScope.of` à se reconstruire sans
 /// changement réel — à parité avec les autres bindings (invariants
 /// AD-15/AD-2). Le `dispose()` du `ZFormController` reste, lui, entièrement géré
-/// par `provider` (via `ChangeNotifierProvider`).
+/// par `provider` (via `ChangeNotifierProvider`). Le scope manager-backed est
+/// dérivé depuis le `Builder` placé sous `MultiProvider` mais au-dessus du
+/// nouveau `ZcrudScope` : il complète donc le scope hôte sans jamais se dériver
+/// de lui-même.
 class ZcrudProviderScope extends StatefulWidget {
   /// Construit le scope.
   ///
@@ -70,30 +75,30 @@ class _ZcrudProviderScopeState extends State<ZcrudProviderScope> {
 
   @override
   Widget build(BuildContext context) => MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ZFormController>(
-            // `lazy: false` : le controller est créé (et donc disposé par
-            // `provider`) même s'il n'est jamais lu — un scope de formulaire
-            // possède son controller dès le montage (pas de création paresseuse).
-            lazy: false,
-            create: (_) =>
-                widget.createController?.call() ?? ZFormController(),
-          ),
-          ...widget.providers,
-        ],
-        // `Builder` : obtient un context SOUS les providers pour que
-        // `ZProviderResolver` (context.read) les voie. Le context du `Builder`
-        // est STABLE d'un build à l'autre ; on le (ré)attache au resolver
-        // mémoïsé sans jamais recréer ce dernier (identité stable).
-        child: Builder(
-          builder: (inner) {
-            _resolver.attach(inner);
-            return ZcrudScope(
-              resolver: _resolver,
-              acl: widget.acl,
-              child: widget.child,
-            );
-          },
-        ),
-      );
+    providers: [
+      ChangeNotifierProvider<ZFormController>(
+        // `lazy: false` : le controller est créé (et donc disposé par
+        // `provider`) même s'il n'est jamais lu — un scope de formulaire
+        // possède son controller dès le montage (pas de création paresseuse).
+        lazy: false,
+        create: (_) => widget.createController?.call() ?? ZFormController(),
+      ),
+      ...widget.providers,
+    ],
+    // `Builder` : obtient un context SOUS les providers pour que
+    // `ZProviderResolver` (context.read) les voie. Le context du `Builder`
+    // est STABLE d'un build à l'autre ; on le (ré)attache au resolver
+    // mémoïsé sans jamais recréer ce dernier (identité stable).
+    child: Builder(
+      builder: (inner) {
+        _resolver.attach(inner);
+        return ZcrudScope.derive(
+          inner,
+          resolver: _resolver,
+          acl: widget.acl,
+          child: widget.child,
+        );
+      },
+    ),
+  );
 }

@@ -30,6 +30,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:zcrud_core/zcrud_core.dart' show ZForegroundOverride;
 import 'package:zcrud_menu/zcrud_menu.dart';
 
 import 'z_readable_tint.dart';
@@ -515,10 +516,14 @@ class _ZItemActionGridTile extends StatelessWidget {
       ZItemActionState.absent || null => null,
     };
     if (tint != null) {
-      tile = IconTheme.merge(
-        data: IconThemeData(color: tint),
-        child: tile,
-      );
+      // `ZForegroundOverride`, jamais `IconTheme.merge` : ce dernier n'atteint
+      // QUE le contenu qui HÉRITE. Un slot d'hôte stylé depuis
+      // `Theme.of(context).textTheme.*` (rôles `inherit: false`) garderait la
+      // couleur ambiante et resterait illisible — le défaut même que la teinte
+      // d'état prétend corriger. La primitive réécrit AUSSI
+      // `ThemeData.textTheme`/`iconTheme`, donc elle atteint le slot libre.
+      // Garde inter-paquets : `z_foreground_merge_source_guard_test` (CR-IFFD-43).
+      tile = ZForegroundOverride(color: tint, child: tile);
     }
 
     final int? count = action.count;

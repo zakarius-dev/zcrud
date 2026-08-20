@@ -527,61 +527,14 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
 
   /// Re-pose le [ZcrudScope] ambiant sous l'`Overlay`.
   ///
-  /// Recopie **champ par champ** : `ZcrudScope` est un `InheritedWidget` nu
-  /// (pas un `InheritedTheme`), il n'est donc pas capturé par
-  /// `showModalBottomSheet`, et il n'expose pas de `copyWith`. Un champ ajouté à
-  /// `ZcrudScope` et oublié ici serait perdu dans la feuille : c'est
-  /// exactement ce que garde `cr_iffd41_subfolder_sheet_test.dart`
-  /// (« tout paramètre de ZcrudScope est propagé »), qui lit la liste réelle
-  /// des paramètres dans la source de `zcrud_core`.
+  /// `ZcrudScope` est un `InheritedWidget` nu (pas un `InheritedTheme`) : la
+  /// feuille ne le capture pas. La re-pose passe par [ZcrudScope.copyWith]
+  /// plutôt que par une énumération manuelle : tout seam ajouté demain au
+  /// scope reste ainsi hérité par construction, sans pouvoir disparaître sous
+  /// l'`Overlay` parce qu'un site satellite aurait oublié de le recopier.
   Widget _rePoseScope(ZcrudScope? scope, Widget child) {
     if (scope == null) return child;
-    return ZcrudScope(
-      resolver: scope.resolver,
-      acl: scope.acl,
-      labels: scope.labels,
-      theme: scope.theme,
-      widgetRegistry: scope.widgetRegistry,
-      relationSourceRegistry: scope.relationSourceRegistry,
-      choicesSourceRegistry: scope.choicesSourceRegistry,
-      relationCrudRegistry: scope.relationCrudRegistry,
-      filePicker: scope.filePicker,
-      cloudStorage: scope.cloudStorage,
-      // v0.64.0 : le port de RÉSOLUTION des références de fichiers. Sans cette
-      // re-pose, un champ fichier monté dans la feuille afficherait ses valeurs
-      // persistées comme VIDES — le défaut même que ce port ferme. Ajouté sur
-      // signalement de la garde de structure de `cr_iffd41_subfolder_sheet_test`,
-      // qui lit la liste RÉELLE des paramètres dans la source de `zcrud_core`.
-      appFileResolver: scope.appFileResolver,
-      // v0.66.0 : port de rendu riche (sous-titres d'étape en Markdown). Même
-      // motif que `appFileResolver` ci-dessus — signalé par la MÊME garde de
-      // structure, qui a donc mordu deux fois de suite sur deux ports
-      // différents. Elle lit la liste réelle des paramètres dans la source de
-      // `zcrud_core` : tout port ajouté sans être re-posé ici la fait rougir.
-      richTextRenderer: scope.richTextRenderer,
-      // v0.69.0 : port de formatage des dates. TROISIÈME port signalé par cette
-      // même garde en trois jours (`appFileResolver`, `richTextRenderer`, puis
-      // celui-ci). Le motif est clair : tout port ajouté à `ZcrudScope` doit
-      // être re-posé ici, et c'est la garde — pas la vigilance — qui le tient.
-      dateDisplayFormatter: scope.dateDisplayFormatter,
-      // v1.8.0 puis v2.1.0 : les deux canaux de seams déclaratifs — celui des
-      // SOUS-LISTES, puis celui du RENDU DE CHOIX. QUATRIÈME et CINQUIÈME ports
-      // signalés par cette même garde. Le motif ne varie pas : un canal ajouté
-      // au scope et non re-posé ici disparaîtrait sous l'Overlay, et l'hôte
-      // verrait son rendu déclaré s'évanouir dans la feuille — sans rien qui
-      // l'annonce. C'est la garde, jamais la vigilance, qui tient cette liste.
-      subListSeamRegistry: scope.subListSeamRegistry,
-      selectChoiceBuilderRegistry: scope.selectChoiceBuilderRegistry,
-      listRenderer: scope.listRenderer,
-      reorderRenderer: scope.reorderRenderer,
-      dropRegionRenderer: scope.dropRegionRenderer,
-      selectPresenter: scope.selectPresenter,
-      iconResolver: scope.iconResolver,
-      colorPicker: scope.colorPicker,
-      colorKeyResolver: scope.colorKeyResolver,
-      gradientResolver: scope.gradientResolver,
-      child: child,
-    );
+    return scope.copyWith(child: child);
   }
 
   /// Contenu de la feuille : titre (point 4) + racine en ITEM (point 7) + la

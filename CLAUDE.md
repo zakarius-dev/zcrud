@@ -292,6 +292,20 @@ substitué `ZUnsupportedOperationFailure`). ⚠️ Action **owner** requise : d�
 
 ⚠️ **`melos run test` HANGE** — ne pas compter dessus : lancer package par package.
 
+🔴 **Rejouer les suites de TOUS les paquets avant un tag — pas seulement ceux qu'on a touchés.**
+Mesuré **deux fois le 2026-08-18** : des **gardes INTER-PAQUETS** vivent ailleurs que dans le code
+qu'elles surveillent. `zcrud_study` porte une garde qui lit la liste réelle des paramètres de
+`ZcrudScope` dans la source de `zcrud_core` ; `zcrud_core` porte une garde qui **scanne les sources
+de tous les autres paquets** et interdit un `IconTheme.merge` coloré hors de `ZForegroundOverride`.
+Les deux ont mordu sur des défauts **livrés**, parce que la vérif ne couvrait que les paquets
+modifiés. `melos run analyze` et `melos run verify` verts ne disent **rien** d'un test rouge.
+Boucle de secours (`melos run test` pend) :
+```bash
+cd packages; for p in */; do p=${p%/}; [ -d "$p/test" ] || continue; (cd "$p" && flutter test --no-pub -r compact 2>&1 | tail -1); done
+```
+⚠️ `zcrud_generator` échoue de façon **environnementale** (`Unsupported operation:
+Isolate.packageConfig`, via `build_test`) : rouge attendu, à qualifier et non à imputer au code.
+
 ---
 
 ## Architecture

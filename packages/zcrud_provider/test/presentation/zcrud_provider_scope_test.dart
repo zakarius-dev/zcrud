@@ -13,6 +13,23 @@ class _DemoSeam {
   final String label;
 }
 
+class _HostResolver extends ZDependencyResolver {
+  const _HostResolver();
+
+  @override
+  T resolve<T>() => throw StateError('resolver hôte non destiné à résoudre');
+}
+
+class _MarkerAcl implements ZAcl {
+  const _MarkerAcl(this.allowed);
+
+  final bool allowed;
+
+  @override
+  bool can(ZCrudAction action, {ZEntity? target, String? collectionId}) =>
+      allowed;
+}
+
 /// Controller espion pour prouver le dispose géré par `provider`.
 class _SpyController extends ZFormController {
   bool disposed = false;
@@ -24,15 +41,91 @@ class _SpyController extends ZFormController {
 }
 
 void main() {
+  testWidgets(
+    'le Builder complète l’ambiant sans se dériver du scope qu’il crée',
+    (tester) async {
+      const hostResolver = _HostResolver();
+      const hostAcl = _MarkerAcl(true);
+      const bindingAcl = _MarkerAcl(false);
+      const hostTheme = ZcrudTheme(gapS: 17);
+      final hostWidgetRegistry = ZWidgetRegistry();
+      final hostSubListRegistry = ZSubListSeamRegistry();
+      late ZcrudScope hostScope;
+      late ZcrudScope boundScope;
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: ZcrudScope(
+            resolver: hostResolver,
+            acl: hostAcl,
+            theme: hostTheme,
+            widgetRegistry: hostWidgetRegistry,
+            subListSeamRegistry: hostSubListRegistry,
+            child: Builder(
+              builder: (hostContext) {
+                hostScope = ZcrudScope.of(hostContext);
+                return ZcrudProviderScope(
+                  acl: bindingAcl,
+                  child: Builder(
+                    builder: (boundContext) {
+                      boundScope = ZcrudScope.of(boundContext);
+                      return const SizedBox();
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(ZcrudScope), findsNWidgets(2));
+      expect(boundScope, isNot(same(hostScope)));
+      expect(boundScope.theme, same(hostTheme));
+      expect(boundScope.widgetRegistry, same(hostWidgetRegistry));
+      expect(boundScope.subListSeamRegistry, same(hostSubListRegistry));
+      expect(boundScope.resolver, isA<ZProviderResolver>());
+      expect(boundScope.resolver, isNot(same(hostResolver)));
+      expect(boundScope.acl, same(bindingAcl));
+      expect(boundScope.acl, isNot(same(hostAcl)));
+    },
+  );
+
+  testWidgets('sans scope ambiant, conserve les replis zéro-config', (
+    tester,
+  ) async {
+    late ZcrudScope boundScope;
+
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: ZcrudProviderScope(
+          child: Builder(
+            builder: (context) {
+              boundScope = ZcrudScope.of(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(boundScope.theme, isNull);
+    expect(boundScope.widgetRegistry, isNull);
+    expect(boundScope.subListSeamRegistry, isNull);
+    expect(boundScope.resolver, isA<ZProviderResolver>());
+    expect(boundScope.acl, isA<ZDenyAllAcl>());
+    expect(boundScope.acl.can(ZCrudAction.create), isFalse);
+  });
+
   testWidgets('résout un seam via context.read (AC5)', (tester) async {
     late _DemoSeam resolved;
     await tester.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
         child: ZcrudProviderScope(
-          providers: [
-            Provider<_DemoSeam>.value(value: const _DemoSeam('ok')),
-          ],
+          providers: [Provider<_DemoSeam>.value(value: const _DemoSeam('ok'))],
           child: Builder(
             builder: (context) {
               resolved = ZcrudScope.of(context).resolver.resolve<_DemoSeam>();
@@ -45,8 +138,9 @@ void main() {
     expect(resolved.label, 'ok');
   });
 
-  testWidgets('resolver lève ZScopeError pour un type sans provider (AC5)',
-      (tester) async {
+  testWidgets('resolver lève ZScopeError pour un type sans provider (AC5)', (
+    tester,
+  ) async {
     late ZDependencyResolver resolver;
     await tester.pumpWidget(
       Directionality(
@@ -64,27 +158,33 @@ void main() {
     expect(() => resolver.resolve<_DemoSeam>(), throwsA(isA<ZScopeError>()));
   });
 
-  testWidgets('provider dispose le ZFormController au démontage (AC5, pas de fuite)',
-      (tester) async {
-    final spy = _SpyController();
-    await tester.pumpWidget(
-      Directionality(
-        textDirection: TextDirection.ltr,
-        child: ZcrudProviderScope(
-          createController: () => spy,
-          child: const SizedBox(),
+  testWidgets(
+    'provider dispose le ZFormController au démontage (AC5, pas de fuite)',
+    (tester) async {
+      final spy = _SpyController();
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: ZcrudProviderScope(
+            createController: () => spy,
+            child: const SizedBox(),
+          ),
         ),
-      ),
-    );
-    expect(spy.disposed, isFalse);
+      );
+      expect(spy.disposed, isFalse);
 
-    await tester.pumpWidget(const SizedBox());
-    expect(spy.disposed, isTrue,
-        reason: 'ChangeNotifierProvider dispose le controller au démontage');
-  });
+      await tester.pumpWidget(const SizedBox());
+      expect(
+        spy.disposed,
+        isTrue,
+        reason: 'ChangeNotifierProvider dispose le controller au démontage',
+      );
+    },
+  );
 
-  testWidgets('le ZFormController exposé est résoluble (context.read) (AC5)',
-      (tester) async {
+  testWidgets('le ZFormController exposé est résoluble (context.read) (AC5)', (
+    tester,
+  ) async {
     late ZFormController resolved;
     await tester.pumpWidget(
       Directionality(
@@ -92,8 +192,9 @@ void main() {
         child: ZcrudProviderScope(
           child: Builder(
             builder: (context) {
-              resolved =
-                  ZcrudScope.of(context).resolver.resolve<ZFormController>();
+              resolved = ZcrudScope.of(
+                context,
+              ).resolver.resolve<ZFormController>();
               return const SizedBox();
             },
           ),

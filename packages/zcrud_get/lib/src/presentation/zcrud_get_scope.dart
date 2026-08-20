@@ -2,9 +2,11 @@
 ///
 /// Équivalent de `ZcrudScope` pour l'idiome GetX/get_it. Il (a) possède un
 /// périmètre `get_it` isolé, (b) y crée/scope/dispose le `ZFormController` selon
-/// le lifecycle du manager, puis (c) enveloppe l'enfant dans un `ZcrudScope`
-/// porteur d'un `ZGetResolver` manager-backed — de sorte que les widgets du cœur
-/// continuent d'appeler `ZcrudScope.of(context)` sans jamais connaître GetX.
+/// le lifecycle du manager, puis (c) complète le `ZcrudScope` ambiant avec un
+/// `ZGetResolver` manager-backed et l'ACL déclarée par le binding. Les autres
+/// seams hôte restent hérités ; sans scope ambiant, les défauts zéro-config du
+/// cœur s'appliquent. Les widgets du cœur continuent ainsi d'appeler
+/// `ZcrudScope.of(context)` sans jamais connaître GetX.
 /// Le binding NE réimplémente PAS la réactivité : il réutilise `ZFormController`
 /// (invariant AD-2) tel quel.
 library;
@@ -19,8 +21,9 @@ import 'z_get_resolver.dart';
 /// Scope Flutter branchant l'injection/lifecycle sur `get_it`.
 ///
 /// Monte (ou réutilise) un [GetIt], y enregistre un [ZFormController] possédé
-/// par le scope, expose un [ZGetResolver] via un [ZcrudScope], puis désenregistre
-/// et `dispose()` le controller au démontage (aucune fuite — prouvé par test).
+/// par le scope, expose un [ZGetResolver] via un [ZcrudScope] dérivé de
+/// l'ambiant (qu'il complète sans le remplacer), puis désenregistre et
+/// `dispose()` le controller au démontage (aucune fuite — prouvé par test).
 /// Option [registerInGetX] : enregistre AUSSI le controller dans le conteneur
 /// réactif GetX (`Get.put`/`Get.delete`), pour une app GetX qui le résout via
 /// `Get.find<ZFormController>()`.
@@ -135,9 +138,10 @@ class _ZcrudGetScopeState extends State<ZcrudGetScope> {
   }
 
   @override
-  Widget build(BuildContext context) => ZcrudScope(
-        resolver: _resolver,
-        acl: widget.acl,
-        child: widget.child,
-      );
+  Widget build(BuildContext context) => ZcrudScope.derive(
+    context,
+    resolver: _resolver,
+    acl: widget.acl,
+    child: widget.child,
+  );
 }

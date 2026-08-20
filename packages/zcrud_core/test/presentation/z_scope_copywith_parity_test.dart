@@ -138,15 +138,17 @@ void main() {
           'surcharge par écran ne saurait pas surcharger ce(s) seam(s).',
     );
 
-    final Set<String> notForwarded = declared
-        .where((String s) => !RegExp('$s:\\s').hasMatch(body))
-        .toSet();
+    final Set<String> notForwarded = declared.where((String s) {
+      final String escaped = RegExp.escape(s);
+      return !RegExp('\\b$escaped\\s*:\\s*$escaped\\b').hasMatch(body);
+    }).toSet();
     expect(
       notForwarded,
       isEmpty,
       reason: '🔴 ${notForwarded.join(', ')} accepté(s) par `derive` mais '
-          'JAMAIS transmis à `copyWith` (argument nommé absent du corps) : la '
-          'surcharge passée par l\'hôte serait silencieusement ignorée.',
+          'JAMAIS transmis à `copyWith` sous la forme `<seam>: <seam>` : la '
+          'surcharge passée par l\'hôte serait silencieusement ignorée ou '
+          'remplacée par une autre valeur.',
     );
   });
 }

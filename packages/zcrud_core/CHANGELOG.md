@@ -3,6 +3,15 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.1.0 — 2026-08-18
+
+### Renforcé — la parité `copyWith` / `derive` exige le relais exact
+
+La garde de parité dérivait déjà les trois listes de paramètres de la **source**.
+Elle exige désormais que `derive` **relaie** effectivement chaque seam, et pas
+seulement qu'il l'accepte en signature : un paramètre accepté puis ignoré aurait
+rouvert, un étage plus haut, toute la classe de défauts de perte de seam.
+
 ## 2.5.0 — 2026-08-18
 
 ### Ajouté

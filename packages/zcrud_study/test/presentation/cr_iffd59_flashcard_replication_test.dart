@@ -29,7 +29,17 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
+import 'package:zcrud_core/zcrud_core.dart'
+    show
+        ZChoicesSourceRegistry,
+        ZRelationCrudRegistry,
+        ZRelationSourceRegistry,
+        ZSelectChoiceBuilderRegistry,
+        ZSubListSeamRegistry,
+        ZWidgetRegistry,
+        ZcrudLabels,
+        ZcrudScope,
+        ZcrudTheme;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_study/zcrud_study.dart';
 
@@ -325,6 +335,78 @@ void main() {
                   'la neutralisation (l\'énoncé n\'est pas un champ).');
         }
       }
+    });
+
+    testWidgets('la re-pose neutralise le thème SEUL et garde les seams par '
+        'IDENTITÉ', (tester) async {
+      final ZcrudTheme hostTheme = const ZcrudTheme().copyWith(
+        gapM: 37,
+        fieldBorderColor: Colors.red,
+        fieldPadding: const EdgeInsetsDirectional.all(23),
+      );
+      final ZcrudLabels labels = ZcrudLabels(<String, String>{'probe': 'hôte'});
+      final ZWidgetRegistry widgetRegistry = ZWidgetRegistry();
+      final ZSubListSeamRegistry subListSeamRegistry =
+          ZSubListSeamRegistry();
+      final ZSelectChoiceBuilderRegistry selectChoiceBuilderRegistry =
+          ZSelectChoiceBuilderRegistry();
+      final ZRelationSourceRegistry relationSourceRegistry =
+          ZRelationSourceRegistry();
+      final ZChoicesSourceRegistry choicesSourceRegistry =
+          ZChoicesSourceRegistry();
+      final ZRelationCrudRegistry relationCrudRegistry =
+          ZRelationCrudRegistry();
+
+      await tester.pumpWidget(
+        _host(
+          ZcrudScope(
+            labels: labels,
+            theme: hostTheme,
+            widgetRegistry: widgetRegistry,
+            subListSeamRegistry: subListSeamRegistry,
+            relationSourceRegistry: relationSourceRegistry,
+            choicesSourceRegistry: choicesSourceRegistry,
+            selectChoiceBuilderRegistry: selectChoiceBuilderRegistry,
+            relationCrudRegistry: relationCrudRegistry,
+            child: ZDefaultFlashcardCard(card: _card(question: 'Scope')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final BuildContext contentContext =
+          tester.element(find.byType(ZFlashcardMarkdownContent));
+      final ZcrudScope actual = ZcrudScope.of(contentContext);
+      expect(actual.theme!.fieldBorderColor,
+          ZFlashcardCardReference.neutralizedFieldBorder);
+      expect(actual.theme!.fieldPadding, EdgeInsetsDirectional.zero);
+      expect(actual.theme, isNot(same(hostTheme)));
+      expect(actual.theme!.gapM, hostTheme.gapM,
+          reason: 'la neutralisation ne change aucun autre token du thème');
+      expect(actual.labels, same(labels));
+      expect(actual.widgetRegistry, same(widgetRegistry));
+      expect(actual.subListSeamRegistry, same(subListSeamRegistry));
+      expect(actual.relationSourceRegistry, same(relationSourceRegistry));
+      expect(actual.choicesSourceRegistry, same(choicesSourceRegistry));
+      expect(actual.selectChoiceBuilderRegistry,
+          same(selectChoiceBuilderRegistry));
+      expect(actual.relationCrudRegistry, same(relationCrudRegistry));
+    });
+
+    testWidgets('sans scope ambiant, le lecteur reste sur la voie `Theme`',
+        (tester) async {
+      await tester.pumpWidget(
+        _host(ZDefaultFlashcardCard(card: _card(question: 'Sans scope'))),
+      );
+      await tester.pumpAndSettle();
+
+      final BuildContext contentContext =
+          tester.element(find.byType(ZFlashcardMarkdownContent));
+      expect(ZcrudScope.maybeOf(contentContext), isNull);
+      final ZcrudTheme actual = ZcrudTheme.of(contentContext);
+      expect(actual.fieldBorderColor,
+          ZFlashcardCardReference.neutralizedFieldBorder);
+      expect(actual.fieldPadding, EdgeInsetsDirectional.zero);
     });
 
     testWidgets('questionBuilder INJECTÉ : il REMPLACE le rendu par défaut '

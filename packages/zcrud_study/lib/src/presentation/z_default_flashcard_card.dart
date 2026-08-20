@@ -995,11 +995,12 @@ class ZDefaultFlashcardCard extends StatelessWidget {
 /// - **graisse/teinte** : passées par `DefaultTextStyle.merge` — Quill les
 ///   hérite (seuls `fontSize`/`height`/`decoration` sont forcés par sa base).
 ///
-/// La ré-injection du thème copie le [ZcrudScope] parent seam par seam quand
-/// il existe (le lecteur continue de voir les coutures de l'hôte), et passe
-/// par une extension de `Theme` sinon — dans les DEUX cas, seule la paire
-/// `fieldBorderColor`/`fieldPadding` change, pour le SEUL sous-arbre du
-/// lecteur.
+/// Quand un [ZcrudScope] parent existe, la ré-injection passe par
+/// [ZcrudScope.copyWith] : l'ancienne copie manuelle pouvait oublier un seam
+/// ajouté au cœur et faire disparaître silencieusement une personnalisation de
+/// l'hôte. Sans scope, une extension de `Theme` conserve le contre-chemin
+/// historique. Dans les DEUX cas, seule la paire
+/// `fieldBorderColor`/`fieldPadding` change, pour le SEUL sous-arbre du lecteur.
 class _ZFlashcardRichText extends StatelessWidget {
   const _ZFlashcardRichText({
     required this.content,
@@ -1058,42 +1059,8 @@ class _ZFlashcardRichText extends StatelessWidget {
 
     final ZcrudScope? scope = ZcrudScope.maybeOf(context);
     if (scope != null) {
-      // Copie seam par seam — SEUL `theme` change (neutralisation locale).
-      return ZcrudScope(
-        resolver: scope.resolver,
-        acl: scope.acl,
-        labels: scope.labels,
+      return scope.copyWith(
         theme: neutralized,
-        widgetRegistry: scope.widgetRegistry,
-        relationSourceRegistry: scope.relationSourceRegistry,
-        choicesSourceRegistry: scope.choicesSourceRegistry,
-        relationCrudRegistry: scope.relationCrudRegistry,
-        filePicker: scope.filePicker,
-        cloudStorage: scope.cloudStorage,
-        // v0.64.0 : même motif que `z_subfolder_selector_bar` — le port de
-        // résolution des références de fichiers doit survivre à la re-pose,
-        // sinon un champ fichier rendu ici perdrait ses valeurs persistées
-        // en silence.
-        appFileResolver: scope.appFileResolver,
-        // v0.66.0 : port de rendu riche, même motif que `appFileResolver`.
-        richTextRenderer: scope.richTextRenderer,
-        // v0.69.0 : port de formatage des dates, même motif.
-        dateDisplayFormatter: scope.dateDisplayFormatter,
-        // v1.8.0 puis v2.1.0 : canaux de seams des SOUS-LISTES et du RENDU DE
-        // CHOIX. Site JUMEAU de `z_subfolder_selector_bar` — la garde de
-        // structure ne lit que celui-là, donc ce défaut-ci ne serait signalé
-        // par rien. Trouvé en cherchant le jumeau plutôt qu'en attendant qu'il
-        // se manifeste.
-        subListSeamRegistry: scope.subListSeamRegistry,
-        selectChoiceBuilderRegistry: scope.selectChoiceBuilderRegistry,
-        listRenderer: scope.listRenderer,
-        reorderRenderer: scope.reorderRenderer,
-        dropRegionRenderer: scope.dropRegionRenderer,
-        selectPresenter: scope.selectPresenter,
-        iconResolver: scope.iconResolver,
-        colorPicker: scope.colorPicker,
-        colorKeyResolver: scope.colorKeyResolver,
-        gradientResolver: scope.gradientResolver,
         child: child,
       );
     }

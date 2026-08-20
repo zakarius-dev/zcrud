@@ -3,6 +3,35 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.1.0 — 2026-08-18
+
+### 🔴 Corrigé — la teinte d'état n'atteignait pas un slot d'hôte
+
+La teinte d'état livrée en 3.0.0 passait par `IconTheme.merge`, qui n'atteint
+**que le contenu qui hérite**. Un slot d'hôte stylé depuis
+`Theme.of(context).textTheme.*` (rôles `inherit: false`) gardait donc la couleur
+ambiante et **restait illisible** — le défaut même que la teinte prétend
+corriger.
+
+Remplacé par `ZForegroundOverride`, la primitive prévue, qui réécrit **aussi**
+`ThemeData.textTheme`/`iconTheme`. Trouvé par une garde **inter-paquets** de
+`zcrud_core` qui scanne les sources de tous les paquets.
+
+### Modifié — la re-pose du scope devient infaillible par construction
+
+Les deux sites qui recopiaient le `ZcrudScope` **seam par seam** sous un
+`Overlay` emploient désormais `copyWith`, qui **hérite de tout paramètre omis**.
+Le défaut ne peut plus se produire, au lieu d'être rattrapé après coup.
+
+Les commentaires du fichier recensaient **cinq** ports oubliés puis rattrapés un
+par un ; les deux derniers dataient de la veille, et le **site jumeau** portait
+les mêmes manquants sans qu'aucune garde ne le surveille.
+
+La garde de structure a été **repensée, pas supprimée** : elle vérifie désormais
+le **comportement** — huit seams survivent par **identité** dans la feuille et
+dans la carte — et couvre **les deux** sites. Elle échouerait aussi si quelqu'un
+revenait à une énumération manuelle.
+
 ## 3.0.0 — 2026-08-18
 
 ### 🔴 Corrigé — deux canaux de seams disparaissaient sous la feuille
