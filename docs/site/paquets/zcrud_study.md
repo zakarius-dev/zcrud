@@ -46,9 +46,10 @@ indépendantes, chacune dans son propre sous-arbre de rebuild.
 | Type | Rôle |
 |---|---|
 | `ZStudyToolsSectionSpec` / `ZSectionedStudyLayout` | Descripteur de section et échafaudage qui les rend comme des sous-arbres indépendants. |
-| `ZStudyFolderDetail` | Page-détail d'un dossier : onglets Matériel/Progression, navigation de sous-dossiers adaptative. |
+| `ZStudyFolderDetail` | Page-détail d'un dossier : trois onglets — Matériel, Carnet (`notebookBuilder`, fourni par l'hôte), Progression — et navigation de sous-dossiers adaptative. |
 | `ZFlashcardListView` / `ZFlashcardGenerationController` | Liste de flashcards à réordonnancement manuel, et flux de génération par IA. |
 | `ZStudySessionView` / `ZStudySessionHost` | Corps composable et détenteur du runtime de la session de révision assemblée. |
+| `ZItemActionsMenu` / `ZItemActionState` | Menu d'actions d'un élément d'étude — **grille de 3 colonnes par défaut** (`crossAxisCount`, `1` pour retrouver la colonne unique), rendu délégué au `ZMenuRenderer` du `ZMenuScope` ambiant. Une action porte son état (`absent` / `inProgress` / `present`) et un compte optionnel : la teinte signale l'existence de ce que l'action produit, le badge dit combien. |
 | `ZStudySharingAcl` / `ZStudySharingPort` | Garde d'autorisation pure du partage, et le port neutre que l'application implémente. |
 
 ## Voir aussi

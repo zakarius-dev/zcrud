@@ -45,7 +45,8 @@ class ZcrudGetScope extends StatefulWidget {
   /// scope actif « possède » l'enregistrement GetX à la fois.
   /// [createController] : fabrique du `ZFormController` possédé par ce scope
   /// (par défaut un `ZFormController()` vide). [acl] : port d'autorisation
-  /// exposé au cœur (défaut permissif). [registerController] : enregistre le
+  /// exposé au cœur (défaut **refusant** : [ZDenyAllAcl], aucun geste offert
+  /// tant qu'aucune ACL n'est déclarée). [registerController] : enregistre le
   /// controller dans le locator (défaut vrai). [registerInGetX] : bridge GetX
   /// optionnel (défaut faux — évite tout état global partagé).
   const ZcrudGetScope({

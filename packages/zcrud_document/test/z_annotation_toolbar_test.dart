@@ -15,6 +15,10 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
 /// Helper LOCAL (D6) : ratio de contraste WCAG 2.1 (luminance relative via
 /// `Color.computeLuminance`). Résultat dans `[1, 21]`.
+///
+/// Oracle INDÉPENDANT du socle : il délègue au SDK là où `zContrastRatio`
+/// linéarise lui-même. Il reste ici — et seulement ici, dans `test/` — pour
+/// que les assertions de contraste ne soient pas tautologiques.
 double wcagContrastRatio(Color a, Color b) {
   final la = a.computeLuminance();
   final lb = b.computeLuminance();
@@ -48,6 +52,99 @@ ValueKey<String> _kindKey(ZDocumentAnnotationKind kind) =>
     ValueKey<String>('$kAnnotationKindKeyPrefix${kind.name}');
 
 void main() {
+  group('🔴 ÉQUIVALENCE — le calculateur privé supprimé rendait EXACTEMENT ce '
+      'que rend le socle', () {
+    // Le fichier portait un `_wcagContrastRatio` privé bâti sur
+    // `Color.computeLuminance()` ; il a été supprimé au profit de
+    // `zContrastRatio` (zcrud_core). Cette garde est ce qui AUTORISE la
+    // suppression : sans elle, « rendu inchangé » serait une affirmation.
+    // L'oracle est `wcagContrastRatio` ci-dessus, copie mot à mot du supprimé.
+    test('bit à bit sur un échantillon couvrant les DEUX côtés du plancher',
+        () {
+      final List<Color> tints = <Color>[
+        for (int r = 0; r <= 255; r += 15)
+          for (int g = 0; g <= 255; g += 51)
+            for (int b = 0; b <= 255; b += 85) Color.fromARGB(255, r, g, b),
+        const Color(0xFFFF9800),
+        const Color(0xFFFFFF00),
+        const Color(0xFF667EEA),
+        const Color(0xFF000000),
+        const Color(0xFFFFFFFF),
+        const Color(0xFF080808),
+        const Color(0xFF0A0A0A),
+        const Color(0x80FF9800),
+      ];
+      const List<Color> surfaces = <Color>[
+        Color(0xFFFFFFFF),
+        Color(0xFFFEF7FF),
+        Color(0xFF1C1B1F),
+        Color(0xFF000000),
+      ];
+      double worstDelta = 0;
+      int compared = 0;
+      int below = 0;
+      int above = 0;
+      int floorDisagreements = 0;
+      for (final Color tint in tints) {
+        for (final Color surface in surfaces) {
+          compared++;
+          final double sdk = wcagContrastRatio(tint, surface);
+          final double core = zContrastRatio(tint, surface);
+          final double delta = (sdk - core).abs();
+          if (delta > worstDelta) worstDelta = delta;
+          if (sdk < kZNonTextMinContrast) {
+            below++;
+          } else {
+            above++;
+          }
+          for (final double floor in <double>[
+            kZNonTextMinContrast,
+            kZTextMinContrast,
+          ]) {
+            if ((sdk >= floor) != (core >= floor)) floorDisagreements++;
+          }
+        }
+      }
+      // L'échantillon DOIT couvrir les deux côtés du plancher, sinon la
+      // comparaison ne dirait rien de la décision qui en dépend.
+      expect(below, greaterThan(50),
+          reason: '🔴 ÉCHANTILLON DÉGÉNÉRÉ : rien sous le plancher');
+      expect(above, greaterThan(50),
+          reason: '🔴 ÉCHANTILLON DÉGÉNÉRÉ : rien au-dessus du plancher');
+      expect(compared, greaterThan(500));
+      expect(worstDelta, 0.0,
+          reason: '🔴 DIVERGENCE : `Color.computeLuminance()` et '
+              '`zRelativeLuminance` ne rendent plus le même chiffre '
+              '(écart max $worstDelta sur $compared couples) — la suppression '
+              'du calculateur privé changerait alors le rendu.');
+      expect(floorDisagreements, 0,
+          reason: '🔴 les deux implémentations ne classent plus les mêmes '
+              'couples du même côté du plancher');
+    });
+
+    test('la luminance relative elle-même coïncide, canal par canal', () {
+      double worst = 0;
+      int compared = 0;
+      for (int v = 0; v <= 255; v++) {
+        for (final Color c in <Color>[
+          Color.fromARGB(255, v, 0, 0),
+          Color.fromARGB(255, 0, v, 0),
+          Color.fromARGB(255, 0, 0, v),
+          Color.fromARGB(255, v, v, v),
+        ]) {
+          compared++;
+          final double d = (c.computeLuminance() - zRelativeLuminance(c)).abs();
+          if (d > worst) worst = d;
+        }
+      }
+      expect(compared, 1024);
+      expect(worst, 0.0,
+          reason: '🔴 la linéarisation sRGB du socle a divergé de celle du '
+              'SDK (écart max $worst) — dont le seuil 0.03928 et l\'exposant '
+              '2.4.');
+    });
+  });
+
   group('AC1 — sélection de kind : un bouton par constante + mapping exact', () {
     testWidgets('taper le bouton k appelle onKindSelected(k) — pour chaque k',
         (tester) async {

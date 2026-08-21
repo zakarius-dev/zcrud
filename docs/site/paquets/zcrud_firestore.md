@@ -32,9 +32,17 @@ utilitaires de migration de corpus legacy.
 - Backend ni Firestore ni Hive : implémentez directement les ports
   `ZRepository<T>`/`ZLocalStore<T>`/`ZRemoteStore<T>` de `zcrud_core` pour
   votre backend.
-- Recherche plein texte ou accent-insensible : non honorée par
-  `ZDataRequest.search` sur cet adaptateur — prévoir un champ normalisé
-  pré-calculé côté application.
+- Recherche plein texte ou accent-insensible **sur un gros parc** : Firestore
+  n'a ni `LIKE`, ni index plein-texte, ni pliage diacritique. Les trois dépôts
+  de ce paquet le **déclarent** en appliquant le mixin `ZDelegatesSearch` de
+  `zcrud_core` — la barre de recherche d'un listing du socle n'est donc pas
+  inerte : `ZListController` bascule sur son propre moteur (terme, portée de
+  colonnes, pliage, tri) le temps d'une recherche active. Le prix est une
+  **lecture non paginée** de la collection à chaque terme saisi, raisonnable
+  jusqu'à quelques milliers de lignes seulement. Au-delà, la voie honnête reste
+  un champ de recherche **normalisé pré-calculé** côté application,
+  interrogeable par égalité ou par préfixe : le dépôt sert alors la recherche
+  et n'applique pas le mixin.
 
 ## Types clés
 

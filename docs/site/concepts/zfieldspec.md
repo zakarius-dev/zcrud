@@ -187,9 +187,18 @@ const coauthorField = ZFieldSpec(
 );
 ```
 
-Côté widget, chaque item est édité par un sous-formulaire imbriqué — un
-`ZFormController` **propre à l'item**, qui réutilise le même dispatcher de champ que le
-formulaire racine. La granularité de rebuild reste imbriquée : taper dans le champ d'un
+Côté widget, `ZSubListConfig.displayMode` décide de la présentation, et son défaut est
+`ZSubListDisplayMode.compact` : une **table de résumé** (une ligne par item, une colonne
+par valeur de `summaryFields`) doublée d'un **formulaire d'édition par item**, chaque
+geste filtré par l'`ZAcl`. Deux autres modes se déclarent en une ligne :
+`ZSubListDisplayMode.inline` déballe tous les sous-champs de chaque item en
+sous-formulaires imbriqués, `ZSubListDisplayMode.tags` rend une rangée de puces.
+`ZSubItemFormPresentation` choisit l'enveloppe du formulaire d'item — `dialog`
+(défaut), `sheet` ou `page`.
+
+Quel que soit le mode, chaque item est édité par un `ZFormController` **propre à
+l'item**, qui réutilise le même dispatcher de champ que le formulaire racine. La
+granularité de rebuild reste imbriquée : taper dans le champ d'un
 item ne reconstruit que ce champ, jamais le conteneur ni les items voisins (même
 discipline que l'invariant [AD-2](invariants.md#ad-2) au niveau racine). Un modèle
 `@ZcrudModel` imbriqué (`List<Author> coauthors`, `Author? author`) obtient

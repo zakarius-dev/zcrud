@@ -33,6 +33,7 @@ confinées à l'implémentation.
 | `registerZMediaFieldWidgets` | Enrôle les widgets média riches dans un `ZWidgetRegistry`. |
 | `ZMediaFieldWidget` | Widget riche : drop-zone, ouverture, vignette vidéo. |
 | `ZMediaCropOptions` | Options neutres de recadrage post-pick, désactivées par défaut. |
+| `ZImagePickSeam` / `ZFilePickSeam` / `ZDocumentScanSeam` / `ZImageCropSeam` / `ZVideoThumbnailSeam` / `ZFileOpenSeam` | Les six seams d'acquisition **injectables** derrière `ZMediaFilePicker` : aucune signature ne porte de type plateforme (`XFile`, `PlatformFile`, `File`…), seulement des `AppFile`, chemins et `Uint8List`. Un test injecte un fake déterministe au lieu du plugin réel. Chacun garantit un **résultat défini** — liste vide, `null` ou `false` — sur annulation, permission refusée ou plugin défaillant, jamais une exception traversante ([AD-10](../concepts/invariants.md#ad-10)). |
 
 ## Voir aussi
 

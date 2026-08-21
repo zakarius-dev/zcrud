@@ -32,7 +32,7 @@ sont interchangeables.
 | Type | Rôle |
 |---|---|
 | `ZPackageReorderRenderer` | Seul point d'entrée du paquet, injecté via `ZcrudScope.reorderRenderer`. |
-| `kDefaultMoveBeforeLabel` / `kDefaultMoveAfterLabel` | Libellés localisés de repli des actions sémantiques de déplacement. |
+| `kDefaultMoveBeforeLabel` / `kDefaultMoveAfterLabel` | Repli des libellés des actions sémantiques de déplacement quand l'hôte n'en fournit pas — deux littéraux **français** (`'Déplacer avant'` / `'Déplacer après'`), pas des clés résolues par la l10n. Une application non francophone déclare les siens plutôt que de subir ce repli. |
 
 ## Voir aussi
 

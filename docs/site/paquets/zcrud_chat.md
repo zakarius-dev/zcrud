@@ -46,7 +46,7 @@ Syncfusion, ni gestionnaire d'état).
 | `ZChatController` | Le contrôleur de conversation — tranches réactives granulaires, jeton par requête, point d'entrée unique des verbes (`runAction`). |
 | `ZChatRenderer` / `ZChatRendererScope` | Port de rendu neutre et sa chaîne de résolution, sur le patron de `ZListRenderer` (invariant [AD-8](../concepts/invariants.md#ad-8)). |
 | `ZChatSettingsSheet` / `ZChatSettingsController` | Feuille de réglages composable et l'état de génération qu'elle rend, sans réinventer d'enum. |
-| `ZChatAttachmentController` / `ZChatExportService` | Cycle de vie d'une pièce jointe en attente ; export agrégé d'une conversation en quatre formats. |
+| `ZChatAttachmentController` / `ZChatExportService` | Cycle de vie d'une pièce jointe en attente ; export agrégé d'une conversation en cinq formats (`markdown`, `plainText`, `html`, `references`, `pdf` — ce dernier mis en page par la couture `ZChatPdfComposer`). |
 | `ZDefaultChatComposer` / `ZChatConversationList` | Assemblages par défaut, opt-in et remplaçables pièce par pièce. |
 
 ## Voir aussi

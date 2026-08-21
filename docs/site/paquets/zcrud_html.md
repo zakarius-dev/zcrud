@@ -32,9 +32,14 @@ HTML — aucun intermédiaire Delta.
 
 | Type | Rôle |
 |---|---|
-| `ZHtmlEditorField` | Champ d'édition HTML WYSIWYG à controller WebView isolé (invariant [AD-2](../concepts/invariants.md#ad-2)). |
 | `ZHtmlView` | Rendu de lecture HTML natif, défensif sur un contenu malformé. |
 | `registerZHtmlFields` | Enregistre les `kind` `html`/`inlineHtml` dans un `ZWidgetRegistry` injecté. |
+
+Ce sont les **deux seuls** symboles du barrel. Le champ d'édition WYSIWYG à controller
+WebView isolé (invariant [AD-2](../concepts/invariants.md#ad-2)) reste une
+implémentation interne : on ne le construit pas soi-même, on l'atteint en enregistrant
+les `kind` `html` (pleine hauteur) et `inlineHtml` (compact) par
+`registerZHtmlFields`.
 
 ## Voir aussi
 

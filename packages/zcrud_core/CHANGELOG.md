@@ -3,6 +3,20 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.3.1 — 2026-08-21
+
+### Gardes — l'unicité du calculateur de contraste couvre une seconde forme
+
+La garde attrapait une réimplémentation portant les **coefficients WCAG
+littéraux**. Elle attrape désormais aussi un calculateur qui **délègue la
+luminance au SDK** — forme qui n'écrit aucun coefficient et lui échappait donc
+entièrement. Les deux motifs sont **dérivés de la source**, jamais figés dans le
+test.
+
+La conjonction est délibérée : mesurer une brillance reste légitime ; c'est
+l'association avec le décalage du rapport de contraste qui trahit une
+réimplémentation.
+
 ## 3.3.0 — 2026-08-21
 
 ### Ajouté — `ZColorCycle`, une animation de progression réutilisable

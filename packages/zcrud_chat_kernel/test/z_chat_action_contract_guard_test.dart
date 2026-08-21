@@ -55,6 +55,31 @@ List<String> _effectMembers() {
   return members;
 }
 
+/// La **DÉCLARATION** d'un constructeur nommé homonyme d'un membre d'effet.
+///
+/// 🔴 **Définition UNIQUE, partagée par les DEUX sens de la garde.** Une
+/// déclaration comme `const ZChatArtifactAction.regenerate({` porte le nom
+/// d'un verbe **sans l'invoquer**. Les deux tests de G-U1 la rencontrent, et
+/// elle les trompe en sens INVERSE :
+///   * « un seul site d'appel » la compterait pour un **second site d'appel**
+///     inexistant — un faux ROUGE, bruyant donc corrigible ;
+///   * « aucun verbe mort » la compterait pour un **aiguillage** — un faux
+///     VERT, que rien ne signale.
+///
+/// Les avoir écrites séparément aurait laissé les deux sens diverger : c'est
+/// exactement ce qui s'est produit, le premier ayant été corrigé seul.
+///
+/// Les trois traits EXIGÉS sont ceux d'une déclaration, et d'elle seule :
+/// début de ligne (éventuellement précédé de `const`/`factory`), récepteur
+/// commençant par une **MAJUSCULE** (donc un TYPE), et parenthèse
+/// **immédiate**. Un appel réel n'en réunit jamais les trois : son récepteur
+/// est une variable (`executor.regenerate(`, `aware.regenerateWithSettings(`,
+/// `widget.executor.regenerate(`), donc en minuscule ; et un tear-off n'a pas
+/// de parenthèse. Rien de ce que la garde protégeait n'est donc relâché.
+RegExp _namedCtorDecl(String alternation) => RegExp(
+      r'^\s*(?:const\s+|factory\s+)?[A-Z]\w*\.(?:' + alternation + r')\s*\(',
+    );
+
 /// Toutes les occurrences de `.<membre>` en position de RÉCEPTEUR (appel ou
 /// tear-off) dans `packages/*/lib`, hors commentaires, par fichier.
 ///
@@ -91,9 +116,7 @@ List<String> _effectMembers() {
 Map<String, List<String>> _callSites(List<String> members) {
   final String alternation = members.join('|');
   final RegExp use = RegExp(r'\.(' + alternation + r')\b');
-  final RegExp namedCtorDecl = RegExp(
-    r'^\s*(?:const\s+|factory\s+)?[A-Z]\w*\.(?:' + alternation + r')\s*\(',
-  );
+  final RegExp namedCtorDecl = _namedCtorDecl(alternation);
   final Map<String, List<String>> byFile = <String, List<String>>{};
   final List<File> files = packageLibDartFiles();
   expect(files, isNotEmpty, reason: 'aucun fichier scanné : garde VACUELLE');
@@ -145,12 +168,37 @@ void main() {
       );
     });
 
+    // 🔴 **ANGLE MORT REFERMÉ — le SENS INVERSE de celui corrigé sur le test
+    // ci-dessus.** Ce test cherchait `\.<membre>\s*\(` dans la source ENTIÈRE
+    // du répartiteur, sans exclure la déclaration d'un constructeur nommé. Un
+    // `const ZChatActionDispatcher.regenerate(this.executor);` ajouté au
+    // répartiteur aurait donc suffi à faire passer `regenerate` pour ROUTÉ
+    // alors qu'il aurait été MORT.
+    //
+    // C'est un faux VERT, pas un faux rouge : rien ne l'aurait signalé.
+    //
+    // ⚠️ Et il est ATTEIGNABLE — mesuré, contrairement à ce qui avait été
+    // supposé. G-U2 (ci-dessous) n'y fait pas obstacle : son motif exige un
+    // BLANC juste avant le nom du membre (`^\s{2}[A-Za-z_][\w<>?,\s.]*?\s(\w+)`),
+    // or un constructeur nommé porte un POINT à cette place. Vérifié sur les
+    // trois formes — `const T.verbe(`, `T.verbe(`, `factory T.verbe(` : G-U2
+    // n'en voit AUCUNE. La surface publique restreinte ne fermait donc rien.
+    //
+    // Ce que l'exclusion NE relâche PAS : elle exige les trois traits d'une
+    // DÉCLARATION (cf. `_namedCtorDecl`). Un aiguillage réel du répartiteur
+    // s'écrit `() => executor.regenerate(messageId: …)` — récepteur en
+    // minuscule, jamais en tête de ligne : il reste compté. Un verbe
+    // réellement non routé reste donc signalé, et l'injection R3 qui retire
+    // son aiguillage fait toujours rougir cette assertion.
     test('CHAQUE membre d\'effet est réellement routé (aucun verbe MORT)', () {
       final List<String> members = _effectMembers();
-      final String src = strippedLines(actionFile(_dispatcherFile)).join('\n');
+      final List<String> lines = strippedLines(actionFile(_dispatcherFile));
       final List<String> jamaisAppeles = <String>[
         for (final String m in members)
-          if (!RegExp(r'\.' + m + r'\s*\(').hasMatch(src)) m,
+          if (!lines.any((String l) =>
+              RegExp(r'\.' + m + r'\s*\(').hasMatch(l) &&
+              !_namedCtorDecl(m).hasMatch(l)))
+            m,
       ];
       expect(
         jamaisAppeles,

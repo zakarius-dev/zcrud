@@ -3,6 +3,28 @@
 Toutes les modifications notables de `zcrud_chat_kernel` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.3.1 — 2026-08-21
+
+### Corrigé — un faux VERT refermé dans la garde de contrat des verbes
+
+Le test « aucun verbe mort » cherchait un appel dans la source du répartiteur
+sans distinguer un **appel** d'une **déclaration de constructeur nommé**. Un
+constructeur homonyme d'un verbe suffisait donc à le faire passer pour routé
+alors qu'il aurait été mort — sans que rien ne le signale.
+
+C'est le même angle mort que celui corrigé sur le test jumeau, mais **en sens
+inverse** : là un faux rouge, bruyant donc corrigible ; ici un faux vert,
+silencieux.
+
+Ce scénario avait été jugé **inatteignable**. Mesure faite : c'est faux — la
+garde censée l'interdire exige un blanc devant le nom du membre, or un
+constructeur nommé y porte un point. Les trois formes lui échappaient. La dette
+était donc un défaut réel, pas un durcissement de précaution.
+
+L'exclusion a désormais une **définition unique**, partagée par les deux sens de
+la garde. Un aiguillage réel reste compté, un verbe non routé reste signalé.
+Test seul — aucun changement de code de production.
+
 ## 3.2.0 — 2026-08-21
 
 ### Corrigé — une garde de contrat attrapait une déclaration pour un appel

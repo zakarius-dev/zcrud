@@ -310,23 +310,20 @@ IconData _kindIcon(ZDocumentAnnotationKind kind) {
   }
 }
 
-/// Ratio de contraste WCAG 2.1 entre deux couleurs (luminance relative
-/// dérivée de `Color.computeLuminance`). Résultat dans `[1, 21]`.
-double _wcagContrastRatio(Color a, Color b) {
-  final la = a.computeLuminance();
-  final lb = b.computeLuminance();
-  final hi = la > lb ? la : lb;
-  final lo = la > lb ? lb : la;
-  return (hi + 0.05) / (lo + 0.05);
-}
-
 /// Choisit, entre les rôles `onSurface` et `surface` du [scheme], celui qui
 /// contraste le plus avec [background] — foreground dérivé, jamais fixé.
+///
+/// La mesure porte sur `background` **tel que passé** : un fond
+/// semi-transparent doit être composé (`zCompositeOver`) par l'appelant avant
+/// d'arriver ici, sinon le chiffre ne décrit pas ce qui est peint.
 Color _contrastingForeground(Color background, ColorScheme scheme) {
+  // Le rapport de contraste est calculé par l'UNIQUE implémentation du socle
+  // (`zContrastRatio`, zcrud_core) : un second calculateur, même délégué au
+  // SDK, finit toujours par diverger de celui qui porte les planchers.
   final onSurface = scheme.onSurface;
   final surface = scheme.surface;
-  return _wcagContrastRatio(onSurface, background) >=
-          _wcagContrastRatio(surface, background)
+  return zContrastRatio(onSurface, background) >=
+          zContrastRatio(surface, background)
       ? onSurface
       : surface;
 }

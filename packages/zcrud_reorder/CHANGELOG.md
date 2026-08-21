@@ -3,6 +3,16 @@
 Toutes les modifications notables de `zcrud_reorder` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.3.1 — 2026-08-21
+
+### Corrigé — des libellés de repli annoncés « localisés » ne le sont pas
+
+Les deux libellés de repli des actions de réordonnancement sont des constantes
+**en français**, non traduites. Leur dartdoc les disait localisées.
+
+Elle dit désormais ce qu'ils sont, et avertit qu'une application multilingue doit
+fournir les siens.
+
 ## [0.86.0] — Chantier documentation
 
 ### Ajouté

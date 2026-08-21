@@ -3,6 +3,17 @@
 Toutes les modifications notables de `zcrud_get` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.3.1 — 2026-08-21
+
+### Corrigé — la dartdoc inversait le défaut d'autorisation
+
+Le constructeur annonçait un défaut **permissif** là où le code pose un refus
+par défaut (`ZDenyAllAcl`) — le fichier se contredisait d'ailleurs quelques
+lignes plus bas. Une documentation qui inverse un défaut de sécurité est pire
+qu'une absence de documentation.
+
+Le comportement n'a jamais changé : seul le texte était faux.
+
 ## 3.1.0 — 2026-08-18
 
 ### Modifié — le binding COMPLÈTE le scope ambiant au lieu de le masquer

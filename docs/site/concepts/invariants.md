@@ -42,7 +42,7 @@ inter-paquet sont rejetés. Tout enum public porte `@JsonKey(unknownEnumValue:)`
 
 ## AD-5 — Domaine backend-agnostique (ports & adapters) {#ad-5}
 
-Les ports (`ZRepository<T>`, `ZLocalStore`, `ZRemoteStore`, `DataRequest`) vivent dans le
+Les ports (`ZRepository<T>`, `ZLocalStore`, `ZRemoteStore`, `ZDataRequest`) vivent dans le
 cœur sans aucun type backend ; `Timestamp`, `Filter` ou `FirebaseException` n'y entrent
 jamais. Les adaptateurs concrets vivent dans `zcrud_firestore`.
 
@@ -82,7 +82,7 @@ absent, inconnu ou corrompu ne fait **jamais** échouer le parent (`unknownEnumV
 
 Tout contrat repository retourne `Either<ZFailure, T>` (`Unit` pour void) ; les flux sont
 des `Stream<List<T>>` nus, jamais enveloppés. La hiérarchie `ZFailure` est maison
-(`DomainFailure`, `CacheFailure`, `NotFoundFailure`, `ServerFailure`…).
+(`ZDomainFailure`, `ZCacheFailure`, `ZNotFoundFailure`, `ZServerFailure`…).
 
 ## AD-12 — Zéro secret dans les paquets {#ad-12}
 
@@ -115,7 +115,7 @@ manager = un nouveau paquet de binding, jamais une modification du cœur.
 ## AD-16 — ACL et pagination curseur dans le contrat neutre {#ad-16}
 
 Le contrôle d'accès passe par un port `ZAcl` fourni par l'application ; la pagination par
-curseur (`startAfter`) est exprimée dans le contrat neutre `DataRequest` et implémentée
+curseur (`startAfter`) est exprimée dans le contrat neutre `ZDataRequest` et implémentée
 par l'adaptateur backend.
 
 **Le repli est refusant (fail-closed).** Tout point qui consulte une ACL sans en avoir

@@ -23,22 +23,22 @@ en dépendance, et de `zcrud_generator` + `build_runner` en dev-dépendance :
 ```yaml
 dependencies:
   zcrud_core:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.94.0, path: packages/zcrud_core }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.3.0, path: packages/zcrud_core }
   zcrud_annotations:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.94.0, path: packages/zcrud_annotations }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.3.0, path: packages/zcrud_annotations }
 
 dev_dependencies:
   zcrud_generator:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.94.0, path: packages/zcrud_generator }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.3.0, path: packages/zcrud_generator }
   build_runner: ^2.4.0
 
 # OBLIGATOIRE dès qu'un paquet zcrud_* supplémentaire entre dans le graphe
 # (ex. zcrud_list plus bas dans ce guide) : voir la recette de consommation.
 dependency_overrides:
   zcrud_core:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.94.0, path: packages/zcrud_core }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.3.0, path: packages/zcrud_core }
   zcrud_annotations:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.94.0, path: packages/zcrud_annotations }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.3.0, path: packages/zcrud_annotations }
 ```
 
 ## Annoter un modèle {#annoter-un-modele}

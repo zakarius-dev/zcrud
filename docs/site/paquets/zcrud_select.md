@@ -9,9 +9,13 @@ description: Présentateur de sélection riche (modal, recherche) pour zcrud, ad
 
 `zcrud_select` fournit `ZSmartSelectPresenter`, un présentateur riche pour
 les familles `select`/`radio`/`checkbox`/`multiselect`/`relation`, adossé au
-fork vendorisé `awesome_select`. Il rend un modal en bottom-sheet avec
-recherche optionnelle, avec une apparence de référence par défaut
-entièrement personnalisable via une chaîne paramètre/jeton/référence.
+fork vendorisé `awesome_select`. Il rend un modal avec recherche optionnelle,
+dont la forme est **adaptative** par défaut (`ZSelectModalShape.adaptive`) :
+boîte de dialogue au-delà de 600 dp de largeur utile, feuille par le bas en
+deçà — un critère mesuré, jamais un détecteur de plateforme. Les formes fixes
+`bottomSheet`, `popupDialog` et `fullPage` restent déclarables. L'apparence de
+référence est entièrement personnalisable via une chaîne
+paramètre/jeton/référence.
 
 ## Quand l'utiliser
 
@@ -29,7 +33,7 @@ entièrement personnalisable via une chaîne paramètre/jeton/référence.
 |---|---|
 | `ZSmartSelectPresenter` | Présentateur riche, à injecter via `ZcrudScope.selectPresenter`. |
 | `ZSelectTileSpec` | Surcharge par paramètre de l'apparence. |
-| `ZSelectTileReference` | Valeurs de référence auditées (dimensions uniquement). |
+| `ZSelectTileReference` | Point d'audit unique des valeurs de référence : dimensions, seuil adaptatif (600 dp), pagination des options, délai de garde d'un chargeur, et formes par défaut. Aucune couleur. |
 | `ZSelectChoiceStyle` / `ZSelectModalShape` | Formes des options et du conteneur de modal. |
 
 ## Voir aussi

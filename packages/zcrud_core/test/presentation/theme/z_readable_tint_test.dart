@@ -434,14 +434,18 @@ void main() {
 
   group('🔴 DUPLICATION SUPPRIMÉE — une seule implémentation dans tout '
       '`packages/*/lib`', () {
-    /// Sites d'implémentation, repérés par un motif **structurel** : les trois
-    /// coefficients de la luminance relative WCAG. Un doublon RENOMMÉ (c'était
-    /// le cas : `zChatRelativeLuminance`) reste attrapé, et le motif se dérive
-    /// de la constante réellement employée — il ne peut pas se figer sur un
-    /// nom.
-    List<String> implementationSites() {
-      final Directory packages = Directory('${repoRoot().path}/packages');
-      expect(packages.existsSync(), isTrue, reason: '🔴 packages/ introuvable');
+    /// Les DEUX motifs **structurels** qui repèrent un calculateur de
+    /// contraste, tous deux DÉRIVÉS de la source du cœur (jamais recopiés en
+    /// dur ici — un motif figé serait vert sur tout défaut) :
+    ///
+    /// 1. les trois **coefficients** de la luminance relative WCAG — attrape
+    ///    une réimplémentation complète, même RENOMMÉE (c'était le cas :
+    ///    `zChatRelativeLuminance`) ;
+    /// 2. l'appel `computeLuminance` du SDK **combiné** au décalage du
+    ///    rapport de contraste — attrape un calculateur qui DÉLÈGUE la
+    ///    luminance au SDK et n'écrit donc aucun coefficient. Cette forme
+    ///    échappait entièrement au motif 1.
+    ({List<String> coefficients, RegExp sdkDelegation}) detectors() {
       // Motif VARIABLE : les coefficients sont lus dans la source du cœur,
       // jamais recopiés en dur ici. Si le cœur change de formule, la garde
       // suit — un motif figé serait vert sur tout défaut.
@@ -458,6 +462,36 @@ void main() {
           reason: '🔴 GARDE VACUELLE : les coefficients WCAG ne sont plus '
               'lisibles dans la source du cœur — vu $coefficients');
 
+      // Motif 2, VARIABLE lui aussi : le décalage du rapport de contraste est
+      // lu dans `zContrastRatio` (forme `(hi + 0.05) / (lo + 0.05)`), pas
+      // écrit en dur. Un calculateur bâti sur `Color.computeLuminance()` ne
+      // porte AUCUN coefficient — seul ce décalage le trahit.
+      final RegExpMatch? offsetMatch =
+          RegExp(r'\(\w+ \+ (0\.\d+)\) / \(\w+ \+ 0\.\d+\)').firstMatch(core);
+      expect(offsetMatch, isNotNull,
+          reason: '🔴 GARDE VACUELLE : la forme du rapport de contraste n\'est '
+              'plus lisible dans la source du cœur — le motif « délégation au '
+              'SDK » ne peut plus être dérivé.');
+      final String offset = offsetMatch!.group(1)!;
+      // Le motif 2 est une CONJONCTION : `computeLuminance` seul est légitime
+      // (décider d'une brillance n'est pas mesurer un contraste) ; c'est sa
+      // combinaison avec le décalage WCAG qui fait un calculateur de contraste.
+      final RegExp sdkDelegation =
+          RegExp('computeLuminance\\(\\)[\\s\\S]{0,400}?'
+              '\\+ ${RegExp.escape(offset)}\\)');
+      return (coefficients: coefficients, sdkDelegation: sdkDelegation);
+    }
+
+    /// Un fichier de `packages/*/lib` est un site d'implémentation s'il porte
+    /// l'UNE des deux formes.
+    bool isSite(String src, ({List<String> coefficients, RegExp sdkDelegation}) d) =>
+        d.coefficients.every(src.contains) || d.sdkDelegation.hasMatch(src);
+
+    List<String> implementationSites() {
+      final Directory packages = Directory('${repoRoot().path}/packages');
+      expect(packages.existsSync(), isTrue, reason: '🔴 packages/ introuvable');
+      final ({List<String> coefficients, RegExp sdkDelegation}) d = detectors();
+
       final List<String> sites = <String>[];
       int scanned = 0;
       for (final Directory pkg in packages
@@ -471,7 +505,7 @@ void main() {
             .where((File f) => f.path.endsWith('.dart'))) {
           scanned++;
           final String src = stripLines(f.readAsLinesSync()).join('\n');
-          if (coefficients.every(src.contains)) {
+          if (isSite(src, d)) {
             sites.add(f.path
                 .replaceAll(r'\', '/')
                 .split('/packages/')
@@ -493,8 +527,48 @@ void main() {
         reason: '🔴 DUPLICATION. Deux calculateurs de contraste finissent '
             'toujours par diverger : l\'algorithme vit dans `zcrud_core`, '
             'atteignable par TOUT satellite sans arête latérale (AD-1). '
+            'Un calculateur qui DÉLÈGUE la luminance à '
+            '`Color.computeLuminance()` en est un aussi : il n\'écrit aucun '
+            'coefficient, mais porte le décalage `+ 0.05` du rapport WCAG. '
             'Sites vus : $sites',
       );
+    });
+
+    test('🔴 MORDANCE du motif 2 — un calculateur DÉLÉGUANT au SDK est '
+        'reconnu comme site, un usage légitime de `computeLuminance` ne '
+        'l\'est pas', () {
+      final ({List<String> coefficients, RegExp sdkDelegation}) d = detectors();
+
+      // La forme exacte qui a échappé à la garde pendant trois versions :
+      // aucun coefficient, luminance déléguée au SDK.
+      const String delegating = '''
+double _wcagContrastRatio(Color a, Color b) {
+  final la = a.computeLuminance();
+  final lb = b.computeLuminance();
+  final hi = la > lb ? la : lb;
+  final lo = la > lb ? lb : la;
+  return (hi + 0.05) / (lo + 0.05);
+}''';
+      expect(isSite(delegating, d), isTrue,
+          reason: '🔴 GARDE INERTE : un calculateur de contraste bâti sur '
+              '`Color.computeLuminance()` passe au travers — c\'est '
+              'exactement l\'angle mort qui a laissé vivre un TROISIÈME '
+              'calculateur.');
+
+      // Contre-témoin : décider d'une brillance n'est pas mesurer un
+      // contraste. Sans cette moitié, la garde interdirait un usage légitime.
+      const String legitimate = '''
+Brightness _brightnessOf(Color c) =>
+    c.computeLuminance() > 0.5 ? Brightness.light : Brightness.dark;''';
+      expect(isSite(legitimate, d), isFalse,
+          reason: '🔴 GARDE TROP LARGE : `computeLuminance` seul est un usage '
+              'légitime ; seule sa combinaison avec le décalage WCAG fait un '
+              'calculateur de contraste.');
+
+      // Et le motif 1 reste mordant, indépendamment du motif 2.
+      expect(
+          isSite('0.2126 * r + 0.7152 * g + 0.0722 * b', d), isTrue,
+          reason: '🔴 le motif des coefficients a cessé de mordre');
     });
 
     test('les noms préfixés `zChat*` de la copie supprimée n\'ont pas '

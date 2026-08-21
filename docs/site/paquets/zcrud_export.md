@@ -32,6 +32,7 @@ bytes Excel (`.xlsx`) via `ZExporter`, avec la même façade pour le PDF
 | Type | Rôle |
 |---|---|
 | `ZExporter` | Façade d'export neutre et immuable — `toExcelBytes` / `toPdfBytes`. |
+| `ZCsvListExporter` / `ZXlsxListExporter` | Implémentations du port `ZListExporter` du cœur : elles se déclarent sur `ZExportPolicy.exporters` d'un [`ZCrudScreen`](zcrud_screen.md) pour offrir l'export du listing. `ZPdfListExporter` vient de `zcrud_export_pdf`, réexporté ici. |
 | `ZExportApi` | Marqueur de version de l'API publique du paquet. |
 | `ZPdfCreationService` / `ZFileSaver` / `ZPdfExportOptions` | Réexportés depuis `zcrud_export_pdf` — assemblage PDF, sauvegarde, mise en page. |
 

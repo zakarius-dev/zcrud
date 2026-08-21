@@ -14,8 +14,7 @@ dépendances entre paquets est acyclique et vérifié par gate
 satellite, chaque satellite dépend du cœur.
 
 Les liens ci-dessous pointent vers la fiche dédiée de chaque paquet (gabarit défini par la
-[charte documentaire](../charte.md)) ; les fiches manquantes arrivent au fil de la
-rédaction.
+[charte documentaire](../charte.md)) — les 40 paquets en ont une.
 
 ## Cœur {#coeur}
 

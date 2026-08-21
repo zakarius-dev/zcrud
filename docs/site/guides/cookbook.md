@@ -496,10 +496,11 @@ Widget wrapWithRiverpod(Widget child) => ZcrudRiverpodScope(child: child);
 
 `ZcrudGetScope`/`ZcrudRiverpodScope`/`ZcrudProviderScope` (paquet `zcrud_provider`)
 enveloppent le **même** sous-arbre `DynamicEdition`/`DynamicList` : seul le `resolver`
-d'injection change, jamais la construction des champs. Un scope de binding ne
-re-propage que `resolver`/`acl` — les seams applicatifs (`theme`, `filePicker`,
-`widgetRegistry`, `listRenderer`…) posés à la racine doivent être redéclarés sous le
-scope du binding s'ils doivent rester visibles.
+d'injection change, jamais la construction des champs. Un scope de binding **dérive**
+le `ZcrudScope` ambiant (`ZcrudScope.derive`) au lieu de le remplacer : il surcharge
+`resolver` et `acl`, et **hérite tous les autres seams** (`theme`, `filePicker`,
+`widgetRegistry`, `listRenderer`, registres de choix/relations, `gradientResolver`…)
+posés plus haut — rien à redéclarer sous le binding.
 
 Voir l'écran de démo : `example/lib/binding/binding_selector.dart` (sélecteur réutilisé
 par les démos édition/liste/géo/intl) et `example/lib/demos/edition_demo_screen.dart`.

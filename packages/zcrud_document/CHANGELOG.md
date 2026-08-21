@@ -3,6 +3,18 @@
 Toutes les modifications notables de `zcrud_document` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.3.1 — 2026-08-21
+
+### Modifié — un seul calculateur de contraste dans tout le dépôt
+
+La barre d'annotation portait un calculateur WCAG privé, bâti sur la luminance du
+SDK ; elle consomme désormais celui de `zcrud_core`.
+
+**Rendu strictement inchangé** — et mesuré, pas supposé : les deux
+implémentations rendent le même nombre à **0.0 près** sur 1 257 couleurs et
+5 028 couples teinte/surface, et classent tous ces couples du même côté des
+planchers 3:1 et 4,5:1.
+
 ## [0.86.0] — Chantier documentation
 
 ### Ajouté

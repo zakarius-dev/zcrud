@@ -21,14 +21,18 @@ import 'package:zcrud_responsive/zcrud_responsive.dart' show computeCrossAxisCou
 
 import 'package_reorder_index.dart';
 
-/// Repli LOCALISÉ du libellé « déplacer avant » quand l'hôte n'en fournit pas.
+/// Libellé de repli de « déplacer avant » quand l'hôte n'en fournit pas.
+///
+/// ⚠️ Ce repli est **en français**, non traduit : une application multilingue
+/// doit fournir ses propres libellés.
 ///
 /// Une action sémantique sans libellé est **inutilisable** au lecteur d'écran :
 /// mieux vaut un défaut que rien (AD-13). Identique au repli du renderer par
 /// défaut — l'interchangeabilité vaut aussi pour l'a11y.
 const String kDefaultMoveBeforeLabel = 'Déplacer avant';
 
-/// Repli LOCALISÉ du libellé « déplacer après ». Cf. [kDefaultMoveBeforeLabel].
+/// Libellé de repli de « déplacer après », en français comme
+/// [kDefaultMoveBeforeLabel] — mêmes réserves.
 const String kDefaultMoveAfterLabel = 'Déplacer après';
 
 /// Renderer réordonnable adossé à `reorderable_grid_view`.
