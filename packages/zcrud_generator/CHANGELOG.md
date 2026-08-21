@@ -2,6 +2,15 @@
 
 All notable changes to `zcrud_generator` are documented in this file.
 
+## 3.3.0 — 2026-08-21
+
+### Modifié — la dartdoc émise dans le code généré est documentaire
+
+Les commentaires que le générateur écrit dans les `*.g.dart` citaient des
+identifiants de suivi interne. La documentation du projet étant générée à partir
+des commentaires Dart, ils s'adressaient au mauvais lecteur. Le contenu décrit
+désormais ce que le symbole garantit, sans référence de traitement.
+
 ## 0.90.0 — 2026-08-12
 
 ### Modifié — durcissement cassant

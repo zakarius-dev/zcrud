@@ -457,8 +457,8 @@ class _ZAddressFieldWidgetState extends State<ZAddressFieldWidget> {
     );
   }
 
-  /// Décoration THÉMÉE d'un **sous-champ** du groupe adresse
-  ///: la fabrique centrale du cœur
+  /// Décoration THÉMÉE d'un **sous-champ** du groupe adresse : la fabrique
+  /// centrale du cœur
   /// (`ZcrudTheme.inputDecoration`), pilotée par les jetons **existants**
   /// (`fieldFillColor`/`fieldBorderColor`/`inputRadius`/`inputContentPadding`),
   /// avec le libellé PROPRE au sous-champ.

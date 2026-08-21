@@ -3,6 +3,28 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.3.0 — 2026-08-21
+
+### Ajouté — `ZColorCycle`, une animation de progression réutilisable
+
+Primitive publique qui anime une **palette fournie** sur une période fournie.
+Elle ne connaît ni son appelant ni son usage : tout module peut s'en servir pour
+signaler une génération en cours.
+
+Palette et période sont **requises** — le cœur n'invente ni couleur ni tempo
+(FR-26). Sous « Réduire les animations », aucun contrôleur n'est créé.
+
+### Modifié — un seul calculateur de teinte lisible, dans le cœur
+
+Le calculateur vivait dans un satellite, et une copie avait dû être faite dans un
+autre : une arête entre satellites violerait l'invariant de dépendances. Il est
+remonté au cœur, **sans rupture** — le satellite d'origine le ré-exporte sous le
+même nom.
+
+Sa dartdoc dit désormais **sur quelle surface la mesure porte**. Deux chiffres
+circulaient pour la même couleur, tous deux exacts : l'un sur blanc pur, l'autre
+sur la surface réelle d'un thème clair.
+
 ## 3.1.0 — 2026-08-18
 
 ### Renforcé — la parité `copyWith` / `derive` exige le relais exact

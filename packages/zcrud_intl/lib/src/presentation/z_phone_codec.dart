@@ -103,8 +103,8 @@ abstract final class ZPhoneCodec {
   /// > pour le pays sélectionné; sinon la **même forme internationale**,
   /// > simplement incomplète.
   ///
-  /// **Pourquoi pas `value.phoneNumber` brut** (ce que demandait littéralement la
-  /// CR): mesuré sur `intl_phone_number_input 0.7.5`, ce champ vaut l'E.164
+  /// **Pourquoi pas `value.phoneNumber` brut** : mesuré sur
+  /// `intl_phone_number_input 0.7.5`, ce champ vaut l'E.164
   /// quand le numéro est valide, mais sinon `dialCode` **concaténé à la saisie
   /// non nettoyée** — la sonde a produit `'+228+++++'` pour une saisie `'+++++'`
   /// et `'+228901'` pour une saisie partielle. Persister cela donnerait une

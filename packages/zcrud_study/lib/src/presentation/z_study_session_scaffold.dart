@@ -16,8 +16,8 @@
 ///
 /// ## 💡 Quand NE PAS l'utiliser
 ///
-/// Patron **exact** de l'arbitrage documenté par `ZPageScaffold`
-/// (`z_page_scaffold.dart:44-46`) : un hôte dont le `Scaffold` est non trivial
+/// Patron **exact** de l'arbitrage documenté par `ZPageScaffold` : un hôte
+/// dont le `Scaffold` est non trivial
 /// — enveloppé dans un `PopScope`, aiguillé selon l'état, ou porteur d'un slot
 /// que ce pass-through n'expose pas — ne doit **pas** passer par ici. Il compose
 /// directement [ZStudySessionHost] (ou [ZStudySessionView] s'il détient déjà son

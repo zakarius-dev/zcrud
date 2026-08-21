@@ -82,7 +82,7 @@ class ZDateRange {
   /// non-ISO (`DateTime.parse`), ou invariant `end < start` violé. Cette
   /// falsifiabilité est **volontaire** : brancher un chemin de persistance sur ce
   /// décodeur (au lieu de [fromJsonSafe]) fait **rougir** le corpus corrompu
-  /// (injection R3, AD-10).
+  /// (invariant AD-10).
   static ZDateRange fromJson(Object? json) {
     if (json is! Map) {
       throw const FormatException('ZDateRange.fromJson: entrée non-map');

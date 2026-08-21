@@ -34,11 +34,10 @@ import 'package:zcrud_core/domain.dart';
 /// migrateur (`zcrud_note`) l'importent **d'ici**, jamais en dur.
 const String kTableEmbedType = 'table';
 
-/// Type Delta de l'embed tableau **LEGACY** (CR parité 2026-08-11,
-/// ) — op `{"insert": {"x-embed-table": "<markdown>"}}`.
+/// Type Delta de l'embed tableau **LEGACY** — op
+/// `{"insert": {"x-embed-table": "<markdown>"}}`.
 ///
-/// MESURÉ sur le legacy (`markdown_quill/embeddable_table_syntax.dart:101` +
-/// `table_view_embed.dart:23,30`) : la clé est `x-embed-table` et la charge un
+/// Forme legacy MESURÉE : la clé est `x-embed-table` et la charge un
 /// **string Markdown** (tableau GFM). zcrud le RECONNAÎT EN LECTURE (rendu +
 /// pré-remplissage d'édition) ; toute ÉCRITURE reste sur [kTableEmbedType]
 /// (`{rows,columns,cells}`) — migration à SENS UNIQUE (le legacy ne relit pas

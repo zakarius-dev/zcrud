@@ -81,6 +81,8 @@ import 'package:zcrud_core/zcrud_core.dart'
         ZStudyCardContentAlignment,
         ZcrudScope,
         ZcrudTheme,
+        kZTextMinContrast,
+        zReadableTintOn,
         zResolveColorKeyOrSlot,
         zResolveGradient;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart'
@@ -90,7 +92,6 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 
 import 'z_faded_overflow.dart';
 import 'z_flashcard_card_reference.dart';
-import 'z_readable_tint.dart';
 import 'z_study_tools_item_card.dart';
 import 'z_tag_chips.dart';
 
@@ -112,12 +113,16 @@ const double _kMinTapTarget = 48.0;
 /// couleur nouvelle.
 ///
 /// Appliquée aux premiers plans TEINTÉS PAR LE TYPE : peindre le libellé de
-/// pied en `primaryColor` BRUT mesure **2,30:1** sur thème clair (`#4facfe`
-/// sur blanc), sous le plancher WCAG AA (4,5:1) que la garde de contraste du
-/// package impose à tout ce qui est peint. La saturation est bornée en bas
-/// (≥ 0.4, la teinte reste identifiable) et la clarté est ramenée dans la
-/// fenêtre lisible de la luminosité courante (0.25-0.45 en clair, 0.55-0.75
-/// en sombre). Les FONDS décoratifs (tuile à 15 %, pastille à 10 %) gardent
+/// pied en `primaryColor` BRUT mesure **2,304:1** sur le `surface` d'un thème
+/// clair Material 3 (`#4facfe` sur `#FEF7FF`) — et **2,424:1** sur blanc pur.
+/// 🔴 Les deux chiffres sont exacts : un rapport de contraste n'existe que
+/// RELATIVEMENT à une surface (cf. `zReadableTintOn`, dont la surface est un
+/// argument REQUIS). Les deux sont sous le plancher WCAG AA (4,5:1) que la
+/// garde de contraste du package impose à tout ce qui est peint. La
+/// saturation est bornée en bas (≥ 0.4, la teinte reste identifiable) et la
+/// clarté est ramenée dans la fenêtre lisible de la luminosité courante
+/// (0.25-0.45 en clair, 0.55-0.75 en sombre). Les FONDS décoratifs (tuile à
+/// 15 %, pastille à 10 %) gardent
 /// la couleur brute — seul le premier plan est ajusté.
 ///
 /// ## La fenêtre HSL ne GARANTIT rien, [surface] la garantit
@@ -296,9 +301,8 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// déborde réellement** [questionMaxHeight].
   ///
   /// Défaut : [ZFlashcardCardReference.questionFadeExtent] (12 dp). `0` ⇒
-  /// aucun fondu — l'énoncé est simplement écrêté, c'est-à-dire **exactement**
-  /// le rendu v0.47.0 (voie de retour explicite pour un hôte que le fondu
-  /// dérange).
+  /// aucun fondu — l'énoncé est simplement écrêté (voie de retour explicite
+  /// pour un hôte que le fondu dérange).
   ///
   /// **Ce n'est PAS une ellipse, et le mot serait un mensonge** :
   /// `TextOverflow.ellipsis` est une propriété de *paragraphe*, sans prise sur
@@ -641,8 +645,8 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   ///   de couleur codée en dur ; l'information reste AUSSI en texte,
   ///   invariant AD-13). `isTrue` absent ⇒ aperçu ABSENT — jamais un « Faux » fabriqué
   ///   depuis `null` (écart assumé avec le legacy `isTrue ?? false`) ;
-  /// - `multipleChoice` ⇒ liste des choix « ✓/✕ » (fidélité au CODE legacy,
-  ///   qui dit plus que sa CR) — corrects en teinte de type, incorrects en
+  /// - `multipleChoice` ⇒ liste des choix « ✓/✕ » (fidélité au CODE legacy)
+  ///   — corrects en teinte de type, incorrects en
   ///   rôle `error`, contenu RICHE ;
   /// - sinon ⇒ [ZFlashcard.answer] en rendu riche teinté par type ; réponse
   ///   absente/vide ⇒ `null` (l'appelant n'affiche pas non plus le divider).

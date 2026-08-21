@@ -1,13 +1,13 @@
-/// Habillage « carte » OPT-IN du champ rich-text (CR parité 2026-08-11)
+/// Habillage « carte » OPT-IN du champ rich-text
 /// — en-tête icône + libellé, bordure/ombre, pilule d'action « Rédiger /
 /// Modifier / Valider ».
 ///
-/// MESURE legacy (`mef:141-310`) : carte rayon 14 à bordure colorée par
+/// MESURE legacy : carte rayon 14 à bordure colorée par
 /// contenu + ombre ; en-tête à fond dégradé (icône `article_rounded` dans une
 /// puce dégradée + libellé `titleMedium` w600, `labelBuilder` optionnel) ;
 /// pilule dégradée « Rédiger » (vide) / « Modifier » (contenu) en mode block,
-/// « Valider » (save) en mode inline. Articulation save legacy MESURÉE
-/// (`mef:93-101`) : le listener `changes` est COMMENTÉ — l'inline n'écrit que
+/// « Valider » (save) en mode inline. Articulation save legacy MESURÉE :
+/// le listener `changes` est COMMENTÉ — l'inline n'écrit que
 /// sur PERTE DE FOCUS ou sur « Valider », jamais à la frappe.
 ///
 /// ## Chaîne de couleurs — paramètre > jeton/seam > rôle
@@ -34,54 +34,53 @@ library;
 
 import 'package:flutter/widgets.dart';
 
-/// Dimensions et scalaires de RÉFÉRENCE du chrome carte (mesurés `mef:141-310`)
+/// Dimensions et scalaires de RÉFÉRENCE du chrome carte (mesuré sur le legacy)
 /// — patron `ZStudyCardReference` : point d'audit UNIQUE, **aucune couleur**
 /// (les couleurs suivent la chaîne paramètre > seam > rôle, cf. en-tête).
 abstract final class ZMarkdownChromeReference {
-  /// Rayon de la carte (**14** — `mef:145`).
+  /// Rayon de la carte (**14**).
   static const Radius cardRadius = Radius.circular(14);
 
-  /// Rayon intérieur de l'en-tête (**13** — `mef:174`, rayon carte − bordure).
+  /// Rayon intérieur de l'en-tête (**13**, rayon carte − bordure).
   static const Radius headerRadius = Radius.circular(13);
 
-  /// Rayon des puces (icône, pilule d'action — **8**, `mef:188,223`).
+  /// Rayon des puces (icône, pilule d'action — **8**).
   static const Radius chipRadius = Radius.circular(8);
 
-  /// Padding de l'en-tête (**12** — `mef:166`).
+  /// Padding de l'en-tête (**12**).
   static const EdgeInsetsGeometry headerPadding = EdgeInsetsDirectional.all(12);
 
-  /// Padding de la puce d'icône (**8** — `mef:181`).
+  /// Padding de la puce d'icône (**8**).
   static const EdgeInsetsGeometry iconChipPadding = EdgeInsetsDirectional.all(8);
 
-  /// Taille de l'icône d'en-tête (**18** — `mef:192`).
+  /// Taille de l'icône d'en-tête (**18**).
   static const double headerIconSize = 18;
 
-  /// Largeur de bordure de carte : contenu présent (**1.5**) / vide (**1**)
-  /// (`mef:150`).
+  /// Largeur de bordure de carte : contenu présent (**1.5**) / vide (**1**).
   static const double borderWidthFilled = 1.5;
 
   /// Voir [borderWidthFilled].
   static const double borderWidthEmpty = 1;
 
-  /// Opacité de la bordure colorée par contenu (**80/255** — `mef:148`).
+  /// Opacité de la bordure colorée par contenu (**80/255**).
   static const double borderOpacity = 80 / 255;
 
-  /// Opacité du fond dégradé de l'en-tête (**15/255** — `mef:170`, thème clair).
+  /// Opacité du fond dégradé de l'en-tête (**15/255**, thème clair).
   static const double headerGradientOpacity = 15 / 255;
 
-  /// Opacité du dégradé de la puce d'icône (**40/255** — `mef:185`, thème clair).
+  /// Opacité du dégradé de la puce d'icône (**40/255**, thème clair).
   static const double iconChipGradientOpacity = 40 / 255;
 
-  /// Ombre de carte : rayon de flou (**8**) et décalage (**0, 2**) (`mef:157-158`).
+  /// Ombre de carte : rayon de flou (**8**) et décalage (**0, 2**).
   static const double shadowBlurRadius = 8;
 
   /// Voir [shadowBlurRadius].
   static const Offset shadowOffset = Offset(0, 2);
 
-  /// Opacité de l'ombre colorée par contenu (**10/255** — `mef:155`, thème clair).
+  /// Opacité de l'ombre colorée par contenu (**10/255**, thème clair).
   static const double shadowOpacity = 10 / 255;
 
-  /// Padding de la pilule d'action (**12×6** — `mef:249-251`).
+  /// Padding de la pilule d'action (**12×6**).
   static const EdgeInsetsGeometry actionPillPadding =
       EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 6);
 }
@@ -103,7 +102,7 @@ class ZMarkdownFieldChrome {
     this.deferWrites = false,
   });
 
-  /// Icône d'en-tête. `null` ⇒ `Icons.article_rounded` (parité `mef:191`).
+  /// Icône d'en-tête. `null` ⇒ `Icons.article_rounded` (parité legacy).
   final IconData? icon;
 
   /// Dégradé signature de l'hôte (≥ 1 couleur ; la 1ʳᵉ teinte bordure/ombre).
@@ -122,7 +121,7 @@ class ZMarkdownFieldChrome {
   final String? gradientKey;
 
   /// Remplace le libellé d'en-tête par un widget de l'hôte (parité
-  /// `fieldLabelBuilder`, `mef:29`). Reçoit le libellé résolu du champ.
+  /// `fieldLabelBuilder`). Reçoit le libellé résolu du champ.
   final Widget Function(BuildContext context, String label)? labelBuilder;
 
   /// Affiche la pilule d'action (« Rédiger / Modifier » en mode block,
@@ -131,7 +130,7 @@ class ZMarkdownFieldChrome {
 
   /// **Articulation legacy de l'écriture** (inline uniquement, OPT-IN) :
   /// `true` ⇒ la tranche n'est écrite QUE sur « Valider » ou sur perte de
-  /// focus (mesuré `mef:93-101`) — plus d'écriture à la frappe. `false`
+  /// focus (mesuré sur le legacy) — plus d'écriture à la frappe. `false`
   /// (défaut) ⇒ l'auto-save actuel des hôtes existants est CONSERVÉ.
   final bool deferWrites;
 }

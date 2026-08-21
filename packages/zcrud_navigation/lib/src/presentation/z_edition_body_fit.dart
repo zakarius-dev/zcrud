@@ -31,7 +31,7 @@
 /// * `page` et `sheet` donnent tous deux au corps une hauteur **infinie** en
 ///   [intrinsic] (`SliverToBoxAdapter` / `SingleChildScrollView`) : un corps qui
 ///   défile lui-même y lève `Vertical viewport was given unbounded height`, puis
-///   une cascade de `RenderBox was not laid out` — l'écran blanc de la CR.
+///   une cascade de `RenderBox was not laid out` — donc un écran blanc.
 ///
 /// ## Pourquoi [intrinsic] reste le DÉFAUT
 ///

@@ -1051,7 +1051,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   /// stable — c'est exactement ce qu'une garde d'exhaustivité doit comparer.
   String _emitPersistedKeys(String className, List<_Field> fields) {
     final entries = fields.map((f) => "  '${f.key}',").join('\n');
-    return "/// Clés que `$className.toMap()` PEUT produire (CR-LEX-28) — "
+    return "/// Clés que `$className.toMap()` PEUT produire — "
         'surensemble\n'
         '/// stable, champs nuls compris. Source unique pour une garde '
         "d'exhaustivité\n"
@@ -1064,7 +1064,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
 
   String _emitFieldSpecs(String className, List<_Field> fields) {
     final specs = fields.map(_emitSpec).join('\n');
-    return '/// Schéma déclaratif projeté depuis @ZcrudField (E2-5).\n'
+    return '/// Schéma déclaratif projeté depuis @ZcrudField.\n'
         'const List<ZFieldSpec> \$${className}FieldSpecs = <ZFieldSpec>[\n'
         '$specs\n];';
   }
@@ -1396,11 +1396,11 @@ const _sharedHelpers = '''
 /// Sentinelle « argument non fourni » du `copyWith` généré (reset-null).
 const Object? _\$undefined = _ZUndefined();
 
-/// Clé de SONDE du garde DW-ES14-1 : n'est le nom persisté d'AUCUN champ de
-/// schéma, ni une clé réservée (`ZSyncMeta`), ni `source`/`extension`.
+/// Clé de SONDE de la garde d'extensibilité : n'est le nom persisté d'AUCUN
+/// champ de schéma, ni une clé réservée (`ZSyncMeta`), ni `source`/`extension`.
 const String _\$zExtraProbeKey = '$_extraProbeKey';
 
-/// **GARDE EXÉCUTOIRE DW-ES14-1** (invariant AD-4) — émise dans le `register…`
+/// **GARDE EXÉCUTOIRE d'extensibilité** (invariant AD-4) — émise dans le `register…`
 /// de toute classe `ZExtensible`.
 ///
 /// ## Ce qu'il fait, et pourquoi il existe

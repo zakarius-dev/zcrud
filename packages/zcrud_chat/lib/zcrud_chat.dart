@@ -165,6 +165,10 @@ export 'src/presentation/view/z_chat_notebook_view.dart';
 // menu par défaut au rendu des vidéos, coche sur l'actif).
 export 'src/presentation/view/z_chat_settings_entry.dart';
 export 'src/presentation/view/z_chat_settings_sheet.dart';
+// La coquille déclarée d'une tuile : carte, filet, coiffe, style du bouton de
+// dépli, format d'horodatage. Rien n'est peint tant qu'elle n'est pas
+// déclarée — cf. `ZChatTileShell`.
+export 'src/presentation/view/z_chat_tile_shell.dart';
 export 'src/presentation/view/z_default_chat_composer.dart';
 export 'src/presentation/z_chat_assembly_contract.dart';
 export 'src/presentation/z_chat_controller.dart';

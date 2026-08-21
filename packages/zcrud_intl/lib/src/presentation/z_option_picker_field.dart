@@ -68,8 +68,8 @@ class ZOptionPickerField<T> extends StatefulWidget {
 
   /// Décoration **thémée** du déclencheur.
   ///
-  /// `null` ⇒ rendu **strictement inchangé** (chemin des champs devise/état, qui
-  /// ne sont pas dans le périmètre de la CR). Fournie ⇒ le déclencheur est rendu
+  /// `null` ⇒ rendu **strictement inchangé** (chemin des champs
+  /// devise/état). Fournie ⇒ le déclencheur est rendu
   /// par un `InputDecorator`, comme `ZDecoratedFieldTrigger` du cœur: libellé
   /// au repos quand vide / flottant quand rempli, chevron en `suffixIcon` sauf
   /// si un ornement de fin est déjà déclaré.

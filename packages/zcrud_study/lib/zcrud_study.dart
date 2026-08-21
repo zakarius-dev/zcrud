@@ -103,7 +103,20 @@ export 'src/presentation/z_feature_availability.dart';
 // cartes en régime de brouillon déclaré, avec un commit unique injecté comme
 // seul franchissement de la frontière de persistance.
 export 'src/presentation/z_flashcard_card_reference.dart';
-export 'src/presentation/z_readable_tint.dart';
+// 🔴 NON-RUPTURE — le calculateur de teinte lisible a REMONTÉ dans le cœur
+// (`zcrud_core/lib/src/presentation/theme/z_readable_tint.dart`), pour que
+// `zcrud_chat` cesse d'en porter une copie sans acquérir d'arête latérale
+// vers ce paquet (invariant AD-1). Les six symboles restent atteignables
+// depuis `zcrud_study` SOUS LES MÊMES NOMS : un hôte qui les importait d'ici
+// n'a rien à changer. Retirer ce ré-export CASSERAIT ces hôtes.
+export 'package:zcrud_core/zcrud_core.dart'
+    show
+        kZNonTextMinContrast,
+        kZTextMinContrast,
+        zCompositeOver,
+        zContrastRatio,
+        zReadableTintOn,
+        zRelativeLuminance;
 export 'src/presentation/z_flashcard_list_view.dart';
 export 'src/presentation/z_folder_card.dart';
 export 'src/presentation/z_folder_card_chrome.dart';

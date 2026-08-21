@@ -36,9 +36,8 @@ const String _kInlineDangerous = r'\\`*_[<~';
 ///
 /// Deux formes distinctes, et la distinction compte :
 /// - `<chiffres>.` ou `<chiffres>)` — liste ordonnée. CommonMark accepte les
-///   DEUX délimiteurs ; oublier `)` détruisait `1) premier` (la numérotation
-///   usuelle en français administratif), qui survivait en v0.6.0 parce que
-///   l'ancien échappement traitait `(` et `)` en toute position.
+///   DEUX délimiteurs ; oublier `)` détruit `1) premier` (la numérotation
+///   usuelle en français administratif).
 /// - `-`/`+`/`*` (puce), `>` (citation), `#` (titre) — seuls en tête de ligne.
 ///
 /// Le délimiteur est échappé APRÈS les chiffres, car Markdown n'admet pas
@@ -46,12 +45,12 @@ const String _kInlineDangerous = r'\\`*_[<~';
 /// alors que `1\. item` ressort `1. item`. Mesuré.
 ///
 /// `)` n'est PAS échappé seul : hors d'une numérotation il n'ouvre aucun bloc,
-/// et l'échapper partout ramènerait le bruit que la CR dénonce.
+/// et l'échapper partout ramènerait du sur-échappement.
 ///
 /// Une **espace** (ou une fin de ligne) est exigée après le délimiteur, comme
 /// CommonMark l'exige lui-même : `12.05.2024` et `#hashtag` n'ouvrent aucun
-/// bloc et n'ont donc pas à être échappés — c'était du sur-échappement résiduel,
-/// exactement le grief de la CR. Le `>` fait exception : `>cite` est une
+/// bloc et n'ont donc pas à être échappés — ce serait du sur-échappement.
+/// Le `>` fait exception : `>cite` est une
 /// citation valide sans espace.
 final RegExp _kBlockOpener =
     RegExp(r'^(\s*)(?:(\d+)([.)])(?=\s|$)|([-+*#])(?=\s|$)|(>))');

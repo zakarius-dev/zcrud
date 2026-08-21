@@ -168,10 +168,9 @@ List<List<String>>? zCellsOfTablePayload(Object? data) {
 }
 
 /// Relit un tableau Markdown **LEGACY** en matrice, ou `null` si [raw]
-/// n'en tire aucune ligne (CR parité 2026-08-11).
+/// n'en tire aucune ligne.
 ///
-/// PORT FIDÈLE de l'algorithme de lecture du legacy
-/// (`table_view_embed.dart:78-177`, `_parseMarkdown`) — c'est LUI qui définit ce
+/// PORT FIDÈLE de l'algorithme de lecture du legacy — c'est LUI qui définit ce
 /// qu'un embed `x-embed-table` réel contient, pas notre grammaire GFM stricte :
 /// - lignes vides ignorées ; ligne séparatrice `|---|---|` (sans alphanumérique)
 ///   ignorée ;
@@ -212,8 +211,8 @@ List<List<String>>? zParseLegacyMarkdownTable(String raw) {
 }
 
 /// Découpe une ligne de tableau **legacy** en cellules, en respectant les
-/// délimiteurs LaTeX — PORT FIDÈLE de la boucle de `table_view_embed.dart:91-155`
-/// (états `insideInlineMath`/`insideBlockMath`/`insideEscape`/`braceDepth`).
+/// délimiteurs LaTeX — PORT FIDÈLE de la boucle du legacy (états
+/// `insideInlineMath`/`insideBlockMath`/`insideEscape`/`braceDepth`).
 ///
 /// Un `|` n'est séparateur que HORS `$...$` / `$$...$$` / accolades, et non
 /// échappé par `\`. Bords vides retirés, cellules `trim()`ées (comme le legacy).

@@ -306,8 +306,8 @@ class ZSubListConfig extends ZFieldConfig {
   /// colonne oblige à visiter **toutes** ses cellules. Au-delà de
   /// `ZSubListFieldWidget.summaryTableRowBudget` lignes, le socle retombe donc
   /// sur un rendu **construit à la demande** (`ListView.builder`, colonnes de
-  /// largeur égale sous une ligne d'en-têtes de même géométrie) — le rendu de
-  /// v1.4.1, inchangé. Voir cette constante pour le budget et sa justification.
+  /// largeur égale sous une ligne d'en-têtes de même géométrie). Voir cette
+  /// constante pour le budget et sa justification.
   ///
   /// ## Sur une surface étroite, la table se replie
   ///

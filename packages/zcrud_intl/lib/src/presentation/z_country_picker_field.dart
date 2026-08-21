@@ -77,7 +77,7 @@ class ZCountryPickerField extends StatefulWidget {
 
   /// Codes ISO remontés **en tête** de la liste (surcharge par-champ via
   /// [ZIntlFieldConfig.preferredCountryIsos]). `const []` → ordre catalogue
-  /// inchangé (rétro-compat E11a-2 stricte).
+  /// inchangé (rétro-compatibilité stricte).
   final List<String> preferredIsos;
 
   /// Affiche la boîte de recherche (option neutre, défaut `true`).
@@ -368,7 +368,7 @@ class _ZCountryPickerFieldState extends State<ZCountryPickerField> {
 
   /// Remonte les [ZCountryPickerField.preferredIsos] en tête (ordre déclaré),
   /// puis le reste dans l'ordre catalogue. `preferredIsos` vide → identité
-  /// (rétro-compat E11a-2 stricte).
+  /// (rétro-compatibilité stricte).
   List<ZCountryInfo> _ordered(List<ZCountryInfo> results) {
     final prefs = widget.preferredIsos;
     if (prefs.isEmpty || results.isEmpty) return results;

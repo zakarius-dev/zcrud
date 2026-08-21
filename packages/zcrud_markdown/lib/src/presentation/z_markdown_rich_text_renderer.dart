@@ -1,10 +1,10 @@
 /// `ZMarkdownRichTextRenderer` — moteur **Markdown** du port `ZRichTextRenderer`
 /// de `zcrud_core` (AD-1/AD-8).
 ///
-/// `zcrud_core` v0.66.0 a livré le PORT et rien d'autre : sans implémentation,
-/// un `ZcrudScope` n'a aucun moteur à injecter et tout libellé riche retombe sur
-/// le texte simple. Ce fichier est l'implémentation — le pendant exact de
-/// `zcrud_list` pour `ZListRenderer`.
+/// `zcrud_core` ne porte que le PORT : sans implémentation injectée, un
+/// `ZcrudScope` n'a aucun moteur et tout libellé riche retombe sur le texte
+/// simple. Ce fichier est l'implémentation — le pendant exact de `zcrud_list`
+/// pour `ZListRenderer`.
 ///
 /// ## Aucune arête nouvelle (AD-1)
 ///

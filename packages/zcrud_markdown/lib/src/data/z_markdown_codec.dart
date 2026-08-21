@@ -329,14 +329,11 @@ const List<_ZMarkerAttr> _kMarkerAttrs = <_ZMarkerAttr>[
 ///   reversé en attribut d'op `alt`. Reste PERDU : un ALT contenant `]` ou un
 ///   saut de ligne (cf. table des pertes) — jamais l'URL.
 /// - `divider` (`---`) : `MarkdownToDelta` construit l'embed depuis `hr` et
-///   `DeltaToMarkdown` écrit `- - -`. Le pont existait des DEUX côtés, comme
-///   pour l'image — et il était neutralisé au même endroit. Corriger l'image
-///   sans chercher son jumeau, c'était traiter un symptôme : trouvé en revue.
+///   `DeltaToMarkdown` écrit `- - -`. Le pont existe des DEUX côtés, comme pour
+///   l'image.
 /// - `table` : rendu en TABLEAU GFM lisible quand ce rendu se relit à
-///   l'identique, en bloc clôturé `\`\`\`zcrud-table` sinon (charge JSON exacte).
-///   Avant la v0.8.0 un tableau perdait **toutes ses cellules** au premier
-///   enregistrement — ce n'était pas une dégradation documentée, c'était la même
-///   destruction que celle de l'image.
+///   l'identique, en bloc clôturé `\`\`\`zcrud-table` sinon (charge JSON exacte)
+///   — jamais une perte de cellules.
 /// - `video` : pas de forme Markdown native ; encodé en lien `[src](src)`
 ///   (parité des hôtes). Le round-trip le rend donc comme un LIEN, pas comme une
 ///   vidéo — dégradation ASSUMÉE, mais la source survit, ce qui n'était pas le
@@ -359,19 +356,9 @@ const Set<String> _kNativeEmbedTypes = <String>{
 ///
 /// ## Table des pertes (round-trip borné)
 ///
-/// > **Cette table a été FAUSSE de la v0.1.0 à la v0.6.0 incluse** sur deux
-/// > lignes, et INCOMPLÈTE sur trois pertes. Elle annonçait « titres H1–H6 »
-/// > alors que H4–H6 étaient écrasés, et « barré conservé » alors que le
-/// > décodeur ne savait pas relire `~~`. Aucun test ne l'exécutait : le groupe
-/// > « assertion EXPLICITE de chaque perte » n'en couvrait que 2 sur 8. Les deux
-/// > défauts sont CORRIGÉS depuis la v0.7.0, et chaque ligne
-/// > ci-dessous est désormais assertée par exécution.
-///
-/// > **Elle était encore INCOMPLÈTE au tag v0.18.0** : elle rangeait les
-/// > « images via `![](src)` » parmi ce que le round-trip PRÉSERVE, alors que le
-/// > **texte ALT** était détruit dès le premier enregistrement et n'apparaissait
-/// > sur AUCUNE ligne de perte. Le ALT est désormais PRÉSERVÉ ; ce
-/// > qui en reste perdu est explicitement listé ci-dessous.
+/// > **Cette table est la SPÉCIFICATION du round-trip, pas un commentaire** :
+/// > chaque ligne ci-dessous est assertée par exécution. Une perte qui n'y
+/// > figure pas est un défaut, pas une dégradation tolérée.
 ///
 /// Le round-trip `decode(encode(ops))` PRÉSERVE la sémantique du **sous-ensemble
 /// Markdown** : titres **H1–H6**, gras, italique, **souligné** via `<u>`,
@@ -432,7 +419,7 @@ final class ZMarkdownCodec implements ZCodec {
   /// mode **texte littéral** sur le chemin SANS pont, et sur lui seul.
   ///
   /// Mesuré avant correction : `ZMarkdownCodec()` (la construction par défaut,
-  /// donc le chemin EXPOSÉ au sens de CR-56) altérait `$$\int_0^1 x\,dx$$` en
+  /// donc le chemin EXPOSÉ) altérait `$$\int_0^1 x\,dx$$` en
   /// `$$\\int\_0^1 x,dx$$` au premier cycle — antislash doublé par
   /// l'échappement, `\,` détruit par la résolution CommonMark. Altération de
   /// DONNÉE, irréversible.
@@ -473,7 +460,7 @@ final class ZMarkdownCodec implements ZCodec {
   /// concaténant ses cellules — mesuré : `| a | b |…` devient `ab12`, séparateurs
   /// et structure détruits. Aujourd'hui une table survit en texte littéral, donc
   /// l'activer serait échanger une perte contre une DESTRUCTION. Le pont
-  /// table↔embed est un chantier à part.
+  /// table↔embed reste hors de ce codec.
   md.Document _markdownDocument() => md.Document(
         encodeHtml: false,
         // Les syntaxes des ponts passent AVANT les syntaxes par défaut
@@ -769,7 +756,7 @@ final class ZMarkdownCodec implements ZCodec {
   /// La charge de l'embed reste une `String` (l'URL), comme l'attend tout
   /// `EmbedBuilder` d'hôte : le ALT voyage en ATTRIBUT, clé inconnue du registre
   /// `flutter_quill` (donc `AttributeScope.ignore`, inoffensive au rendu) mais
-  /// parfaitement sérialisable — c'est la place que la CR laissait au choix.
+  /// parfaitement sérialisable.
   static List<Map<String, dynamic>> _restoreImageAlt(
     List<Map<String, dynamic>> ops,
   ) {
@@ -827,8 +814,8 @@ final class ZMarkdownCodec implements ZCodec {
   /// (`## `, `> `, `- `) en TÊTE de ligne — donc AVANT l'embed —, puis la coupure
   /// forcée du handler `table` scinde la ligne en deux et **orpheline le texte** :
   /// `## ` vide avant le tableau, titre nu après. Un tableau en TÊTE de document
-  /// n'était pas touché (le drapeau démarre à `false`), ce qui explique le
-  /// contrôle négatif vert de la CR.
+  /// n'est pas touché (le drapeau démarre à `false`) : un contrôle qui ne
+  /// testerait que ce cas-là passerait sans rien voir.
   ///
   /// On répare donc à la SOURCE, sur la ligne Delta, plutôt qu'à l'écriture :
   /// c'est la structure qui était fausse, pas son rendu.

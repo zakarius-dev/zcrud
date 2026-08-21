@@ -1,14 +1,9 @@
-/// `ZNoteAudio` — slot audio **typé, versionné, OPT-IN** d'une note (
-/// , AD-4 pt.1).
+/// `ZNoteAudio` — slot audio **typé, versionné, OPT-IN** d'une note
+/// (invariant AD-4 pt.1).
 ///
-/// ## 🔵 Le PREMIER `ZExtension` CONCRET du repo — un filet qu'on n'avait jamais
-/// vu mordre
-///
-/// `grep -r "implements ZExtension" packages/*/lib` rendait **zéro** avant cette
-/// story : AD-4 pt.1 (« slot type additif **versionné**, parsé **défensivement**,
-/// **jamais** de throw ») n'avait **jamais été exercé concrètement** — c'était de
-/// la **prose**. [fromJsonSafe] lui donne son premier cas réel **et** ses tests de
-/// corruption (*« un filet qu'on n'a pas vu échouer n'est pas un filet »*).
+/// Implémentation concrète de [ZExtension] : slot de type **additif**,
+/// **versionné**, parsé **défensivement** — [fromJsonSafe] ne lève jamais et
+/// rend `null` sur toute charge qu'elle ne sait pas typer.
 ///
 /// ## Pourquoi l'audio est HORS-SCHÉMA
 ///

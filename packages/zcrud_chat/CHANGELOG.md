@@ -3,6 +3,42 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.3.0 — 2026-08-21
+
+### Ajouté — l'animation d'occupation, la table de capacités complète, la coquille de tuile
+
+**Occupation.** Le glyphe d'un artefact en cours de génération s'anime sur la
+palette du socle — **par artefact**, jamais globalement. L'animation consomme
+`busyPalette`, qui n'avait jusqu'ici **aucun lecteur**. Sous « Réduire les
+animations », aucun contrôleur n'est créé et le glyphe se fige sur la première
+teinte : l'occupation reste perceptible par la teinte **et** par l'annonce.
+
+Le mécanisme lui-même vit dans `zcrud_core` (`ZColorCycle`) : il ne connaît ni le
+chat, ni les artefacts, et sert donc tous les modules.
+
+**Capacités : 5 → 9 entrées** de référence (`summary`, `elaboration`, `examples`,
+`poem`), avec leurs clés publiques. Ce sont des **défauts** surchargeables, pas
+une liste fermée : une clé inventée par l'hôte reste servie par sa propre
+déclaration.
+
+**Coquille de tuile** — `ZChatTileShell`, déclarée par le skin : carte, filet,
+coiffe par le sujet du tour (`topic`), style du bouton de dépli (alignement
+directionnel, forme, remplissage par rôle de `ColorScheme`), et format
+d'horodatage par résolveur d'hôte avec repli défensif.
+
+⚠️ **`null` ⇒ arbre strictement inchangé.** Le rendu de référence est le défaut
+**de la référence**, servi quand la coquille est déclarée — jamais le défaut du
+paquet : plusieurs applications consomment `zcrud_chat` et aucune n'a demandé ce
+rendu.
+
+### Mesuré — le débordement à neuf artefacts : rien à ajouter
+
+La rangée est un `Wrap`, qui répartit déjà neuf cibles sur plusieurs lignes
+(6 + 3 sur 360 dp, 5 + 4 sur 320, 4 + 4 + 1 sur 240). Toutes restent à
+48 × 48 dp, dans le viewport, disjointes, et répondent au tap — en LTR comme en
+RTL. **Aucun mécanisme n'est ajouté** : en ajouter un déplacerait des cibles déjà
+atteignables derrière une affordance de plus.
+
 ## 3.2.0 — 2026-08-21
 
 ### Ajouté — les artefacts d'un message se DÉCLARENT au lieu de se porter

@@ -1,5 +1,5 @@
-/// La **déclaration** d'un artefact par message — le mécanisme que
-/// CR-IFFD-84 (volet A) demande, et que 2 765 lignes d'hôte remplaçaient.
+/// La **déclaration** d'un artefact par message : ce que l'hôte doit dire pour
+/// que le socle rende la barre d'artefacts, et rien de plus.
 ///
 /// ## Ce que l'hôte déclare, et ce qu'il ne déclare plus
 ///
@@ -30,7 +30,8 @@
 ///
 /// Le socle **ne connaît ni `mindmap` ni `flashcards`** : il connaît une clé
 /// opaque, exactement comme `ZChatCustomAction.verb`. Les identités et le
-/// stockage restent à l'hôte — chez IFFD, `classroom` s'écrit `chat` en base.
+/// stockage restent à l'hôte — une clé `classroom` peut très bien s'écrire
+/// `chat` en base.
 /// La clé ne sert qu'à deux choses : retrouver un accent dans la chaîne
 /// `ZChatNotebookSkin` (paramètre > jeton > référence), et distinguer deux
 /// artefacts dans l'arbre.
@@ -38,10 +39,11 @@
 /// ## 🔴 L'ordre et la teinte restent ceux de l'HÔTE
 ///
 /// Les verbes sont rendus dans l'ordre **déclaré**, et chacun porte sa propre
-/// teinte facultative. C'est délibéré : IFFD rend « Régénérer » en vert pour
-/// la carte mentale et en gris-bleu pour les variantes, et l'ordre des
-/// entrées diffère d'un artefact à l'autre. Un mécanisme qui imposerait un
-/// ordre unique forcerait l'hôte à choisir entre le socle et la parité.
+/// teinte facultative. C'est délibéré : une application rend couramment
+/// « Régénérer » en vert pour un artefact et en gris-bleu pour un autre, et
+/// l'ordre des entrées diffère d'un artefact à l'autre. Un mécanisme qui
+/// imposerait un ordre unique forcerait l'hôte à choisir entre le socle et sa
+/// propre présentation.
 ///
 /// ## Trois lectures d'ÉTAT, sur le message BRUT
 ///
@@ -74,9 +76,8 @@ typedef ZChatArtifactCount = int? Function(ZChatMessage message);
 
 /// Lecture de l'**occupation** — une génération en cours POUR CET ARTEFACT.
 ///
-/// La lecture est indexée par artefact **par construction** : c'est ce qui
-/// rend inexprimable le défaut ③ de CR-IFFD-84, où l'occupation animait les
-/// sept glyphes à la fois.
+/// La lecture est indexée par artefact **par construction** : une occupation
+/// qui animerait tous les glyphes à la fois est inexprimable.
 typedef ZChatArtifactBusy = bool Function(ZChatMessage message);
 
 /// Condition de visibilité d'un verbe. [present] est le résultat **déjà
@@ -134,8 +135,8 @@ class ZChatArtifactAction {
 
   /// « Ouvrir » — visible **si l'artefact est présent**.
   ///
-  /// C'est ce verbe qui ferme le défaut ② de CR-IFFD-84 : toucher le glyphe
-  /// ouvre un MENU, il ne régénère plus en silence.
+  /// C'est ce verbe qui garantit que toucher le glyphe ouvre un MENU, et ne
+  /// régénère jamais en silence.
   const ZChatArtifactAction.open({
     required this.onSelected,
     this.label,
@@ -194,8 +195,8 @@ class ZChatArtifactAction {
   /// Teinte **propre à ce verbe**, portée au plancher de contraste avant
   /// d'être peinte. `null` signifie la couleur ambiante.
   ///
-  /// C'est ce champ qui rend la parité d'IFFD atteignable sans forcer le
-  /// socle à inventer une palette de verbes.
+  /// C'est ce champ qui laisse l'hôte garder sa palette de verbes sans que le
+  /// socle ait à en inventer une.
   final Color? accent;
 
   /// Condition de visibilité. `null` signifie **toujours visible**.

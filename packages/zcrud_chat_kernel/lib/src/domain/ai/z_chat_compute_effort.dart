@@ -20,9 +20,8 @@
 /// ## Pourquoi un **entier 1..5** et pas un enum
 ///
 /// Parce que c'est la forme **réellement commune aux fournisseurs
-/// rencontrés** : un entier `1..5` d'origine `backend/app/models/chat.py:261`
-/// d'un côté, `shared/schemas/base_request.py:104` de l'autre — le même axe,
-/// sous le même intervalle. Un enum `low/medium/high` perdrait deux paliers
+/// rencontrés** : un entier `1..5` de part et d'autre — le même axe, sous le
+/// même intervalle. Un enum `low/medium/high` perdrait deux paliers
 /// sur cinq à l'aller-retour ; l'entier les porte tous, et un préréglage à
 /// trois valeurs s'y **projette** ([low]/[medium]/[high]). L'inverse — porter
 /// l'enum et deviner l'entier — ne serait pas réversible.
@@ -36,6 +35,10 @@ library;
 /// rejetée par une exception — un champ corrompu ne fait pas échouer le
 /// parent).
 class ZChatComputeEffort {
+  // Provenance de l'intervalle, conservée : `backend/app/models/chat.py:261`
+  // d'un côté, `shared/schemas/base_request.py:104` de l'autre — les deux
+  // backends rencontrés portent le MÊME entier 1..5.
+
   /// Construit un effort de calcul, [level] **écrêté** à `1..5`.
   ZChatComputeEffort(int level)
     : level = level < min ? min : (level > max ? max : level);

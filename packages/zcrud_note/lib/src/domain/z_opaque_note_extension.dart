@@ -1,15 +1,15 @@
 /// `ZOpaqueNoteExtension` — **canal de SURVIE** du payload `extension` **non
-/// décodé** (cette remédiation).
+/// décodé**.
 ///
 /// ## Le problème : `formatVersion` avait une EXISTENCE, aucun POUVOIR
 ///
 /// `ZExtension` promet une extension *« riche, **rétro-compatible**, versionnée
 /// indépendamment du parent »* et une **« évolution additive »** (AD-4 pt.1 /
-/// AD-10). **Le mécanisme livré en v1 ne savait faire qu'une chose de la version :
-/// la JETER.**
+/// AD-10). Sans ce canal, la seule chose qu'un décodeur sait faire d'une
+/// version qu'il ne connaît pas, c'est **la jeter**.
 ///
-/// **MESURÉ (v1)** — les **deux** voies par lesquelles un payload d'extension
-/// disparaissait **définitivement** :
+/// **Les deux voies** par lesquelles un payload d'extension disparaîtrait
+/// **définitivement** :
 ///
 /// ```dart
 /// // (1) LA VOIE DU REGISTRE (la SEULE que le store emprunte) :

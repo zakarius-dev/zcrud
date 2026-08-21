@@ -804,13 +804,15 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   ///
   /// Cette limite est **signalée**, jamais silencieuse (même idiome que
   /// `ZSyncMeta.collidingReservedKeys`) : une capacité déclarée que personne
-  /// n'applique est précisément le défaut qu'il faut éviter. Le correctif —
-  /// faire porter la composition au stepper — touche son invariant de
-  /// single-writer et relève d'un chantier à part, pas d'un ajout ponctuel.
+  /// n'applique est précisément le défaut qu'il faut éviter.
   ///
   /// Les cibles `value`, `options` et `bounds`, elles, fonctionnent
   /// normalement sous stepper : seule `visible` est concernée.
   void _warnDerivedVisibilityUnsupported() {
+    // Le correctif de fond — faire porter la composition de la cible `visible`
+    // au stepper — touche son invariant de single-writer sur `visibleFields` :
+    // c'est un chantier à part, pas un ajout ponctuel greffé ici.
+
     assert(() {
       final ignored = <String>[
         for (final f in widget.fields)

@@ -30,6 +30,7 @@ import '../render/z_chat_render_request.dart';
 import '../render/z_chat_seam_failure.dart';
 import 'z_chat_block_view.dart';
 import 'z_chat_labels.dart';
+import 'z_chat_tile_shell.dart';
 
 /// Construit le contenu d'un créneau par message — couture d'hôte, sur le
 /// modèle des builders de seam existants.
@@ -67,6 +68,8 @@ class ZChatMessageTile extends StatefulWidget {
     this.expandController,
     this.identityBuilder,
     this.actionsBuilder,
+    this.shell,
+    this.topic,
     super.key,
   });
 
@@ -132,6 +135,28 @@ class ZChatMessageTile extends StatefulWidget {
   /// `null` (défaut) donne un comportement strictement inchangé.
   final ZChatMessageSlotBuilder? actionsBuilder;
 
+  /// La **coquille** de cette tuile : carte, filet, horodatage, style du
+  /// bouton de dépli.
+  ///
+  /// `null` (défaut) donne un arbre strictement inchangé — pas même un
+  /// conteneur transparent. Déclarée, elle apporte le rendu de référence,
+  /// corrigeable champ par champ (cf. [ZChatTileShell]).
+  final ZChatTileShell? shell;
+
+  /// Le **sujet du tour** qui coiffe ce message — typiquement la question qui
+  /// a produit cette réponse.
+  ///
+  /// 🔴 Ce n'est pas l'identité de l'interlocuteur : celle-ci a son propre
+  /// créneau ([identityBuilder]), et une surface qui la masque
+  /// (`ZChatNotebookView`) peut parfaitement coiffer ses réponses. Régler
+  /// l'un ne règle jamais l'autre.
+  ///
+  /// `null` ou vide (défaut) signifie aucune coiffe, absente de l'arbre
+  /// (invariant AD-4). Une vue résout ce sujet par message
+  /// (`ZChatTileShell.topicOf`, qui voit le message précédent) ; une tuile
+  /// montée seule le reçoit ici, déjà résolu.
+  final String? topic;
+
   @override
   State<ZChatMessageTile> createState() => _ZChatMessageTileState();
 }
@@ -189,10 +214,26 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
       ),
     );
 
+    // Deux déclarations INDÉPENDANTES, deux effets séparés : la coquille
+    // amène la carte, son filet et le style du bouton de dépli ; le sujet du
+    // tour amène la coiffe. Déclarer l'un ne fait jamais apparaître l'autre.
+    final ZChatTileShell? shell = widget.shell;
+    final String? raw = widget.topic?.trim();
+    final String? subject = (raw == null || raw.isEmpty) ? null : raw;
+    // Rien de déclaré ⇒ RIEN n'est résolu : pas une lecture de thème, pas un
+    // rôle de couleur demandé. La coquille implicite ne sert qu'à donner sa
+    // typographie de référence à une coiffe posée sans carte.
+    final ZChatTileShellStyle? style = (shell == null && subject == null)
+        ? null
+        : zChatTileShellStyleOf(context, shell: shell ?? const ZChatTileShell());
+    // Le bouton de dépli ne suit QUE la coquille : une coiffe seule ne le
+    // déplace pas.
+    final ZChatTileShellStyle? shellStyle = shell == null ? null : style;
+
     final double? maxHeight = widget.collapsedMaxHeight;
     final Widget core = maxHeight == null
         ? content
-        : _collapsible(content, maxHeight);
+        : _collapsible(content, maxHeight, shellStyle);
 
     // Créneaux additifs. Construits ici, dans `build`, donc hors du
     // `ValueListenableBuilder` du dépli : basculer « Afficher plus » ne
@@ -209,8 +250,14 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
       widget.actionsBuilder,
       kZChatSeamActionsSlot,
     );
-    if (identity == null && actions == null) return core;
-    return Column(
+    final Widget? topic = _topic(context, shell, style, subject);
+    if (identity == null &&
+        actions == null &&
+        topic == null &&
+        shellStyle == null) {
+      return core;
+    }
+    final Widget stacked = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
@@ -220,10 +267,94 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
         // leurs boutons gardent leur sémantique propre. Aucun interligne
         // imposé : l'espacement appartient au widget de l'hôte.
         ?identity,
+        // La coiffe est construite ICI, dans `build`, donc hors du
+        // `ValueListenableBuilder` du dépli : basculer « Afficher plus » ne
+        // la reconstruit pas, et elle ne reconstruit pas les blocs
+        // (invariant AD-2).
+        ?topic,
         core,
         ?actions,
       ],
     );
+    if (shellStyle == null) return stacked;
+    return _ZTileShell(style: shellStyle, child: stacked);
+  }
+
+  /// La coiffe : le sujet du tour, puis l'horodatage.
+  ///
+  /// Rend `null` quand il n'y a ni l'un ni l'autre — pas un conteneur vide
+  /// (invariant AD-4). L'horodatage suit la chaîne du skin
+  /// (`showTimestamp`) et n'existe que sous une coquille déclarée : une
+  /// tuile nue n'a jamais affiché de date, et ce lot ne lui en donne pas.
+  Widget? _topic(
+    BuildContext context,
+    ZChatTileShell? shell,
+    ZChatTileShellStyle? style,
+    String? subject,
+  ) {
+    if (style == null) return null;
+    final DateTime? stamp = (shell != null && style.showTimestamp)
+        ? widget.message.createdAt
+        : null;
+    if (subject == null && stamp == null) return null;
+    final int maxLines = style.topicMaxLines;
+    final List<Widget> parts = <Widget>[
+      if (subject != null)
+        Semantics(
+          // La contrainte DÉCLARÉE : la coiffe est un en-tête, et son libellé
+          // porte le sujet ENTIER — la troncature est visuelle, elle ne
+          // retire rien à l'annonce.
+          header: true,
+          container: true,
+          label: subject,
+          excludeSemantics: true,
+          child: Text(
+            subject,
+            maxLines: maxLines,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.start,
+            // Une GRAISSE seule, posée sur le style ambiant : la police, le
+            // corps et la couleur restent ceux de l'hôte (invariant FR-26).
+            style: DefaultTextStyle.of(
+              context,
+            ).style.copyWith(fontWeight: style.topicWeight),
+          ),
+        ),
+      if (stamp != null)
+        Text(
+          _stamp(context, stamp, shell?.timestampFormatter),
+          textAlign: TextAlign.start,
+        ),
+    ];
+    if (parts.length == 1) return parts.single;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: parts,
+    );
+  }
+
+  /// L'horodatage rendu — format de l'hôte, sinon celui de la référence.
+  ///
+  /// Chaîne totale (invariant AD-10) : un formateur d'hôte qui lève perd son
+  /// format, jamais l'horodatage ni le message. L'exception est relayée à
+  /// `FlutterError` avec le nom du seam, comme pour les créneaux.
+  String _stamp(
+    BuildContext context,
+    DateTime value,
+    ZChatTimestampFormatter? formatter,
+  ) {
+    if (formatter == null) return zChatReferenceTimestamp(value);
+    try {
+      return formatter(context, value);
+    } catch (error, stack) {
+      zChatReportSeamFailure(
+        error: error,
+        stack: stack,
+        seam: kZChatSeamTimestamp,
+      );
+      return zChatReferenceTimestamp(value);
+    }
   }
 
   /// Invoque un builder de créneau — chaîne totale (invariant AD-10) : un
@@ -245,7 +376,11 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
   }
 
   /// Le cœur repliable.
-  Widget _collapsible(Widget content, double maxHeight) {
+  Widget _collapsible(
+    Widget content,
+    double maxHeight,
+    ZChatTileShellStyle? style,
+  ) {
     return ValueListenableBuilder<bool>(
       // L'écoute stable de la liaison — pas la source courante : brancher
       // le `ValueListenableBuilder` sur le contrôleur lui-même obligerait à
@@ -270,6 +405,7 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
                 if (!overflowed && !expanded) return const SizedBox.shrink();
                 return _ZToggleButton(
                   expanded: expanded,
+                  style: style,
                   // Le geste interne écrit à la source : quand l'hôte
                   // pilote, le tap est écrit chez lui et lui reste donc
                   // lisible. Une écriture dans un miroir local aurait laissé
@@ -395,38 +531,130 @@ class _ZBlocks extends StatelessWidget {
 
 /// Le bouton de dépli — cible tactile ≥ 48 dp, sémantique de bouton, libellé
 /// **résolu** (jamais codé en dur).
+///
+/// Deux rendus, et un seul point de bascule : sans coquille déclarée, le
+/// bouton est le texte aligné au début qu'il a toujours été ; avec, il prend
+/// la forme, l'alignement et le remplissage de la coquille. Le plancher
+/// tactile de 48 dp et la sémantique de bouton sont les mêmes dans les deux —
+/// ils ne sont pas un style, ils ne se règlent pas.
 class _ZToggleButton extends StatelessWidget {
-  const _ZToggleButton({required this.expanded, required this.onToggle});
+  const _ZToggleButton({
+    required this.expanded,
+    required this.onToggle,
+    this.style,
+  });
 
   final bool expanded;
   final VoidCallback onToggle;
 
+  /// La coquille résolue, ou `null` — l'interrupteur entre les deux rendus.
+  final ZChatTileShellStyle? style;
+
   @override
   Widget build(BuildContext context) {
-    return Semantics(
+    final String text = zChatLabel(
+      context,
+      expanded ? kZChatLabelShowLess : kZChatLabelShowMore,
+    );
+    final ZChatTileShellStyle? s = style;
+    final Widget target = s == null
+        ? ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: kZChatMinTapTarget,
+              minWidth: kZChatMinTapTarget,
+            ),
+            child: Align(
+              // Invariant AD-13 : alignement directionnel — le bouton suit le
+              // sens du texte.
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(text, textAlign: TextAlign.start),
+            ),
+          )
+        : ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: kZChatMinTapTarget,
+              minWidth: kZChatMinTapTarget,
+            ),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: s.toggleFill?.color,
+                borderRadius: BorderRadius.all(s.toggleRadius),
+              ),
+              child: Padding(
+                padding: s.togglePadding,
+                child: Center(
+                  // `widthFactor: 1` — la pilule se serre sur son libellé,
+                  // sans jamais descendre sous le plancher tactile que la
+                  // contrainte ci-dessus impose.
+                  widthFactor: 1,
+                  child: Text(
+                    text,
+                    textAlign: TextAlign.start,
+                    // Le premier plan vient de la MÊME paire que le fond :
+                    // le contraste du libellé est garanti par le rôle, pas
+                    // espéré (invariant AD-13). Sans remplissage, le style
+                    // ambiant est gardé tel quel.
+                    style: s.toggleFill == null
+                        ? null
+                        : DefaultTextStyle.of(
+                            context,
+                          ).style.copyWith(color: s.toggleFill!.onColor),
+                  ),
+                ),
+              ),
+            ),
+          );
+    final Widget interactive = Semantics(
       button: true,
       onTap: onToggle,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onToggle,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minHeight: kZChatMinTapTarget,
-            minWidth: kZChatMinTapTarget,
-          ),
-          child: Align(
-            // Invariant AD-13 : alignement directionnel — le bouton suit le
-            // sens du texte.
-            alignment: AlignmentDirectional.centerStart,
-            child: Text(
-              zChatLabel(
-                context,
-                expanded ? kZChatLabelShowLess : kZChatLabelShowMore,
-              ),
-              textAlign: TextAlign.start,
-            ),
-          ),
+        child: target,
+      ),
+    );
+    // L'alignement est posé AU-DESSUS du geste, jamais au-dessous : la zone
+    // tactile épouse la pilule au lieu de couvrir toute la largeur de la
+    // tuile. Directionnel (invariant AD-13) : en RTL, `centerStart` bascule
+    // de lui-même, sans second réglage.
+    if (s == null) return interactive;
+    return Align(alignment: s.toggleAlignment, child: interactive);
+  }
+}
+
+/// La carte d'une tuile : sa marge externe, son fond, son filet, sa marge
+/// interne.
+///
+/// Ce widget n'existe que sous une coquille déclarée — il n'a pas de branche
+/// « rien » : c'est l'appelant qui décide de ne pas le monter, ce qui laisse
+/// l'arbre d'un hôte passif exempt même d'un conteneur transparent
+/// (invariant AD-4).
+class _ZTileShell extends StatelessWidget {
+  const _ZTileShell({required this.style, required this.child});
+
+  final ZChatTileShellStyle style;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: style.margin,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: style.backgroundColor,
+          // Une épaisseur nulle ne peint aucun côté : une coquille sans
+          // cadre est exprimable, et elle ne pose alors rien.
+          border: style.hasBorder
+              ? Border.fromBorderSide(
+                  BorderSide(
+                    color: style.borderColor,
+                    width: style.borderWidth,
+                  ),
+                )
+              : null,
+          borderRadius: BorderRadius.all(style.radius),
         ),
+        child: Padding(padding: style.padding, child: child),
       ),
     );
   }

@@ -313,8 +313,7 @@ class ZBooleanFieldWidget extends StatelessWidget {
   /// de 56 à **48 dp**, donc l'encart de 88 à 80 dp — toujours pas les 56 dp
   /// du voisin — tout en posant la ligne **au plancher exact** de la cible
   /// tactile (invariant AD-13, aucune marge) et, dans sa variante `dense`, en
-  /// changeant la **taille du libellé**, ce que la CR ne demande pas et que le
-  /// point 1 de la même CR contredirait.
+  /// changeant la **taille du libellé**.
   Widget _box(BuildContext context, Widget child) {
     final tokens = ZcrudTheme.of(context);
     final EdgeInsetsDirectional pad = tokens.inputContentPadding;

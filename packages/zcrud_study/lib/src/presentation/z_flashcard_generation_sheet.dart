@@ -357,7 +357,7 @@ class _ZFlashcardGenerationSheetState extends State<ZFlashcardGenerationSheet> {
   }
 
   /// Sources du contexte EFFECTIVES : celles de l'hôte + celles acquises dans
-  /// cette session, dans l'ordre de présentation (CR-70).
+  /// cette session, dans l'ordre de présentation.
   List<ZGenerationSourceOption> get _allContextSources =>
       <ZGenerationSourceOption>[...widget.contextSources, ..._acquiredSources.value];
 
@@ -389,7 +389,7 @@ class _ZFlashcardGenerationSheetState extends State<ZFlashcardGenerationSheet> {
 
   /// Soumission : les sources du contexte SÉLECTIONNÉES sont résolues À LA
   /// DEMANDE par le contrôleur (sous anti-double-tap + jeton de fraîcheur),
-  /// jamais avant (CR-70/SM-1).
+  /// jamais avant (invariant SM-1).
   void _submit() => _generation.generate(
         _buildRequest(),
         sourceResolvers: <ZGenerationSourceResolver>[
@@ -399,7 +399,7 @@ class _ZFlashcardGenerationSheetState extends State<ZFlashcardGenerationSheet> {
         ],
       );
 
-  /// Enveloppe le résolveur d'une option (CR-70) :
+  /// Enveloppe le résolveur d'une option :
   /// * sans [ZGenerationSourceOption.resolveContent] ⇒ source **par référence**
   ///   (la provenance porte la référence — couvre `…FromWholeDocument`) ;
   /// * avec ⇒ résolution hôte, la provenance de l'option est estampillée sur la
@@ -425,7 +425,7 @@ class _ZFlashcardGenerationSheetState extends State<ZFlashcardGenerationSheet> {
     };
   }
 
-  /// Acquisition d'une source SUR PLACE (CR-70) : le geste de l'hôte produit une
+  /// Acquisition d'une source SUR PLACE : le geste de l'hôte produit une
   /// option, ajoutée aux sources du contexte et PRÉ-SÉLECTIONNÉE — sans toucher
   /// au paramétrage saisi (controllers stables, tranches non réinitialisées).
   Future<void> _acquire(ZSourceAcquisitionGesture gesture) async {
@@ -566,7 +566,7 @@ class _ZFlashcardGenerationSheetState extends State<ZFlashcardGenerationSheet> {
     );
   }
 
-  /// Section « sources du contexte » + gestes d'acquisition (CR-70).
+  /// Section « sources du contexte » + gestes d'acquisition.
   ///
   /// **Chaîne de repli totale (AD-4/AD-10)** : sans sources présentées ET sans
   /// geste d'acquisition, retourne `SizedBox.shrink()` — l'hôte passif rend

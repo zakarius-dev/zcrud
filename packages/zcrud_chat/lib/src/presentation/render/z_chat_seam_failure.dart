@@ -23,6 +23,12 @@ const String kZChatSeamIdentitySlot = 'ZChatMessageTile.identityBuilder';
 /// Nom du seam d'**actions par message** — idem.
 const String kZChatSeamActionsSlot = 'ZChatMessageTile.actionsBuilder';
 
+/// Nom du seam du **sujet de tour** (la coiffe d'une tuile) — idem.
+const String kZChatSeamTopic = 'ZChatTileShell.topicOf';
+
+/// Nom du seam du **format d'horodatage** d'une tuile — idem.
+const String kZChatSeamTimestamp = 'ZChatTileShell.timestampFormatter';
+
 /// Nom du seam des **lectures d'état d'un artefact déclaré** — idem.
 ///
 /// Une seule constante pour les quatre lectures (`presence`, `count`, `busy`,

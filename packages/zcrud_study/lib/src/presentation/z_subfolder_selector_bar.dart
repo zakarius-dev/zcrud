@@ -399,8 +399,8 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
   /// Le chrome est un [Material] (plus un `DecoratedBox`) : l'`InkWell` du
   /// déclencheur y trouve son ancêtre `Material` LE PLUS PROCHE, et l'encre se
   /// dessine AU-DESSUS du fond — un fond opaque posé en `DecoratedBox`
-  /// au-dessus du `Material` ambiant l'aurait avalée (piège M3 payé en B-53
-  /// chez IFFD). Gardé par test : le `Material` du chrome est bien l'ancêtre
+  /// au-dessus du `Material` ambiant l'aurait avalée (piège M3 classique).
+  /// Gardé par test : le `Material` du chrome est bien l'ancêtre
   /// d'encre de l'`InkWell`, et le splash y est réellement peint.
   Widget _triggerChrome(BuildContext context, ZcrudTheme theme, Widget child) {
     final ZSubfolderTriggerVariant variant =

@@ -1,5 +1,5 @@
 /// Hint de **format de persistance** d'un champ date/heure, déclaré par champ via
-/// [ZcrudField.persistAs] et lu **statiquement** par le générateur E2-5
+/// [ZcrudField.persistAs] et lu **statiquement** par le générateur
 /// (`ConstantReader`, jamais `reflectable`).
 ///
 /// **Enum pur-Dart, ZÉRO dépendance backend** (AD-5) : ce marqueur ne référence

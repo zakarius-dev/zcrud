@@ -57,10 +57,8 @@ enum ZChatRole {
 ///
 /// ## Deux concepts nommés « effort », jamais fusionnés
 ///
-/// La verbosité d'une réponse (ce type, dont l'origine est
-/// `domain/enums/chat_enums.dart:20-26`) et le budget de calcul demandé au
-/// fournisseur ([ZChatComputeEffort], dont l'origine est
-/// `lib/src/domain/models/ai/ai_models.dart:119-122`) sont deux intégrations
+/// La verbosité d'une réponse (ce type) et le budget de calcul demandé au
+/// fournisseur ([ZChatComputeEffort]) sont deux intégrations
 /// vues sous le même nom générique « effort » ailleurs dans l'écosystème,
 /// avec des valeurs incompatibles (`concis`/`standard`/`detaille` d'un côté,
 /// `low`/`medium`/`high` de l'autre). Les fusionner produirait un enum vide de
@@ -72,6 +70,12 @@ enum ZChatRole {
 /// paquet : le budget de calcul porte le nom explicite [ZChatComputeEffort],
 /// jamais `Effort` seul.
 enum ZChatResponseLength {
+  // Provenance des DEUX axes homonymes, conservée pour qu'on ne les refusionne
+  // jamais : la VERBOSITÉ vient de `domain/enums/chat_enums.dart:20-26` d'une
+  // intégration, le BUDGET DE CALCUL (`ZChatComputeEffort`) de
+  // `lib/src/domain/models/ai/ai_models.dart:119-122` d'une autre. Valeurs
+  // incompatibles, donc types distincts.
+
   /// Réponse courte.
   concise,
 

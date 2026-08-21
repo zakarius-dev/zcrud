@@ -15,9 +15,8 @@
 ///
 /// ## Les quatre pièges d'intégration, traités ici
 ///
-/// La dartdoc de l'assemblage de référence
-/// (`example/lib/demos/study_session_demo_screen.dart:72-100`) énumère les
-/// pièges. Deux d'entre eux se règlent **dans cette vue** :
+/// La dartdoc de l'assemblage de référence énumère les pièges. Deux d'entre
+/// eux se règlent **dans cette vue** :
 ///
 /// 1. **`key` de pile dérivée de l'identité de file** (su-4 D1) — la pile porte
 ///    `ValueKey('zStudySessionStack_<identité>')` où l'identité est l'ordre des

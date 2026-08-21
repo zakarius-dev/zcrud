@@ -152,7 +152,7 @@ class ZcrudModel {
   /// Construit l'annotation `const` avec des défauts sûrs.
   const ZcrudModel({this.kind, this.fieldRename = ZFieldRename.snake});
 
-  /// Discriminant du `ZcrudRegistry`. `null` ⇒ le générateur E2-5 le **dérive**
+  /// Discriminant du `ZcrudRegistry`. `null` ⇒ le générateur le **dérive**
   /// du nom de la classe.
   final String? kind;
 

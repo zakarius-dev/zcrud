@@ -156,7 +156,7 @@ class ZMarkdownReader extends StatefulWidget {
   final WidgetBuilder? emptyBuilder;
 
   /// (opt-in) : icône de l'état vide enrichi (parité legacy
-  /// `notes_rounded`, `mef:386` — l'ICÔNE est choisie par l'hôte, rien d'imposé).
+  /// `notes_rounded` — l'ICÔNE est choisie par l'hôte, rien d'imposé).
   final IconData? emptyIcon;
 
   /// (opt-in) : seconde ligne de l'état vide enrichi (sous le

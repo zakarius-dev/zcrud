@@ -75,10 +75,9 @@ class ZcrudField {
   /// Libellé d'affichage (clé l10n ou littéral ; résolu côté UI en E3/E4).
   final String? label;
 
-  /// Type de champ. `null` ⇒ le générateur **E2-5** l'infère du type statique
+  /// Type de champ. `null` ⇒ le générateur l'infère du type statique
   /// Dart (`String`→`text`, `int`→`integer`, `bool`→`boolean`,
-  /// `DateTime`→`dateTime`, `enum`→`select`, …). L'inférence est **implémentée
-  /// en E2-5** (E2-4 ne fait que la documenter).
+  /// `DateTime`→`dateTime`, `enum`→`select`, …).
   final EditionFieldType? type;
 
   /// Validateurs **déclaratifs** (composés en `FormBuilderValidators` par E3).

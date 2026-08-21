@@ -22,7 +22,7 @@
 /// [ZInvertedSurface] ferme les trois chemins d'un coup — `TextTheme`,
 /// `DefaultTextStyle`, `IconTheme` — et existe dans `zcrud_core` pour que toute
 /// surface d'inversion à venir (sélection, mise en avant, état actif) l'obtienne
-/// **gratuitement**, au lieu de rejouer le même défaut une troisième fois.
+/// **gratuitement**, au lieu de rejouer le même défaut.
 ///
 /// L'imposition du premier plan n'est pas écrite ici : elle est déléguée à
 /// [ZForegroundOverride], la primitive générale

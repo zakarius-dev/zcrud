@@ -263,8 +263,7 @@ class ZSubListFieldWidget extends StatefulWidget {
   /// ce point implicite (et de le découvrir sur l'appareil d'un utilisateur), le
   /// socle **choisit** : au-delà de ce nombre de lignes, il rend la sous-liste
   /// par un `ListView.builder` (lignes construites à la demande, colonnes de
-  /// largeur **égale** sous une ligne d'en-têtes de même géométrie) — le rendu
-  /// de v1.4.1, conservé pour cela même.
+  /// largeur **égale** sous une ligne d'en-têtes de même géométrie).
   ///
   /// **La bascule est observable**, et c'est délibéré : `find.byType(Table)`
   /// répond `findsOneWidget` à [summaryTableRowBudget] lignes et `findsNothing`
@@ -1477,7 +1476,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   ///    désignation d'une ligne de document — la seule dont l'élasticité ne
   ///    dérange personne, et celle qu'on veut voir en entier.
   /// 2. **En-têtes solidaires** — l'en-tête n'est pas une ligne qui *reproduit*
-  ///    la géométrie des cellules (ce que faisait le rendu de v1.4.1, en
+  ///    la géométrie des cellules (ce que fait le rendu à colonnes égales, en
   ///    recopiant marges et réserve d'actions) : c'est **la même colonne**, dans
   ///    la même `Table`. Il ne peut donc pas se désaligner : il n'y a rien à
   ///    tenir d'accord.

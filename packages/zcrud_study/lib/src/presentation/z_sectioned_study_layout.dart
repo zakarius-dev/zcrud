@@ -85,15 +85,14 @@ class ZSectionedStudyLayout extends StatelessWidget {
   /// Descripteurs de section, dans l'ordre visuel vertical voulu.
   final List<ZStudyToolsSectionSpec> sections;
 
-  /// CR-53 — contenu LIBRE rendu **au-dessus de la première section**, dans le
+  /// Contenu LIBRE rendu **au-dessus de la première section**, dans le
   /// **MÊME défilement** qu'elles (premier item du `ListView.builder`, jamais
   /// un second `Scrollable` ni un bandeau figé hors-scroll).
   ///
-  /// Répond au constat lex : la page-détail rend quatre blocs au-dessus des
-  /// sections (CTA « Réviser », chips de sous-dossiers, bandeau de génération,
-  /// filtre par tags) qui ne sont PAS des sections d'outils — les verser dans
-  /// [sections] serait un détournement (ni titre, ni compteur, ni sémantique de
-  /// section).
+  /// Pour tout ce qu'une page-détail rend au-dessus de ses sections sans que ce
+  /// soit une section d'outils : appel à réviser, chips de sous-dossiers,
+  /// bandeau de génération, filtre par tags. Les verser dans [sections] serait
+  /// un détournement (ni titre, ni compteur, ni sémantique de section).
   ///
   /// **AD-4** : `null` ⇒ capacité absente — AUCUN item n'est réservé, aucun
   /// `SizedBox.shrink` fantôme n'est inséré, `itemCount` est inchangé.

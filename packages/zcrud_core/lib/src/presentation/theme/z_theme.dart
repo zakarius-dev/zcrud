@@ -870,52 +870,52 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// consultés en ligne.
   final double? subListColumnMinWidth;
 
-  /// Hauteur future de la barre d'accent. `null` conserve v0.19.3 inchangé.
+  /// Hauteur future de la barre d'accent. `null` conserve le rendu par défaut.
   final double? accentBarHeight;
 
-  /// Début directionnel du dégradé. `null` conserve v0.19.3 inchangé.
+  /// Début directionnel du dégradé. `null` conserve le rendu par défaut.
   final AlignmentGeometry? gradientBegin;
 
-  /// Fin directionnelle du dégradé. `null` conserve v0.19.3 inchangé.
+  /// Fin directionnelle du dégradé. `null` conserve le rendu par défaut.
   final AlignmentGeometry? gradientEnd;
 
-  /// Flou de l'ombre de carte. `null` conserve v0.19.3 inchangé.
+  /// Flou de l'ombre de carte. `null` conserve le rendu par défaut.
   final double? cardShadowBlurRadius;
 
-  /// Décalage de l'ombre de carte. `null` conserve v0.19.3 inchangé.
+  /// Décalage de l'ombre de carte. `null` conserve le rendu par défaut.
   final Offset? cardShadowOffset;
 
-  /// Opacité de l'ombre de carte. `null` conserve v0.19.3 inchangé.
+  /// Opacité de l'ombre de carte. `null` conserve le rendu par défaut.
   final double? cardShadowAlpha;
 
-  /// Opacité de teinte de carte. `null` conserve v0.19.3 inchangé.
+  /// Opacité de teinte de carte. `null` conserve le rendu par défaut.
   final double? cardTintAlpha;
 
-  /// Taille future du conteneur d'icône. `null` conserve v0.19.3 inchangé.
+  /// Taille future du conteneur d'icône. `null` conserve le rendu par défaut.
   final double? iconContainerSize;
 
-  /// Rayon futur du conteneur d'icône. `null` conserve v0.19.3 inchangé.
+  /// Rayon futur du conteneur d'icône. `null` conserve le rendu par défaut.
   final Radius? iconContainerRadius;
 
-  /// Padding directionnel de la pastille de compteur. `null` conserve v0.19.3.
+  /// Padding directionnel de la pastille de compteur. `null` conserve le rendu par défaut.
   final EdgeInsetsDirectional? countPillPadding;
 
-  /// Rayon de la pastille de compteur. `null` conserve v0.19.3 inchangé.
+  /// Rayon de la pastille de compteur. `null` conserve le rendu par défaut.
   final Radius? countPillRadius;
 
-  /// Taille d'icône de la pastille de compteur. `null` conserve v0.19.3.
+  /// Taille d'icône de la pastille de compteur. `null` conserve le rendu par défaut.
   final double? countPillIconSize;
 
-  /// Durée de célébration. `null` conserve v0.19.3 inchangé.
+  /// Durée de célébration. `null` conserve le rendu par défaut.
   final Duration? celebrationDuration;
 
-  /// Courbe de célébration. `null` conserve v0.19.3 inchangé.
+  /// Courbe de célébration. `null` conserve le rendu par défaut.
   final Curve? celebrationCurve;
 
-  /// Durée de retournement. `null` conserve v0.19.3 inchangé.
+  /// Durée de retournement. `null` conserve le rendu par défaut.
   final Duration? flipDuration;
 
-  /// Courbe de retournement. `null` conserve v0.19.3 inchangé.
+  /// Courbe de retournement. `null` conserve le rendu par défaut.
   final Curve? flipCurve;
 
   /// Habillage du déclencheur de navigation de fratrie.

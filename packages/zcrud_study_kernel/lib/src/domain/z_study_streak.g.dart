@@ -9,11 +9,11 @@ part of 'z_study_streak.dart';
 /// Sentinelle « argument non fourni » du `copyWith` généré (reset-null).
 const Object? _$undefined = _ZUndefined();
 
-/// Clé de SONDE du garde DW-ES14-1 : n'est le nom persisté d'AUCUN champ de
-/// schéma, ni une clé réservée (`ZSyncMeta`), ni `source`/`extension`.
+/// Clé de SONDE de la garde d'extensibilité : n'est le nom persisté d'AUCUN
+/// champ de schéma, ni une clé réservée (`ZSyncMeta`), ni `source`/`extension`.
 const String _$zExtraProbeKey = 'zz__zcrud_extra_probe__';
 
-/// **GARDE EXÉCUTOIRE DW-ES14-1** (invariant AD-4) — émise dans le `register…`
+/// **GARDE EXÉCUTOIRE d'extensibilité** (invariant AD-4) — émise dans le `register…`
 /// de toute classe `ZExtensible`.
 ///
 /// ## Ce qu'il fait, et pourquoi il existe
@@ -212,7 +212,7 @@ extension ZStudyStreakZcrud on ZStudyStreak {
   );
 }
 
-/// Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+/// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyStreakFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),
   ZFieldSpec(name: 'current', type: EditionFieldType.integer),
@@ -220,7 +220,7 @@ const List<ZFieldSpec> $ZStudyStreakFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'last_graded_day', type: EditionFieldType.text),
 ];
 
-/// Clés que `ZStudyStreak.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// Clés que `ZStudyStreak.toMap()` PEUT produire — surensemble
 /// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
 /// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
 const Set<String> $ZStudyStreakPersistedKeys = <String>{

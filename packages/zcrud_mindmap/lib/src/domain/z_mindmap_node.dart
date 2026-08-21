@@ -14,8 +14,8 @@ import 'package:zcrud_core/domain.dart';
 
 /// Décodeur défensif OPTIONNEL d'une `ZExtension` concrète depuis sa map JSON.
 ///
-/// Les sous-classes concrètes de [ZExtension] vivent dans l'app hôte / les
-/// stories ultérieures (audio/sources/RAG/confiance), **jamais** dans le cœur.
+/// Les sous-classes concrètes de [ZExtension] vivent dans l'app hôte ou dans
+/// un satellite (audio/sources/RAG/confiance), **jamais** dans le cœur.
 /// L'appelant qui sait les reconstruire fournit ce décodeur ; l'absence de
 /// décodeur laisse `extension` à `null`. Toute exception du décodeur est
 /// absorbée (`ZExtension.guard`, AD-10).

@@ -93,7 +93,7 @@ class ZCountBadgeSpec {
 /// Badge de compte accessible, construit uniquement pour un compte positif.
 class ZCountBadge extends StatelessWidget {
   /// Construit un badge de compte à partir de données de présentation.
-  /// `count` doit être **strictement positif** (CR epic VIS, MEDIUM-3).
+  /// `count` doit être **strictement positif**.
   /// [ZCountBadgeRow] filtre déjà les comptes nuls — un badge à zéro est
   /// ABSENT DE L'ARBRE, il n'est pas masqué. Mais rien n'empêchait d'instancier
   /// `ZCountBadge` directement avec `0` ou une valeur négative, ce qui affichait

@@ -84,7 +84,7 @@ class ZChatNotebookView extends StatelessWidget {
   /// reste un notebook (invariant AD-4 — créneau nul, absent de l'arbre).
   final ZChatMessageSlotBuilder? actionsBuilder;
 
-  /// Les **artefacts déclarés** par l'hôte — le mécanisme de CR-IFFD-84.
+  /// Les **artefacts déclarés** par l'hôte.
   ///
   /// Vide (défaut), le notebook est **exactement** celui d'avant : aucun
   /// widget ajouté, [actionsBuilder] relayé tel quel. Renseigné, le socle
@@ -97,9 +97,15 @@ class ZChatNotebookView extends StatelessWidget {
   final List<ZChatArtifactSpec> artifacts;
 
   /// Réglage de rendu du notebook — c'est lui qui porte
-  /// `capabilityAccents`, la table d'accents par clé d'artefact. `null`
-  /// signifie « le jeton `ZcrudTheme.chatCapabilityAccents`, puis la
-  /// référence ».
+  /// `capabilityAccents`, la table d'accents par clé d'artefact, et la
+  /// **coquille** des tuiles (`ZChatNotebookSkin.tile`). `null` signifie
+  /// « le jeton `ZcrudTheme.chatCapabilityAccents`, puis la référence », et
+  /// aucune coquille.
+  ///
+  /// Déclarer une coquille est le geste qui coiffe une réponse de sa
+  /// question (`ZChatTileShell.topicOf`) : le sujet du tour, à ne pas
+  /// confondre avec l'identité de l'interlocuteur, qui reste — elle —
+  /// structurellement absente de cette surface.
   final ZChatNotebookSkin? skin;
 
   /// Couture de confirmation d'un verbe destructeur. `null` signifie la
@@ -138,6 +144,11 @@ class ZChatNotebookView extends StatelessWidget {
       // Identité : pas de paramètre sur cette surface — le masquage n'est pas
       // un défaut réglable, c'est la définition de l'usage notebook.
       actionsBuilder: _actionsSlot(),
+      // La coquille DÉCLARÉE traverse la racine commune jusqu'à la fabrique
+      // de tuile unique : elle ne peut donc pas diverger entre les deux
+      // surfaces, et le notebook n'en construit aucune lui-même. Non
+      // déclarée, c'est `null` qui passe — l'arbre est inchangé.
+      shell: skin?.tile,
       // Relai, jamais une seconde saisie : la fabrique unique rend les deux
       // surfaces.
       composer: composer,

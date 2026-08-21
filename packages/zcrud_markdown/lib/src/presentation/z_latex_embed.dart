@@ -43,10 +43,10 @@ const String kLatexEmbedType = 'latex';
 /// `{"insert": {"latexBlock": "<src>"}}`. ADDITIF : ne remplace jamais `latex`.
 const String kLatexBlockEmbedType = 'latexBlock';
 
-/// Clé Delta de l'embed formule **LEGACY bloc/display** (CR parité
-/// 2026-08-11) — op `{"insert": {"formula": "<latex nu>"}}`.
+/// Clé Delta de l'embed formule **LEGACY bloc/display** — op
+/// `{"insert": {"formula": "<latex nu>"}}`.
 ///
-/// MESURÉ sur le legacy (`formula_embed.dart:250` + `:323`) : la clé est
+/// Forme legacy MESURÉE : la clé est
 /// `formula`, la charge une **`String` LaTeX nue** (même forme que la nôtre —
 /// seul le NOM de clé diverge), rendue `MathStyle.display`, `expanded == false`.
 /// zcrud la RECONNAÎT EN LECTURE (rendu + pré-remplissage d'édition) ; toute
@@ -55,8 +55,8 @@ const String kLatexBlockEmbedType = 'latexBlock';
 const String kLegacyFormulaEmbedType = 'formula';
 
 /// Clé Delta de l'embed formule **LEGACY inline** — op
-/// `{"insert": {"formula_inline": "<latex nu>"}}` (`formula_embed.dart:266` +
-/// `:377`, `MathStyle.text`). Même contrat de lecture seule que
+/// `{"insert": {"formula_inline": "<latex nu>"}}` (rendu `MathStyle.text`).
+/// Même contrat de lecture seule que
 /// [kLegacyFormulaEmbedType].
 const String kLegacyFormulaInlineEmbedType = 'formula_inline';
 
@@ -110,7 +110,7 @@ Widget _latexErrorPlaceholder(BuildContext context) {
 }
 
 /// `InheritedWidget` INTERNE fournissant la [ZRichTextFormulaSpec] par champ
-/// (CR parité 2026-08-11) aux builders de formule — qui sont `const` et
+/// aux builders de formule — qui sont `const` et
 /// PARTAGÉS ([kZEmbedBuilders]) : la personnalisation PAR CHAMP ne peut donc
 /// passer que par le contexte, jamais par le builder.
 ///

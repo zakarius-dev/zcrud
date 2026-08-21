@@ -41,12 +41,14 @@ import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
 import '../render/z_chat_render_request.dart';
+import '../render/z_chat_seam_failure.dart';
 import '../render/z_chat_shell_render_request.dart';
 import '../render/z_chat_shell_renderer_scope.dart';
 import '../z_chat_controller.dart';
 import 'z_chat_block_view.dart';
 import 'z_chat_labels.dart';
 import 'z_chat_message_tile.dart';
+import 'z_chat_tile_shell.dart';
 
 /// Rend la conversation d'un [ZChatController] — zéro dépendance tierce.
 ///
@@ -61,6 +63,7 @@ class ZChatConversationView extends StatelessWidget {
     this.reverse = false,
     this.identityBuilder,
     this.actionsBuilder,
+    this.shell,
     this.composer,
     super.key,
   });
@@ -89,6 +92,14 @@ class ZChatConversationView extends StatelessWidget {
   /// [ZChatMessageTile.actionsBuilder] — les verbes passent par
   /// `runAction(ZChatCustomAction(...))`, jamais par un canal parallèle.
   final ZChatMessageSlotBuilder? actionsBuilder;
+
+  /// La **coquille** relayée à la fabrique de tuile unique.
+  ///
+  /// `null` (défaut) laisse l'arbre strictement inchangé. Déclarée, elle
+  /// apporte la carte, son filet, l'horodatage, le style du bouton de dépli,
+  /// et la coiffe : [ZChatTileShell.topicOf] est résolu **ici**, parce que
+  /// cette vue est la seule à voir le message qui précède.
+  final ZChatTileShell? shell;
 
   /// La zone de saisie montée sous le fil — typiquement un `ZChatComposer`.
   ///
@@ -123,6 +134,7 @@ class ZChatConversationView extends StatelessWidget {
                         reverse: reverse,
                         identityBuilder: identityBuilder,
                         actionsBuilder: actionsBuilder,
+                        shell: shell,
                       ),
                     );
                   },
@@ -177,6 +189,7 @@ class _ZChatList extends StatelessWidget {
     required this.reverse,
     required this.identityBuilder,
     required this.actionsBuilder,
+    required this.shell,
   });
 
   final ZChatController controller;
@@ -187,6 +200,7 @@ class _ZChatList extends StatelessWidget {
   final bool reverse;
   final ZChatMessageSlotBuilder? identityBuilder;
   final ZChatMessageSlotBuilder? actionsBuilder;
+  final ZChatTileShell? shell;
 
   /// La tuile de l'index [index] — le seul constructeur de tuile du paquet.
   Widget _item(BuildContext context, int index) {
@@ -202,6 +216,11 @@ class _ZChatList extends StatelessWidget {
         // il n'existe aucun second endroit où les brancher.
         identityBuilder: identityBuilder,
         actionsBuilder: actionsBuilder,
+        shell: shell,
+        // Le SUJET du tour, résolu ici : c'est le seul endroit qui voit le
+        // message précédent. Une tuile, seule, ne peut pas savoir quelle
+        // question l'a produite.
+        topic: _topicOf(message, index),
       );
     }
     final int active = index - messages.length;
@@ -216,6 +235,37 @@ class _ZChatList extends StatelessWidget {
       controller: controller,
       requestId: requestId,
     );
+  }
+
+  /// Le sujet du tour du message d'index [index], ou `null`.
+  ///
+  /// La **question** d'un tour est le message d'utilisateur le plus proche
+  /// au-dessus : la recherche remonte le fil, jamais la position d'affichage
+  /// — `reverse` retourne la liste à l'écran, pas l'ordre du dialogue.
+  ///
+  /// Chaîne totale (invariant AD-10) : un résolveur d'hôte qui lève perd la
+  /// coiffe, jamais le message ; l'échec est relayé à `FlutterError` avec le
+  /// nom du seam.
+  String? _topicOf(ZChatMessage message, int index) {
+    final ZChatTurnTopicResolver? resolver = shell?.topicOf;
+    if (resolver == null) return null;
+    ZChatMessage? request;
+    for (int i = index - 1; i >= 0; i--) {
+      if (messages[i].role == ZChatRole.user) {
+        request = messages[i];
+        break;
+      }
+    }
+    try {
+      return resolver(message, request);
+    } catch (error, stack) {
+      zChatReportSeamFailure(
+        error: error,
+        stack: stack,
+        seam: kZChatSeamTopic,
+      );
+      return null;
+    }
   }
 
   @override

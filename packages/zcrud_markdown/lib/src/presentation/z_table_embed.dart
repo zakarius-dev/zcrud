@@ -138,7 +138,7 @@ class ZTableEmbedBuilder extends EmbedBuilder {
 }
 
 /// `EmbedBuilder` de LECTURE de l'embed tableau **LEGACY**
-/// (`x-embed-table`, charge **string Markdown**, CR parité 2026-08-11).
+/// (`x-embed-table`, charge **string Markdown**).
 ///
 /// DÉFENSIF (AD-10) : charge non-`String` / vide / illisible → placeholder
 /// annoté ([kTableInvalidLabel]), jamais de throw. La relecture passe par

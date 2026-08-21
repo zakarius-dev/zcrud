@@ -56,8 +56,8 @@
 /// depuis la position de la ligne dans la séquence rendue, avec l'unique règle
 /// de numérotation du cœur (`ZListOrdinal.textAt`).
 ///
-/// **Largeur de colonnes RESPONSIVE** (parité legacy DODLP
-/// `dynamic_list_screen.dart:1223-1231`) : [ZSfDataGridRenderer.columnWidthMode]
+/// **Largeur de colonnes RESPONSIVE** (parité legacy DODLP) :
+/// [ZSfDataGridRenderer.columnWidthMode]
 /// est désormais **nullable**. `null` (défaut) ⇒ le mode est **dérivé** de
 /// (plateforme × nombre de colonnes visibles) par
 /// [ZSfDataGridRenderer.responsiveColumnWidthMode] ; une valeur explicite
@@ -153,8 +153,7 @@ class ZSfDataGridRenderer implements ZListRenderer {
   });
 
   /// Dérive le mode de largeur de colonnes **PUREMENT** (aucun
-  /// `BuildContext`), en reproduisant la RÈGLE legacy DODLP
-  /// (`dynamic_list_screen.dart:1223-1231`) :
+  /// `BuildContext`), en reproduisant la RÈGLE legacy DODLP :
   ///
   /// | Cible | Règle |
   /// |---|---|

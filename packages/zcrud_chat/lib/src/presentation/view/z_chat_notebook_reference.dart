@@ -65,18 +65,32 @@
 /// | histoire `#009688` | 3.67 | 5.10 |
 /// | humour `#FFEB3B` | 1.22 (insuffisant) | 15.34 |
 /// | classe `#8BC34A` | 2.10 (insuffisant) | 8.92 |
+/// | résumé `#607D8B` | 4.37 | 4.29 |
+/// | élaboration `#4CAF50` | 2.78 (insuffisant) | 6.74 |
+/// | exemples `#E91E63` | 4.35 | 4.31 |
+/// | poème `#9C27B0` | 6.31 | 2.97 (insuffisant) |
 /// | occupation `#F44336` (rouge) | 3.68 | 5.09 |
-/// | occupation `#4CAF50` (vert) | 2.78 (insuffisant) | 6.74 |
 /// | occupation `#795548` (brun) | 6.55 | 2.86 (insuffisant) |
 ///
-/// Sur les 8 teintes distinctes portées ici, 5 échouent au seuil WCAG 3.0
-/// dans au moins une des deux luminosités — majoritairement en thème clair.
+/// Sur les 11 teintes distinctes portées ici, 6 échouent au seuil WCAG 3.0
+/// dans au moins une des deux luminosités — majoritairement en thème clair
+/// (4 en clair, 2 en sombre).
 /// La correction retenue n'est pas de les recolorer (ce serait renoncer à la
 /// fidélité visuelle sur le seul axe où elle est demandée) : c'est de
 /// garantir qu'aucune information ne repose sur elles, ce que le type
 /// [ZChatNotebookCapabilityStyle] rend structurel en exigeant deux canaux
 /// non chromatiques. Un hôte qui veut une teinte conforme la pose par jeton
 /// ou par paramètre — la chaîne est faite pour cela.
+///
+/// 🔴 **Les teintes ne penchent pas toutes du même côté.** La plupart
+/// échouent en thème clair, mais `#9C27B0` (poème) est une teinte sombre :
+/// elle tient largement en clair (6.31) et échoue en **sombre** (2.97). Une
+/// correction qui ne saurait qu'assombrir aggraverait son cas. Un
+/// consommateur qui applique lui-même ces valeurs doit donc porter la teinte
+/// au plancher dans **les deux sens**, contre la surface réellement peinte —
+/// c'est ce que fait `zReadableTintOn`, qui déplace la luminance du côté qui
+/// coûte le moins. C'est la condition pour qu'une même table serve les deux
+/// luminosités.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -154,6 +168,18 @@ const String kZChatCapabilityHumour = 'humour';
 /// Clé de variante « chat / salle de classe ».
 const String kZChatCapabilityClassroom = 'classroom';
 
+/// Clé de variante « résumé ».
+const String kZChatCapabilitySummary = 'summary';
+
+/// Clé de variante « élaboration » (développement d'une réponse).
+const String kZChatCapabilityElaboration = 'elaboration';
+
+/// Clé de variante « exemples ».
+const String kZChatCapabilityExamples = 'examples';
+
+/// Clé de variante « poème ».
+const String kZChatCapabilityPoem = 'poem';
+
 /// Les valeurs de référence du rendu notebook — le point d'audit unique.
 ///
 /// Modifier une valeur ici change le défaut du skin partout ; ajouter une
@@ -191,14 +217,74 @@ abstract final class ZChatNotebookReference {
 
   /// Motif d'horodatage de référence.
   ///
-  /// Le socle ne l'applique pas automatiquement : c'est un format figé,
-  /// insensible à la locale, et l'imposer à tout hôte reproduirait un
-  /// défaut de libellé en dur une couche plus bas. La valeur est publiée
-  /// pour l'hôte qui veut une parité stricte
-  /// (`DateFormat(ZChatNotebookReference.timestampFormatPattern)`) ; à
-  /// défaut, le format reste celui du backend de coquille, qui suit la
-  /// locale.
+  /// C'est un format figé, insensible à la locale : il n'est appliqué qu'à
+  /// une tuile dont la coquille est **déclarée**, où il est le rendu de
+  /// référence (`zChatReferenceTimestamp` le produit sans aucune dépendance
+  /// de date). Une tuile sans coquille n'affiche aucun horodatage, et aucun
+  /// hôte ne se voit imposer ce format.
+  ///
+  /// Le motif reste publié sous cette forme pour l'hôte qui formate
+  /// lui-même — `DateFormat(ZChatNotebookReference.timestampFormatPattern)`
+  /// — et tout autre besoin passe par un `ZChatTimestampFormatter`, qui,
+  /// lui, connaît la locale.
   static const String timestampFormatPattern = 'dd/MM/yyyy HH:mm:ss';
+
+  // ── Coquille de tuile ────────────────────────────────────────────────
+  //
+  // Ces valeurs ne sont servies qu'à une tuile dont la coquille est DÉCLARÉE
+  // (`ZChatTileShell`). Une tuile sans coquille ne les lit jamais : c'est ce
+  // qui rend l'ajout strictement additif pour les hôtes qui n'ont rien
+  // demandé.
+
+  /// Rayon des coins de la carte d'une tuile.
+  static const Radius tileRadius = Radius.circular(12);
+
+  /// Épaisseur du filet d'une tuile.
+  static const double tileBorderWidth = 1;
+
+  /// Slot de rôle du filet d'une tuile — le rôle **neutre** du `ColorScheme`
+  /// de l'hôte (`ZColorSlot.neutral`), dont le premier plan sert de teinte de
+  /// filet.
+  ///
+  /// C'est un indice de rôle, jamais une couleur : le socle ne connaît aucune
+  /// valeur, et la teinte réellement peinte appartient au thème de l'hôte
+  /// (invariant FR-26).
+  static const int tileBorderColorSlot = 4;
+
+  /// Marge interne d'une carte de tuile — directionnelle (invariant AD-13).
+  static const EdgeInsetsDirectional tilePadding =
+      EdgeInsetsDirectional.all(8);
+
+  /// Marge externe d'une carte de tuile — directionnelle (invariant AD-13).
+  static const EdgeInsetsDirectional tileMargin =
+      EdgeInsetsDirectional.symmetric(vertical: 4);
+
+  /// Lignes de la coiffe avant troncature **visuelle**. Le sujet complet
+  /// reste annoncé.
+  static const int tileTopicMaxLines = 1;
+
+  /// Alignement du bouton de dépli d'une tuile à coquille — **centré**, et
+  /// directionnel (invariant AD-13).
+  static const AlignmentDirectional tileToggleAlignment =
+      AlignmentDirectional.center;
+
+  /// Rayon du bouton de dépli — la moitié du plancher tactile, donc une
+  /// pilule dès que le bouton fait sa hauteur minimale.
+  static const Radius tileToggleRadius = Radius.circular(24);
+
+  /// Marge interne du bouton de dépli — directionnelle (invariant AD-13).
+  static const EdgeInsetsDirectional tileTogglePadding =
+      EdgeInsetsDirectional.symmetric(horizontal: 24);
+
+  /// Le bouton de dépli d'une tuile à coquille est-il **plein** ?
+  static const bool tileToggleFilled = true;
+
+  /// Slot de rôle du remplissage du bouton de dépli — le rôle **primaire**
+  /// du `ColorScheme` de l'hôte (`ZColorSlot.primary`).
+  ///
+  /// Un slot rend une **paire** contrastée : le libellé du bouton reste donc
+  /// lisible sur son fond, en thème clair comme en sombre (invariant AD-13).
+  static const int tileToggleFillSlot = 0;
 
   // ── Composer ─────────────────────────────────────────────────────────
 
@@ -390,8 +476,44 @@ abstract final class ZChatNotebookReference {
   /// Une clé inconnue rend `null` côté [ZChatNotebookSkin] : une capacité
   /// future n'a pas d'accent de référence, elle n'en fabrique pas un au
   /// hasard (invariant AD-10).
+  ///
+  /// ## Neuf capacités, et ce que la table garantit
+  ///
+  /// Les neuf clés publiées ([kZChatCapabilityMindmap],
+  /// [kZChatCapabilityFlashcards], [kZChatCapabilityStory],
+  /// [kZChatCapabilityHumour], [kZChatCapabilityClassroom],
+  /// [kZChatCapabilitySummary], [kZChatCapabilityElaboration],
+  /// [kZChatCapabilityExamples], [kZChatCapabilityPoem]) portent chacune un
+  /// accent **distinct** : le code-couleur est le repère que l'utilisateur
+  /// apprend, deux capacités ne partagent donc jamais une teinte.
+  ///
+  /// Cette table est un **défaut**, pas une liste fermée. Une clé qu'elle ne
+  /// connaît pas reste servie par l'accent que l'appelant déclare — au niveau
+  /// de la spec d'artefact, de `ZChatNotebookSkin.capabilityAccents` ou du
+  /// jeton `ZcrudTheme.chatCapabilityAccents`. Un consommateur peut donc
+  /// inventer ses propres capacités sans rien perdre du rendu.
   static const Map<String, ZChatNotebookCapabilityStyle> capabilities =
       <String, ZChatNotebookCapabilityStyle>{
+        // ── Note d'implémentation — D'OÙ viennent ces neuf valeurs ────────
+        //
+        // Le relevé initial n'en portait que cinq ; l'écran legacy en rend
+        // NEUF. Les quatre dernières (`summary`, `elaboration`, `examples`,
+        // `poem`) sont relevées sur la table d'écran de
+        // `chatbot_conversation_screen.dart`, lignes `:1297`, `:1306`,
+        // `:1315`, `:1324`.
+        //
+        // 🔴 LE PIÈGE DE LA DOUBLE SOURCE. Deux sources coexistent chez
+        // l'hôte et elles DIVERGENT : le modèle (`ChatbotMessageTransformer`)
+        // porte ses propres couleurs et donne `#2196F3` pour `summary`, là où
+        // l'écran donne `#607D8B`. Ce sont les valeurs d'ÉCRAN qui sont
+        // retenues — c'est l'écran qui décide de ce que l'utilisateur voit.
+        //
+        // Un relevé futur reparti de l'enum du modèle « corrigerait » donc
+        // `summary` vers la teinte des flashcards : une régression
+        // silencieuse, qui ne casse rien et change ce que l'utilisateur
+        // reconnaît. Le groupe A10 de `z_chat_cr84_artifacts_test.dart`
+        // asserte la valeur d'écran ET la divergence, pour que ce retour en
+        // arrière rougisse.
         kZChatCapabilityMindmap: ZChatNotebookCapabilityStyle(
           accent: Color(0xFFFF9800),
           generatedLabelKey: kZChatLabelGenerated,
@@ -414,6 +536,32 @@ abstract final class ZChatNotebookReference {
         ),
         kZChatCapabilityClassroom: ZChatNotebookCapabilityStyle(
           accent: Color(0xFF8BC34A),
+          generatedLabelKey: kZChatLabelGenerated,
+          generatedMarkSize: generatedMarkSize,
+        ),
+        // ⚠️ Valeur d'ÉCRAN (`:1297`), PAS celle de l'enum du modèle, qui
+        // porte `#2196F3` — cf. le piège de la double source ci-dessus.
+        kZChatCapabilitySummary: ZChatNotebookCapabilityStyle(
+          accent: Color(0xFF607D8B),
+          generatedLabelKey: kZChatLabelGenerated,
+          generatedMarkSize: generatedMarkSize,
+        ),
+        // Valeur d'écran `:1306`.
+        kZChatCapabilityElaboration: ZChatNotebookCapabilityStyle(
+          accent: Color(0xFF4CAF50),
+          generatedLabelKey: kZChatLabelGenerated,
+          generatedMarkSize: generatedMarkSize,
+        ),
+        // Valeur d'écran `:1315`.
+        kZChatCapabilityExamples: ZChatNotebookCapabilityStyle(
+          accent: Color(0xFFE91E63),
+          generatedLabelKey: kZChatLabelGenerated,
+          generatedMarkSize: generatedMarkSize,
+        ),
+        // Valeur d'écran `:1324`. 🔴 La seule des neuf qui échoue en thème
+        // SOMBRE et tient en clair — cf. la table de contraste.
+        kZChatCapabilityPoem: ZChatNotebookCapabilityStyle(
+          accent: Color(0xFF9C27B0),
           generatedLabelKey: kZChatLabelGenerated,
           generatedMarkSize: generatedMarkSize,
         ),

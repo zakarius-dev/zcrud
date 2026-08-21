@@ -53,10 +53,10 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zcrud_core/zcrud_core.dart' show ZContentHubDensity, ZcrudTheme;
+import 'package:zcrud_core/zcrud_core.dart'
+    show ZContentHubDensity, ZcrudTheme, zCompositeOver, zReadableTintOn;
 
 import 'z_content_hub_reference.dart';
-import 'z_readable_tint.dart';
 
 /// Une entrée du hub d'ajout — data-class de présentation immuable (`const`).
 ///

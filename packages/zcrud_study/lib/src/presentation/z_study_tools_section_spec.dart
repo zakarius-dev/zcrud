@@ -848,12 +848,12 @@ class ZStudyToolsSectionSpec {
   final int itemCount;
 
   /// Construit l'item à l'index donné (`0 <= index < itemCount`). L'appelant
-  /// fournit ici la carte d'item (équivalent `_buildGridItemCard` IFFD) —
+  /// fournit ici la carte d'item —
   /// couleurs/icônes/labels y sont injectés, jamais dans le descripteur.
   final Widget Function(BuildContext context, int index) itemBuilder;
 
   /// Widget affiché quand la section est vide (`itemCount == 0`). Fourni par
-  /// l'appelant (équivalent `EmtyFolderContent` IFFD) — jamais un `SizedBox`
+  /// l'appelant — jamais un `SizedBox`
   /// silencieux imposé par le descripteur.
   final Widget emptyState;
 
@@ -862,14 +862,14 @@ class ZStudyToolsSectionSpec {
 
   /// Glyphe INJECTÉ du bouton d'ajout (`+`). `null` = l'appelant n'impose pas
   /// d'icône ; le layout se replie sur un glyphe « add » neutre documenté
-  /// ([ZSectionedStudyLayout]). Solde DW-ES51-1 MEDIUM-1 : plus aucun
-  /// `Icons.add` codé en dur INCONDITIONNELLEMENT dans le package (FR-26 — les
-  /// `IconData` significatifs sont fournis par l'appelant).
+  /// ([ZSectionedStudyLayout]). Aucun `Icons.add` n'est codé en dur
+  /// inconditionnellement dans le package (FR-26 — les `IconData` significatifs
+  /// sont fournis par l'appelant).
   final IconData? addActionIcon;
 
   /// Label sémantique LOCALISÉ du bouton d'ajout (lecteur d'écran). `null` = le
-  /// layout se replie sur [title] (toléré, documenté). Solde DW-ES51-1
-  /// MEDIUM-1 : le label injecté PRIME sur [title] pour lever l'ambiguïté
+  /// layout se replie sur [title] (toléré, documenté). Le label injecté PRIME
+  /// sur [title] pour lever l'ambiguïté
   /// `« <titre>, bouton »` (le screen-reader annonce l'ACTION « ajouter … », pas
   /// l'en-tête homonyme). JAMAIS de « Ajouter »/« Add » codé en dur (i18n —
   /// AD-13/FR-23).

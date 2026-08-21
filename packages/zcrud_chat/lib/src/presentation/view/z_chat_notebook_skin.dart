@@ -29,16 +29,19 @@
 ///
 /// ## Hôte passif
 ///
-/// Ce fichier n'est monté par aucune vue : `ZChatConversationView` et
-/// `ZChatNotebookView` ne le lisent pas, et leur arbre reste inchangé. Le
-/// skin est opt-in, consommé uniquement par le backend de coquille auquel
-/// l'hôte le passe explicitement.
+/// Le skin est **opt-in** : ne pas en passer laisse l'arbre des vues
+/// strictement inchangé. En passer un ne suffit d'ailleurs pas à changer le
+/// rendu — chaque champ est lu par le seul rendu qui le concerne, et
+/// [ZChatNotebookSkin.tile] doit être **déclaré** pour qu'une tuile prenne
+/// une coquille. Un skin qui ne porterait que des accents de capacité ne
+/// dessine donc aucune carte.
 library;
 
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
 import 'z_chat_notebook_reference.dart';
+import 'z_chat_tile_shell.dart';
 
 /// Réglage **partiel** du rendu Notebook : tout champ `null` délègue au niveau
 /// suivant (jeton, puis référence).
@@ -58,6 +61,7 @@ class ZChatNotebookSkin {
     this.toolAccentColor,
     this.capabilityAccents,
     this.busyPalette,
+    this.tile,
   });
 
   /// Fraction de largeur des bulles. `null` ⇒ jeton, puis
@@ -95,6 +99,15 @@ class ZChatNotebookSkin {
 
   /// Séquence de teintes de l'indicateur d'occupation.
   final List<Color>? busyPalette;
+
+  /// La **coquille** des tuiles : carte, filet, coiffe, style du bouton de
+  /// dépli, format d'horodatage.
+  ///
+  /// `null` (défaut) signifie **aucune coquille** : les tuiles rendent
+  /// exactement l'arbre qu'elles rendaient sans ce champ. Déclarer
+  /// `const ZChatTileShell()` demande le rendu de référence, corrigeable
+  /// champ par champ — cf. [ZChatTileShell].
+  final ZChatTileShell? tile;
 
   /// Résout les trois niveaux contre le thème ambiant.
   ///
@@ -137,6 +150,7 @@ class ZChatNotebookSkin {
           ZChatNotebookReference.busyPalette,
       capabilityAccents: capabilityAccents,
       themeCapabilityAccents: theme.chatCapabilityAccents,
+      tile: tile,
     );
   }
 }
@@ -159,6 +173,7 @@ class ZChatNotebookStyle {
     required this.busyPalette,
     this.capabilityAccents,
     this.themeCapabilityAccents,
+    this.tile,
   });
 
   /// Fraction de largeur des bulles.
@@ -191,6 +206,12 @@ class ZChatNotebookStyle {
 
   /// Accents de capacité fournis en **jeton** (niveau 2).
   final Map<String, Color>? themeCapabilityAccents;
+
+  /// La coquille déclarée, relayée telle quelle — `null` signifie aucune
+  /// coquille. Elle n'a pas de niveau « jeton » : c'est une **déclaration**,
+  /// pas une valeur, et un thème ne doit pas pouvoir faire naître une carte
+  /// que l'hôte n'a pas demandée.
+  final ZChatTileShell? tile;
 
   /// Style complet d'une capacité — accent résolu aux trois niveaux, canaux non
   /// chromatiques **toujours** ceux de la référence.

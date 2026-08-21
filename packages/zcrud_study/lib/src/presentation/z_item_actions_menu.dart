@@ -7,9 +7,9 @@
 /// [ZActionMenu]. Deux implémentations de menu ne vivent jamais côte à côte
 /// dans le socle — une garde dédiée le mesure sur disque.
 ///
-/// CR-IFFD-82 change explicitement le défaut de contenu : [menuBuilder] nul
-/// rend une grille à trois colonnes. Le déclencheur reste celui du renderer et
-/// la colonne reste atteignable par `crossAxisCount: 1`.
+/// Défaut de contenu : [menuBuilder] nul rend une grille à **trois colonnes**.
+/// Le déclencheur reste celui du renderer et la colonne unique reste
+/// atteignable par `crossAxisCount: 1`.
 ///
 /// Ce que la délégation REND ACCESSIBLE, en ADDITIF :
 /// * [ZItemAction.permitted] — le **droit** séparé de l'**effet**, deux
@@ -30,10 +30,10 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zcrud_core/zcrud_core.dart' show ZForegroundOverride;
+import 'package:zcrud_core/zcrud_core.dart'
+    show ZForegroundOverride, kZNonTextMinContrast, zReadableTintOn;
 import 'package:zcrud_menu/zcrud_menu.dart';
 
-import 'z_readable_tint.dart';
 
 /// Couture de menu RÉEXPORTÉE : un hôte qui compose un [menuBuilder] a besoin de
 /// [ZMenuEntryTile] (cellule a11y) et de [ZMenuEntryIds] (identités partagées)
@@ -344,8 +344,8 @@ class ZItemActionsMenu extends StatelessWidget {
   /// Nombre de colonnes de la grille rendue quand [menuBuilder] est `null`.
   ///
   /// Le défaut est **3**. Un hôte qui veut retrouver une colonne la déclare en
-  /// une ligne avec `crossAxisCount: 1`; `2` reproduit notamment la géométrie
-  /// legacy d'IFFD. Ignoré quand [menuBuilder] est fourni.
+  /// une ligne avec `crossAxisCount: 1`. Ignoré quand [menuBuilder] est
+  /// fourni.
   final int crossAxisCount;
 
   /// Surcharge ponctuelle du renderer de menu (prioritaire sur [ZMenuScope]).

@@ -277,8 +277,9 @@ class _ZExamEditorState extends State<ZExamEditor> {
 
   /// Ajoute le seuil saisi en QUEUE — **APPEND**, aucun `sort`, aucune dédup (AC3).
   ///
-  /// Un texte non entier / négatif est IGNORÉ (AD-10). Neutraliser l'append en
-  /// `..sort()` ou `.toSet().toList()` réordonnerait/dédupliquerait ⇒ R3-I3 (RC=1).
+  /// Un texte non entier / négatif est IGNORÉ (AD-10). L'ordre de saisie et
+  /// les doublons sont significatifs : ni `..sort()` ni `.toSet().toList()`
+  /// n'ont leur place ici.
   void _addThreshold() {
     final raw = _thresholdController.text.trim();
     final parsed = int.tryParse(raw);

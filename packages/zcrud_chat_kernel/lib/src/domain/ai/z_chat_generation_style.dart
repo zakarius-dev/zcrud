@@ -17,9 +17,9 @@
 ///
 /// Des styles ludiques (poème, histoire, humour, séance de cours…) relèvent
 /// d'une **gamification propre à un hôte donné**, pas du socle — un
-/// catalogue d'intégration observé (`lib/src/domain/models/ai/
-/// ai_models.dart:9-19`) déclare ainsi jusqu'à huit styles de reformulation
-/// applicatifs, tous hors du périmètre partagé. Un `enum` fermé obligerait
+/// catalogue d'intégration observé déclare ainsi jusqu'à huit styles de
+/// reformulation applicatifs, tous hors du périmètre partagé. Un `enum` fermé
+/// obligerait
 /// tout autre hôte à forker zcrud pour déclarer le sien, et lui imposerait un
 /// vocabulaire qui n'est pas le sien. Le patron retenu est
 /// celui, déjà en production dans ce package, de [ZCustomContentBlock] et de
@@ -48,6 +48,12 @@ const String kZChatGenerationStyleParamsKey = 'style_params';
 /// porte les paramètres propres au style de l'hôte, verbatim ou reconstruits
 /// par le codec que l'hôte a enregistré dans un [ZTypeRegistry].
 class ZChatGenerationStyle {
+  // Le catalogue applicatif observé qui motive l'ouverture de ce type :
+  // `iffd/lib/src/domain/models/ai/ai_models.dart:9-19` — un enum FERMÉ de huit
+  // styles (poème, histoire, humour, séance de cours…) portant en plus un
+  // libellé français et une icône Material. Aucun de ces styles n'entre au
+  // socle : un hôte les déclare par `ZChatGenerationStyle('poem')`.
+
   /// Construit un style pour [kind], avec des [params] optionnels.
   ZChatGenerationStyle(
     this.kind, [

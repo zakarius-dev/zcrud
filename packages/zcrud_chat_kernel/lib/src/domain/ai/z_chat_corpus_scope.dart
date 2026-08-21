@@ -1,16 +1,13 @@
 /// **Portée documentaire VÉRIFIABLE** d'une requête — `ZChatCorpusScope`
-/// (lot β, AD-4/AD-10/AD-11).
+/// (AD-4/AD-10/AD-11).
 ///
 /// ## Le vrai sujet n'est pas « restreindre », c'est « pouvoir le VÉRIFIER »
 ///
-/// L'étude CR-IFFD-72 (§ 4.2) a mesuré que `ZChatGenerationRequest` n'a aucun
-/// champ de portée documentaire, et que les 8 occurrences de `corpus` du
-/// paquet sont toutes **en lecture**. Mais elle a surtout établi ce que ni la
-/// CR ni ses deux sources n'avaient formulé : `ZChatSource.corpus` est un
-/// **libellé**, pas une clé. Ajouter un champ de restriction sans cela aurait
-/// produit une restriction **inaudible** — on ne pourrait jamais confronter les
-/// sources rendues à la portée demandée, donc jamais savoir si le fournisseur
-/// l'a honorée. **Une restriction non vérifiable ne vaut rien.**
+/// `ZChatSource.corpus` est un **libellé**, pas une clé. Une restriction posée
+/// sur lui serait **inaudible** : on ne pourrait jamais confronter les sources
+/// rendues à la portée demandée, donc jamais savoir si le fournisseur l'a
+/// honorée. **Une restriction non vérifiable ne vaut rien.** La portée est donc
+/// écrite en **clés stables**, et relue par la même clé.
 ///
 /// ⇒ Ce fichier livre les DEUX moitiés du bouclage :
 /// * l'**écriture** — [ZChatCorpusScope] sur la requête, en **clés stables** ;

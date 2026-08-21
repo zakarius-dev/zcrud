@@ -126,19 +126,17 @@ abstract final class ZContentHubReference {
   /// (`orange`), numérisation (`teal`), note (`green`), carte mentale
   /// (**`deepPurple`**).
   ///
-  /// **La sixième n'est PAS l'indigo annoncé par la CR.** Le legacy pose
-  /// `iconColor: Colors.deepPurple` (`folder_content_add_dialog_widget.dart:337`),
-  /// soit `0xFF673AB7` — et non `Colors.indigo` (`0xFF3F51B5`), qui n'apparaît
-  /// **nulle part** dans le fichier legacy (recherche négative exécutée). La CR
-  /// (§ ② et sa vérification par défilement § ⑤) confond deux teintes Material
-  /// distinctes.
+  /// **La sixième est `deepPurple`, pas `indigo`.** Le legacy pose
+  /// `iconColor: Colors.deepPurple`, soit `0xFF673AB7` — et non
+  /// `Colors.indigo` (`0xFF3F51B5`). Les deux teintes Material se confondent à
+  /// l'œil ; c'est la première qui fait foi.
   ///
   /// **C'est une PALETTE, pas une table par type.** Le socle ne connaît
   /// aucun « type de contenu » : une entrée reçoit sa teinte par
   /// `ZContentHubEntry.tint` (injectée), ou à défaut par un créneau
   /// **déterministe de son identité** (`colorKey`, à défaut son libellé) — donc
-  /// **stable quand une application insère un type au milieu** (« non mesuré »
-  /// n°4 de la CR, mesuré par garde). Jamais par sa POSITION.
+  /// **stable quand une application insère un type au milieu**. Jamais par sa
+  /// POSITION.
   static const List<Color> accents = <Color>[
     Color(0xFF9C27B0), // purple    — « Générer des flashcards avec l'IA »
     Color(0xFF2196F3), // blue      — « Créer des flashcards manuellement »
@@ -219,11 +217,11 @@ abstract final class ZContentHubReference {
 
   /// Glyphe du chevron (`arrow_forward_ios` — legacy l.469).
   ///
-  /// **MESURÉ, et il INFIRME le grief RTL** porté contre le legacy : `Icon`
-  /// **n'a pas** de propriété `matchTextDirection` (elle vit sur `IconData`), et
-  /// `Icons.arrow_forward_ios` la porte **déjà à `true`** dans le SDK
-  /// (`icons.dart:2510-2514`). Le chevron legacy **se retourne donc bien** en
-  /// RTL. Le socle ne s'en remet pas au glyphe pour autant : il **force**
+  /// **Le retournement RTL ne vient PAS du widget** : `Icon` n'a pas de
+  /// propriété `matchTextDirection` (elle vit sur `IconData`), et
+  /// `Icons.arrow_forward_ios` la porte **déjà à `true`** dans le SDK. Ce
+  /// glyphe-là se retourne donc bien en RTL. Le socle ne s'en remet pas au
+  /// glyphe pour autant : il **force**
   /// `matchTextDirection` sur le chevron RÉELLEMENT rendu, y compris quand un
   /// hôte en injecte un autre (garde dédiée).
   static const IconData chevronGlyph = Icons.arrow_forward_ios;
@@ -276,16 +274,14 @@ abstract final class ZContentHubReference {
   /// l.386-387).
   static const double itemSpacing = 8;
 
-  // ── Grille (le cas que la CR déclarait « non mesuré ») ─────────────────────
+  // ── Grille ───────────────────────────────────────────────────────────────
 
   /// Largeur à partir de laquelle le legacy passe à **deux** colonnes
   /// (**600** — legacy l.376 : `isSmallScreen = constraints.maxWidth < 600`).
   ///
-  /// **MESURÉ, contre un « non mesuré » de la CR.** La CR a retiré l'écart
-  /// de grille en le déclarant non comparé en large. Le code legacy, lui,
-  /// impose **sans ambiguïté** `crossAxisCount = 2` au-delà de 600 lp
-  /// (l.377) — jamais une colonne unique. Reproduire le legacy intégralement
-  /// l'inclut.
+  /// **MESURÉ.** Le code legacy impose **sans ambiguïté**
+  /// `crossAxisCount = 2` au-delà de 600 lp (l.377) — jamais une colonne
+  /// unique. Reproduire le legacy intégralement l'inclut.
   static const double gridBreakpoint = 600;
 
   /// Nombre de colonnes au-delà de [gridBreakpoint] (**2** — legacy l.377).

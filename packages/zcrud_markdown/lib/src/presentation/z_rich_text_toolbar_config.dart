@@ -86,14 +86,9 @@ class ZRichTextToolbarConfig {
 
   /// Bouton barré.
   ///
-  /// (CR parité 2026-08-11) : défaut `false` — ALIGNÉ sur le legacy
-  /// l'éditeur historique, qui désactive le barré sur TOUS ses éditeurs
-  /// (`showStrikeThrough: false`, `qmew:85`, hors de portée des presets
-  /// legacy). MESURÉ avant le changement : AUCUN hôte (l'éditeur historique / lex_douane /
-  /// un consommateur legacy / un autre consommateur legacy) ne référence `ZRichTextToolbarConfig` ni ne passe
-  /// `toolbarConfig` — le seul consommateur du défaut est le pilote historique via
-  /// le registre, qui demande précisément ce retrait. Un hôte qui VEUT le
-  /// bouton opte : `copyWith(showStrikethrough: true)`.
+  /// Défaut `false` — ALIGNÉ sur l'éditeur historique, qui désactive le barré
+  /// sur TOUS ses éditeurs. Un hôte qui VEUT le bouton opte :
+  /// `copyWith(showStrikethrough: true)`.
   final bool showStrikethrough;
 
   /// Bouton code inline.
@@ -138,15 +133,14 @@ class ZRichTextToolbarConfig {
   /// Bouton exposant (superscript).
   final bool showSuperscript;
 
-  /// Bouton **Copier** (presse-papier), CR parité 2026-08-11.
+  /// Bouton **Copier** (presse-papier).
   ///
   /// Défaut `true` : cohérent avec le contrat du préset [full] (« tous les
-  /// groupes activés par défaut ») ET avec le legacy
-  /// (`showClipboardCopy: true`, `qmew:227`).
+  /// groupes activés par défaut ») ET avec l'éditeur historique.
   final bool showClipboardCopy;
 
   /// Bouton **Coller** (presse-papier). Défaut `true` (cf.
-  /// [showClipboardCopy] ; legacy `showClipboardPaste: true`, `qmew:228`).
+  /// [showClipboardCopy] ; legacy `showClipboardPaste: true`).
   final bool showClipboardPaste;
 
   /// Bouton custom « Insérer une formule » (embed LaTeX).
@@ -162,27 +156,26 @@ class ZRichTextToolbarConfig {
   final bool showVideoButton;
 
   /// (opt-in) : icônes **`*_rounded`** sur les boutons de la barre
-  /// (jeu MESURÉ du legacy, `qmew:118-208` + boutons custom). Seule
+  /// (jeu MESURÉ du legacy + boutons custom). Seule
   /// l'icône (`iconData`) est remplacée — les **tooltips restent ceux de
   /// Quill, déjà localisés** (aucun libellé posé ici,l10n). Défaut
   /// `false` ⇒ icônes Quill historiques inchangées (AD-4).
   final bool roundedIcons;
 
-  /// Barre **multi-rangées** (`multiRowsDisplay` Quill, parité `qmew:229`) —
-  /// TRI-ÉTAT (CR toolbar multi-rangées par surface, 2026-08-11).
+  /// Barre **multi-rangées** (`multiRowsDisplay` Quill) — TRI-ÉTAT.
   ///
   /// La MÊME config sert le champ en flux ET le dialog plein-écran : un booléen
-  /// unique ne peut pas être juste pour les deux surfaces. Constat device
-  /// (pilote historique) : `true` en flux ⇒ la barre s'empile sur ~10 rangées et
-  /// noie le formulaire ; `false` en plein écran ⇒ boutons rejetés hors écran
-  /// alors que la place abonde.
+  /// unique ne peut pas être juste pour les deux surfaces. Mesuré sur appareil :
+  /// `true` en flux ⇒ la barre s'empile sur ~10 rangées et noie le formulaire ;
+  /// `false` en plein écran ⇒ boutons rejetés hors écran alors que la place
+  /// abonde.
   ///
   /// - `null` (DÉFAUT) ⇒ **AUTO** : la bonne valeur dérive de la SURFACE —
   ///   **une rangée défilante** pour toute barre rendue DANS LE FLUX d'un
   ///   formulaire (mode `inline` ET voie `controller`), **multi-rangées** dans
   ///   `ZRichTextFullscreenDialog`. Aucune configuration hôte requise.
   /// - `true`/`false` ⇒ **forçage hôte**, respecté SUR LES DEUX surfaces
-  ///   (AD-4). Un hôte qui posait `false` (contournement v0.82/v0.83) garde
+  ///   (AD-4). Un hôte qui posait `false` pour contourner l'ancien défaut garde
   ///   exactement son comportement — mais il doit RETIRER ce forçage pour
   ///   profiter de l'AUTO.
   ///
@@ -191,9 +184,9 @@ class ZRichTextToolbarConfig {
   /// plein-écran, donc multi-rangées via l'AUTO. Mesure de la géométrie en
   /// flux (test widget, 400 dp de large, préset [markdown] + undo/redo) :
   /// barre forcée multi-rangées = **262 dp (~5,5 rangées)**, AUTO = **67 dp
-  /// (1 rangée)** — le critère CR « un champ inséré dans un formulaire ne doit
-  /// jamais consommer la hauteur de l'écran » impose la rangée unique pour
-  /// TOUTE barre en flux, quel que soit inline/block.
+  /// (1 rangée)**. La règle : un champ inséré dans un formulaire ne consomme
+  /// jamais la hauteur de l'écran — donc rangée unique pour TOUTE barre en
+  /// flux, quel que soit inline/block.
   final bool? multiRow;
 
   /// Opt-in : **fond de barre thémé** — surface + liseré bas dérivés

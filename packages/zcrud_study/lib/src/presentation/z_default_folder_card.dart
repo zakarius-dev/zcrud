@@ -68,13 +68,14 @@ import 'package:zcrud_core/zcrud_core.dart'
         ZColorPair,
         ZFolderCardFooterPlacement,
         ZcrudTheme,
+        zCompositeOver,
+        zReadableTintOn,
         zResolveColorKeyOrSlot;
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZColorPalette, remapColorKey;
 
 import 'z_folder_card.dart';
 import 'z_folder_card_reference.dart';
-import 'z_readable_tint.dart';
 
 /// Un badge de compteur de la carte de dossier par défaut : un glyphe et un
 /// libellé déjà localisés par l'hôte (« 12 fiches », « 3 sous-dossiers »).

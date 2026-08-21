@@ -21,9 +21,8 @@
 /// frappait **toute** voie rich-text du paquet — lecteur, éditeur, plein-écran —
 /// dès qu'un document contenait un filet horizontal. Il est resté invisible
 /// parce que les gardes existantes éprouvaient le **codec** (qui, lui, produit
-/// l'op correctement) et jamais le **rendu** de l'op produite. C'est exactement
-/// la famille « une garde hérite de l'angle mort de son auteur » : verte,
-/// mordante, et braquée sur la mauvaise propriété.
+/// l'op correctement) et jamais le **rendu** de l'op produite : un embed déclaré
+/// natif par le codec doit avoir un builder, et cela se vérifie au rendu.
 ///
 /// Le filet horizontal est par ailleurs **omniprésent** dans ce que produisent
 /// les modèles de langage — ce qui en fait un cas à couvrir en priorité.

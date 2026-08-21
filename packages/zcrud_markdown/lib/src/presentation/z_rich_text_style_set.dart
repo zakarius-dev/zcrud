@@ -1,5 +1,5 @@
-/// Jeu de styles rich-text **NEUTRE** injectable PAR CHAMP (CR parité
-/// 2026-08-11) + spec de rendu des **formules**.
+/// Jeu de styles rich-text **NEUTRE** injectable PAR CHAMP + spec de rendu
+/// des **formules**.
 ///
 /// ## Pourquoi l'« injection par l'hôte » et PAS des valeurs l'éditeur historique chez nous
 ///

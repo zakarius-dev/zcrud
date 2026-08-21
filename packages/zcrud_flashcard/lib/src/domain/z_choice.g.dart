@@ -9,11 +9,11 @@ part of 'z_choice.dart';
 /// Sentinelle « argument non fourni » du `copyWith` généré (reset-null).
 const Object? _$undefined = _ZUndefined();
 
-/// Clé de SONDE du garde DW-ES14-1 : n'est le nom persisté d'AUCUN champ de
-/// schéma, ni une clé réservée (`ZSyncMeta`), ni `source`/`extension`.
+/// Clé de SONDE de la garde d'extensibilité : n'est le nom persisté d'AUCUN
+/// champ de schéma, ni une clé réservée (`ZSyncMeta`), ni `source`/`extension`.
 const String _$zExtraProbeKey = 'zz__zcrud_extra_probe__';
 
-/// **GARDE EXÉCUTOIRE DW-ES14-1** (invariant AD-4) — émise dans le `register…`
+/// **GARDE EXÉCUTOIRE d'extensibilité** (invariant AD-4) — émise dans le `register…`
 /// de toute classe `ZExtensible`.
 ///
 /// ## Ce qu'il fait, et pourquoi il existe
@@ -202,13 +202,13 @@ extension ZChoiceZcrud on ZChoice {
   );
 }
 
-/// Schéma déclaratif projeté depuis @ZcrudField (E2-5).
+/// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZChoiceFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'content', type: EditionFieldType.text, label: 'Choix'),
   ZFieldSpec(name: 'is_correct', type: EditionFieldType.boolean),
 ];
 
-/// Clés que `ZChoice.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// Clés que `ZChoice.toMap()` PEUT produire — surensemble
 /// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
 /// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
 const Set<String> $ZChoicePersistedKeys = <String>{'content', 'is_correct'};

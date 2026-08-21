@@ -126,9 +126,12 @@ void main() {
     test('chaque capacité porte DEUX canaux non chromatiques, non vides', () {
       final Map<String, ZChatNotebookCapabilityStyle> caps =
           ZChatNotebookReference.capabilities;
-      expect(caps, hasLength(5),
-          reason: '🔴 le relevé legacy dénombre 5 capacités teintées '
-              '(mindmap, flashcards, histoire, humour, chat)');
+      expect(caps, hasLength(9),
+          reason: '🔴 le relevé legacy dénombre 9 capacités teintées '
+              '(mindmap, flashcards, histoire, humour, chat, résumé, '
+              'élaboration, exemples, poème). Le premier relevé n\'en '
+              'comptait que 5 : CR-IFFD-84 a établi que la table était '
+              'INCOMPLÈTE, pas fermée.');
       for (final MapEntry<String, ZChatNotebookCapabilityStyle> e
           in caps.entries) {
         expect(e.value.generatedLabelKey, isNotEmpty,
@@ -179,6 +182,14 @@ void main() {
         kZChatCapabilityStory: <double>[3.67, 5.10],
         kZChatCapabilityHumour: <double>[1.22, 15.34],
         kZChatCapabilityClassroom: <double>[2.10, 8.92],
+        // 🔴 Les quatre entrées de CR-IFFD-84. `poem` est la SEULE des neuf à
+        // échouer en thème sombre et à tenir en clair : c'est elle qui prouve
+        // que la correction de rendu doit savoir ÉCLAIRCIR, pas seulement
+        // assombrir.
+        kZChatCapabilitySummary: <double>[4.37, 4.29],
+        kZChatCapabilityElaboration: <double>[2.78, 6.74],
+        kZChatCapabilityExamples: <double>[4.35, 4.31],
+        kZChatCapabilityPoem: <double>[6.31, 2.97],
       };
       for (final MapEntry<String, List<double>> e in attendu.entries) {
         final Color accent =
@@ -192,7 +203,7 @@ void main() {
           closeTo(2.16, 0.02));
     });
 
-    test('🔴 le VERDICT : 5 des 8 teintes distinctes échouent — et surtout en '
+    test('🔴 le VERDICT : 6 des 11 teintes distinctes échouent — et surtout en '
         'thème CLAIR', () {
       // C'est ce qui rend les canaux non chromatiques obligatoires, et non
       // recommandés. Le legacy n'adapte rien au thème (3 occurrences de
@@ -205,9 +216,11 @@ void main() {
         ZChatNotebookReference.toolAccentColor,
         ...ZChatNotebookReference.busyPalette,
       };
-      expect(teintes, hasLength(8),
+      expect(teintes, hasLength(11),
           reason: '🔴 le nombre de teintes DISTINCTES a changé : la table du '
-              'dartdoc doit être refaite.');
+              'dartdoc doit être refaite. (8 avant CR-IFFD-84 ; +3 seulement '
+              'pour 4 entrées, `elaboration` réutilisant le vert #4CAF50 déjà '
+              'porté par la palette d\'occupation.)');
 
       final List<Color> echouent = <Color>[
         for (final Color c in teintes)
@@ -217,7 +230,7 @@ void main() {
       ];
       // 🔵 Si ce compte BAISSE, c'est une bonne nouvelle — mais elle doit être
       // requalifiée, pas ignorée : le dartdoc affirme un chiffre.
-      expect(echouent, hasLength(5),
+      expect(echouent, hasLength(6),
           reason: '🔴 la palette a été recolorée : re-mesurez et requalifiez '
               'le verdict du dartdoc. Vu en échec : $echouent');
 
@@ -230,7 +243,10 @@ void main() {
           .where((Color c) => _contrast(c, _darkSurface) < 3.0)
           .length;
       expect(echecsClair, 4);
-      expect(echecsSombre, 1);
+      // 🔴 Passé de 1 à 2 avec CR-IFFD-84 : le violet du poème (#9C27B0)
+      // mesure 2.97 sur `#121212`. Le comptage sombre n'est donc PAS
+      // décoratif — il désigne une teinte qui a besoin d'être ÉCLAIRCIE.
+      expect(echecsSombre, 2);
       expect(echecsClair, greaterThan(echecsSombre),
           reason: '🔴 le verdict du dartdoc (« surtout en clair ») est faux.');
 
@@ -344,8 +360,23 @@ void main() {
         'view/z_chat_artifact_bar.dart',
         // La vue ne fait que TRANSPORTER le réglage jusqu'à la rangée.
         'view/z_chat_notebook_view.dart',
+        // 🔴 ARBITRAGE CR-IFFD-84 (volet B, 2026-08-21) — le cardinal passe de
+        // 4 à 5. La coquille de tuile a, comme la rangée d'artefacts, un
+        // RÉSOLVEUR : `zChatTileShellStyleOf` arbitre paramètre > jeton >
+        // référence pour le filet, la carte, la coiffe, l'horodatage et le
+        // bouton de dépli. Il ne peut pas le faire sans citer la référence.
+        //
+        // Ce qui protège l'hôte passif ici n'est PAS ce grep, mais le fait
+        // que le résolveur ne soit JAMAIS appelé sans déclaration :
+        // 1. `ZChatMessageTile` ne l'invoque que si une coquille OU un sujet
+        //    est déclaré — mesuré en COMPTES ABSOLUS de widgets par le
+        //    contre-témoin de `z_chat_cr84_tile_shell_test.dart` ;
+        // 2. ni la tuile ni la racine commune ne citent la référence — elles
+        //    transportent un `ZChatTileShell?` nullable, asserté sur leur
+        //    source par le test suivant.
+        'view/z_chat_tile_shell.dart',
       };
-      expect(proprietaires, hasLength(4),
+      expect(proprietaires, hasLength(5),
           reason: '🔴 un fichier a été AJOUTÉ aux propriétaires du rendu de '
               'référence. Chaque entrée est un endroit de plus où un hôte '
               'passif peut se mettre à hériter du rendu IFFD : justifiez-la '
@@ -366,6 +397,50 @@ void main() {
           reason: '🔴 le rendu de référence a été CÂBLÉ dans le socle : un '
               'hôte passif changerait d\'apparence sans réglage.\n'
               '${offenders.join('\n')}');
+    });
+
+    test('la TUILE et la RACINE COMMUNE ne CÂBLENT aucun rendu de référence',
+        () {
+      // 🔴 Ce sont les deux fichiers que TOUT hôte monte, notebook ou non.
+      // Ils transportent la coquille (`ZChatTileShell?`, nullable) et rien
+      // d'autre : ni référence lue, ni skin construit. Une valeur de
+      // référence qui apparaîtrait ici serait héritée par un hôte qui n'a
+      // rien déclaré — la définition exacte d'un défaut qui bouge.
+      for (final String fichier in <String>[
+        'view/z_chat_message_tile.dart',
+        'view/z_chat_conversation_view.dart',
+      ]) {
+        final List<String> lignes = stripped(libFile(fichier));
+        expect(
+          lignes.any((String l) => l.contains('ZChatTileShell? shell')),
+          isTrue,
+          reason: '🔴 GARDE VACUELLE : `$fichier` ne transporte plus de '
+              'coquille, la règle ne porte plus sur rien',
+        );
+        for (final RegExp interdit in <RegExp>[
+          RegExp(r'ZChatNotebookReference\.'),
+          RegExp(r'ZChatNotebookSkin'),
+        ]) {
+          expect(
+            lignes.where(interdit.hasMatch),
+            isEmpty,
+            reason: '🔴 `${interdit.pattern}` dans `$fichier` : le rendu de '
+                'référence y serait câblé, donc hérité par tout hôte — y '
+                'compris celui qui ne déclare AUCUNE coquille.',
+          );
+        }
+      }
+      // 🔬 contre-preuve : les motifs SAVENT rougir sur leur témoin.
+      expect(
+        RegExp(r'ZChatNotebookReference\.')
+            .hasMatch('  final r = ZChatNotebookReference.tileRadius;'),
+        isTrue,
+      );
+      expect(
+        RegExp(r'ZChatNotebookSkin')
+            .hasMatch('  final ZChatNotebookSkin? skin;'),
+        isTrue,
+      );
     });
 
     test('la VUE RELAIE le skin — elle ne le CONSTRUIT ni ne le RÉSOUT', () {

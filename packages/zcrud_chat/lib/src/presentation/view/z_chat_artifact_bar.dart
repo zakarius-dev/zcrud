@@ -4,7 +4,7 @@
 ///
 /// ## 🔴 « C'est un ÉTAT, pas un style »
 ///
-/// C'est la phrase de CR-IFFD-84, et c'est la seule règle de ce fichier : la
+/// C'est la seule règle de ce fichier : la
 /// teinte n'est peinte **que si l'artefact existe**. Un glyphe teinté en
 /// permanence est une décoration ; un glyphe qui se teint quand le contenu
 /// arrive est une information — c'est ce qui fait la valeur de l'écran.
@@ -27,7 +27,7 @@
 /// (`perMessageActionIconSize`, `perMessageActionBadgeRadius`,
 /// `perMessageActionBadgeFontSize`, et les deux décalages directionnels).
 ///
-/// ## 🔴 La pastille ne vole PAS le tap (CR-IFFD-83, défaut ①)
+/// ## 🔴 La pastille ne vole PAS le tap
 ///
 /// `Badge.count` de Material rend son label **hit-testable** : un tap à
 /// 8 px du coin du glyphe était absorbé par la pastille et ne déclenchait
@@ -39,19 +39,67 @@
 /// ## Contraste (défaut ④)
 ///
 /// La teinte déclarée par l'hôte est portée au plancher WCAG **avant** d'être
-/// peinte (`zChatReadableTintOn`) : l'orange du legacy IFFD mesure 2,05:1 sur
-/// blanc, et le livrer brut reproduirait le défaut que la CR a mesuré. La
-/// couleur de l'hôte qui satisfait déjà le plancher est rendue **inchangée**.
+/// peinte (`zReadableTintOn`, remonté dans `zcrud_core` — ce paquet n'en
+/// porte plus de copie et n'acquiert aucune arête vers `zcrud_study`,
+/// invariant AD-1). Un orange courant (`#FF9800`) mesure **2,155:1 sur
+/// blanc pur** et **2,049:1 sur le `surface` d'un thème clair Material 3**
+/// (`#FEF7FF`) : les deux chiffres sont exacts, sur deux surfaces
+/// différentes, et tous deux sont sous le plancher §1.4.11 (3,0:1) : le
+/// peindre brut serait illisible. 🔴 Ce qui est
+/// mesuré ici n'est NI l'un NI l'autre : `zReadableTintOn` mesure contre la
+/// surface réellement résolue par `_surface(context)`. La couleur de l'hôte
+/// qui satisfait déjà le plancher est rendue **inchangée**.
 ///
-/// ## Ce que ce fichier ne fait PAS
+/// ## L'occupation : animée PAR ARTEFACT
 ///
-/// L'**animation** d'occupation (`ZChatNotebookReference.busyPalette`,
-/// `busyCycleDuration`) n'est pas montée ici : elle relève d'un lot distinct,
-/// avec « Réduire les animations » (invariant AD-13) qu'elle ne peut pas
-/// ignorer. La lecture [ZChatArtifactSpec.busy] est néanmoins déjà
-/// **consommée** — par l'annonce, pas par un pixel animé : un état lu et
-/// jamais restitué serait exactement le motif « offert, non passé » que ce
-/// lot corrige.
+/// `busyPalette` porte les teintes de l'animation d'attente : quand
+/// [ZChatArtifactSpec.busy] rend `true`, **le glyphe de CET artefact**
+/// parcourt la palette. L'animation n'est pas écrite ici : elle est déléguée à
+/// [ZColorCycle], la primitive de `zcrud_core` (« une teinte qui parcourt une
+/// palette »), qui ne connaît ni le chat ni les artefacts — le même signal
+/// sert ailleurs (flashcards, carte mentale, résumé) et n'a pas à être enfoui
+/// dans une barre d'artefacts.
+///
+/// 🔴 **Indexée par artefact, par construction.** Le cycle est monté DANS le
+/// bouton d'un artefact, alimenté par la lecture `busy` de SA spec. Il n'y a
+/// aucun endroit où écrire « tout est occupé » : une occupation qui animerait
+/// tous les glyphes à la fois n'est pas exprimable.
+///
+/// L'animation **prime sur** la teinte de présence, comme chez le legacy
+/// (`animationColor ?? (mindmap != null ? orange : null)`) : c'est
+/// [ZColorCycle.idle] qui porte la teinte d'état, rendue dès que l'occupation
+/// retombe.
+///
+/// ## « Réduire les animations » (AD-13) — l'état reste
+///
+/// Sous `MediaQuery.disableAnimations`, [ZColorCycle] n'arme aucun contrôleur
+/// et fige la **première teinte** de la palette. L'occupation reste donc
+/// perceptible sur deux canaux : cette teinte, et l'annonce sémantique
+/// (`Semantics.value`) qui la portait déjà. Un état qui disparaîtrait avec
+/// l'animation serait un défaut d'accessibilité, pas une simplification.
+///
+/// ## Mise en page : le nombre d'artefacts n'a pas de plafond
+///
+/// Les glyphes sont disposés en `Wrap`, pas en rangée : quel que soit le
+/// nombre d'artefacts déclarés, chaque cible garde ses 48 dp et reste dans
+/// l'écran — la rangée passe à la ligne au lieu de rétrécir ou de déborder.
+/// Mesuré jusqu'à neuf artefacts, une pastille sur chacun : 6 + 3 sur une
+/// largeur de 360 dp, 5 + 4 sur 320 dp, 4 + 4 + 1 sur 240 dp, aucune cible
+/// hors écran, aucune recouvrant une voisine, les neuf répondant au tap. En
+/// RTL, le remplissage va de la fin vers le début, sans autre changement
+/// (invariant AD-13).
+///
+/// Un appelant n'a donc **aucun mécanisme de débordement à prévoir** — ni
+/// menu « … », ni défilement horizontal, ni repli au-delà de N — et il ne
+/// devrait pas en ajouter : cela déplacerait des cibles déjà atteignables
+/// derrière une affordance de plus. [spacing] règle l'écartement, dans les
+/// deux axes.
+///
+/// ## Additif strict
+///
+/// Le cycle n'est monté que si la spec **déclare** une lecture `busy`. Un hôte
+/// qui n'en déclare pas retrouve, au widget près, l'arbre d'avant ce lot :
+/// aucun `ZColorCycle`, aucun contrôleur, aucune animation.
 library;
 
 import 'dart:async';
@@ -66,7 +114,6 @@ import 'z_chat_message_tile.dart'
     show ZChatMessageSlotBuilder, kZChatMinTapTarget;
 import 'z_chat_notebook_reference.dart';
 import 'z_chat_notebook_skin.dart';
-import 'z_chat_readable_tint.dart';
 
 /// La rangée d'artefacts d'**un** message.
 ///
@@ -157,6 +204,13 @@ class ZChatArtifactBar extends StatelessWidget {
       container: true,
       explicitChildNodes: true,
       label: zChatLabel(context, kZChatLabelArtifacts),
+      // 🔴 UN `Wrap`, JAMAIS UN `Row` — et c'est mesuré, pas supposé. Le
+      // relevé de l'hôte pose le problème ainsi : « neuf cibles de 48 dp font
+      // 432 dp, au-delà d'un téléphone courant ». C'est exact pour une
+      // rangée. Avec ce `Wrap`, les neuf cibles restent à 48 × 48 dp, dans le
+      // viewport et disjointes, à 360, 320 et 240 dp de large. Repasser en
+      // `Row` fait sortir la 6ᵉ cible à `right = 372` sur 360 dp : le groupe
+      // A12 de `z_chat_cr84_artifacts_test.dart` le mesure, et rougit.
       child: Wrap(
         spacing: spacing ?? theme.gapS,
         runSpacing: spacing ?? theme.gapS,
@@ -170,9 +224,15 @@ class ZChatArtifactBar extends StatelessWidget {
   /// ce qui permet à un hôte de déclarer ses artefacts une fois pour tout le
   /// fil : sur un message d'utilisateur, aucune condition ne tient, donc
   /// aucun glyphe n'apparaît.
+  ///
+  /// 🔴 Une occupation en cours SUFFIT à rendre l'entrée, même sans contenu ni
+  /// verbe : un artefact en cours de génération est justement celui dont l'état
+  /// intéresse le plus — l'annoncer sans le rendre reviendrait à annoncer un
+  /// nœud que personne ne peut atteindre.
   bool _isRendered(ZChatArtifactSpec spec) {
     final bool present = spec.isPresent(message);
-    return present || spec.visibleActions(message, present: present).isNotEmpty;
+    if (present || spec.isBusy(message)) return true;
+    return spec.visibleActions(message, present: present).isNotEmpty;
   }
 }
 
@@ -293,7 +353,7 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
     final Color? accent = _accent();
     final Color? surface = _surface(context);
     if (accent == null || surface == null) return null;
-    return zChatReadableTintOn(accent, surface: surface);
+    return zReadableTintOn(accent, surface: surface);
   }
 
   /// L'état, en TEXTE : présence, occupation, compte. C'est le canal non
@@ -335,7 +395,12 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
       busy: busy,
       count: count,
     );
-    final Widget glyph = _glyph(context, present: present, count: count);
+    final Widget glyph = _glyph(
+      context,
+      present: present,
+      busy: busy,
+      count: count,
+    );
 
     // Aucun verbe visible : l'entrée reste un INDICATEUR d'état, jamais un
     // bouton qui n'ouvrirait rien (invariant AD-4).
@@ -377,13 +442,50 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
     );
   }
 
+  /// Le glyphe teinté : occupation animée si elle est déclarée, teinte d'état
+  /// sinon.
+  ///
+  /// 🔴 Le cycle vit ICI, dans le bouton d'UN artefact : l'occupation ne peut
+  /// pas déborder sur ses voisins. Et l'`AnimatedBuilder` de [ZColorCycle]
+  /// étant sous ce `build`, l'animation ne reconstruit ni ce bouton, ni la
+  /// rangée, ni la vue (invariant AD-2).
+  Widget _icon(BuildContext context, Color? color) => Icon(
+    widget.spec.icon,
+    size: ZChatNotebookReference.perMessageActionIconSize,
+    // 🔴 L'ÉTAT, et rien d'autre : teinte si le contenu existe ou si une
+    // génération est en cours, couleur ambiante sinon.
+    color: color,
+  );
+
   /// Le glyphe et sa pastille — la cible tactile, jamais la seule icône.
   Widget _glyph(
     BuildContext context, {
     required bool present,
+    required bool busy,
     required int? count,
   }) {
     final Color? tint = _tint(context, present: present);
+    final Color? surface = _surface(context);
+    // Aucune surface ⇒ aucune teinte mesurable, donc aucune teinte peinte —
+    // la même règle FERMANTE que `_tint` (AD-10). L'annonce, elle, reste.
+    final List<Color> palette = surface == null
+        ? const <Color>[]
+        : widget.style.busyPalette;
+    // 🔴 ADDITIF STRICT : sans lecture d'occupation DÉCLARÉE, l'arbre est
+    // exactement celui d'avant — pas de cycle, donc pas de contrôleur.
+    final Widget glyph = widget.spec.busy == null
+        ? _icon(context, tint)
+        : ZColorCycle(
+            palette: palette,
+            period: ZChatNotebookReference.busyCycleDuration,
+            active: busy,
+            // L'animation PRIME sur la teinte d'état, et la teinte d'état
+            // revient dès que l'occupation retombe.
+            idle: tint,
+            surface: surface,
+            builder: (BuildContext context, Color? color, Widget? _) =>
+                _icon(context, color),
+          );
     return ConstrainedBox(
       constraints: const BoxConstraints(
         minWidth: kZChatMinTapTarget,
@@ -392,13 +494,7 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
       child: Stack(
         alignment: AlignmentDirectional.center,
         children: <Widget>[
-          Icon(
-            widget.spec.icon,
-            size: ZChatNotebookReference.perMessageActionIconSize,
-            // 🔴 L'ÉTAT, et rien d'autre : teinte si le contenu existe,
-            // couleur ambiante sinon.
-            color: tint,
-          ),
+          glyph,
           if (count != null)
             PositionedDirectional(
               top: ZChatNotebookReference.perMessageActionBadgeTopInset,
@@ -429,10 +525,10 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
     // fond de la pastille, jamais contre la page.
     final Color? foreground = background == null
         ? null
-        : zChatReadableTintOn(
+        : zReadableTintOn(
             surface ?? background,
             surface: background,
-            minContrast: kZChatTextMinContrast,
+            minContrast: kZTextMinContrast,
           );
     final double diameter =
         ZChatNotebookReference.perMessageActionBadgeRadius * 2;
@@ -526,8 +622,8 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
 
   /// La confirmation **en place** d'un verbe destructeur : la question de
   /// l'hôte (ou celle du socle), puis deux verbes. Le rappel de l'hôte n'est
-  /// appelé que par « confirmer » — le défaut ⑤ de la CR (une suppression qui
-  /// part sans question) n'est pas exprimable ici.
+  /// appelé que par « confirmer » : une suppression qui partirait sans question
+  /// n'est pas exprimable ici.
   Widget _confirmation(BuildContext context, ZChatArtifactAction action) {
     final String question =
         action.confirmMessage ??
@@ -572,10 +668,10 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
     final Color? surface = _surface(context);
     final Color? tint = (accent == null || surface == null)
         ? null
-        : zChatReadableTintOn(
+        : zReadableTintOn(
             accent,
             surface: surface,
-            minContrast: kZChatTextMinContrast,
+            minContrast: kZTextMinContrast,
           );
     final TextStyle base = DefaultTextStyle.of(context).style;
     return Semantics(

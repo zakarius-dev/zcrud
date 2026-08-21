@@ -117,8 +117,8 @@ class ZPageShellBody extends StatefulWidget {
   /// Contenu affiché quand il n'y a **pas** d'onglets (nul ⇒ absent).
   final Widget? body;
 
-  /// Créneau de **contexte de page** posé entre l'app-bar et le `TabBar`
-  ///, dans le `bottom:` de la `SliverAppBar` — **même endroit
+  /// Créneau de **contexte de page** posé entre l'app-bar et le `TabBar`,
+  /// dans le `bottom:` de la `SliverAppBar` — **même endroit
   /// logique** que dans [ZPageScaffold.aboveTabBar], dont il partage la doc et
   /// le code (`_zAppBarBottom`).
   ///

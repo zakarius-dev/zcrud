@@ -17,7 +17,7 @@ import 'package:flutter/foundation.dart';
 ///
 /// La **duplication** est un mode distinct de la création nue : le formulaire
 /// s'ouvre en création (entité sans identité), mais son intitulé dit qu'il
-/// s'agit d'une copie (legacy DODLP : « Copie de la mutation »). La
+/// s'agit d'une copie (« Copie de … »). La
 /// **consultation** est distincte de l'édition pour la même raison : la même
 /// surface, mais un intitulé qui annonce qu'on ne modifie rien.
 @immutable

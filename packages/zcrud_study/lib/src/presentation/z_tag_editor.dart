@@ -298,7 +298,7 @@ class _ZTagEditorState extends State<ZTagEditor> {
   /// via `orphanTagIds` (kernel) les références devenues orphelines (dont l'`id` du
   /// tag supprimé) puis on ÉMET un modèle de références où ces `id` sont RETIRÉS de
   /// chaque `tagIds` ⇒ `orphanTagIds(refsÉmises, existantsAprès) == {}`. La
-  /// persistance est déléguée (DW-ES81-2).
+  /// persistance est déléguée à l'appelant.
   void _deleteTag(ZFlashcardTag tag) {
     final removedId = tag.id;
     final cards = widget.cardTagIds?.call() ?? const <List<String>>[];

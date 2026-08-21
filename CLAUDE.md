@@ -373,6 +373,32 @@ Chaque entité canonique expose : (1) un slot `ZExtension?` typé additif **vers
 
 ---
 
+## Dartdoc = DOCUMENTATION PUBLIÉE, jamais le journal du traitement (consigne owner, 2026-08-21)
+
+🔴 **La documentation du projet est GÉNÉRÉE à partir des commentaires Dart.** Une dartdoc (`///`
+sur une API publique) s'adresse donc au **consommateur du paquet**, jamais à nous.
+
+⇒ Une dartdoc décrit **ce que l'API fait, comment on s'en sert, ses contrats, ses défauts et ses
+garanties**. Elle ne raconte **ni** le traitement d'une CR, **ni** l'historique des versions, **ni**
+comment le défaut a été trouvé.
+
+**Bannis des `///`** : numéros de CR (`CR-IFFD-84`, `CR-LEX-76`…), « livré en vX.Y.Z », « trouvé par
+la garde… », « quatrième fois qu'elle mord », le récit d'un lot, la justification d'un arbitrage
+interne.
+
+**Où cette matière va, à la place** : commentaires d'implémentation `//` **dans les corps**, fichiers
+de tests, CHANGELOG, handoff. Elle garde toute sa valeur — elle change de support, parce qu'elle ne
+s'adresse pas au consommateur.
+
+**Ce qui RESTE légitime en dartdoc**, même né d'une CR : la **règle** elle-même, quand un appelant
+doit la connaître. « La mesure porte sur `surface`, et sur rien d'autre » est de la documentation ;
+« la CR-IFFD-84 a signalé que… » n'en est pas.
+
+⚠️ **À rappeler dans CHAQUE brief de sous-agent** : la consigne a été enfreinte en masse parce que
+les briefs demandaient de « justifier en dartdoc ». Demander une justification, oui — **en `//`**.
+
+---
+
 ## Naming & Consistency Conventions (AD, Consistency Conventions)
 
 | Élément | Convention | Exemple |

@@ -144,7 +144,7 @@ class ZSearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
   State<ZSearchableAppBar> createState() => ZSearchableAppBarState();
 }
 
-/// État de [ZSearchableAppBar]. Public pour servir de **seam de test** (R3):
+/// État de [ZSearchableAppBar]. Public pour servir de **seam de test** :
 /// [queryListenable] expose la query détenue par le widget. N'expose
 /// aucune mutation — l'état reste propriété exclusive du widget.
 class ZSearchableAppBarState extends State<ZSearchableAppBar> {
@@ -175,7 +175,7 @@ class ZSearchableAppBarState extends State<ZSearchableAppBar> {
     super.dispose();
   }
 
-  /// Query détenue par le widget (lecture seule) — seam de test R3.
+  /// Query détenue par le widget (lecture seule) — seam de test.
   @visibleForTesting
   ValueListenable<String> get queryListenable => _controller.query;
 

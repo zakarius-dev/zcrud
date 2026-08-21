@@ -368,10 +368,9 @@ typedef ZSubItemMenuVisibility = bool Function(ZSubListItemView item);
 ///
 /// Deux autres écarts mesurés dans les dépôts hôtes, volontairement corrigés
 /// ici plutôt que reproduits :
-/// - `filter` n'était **jamais invoqué** (grep négatif sur `dodlp-otr` et
-///   `iffd` : les seuls appels de `filter(item)` appartiennent à `DynamicTab`,
-///   une autre classe). Les hôtes filtraient donc leur **liste** d'options à la
-///   main, à la construction. Ici le prédicat est **vivant** et évalué par item ;
+/// - `filter` n'était **jamais invoqué** : les hôtes filtraient leur **liste**
+///   d'options à la main, à la construction. Ici le prédicat est **vivant** et
+///   évalué par item ;
 /// - le `label` était un **libellé brut codé en dur**. Ici, [labelKey] est une
 ///   **clé l10n** résolue par le canal habituel (`ZcrudScope.labels` → locale →
 ///   table `en` → [labelFallback]), invariant FR-26.
@@ -756,7 +755,7 @@ typedef ZSubItemCrudHook = Future<ZSubItemCrudOutcome> Function(
 /// [itemBuilder] rend un widget **opaque** que le socle ne peut pas découper en
 /// cellules, et [listViewBuilder] dispose les lignes lui-même. Déclarer l'un ou
 /// l'autre fait donc retomber la sous-liste sur le rendu **à colonnes de
-/// largeur égale** (`ListView.builder`) — le rendu de v1.4.1, inchangé. Aucun
+/// largeur égale** (`ListView.builder`), inchangé. Aucun
 /// seam n'est **retiré** par la table : c'est la table qui cède, jamais le
 /// seam. Un hôte qui tenait à son rendu de ligne le garde sans rien déclarer de
 /// plus ; un hôte qui veut la table retire son seam.

@@ -23,8 +23,8 @@ import 'delta_neutral_ops.dart';
 /// au-dessus d'un contenu Delta** (`HtmlToDelta` à l'ouverture,
 /// `QuillDeltaToHtmlConverter` à la sauvegarde). C'est EXACTEMENT le rôle d'un
 /// [ZCodec] (AD-7) : `ZHtmlCodec` réutilise l'éditeur/lecteur rich-text isolé
-/// (`ZMarkdownField.fromContext` / `ZMarkdownReader` / dialog plein-écran de
-/// ) plutôt qu'un WYSIWYG HTML tiers (`html_editor_enhanced` + WebView).
+/// (`ZMarkdownField.fromContext` / `ZMarkdownReader` / dialog plein-écran)
+/// plutôt qu'un WYSIWYG HTML tiers (`html_editor_enhanced` + WebView).
 /// Cela respecte AD-7 (Delta interne + `ZCodec` pluggable), AD-1 (aucun SDK
 /// d'éditeur ni type de contenu HTML natif exposé) et /AD-2 (le codec opère
 /// HORS du chemin chaud de frappe). Un futur besoin WYSIWYG HTML natif resterait

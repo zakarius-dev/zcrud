@@ -196,7 +196,7 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
 
   bool get _hasNumberFocus => _numberFocus.hasFocus;
 
-  /// Config additive intl du champ (`null` → chemin E11a-2, rétro-compat).
+  /// Config additive intl du champ (`null` → chemin historique inchangé).
   ZIntlFieldConfig? get _config {
     final c = widget.ctx.field.config;
     return c is ZIntlFieldConfig ? c : null;

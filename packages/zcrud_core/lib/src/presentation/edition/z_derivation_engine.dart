@@ -72,7 +72,7 @@ class ZDerivationEngine {
   /// Abonnements posés, conservés pour un retrait EXHAUSTIF au [dispose].
   final List<_Subscription> _subscriptions = <_Subscription>[];
 
-  /// **Jeton de génération par champ cible** (piège n°2 de la CR). Incrémenté à
+  /// **Jeton de génération par champ cible**. Incrémenté à
   /// CHAQUE recalcul de la cible ; une résolution asynchrone n'écrit que si son
   /// jeton capturé est encore le jeton courant.
   final Map<String, int> _generation = <String, int>{};

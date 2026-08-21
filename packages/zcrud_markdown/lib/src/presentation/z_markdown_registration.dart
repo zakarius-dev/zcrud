@@ -36,10 +36,10 @@ import 'z_rich_text_toolbar_config.dart';
 /// `field.readOnly` est honoré par l'adaptateur (rendu lecteur, prioritaire).
 /// [minLines]/[maxLines] bornent la hauteur de l'éditeur inline
 /// (mode compact) ; [characterLimit] active un compteur + troncature
-/// souple. [styleSet]/[chrome]/[textScaleFactor]/[formulaSpec] (6/7, CR
-/// parité 2026-08-11) : défauts de REGISTRE partagés par tous les champs
-/// rich-text du sous-arbre (styles « signature » de l'hôte, habillage carte,
-/// échelle, formules). [toolbarConfig] (CR B2 2026-08-11) :
+/// souple. [styleSet]/[chrome]/[textScaleFactor]/[formulaSpec] : défauts de
+/// REGISTRE partagés par tous les champs rich-text du sous-arbre (styles
+/// « signature » de l'hôte, habillage carte, échelle, formules).
+/// [toolbarConfig] :
 /// config granulaire de la barre d'outils (boutons + `themedBarBackground`)
 /// partagée par tous les champs rich-text — le registre est la SEULE voie de
 /// construction pour un hôte, donc tout paramètre par-champ de [ZMarkdownField]

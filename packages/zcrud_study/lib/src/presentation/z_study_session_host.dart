@@ -7,8 +7,7 @@
 ///
 /// Le choix du runtime passe par `zSessionRuntimeForMode` (`zcrud_session`,
 /// AD-34) — **table unique du dépôt**. L'assemblage de référence, lui,
-/// redécidait : son `_makeRuntime`
-/// (`example/lib/demos/study_session_demo_screen.dart:212`) portait un second
+/// redécidait : son `_makeRuntime` portait un second
 /// `switch` sur `ZReviewMode`, parallèle à la table. Deux tables qui disent la
 /// même chose aujourd'hui diront deux choses différentes le jour où l'une des
 /// deux bougera — et c'est le **régime d'écriture SRS** qui serait en jeu.
@@ -18,8 +17,8 @@
 ///
 /// 🔬 **Y compris pour `list` / `cramming`** : la démo les séparait
 /// (`list → advance()`, `cramming → answer(q)`). Vérifié sur disque — c'était
-/// redondant : `ZLinearSessionState.answer(quality)`
-/// (`z_linear_session_state.dart:221`) **ignore la qualité en mode `list`** et
+/// redondant : `ZLinearSessionState.answer(quality)` **ignore la qualité en
+/// mode `list`** et
 /// délègue à `advanceLinear`, « comportement identique à `advance()` » (sa
 /// propre dartdoc). Un seul appel sert donc les deux modes, et le point
 /// d'entrée « cramming » devient gratuit.

@@ -3,6 +3,14 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.3.0 — 2026-08-21
+
+### Modifié — le calculateur de teinte lisible est remonté au cœur
+
+L'implémentation vit désormais dans `zcrud_core`. **Aucune rupture** : le barrel
+de ce paquet ré-exporte les mêmes symboles sous les mêmes noms, et un test
+existant qui les importe ainsi passe sans modification.
+
 ## 3.2.0 — 2026-08-21
 
 ### 🔴 Corrigé — la pastille de compte volait le tap qu'elle surmonte

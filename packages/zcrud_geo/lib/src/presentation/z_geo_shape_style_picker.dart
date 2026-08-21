@@ -67,7 +67,7 @@ class ZGeoShapeStylePicker extends StatelessWidget {
 
   /// Ouvre le picker couleur : **seam injecté** prioritaire (dans un
   /// `try/catch (_) → null`, AD-10), sinon repli **built-in neutre** du cœur
-  /// [ZColorPickerDialog]. Calqué sur `z_color_field_widget.dart:97-129`.
+  /// [ZColorPickerDialog]. Même chaîne que le champ couleur du cœur.
   Future<int?> _pickColor(BuildContext context, int? initialArgb) async {
     final injected = ZcrudScope.maybeOf(context)?.colorPicker;
     if (injected != null) {

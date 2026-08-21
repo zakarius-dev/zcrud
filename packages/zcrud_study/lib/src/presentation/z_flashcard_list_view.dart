@@ -89,7 +89,7 @@ const double _kMinTapTarget = 48.0;
 
 /// Largeur minimale d'une tuile (dp) : pilote le nombre de colonnes.
 ///
-/// Remplace le ternaire `300/350` codé en dur d'IFFD — la décision revient à
+/// Remplace un ternaire `300/350` codé en dur — la décision revient à
 /// `computeCrossAxisCount`, sur la largeur **LOCALE**.
 const double _kMinTileWidth = 300.0;
 

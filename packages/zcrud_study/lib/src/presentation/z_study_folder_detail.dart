@@ -6,7 +6,7 @@
 ///   (SUF-1, `zcrud_ui_kit`) — **aucune** app-bar/recherche réimplémentée ;
 /// - onglet **Matériel** → `ZSectionedStudyLayout` (même package), avec deux
 ///   slots LIBRES optionnels au-dessus/en-dessous des sections, dans le MÊME
-///   défilement (`materialHeaderBuilder`/`materialFooterBuilder`, CR-53) ;
+///   défilement (`materialHeaderBuilder`/`materialFooterBuilder`) ;
 /// - onglet **Progression** → `ZStudyProgressRings` (+ DTO PRÉ-CALCULÉ
 ///   `ZProgressRingsData`, `zcrud_session`) + cartes de stats INJECTÉES ;
 /// - navigation de sous-dossiers ADAPTATIVE (sidebar redimensionnable/repliable
@@ -90,7 +90,7 @@ const double kZSubfolderNavBandHeight = 48.0;
 typedef ZMaterialSectionsBuilder =
     List<ZStudyToolsSectionSpec> Function(String? selectedSubfolderId);
 
-/// CR-53 — construit un slot LIBRE (en-tête ou pied) de l'onglet « Matériel »
+/// Construit un slot LIBRE (en-tête ou pied) de l'onglet « Matériel »
 /// pour le sous-dossier [selectedSubfolderId] (`null` = tous).
 ///
 /// **Typedef NOUVEAU, COEXISTANT** : [ZMaterialSectionsBuilder] n'est ni changé
@@ -273,11 +273,11 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// Constructeur des sections Matériel selon le sous-dossier sélectionné.
   final ZMaterialSectionsBuilder materialSectionsBuilder;
 
-  /// CR-53 — slot LIBRE rendu **au-dessus des sections** de l'onglet Matériel,
+  /// Slot LIBRE rendu **au-dessus des sections** de l'onglet Matériel,
   /// dans le MÊME défilement (câblé sur `ZSectionedStudyLayout.header`).
   ///
-  /// `null` (défaut) ⇒ capacité absente : le rendu est STRICTEMENT celui d'avant
-  /// CR-53. Un builder qui rend `null` ⇒ slot absent pour cette sélection.
+  /// `null` (défaut) ⇒ capacité absente, aucun widget ajouté. Un builder qui
+  /// rend `null` ⇒ slot absent pour cette sélection.
   final ZMaterialSlotBuilder? materialHeaderBuilder;
 
   /// Symétrique de [materialHeaderBuilder], rendu **sous la dernière section**

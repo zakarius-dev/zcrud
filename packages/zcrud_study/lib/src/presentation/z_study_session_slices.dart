@@ -41,7 +41,7 @@ import 'package:zcrud_session/zcrud_session.dart' show ZSessionItem;
 /// Phase de l'écran de session — aiguillage **exhaustif**, jamais un booléen.
 ///
 /// Reprend les trois états réellement atteints par l'assemblage de référence
-/// (`_StudyPhase`, `study_session_demo_screen.dart:141`), moins la phase
+/// (`_StudyPhase`), moins la phase
 /// `selecting` : le sélecteur de modes est un écran **amont**
 /// (`ZSessionModeSelector`, `zcrud_session`), pas une phase de la session.
 enum ZStudySessionPhase {

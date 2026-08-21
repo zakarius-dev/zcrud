@@ -46,7 +46,7 @@
 /// remplacer `DateTime.utc(...)` par `DateTime(...)` laissait la garde de
 /// semaine **verte** sur cette machine (`date` ⇒ `GMT`). La propriété est donc
 /// portée par une garde de **SOURCE** (constructeur `DateTime(` nu banni dans ce
-/// fichier et son fichier de référence), qui, elle, mord. Le test
+/// fichier et son fichier de référence), qui, elle, rougit. Le test
 /// comportemental garde la **forme** (7 jours UTC, 24 h d'écart, aucun trou) et
 /// **déclare sa limite** — une garde qui ne peut pas rougir n'est pas gardée.
 ///

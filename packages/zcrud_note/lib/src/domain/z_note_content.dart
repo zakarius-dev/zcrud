@@ -66,13 +66,13 @@
 ///
 /// Recouvrement (~20 lignes) avec `DeltaNeutralOps.asDeltaOps`
 /// (`zcrud_markdown`, **privé**, Flutter/Quill, repli **destructeur**). Le
-/// correctif de fond — hisser la primitive neutre dans `zcrud_core` — reste un
-/// chantier séparé : hors périmètre ici.
+/// correctif de fond serait de hisser la primitive neutre dans `zcrud_core`.
 ///
 /// **Ce n'est PAS une simple duplication : les deux fonctions DIVERGENT, et en
 /// SENS OPPOSÉ SUR LA DONNÉE** (`asDeltaOps('# T') ⇒ []` **détruit** ·
-/// `normalizeNoteContentOps('# T') ⇒ [{insert: '# T\n'}]` **préserve**). En
-/// , `note.content` traversera `ZMarkdownField → asDeltaOps` : un
+/// `normalizeNoteContentOps('# T') ⇒ [{insert: '# T\n'}]` **préserve**). Dès
+/// qu'une note est éditée, `note.content` traverse `ZMarkdownField →
+/// asDeltaOps` : un
 /// aller-retour **domaine → éditeur → domaine** peut donc **EFFACER ce que le
 /// domaine avait sauvé**. La divergence est **ÉPINGLÉE EN MACHINE**
 /// (`test/source_policy_test.dart` › groupe) et **DOIT être
@@ -292,12 +292,12 @@ int noteContentHash(List<Map<String, dynamic>> ops) {
 /// **`noteJsonEquals`/`noteJsonHash` sont EXPORTÉES** (`zcrud_note.dart`) : elles
 /// sont **CONSERVÉES**, jamais supprimées — une suppression de surface publique
 /// casserait un consommateur en dépendance git **sans** que `melos analyze` du
-/// repo ne le voie (leçon **`ZExportApi`**, E11a-3).
+/// repo ne le voie.
 bool noteJsonEquals(Object? a, Object? b) => zJsonEquals(a, b);
 
 /// Hash **profond** cohérent avec [noteJsonEquals].
 ///
-/// ** — ALIAS DÉLÉGANT** de [zJsonHash] (`zcrud_core`) : implémentation
+/// **ALIAS DÉLÉGANT** de [zJsonHash] (`zcrud_core`) : implémentation
 /// unique du repo. Conservée pour la **rétro-compatibilité** de la surface
 /// publique de `zcrud_note` (cf. [noteJsonEquals]).
 int noteJsonHash(Object? v) => zJsonHash(v);

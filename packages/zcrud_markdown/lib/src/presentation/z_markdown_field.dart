@@ -193,8 +193,7 @@ class ZMarkdownField extends StatefulWidget {
   /// (voie `controller`) reste prioritaire pour AFFICHER/MASQUER toute la barre.
   final ZRichTextToolbarConfig? toolbarConfig;
 
-  /// Placeholder (texte indicatif) affiché dans l'éditeur VIDE, CR
-  /// parité 2026-08-11 (legacy `mef:438`).
+  /// Placeholder (texte indicatif) affiché dans l'éditeur VIDE.
   ///
   /// Chaîne : **paramètre > `field.hintText` (résolu l10n) > rien** — le
   /// TEXTE vient toujours de l'hôte ou du système l10n injecté
@@ -239,8 +238,8 @@ class ZMarkdownField extends StatefulWidget {
 
   /// Facteur d'échelle du TEXTE de l'éditeur/lecteur (parité
   /// `textScaleFactor` legacy). Appliqué par [TextScaler.linear] via
-  /// `MediaQuery` LOCAL au contenu (mesuré : Quill lit
-  /// `MediaQuery.textScalerOf`, `text_line.dart:182`) — la toolbar et le
+  /// `MediaQuery` LOCAL au contenu (mesuré : Quill peint via
+  /// `MediaQuery.textScalerOf`) — la toolbar et le
   /// libellé ne changent pas. `null` ⇒ échelle ambiante inchangée.
   final double? textScaleFactor;
 
@@ -569,7 +568,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   }
 
   /// listener de focus posé UNIQUEMENT en écriture différée — commit au
-  /// blur (parité legacy `mef:97-101`).
+  /// blur (parité legacy).
   void _onFocusChangedDeferred() {
     final f = _focus;
     if (f != null && !f.hasFocus) _commitDeferred();

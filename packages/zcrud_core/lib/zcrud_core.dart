@@ -248,10 +248,19 @@ export 'src/presentation/reorder/z_reorder_renderer.dart';
 // possession hors `build` imposée, contrôleur jamais consommé sans être
 // détecté comme tel.
 export 'src/presentation/state/z_display_state.dart';
+// Cycle de teintes réutilisable — le signal « tâche en cours » du socle, sans
+// palette ni tempo à lui : les deux lui sont passés par le module appelant.
+export 'src/presentation/theme/z_color_cycle.dart';
 export 'src/presentation/theme/z_color_key_resolver.dart';
 export 'src/presentation/theme/z_foreground_override.dart';
 export 'src/presentation/theme/z_gradient_resolver.dart';
 export 'src/presentation/theme/z_inverted_surface.dart';
+// Contraste WCAG 2.2 et dérivation d'une teinte LISIBLE sur une surface
+// donnée. Domicile unique du calculateur du dépôt : `zcrud_study` et
+// `zcrud_chat` en portaient chacun une copie, et deux calculateurs de
+// contraste finissent toujours par diverger. `zcrud_study` continue de les
+// exposer sous les mêmes noms par ré-export (aucune rupture pour un hôte).
+export 'src/presentation/theme/z_readable_tint.dart';
 export 'src/presentation/theme/z_theme.dart';
 export 'src/presentation/z_crud_titles.dart';
 export 'src/presentation/z_dependency_resolver.dart';

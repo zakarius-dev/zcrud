@@ -15,11 +15,13 @@
 ///   ([shouldAcceptExternal]) que **hors focus** — jamais pendant l'édition (aucun
 ///   écrasement de sélection/curseur).
 /// - Le format porté est **HTML `String`** (la voie WYSIWYG ne force pas de Delta).
-///
-/// Mutants attendus ROUGES (discipline R3) : « push synchrone » (commit dans
-/// [onContentChanged]) ; « re-sync en focus » ([shouldAcceptExternal] renvoyant
-/// `true` alors que le champ a le focus).
 library;
+
+// Les deux propriétés ci-dessus sont gardées par mutation : injecter un « push
+// synchrone » (commit dans `onContentChanged`) ou une « re-sync en focus »
+// (`shouldAcceptExternal` renvoyant `true` alors que le champ a le focus) doit
+// faire ROUGIR la suite. Une garde qui survit à ces deux injections ne garde
+// rien.
 
 import 'dart:async';
 

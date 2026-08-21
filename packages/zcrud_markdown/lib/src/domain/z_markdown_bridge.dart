@@ -117,7 +117,7 @@ final class ZMarkdownEmbedBridge {
   }
 }
 
-/// Garde par défaut des ponts LaTeX fournis (CR-54).
+/// Garde par défaut des ponts LaTeX fournis.
 ///
 /// Une charge vide est refusée. Les espaces de bordure sont ignorés pour la
 /// décision : `$ V = P + F $` et `$ x^2 $` restent donc des formules. Une

@@ -77,7 +77,7 @@ enum ZSummaryCelebration {
 ///
 /// Chaque champ `null` conserve explicitement le comportement historique. La
 /// valeur est donc additive : une application peut ne surcharger qu'un détail
-/// sans modifier les réglages v0.19.3 restants.
+/// sans toucher aux autres réglages.
 @immutable
 class ZCelebrationSpec {
   /// Crée une recette de célébration partielle ou complète.

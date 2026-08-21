@@ -47,8 +47,8 @@ const double kZMinTapTarget = 48;
 /// allocation à chaque (re)build de tranche (AD-2). MÊME liste pour LaTeX
 /// ET tableau, en édition ET en lecture. Définie HORS de la
 /// surface publique scannée par les tests d'isolation de signature.
-/// ** — `ZDividerEmbedBuilder` comblait un TROU, pas un manque de
-/// confort.** `ZMarkdownCodec` compte `divider` parmi ses types d'embed
+/// **`ZDividerEmbedBuilder` comble un TROU, pas un manque de confort.**
+/// `ZMarkdownCodec` compte `divider` parmi ses types d'embed
 /// NATIFS : un `---` de Markdown produisait donc une op que **rien** ne savait
 /// rendre, et le lecteur comme l'éditeur levaient un `UnimplementedError` suivi
 /// de quatre `RenderErrorBox` en cascade. Mesuré, écran rouge. Le trou a
@@ -95,7 +95,7 @@ const List<EmbedBuilder> kZEmbedBuilders = <EmbedBuilder>[
 /// inline) en dévient délibérément et restent dérivés du thème.
 /// `null` ⇒ comportement historique strictement inchangé.
 ///
-/// [styleSet] (optionnel, — CR parité 2026-08-11) : jeu de styles NEUTRE
+/// [styleSet] (optionnel) : jeu de styles NEUTRE
 /// injecté PAR CHAMP par l'hôte ([ZRichTextStyleSet]) — la voie « signature
 /// l'éditeur historique » SANS faire entrer les valeurs legacy dans le paquet (polices Google
 /// et palette restent chez l'hôte, cf. `z_rich_text_style_set.dart`). Appliqué
@@ -275,12 +275,12 @@ DefaultStyles _applyZStyleSet(DefaultStyles base, ZRichTextStyleSet s) {
   );
 }
 
-/// Enveloppe PARTAGÉE du contenu rich-text (CR parité 2026-08-11)
-/// consommée par l'éditeur, le lecteur ET le dialog plein-écran :
+/// Enveloppe PARTAGÉE du contenu rich-text, consommée par l'éditeur, le
+/// lecteur ET le dialog plein-écran :
 ///
 /// * [textScaleFactor] ⇒ `MediaQuery` LOCAL portant un [TextScaler.linear] —
-///   MESURÉ : Quill peint via `MediaQuery.textScalerOf(context)`
-///   (`text_line.dart:182`), l'échelle s'applique donc à TOUT le contenu sans
+///   MESURÉ : Quill peint via `MediaQuery.textScalerOf(context)`,
+///   l'échelle s'applique donc à TOUT le contenu sans
 ///   toucher les styles (et sans dériver du chemin chaud) ;
 /// * [formulaSpec] ⇒ [ZFormulaSpecScope] lu par les builders de formule
 ///   (`const` partagés — la personnalisation PAR CHAMP passe par le contexte).
@@ -319,7 +319,7 @@ Widget zWrapRichTextContent(
 /// vers les `showXxx` de Quill + la liste `customButtons`. La config DOIT être
 /// construite UNE FOIS par l'appelant (en `initState`) et HISSÉE en champ —
 /// jamais ré-allouée dans le chemin chaud de frappe.
-/// [autoMultiRow] (CR toolbar multi-rangées par surface, 2026-08-11) : valeur
+/// [autoMultiRow] : valeur
 /// AUTO du multi-rangées quand `config.multiRow == null` — chaque SURFACE
 /// appelante déclare sa géométrie (`false` = barre dans le FLUX d'un
 /// formulaire, `true` = plein-écran où la place existe). Un `multiRow`
@@ -409,7 +409,7 @@ QuillSimpleToolbarConfig buildZToolbarConfig({
 
 /// jeu d'icônes **`*_rounded`** (opt-in [ZRichTextToolbarConfig.roundedIcons]).
 ///
-/// Jeu MESURÉ sur le legacy (`qmew:118-208`) : seuls les boutons que le
+/// Jeu MESURÉ sur le legacy : seuls les boutons que le
 /// legacy re-skinnait sont couverts — on n'INVENTE pas d'icône pour les autres
 /// (search, couleur, police… gardent l'icône Quill). AUCUN `tooltip` posé :
 /// Quill fournit les siens, déjà localisés (l10n) — poser un libellé ici
@@ -457,7 +457,7 @@ const QuillSimpleToolbarButtonOptions _kZRoundedButtonOptions =
 /// habillage OPT-IN de la barre d'outils
 /// ([ZRichTextToolbarConfig.themedBarBackground]) : surface + liseré bas
 /// dérivés des RÔLES du thème ( : zéro couleur en dur — les gris figés du
-/// legacy `qmew:70-74` ne sont PAS repris, c'est le thème de l'hôte qui parle).
+/// legacy ne sont PAS repris, c'est le thème de l'hôte qui parle).
 /// Drapeau `false` ⇒ [child] retourné TEL QUEL (rendu historique, AD-4).
 Widget zDecorateToolbar(
   BuildContext context,
