@@ -289,8 +289,20 @@ void main() {
         ],
       );
 
+      // CR-IFFD-83 — la pastille n'ENVELOPPE plus la tuile : elle la SURMONTE
+      // depuis un `Positioned.fill` frère, sous `IgnorePointer`, sans quoi son
+      // décor absorbe le tap qu'elle recouvre. La garde interroge donc la
+      // CELLULE de la grille (`IndexedSemantics`) et non plus la chaîne
+      // d'ancêtres du libellé — la propriété mesurée (« cette action porte une
+      // pastille, celle-là non ») est inchangée.
+      Finder cellOf(String label) => find
+          .ancestor(
+            of: find.text(label),
+            matching: find.byType(IndexedSemantics),
+          )
+          .first;
       Finder badgeFor(String label) =>
-          find.ancestor(of: find.text(label), matching: find.byType(Badge));
+          find.descendant(of: cellOf(label), matching: find.byType(Badge));
       expect(badgeFor('SEPT'), findsOneWidget);
       expect(badgeFor('MILLE'), findsOneWidget);
       expect(badgeFor('ZERO'), findsNothing);

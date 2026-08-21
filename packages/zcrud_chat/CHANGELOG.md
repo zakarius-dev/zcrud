@@ -3,6 +3,38 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.2.0 — 2026-08-21
+
+### Ajouté — les artefacts d'un message se DÉCLARENT au lieu de se porter
+
+`ZChatArtifactSpec` (clé **opaque**, glyphe, libellé, trois lectures d'état —
+présence, compte, occupation — et une liste de verbes) et `ZChatArtifactAction`,
+montés par `ZChatNotebookView(artifacts:)`.
+
+Le socle **ne connaît ni `mindmap` ni `flashcards`** : il connaît une clé. Les
+identités et le stockage restent à l'hôte.
+
+**Ce qui est rendu** : le glyphe **teinté quand l'artefact existe**, à la couleur
+ambiante sinon — *c'est un ÉTAT, pas un style* ; la pastille de compte ; le menu
+au tap, ne contenant que les verbes dont la condition tient ; la confirmation
+avant un verbe destructeur.
+
+**Ce qui reste exprimable, et qui compte pour la parité** : l'**ordre** des verbes
+est celui déclaré, et leur teinte est déclarable **par artefact** — un mécanisme
+qui imposerait un ordre unique forcerait un hôte à choisir entre le socle et sa
+parité.
+
+**Consommation de l'existant** : `capabilityAccents` avait été livré **sans aucun
+consommateur**. La chaîne `spec > skin > jeton > référence` en fait enfin son
+premier lecteur, **par clé** — donc une clé inventée par l'hôte est servie aussi.
+
+**Contraste** : la teinte respecte le plancher **même si l'hôte en déclare une qui
+ne le respecte pas**. Sans surface mesurable, **aucune teinte n'est peinte**
+(repli fermant) — l'état reste porté par l'annonce et la pastille.
+
+Additif strict : sans déclaration, le rendu est identique (contre-témoin à
+comptes absolus).
+
 ## 3.0.0 — 2026-08-18
 
 ### Ajouté — un créneau d'action par groupe de conversations

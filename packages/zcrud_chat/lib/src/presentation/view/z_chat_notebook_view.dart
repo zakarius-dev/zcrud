@@ -44,8 +44,11 @@ library;
 import 'package:flutter/widgets.dart';
 
 import '../z_chat_controller.dart';
+import 'z_chat_artifact_bar.dart';
+import 'z_chat_artifact_spec.dart';
 import 'z_chat_conversation_view.dart';
 import 'z_chat_message_tile.dart';
+import 'z_chat_notebook_skin.dart';
 
 /// Rend un fil en usage **notebook** : même racine que la conversation,
 /// identité masquée, créneau d'actions par message exposé.
@@ -57,6 +60,9 @@ class ZChatNotebookView extends StatelessWidget {
   const ZChatNotebookView({
     required this.controller,
     this.actionsBuilder,
+    this.artifacts = const <ZChatArtifactSpec>[],
+    this.skin,
+    this.confirmArtifactAction,
     this.collapsedMaxHeight,
     this.padding,
     this.reverse = false,
@@ -77,6 +83,28 @@ class ZChatNotebookView extends StatelessWidget {
   /// `null` signifie aucun bandeau d'actions : un notebook en lecture seule
   /// reste un notebook (invariant AD-4 — créneau nul, absent de l'arbre).
   final ZChatMessageSlotBuilder? actionsBuilder;
+
+  /// Les **artefacts déclarés** par l'hôte — le mécanisme de CR-IFFD-84.
+  ///
+  /// Vide (défaut), le notebook est **exactement** celui d'avant : aucun
+  /// widget ajouté, [actionsBuilder] relayé tel quel. Renseigné, le socle
+  /// monte une [ZChatArtifactBar] par message : glyphe teinté selon l'état,
+  /// pastille de compte, menu des verbes dont la condition tient,
+  /// confirmation d'un verbe destructeur, état annoncé.
+  ///
+  /// Les deux créneaux **cohabitent** : le contenu de [actionsBuilder] est
+  /// rendu au-dessus de la rangée d'artefacts, pas remplacé par elle.
+  final List<ZChatArtifactSpec> artifacts;
+
+  /// Réglage de rendu du notebook — c'est lui qui porte
+  /// `capabilityAccents`, la table d'accents par clé d'artefact. `null`
+  /// signifie « le jeton `ZcrudTheme.chatCapabilityAccents`, puis la
+  /// référence ».
+  final ZChatNotebookSkin? skin;
+
+  /// Couture de confirmation d'un verbe destructeur. `null` signifie la
+  /// confirmation **en place** du socle, dans le menu lui-même.
+  final ZChatArtifactConfirm? confirmArtifactAction;
 
   /// Hauteur repliée des tuiles — relayée telle quelle.
   final double? collapsedMaxHeight;
@@ -109,10 +137,24 @@ class ZChatNotebookView extends StatelessWidget {
       reverse: reverse,
       // Identité : pas de paramètre sur cette surface — le masquage n'est pas
       // un défaut réglable, c'est la définition de l'usage notebook.
-      actionsBuilder: actionsBuilder,
+      actionsBuilder: _actionsSlot(),
       // Relai, jamais une seconde saisie : la fabrique unique rend les deux
       // surfaces.
       composer: composer,
     );
   }
+
+  /// Le créneau d'actions réellement passé à la tuile.
+  ///
+  /// Sans artefact déclaré, c'est le créneau de l'hôte **à l'identique** —
+  /// même référence, donc même arbre, y compris `null` (invariant AD-4).
+  /// C'est ce qui rend l'ajout strictement additif.
+  ZChatMessageSlotBuilder? _actionsSlot() => artifacts.isEmpty
+      ? actionsBuilder
+      : ZChatArtifactBar.slot(
+          artifacts: artifacts,
+          host: actionsBuilder,
+          skin: skin,
+          confirm: confirmArtifactAction,
+        );
 }

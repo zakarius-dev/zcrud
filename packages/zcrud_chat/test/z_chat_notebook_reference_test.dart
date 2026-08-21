@@ -321,10 +321,36 @@ void main() {
       // `ZChatNotebookView` lisait la référence, tout hôte passif hériterait
       // du rendu IFFD sans l'avoir demandé — la définition même d'un défaut
       // qui bouge.
+      // 🔴 ARBITRAGE CR-IFFD-84 (volet A, 2026-08-21) — le cardinal passe de
+      // 2 à 4, délibérément. La CR établit que la référence et
+      // `capabilityAccents` existaient SANS AUCUN consommateur (« offert, non
+      // passé », vérifié par grep chez l'hôte comme ici) : le mécanisme
+      // d'artefacts déclarés est leur premier lecteur, et il ne peut pas
+      // l'être sans les citer.
+      //
+      // Ce que la garde protégeait — l'hôte PASSIF — reste protégé, mais par
+      // deux mesures plus précises que ce grep :
+      // 1. le rendu de référence n'est monté QUE si l'hôte déclare des
+      //    artefacts (`artifacts.isEmpty ⇒ créneau inchangé`), mesuré en
+      //    COMPTES ABSOLUS de widgets par le contre-témoin de
+      //    `z_chat_cr84_artifacts_test.dart` ;
+      // 2. la VUE relaie le skin, elle ne le construit ni ne le résout —
+      //    asserté sur sa source par le test suivant.
       const Set<String> proprietaires = <String>{
         'view/z_chat_notebook_reference.dart',
         'view/z_chat_notebook_skin.dart',
+        // Le consommateur du mécanisme d'artefacts : il RÉSOUT la chaîne
+        // paramètre > jeton > référence, et lui seul.
+        'view/z_chat_artifact_bar.dart',
+        // La vue ne fait que TRANSPORTER le réglage jusqu'à la rangée.
+        'view/z_chat_notebook_view.dart',
       };
+      expect(proprietaires, hasLength(4),
+          reason: '🔴 un fichier a été AJOUTÉ aux propriétaires du rendu de '
+              'référence. Chaque entrée est un endroit de plus où un hôte '
+              'passif peut se mettre à hériter du rendu IFFD : justifiez-la '
+              'au point de déclaration et mettez ce compte à jour, '
+              'délibérément.');
       final List<String> offenders = <String>[];
       for (final MapEntry<String, List<String>> e in strippedLib().entries) {
         final String p = e.key.replaceAll(r'\', '/');
@@ -340,6 +366,45 @@ void main() {
           reason: '🔴 le rendu de référence a été CÂBLÉ dans le socle : un '
               'hôte passif changerait d\'apparence sans réglage.\n'
               '${offenders.join('\n')}');
+    });
+
+    test('la VUE RELAIE le skin — elle ne le CONSTRUIT ni ne le RÉSOUT', () {
+      // 🔴 C'est ce qui remplace, pour ce fichier, le grep que l'arbitrage
+      // ci-dessus a dû élargir. Porter un paramètre nullable est inoffensif ;
+      // construire un skin par défaut, ou le résoudre, câblerait la référence
+      // dans une vue que tout hôte monte.
+      final List<String> lignes = stripped(
+        libFile('view/z_chat_notebook_view.dart'),
+      );
+      expect(
+        lignes.any((String l) => l.contains('ZChatNotebookSkin? skin')),
+        isTrue,
+        reason: '🔴 GARDE VACUELLE : le paramètre relayé a disparu, la règle '
+            'ne porte plus sur rien',
+      );
+      for (final RegExp interdit in <RegExp>[
+        RegExp(r'ZChatNotebookSkin\s*\('),
+        RegExp(r'\.resolve\s*\('),
+        RegExp(r'ZChatNotebookReference\.'),
+      ]) {
+        expect(
+          lignes.where(interdit.hasMatch),
+          isEmpty,
+          reason: '🔴 `${interdit.pattern}` dans la VUE notebook : le rendu de '
+              'référence y serait câblé, donc hérité par tout hôte — y '
+              'compris celui qui ne déclare AUCUN artefact.',
+        );
+      }
+      // 🔬 contre-preuve : les motifs SAVENT rougir sur leur témoin.
+      expect(
+        RegExp(r'ZChatNotebookSkin\s*\(')
+            .hasMatch('  final s = const ZChatNotebookSkin();'),
+        isTrue,
+      );
+      expect(
+        RegExp(r'\.resolve\s*\(').hasMatch('  final st = skin.resolve(c);'),
+        isTrue,
+      );
     });
 
     testWidgets('le composer garde le défaut du THÈME, jamais la marge de '

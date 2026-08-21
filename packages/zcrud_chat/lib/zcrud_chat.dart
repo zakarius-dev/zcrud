@@ -100,6 +100,18 @@ export 'src/presentation/render/z_chat_shell_renderer_scope.dart';
 // hôte ne puisse le perdre en silence ; `ZChatSettingsSheet` le rend, tuile
 // par tuile remplaçable. Aucun enum n'est réinventé : tout vient du kernel.
 export 'src/presentation/settings/z_chat_settings_controller.dart';
+// Les ARTEFACTS déclarés par message (CR-IFFD-84, volet A) :
+// `ZChatArtifactSpec` porte une clé OPAQUE, un glyphe, un libellé déjà
+// localisé et trois lectures d'ÉTAT sur le message brut (présence, compte,
+// occupation) ; `ZChatArtifactAction` porte les verbes, leur condition de
+// visibilité, leur teinte propre et leur rappel — l'ordre et la couleur
+// restent ceux de l'hôte. `ZChatArtifactBar` rend l'état (glyphe teinté SI
+// le contenu existe, pastille NON interactive, menu des verbes dont la
+// condition tient, confirmation d'un verbe destructeur, état ANNONCÉ), et
+// consomme enfin `capabilityAccents` — la table que le socle offrait sans
+// que personne ne la lise.
+export 'src/presentation/view/z_chat_artifact_bar.dart';
+export 'src/presentation/view/z_chat_artifact_spec.dart';
 export 'src/presentation/view/z_chat_attachment_strip.dart';
 export 'src/presentation/view/z_chat_block_view.dart';
 export 'src/presentation/view/z_chat_capture_bar.dart';

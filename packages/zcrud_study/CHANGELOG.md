@@ -3,6 +3,37 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.2.0 — 2026-08-21
+
+### 🔴 Corrigé — la pastille de compte volait le tap qu'elle surmonte
+
+Le badge livré en 3.0.0 pose son label **par-dessus** la tuile, et ce label est
+**sensible aux gestes** : il absorbait les taps de son rectangle. Mesuré : tap au
+centre **1**, tap à 8 px du coin **0**. Le tap perdu **n'émettait rien** — ni
+erreur, ni retour visuel — et c'est l'action portant un artefact existant, donc
+celle sur laquelle on appuie le plus.
+
+La pastille est sortie du hit-test. Cinq montages ont été mesurés : neutraliser le
+seul label **ne suffit pas** — l'absorbeur est la boîte décorée du stade, pas le
+texte. **Rendu iso-pixel prouvé** : tuile, pastille, nombre et glyphe aux mêmes
+rectangles.
+
+### 🔴 Corrigé — la pastille rétrécissait la tuile, tuant la moitié de la cellule
+
+Défaut **plus large que le précédent**, trouvé en marge et gardé : le `Stack`
+portant la pastille donnait des contraintes lâches, si bien qu'une tuile **avec**
+compte mesurait `93,3 × 48` là où sa voisine **sans** compte mesurait
+`93,3 × 96`. La moitié basse de la cellule était **morte** — et avec un libellé
+court, les **trois quarts**.
+
+Conséquence visible : dans la même grille, le glyphe d'une action avec compte
+était **24 dp plus haut** que celui d'une action sans compte. Le correctif les
+**aligne** ; la pastille, elle, ne bouge pas d'un pixel (asserté en absolu et en
+relatif).
+
+La garde de preuve a été écrite **avant** le correctif et rougissait en cinq
+assertions chiffrées.
+
 ## 3.1.0 — 2026-08-18
 
 ### 🔴 Corrigé — la teinte d'état n'atteignait pas un slot d'hôte

@@ -23,6 +23,13 @@ const String kZChatSeamIdentitySlot = 'ZChatMessageTile.identityBuilder';
 /// Nom du seam d'**actions par message** — idem.
 const String kZChatSeamActionsSlot = 'ZChatMessageTile.actionsBuilder';
 
+/// Nom du seam des **lectures d'état d'un artefact déclaré** — idem.
+///
+/// Une seule constante pour les quatre lectures (`presence`, `count`, `busy`,
+/// la condition d'un verbe) : elles partagent le même repli **fermant**, et
+/// la pile relayée désigne déjà la closure fautive de l'hôte.
+const String kZChatSeamArtifactSpec = 'ZChatArtifactSpec state reading';
+
 /// Relaie l'échec d'un seam d'hôte **sans** faire tomber le rendu.
 ///
 /// [seam] nomme le membre fautif (`'ZChatRenderer.buildBlock'`…) : sans lui,

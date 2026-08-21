@@ -529,7 +529,63 @@ class _ZItemActionGridTile extends StatelessWidget {
     final int? count = action.count;
     final bool hasCount = count != null && count > 0;
     if (hasCount) {
-      tile = Badge.count(count: count, maxCount: count, child: tile);
+      // CR-IFFD-83 — la pastille est une INFORMATION, jamais une CIBLE.
+      //
+      // `Badge.count(child: tile)` empile son décor par-dessus l'enfant DANS LE
+      // MÊME `Stack`, et ce décor est HIT-TESTABLE : `RenderDecoratedBox`
+      // renvoie `hitTestSelf == true` dès que la forme (`StadiumBorder`)
+      // contient le point. Le `Stack` s'arrête au premier enfant touché : le
+      // tap qui tombe sur la pastille n'atteint JAMAIS la tuile, et il n'émet
+      // rien — ni erreur, ni retour visuel. Mesuré : tap au coin haut-fin
+      // (à 6 dp) ⇒ 0 déclenchement ; tap au centre ⇒ 1.
+      //
+      // 🔴 Neutraliser le seul `label` NE SUFFIT PAS — mesuré aussi :
+      // `Badge(label: IgnorePointer(child: Text('12')))` laisse le tap perdu,
+      // l'absorbeur devenant le `RenderDecoratedBox` du stade. C'est la
+      // pastille ASSEMBLÉE qui doit sortir du hit-test.
+      //
+      // Le montage ci-dessous reproduit la géométrie de `Badge` À L'IDENTIQUE
+      // — `Badge` place lui-même son décor dans un `Positioned.fill` au-dessus
+      // de son enfant, et le calcule à partir de la taille du `Stack`, pas de
+      // celle de la tuile. Mêmes pixels (tuile, pastille et nombre aux mêmes
+      // rectangles), seul le hit-test diffère. Le nombre reste dans l'arbre,
+      // donc toujours ANNONCÉ par le `MergeSemantics` ci-dessous :
+      // `IgnorePointer` ne retire pas le nœud sémantique.
+      tile = Stack(
+        clipBehavior: Clip.none,
+        // `StackFit.passthrough`, jamais le défaut `StackFit.loose` : ce
+        // dernier donne à ses enfants NON positionnés une contrainte LÂCHE.
+        // La tuile se repliait alors sur sa taille intrinsèque au lieu de
+        // remplir la cellule réservée par la grille — mesuré `93,3 × 48` avec
+        // compte contre `93,3 × 96` sans, soit la MOITIÉ BASSE de la cellule
+        // rendue morte au tap ; avec un libellé court, le repli était aussi
+        // horizontal (`48 × 48`) et la pastille — ancrée sur la CELLULE — se
+        // posait entièrement HORS de la tuile, à cheval sur la voisine.
+        //
+        // `passthrough` retransmet la contrainte SERRÉE reçue de la grille :
+        // la tuile réoccupe sa cellule entière. Le décor, lui, est en
+        // `Positioned.fill` et se dimensionne déjà sur le `Stack` : la
+        // pastille et son nombre restent AU PIXEL PRÈS aux mêmes rectangles
+        // (garde de non-régression dédiée).
+        //
+        // Effet ASSUMÉ et gardé : le glyphe redescend de 24 dp, car il est
+        // désormais centré dans la cellule entière — exactement comme celui
+        // d'une action SANS compte. C'est la correction d'une INCOHÉRENCE
+        // (deux glyphes désalignés dans la même rangée), pas une régression.
+        fit: StackFit.passthrough,
+        children: <Widget>[
+          tile,
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Badge.count(
+                count: count,
+                maxCount: count,
+                child: const SizedBox.expand(),
+              ),
+            ),
+          ),
+        ],
+      );
     }
 
     if (stateLabel == null && !hasCount) return tile;

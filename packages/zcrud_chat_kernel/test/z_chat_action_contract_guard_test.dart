@@ -57,15 +57,50 @@ List<String> _effectMembers() {
 
 /// Toutes les occurrences de `.<membre>` en position de RÉCEPTEUR (appel ou
 /// tear-off) dans `packages/*/lib`, hors commentaires, par fichier.
+///
+/// 🔴 **UNE seule forme est exclue : la DÉCLARATION d'un constructeur nommé.**
+/// `const ZChatArtifactAction.regenerate({` (`zcrud_chat`,
+/// `presentation/view/z_chat_artifact_spec.dart:150`) porte le nom d'un verbe
+/// **sans l'invoquer** : c'est le constructeur nommé d'une classe de l'UI, pas
+/// un appel à `ZChatActionExecutor`. Le motif `\.(<membres>)\b` le comptait
+/// pour un second site d'appel. Ce n'est pas la propriété gardée qui est
+/// relâchée, c'est le PROXY qui la mesurait de travers — et le corriger en
+/// exemptant des fichiers aurait, lui, ouvert un trou permanent.
+///
+/// Les **deux formes ont été mesurées sur les sources réelles** avant de
+/// choisir le motif :
+///   * un **APPEL** a un RÉCEPTEUR devant le membre, et ce récepteur n'est
+///     jamais un TYPE : les huit appels réels du répartiteur s'écrivent
+///     `() => executor.estimateImpact(action)`,
+///     `() => aware.regenerateWithSettings(a)`, … ; les formes contournantes
+///     redoutées (`_executor.regenerate(`, `widget.executor.regenerate(`) ont
+///     elles aussi un récepteur en minuscule ;
+///   * une **DÉCLARATION** commence la ligne par le TYPE (majuscule
+///     initiale), éventuellement précédé de `const`/`factory`, et enchaîne
+///     aussitôt sur la liste de paramètres.
+///
+/// Restent donc attrapés : `executor.regenerate(` même seul en tête de ligne
+/// (récepteur en minuscule), les chaînes (`widget.executor.regenerate(`), et
+/// le **tear-off sans parenthèses** (l'exclusion exige `(` juste après).
+///
+/// 🟡 **Perte de couverture assumée et bornée** : un appel STATIQUE écrit en
+/// tête de ligne sur un type (`Machin.regenerate(`) échapperait désormais.
+/// Les membres d'effet de `ZChatActionExecutor` sont tous des membres
+/// d'INSTANCE : aucun ne peut être atteint ainsi — il faudrait un homonyme
+/// statique, qui ne serait pas le verbe gardé.
 Map<String, List<String>> _callSites(List<String> members) {
-  final RegExp use = RegExp(r'\.(' + members.join('|') + r')\b');
+  final String alternation = members.join('|');
+  final RegExp use = RegExp(r'\.(' + alternation + r')\b');
+  final RegExp namedCtorDecl = RegExp(
+    r'^\s*(?:const\s+|factory\s+)?[A-Z]\w*\.(?:' + alternation + r')\s*\(',
+  );
   final Map<String, List<String>> byFile = <String, List<String>>{};
   final List<File> files = packageLibDartFiles();
   expect(files, isNotEmpty, reason: 'aucun fichier scanné : garde VACUELLE');
   for (final File f in files) {
     final List<String> lines = strippedLines(f);
     for (int i = 0; i < lines.length; i++) {
-      if (use.hasMatch(lines[i])) {
+      if (use.hasMatch(lines[i]) && !namedCtorDecl.hasMatch(lines[i])) {
         (byFile[f.path] ??= <String>[]).add('${i + 1}: ${lines[i].trim()}');
       }
     }

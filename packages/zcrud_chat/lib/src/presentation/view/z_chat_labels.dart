@@ -189,6 +189,61 @@ const String kZChatLabelSettingAuto = '${kZChatLabelPrefix}settingAuto';
 /// obligatoire.
 const String kZChatLabelGenerated = '${kZChatLabelPrefix}generated';
 
+// ── Artefacts déclarés par message (CR-IFFD-84, volet A) ─────────────────
+//
+// Les cinq verbes standard sont nommés ICI, jamais dans le rendu : un hôte
+// qui déclare `ZChatArtifactAction.open(...)` obtient un menu localisé sans
+// alimenter son registre, et l'hôte qui traduit passe par les mêmes clés que
+// partout ailleurs. L'IDENTITÉ d'un artefact, elle, n'entre pas au socle :
+// `label` est un texte déjà localisé par l'hôte (patron `ZChatModelOption`).
+
+/// Étiquette sémantique de la rangée d'artefacts d'un message.
+const String kZChatLabelArtifacts = '${kZChatLabelPrefix}artifacts';
+
+/// Verbe standard « créer » — visible quand l'artefact est absent.
+const String kZChatLabelArtifactCreate = '${kZChatLabelPrefix}artifactCreate';
+
+/// Verbe standard « ouvrir » — visible quand l'artefact est présent.
+const String kZChatLabelArtifactOpen = '${kZChatLabelPrefix}artifactOpen';
+
+/// Verbe standard « régénérer ».
+const String kZChatLabelArtifactRegenerate =
+    '${kZChatLabelPrefix}artifactRegenerate';
+
+/// Verbe standard « modifier ».
+const String kZChatLabelArtifactEdit = '${kZChatLabelPrefix}artifactEdit';
+
+/// Verbe standard « supprimer » — destructeur, donc confirmé.
+const String kZChatLabelArtifactDelete = '${kZChatLabelPrefix}artifactDelete';
+
+/// État « aucun contenu pour cet artefact » — le pendant explicite de
+/// [kZChatLabelGenerated].
+///
+/// Les deux états sont annoncés, jamais seulement l'un des deux : une absence
+/// qui ne se signale que par l'absence d'annonce est indiscernable d'un
+/// rendu muet.
+const String kZChatLabelArtifactEmpty = '${kZChatLabelPrefix}artifactEmpty';
+
+/// État « génération en cours » pour CET artefact — le canal non chromatique
+/// de l'occupation. L'animation, elle, est un autre sujet : l'annonce ne
+/// dépend pas d'elle.
+const String kZChatLabelArtifactBusy = '${kZChatLabelPrefix}artifactBusy';
+
+/// Compte d'éléments d'un artefact — porte [kZChatCountPlaceholder]. C'est le
+/// canal TEXTUEL de la pastille, qui n'est jamais annoncée elle-même.
+const String kZChatLabelArtifactCount = '${kZChatLabelPrefix}artifactCount';
+
+/// Question générique de confirmation d'un verbe destructeur, quand l'hôte
+/// n'a pas fourni la sienne (`confirmMessage`).
+const String kZChatLabelArtifactConfirmPrompt =
+    '${kZChatLabelPrefix}artifactConfirmPrompt';
+
+/// Action « confirmer » de la confirmation en place.
+const String kZChatLabelArtifactConfirm = '${kZChatLabelPrefix}artifactConfirm';
+
+/// Action « annuler » de la confirmation en place — elle n'exécute rien.
+const String kZChatLabelArtifactCancel = '${kZChatLabelPrefix}artifactCancel';
+
 // ── Réglages du composer ──────────────────────────────────────────────────
 
 /// Action « envoyer le message » — libellé du créneau d'envoi par défaut
@@ -413,6 +468,18 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelCorpusAll,
   kZChatLabelSettingAuto,
   kZChatLabelGenerated,
+  kZChatLabelArtifacts,
+  kZChatLabelArtifactCreate,
+  kZChatLabelArtifactOpen,
+  kZChatLabelArtifactRegenerate,
+  kZChatLabelArtifactEdit,
+  kZChatLabelArtifactDelete,
+  kZChatLabelArtifactEmpty,
+  kZChatLabelArtifactBusy,
+  kZChatLabelArtifactCount,
+  kZChatLabelArtifactConfirmPrompt,
+  kZChatLabelArtifactConfirm,
+  kZChatLabelArtifactCancel,
   kZChatLabelSend,
   kZChatLabelSettingsReset,
   kZChatLabelSettingsClose,
@@ -511,6 +578,18 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelCorpusAll: 'Tous les corpus',
   kZChatLabelSettingAuto: 'Automatique',
   kZChatLabelGenerated: 'Déjà généré',
+  kZChatLabelArtifacts: 'Artefacts',
+  kZChatLabelArtifactCreate: 'Créer',
+  kZChatLabelArtifactOpen: 'Ouvrir',
+  kZChatLabelArtifactRegenerate: 'Régénérer',
+  kZChatLabelArtifactEdit: 'Modifier',
+  kZChatLabelArtifactDelete: 'Supprimer',
+  kZChatLabelArtifactEmpty: 'Aucun contenu',
+  kZChatLabelArtifactBusy: 'Génération en cours',
+  kZChatLabelArtifactCount: '$kZChatCountPlaceholder élément(s)',
+  kZChatLabelArtifactConfirmPrompt: 'Confirmer cette action ?',
+  kZChatLabelArtifactConfirm: 'Confirmer',
+  kZChatLabelArtifactCancel: 'Annuler',
   kZChatLabelSend: 'Envoyer',
   kZChatLabelSettingsReset: 'Réinitialiser',
   kZChatLabelSettingsClose: 'Fermer',
