@@ -67,14 +67,21 @@ pas une, un fichier modifié si. Seuil d'inactivité ~5 min avant de considérer
 cas de doute, demander au owner de lancer `/codex:status <task-id>`. Toujours **retenir
 l'identifiant `task-…`** rendu au lancement : sans lui, ni statut ni annulation ne sont possibles.
 
-**Veille et publication (consigne owner, 2026-08-14)** : cycle permanent — **toutes les 30 min**,
-vérifier si l'un des quatre dépôts hôtes a **émis ou modifié** un CR (un CR *modifié* compte
+**Veille et publication (consigne owner, 2026-08-14, cadence révisée le 2026-08-22)** : cycle
+permanent — **toutes les 1 h 30**, vérifier si l'un des quatre dépôts hôtes a **émis ou modifié** un CR (un CR *modifié* compte
 autant qu'un CR neuf : le pilote réécrit ses CR, cf. le retour de pilote passé de 7 à 8 écarts
 en cours de traitement) ; traiter les CR trouvés ; **publier de façon GROUPÉE quand plusieurs CR
 sont traités dans la même vague**, sinon publier le CR seul ; puis attendre les suivants.
 Release = vérif verte au repos, bump des paquets **et** de `tool/*`, CHANGELOGs datés,
 `docs/handoff-vX.Y.Z.md`, tag, push. La publication du **site** reste un geste distinct, demandé
 explicitement par le owner.
+
+⚠️ **DEUX conventions de dépôt de CR, à balayer toutes les deux** : `dodlp-otr` écrit **un fichier
+par CR** (`docs/cr-zcrud/cr-*.md`) ; `iffd` **et** `lex_douane` tiennent un **registre unique**
+(`docs/zcrud-change-requests.md`, plusieurs centaines de Ko). Un balayage qui ne cherche que
+`cr-*.md` est **aveugle aux registres** — mesuré le 2026-08-18 : trois CR IFFD ouvertes depuis dix
+jours n'avaient jamais été signalées. Pour un registre, isoler le neuf par l'historique git
+(`git log -- <registre>` puis `git show <commit> -- <registre>`), jamais en relisant 350 Ko.
 
 ⚠️ **Règle de stabilité** : un fichier de CR écrit il y a moins de **2 minutes** peut encore être
 en cours de rédaction — remesurer (mtime + taille inchangés) avant de le lire et de le traiter.

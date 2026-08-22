@@ -37,7 +37,7 @@
 # entrante (PUITS du graphe à cette date).
 name: zcrud_menu
 description: "Decoupled contextual menus for zcrud: ZMenuRenderer lets a host plug its own menu package behind a neutral seam, with a zero-third-party Material fallback, disabled-with-reason entries and injected trigger and content."
-version: 3.4.0
+version: 3.5.0
 publish_to: none
 resolution: workspace
 
@@ -62,7 +62,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  zcrud_core: ^3.4.0
+  zcrud_core: ^3.5.0
 
 # Package Flutter → tests via `flutter test`, DEPUIS CE DOSSIER. Aucun codegen
 # (aucun `@ZcrudModel` : une entrée de menu est une donnée de PRÉSENTATION, jamais

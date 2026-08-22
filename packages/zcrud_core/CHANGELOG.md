@@ -3,6 +3,19 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.5.0 — 2026-08-22
+
+### Ajouté — deux jetons de premier plan
+
+**`onErrorColor`** — le premier plan d'erreur, **apparié** à `errorColor` : le
+repli l'alimente depuis le rôle correspondant du `ColorScheme`, exactement comme
+le fond depuis le sien. Un consommateur qui peint un fond d'alerte y prend son
+texte, jamais dans la couleur de surface — laquelle n'a aucune raison d'être
+lisible sur une pastille.
+
+**`chatComposerActiveAccent`** — teinte d'état **actif** des bascules d'outils
+du composer. **Absente du repli** : sans déclaration, aucune teinte n'est peinte.
+
 ## 3.3.1 — 2026-08-21
 
 ### Gardes — l'unicité du calculateur de contraste couvre une seconde forme

@@ -103,17 +103,48 @@ import 'z_chat_settings_sheet.dart'
 /// sien.
 ///
 /// **Pourquoi ce canal-là**, et pas une pastille/un fond/un contour : le
-/// socle n'invente aucune couleur et ne peut pas re-styler un glyphe d'hôte
-/// (widget opaque). Une décoration exigerait une couleur d'hôte — donc un
-/// canal **conditionné** au câblage, c'est-à-dire zéro canal chez l'hôte qui
-/// n'a rien câblé. Le libellé emphasé est le seul canal que le socle peut
-/// peindre **inconditionnellement**, et c'est déjà celui que la feuille de
-/// réglages utilise (un état, deux surfaces, une seule grammaire).
+/// socle n'invente aucune couleur. Une décoration exige une couleur d'hôte —
+/// donc un canal **conditionné** au câblage, c'est-à-dire zéro canal chez
+/// l'hôte qui n'a rien câblé. Le libellé emphasé est le seul canal que le
+/// socle peut peindre **inconditionnellement**, et c'est déjà celui que la
+/// feuille de réglages utilise (un état, deux surfaces, une seule grammaire).
+///
+/// ⇒ La teinte d'état actif (`activeAccent` / jeton
+/// `chatComposerActiveAccent`, cf. [_activeAccent]) est un canal
+/// **supplémentaire**, jamais un substitut : elle teinte glyphe et libellé
+/// quand l'hôte l'a déclarée, et cette règle du canal visible reste tenue
+/// telle quelle pour l'hôte qui n'a rien déclaré.
 bool _labelVisible({
   required bool showLabel,
   required bool hasGlyph,
   required bool stateful,
 }) => showLabel || !hasGlyph || stateful;
+
+/// **La teinte d'état ACTIF, en garde-fou de lisibilité.**
+///
+/// Chaîne `paramètre > jeton (`ZcrudTheme.chatComposerActiveAccent`) >
+/// **rien**` : sans déclaration, aucune teinte n'est peinte et l'arbre rendu
+/// est exactement celui d'un socle sans ce canal (invariant AD-4).
+///
+/// La teinte déclarée est portée au **plancher de contraste** des composants
+/// graphiques, mesuré contre la surface du composer : un accent que le thème
+/// de l'hôte rendrait illisible est corrigé, jamais peint tel quel. Surface
+/// non mesurable ⇒ aucune teinte (repli **fermant**, AD-10) : une couleur
+/// dont on ne peut pas mesurer la lisibilité n'est pas un état lisible.
+///
+/// 🔴 Ce canal s'**AJOUTE**, il ne remplace rien : le libellé emphasé et
+/// `Semantics(toggled:)` restent les canaux non chromatiques de l'état
+/// (invariant AD-13).
+TextStyle _tinted(TextStyle style, Color? tint) =>
+    tint == null ? style : style.copyWith(color: tint);
+
+Color? _activeAccent(BuildContext context, Color? accent) {
+  final ZcrudTheme theme = ZcrudTheme.of(context);
+  final Color? declared = accent ?? theme.chatComposerActiveAccent;
+  final Color? surface = theme.surfaceColor;
+  if (declared == null || surface == null) return null;
+  return zReadableTintOn(declared, surface: surface);
+}
 
 double _gapOf(BuildContext context) =>
     ZcrudScope.maybeOf(context)?.theme?.gapS ?? kZChatSettingsReferenceGap;
@@ -473,6 +504,7 @@ class _ZChatComposerBandTarget extends StatelessWidget {
     required this.children,
     this.toggled,
     this.liveRegion = false,
+    this.foreground,
   });
 
   final String semanticsLabel;
@@ -487,6 +519,10 @@ class _ZChatComposerBandTarget extends StatelessWidget {
   final bool? toggled;
 
   final List<Widget> children;
+
+  /// Teinte imposée au premier plan du contenu (glyphe d'hôte compris).
+  /// `null` ⇒ couleur ambiante — l'arbre est alors celui d'avant ce canal.
+  final Color? foreground;
 
   @override
   Widget build(BuildContext context) {
@@ -510,7 +546,18 @@ class _ZChatComposerBandTarget extends StatelessWidget {
             alignment: AlignmentDirectional.center,
             widthFactor: 1,
             heightFactor: 1,
-            child: Row(mainAxisSize: MainAxisSize.min, children: children),
+            // Un glyphe d'hôte est opaque : seule une enveloppe de premier
+            // plan peut le teinter — et c'est la primitive du socle qui le
+            // fait, jamais un `IconTheme` coloré posé ici.
+            child: foreground == null
+                ? Row(mainAxisSize: MainAxisSize.min, children: children)
+                : ZForegroundOverride(
+                    color: foreground!,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: children,
+                    ),
+                  ),
           ),
         ),
       ),
@@ -547,6 +594,7 @@ class ZChatComposerThinkingToggle extends StatelessWidget {
     this.glyph,
     this.showLabel = true,
     this.badgeBuilder,
+    this.activeAccent,
     super.key,
   });
 
@@ -566,6 +614,15 @@ class ZChatComposerThinkingToggle extends StatelessWidget {
   /// badger sur un booléen déjà porté par l'emphase et par
   /// `Semantics(toggled:)`.
   final Widget? Function(BuildContext context, bool active)? badgeBuilder;
+
+  /// Teinte de l'état **ACTIF** — un rôle d'hôte, jamais un style. `null` ⇒
+  /// jeton `chatComposerActiveAccent`, sinon **aucune teinte**.
+  ///
+  /// Elle s'AJOUTE au libellé emphasé et à `Semantics(toggled:)` : c'est le
+  /// canal que le mode compact rend nécessaire, pas un remplacement des
+  /// canaux non chromatiques (invariant AD-13). Elle est portée au plancher
+  /// de contraste avant d'être peinte.
+  final Color? activeAccent;
 
   @override
   Widget build(BuildContext context) {
@@ -595,9 +652,15 @@ class ZChatComposerThinkingToggle extends StatelessWidget {
               hasGlyph: face != null,
               stateful: active,
             );
+            // La teinte n'est résolue QUE sur l'état actif : au repos, la
+            // pièce reste à la couleur ambiante.
+            final Color? tint = active
+                ? _activeAccent(context, activeAccent)
+                : null;
             return _ZChatComposerBandTarget(
               semanticsLabel: resolved,
               toggled: active,
+              foreground: tint,
               onTap: () => controller.setRevealThinkingSteps(!active),
               children: <Widget>[
                 if (face != null) ExcludeSemantics(child: face),
@@ -607,8 +670,12 @@ class ZChatComposerThinkingToggle extends StatelessWidget {
                   Text(
                     resolved,
                     // Le canal VISIBLE de l'état : emphase quand actif —
-                    // jamais la seule couleur, jamais la seule sémantique.
-                    style: active ? styles.chosen : styles.plain,
+                    // jamais la seule couleur, jamais la seule sémantique. La
+                    // teinte s'y AJOUTE ; le style porte sa propre couleur, il
+                    // n'hériterait pas de l'enveloppe de premier plan.
+                    style: active
+                        ? _tinted(styles.chosen, tint)
+                        : styles.plain,
                     textAlign: TextAlign.start,
                   ),
                 if (badge != null) ...<Widget>[
@@ -633,6 +700,7 @@ class ZChatComposerWebSearchToggle extends StatelessWidget {
     required this.controller,
     this.glyph,
     this.showLabel = true,
+    this.activeAccent,
     super.key,
   });
 
@@ -645,6 +713,15 @@ class ZChatComposerWebSearchToggle extends StatelessWidget {
   /// `false` ⇒ compact : libellé masqué **si un glyphe existe ET que la
   /// bascule est au repos**.
   final bool showLabel;
+
+  /// Teinte de l'état **ACTIF** — un rôle d'hôte, jamais un style. `null` ⇒
+  /// jeton `chatComposerActiveAccent`, sinon **aucune teinte**.
+  ///
+  /// Elle s'AJOUTE au libellé emphasé et à `Semantics(toggled:)` : c'est le
+  /// canal que le mode compact rend nécessaire, pas un remplacement des
+  /// canaux non chromatiques (invariant AD-13). Elle est portée au plancher
+  /// de contraste avant d'être peinte.
+  final Color? activeAccent;
 
   @override
   Widget build(BuildContext context) {
@@ -671,9 +748,13 @@ class ZChatComposerWebSearchToggle extends StatelessWidget {
               hasGlyph: face != null,
               stateful: active,
             );
+            final Color? tint = active
+                ? _activeAccent(context, activeAccent)
+                : null;
             return _ZChatComposerBandTarget(
               semanticsLabel: resolved,
               toggled: active,
+              foreground: tint,
               // Le geste EXISTANT du contrôleur — demandé ⇔ non exprimé.
               onTap: () =>
                   controller.toggleCapability(kZChatCapabilityWebSearch),
@@ -684,7 +765,9 @@ class ZChatComposerWebSearchToggle extends StatelessWidget {
                 if (labelVisible)
                   Text(
                     resolved,
-                    style: active ? styles.chosen : styles.plain,
+                    style: active
+                        ? _tinted(styles.chosen, tint)
+                        : styles.plain,
                     textAlign: TextAlign.start,
                   ),
               ],
@@ -1218,6 +1301,7 @@ class ZChatComposerDictationTrigger extends StatelessWidget {
     this.glyph,
     this.listeningGlyph,
     this.showLabel = true,
+    this.activeAccent,
     super.key,
   });
 
@@ -1243,6 +1327,15 @@ class ZChatComposerDictationTrigger extends StatelessWidget {
   /// micro est au repos**.
   final bool showLabel;
 
+  /// Teinte de l'état **ACTIF** — un rôle d'hôte, jamais un style. `null` ⇒
+  /// jeton `chatComposerActiveAccent`, sinon **aucune teinte**.
+  ///
+  /// Elle s'AJOUTE au libellé emphasé et à `Semantics(toggled:)` : c'est le
+  /// canal que le mode compact rend nécessaire, pas un remplacement des
+  /// canaux non chromatiques (invariant AD-13). Elle est portée au plancher
+  /// de contraste avant d'être peinte.
+  final Color? activeAccent;
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
@@ -1263,9 +1356,13 @@ class ZChatComposerDictationTrigger extends StatelessWidget {
           hasGlyph: face != null,
           stateful: active,
         );
+        final Color? tint = active
+            ? _activeAccent(context, activeAccent)
+            : null;
         return _ZChatComposerBandTarget(
           semanticsLabel: resolved,
           toggled: active,
+          foreground: tint,
           // L'écoute est ANNONCÉE : ce que dit l'utilisateur part dans un
           // moteur — il doit le savoir sans regarder l'écran.
           liveRegion: active,
@@ -1277,7 +1374,7 @@ class ZChatComposerDictationTrigger extends StatelessWidget {
             if (labelVisible)
               Text(
                 resolved,
-                style: active ? styles.chosen : styles.plain,
+                style: active ? _tinted(styles.chosen, tint) : styles.plain,
                 textAlign: TextAlign.start,
               ),
           ],

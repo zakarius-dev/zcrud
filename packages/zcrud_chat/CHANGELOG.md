@@ -3,6 +3,56 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.5.0 — 2026-08-22
+
+### ⚠️ Corrigé — le libellé d'une pastille n'est plus la couleur de surface
+
+Le premier plan d'une pastille de compte dérivait de la **surface ambiante**,
+corrigée au contraste contre le fond. En thème sombre, une surface quasi noire
+tenant déjà le plancher contre un rouge saturé était donc peinte **telle quelle**
+— du noir sur une pastille d'alerte. Correct au sens de la mesure, faux au sens
+de l'usage.
+
+Le libellé dérive désormais du rôle **premier plan d'erreur**, avec l'ancienne
+chaîne appariée en repli et le plancher 4,5:1 conservé en **garde-fou** — il
+corrige un couple illisible, il ne choisit plus la couleur.
+
+🔴 **Le rendu par défaut change**, dans le sens de la lisibilité, mesuré sur le
+schéma du SDK : en clair `#D6D6D6` → `#FFFFFF`, en sombre `#535353` → `#601410`.
+⚠️ Un hôte qui surcharge la couleur d'erreur **sans** surcharger son premier plan
+obtient un couple désaccordé, rattrapé par le plancher : pour le rendu exact
+attendu, surcharger **les deux rôles ensemble**.
+
+### Ajouté — la présentation d'un menu d'artefact devient injectable
+
+`menuBuilder` sur la barre d'artefacts, **relayé par la vue notebook** — sans ce
+relais, la couture serait inatteignable depuis la surface que les hôtes montent.
+
+Le rappel reçoit **exactement les verbes visibles** et un sélecteur qui passe par
+le **même chemin** que le rendu par défaut : une présentation injectée ne peut ni
+contourner la confirmation d'un verbe destructeur, ni faire réapparaître un verbe
+écarté. Un rappel qui **lève** est relayé et le menu du socle prend la suite
+(AD-10).
+
+C'est ce qui permet de peindre ces menus avec la bibliothèque de menus qu'une
+application emploie déjà ailleurs.
+
+### ⚠️ Modifié — le menu d'artefact par défaut est une GRILLE
+
+Trois colonnes, réglables ; **1** retrouve la disposition en colonne rendue
+auparavant. Même nombre de colonnes par défaut que l'autre menu du dépôt : deux
+défauts différents pour deux menus du même écran seraient un piège. Cibles
+≥ 48 dp et ordre déclaré préservés.
+
+### Ajouté — un accent d'état actif pour les bascules du composer
+
+Chaîne `paramètre > jeton > rien`, portée au plancher de contraste des
+composants.
+
+🔴 **La teinte s'AJOUTE, elle ne remplace pas.** Le libellé emphasé et l'état
+annoncé subsistent : en mode compact, l'état reste **écrit et annoncé**, jamais
+porté par la seule couleur (AD-13). Sans déclaration, l'arbre est inchangé.
+
 ## 3.4.0 — 2026-08-22
 
 ### ⚠️ Modifié — le filet borne le CONTENU, plus les commandes

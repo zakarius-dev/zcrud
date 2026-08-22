@@ -72,6 +72,7 @@ class ZDefaultChatComposer extends StatelessWidget {
     this.chrome,
     this.backgroundColor,
     this.borderColor,
+    this.activeAccent,
     this.clipBehavior = Clip.none,
     this.focusNode,
     this.hints = const <String>[],
@@ -139,6 +140,15 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// (invariant AD-4). L'épaisseur vient de la chaîne du chrome (référence
   /// 1).
   final Color? borderColor;
+
+  /// Teinte d'état **ACTIF** des bascules de la bande (« réfléchir »,
+  /// « internet », dictée). `null` signifie jeton `chatComposerActiveAccent`,
+  /// sinon aucune teinte (invariant AD-4).
+  ///
+  /// Ce canal chromatique s'AJOUTE au libellé emphasé et à
+  /// `Semantics(toggled:)` : il rend l'état perceptible en mode compact sans
+  /// jamais devenir le seul porteur de l'information (invariant AD-13).
+  final Color? activeAccent;
 
   /// Rognage du contenu au rayon du conteneur. `Clip.none` par défaut — cf.
   /// [ZChatComposerSurface.clipBehavior] (mesuré : aujourd'hui inutile,
@@ -461,6 +471,7 @@ class ZDefaultChatComposer extends StatelessWidget {
                   glyph: dictationGlyph,
                   listeningGlyph: dictationListeningGlyph,
                   showLabel: labels,
+                  activeAccent: activeAccent,
                 ),
         );
         final Widget? thinking = _piece(
@@ -472,6 +483,7 @@ class ZDefaultChatComposer extends StatelessWidget {
                   controller: settings,
                   glyph: thinkingGlyph,
                   showLabel: labels,
+                  activeAccent: activeAccent,
                 )
               : null,
         );
@@ -484,6 +496,7 @@ class ZDefaultChatComposer extends StatelessWidget {
                   controller: settings,
                   glyph: webSearchGlyph,
                   showLabel: labels,
+                  activeAccent: activeAccent,
                 )
               : null,
         );

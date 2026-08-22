@@ -39,6 +39,9 @@ const String kZChatSeamTimestamp = 'ZChatTileShell.timestampFormatter';
 /// la pile relayée désigne déjà la closure fautive de l'hôte.
 const String kZChatSeamArtifactSpec = 'ZChatArtifactSpec state reading';
 
+/// Nom du seam de **présentation du menu d'artefact** — idem.
+const String kZChatSeamArtifactMenu = 'ZChatArtifactBar.menuBuilder';
+
 /// Relaie l'échec d'un seam d'hôte **sans** faire tomber le rendu.
 ///
 /// [seam] nomme le membre fautif (`'ZChatRenderer.buildBlock'`…) : sans lui,

@@ -95,6 +95,20 @@
 /// derrière une affordance de plus. [spacing] règle l'écartement, dans les
 /// deux axes.
 ///
+/// ## Le menu : le socle choisit les VERBES, l'hôte choisit la PEINTURE
+///
+/// La barre décide **quels** verbes sont visibles — un verbe dont la condition
+/// ne tient pas n'est pas rendu, et une présentation injectée ne peut pas le
+/// faire réapparaître. Elle ne décide plus **comment** ils sont peints :
+/// [ZChatArtifactBar.menuBuilder] reçoit les verbes visibles et rend la
+/// présentation, y compris celle d'une bibliothèque de menus tierce déjà
+/// employée ailleurs dans l'application.
+///
+/// Sans injection, le menu est une **grille** de
+/// [kZChatArtifactMenuCrossAxisCount] colonnes ; `menuCrossAxisCount: 1`
+/// retrouve une colonne. La sélection — filtrage des verbes, question posée
+/// avant un effet destructeur, fermeture — reste au socle dans les deux cas.
+///
 /// ## Additif strict
 ///
 /// Le cycle n'est monté que si la spec **déclare** une lecture `busy`. Un hôte
@@ -108,12 +122,47 @@ import 'package:flutter/widgets.dart';
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
+import '../render/z_chat_seam_failure.dart';
 import 'z_chat_artifact_spec.dart';
 import 'z_chat_labels.dart';
 import 'z_chat_message_tile.dart'
     show ZChatMessageSlotBuilder, kZChatMinTapTarget;
 import 'z_chat_notebook_reference.dart';
 import 'z_chat_notebook_skin.dart';
+
+/// Nombre de colonnes de la **grille** rendue par défaut dans un menu
+/// d'artefact.
+///
+/// Trois, comme le menu d'actions par item du socle : deux défauts différents
+/// pour deux menus du même écran seraient un piège. Un hôte qui veut d'autres
+/// colonnes — ou la colonne unique — le déclare
+/// (`ZChatArtifactBar.menuCrossAxisCount`).
+const int kZChatArtifactMenuCrossAxisCount = 3;
+
+/// Présentation **INJECTÉE** du contenu d'un menu d'artefact.
+///
+/// La barre décide **quels** verbes sont visibles ; ce rappel décide **comment**
+/// ils sont peints — une grille bornée, une colonne, des sections, ou la
+/// surface de menu que l'application emploie déjà partout ailleurs.
+///
+/// * [actions] — **exactement** les verbes dont la condition tient, dans
+///   l'ordre déclaré par l'hôte. La sélection reste au socle : une
+///   présentation alternative ne peut pas faire réapparaître un verbe écarté.
+/// * [select] — invoque le verbe **par le MÊME chemin** que le rendu par
+///   défaut : confirmation d'un verbe destructeur comprise, fermeture du menu
+///   comprise. L'appelant n'a ni à fermer le menu, ni à appeler
+///   `ZChatArtifactAction.onSelected`, ni à rejouer la confirmation — une
+///   présentation injectée ne peut donc pas diverger du comportement du socle,
+///   ni contourner la question posée avant un effet destructeur.
+///
+/// Un rappel qui **lève** ne casse jamais l'écran : l'exception est relayée à
+/// `FlutterError.onError` et le menu du socle prend le relais (AD-10).
+typedef ZChatArtifactMenuBuilder =
+    Widget Function(
+      BuildContext context,
+      List<ZChatArtifactAction> actions,
+      void Function(ZChatArtifactAction action) select,
+    );
 
 /// La rangée d'artefacts d'**un** message.
 ///
@@ -128,8 +177,15 @@ class ZChatArtifactBar extends StatelessWidget {
     this.skin,
     this.confirm,
     this.spacing,
+    this.menuBuilder,
+    this.menuCrossAxisCount = kZChatArtifactMenuCrossAxisCount,
     super.key,
-  });
+  })
+    // Un nombre de colonnes nul ou négatif est une erreur d'appelant : elle
+    // rougit en debug, et le rendu la BORNE en release (AD-10) plutôt que de
+    // lever au milieu d'une conversation. Aucun message : une chaîne écrite en
+    // dur dans un fichier de rendu est interdite, message d'assertion compris.
+    : assert(menuCrossAxisCount > 0);
 
   /// Point de montage dans un créneau d'actions par message : rend `null`
   /// quand rien n'est déclaré — le créneau est alors absent de l'arbre
@@ -146,6 +202,8 @@ class ZChatArtifactBar extends StatelessWidget {
     ZChatNotebookSkin? skin,
     ZChatArtifactConfirm? confirm,
     double? spacing,
+    ZChatArtifactMenuBuilder? menuBuilder,
+    int menuCrossAxisCount = kZChatArtifactMenuCrossAxisCount,
   }) => (BuildContext context, ZChatMessage message) {
     final Widget? own = host?.call(context, message);
     if (artifacts.isEmpty) return own;
@@ -155,6 +213,8 @@ class ZChatArtifactBar extends StatelessWidget {
       skin: skin,
       confirm: confirm,
       spacing: spacing,
+      menuBuilder: menuBuilder,
+      menuCrossAxisCount: menuCrossAxisCount,
     );
     if (own == null) return bar;
     return Column(
@@ -181,6 +241,22 @@ class ZChatArtifactBar extends StatelessWidget {
   /// Espacement entre glyphes. `null` signifie le jeton `gapS`.
   final double? spacing;
 
+  /// Présentation **injectée** du contenu des menus de verbes. `null` signifie
+  /// la grille du socle, dont [menuCrossAxisCount] règle le nombre de
+  /// colonnes.
+  ///
+  /// C'est l'unique point où l'apparence d'un menu se remplace : la barre
+  /// continue de décider quels verbes sont visibles, et le chemin de sélection
+  /// reste le sien (cf. [ZChatArtifactMenuBuilder]).
+  final ZChatArtifactMenuBuilder? menuBuilder;
+
+  /// Nombre de colonnes de la grille rendue quand [menuBuilder] est `null`.
+  ///
+  /// La disposition en **colonne** reste atteignable, sans couture, par
+  /// `menuCrossAxisCount: 1`. Ignoré quand [menuBuilder] est fourni : la
+  /// présentation injectée dispose comme elle l'entend.
+  final int menuCrossAxisCount;
+
   @override
   Widget build(BuildContext context) {
     final ZcrudTheme theme = ZcrudTheme.of(context);
@@ -195,6 +271,8 @@ class ZChatArtifactBar extends StatelessWidget {
             spec: spec,
             style: style,
             confirm: confirm,
+            menuBuilder: menuBuilder,
+            menuCrossAxisCount: menuCrossAxisCount,
           ),
     ];
     // Aucun artefact à montrer sur ce message : rien dans l'arbre, pas même
@@ -243,6 +321,8 @@ class _ZChatArtifactButton extends StatefulWidget {
     required this.spec,
     required this.style,
     required this.confirm,
+    required this.menuBuilder,
+    required this.menuCrossAxisCount,
     super.key,
   });
 
@@ -250,6 +330,8 @@ class _ZChatArtifactButton extends StatefulWidget {
   final ZChatArtifactSpec spec;
   final ZChatNotebookStyle style;
   final ZChatArtifactConfirm? confirm;
+  final ZChatArtifactMenuBuilder? menuBuilder;
+  final int menuCrossAxisCount;
 
   @override
   State<_ZChatArtifactButton> createState() => _ZChatArtifactButtonState();
@@ -510,23 +592,56 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
     );
   }
 
-  /// La pastille de compte. Sa couleur est un **rôle** (`errorColor`), jamais
-  /// une valeur de référence : la référence a explicitement REFUSÉ de porter
-  /// cette couleur, dérivable d'un `ColorScheme`.
+  /// La pastille de compte. Son fond **et** son libellé sont des **rôles**,
+  /// jamais des valeurs de référence : la référence a explicitement REFUSÉ de
+  /// porter ces couleurs, dérivables d'un `ColorScheme`.
+  ///
+  /// 🔴 **Le libellé n'est JAMAIS la couleur de surface.** Fond et premier
+  /// plan sont deux rôles **appariés** : quand le fond vient du rôle
+  /// d'erreur, le libellé vient du rôle *premier plan d'erreur*
+  /// (`ZcrudTheme.onErrorColor`) — celui que le thème alimente depuis le
+  /// même `ColorScheme` que le fond.
+  ///
+  /// Non résolu, le libellé retombe sur la chaîne appariée d'origine —
+  /// `errorColor`, puis la couleur ambiante du texte, puis la surface : le
+  /// fond au premier terme disponible, le libellé au **terme suivant**.
+  ///
+  /// Le plancher de contraste du texte (4,5:1, mesuré contre le fond de la
+  /// pastille) reste appliqué **en garde-fou** : il corrige un couple que le
+  /// thème de l'hôte rendrait illisible, il ne choisit pas la couleur.
   Widget _badge(BuildContext context, int count) {
     final ZcrudTheme theme = ZcrudTheme.of(context);
     final Color? surface = _surface(context);
     // Un rôle, jamais un littéral. Aucune couleur résolvable ⇒ aucune
     // décoration : le compte reste lisible, il ne devient pas invisible sur
     // un fond inventé (repli fermant, AD-10).
-    final Color? background = theme.errorColor ?? _ambient(context) ?? surface;
+    final Color? errorRole = theme.errorColor;
+    final Color? ambient = _ambient(context);
+    final Color? background = errorRole ?? ambient ?? surface;
+    // Le TERME SUIVANT de la même chaîne. Le défaut corrigé ici était de
+    // partir de `surface` quel que soit le fond : en thème sombre la surface
+    // (#121212 chez l'hôte) tient déjà le plancher contre un rouge saturé,
+    // donc elle était peinte telle quelle — du noir sur une pastille
+    // d'alerte, correct à la mesure et faux à l'usage.
+    //
+    // Quand le fond ne vient PAS du rôle d'erreur, l'appariement est le même,
+    // d'un cran plus bas : fond ambiant ⇒ libellé sur la surface ; fond
+    // surface ⇒ plus aucun terme, on repart du fond lui-même et c'est le
+    // plancher qui écarte les deux (repli TOTAL, AD-10).
+    // Le rôle DÉDIÉ d'abord — « ce qui se pose sur la couleur d'erreur » —,
+    // puis l'ancienne chaîne appariée en repli : un thème qui ne porte pas ce
+    // rôle rend exactement ce qu'il rendait.
+    final Color? onErrorRole = theme.onErrorColor;
+    final Color? paired = errorRole != null
+        ? (onErrorRole ?? ambient ?? surface)
+        : (ambient != null ? surface : null);
     final TextStyle base = DefaultTextStyle.of(context).style;
     // Le libellé d'une pastille est du TEXTE : plancher 4.5, mesuré contre le
     // fond de la pastille, jamais contre la page.
     final Color? foreground = background == null
         ? null
         : zReadableTintOn(
-            surface ?? background,
+            paired ?? background,
             surface: background,
             minContrast: kZTextMinContrast,
           );
@@ -592,31 +707,151 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
   }
 
   /// Le menu : **exactement** les verbes dont la condition tient, dans
-  /// l'ordre déclaré par l'hôte.
+  /// l'ordre déclaré par l'hôte — et leur présentation, injectée ou par
+  /// défaut.
+  ///
+  /// La sélection reste ici, quelle que soit la présentation : c'est le socle
+  /// qui filtre les verbes et qui pose la question avant un effet destructeur.
   Widget _menu(BuildContext context, List<ZChatArtifactAction> actions) {
     return Semantics(
       container: true,
       explicitChildNodes: true,
       label: widget.spec.label,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          for (final ZChatArtifactAction action in actions)
-            _menuItem(context, action),
-        ],
+      child: _menuContent(context, actions),
+    );
+  }
+
+  /// La présentation de l'hôte si elle est fournie ET qu'elle rend, celle du
+  /// socle sinon.
+  Widget _menuContent(
+    BuildContext context,
+    List<ZChatArtifactAction> actions,
+  ) {
+    final ZChatArtifactMenuBuilder? host = widget.menuBuilder;
+    if (host == null) return _defaultMenu(context, actions);
+    try {
+      return host(
+        context,
+        actions,
+        // MÊME chemin de sortie que le défaut : ni double invocation, ni
+        // confirmation contournée, ni menu resté ouvert.
+        (ZChatArtifactAction action) => unawaited(_select(action)),
+      );
+    } on Object catch (error, stack) {
+      // Un seam d'hôte qui lève ne fait pas tomber l'écran (AD-10) : le menu
+      // du socle prend le relais, l'exception reste observable.
+      zChatReportSeamFailure(
+        error: error,
+        stack: stack,
+        seam: kZChatSeamArtifactMenu,
+      );
+      return _defaultMenu(context, actions);
+    }
+  }
+
+  /// Le menu du socle : une **grille** bornée, `menuCrossAxisCount` colonnes.
+  ///
+  /// La largeur est fixée à deux fois le plancher tactile par colonne — la
+  /// même mesure que la grille d'actions par item : sans elle, la grille n'a
+  /// aucune contrainte transversale dans le portail et ne peut pas se
+  /// dimensionner.
+  Widget _defaultMenu(BuildContext context, List<ZChatArtifactAction> actions) {
+    // Borné : cf. l'assertion du constructeur — jamais de `RangeError` chez un
+    // hôte en release.
+    final int columns = widget.menuCrossAxisCount < 1
+        ? 1
+        : widget.menuCrossAxisCount;
+    return SizedBox(
+      width: columns * kZChatMinTapTarget * 2,
+      child: GridView.builder(
+        shrinkWrap: true,
+        padding: EdgeInsets.zero,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columns,
+          mainAxisExtent: kZChatMinTapTarget * 2,
+        ),
+        itemCount: actions.length,
+        itemBuilder: (BuildContext context, int index) =>
+            _menuItem(context, actions[index]),
       ),
     );
   }
 
+  /// Une cellule de la grille : glyphe au-dessus du libellé, cible pleine
+  /// cellule (donc ≥ 48 dp dans les deux axes).
   Widget _menuItem(BuildContext context, ZChatArtifactAction action) {
     final String resolved = _actionLabel(context, action);
-    return _tappableRow(
+    return _tappableTile(
       context,
       label: resolved,
       icon: action.icon,
       accent: action.accent,
       onTap: () => unawaited(_select(action)),
+    );
+  }
+
+  /// Une cellule tapable de la grille — même contrat que [_tappableRow]
+  /// (cible ≥ 48 dp, teinte portée au plancher de contraste du TEXTE, aucun
+  /// mot codé en dur), disposée verticalement.
+  ///
+  /// Le libellé est borné à une ligne : une grille borne la hauteur de ses
+  /// cellules, et le nœud sémantique porte de toute façon la chaîne entière.
+  Widget _tappableTile(
+    BuildContext context, {
+    required String label,
+    required IconData? icon,
+    required Color? accent,
+    required VoidCallback onTap,
+  }) {
+    final Color? tint = _readableAccent(context, accent);
+    final TextStyle base = DefaultTextStyle.of(context).style;
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      onTap: onTap,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (icon != null) ...<Widget>[
+              ExcludeSemantics(
+                child: Icon(
+                  icon,
+                  size: ZChatNotebookReference.perMessageActionIconSize,
+                  color: tint,
+                ),
+              ),
+              SizedBox(height: ZcrudTheme.of(context).gapS),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: tint == null ? base : base.copyWith(color: tint),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// La teinte d'un verbe, portée au plancher de contraste du TEXTE. `null`
+  /// (accent absent, ou surface non mesurable) ⇒ couleur ambiante.
+  Color? _readableAccent(BuildContext context, Color? accent) {
+    final Color? surface = _surface(context);
+    if (accent == null || surface == null) return null;
+    return zReadableTintOn(
+      accent,
+      surface: surface,
+      minContrast: kZTextMinContrast,
     );
   }
 
@@ -665,14 +900,7 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
     required Color? accent,
     required VoidCallback onTap,
   }) {
-    final Color? surface = _surface(context);
-    final Color? tint = (accent == null || surface == null)
-        ? null
-        : zReadableTintOn(
-            accent,
-            surface: surface,
-            minContrast: kZTextMinContrast,
-          );
+    final Color? tint = _readableAccent(context, accent);
     final TextStyle base = DefaultTextStyle.of(context).style;
     return Semantics(
       button: true,

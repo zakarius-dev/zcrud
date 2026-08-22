@@ -330,6 +330,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.fieldFocusedBorderColor,
     this.dateFieldDecorated,
     this.errorColor,
+    this.onErrorColor,
     this.labelColor,
     this.surfaceColor,
     this.gapS = 4,
@@ -494,6 +495,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.chatComposerMobileBreakpoint,
     this.chatComposerHintRotationPeriod,
     this.chatComposerHintSwitchDuration,
+    this.chatComposerActiveAccent,
     this.chatResponseLengthAccents,
     this.chatSelectedEmphasisWeight,
     this.chatSelectedEmphasisDecoration,
@@ -538,6 +540,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     return ZcrudTheme(
       fieldBorderColor: scheme.outline,
       errorColor: scheme.error,
+      onErrorColor: scheme.onError,
       labelColor: text.bodyMedium?.color ?? scheme.onSurface,
       surfaceColor: scheme.surface,
     );
@@ -615,6 +618,21 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
   /// Couleur d'erreur (repli : `ColorScheme.error`).
   final Color? errorColor;
+
+  /// Couleur de **premier plan** d'erreur — ce qui se pose SUR [errorColor]
+  /// (repli : `ColorScheme.onError`).
+  ///
+  /// Jeton **apparié** à [errorColor] : les deux sont alimentés par
+  /// [ZcrudTheme.fallback] depuis le même `ColorScheme`, et un consommateur
+  /// qui peint un fond d'alerte prend son texte ICI — jamais dans
+  /// [surfaceColor], qui n'a aucune raison d'être lisible sur une pastille
+  /// d'alerte (leur seul rapport est d'être dans la même page).
+  ///
+  /// Ce jeton **choisit** la couleur ; il ne garantit pas sa lisibilité. Le
+  /// consommateur garde son plancher de contraste en garde-fou, de sorte
+  /// qu'un couple `errorColor` / `onErrorColor` déclaré illisible soit encore
+  /// corrigé.
+  final Color? onErrorColor;
 
   /// Couleur de libellé (repli : `TextTheme.bodyMedium.color`).
   ///
@@ -1705,6 +1723,21 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// `null` ⇒ référence (350 ms). `lerp` par [_lerpNullableDuration].
   final Duration? chatComposerHintSwitchDuration;
 
+  /// Teinte d'**état ACTIF** des bascules d'outils du composer (« réfléchir »,
+  /// « internet », dictée…). `null` ⇒ **aucune teinte** : le socle n'invente
+  /// pas de couleur, l'état reste porté par ses canaux non chromatiques.
+  ///
+  /// Ce jeton ne remplace que le canal **chromatique** : les canaux textuel
+  /// (libellé emphasé) et sémantique (`Semantics(toggled:)`) ne sont pas
+  /// thémables, sans quoi un thème pourrait rétablir le défaut
+  /// « information portée par la seule couleur » (AD-13). Même régime que
+  /// [chatCapabilityAccents] côté notebook.
+  ///
+  /// La teinte déclarée est portée au **plancher de contraste** par le
+  /// consommateur : un jeton illisible sur la surface du composer est
+  /// corrigé, jamais peint tel quel.
+  final Color? chatComposerActiveAccent;
+
   /// Accents des paliers de verbosité du chat, indexés par le **nom** du
   /// palier kernel (`'concise'`, `'standard'`, `'detailed'` —
   /// `ZChatResponseLength.name`, AD-1 : ce package ne peut pas importer
@@ -2233,6 +2266,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Color? fieldFocusedBorderColor,
     bool? dateFieldDecorated,
     Color? errorColor,
+    Color? onErrorColor,
     Color? labelColor,
     Color? surfaceColor,
     double? gapS,
@@ -2385,6 +2419,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? chatComposerMobileBreakpoint,
     Duration? chatComposerHintRotationPeriod,
     Duration? chatComposerHintSwitchDuration,
+    Color? chatComposerActiveAccent,
     Map<String, Color>? chatResponseLengthAccents,
     FontWeight? chatSelectedEmphasisWeight,
     TextDecoration? chatSelectedEmphasisDecoration,
@@ -2426,6 +2461,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         fieldFocusedBorderColor ?? this.fieldFocusedBorderColor,
     dateFieldDecorated: dateFieldDecorated ?? this.dateFieldDecorated,
     errorColor: errorColor ?? this.errorColor,
+    onErrorColor: onErrorColor ?? this.onErrorColor,
     labelColor: labelColor ?? this.labelColor,
     surfaceColor: surfaceColor ?? this.surfaceColor,
     gapS: gapS ?? this.gapS,
@@ -2639,6 +2675,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         chatComposerHintRotationPeriod ?? this.chatComposerHintRotationPeriod,
     chatComposerHintSwitchDuration:
         chatComposerHintSwitchDuration ?? this.chatComposerHintSwitchDuration,
+    chatComposerActiveAccent:
+        chatComposerActiveAccent ?? this.chatComposerActiveAccent,
     chatResponseLengthAccents:
         chatResponseLengthAccents ?? this.chatResponseLengthAccents,
     chatSelectedEmphasisWeight:
@@ -2719,6 +2757,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       dateFieldDecorated:
           t < 0.5 ? dateFieldDecorated : other.dateFieldDecorated,
       errorColor: Color.lerp(errorColor, other.errorColor, t),
+      onErrorColor: Color.lerp(onErrorColor, other.onErrorColor, t),
       labelColor: Color.lerp(labelColor, other.labelColor, t),
       surfaceColor: Color.lerp(surfaceColor, other.surfaceColor, t),
       gapS: gapS + (other.gapS - gapS) * t,
@@ -3465,6 +3504,13 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       chatComposerHintSwitchDuration: _lerpNullableDuration(
         chatComposerHintSwitchDuration,
         other.chatComposerHintSwitchDuration,
+        t,
+      ),
+      // COULEUR : interpolable, comme les autres teintes nullables — `null`
+      // des deux côtés reste `null` (la référence n'est jamais matérialisée).
+      chatComposerActiveAccent: Color.lerp(
+        chatComposerActiveAccent,
+        other.chatComposerActiveAccent,
         t,
       ),
       // TABLE : discrète, comme `chatCapabilityAccents` (pas de demi-palette).

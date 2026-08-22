@@ -63,6 +63,8 @@ class ZChatNotebookView extends StatelessWidget {
     this.artifacts = const <ZChatArtifactSpec>[],
     this.skin,
     this.confirmArtifactAction,
+    this.artifactMenuBuilder,
+    this.artifactMenuCrossAxisCount = kZChatArtifactMenuCrossAxisCount,
     this.collapsedMaxHeight,
     this.padding,
     this.reverse = false,
@@ -95,6 +97,20 @@ class ZChatNotebookView extends StatelessWidget {
   /// Les deux créneaux **cohabitent** : le contenu de [actionsBuilder] est
   /// rendu au-dessus de la rangée d'artefacts, pas remplacé par elle.
   final List<ZChatArtifactSpec> artifacts;
+
+  /// Présentation **injectée** du contenu des menus d'artefact — relayée telle
+  /// quelle à [ZChatArtifactBar.menuBuilder].
+  ///
+  /// `null` signifie la grille du socle. Le socle continue de décider **quels**
+  /// verbes sont visibles ; ce rappel décide **comment** ils sont peints, ce
+  /// qui permet de rendre ces menus avec la bibliothèque de menus que
+  /// l'application emploie déjà partout ailleurs.
+  final ZChatArtifactMenuBuilder? artifactMenuBuilder;
+
+  /// Nombre de colonnes de la grille rendue quand [artifactMenuBuilder] est
+  /// `null` — relayé à [ZChatArtifactBar.menuCrossAxisCount]. `1` retrouve une
+  /// disposition en colonne.
+  final int artifactMenuCrossAxisCount;
 
   /// Réglage de rendu du notebook — c'est lui qui porte
   /// `capabilityAccents`, la table d'accents par clé d'artefact, et la
@@ -167,5 +183,7 @@ class ZChatNotebookView extends StatelessWidget {
           host: actionsBuilder,
           skin: skin,
           confirm: confirmArtifactAction,
+          menuBuilder: artifactMenuBuilder,
+          menuCrossAxisCount: artifactMenuCrossAxisCount,
         );
 }
