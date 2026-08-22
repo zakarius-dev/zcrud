@@ -322,6 +322,66 @@ c'est l'écran où la navigation manque le plus, l'usager n'y ayant ni contenu n
 sortie. Sans `drawer`/`endDrawer` déclarés, le rendu est strictement celui
 d'avant leur introduction : aucun tiroir, aucun bouton.
 
+## Journal d'une entité {#journal}
+
+`history` (`ZEntityHistorySource<T>`, port du cœur) ajoute à chaque ligne une
+action **Journal** qui présente les versions antérieures de l'entité dans une
+feuille modale, avec les différences d'une entrée à la suivante. Sans source
+déclarée, **aucun geste, aucun abonnement, aucun nœud de rendu** d'historique
+n'est créé. L'action est gouvernée comme toutes les autres, par la permission
+`ZCrudAction.history`.
+
+Le port a une seule méthode — `Stream<List<ZHistoryEntry>> watchHistory(T)` —
+et le socle **ne connaît ni le stockage, ni la forme du journal métier** : une
+entrée est écrite, ordonnée et désérialisée par l'application.
+
+### Ce qu'une entrée porte
+
+| Champ | Contrat |
+|---|---|
+| `at` | Instant fourni par l'hôte. `null` reste une donnée **invalide**, jamais remplacée par l'heure courante. |
+| `action` | Opération CRUD standard (`ZCrudAction`), **localisée par le socle**. |
+| `operationLabel` | Libellé métier **déjà résolu** par l'hôte, pour une opération absente de `ZCrudAction`. |
+| `authorLabel` | Auteur **déjà résolu** par l'hôte. |
+| `previousValue` | État immédiatement **avant** cette mutation, si l'hôte le conserve. |
+
+Une entrée n'est rendue que si `at` est non nul **et** qu'elle porte soit une
+`action`, soit un `operationLabel` non vide. Les entrées incomplètes sont
+simplement ignorées ([AD-10](../concepts/invariants.md#ad-10)) — comme un flux
+en erreur, traité en liste vide.
+
+### Le contrat de diff : à quoi chaque entrée est comparée
+
+Les différences affichées sous une entrée ne comparent pas l'entrée à
+elle-même : le socle compare le `previousValue` de l'entrée à **son état
+d'après**, qui est
+
+- pour la **première** entrée de la liste : l'**entité courante** telle que
+  l'écran la projette en cellules ;
+- pour toute autre entrée : le `previousValue` de l'entrée **immédiatement plus
+  récente**.
+
+Les clés présentes d'un seul côté sont rendues comme un ajout ou un retrait ;
+les valeurs différentes comme `avant → après`. Les maps et listes imbriquées
+sont comparées **atomiquement** — un changement à l'intérieur d'une structure
+est signalé, mais pas détaillé clé par clé.
+
+### Le socle ne trie pas : l'ordre est une obligation de l'hôte
+
+`watchHistory` est consommé **dans l'ordre où il émet**. Le socle ne réordonne
+rien, et il ne peut pas le faire : `at` est nullable et l'ordre métier
+appartient à l'application.
+
+Or le contrat de diff ci-dessus suppose un ordre **antichronologique** (du plus
+récent au plus ancien). **Un flux ordonné autrement produit des différences
+fausses** — pas une liste mal triée, mais des « avant → après » inversés ou
+sans rapport. Trier le flux du plus récent au plus ancien est donc une
+obligation de l'implémentation du port, pas une préférence d'affichage.
+
+`showZEntityHistory<T>(context, entity:, source:, currentValue:)` est exporté :
+un hôte peut présenter le même journal depuis sa propre surface, en fournissant
+lui-même l'état courant projeté.
+
 ## Types clés
 
 | Type | Rôle |
@@ -334,6 +394,7 @@ d'avant leur introduction : aucun tiroir, aucun bouton.
 | `ZListTabsStore` | Persistance de l'onglet actif **et** du défilement par onglet — port neutre, écriture par emplacement, clé de portée dérivée. `ZInMemoryListTabsStore` sert les tests. |
 | `ZAppBarActionsBuilder` / `ZAppBarActionsContext` | Actions d'app-bar dépendantes de l'état, rendues en données (`ZAppBarAction`). Exclusif avec `actions`. |
 | `ZRowAclResolver<T>` / `ZRowPermissions` | Droits effectifs d'une ligne, en intersection avec l'ACL de l'écran. |
+| `ZEntityHistorySource<T>` / `ZHistoryEntry` | Port de lecture du journal d'une entité et ses entrées. Ordre **antichronologique à la charge de l'hôte** — le socle ne trie pas. |
 | `ZSelectionPolicy` | Sélection multiple et barre d'actions de masse. |
 | `ZExportPolicy` | Formats d'export offerts et remise du fichier à l'application. |
 | `ZRowTint` | Teinte d'une ligne, doublée d'un libellé annoncé. |

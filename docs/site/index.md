@@ -59,7 +59,7 @@ vit sous `lib/src/` et n'est pas un contrat.
 ## Documentation
 
 - [Concepts](concepts/invariants.md) — les modèles mentaux : schéma, couches, réactivité,
-  offline, invariants.
+  offline, [artefacts de message](concepts/artefacts-de-message.md), invariants.
 - [Guides](guides/index.md) — migration depuis un moteur legacy, recettes (cookbook).
 - [Catalogue des paquets](paquets/index.md) — une fiche par paquet : rôle, quand l'utiliser,
   liens.

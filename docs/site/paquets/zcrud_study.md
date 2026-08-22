@@ -41,6 +41,66 @@ indépendantes, chacune dans son propre sous-arbre de rebuild.
   résumé) : c'est le rôle de `zcrud_session`, que ce paquet assemble en
   écran mais ne réimplémente pas.
 
+## Navigation de sous-dossiers {#navigation-sous-dossiers}
+
+`ZStudyFolderDetail` rend une navigation de fratrie **adaptative** : sidebar
+redimensionnable au-delà de 600 dp de large, surface étroite en deçà. Tout y
+passe par un **value-object opaque** (`ZSubfolderRef`) et un descripteur
+(`ZSubfolderNavSpec`) : l'entité du kernel n'entre jamais dans la présentation,
+et aucun libellé n'est composé par le paquet — ils sont tous **injectés, déjà
+localisés**.
+
+| Symbole | Rôle |
+|---|---|
+| `ZSubfolderRef` | Référence **opaque** d'un sous-dossier : `id` (valeur de sélection **et** clé de réordonnancement), `label` déjà localisé, `colorKey` opaque, `count`. Aucune `Color`, aucun `IconData`, aucune règle métier. |
+| `ZSubfolderNavSpec` | Descripteur immuable de la navigation : la liste, les libellés, les seams d'item (`itemBuilder`, `itemActionBuilder`), le mode étroit, le placement de l'ajout, le réordonnancement, les bornes de largeur de la sidebar. |
+| `ZSubfolderSidebar` | Surface **grand écran** : colonne, surbrillance par item, repli/déploiement, redimensionnement **borné** au drag, au clavier **et** par action sémantique, réordonnancement optionnel. Ne détient aucun état. |
+| `ZSubfolderSelectorBar` | Surface **étroite par défaut** : une ligne pleine largeur ≥ 48 dp annonçant l'élément **courant**, dont la fratrie se déploie en **feuille modale** bornée à 80 % de la hauteur d'écran. |
+| `ZSubfolderCompactSelector` | Surface étroite **historique** : rangée de puces défilant horizontalement. Même `itemBuilder` que la sidebar — une même spec a les mêmes capacités des deux côtés du seuil. |
+| `ZSubfolderNarrowNav` | L'aiguillage sous le seuil : coquille de l'hôte, puis la surface du mode demandé. |
+| `ZSubfolderSelectionController` | Pilotage **externe et optionnel** de la sélection (fil d'Ariane, recherche, lien profond). `null` ⇒ la page détient l'état comme avant. |
+| `ZSubfolderNavRenderer` / `ZSubfolderNavRendererScope` / `ZSubfolderNavRenderRequest` | Port de rendu de **surface** et son injection — le patron de `ZListRenderer` : `null` est une réponse valide, le renderer est `const` et comparé par identité. |
+| `zResolveSubfolderNav` | La chaîne de résolution **totale** : absence de scope, `renderer` nul, coquille qui décline ou coquille qui **lève** rendent tous la surface du socle. |
+
+Trois points de contrat à connaître avant de déclarer une navigation.
+
+**Le mode étroit par défaut est la barre de sélection**, pas la rangée de
+puces. La raison est un défaut d'usage : dans une rangée défilante, un seul
+balayage sort la sélection du champ visible et l'utilisateur perd le « où
+suis-je ». La question posée est « lequel est actif ? » **avant** « lesquels
+existent ? ». La rangée de puces reste déclarable
+(`narrowMode: ZSubfolderNarrowMode.compact`), à l'identique de son rendu
+historique. Conséquence de la feuille modale : la fratrie **flotte** au lieu
+d'être poussée dans le flux — un hôte qui compensait un déploiement en ligne
+(réserve de hauteur, défilement piloté, fermeture à la sélection) doit
+**retirer sa compensation**.
+
+**Un `itemBuilder` subit des contraintes différentes selon la surface.** Deux
+axes orthogonaux voyagent jusqu'à lui, sans changer sa signature à trois
+paramètres :
+
+- `ZSubfolderLayoutMode` (`sidebar` / `compact`) dit quelles **contraintes de
+  layout** l'item subit — en `compact`, la largeur n'est pas bornée : ni
+  `Expanded`, ni `ListTile`, ni `Row` pleine largeur. Hors d'une surface zcrud,
+  `ZSubfolderLayoutMode.of` replie sur `compact`, le seul mode dont les
+  contraintes sont satisfaites partout ;
+- `ZSubfolderSurface` (`sidebar` / `chips` / `selectorTrigger` /
+  `selectorSheet`) dit **quelle surface** demande l'item — le déclencheur
+  annonce l'élément courant et ne se sélectionne pas ; la feuille liste les
+  choix. `boundsWidth` distingue la seule surface à largeur non bornée
+  (`chips`). Les deux se lisent par `ZSubfolderLayoutScope`.
+
+**Le placement dans une page à onglets est un axe indépendant du point de
+rupture.** `ZSubfolderNavPlacement.withinTab` (défaut) construit la navigation
+**dans** l'onglet Matériel — elle disparaît donc sur les autres onglets, comme
+historiquement. `aboveTabs` la hisse au-dessus de la zone d'onglets : elle
+devient le contexte de la page entière, et n'est pas dupliquée dans l'onglet.
+Sous `aboveTabs`, **aucune sidebar n'est rendue, à aucune largeur** : le
+créneau hissé reçoit une hauteur non bornée, dans laquelle la sidebar déployée
+ne peut pas se rendre. La surface hissée est la bande étroite, et sa hauteur
+mesurée est exposée en `kZSubfolderNavBandHeight` pour que l'hôte compose sa
+déclaration à partir d'elle plutôt que de la recopier.
+
 ## Types clés
 
 | Type | Rôle |
