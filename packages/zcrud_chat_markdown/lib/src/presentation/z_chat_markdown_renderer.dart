@@ -53,6 +53,27 @@
 /// L'ambiguïté entre un prix (`5$`) et une formule (`$E = mc^2$`) est
 /// arbitrée par `zcrud_markdown` lui-même.
 ///
+/// ## Typographie du rendu
+///
+/// Deux canaux, de portées différentes, et ils se composent :
+///
+/// * [ZChatMarkdownRenderer.textStyle] est un style **global** : il devient la
+///   base de tout ce qui est peint dans la bulle (paragraphes, listes,
+///   citation, et le point de départ des titres).
+/// * [ZChatMarkdownRenderer.styleSet] est un jeu de styles **par axe
+///   Markdown** : `h2`, gras, italique, citation, code… Chaque slot fourni est
+///   fusionné **par-dessus** la base.
+///
+/// ⇒ **Sur un axe couvert par [ZChatMarkdownRenderer.styleSet], c'est le jeu de
+/// styles qui l'emporte** ; sur les axes qu'il ne couvre pas,
+/// [ZChatMarkdownRenderer.textStyle] (puis le thème) reste seul en vigueur.
+/// La règle est celle d'un `merge` : un slot ne portant qu'une couleur ne
+/// change que la couleur, la taille et la graisse héritées restant en place.
+///
+/// Aucun de ces deux canaux n'a de valeur par défaut : sans déclaration, le
+/// rendu est celui du thème injecté, et ce paquet n'invente ni couleur ni
+/// taille (FR-26).
+///
 /// ## Confinement de la dépendance riche
 ///
 /// Ce fichier ne référence aucun type de l'éditeur riche sous-jacent : il
@@ -129,6 +150,8 @@ class ZChatMarkdownRenderer extends ZChatRenderer {
     this.latex = true,
     this.roles = kZChatMarkdownDefaultRoles,
     this.textStyle,
+    this.styleSet,
+    this.textScaleFactor,
   });
 
   /// Politique de rendu pendant le flux (défaut : neutre pendant, riche après).
@@ -150,7 +173,36 @@ class ZChatMarkdownRenderer extends ZChatRenderer {
   ///
   /// Aucune couleur ni taille n'est décidée par ce paquet : `null` laisse
   /// `zcrud_markdown` dériver ses styles du thème injecté.
+  ///
+  /// Portée **globale** : il ne distingue pas un titre d'un gras. Pour viser un
+  /// axe Markdown précis, voir [styleSet], qui l'emporte sur les axes qu'il
+  /// couvre (section typographie de la dartdoc de tête).
   final TextStyle? textStyle;
+
+  /// Jeu de styles **par axe Markdown**, fourni par l'hôte, ou `null`.
+  ///
+  /// C'est le seul canal permettant de viser séparément un titre, le gras,
+  /// l'italique, la citation ou le code : ni [textStyle] (global) ni le thème
+  /// de l'application (qui vise tout l'écran) ne distinguent ces axes.
+  ///
+  /// Chaque slot est **fusionné par-dessus** le style courant : un slot ne
+  /// portant qu'une couleur laisse la taille et la graisse héritées en place,
+  /// et un slot non fourni ne change rien — un jeu partiel est donc légitime.
+  ///
+  /// `null` ⇒ rendu strictement inchangé. Ce paquet ne pose aucune couleur de
+  /// lui-même (FR-26) : les couleurs sémantiques d'un hôte lui appartiennent,
+  /// et c'est par ici qu'elles entrent.
+  final ZRichTextStyleSet? styleSet;
+
+  /// Facteur d'échelle **absolu** du texte rendu, ou `null` pour l'échelle
+  /// ambiante.
+  ///
+  /// Absolu veut dire qu'il **remplace** l'échelle ambiante au lieu de s'y
+  /// multiplier : un hôte qui veut composer avec l'échelle d'accessibilité de
+  /// l'utilisateur multiplie lui-même avant de la passer ici. C'est le canal
+  /// pour aligner la typographie du rendu sans toucher au thème de
+  /// l'application.
+  final double? textScaleFactor;
 
   /// Le codec de lecture, dérivé de [latex]. Reconstruit à chaque appel — il
   /// est `const`-compatible et sans état ; le coût est celui d'une allocation
@@ -216,6 +268,11 @@ class ZChatMarkdownRenderer extends ZChatRenderer {
       chrome: ZMarkdownReaderChrome.none,
       // Aucun libellé de repli inventé : un contenu vide ne rend rien.
       placeholder: '',
+      // Le chaînon par axe. `null` ⇒ le lecteur ne fusionne rien et rend
+      // exactement comme avant : le défaut n'est pas touché.
+      styleSet: styleSet,
+      // `null` ⇒ aucun wrapper d'échelle n'est posé par le lecteur.
+      textScaleFactor: textScaleFactor,
     );
     final TextStyle? style = textStyle;
     if (style == null) return reader;

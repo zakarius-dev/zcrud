@@ -26,6 +26,9 @@ const String kZChatSeamActionsSlot = 'ZChatMessageTile.actionsBuilder';
 /// Nom du seam du **sujet de tour** (la coiffe d'une tuile) — idem.
 const String kZChatSeamTopic = 'ZChatTileShell.topicOf';
 
+/// Nom du seam du **créneau de fin de coiffe** d'une tuile — idem.
+const String kZChatSeamTopicTrailing = 'ZChatTileShell.topicTrailing';
+
 /// Nom du seam du **format d'horodatage** d'une tuile — idem.
 const String kZChatSeamTimestamp = 'ZChatTileShell.timestampFormatter';
 

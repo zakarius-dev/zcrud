@@ -132,11 +132,21 @@ class ZChatMessageTile extends StatefulWidget {
   /// `ZChatController.runAction(ZChatCustomAction(...))` — l'unique point
   /// d'entrée des verbes. Aucun nouveau chemin d'exécution.
   ///
+  /// Sous une coquille déclarée ([shell]), cette barre est rendue **hors du
+  /// filet**, sous la carte : le cadre délimite la réponse, jamais la réponse
+  /// **et** ses commandes. Les commandes qui portent sur la carte elle-même
+  /// (modifier, régénérer, supprimer) ont leur propre place, dans la coiffe —
+  /// cf. `ZChatTileShell.topicTrailing`.
+  ///
   /// `null` (défaut) donne un comportement strictement inchangé.
   final ZChatMessageSlotBuilder? actionsBuilder;
 
   /// La **coquille** de cette tuile : carte, filet, horodatage, style du
   /// bouton de dépli.
+  ///
+  /// Le filet borne le **contenu** : l'identité, la coiffe, les blocs et le
+  /// bouton de dépli sont dedans ; la barre d'[actionsBuilder] reste dehors,
+  /// sous la carte.
   ///
   /// `null` (défaut) donne un arbre strictement inchangé — pas même un
   /// conteneur transparent. Déclarée, elle apporte le rendu de référence,
@@ -257,27 +267,48 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
         shellStyle == null) {
       return core;
     }
-    final Widget stacked = Column(
+    if (shellStyle == null) {
+      // Sans coquille, l'empilement est celui qu'il a toujours été : une
+      // seule colonne, les quatre créneaux à la suite.
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[?identity, ?topic, core, ?actions],
+      );
+    }
+    // Le filet borne le CONTENU. L'identité, la coiffe et les blocs sont ce
+    // dont la carte parle ; la barre d'actions, elle, porte les commandes du
+    // message — elle reste une sœur de la carte, sous elle et hors du filet.
+    // Cf. la dartdoc d'[actionsBuilder] : c'est un contrat, pas un effet de
+    // mise en page.
+    final Widget framed = _ZTileShell(
+      style: shellStyle,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          // L'identité précède le contenu (ordre de lecture, invariant
+          // AD-13). Aucun interligne imposé : l'espacement appartient au
+          // widget de l'hôte.
+          ?identity,
+          // La coiffe est construite ICI, dans `build`, donc hors du
+          // `ValueListenableBuilder` du dépli : basculer « Afficher plus » ne
+          // la reconstruit pas, et elle ne reconstruit pas les blocs
+          // (invariant AD-2).
+          ?topic,
+          core,
+        ],
+      ),
+    );
+    if (actions == null) return framed;
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        // L'identité précède le contenu (ordre de lecture, invariant
-        // AD-13) ; les actions le suivent et restent des sœurs du nœud
-        // annoncé (`_announced` exclut la sémantique de ses seuls enfants) :
-        // leurs boutons gardent leur sémantique propre. Aucun interligne
-        // imposé : l'espacement appartient au widget de l'hôte.
-        ?identity,
-        // La coiffe est construite ICI, dans `build`, donc hors du
-        // `ValueListenableBuilder` du dépli : basculer « Afficher plus » ne
-        // la reconstruit pas, et elle ne reconstruit pas les blocs
-        // (invariant AD-2).
-        ?topic,
-        core,
-        ?actions,
-      ],
+      // Les actions restent des sœurs du nœud annoncé (`_announced` exclut la
+      // sémantique de ses seuls enfants) : leurs boutons gardent leur
+      // sémantique propre.
+      children: <Widget>[framed, actions],
     );
-    if (shellStyle == null) return stacked;
-    return _ZTileShell(style: shellStyle, child: stacked);
   }
 
   /// La coiffe : le sujet du tour, puis l'horodatage.
@@ -296,7 +327,8 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
     final DateTime? stamp = (shell != null && style.showTimestamp)
         ? widget.message.createdAt
         : null;
-    if (subject == null && stamp == null) return null;
+    final Widget? trailing = _trailing(context, shell, style);
+    if (subject == null && stamp == null && trailing == null) return null;
     final int maxLines = style.topicMaxLines;
     final List<Widget> parts = <Widget>[
       if (subject != null)
@@ -326,11 +358,69 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
           textAlign: TextAlign.start,
         ),
     ];
-    if (parts.length == 1) return parts.single;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: parts,
+    if (trailing == null) {
+      if (parts.length == 1) return parts.single;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: parts,
+      );
+    }
+    // Un créneau sans sujet ni horodatage : il se pose seul, en FIN de coiffe
+    // (`centerEnd`, donc à droite en LTR et à gauche en RTL — invariant
+    // AD-13). Pas de `Row` avec un `Expanded` vide : on n'insère pas un
+    // conteneur qui ne borne rien (invariant AD-4).
+    if (parts.isEmpty) {
+      return Align(
+        alignment: AlignmentDirectional.centerEnd,
+        child: trailing,
+      );
+    }
+    final Widget lead = parts.length == 1
+        ? parts.single
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: parts,
+          );
+    // `Expanded` sur le sujet, largeur INTRINSÈQUE sur le créneau : c'est ce
+    // qui fait que le sujet TRONQUE (il n'a que la place restante) et que les
+    // commandes restent entières, quelle que soit la longueur de la question.
+    // L'inverse — laisser le sujet prendre sa largeur naturelle — écraserait
+    // le créneau, ou déborderait.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[Expanded(child: lead), trailing],
+    );
+  }
+
+  /// Le créneau de **fin de coiffe** : les commandes de la carte.
+  ///
+  /// Rend `null` quand la coquille n'en déclare aucun, ou quand le builder de
+  /// l'hôte rend `null` pour ce message (invariant AD-4). Un builder qui lève
+  /// perd le créneau, jamais la coiffe (invariant AD-10).
+  ///
+  /// Deux contraintes, et deux seulement : le plancher tactile de
+  /// `kZChatMinTapTarget`, qui ne se négocie pas (invariant AD-13), et une
+  /// taille de glyphe réduite, posée par `IconTheme` — un `merge` de TAILLE,
+  /// jamais de couleur (invariant FR-26).
+  Widget? _trailing(
+    BuildContext context,
+    ZChatTileShell? shell,
+    ZChatTileShellStyle style,
+  ) {
+    final Widget? built = _slot(
+      context,
+      shell?.topicTrailing,
+      kZChatSeamTopicTrailing,
+    );
+    if (built == null) return null;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: kZChatMinTapTarget),
+      child: IconTheme.merge(
+        data: IconThemeData(size: style.topicTrailingIconSize),
+        child: built,
+      ),
     );
   }
 

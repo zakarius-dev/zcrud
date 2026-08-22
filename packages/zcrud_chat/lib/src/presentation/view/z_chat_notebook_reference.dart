@@ -263,6 +263,15 @@ abstract final class ZChatNotebookReference {
   /// reste annoncé.
   static const int tileTopicMaxLines = 1;
 
+  /// Côté d'un glyphe posé dans le **créneau de fin de coiffe**.
+  ///
+  /// Plus petit que celui d'une action par message
+  /// ([perMessageActionIconSize]) : la coiffe est une ligne, et ses commandes
+  /// doivent y tenir sans la gonfler. C'est la seule densité que le socle
+  /// impose au créneau — la **cible tactile**, elle, reste `kZChatMinTapTarget`
+  /// et ne se réduit jamais (invariant AD-13).
+  static const double tileTopicTrailingIconSize = 20;
+
   /// Alignement du bouton de dépli d'une tuile à coquille — **centré**, et
   /// directionnel (invariant AD-13).
   static const AlignmentDirectional tileToggleAlignment =

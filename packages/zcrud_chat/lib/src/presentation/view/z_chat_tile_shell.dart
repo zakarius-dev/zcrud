@@ -45,6 +45,7 @@ import 'package:flutter/widgets.dart';
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
+import 'z_chat_message_tile.dart';
 import 'z_chat_notebook_reference.dart';
 
 /// Formate l'horodatage d'un message — couture d'hôte.
@@ -180,6 +181,15 @@ class ZChatTileToggleStyle {
 
 /// La coquille déclarée d'une tuile de message.
 ///
+/// ## Ce que le filet borne
+///
+/// Le **contenu**, et lui seul : l'identité de l'interlocuteur, la coiffe, les
+/// blocs du message et le bouton de dépli. La barre d'actions par message
+/// (`ZChatMessageTile.actionsBuilder`) est rendue **sous** la carte, hors du
+/// filet — un cadre qui engloberait les commandes cesserait de délimiter la
+/// réponse. Les commandes qui portent sur la carte elle-même ont leur place
+/// dans la coiffe, par [topicTrailing].
+///
 /// Déclarer une coquille — même vide — demande : une carte cernée d'un filet,
 /// une coiffe quand [topicOf] rend un sujet, un horodatage quand le message
 /// en porte un, et le bouton de dépli en pilule centrée. Ne rien déclarer
@@ -199,6 +209,7 @@ class ZChatTileShell {
     this.margin,
     this.topicOf,
     this.topicMaxLines,
+    this.topicTrailing,
     this.showTimestamp,
     this.timestampFormatter,
     this.toggle = const ZChatTileToggleStyle(),
@@ -246,6 +257,33 @@ class ZChatTileShell {
   /// annoncé aux lecteurs d'écran.
   final int? topicMaxLines;
 
+  /// Créneau rendu **en fin de coiffe**, à la suite du sujet du tour.
+  ///
+  /// C'est la place des commandes de la **carte** — celles qui portent sur le
+  /// message lui-même (modifier, régénérer, supprimer, interrompre). Elles y
+  /// tiennent parce que la coiffe est une ligne : le sujet occupe l'espace
+  /// restant et **tronque**, le créneau garde sa largeur entière.
+  ///
+  /// Ce que le socle impose au créneau, et rien de plus :
+  ///
+  /// * une **hauteur minimale** de `kZChatMinTapTarget` — le plancher tactile
+  ///   ne se réduit jamais (invariant AD-13) ;
+  /// * une **taille de glyphe réduite**
+  ///   ([ZChatNotebookReference.tileTopicTrailingIconSize]), posée par
+  ///   `IconTheme` : une commande de coiffe est plus discrète qu'une action
+  ///   de message. Un widget qui fixe lui-même sa taille d'icône garde la
+  ///   sienne.
+  ///
+  /// Le créneau est un **frère** du sujet, pas son enfant : les boutons de
+  /// l'hôte gardent leur sémantique propre, et le libellé d'en-tête du sujet
+  /// ne les avale pas.
+  ///
+  /// `null` (défaut) laisse la coiffe strictement inchangée. Un builder qui
+  /// rend `null` pour un message signifie aucun créneau pour ce message
+  /// (invariant AD-4). Un builder qui lève perd le créneau, jamais la coiffe
+  /// (invariant AD-10).
+  final ZChatMessageSlotBuilder? topicTrailing;
+
   /// Afficher l'horodatage du message ? `null` ⇒ jeton
   /// `ZcrudTheme.chatBubbleShowTimestamp`, puis référence (`true`).
   ///
@@ -279,6 +317,7 @@ class ZChatTileShell {
           margin == other.margin &&
           topicOf == other.topicOf &&
           topicMaxLines == other.topicMaxLines &&
+          topicTrailing == other.topicTrailing &&
           showTimestamp == other.showTimestamp &&
           timestampFormatter == other.timestampFormatter &&
           toggle == other.toggle;
@@ -294,6 +333,7 @@ class ZChatTileShell {
     margin,
     topicOf,
     topicMaxLines,
+    topicTrailing,
     showTimestamp,
     timestampFormatter,
     toggle,
@@ -316,6 +356,7 @@ class ZChatTileShellStyle {
     required this.margin,
     required this.topicMaxLines,
     required this.topicWeight,
+    required this.topicTrailingIconSize,
     required this.showTimestamp,
     required this.toggleAlignment,
     required this.toggleRadius,
@@ -347,6 +388,11 @@ class ZChatTileShellStyle {
   /// Graisse de la coiffe — une graisse seule, jamais un style complet : la
   /// police et la couleur restent celles de l'hôte (invariant FR-26).
   final FontWeight topicWeight;
+
+  /// Côté des glyphes du créneau de fin de coiffe — la densité réduite d'une
+  /// commande de carte. Ce n'est pas la cible tactile, qui reste
+  /// `kZChatMinTapTarget`.
+  final double topicTrailingIconSize;
 
   /// L'horodatage est-il affiché ?
   final bool showTimestamp;
@@ -412,6 +458,7 @@ ZChatTileShellStyle zChatTileShellStyleOf(
             ZChatNotebookReference.tileTopicMaxLines)
         .clamp(1, 0x7fffffff),
     topicWeight: ZChatNotebookReference.messageTitleWeight,
+    topicTrailingIconSize: ZChatNotebookReference.tileTopicTrailingIconSize,
     showTimestamp:
         shell.showTimestamp ??
         theme?.chatBubbleShowTimestamp ??

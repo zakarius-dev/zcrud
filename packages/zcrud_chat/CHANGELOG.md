@@ -3,6 +3,41 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.4.0 — 2026-08-22
+
+### ⚠️ Modifié — le filet borne le CONTENU, plus les commandes
+
+**Changement de rendu pour tout hôte déclarant une coquille de tuile.** Le filet
+englobait la tuile entière : identité, coiffe, contenu **et** la barre d'actions
+par message. Il cessait donc de délimiter *la réponse* pour délimiter *la réponse
+et ses commandes*.
+
+Le filet borne désormais le **contenu** — identité, coiffe, blocs et bouton de
+dépli — et la barre d'actions est rendue **sous** la carte.
+
+Mesuré sur un message court avec une barre de 96 dp : la hauteur du filet passe
+de **132 dp à moins de 44 dp**.
+
+Un hôte **sans** coquille déclarée rend un arbre strictement inchangé.
+
+### Ajouté — `topicTrailing`, la place des commandes de la carte
+
+Un créneau rendu **en fin de coiffe**, à la suite du sujet du tour : c'est la
+place des commandes qui portent sur la carte elle-même, non des actions parmi
+d'autres.
+
+Le sujet occupe la place restante et **tronque** ; le créneau garde sa largeur
+entière, une hauteur minimale de 48 dp et une densité de glyphe réduite
+(20 dp contre 24 pour une action de message). Directionnel : « fin » se rend à
+droite en écriture gauche-à-droite, à gauche en droite-à-gauche.
+
+Strictement additif — sans créneau déclaré, la coiffe est inchangée. Un
+constructeur qui **lève** perd le créneau, jamais la coiffe (AD-10).
+
+⚠️ **Un écart délibéré** : un plancher tactile de 48 dp est non négociable
+(AD-13). Une coiffe portant un créneau chargé fera donc au moins cette hauteur,
+là où un rendu plus compact serait possible en le sacrifiant.
+
 ## 3.3.0 — 2026-08-21
 
 ### Ajouté — l'animation d'occupation, la table de capacités complète, la coquille de tuile
