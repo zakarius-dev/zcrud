@@ -64,9 +64,12 @@
     
 <section class="desc markdown">
   <p>Pose la politique sur une <code>request</code> : filtres permanents <strong>en tête</strong> des
-filtres déjà présents, tri par défaut si la requête n'en porte aucun,
-taille de page si la requête n'en fixe aucune, et sémantique de recherche
-déclarée.</p>
+filtres déjà présents, disjonctions permanentes en tête de celles déjà
+présentes, tri par défaut si la requête n'en porte aucun, taille de page
+si la requête n'en fixe aucune, et sémantique de recherche déclarée.</p>
+<p>Le <strong>post-filtre</strong> (<a href="../../zcrud_screen/ZListQueryPolicy/itemFilter.html">itemFilter</a>) n'entre pas dans la requête : il ne
+s'exprime pas en clauses, et c'est le listing qui l'applique aux entités
+lues.</p>
 <p>Tout le reste de la requête est transmis tel quel — la portée de
 suppression d'une vue corbeille, le terme de recherche et le curseur de
 page ne sont jamais touchés.</p>
@@ -78,6 +81,7 @@ page ne sont jamais touchés.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">ZDataRequest applyTo(ZDataRequest request) =&gt; request.copyWith(
       filters: filtersWith(request.filters),
+      filterGroups: filterGroupsWith(request.filterGroups),
       sorts: sortFor(request.sorts),
       limit: request.limit ?? pageSize,
       searchScope: searchScope,
@@ -110,7 +114,7 @@ page ne sont jamais touchés.</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

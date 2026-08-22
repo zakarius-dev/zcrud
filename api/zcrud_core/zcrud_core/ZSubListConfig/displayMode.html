@@ -62,8 +62,27 @@
       </section>
       
 <section class="desc markdown">
-  <p>Mode de rendu : <a href="../../zcrud_core/ZSubListDisplayMode.html">ZSubListDisplayMode.inline</a> (défaut, rétro-compat) ou
-<a href="../../zcrud_core/ZSubListDisplayMode.html">ZSubListDisplayMode.compact</a> (liste résumé + dialog par item).</p>
+  <p>Mode de rendu : <a href="../../zcrud_core/ZSubListDisplayMode.html">ZSubListDisplayMode.compact</a> (<strong>défaut</strong> — table de
+résumé + formulaire par item), <a href="../../zcrud_core/ZSubListDisplayMode.html">ZSubListDisplayMode.inline</a>
+(sous-formulaires imbriqués) ou <a href="../../zcrud_core/ZSubListDisplayMode.html">ZSubListDisplayMode.tags</a>.</p>
+<h2 id="-le-dfaut-est-pass-de-inline--compact--rupture-assume">🔴 Le défaut est passé de <code>inline</code> à <code>compact</code> — rupture assumée</h2>
+<p><strong>Ce que voit un hôte passif</strong> : un champ <code>subItems</code> qui ne déclarait pas
+<a href="../../zcrud_core/ZSubListConfig/displayMode.html">displayMode</a> rendait une <strong>pile de sous-formulaires à champs vivants</strong> ;
+il rend désormais une <strong>table de résumé + un formulaire par item</strong>.</p>
+<p><strong>Pourquoi ce n'est pas un caprice de présentation.</strong> Le moteur legacy
+dont ces sous-listes sont l'extraction rendait chaque item par
+<code>itemBuilder?.call(item) ?? Container()</code> — <strong>sans builder, un item legacy
+s'affiche vide</strong> — et éditait par une <strong>fenêtre</strong>. Le mode legacy est donc
+<code>compact</code> (résumé + fenêtre), et <strong>pas</strong> <code>inline</code> : <code>inline</code> est un mode
+<strong>natif zcrud</strong>, sans contrepartie legacy. Un hôte qui migre depuis le
+moteur legacy et ne déclare rien recevait donc, jusqu'ici, le mode qui
+ressemble le moins à ce qu'il rendait avant.</p>
+<p><strong>Le geste de retour arrière tient en une ligne</strong>, et il est exact :
+<code>displayMode: ZSubListDisplayMode.inline</code> rend ce que rendait l'ancien
+défaut — même code, même structure, aucun chemin dérivé (garde :
+« <code>inline</code> rend exactement l'ancien défaut »).</p>
+<p><strong>Ce qui ne bouge pas</strong> : tout hôte qui <strong>déclarait</strong> <a href="../../zcrud_core/ZSubListConfig/displayMode.html">displayMode</a> — quel
+que soit le mode — est strictement inchangé de ce fait.</p>
 </section>
 
       
@@ -98,7 +117,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -57,9 +57,12 @@
 <span class="returntype"><a href="../../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a></span>
 <span class="name ">copyWith</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="copyWith-param-sort"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSort</span>&gt;</span>?</span> <span class="parameter-name">sort</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilter</span>&gt;</span>?</span> <span class="parameter-name">baseFilters</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-baseFilterGroups"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilterGroup</span>&gt;</span>?</span> <span class="parameter-name">baseFilterGroups</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-itemFilter"><span class="type-annotation">ZItemFilter?</span> <span class="parameter-name">itemFilter</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-pageSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">pageSize</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-searchScope"><span class="type-annotation">ZSearchScope?</span> <span class="parameter-name">searchScope</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-searchFolding"><span class="type-annotation">ZSearchFolding?</span> <span class="parameter-name">searchFolding</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-paginationMode"><span class="type-annotation">ZListPaginationMode?</span> <span class="parameter-name">paginationMode</span>, </span></li>
 </ol>})
 
       
@@ -77,16 +80,22 @@
   <pre class="language-dart"><code class="language-dart">ZListQueryPolicy copyWith({
   List&lt;ZSort&gt;? sort,
   List&lt;ZFilter&gt;? baseFilters,
+  List&lt;ZFilterGroup&gt;? baseFilterGroups,
+  ZItemFilter? itemFilter,
   int? pageSize,
   ZSearchScope? searchScope,
   ZSearchFolding? searchFolding,
+  ZListPaginationMode? paginationMode,
 }) =&gt;
     ZListQueryPolicy(
       sort: sort ?? this.sort,
       baseFilters: baseFilters ?? this.baseFilters,
+      baseFilterGroups: baseFilterGroups ?? this.baseFilterGroups,
+      itemFilter: itemFilter ?? this.itemFilter,
       pageSize: pageSize ?? this.pageSize,
       searchScope: searchScope ?? this.searchScope,
       searchFolding: searchFolding ?? this.searchFolding,
+      paginationMode: paginationMode ?? this.paginationMode,
     );</code></pre>
 </section>
 
@@ -115,7 +124,7 @@
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

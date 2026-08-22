@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZSubListSeams class from the zcrud_core library, for the Dart programming language.">
+  <title>ZSubListSeams class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZSubListSeams class</li>
+  </ol>
+  <div class="self-name">ZSubListSeams</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZSubListSeams-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZSubListSeams</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p><strong>Bundle immuable</strong> des seams de présentation d'un champ <code>subItems</code> /
+<code>dynamicItem</code>. Chaque seam est <strong>optionnel</strong> : <code>null</code> ⇒ rendu natif
+<strong>strictement</strong> inchangé (rétro-compatibilité stricte).</p>
+<h2 id="applicabilit-par-mode-daffichage">Applicabilité par mode d'affichage</h2>
+<table>
+<thead>
+<tr>
+<th>Seam</th>
+<th><code>inline</code></th>
+<th><code>compact</code></th>
+<th><code>tags</code></th>
+<th><code>dynamicItem</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../zcrud_core/ZSubListSeams/acl.html">acl</a></td>
+<td>—</td>
+<td>✅ actions de ligne</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZSubListSeams/itemTitleBuilder.html">itemTitleBuilder</a></td>
+<td>—</td>
+<td>✅ titre de ligne (sans <code>summaryFields</code>) + titre de dialogue</td>
+<td>✅ libellé de puce + titre de dialogue</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZSubListSeams/itemBuilder.html">itemBuilder</a></td>
+<td>—</td>
+<td>✅ remplace le contenu résumé (<strong>et sort de la table</strong>)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZSubListSeams/itemActionsBuilder.html">itemActionsBuilder</a></td>
+<td>✅ après retrait/réordonnancement</td>
+<td>✅ après les actions natives</td>
+<td>—</td>
+<td>✅ après « effacer »</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZSubListSeams/listViewBuilder.html">listViewBuilder</a></td>
+<td>—</td>
+<td>✅ remplace le conteneur de lignes (<strong>et sort de la table</strong>)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZSubListSeams/captionBuilder.html">captionBuilder</a></td>
+<td>—</td>
+<td>✅ remplace l'en-tête</td>
+<td>✅ remplace l'en-tête</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZSubListSeams/itemTransformer.html">itemTransformer</a></td>
+<td>—</td>
+<td>✅ résumé + seams de rendu</td>
+<td>✅ libellé de puce</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZSubListSeams/itemFieldsResolver.html">itemFieldsResolver</a></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>✅ sous-champs rendus</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZSubListSeams/subSchemaResolver.html">subSchemaResolver</a></td>
+<td>✅ sous-schéma rendu</td>
+<td>✅ sous-schéma du formulaire d'item</td>
+<td>✅ sous-schéma du formulaire d'item</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZSubListSeams/creationTemplatesResolver.html">creationTemplatesResolver</a></td>
+<td>—</td>
+<td>✅ menu d'ajout</td>
+<td>✅ menu d'ajout</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZSubListSeams/itemMenuOptions.html">itemMenuOptions</a></td>
+<td>—</td>
+<td>✅ menu de débordement de ligne</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="../zcrud_core/ZSubListSeams/onCrud.html">onCrud</a></td>
+<td>—</td>
+<td>✅ create/update/delete + option + gabarit</td>
+<td>✅ create/update/delete + gabarit</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>« — » signifie : le seam est ignoré, silencieusement et sans effet de
+bord.</strong> Un seam déclaré pour un mode qui ne le sert pas ne dégrade rien et
+ne lève rien (invariant AD-10) ; il ne fait simplement rien. Les raisons,
+mode par mode :</p>
+<p>⚠️ <strong>« sort de la table »</strong> — le mode <code>compact</code> rend par défaut une vraie
+<code>Table</code> (colonnes suivant le contenu, en-têtes solidaires). Deux seams sont
+<strong>incompatibles avec elle</strong>, non par choix mais par construction :
+<a href="../zcrud_core/ZSubListSeams/itemBuilder.html">itemBuilder</a> rend un widget <strong>opaque</strong> que le socle ne peut pas découper en
+cellules, et <a href="../zcrud_core/ZSubListSeams/listViewBuilder.html">listViewBuilder</a> dispose les lignes lui-même. Déclarer l'un ou
+l'autre fait donc retomber la sous-liste sur le rendu <strong>à colonnes de
+largeur égale</strong> (<code>ListView.builder</code>), inchangé. Aucun
+seam n'est <strong>retiré</strong> par la table : c'est la table qui cède, jamais le
+seam. Un hôte qui tenait à son rendu de ligne le garde sans rien déclarer de
+plus ; un hôte qui veut la table retire son seam.</p>
+<ul>
+<li><strong><code>inline</code></strong> déballe les sous-champs <strong>éditables</strong> de chaque item. Un
+rendu libre, un conteneur libre ou une transformation d'affichage y
+remplaceraient ou désynchroniseraient des champs vivants — donc de l'état
+et du focus (invariant AD-2). Deux seams y ont malgré tout un sens : les
+<strong>actions supplémentaires</strong>, qui s'ajoutent à côté des contrôles de la
+carte sans toucher aux champs ; et le <strong>sous-schéma dérivé</strong>, qui décide
+<em>quels</em> champs sont déballés — le socle réconcilie alors les tranches
+plutôt que de recréer les contrôleurs, si bien que les champs inchangés
+gardent leur état et leur focus. Les <strong>gabarits de création</strong>, eux, ne
+valent pas ici : le mode <code>inline</code> ajoute un item <strong>vide</strong> par un bouton,
+il n'ouvre aucun formulaire à pré-remplir et n'a donc pas de menu d'ajout.</li>
+<li><strong><code>tags</code></strong> rend une puce, dont le libellé est <strong>du texte</strong> : un rendu
+libre d'item n'y a pas de place, et le conteneur (<code>Wrap</code>) est le rendu
+même du mode. Le moteur legacy faisait le même choix (son mode tags
+ignorait <code>listViewBuilder</code>). Ce mode ne consulte <strong>pas</strong> l'ACL — il n'en
+consultait pas avant, et la mettre ici retirerait des gestes à un hôte qui
+n'a rien demandé.</li>
+<li><strong><code>dynamicItem</code></strong> n'a ni liste, ni résumé, ni en-tête à habiller
+(cardinalité ≤ 1, item toujours déballé) : seuls <a href="../zcrud_core/ZSubListSeams/itemFieldsResolver.html">itemFieldsResolver</a> et
+<a href="../zcrud_core/ZSubListSeams/itemActionsBuilder.html">itemActionsBuilder</a> y ont un sens. Il n'y a <strong>pas d'item à supprimer ni à
+créer</strong> (seulement « effacer », qui vide des tranches) : ni les options ni
+le crochet n'y auraient de geste à arbitrer.</li>
+</ul>
+<p>Deux précisions sur les deux derniers seams, dont l'applicabilité <strong>diffère</strong>
+l'une de l'autre :</p>
+<ul>
+<li><strong><a href="../zcrud_core/ZSubListSeams/itemMenuOptions.html">itemMenuOptions</a> : <code>compact</code> uniquement.</strong> Le mode <code>tags</code> rend une puce
+dont les seules affordances sont « ouvrir » et « retirer » ; y greffer un
+menu par puce entasserait trois gestes sur une cible de la taille d'un
+mot. Le mode <code>inline</code> déballe des champs vivants : une ligne y est un
+sous-formulaire, pas un enregistrement résumé sur lequel agir.</li>
+<li><strong><a href="../zcrud_core/ZSubListSeams/onCrud.html">onCrud</a> : <code>compact</code> ET <code>tags</code>.</strong> Ce sont les deux modes qui possèdent un
+cycle de vie <strong>par item</strong> passant par les dialogues (ajouter, consulter,
+modifier, supprimer). Le mode <code>inline</code> est délibérément <strong>exclu</strong> : il n'a
+ni création ni édition d'item au sens CRUD — un item y naît vide et se
+modifie <strong>champ par champ</strong> par le canal granulaire (invariant AD-2), si
+bien qu'appeler un crochet « update » y reviendrait à l'appeler à chaque
+frappe ; et son retrait de ligne est une rétractation <strong>structurelle</strong>,
+non gouvernée par l'ACL (ce mode n'en consulte pas). Câbler le crochet sur
+ce seul point aurait donné à l'hôte le pouvoir de refuser un retrait sans
+jamais pouvoir arbitrer une création ni une édition : une asymétrie plus
+trompeuse qu'un silence assumé.</li>
+</ul>
+<h2 id="dfensivit-invariant-ad-10">Défensivité (invariant AD-10)</h2>
+<p>Un seam qui <strong>lève</strong> est traité comme un seam <strong>absent</strong> : le rendu natif
+reprend la main, aucune exception ne remonte, le formulaire reste utilisable.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://api.flutter.dev/flutter/meta/immutable-constant.html">immutable</a></li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZSubListSeams.new" class="callable">
+          <span class="name"><a href="../zcrud_core/ZSubListSeams/ZSubListSeams.html">ZSubListSeams</a></span><span class="signature">({<span class="parameter" id="param-acl"><span class="type-annotation"><a href="../zcrud_core/ZAcl-class.html">ZAcl</a>?</span> <span class="parameter-name">acl</span>, </span><span class="parameter" id="param-itemTitleBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubItemTitleBuilder.html">ZSubItemTitleBuilder</a>?</span> <span class="parameter-name">itemTitleBuilder</span>, </span><span class="parameter" id="param-itemBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubItemWidgetBuilder.html">ZSubItemWidgetBuilder</a>?</span> <span class="parameter-name">itemBuilder</span>, </span><span class="parameter" id="param-itemActionsBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubItemActionsBuilder.html">ZSubItemActionsBuilder</a>?</span> <span class="parameter-name">itemActionsBuilder</span>, </span><span class="parameter" id="param-listViewBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubListViewBuilder.html">ZSubListViewBuilder</a>?</span> <span class="parameter-name">listViewBuilder</span>, </span><span class="parameter" id="param-captionBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubListCaptionBuilder.html">ZSubListCaptionBuilder</a>?</span> <span class="parameter-name">captionBuilder</span>, </span><span class="parameter" id="param-itemTransformer"><span class="type-annotation"><a href="../zcrud_core/ZSubItemTransformer.html">ZSubItemTransformer</a>?</span> <span class="parameter-name">itemTransformer</span>, </span><span class="parameter" id="param-itemFieldsResolver"><span class="type-annotation"><a href="../zcrud_core/ZSubItemFieldsResolver.html">ZSubItemFieldsResolver</a>?</span> <span class="parameter-name">itemFieldsResolver</span>, </span><span class="parameter" id="param-subSchemaResolver"><span class="type-annotation"><a href="../zcrud_core/ZSubListSchemaResolver.html">ZSubListSchemaResolver</a>?</span> <span class="parameter-name">subSchemaResolver</span>, </span><span class="parameter" id="param-creationTemplatesResolver"><span class="type-annotation"><a href="../zcrud_core/ZSubListTemplatesResolver.html">ZSubListTemplatesResolver</a>?</span> <span class="parameter-name">creationTemplatesResolver</span>, </span><span class="parameter" id="param-itemMenuOptions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSubItemMenuOption-class.html">ZSubItemMenuOption</a></span>&gt;</span></span> <span class="parameter-name">itemMenuOptions</span> = <span class="default-value">const &lt;ZSubItemMenuOption&gt;[]</span>, </span><span class="parameter" id="param-onCrud"><span class="type-annotation"><a href="../zcrud_core/ZSubItemCrudHook.html">ZSubItemCrudHook</a>?</span> <span class="parameter-name">onCrud</span></span>})</span>
+        </dt>
+        <dd>
+          Construit un bundle <code>const</code> de seams — tous optionnels.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="acl" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSeams/acl.html">acl</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZAcl-class.html">ZAcl</a>?</span>
+  
+
+</dt>
+<dd>
+  Surcharge d'<strong>ACL propre à ce champ</strong>, prioritaire sur <code>ZcrudScope.acl</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="captionBuilder" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSeams/captionBuilder.html">captionBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSubListCaptionBuilder.html">ZSubListCaptionBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Habillage libre de l'en-tête (voir <a href="../zcrud_core/ZSubListCaptionBuilder.html">ZSubListCaptionBuilder</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="creationTemplatesResolver" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSeams/creationTemplatesResolver.html">creationTemplatesResolver</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSubListTemplatesResolver.html">ZSubListTemplatesResolver</a>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Gabarits de création dérivés de l'état du formulaire parent</strong> —
+<code>subItems</code>, modes <code>compact</code> et <code>tags</code> (voir <a href="../zcrud_core/ZSubListTemplatesResolver.html">ZSubListTemplatesResolver</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="itemActionsBuilder" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSeams/itemActionsBuilder.html">itemActionsBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSubItemActionsBuilder.html">ZSubItemActionsBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Actions supplémentaires d'un item (voir <a href="../zcrud_core/ZSubItemActionsBuilder.html">ZSubItemActionsBuilder</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="itemBuilder" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSeams/itemBuilder.html">itemBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSubItemWidgetBuilder.html">ZSubItemWidgetBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Rendu libre d'un item (voir <a href="../zcrud_core/ZSubItemWidgetBuilder.html">ZSubItemWidgetBuilder</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="itemFieldsResolver" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSeams/itemFieldsResolver.html">itemFieldsResolver</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSubItemFieldsResolver.html">ZSubItemFieldsResolver</a>?</span>
+  
+
+</dt>
+<dd>
+  Sous-champs rendus d'un <code>dynamicItem</code> (voir <a href="../zcrud_core/ZSubItemFieldsResolver.html">ZSubItemFieldsResolver</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="itemMenuOptions" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSeams/itemMenuOptions.html">itemMenuOptions</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSubItemMenuOption-class.html">ZSubItemMenuOption</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  <strong>Options de menu par item</strong> (voir <a href="../zcrud_core/ZSubItemMenuOption-class.html">ZSubItemMenuOption</a>) — mode <code>compact</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="itemTitleBuilder" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSeams/itemTitleBuilder.html">itemTitleBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSubItemTitleBuilder.html">ZSubItemTitleBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Titre/résumé lisible d'un item (voir <a href="../zcrud_core/ZSubItemTitleBuilder.html">ZSubItemTitleBuilder</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="itemTransformer" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSeams/itemTransformer.html">itemTransformer</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSubItemTransformer.html">ZSubItemTransformer</a>?</span>
+  
+
+</dt>
+<dd>
+  Transformation d'affichage d'un item (voir <a href="../zcrud_core/ZSubItemTransformer.html">ZSubItemTransformer</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="listViewBuilder" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSeams/listViewBuilder.html">listViewBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSubListViewBuilder.html">ZSubListViewBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Conteneur libre de la liste (voir <a href="../zcrud_core/ZSubListViewBuilder.html">ZSubListViewBuilder</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onCrud" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSeams/onCrud.html">onCrud</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSubItemCrudHook.html">ZSubItemCrudHook</a>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Crochet CRUD</strong> (voir <a href="../zcrud_core/ZSubItemCrudHook.html">ZSubItemCrudHook</a>) — modes <code>compact</code> et <code>tags</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="subSchemaResolver" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSeams/subSchemaResolver.html">subSchemaResolver</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSubListSchemaResolver.html">ZSubListSchemaResolver</a>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Sous-schéma dérivé de l'état du formulaire parent</strong> — <code>subItems</code>
+uniquement (voir <a href="../zcrud_core/ZSubListSchemaResolver.html">ZSubListSchemaResolver</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZSubListSeams class</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

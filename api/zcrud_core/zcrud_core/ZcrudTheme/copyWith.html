@@ -92,11 +92,19 @@
 <li><span class="parameter" id="copyWith-param-largeLeadingIconSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">largeLeadingIconSize</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-largeLeadingGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">largeLeadingGap</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-largeLabelGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">largeLabelGap</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-readLayout"><span class="type-annotation"><a href="../../zcrud_core/ZReadFieldLayout.html">ZReadFieldLayout</a>?</span> <span class="parameter-name">readLayout</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-readCardMargin"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span> <span class="parameter-name">readCardMargin</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-readPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span> <span class="parameter-name">readPadding</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-readLabelGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">readLabelGap</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-readLabelTextStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">readLabelTextStyle</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-readValueTextStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">readValueTextStyle</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-readFillColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">readFillColor</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-readBorderColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">readBorderColor</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-readBorderWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">readBorderWidth</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-readCardMinHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">readCardMinHeight</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-readRowLabelWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">readRowLabelWidth</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-readRowMinWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">readRowMinWidth</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-subListColumnMinWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">subListColumnMinWidth</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-accentBarHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">accentBarHeight</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-gradientBegin"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/AlignmentGeometry-class.html">AlignmentGeometry</a>?</span> <span class="parameter-name">gradientBegin</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-gradientEnd"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/AlignmentGeometry-class.html">AlignmentGeometry</a>?</span> <span class="parameter-name">gradientEnd</span>, </span></li>
@@ -292,11 +300,19 @@ ZcrudTheme copyWith({
   double? largeLeadingIconSize,
   double? largeLeadingGap,
   double? largeLabelGap,
+  ZReadFieldLayout? readLayout,
   EdgeInsetsDirectional? readCardMargin,
   EdgeInsetsDirectional? readPadding,
   double? readLabelGap,
   TextStyle? readLabelTextStyle,
   TextStyle? readValueTextStyle,
+  Color? readFillColor,
+  Color? readBorderColor,
+  double? readBorderWidth,
+  double? readCardMinHeight,
+  double? readRowLabelWidth,
+  double? readRowMinWidth,
+  double? subListColumnMinWidth,
   double? accentBarHeight,
   AlignmentGeometry? gradientBegin,
   AlignmentGeometry? gradientEnd,
@@ -478,11 +494,20 @@ ZcrudTheme copyWith({
   largeLeadingIconSize: largeLeadingIconSize ?? this.largeLeadingIconSize,
   largeLeadingGap: largeLeadingGap ?? this.largeLeadingGap,
   largeLabelGap: largeLabelGap ?? this.largeLabelGap,
+  readLayout: readLayout ?? this.readLayout,
   readCardMargin: readCardMargin ?? this.readCardMargin,
   readPadding: readPadding ?? this.readPadding,
   readLabelGap: readLabelGap ?? this.readLabelGap,
   readLabelTextStyle: readLabelTextStyle ?? this.readLabelTextStyle,
   readValueTextStyle: readValueTextStyle ?? this.readValueTextStyle,
+  readFillColor: readFillColor ?? this.readFillColor,
+  readBorderColor: readBorderColor ?? this.readBorderColor,
+  readBorderWidth: readBorderWidth ?? this.readBorderWidth,
+  readCardMinHeight: readCardMinHeight ?? this.readCardMinHeight,
+  readRowLabelWidth: readRowLabelWidth ?? this.readRowLabelWidth,
+  readRowMinWidth: readRowMinWidth ?? this.readRowMinWidth,
+  subListColumnMinWidth:
+      subListColumnMinWidth ?? this.subListColumnMinWidth,
   accentBarHeight: accentBarHeight ?? this.accentBarHeight,
   gradientBegin: gradientBegin ?? this.gradientBegin,
   gradientEnd: gradientEnd ?? this.gradientEnd,
@@ -735,7 +760,7 @@ ZcrudTheme copyWith({
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

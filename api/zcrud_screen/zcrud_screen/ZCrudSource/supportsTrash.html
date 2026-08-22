@@ -67,7 +67,7 @@
     </section>
     
 <section class="desc markdown">
-  <p><code>true</code> si la source sait servir une <strong>corbeille</strong> : repository
+  <p><code>true</code> si la source sait servir une <strong>corbeille</strong> : dépôt d'écriture
 (<code>deletedScope</code> + <code>softDelete</code>/<code>restore</code>), ou partition <a href="../../zcrud_screen/ZCrudSource/isDeleted.html">isDeleted</a> +
 au moins une écriture de corbeille.</p>
 </section>
@@ -76,7 +76,7 @@ au moins une écriture de corbeille.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">bool get supportsTrash =&gt;
-    repository != null ||
+    writeRepository != null ||
     (isDeleted != null &amp;&amp;
         (onSoftDelete != null || onRestore != null || onPurge != null));</code></pre>
 </section>
@@ -108,7 +108,7 @@ au moins une écriture de corbeille.</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

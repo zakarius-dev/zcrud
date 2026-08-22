@@ -67,14 +67,17 @@
     </section>
     
 <section class="desc markdown">
-  <p><code>true</code> si la source sait <strong>écrire</strong> (création/édition) : repository, ou
-callback <a href="../../zcrud_screen/ZCrudSource/onSave.html">onSave</a> fourni.</p>
+  <p><code>true</code> si la source sait <strong>écrire</strong> (création/édition) : dépôt d'écriture
+(<a href="../../zcrud_screen/ZCrudSource/writeRepository.html">writeRepository</a>), ou callback <a href="../../zcrud_screen/ZCrudSource/onSave.html">onSave</a> fourni.</p>
+<p>Faux sur une source déclarée en lecture seule, <strong>dépôt présent compris</strong> :
+c'est ce qui permet d'exprimer une ressource immuable sans renoncer à la
+pagination ni à la recherche serveur.</p>
 </section>
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">bool get canWrite =&gt; repository != null || onSave != null;</code></pre>
+  <pre class="language-dart"><code class="language-dart">bool get canWrite =&gt; writeRepository != null || onSave != null;</code></pre>
 </section>
 
   </section>
@@ -104,7 +107,7 @@ callback <a href="../../zcrud_screen/ZCrudSource/onSave.html">onSave</a> fourni.
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -61,7 +61,10 @@ scope, si bien que <code>ZcrudScope.updateShouldNotify</code> (comparaison <code
 n'oblige jamais les consommateurs de <code>ZcrudScope.of</code> à se reconstruire sans
 changement réel — à parité avec les autres bindings (invariants
 AD-15/AD-2). Le <code>dispose()</code> du <code>ZFormController</code> reste, lui, entièrement géré
-par <code>provider</code> (via <code>ChangeNotifierProvider</code>).</p>
+par <code>provider</code> (via <code>ChangeNotifierProvider</code>). Le scope manager-backed est
+dérivé depuis le <code>Builder</code> placé sous <code>MultiProvider</code> mais au-dessus du
+nouveau <code>ZcrudScope</code> : il complète donc le scope hôte sans jamais se dériver
+de lui-même.</p>
 </section>
 
 
@@ -385,7 +388,7 @@ tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode
 <footer>
   <span class="no-break">
     zcrud_provider
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

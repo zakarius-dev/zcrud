@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZDelegatesSearch mixin from the zcrud_core library, for the Dart programming language.">
+  <title>ZDelegatesSearch mixin - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZDelegatesSearch<span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span> mixin</li>
+  </ol>
+  <div class="self-name">ZDelegatesSearch</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZDelegatesSearch-mixin-sidebar.html">
+    <div>
+<h1><span class="kind-mixin">ZDelegatesSearch&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span> mixin 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Déclare qu'un dépôt <strong>ne sert pas</strong> la recherche plein-texte et la
+<strong>délègue</strong> au moteur du socle.</p>
+<h2 id="pourquoi-une-capacit-dclare-plutt-que-devine">Pourquoi une capacité déclarée plutôt que devinée</h2>
+<p>Deviner reviendrait à reconnaître les adaptateurs par leur type ou leur nom
+(« si c'est du Firestore, alors… ») : le cœur connaîtrait ses satellites,
+ce qu'AD-1 interdit, et un dépôt d'application ayant la même limite ne
+serait jamais reconnu. La déclaration inverse la charge — celui qui connaît
+la limite est celui qui la porte.</p>
+<h2 id="pourquoi-un-mixin-plutt-quun-membre-du-port">Pourquoi un mixin plutôt qu'un membre du port</h2>
+<p>Ajouter <code>bool get servesSearch</code> à <code>ZRepository</code> casserait toute
+implémentation hôte écrite avec <code>implements ZRepository&lt;T&gt;</code> : Dart exige
+alors que <strong>chaque</strong> membre soit fourni, y compris ceux qui portent un
+corps par défaut. Or c'est la forme la plus répandue (les décorateurs du
+socle lui-même l'emploient). Un mixin <strong>sans contrainte de superclasse</strong>
+s'applique à n'importe quel dépôt, et son <strong>absence</strong> est le comportement
+historique : un dépôt qui ne l'applique pas est réputé servir la recherche,
+exactement comme avant.</p>
+<h2 id="comment-le-dclarer">Comment le déclarer</h2>
+<pre class="language-dart"><code class="language-dart">class MonDepotFirestore&lt;T extends ZEntity&gt; extends ZRepository&lt;T&gt;
+    with ZDelegatesSearch&lt;T&gt; {
+  // … le port, inchangé : aucun membre à ajouter.
+}
+</code></pre>
+<h2 id="ce-que-le-socle-en-fait">Ce que le socle en fait</h2>
+<p><code>ZListController</code> interroge la capacité <strong>au moment où une recherche est
+active</strong>. Si le dépôt la délègue, la requête part sans pagination et le
+filtrage — recherche, portée de colonnes, pliage diacritique, tri — est
+appliqué en mémoire par le moteur du socle, exactement comme sur le repli
+d'un curseur non honoré. Sans recherche active, rien ne change : la
+pagination curseur reste le chemin nominal.</p>
+<h2 id="ce-que-ce-chemin-cote">Ce que ce chemin coûte</h2>
+<p>Servir la recherche en mémoire suppose de <strong>lire le jeu entier</strong> : une
+lecture non paginée de la source à chaque terme saisi. C'est le prix d'une
+recherche exacte sur un backend qui ne sait pas la faire, et il n'est
+raisonnable que pour un listing dont les données tiennent en mémoire
+(quelques milliers de lignes). Au-delà, la voie honnête est un <strong>champ de
+recherche normalisé pré-calculé</strong> côté application, interrogeable par
+égalité ou par préfixe — le dépôt sert alors la recherche et n'applique
+pas ce mixin.</p>
+</section>
+
+
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="../zcrud_core/ZDelegatesSearch/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="../zcrud_core/ZDelegatesSearch/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="../zcrud_core/ZDelegatesSearch/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="../zcrud_core/ZDelegatesSearch/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="../zcrud_core/ZDelegatesSearch/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZDelegatesSearch<span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span> mixin</li>
+</ol>
+
+  <h5>zcrud_core library</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div>
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

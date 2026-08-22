@@ -66,8 +66,24 @@
     
 <section class="desc markdown">
   <p>Applique un <code>request</code> <strong>entièrement en mémoire</strong> à <code>rows</code> et retourne une
-<a href="../zcrud_core/ZListPage-class.html">ZListPage</a> (filtre → recherche → tri → saut curseur → <code>take(limit)</code> →
-dérivation <code>nextCursor</code>/<code>hasMore</code>).</p>
+<a href="../zcrud_core/ZListPage-class.html">ZListPage</a> (filtres → disjonctions → recherche → tri → saut curseur →
+<code>take(limit)</code> → dérivation <code>nextCursor</code>/<code>hasMore</code>).</p>
+<p>Les <a href="../zcrud_core/ZDataRequest/filters.html">ZDataRequest.filters</a> se composent en <strong>conjonction</strong> ; chaque
+<a href="../zcrud_core/ZFilterGroup-class.html">ZFilterGroup</a> de <a href="../zcrud_core/ZDataRequest/filterGroups.html">ZDataRequest.filterGroups</a> est ANDé au reste mais
+résolu en <strong>disjonction</strong> de ses clauses (« cette valeur <strong>ou</strong> ce champ
+absent »).</p>
+<p><strong>Ce que ce moteur n'évalue jamais</strong> : une clause déclarée
+<a href="../zcrud_core/ZFilter/ZFilter.servedBySource.html">ZFilter.servedBySource</a>. Elle vise une règle que seule la base sait
+trancher — la ré-appliquer sur une cellule qui n'existe pas viderait le
+listing au lieu de le filtrer. Elle est donc sautée en conjonction, et
+retirée des clauses d'une disjonction (un groupe qui n'en contient que de
+celles-là redevient inerte).</p>
+<p><strong>Ce qu'il ordonne sans jamais retrancher</strong> : une valeur absente est
+<strong>classée</strong>, pas retirée — dernière en ordre croissant, première en
+décroissant (la négation du même classement). C'est la différence avec un
+ordre servi par un backend documentaire, dont l'<code>orderBy</code> exclut
+silencieusement les documents dépourvus du champ : le listing ordonné en
+mémoire garde tout ce qu'il a lu.</p>
 <p>La sémantique du curseur (comparaison positionnelle par
 <code>ZCursor.values</code> alignées sur <code>request.sorts</code>, <code>id</code> en départage,
 <code>id: null</code> légitime, ancre introuvable gérée <strong>gracieusement</strong> — page vide
@@ -86,12 +102,38 @@ ne lève (AD-10) : un type non comparable retombe sur « ne matche pas »
   ZDataRequest request, {
   required List&lt;ZFieldSpec&gt; schema,
 }) {
-  &#47;&#47; (1) Filtres (conjonction) sur les cellules brutes.
+  &#47;&#47; (1) Filtres (conjonction) sur les cellules brutes. Une clause déclarée
+  &#47;&#47; `ZFilter.servedBySource` est SAUTÉE : la source a promis de la servir, et
+  &#47;&#47; le champ qu&#39;elle vise n&#39;existe souvent pas sur la ligne (valeur calculée,
+  &#47;&#47; colonne non projetée) — la ré-appliquer ici ne la vérifierait pas, elle
+  &#47;&#47; viderait le listing.
   var result = rows;
   for (final filter in request.filters) {
+    if (filter.sourceOnly) continue;
     result = &lt;ZListRow&gt;[
       for (final row in result)
         if (_matchesFilter(row, filter)) row,
+    ];
+  }
+  &#47;&#47; (1 bis) Disjonctions : chaque groupe est ANDé aux filtres et aux autres
+  &#47;&#47; groupes, mais ses clauses sont en OR — une ligne suffit à retenir dès
+  &#47;&#47; qu&#39;une clause la retient. Un groupe SANS clause n&#39;exprime aucune intention :
+  &#47;&#47; il est ignoré (il n&#39;élargit ni ne restreint), là où le lire comme « ne
+  &#47;&#47; retenir personne » viderait le listing sans recours.
+  for (final group in request.filterGroups) {
+    if (group.isEmpty) continue;
+    &#47;&#47; Une clause servie par la source n&#39;est pas jugeable ici : elle est
+    &#47;&#47; retirée du OR. Un groupe qui n&#39;en contient que de celles-là n&#39;a plus
+    &#47;&#47; aucune clause jugeable — il redevient inerte, plutôt que de vider le
+    &#47;&#47; listing sur une disjonction que le socle ne sait pas évaluer.
+    final judged = &lt;ZFilter&gt;[
+      for (final clause in group.clauses)
+        if (!clause.sourceOnly) clause,
+    ];
+    if (judged.isEmpty) continue;
+    result = &lt;ZListRow&gt;[
+      for (final row in result)
+        if (_matchesAnyFilter(row, judged)) row,
     ];
   }
   &#47;&#47; (2) Recherche sans accents sur le domaine déclaré par la requête
@@ -161,7 +203,7 @@ ne lève (AD-10) : un type non comparable retombe sur « ne matche pas »
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

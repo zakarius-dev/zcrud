@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zChatTileShellStyleOf function from the zcrud_chat library, for the Dart programming language.">
+  <title>zChatTileShellStyleOf function - zcrud_chat library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat.dart</a></li>
+    <li class="self-crumb">zChatTileShellStyleOf function</li>
+  </ol>
+  <div class="self-name">zChatTileShellStyleOf</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_chat&#47;zcrud_chat-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zChatTileShellStyleOf</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="../zcrud_chat/ZChatTileShellStyle-class.html">ZChatTileShellStyle</a></span>
+<span class="name ">zChatTileShellStyleOf</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="zChatTileShellStyleOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span></li>
+<li><span class="parameter" id="zChatTileShellStyleOf-param-shell"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatTileShell-class.html">ZChatTileShell</a></span> <span class="parameter-name">shell</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Résout une coquille contre le thème ambiant : paramètre, puis jeton, puis
+référence.</p>
+<p>Ne lève jamais (invariant AD-10) : une valeur absurde est écrêtée, un
+scope absent retombe sur la référence.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZChatTileShellStyle zChatTileShellStyleOf(
+  BuildContext context, {
+  required ZChatTileShell shell,
+}) {
+  final ZcrudTheme? theme = ZcrudScope.maybeOf(context)?.theme;
+  final bool filled =
+      shell.toggle.filled ?? ZChatNotebookReference.tileToggleFilled;
+  return ZChatTileShellStyle(
+    &#47;&#47; Le filet ne connaît aucune valeur : il demande un RÔLE au thème de
+    &#47;&#47; l&#39;hôte. `&#39;&#39;` n&#39;est pas une clé — c&#39;est l&#39;absence de clé, qui envoie
+    &#47;&#47; directement au slot de repli.
+    borderColor:
+        shell.borderColor ??
+        zResolveColorKeyOrSlot(
+          context,
+          &#39;&#39;,
+          slotIndex: ZChatNotebookReference.tileBorderColorSlot,
+        ).onColor,
+    &#47;&#47; Une épaisseur négative est écrêtée à 0 : un paramètre absurde ne fait
+    &#47;&#47; pas lever le rendu.
+    borderWidth: (shell.borderWidth ?? ZChatNotebookReference.tileBorderWidth)
+        .clamp(0.0, double.infinity),
+    radius:
+        shell.radius ?? theme?.radiusM ?? ZChatNotebookReference.tileRadius,
+    backgroundColor: shell.backgroundColor,
+    padding: shell.padding ?? ZChatNotebookReference.tilePadding,
+    margin: shell.margin ?? ZChatNotebookReference.tileMargin,
+    &#47;&#47; Une coiffe de zéro ligne serait une coiffe invisible mais annoncée :
+    &#47;&#47; le plancher est 1.
+    topicMaxLines: (shell.topicMaxLines ??
+            ZChatNotebookReference.tileTopicMaxLines)
+        .clamp(1, 0x7fffffff),
+    topicWeight: ZChatNotebookReference.messageTitleWeight,
+    showTimestamp:
+        shell.showTimestamp ??
+        theme?.chatBubbleShowTimestamp ??
+        ZChatNotebookReference.showTimestamp,
+    toggleAlignment:
+        shell.toggle.alignment ?? ZChatNotebookReference.tileToggleAlignment,
+    toggleRadius:
+        shell.toggle.radius ?? ZChatNotebookReference.tileToggleRadius,
+    togglePadding:
+        shell.toggle.padding ?? ZChatNotebookReference.tileTogglePadding,
+    toggleFill: filled
+        ? zResolveColorKeyOrSlot(
+            context,
+            shell.toggle.fillColorKey ?? &#39;&#39;,
+            slotIndex:
+                shell.toggle.fillSlotIndex ??
+                ZChatNotebookReference.tileToggleFillSlot,
+          )
+        : null,
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat</a></li>
+    <li class="self-crumb">zChatTileShellStyleOf function</li>
+</ol>
+
+    <h5>zcrud_chat library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

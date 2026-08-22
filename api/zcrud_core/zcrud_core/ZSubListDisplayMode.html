@@ -63,18 +63,20 @@
 <p>Extension <strong>additive</strong> <code>const</code> (invariant AD-4, jamais <code>sealed</code>) : ajoute
 un mode sans rien retirer. Valeurs en <strong>camelCase</strong>.</p>
 <ul>
-<li><a href="../zcrud_core/ZSubListDisplayMode.html">inline</a> (<strong>défaut</strong>, rétro-compat) : chaque item déballe TOUS ses
-sous-champs en <strong>sous-formulaire imbriqué</strong> (mini-CRUD inline). Aucun
-changement pour les configs existantes.</li>
-<li><a href="../zcrud_core/ZSubListDisplayMode.html">compact</a> : <strong>liste résumé</strong> (une ligne/valeurs de résumé par item) +
-<strong>dialog d'édition par item</strong> (ajouter/consulter/modifier/supprimer),
-chaque action <strong>filtrée par <code>ZAcl</code></strong> — sans imposer le déballage inline
-de tous les items.</li>
+<li><a href="../zcrud_core/ZSubListDisplayMode.html">compact</a> (<strong>défaut</strong> depuis la rupture assumée décrite sur
+<a href="../zcrud_core/ZSubListConfig/displayMode.html">ZSubListConfig.displayMode</a>) : <strong>table de résumé</strong> (une ligne par item,
+une colonne par valeur de résumé) + <strong>formulaire d'édition par item</strong>
+(ajouter/consulter/modifier/supprimer), chaque action <strong>filtrée par
+<code>ZAcl</code></strong> — sans imposer le déballage inline de tous les items.</li>
+<li><a href="../zcrud_core/ZSubListDisplayMode.html">inline</a> : chaque item déballe TOUS ses sous-champs en <strong>sous-formulaire
+imbriqué</strong> (mini-CRUD inline). C'est un mode <strong>natif zcrud</strong> — le moteur
+legacy n'a pas d'équivalent — et il reste <strong>pleinement disponible</strong> : une
+ligne de déclaration (<code>displayMode: ZSubListDisplayMode.inline</code>) rend
+exactement ce que rendait l'ancien défaut.</li>
 <li><a href="../zcrud_core/ZSubListDisplayMode.html">tags</a> : <strong>rangée de puces</strong> (<code>Wrap</code>/<code>InputChip</code>) présentant le résumé de
 chaque item + bouton d'ajout réutilisant la machinerie de création
 (dialog par item). <strong>Rendu natif minimal zéro-dépendance</strong> — additif,
-opt-in : jamais atteint sans <code>displayMode: ZSubListDisplayMode.tags</code>
-(<code>inline</code> reste le défaut, rétro-compat stricte).</li>
+opt-in : jamais atteint sans <code>displayMode: ZSubListDisplayMode.tags</code>.</li>
 </ul>
 </section>
 
@@ -114,7 +116,8 @@ opt-in : jamais atteint sans <code>displayMode: ZSubListDisplayMode.tags</code>
 
 </dt>
 <dd>
-  <p>Sous-formulaires imbriqués empilés (comportement par défaut).</p>
+  <p>Sous-formulaires imbriqués empilés (mode natif zcrud, sans contrepartie
+legacy — déclaratif, plus le défaut).</p>
   
 
 </dd>
@@ -126,7 +129,8 @@ opt-in : jamais atteint sans <code>displayMode: ZSubListDisplayMode.tags</code>
 
 </dt>
 <dd>
-  <p>Liste résumé + dialog d'édition par item, actions filtrées par <code>ZAcl</code>.</p>
+  <p>Table de résumé + formulaire d'édition par item, actions filtrées par
+<code>ZAcl</code> (<strong>défaut</strong>).</p>
   
 
 </dd>
@@ -307,7 +311,7 @@ natif minimal zéro-dépendance.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

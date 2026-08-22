@@ -68,6 +68,9 @@
 <li><span class="parameter" id="param-layout"><span class="type-annotation">ZListLayout?</span> <span class="parameter-name">layout</span>, </span></li>
 <li><span class="parameter" id="param-itemBuilder"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudItemBuilder.html">ZCrudItemBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">itemBuilder</span>, </span></li>
 <li><span class="parameter" id="param-tabs"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZListTab</span>&gt;</span>?</span> <span class="parameter-name">tabs</span>, </span></li>
+<li><span class="parameter" id="param-tabsScrollable"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">tabsScrollable</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-tabsStore"><span class="type-annotation"><a href="../../zcrud_screen/ZListTabsStore-class.html">ZListTabsStore</a>?</span> <span class="parameter-name">tabsStore</span>, </span></li>
+<li><span class="parameter" id="param-tabsScopeKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">tabsScopeKey</span>, </span></li>
 <li><span class="parameter" id="param-query"><span class="type-annotation"><a href="../../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a></span> <span class="parameter-name">query</span> = <span class="default-value">const ZListQueryPolicy()</span>, </span></li>
 <li><span class="parameter" id="param-header"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">header</span>, </span></li>
 <li><span class="parameter" id="param-canCreate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">canCreate</span> = <span class="default-value">true</span>, </span></li>
@@ -84,13 +87,17 @@
 <li><span class="parameter" id="param-onSave"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudSave.html">ZCrudSave</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onSave</span>, </span></li>
 <li><span class="parameter" id="param-editionBuilder"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudEditionBuilder.html">ZCrudEditionBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">editionBuilder</span>, </span></li>
 <li><span class="parameter" id="param-defaultItemBuilder"><span class="type-annotation">T</span> <span class="parameter-name">defaultItemBuilder</span>()?, </span></li>
+<li><span class="parameter" id="param-history"><span class="type-annotation">ZEntityHistorySource<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">history</span>, </span></li>
 <li><span class="parameter" id="param-rowActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZRowAction<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">rowActions</span>, </span></li>
 <li><span class="parameter" id="param-trashRowActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZRowAction<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">trashRowActions</span>, </span></li>
 <li><span class="parameter" id="param-columnPolicy"><span class="type-annotation">ZColumnPolicy?</span> <span class="parameter-name">columnPolicy</span>, </span></li>
 <li><span class="parameter" id="param-collectionId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">collectionId</span>, </span></li>
 <li><span class="parameter" id="param-actions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZAppBarAction</span>&gt;</span></span> <span class="parameter-name">actions</span> = <span class="default-value">const &lt;ZAppBarAction&gt;[]</span>, </span></li>
+<li><span class="parameter" id="param-actionsBuilder"><span class="type-annotation"><a href="../../zcrud_screen/ZAppBarActionsBuilder.html">ZAppBarActionsBuilder</a>?</span> <span class="parameter-name">actionsBuilder</span>, </span></li>
 <li><span class="parameter" id="param-appBarActions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>&gt;</span></span> <span class="parameter-name">appBarActions</span> = <span class="default-value">const &lt;Widget&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-leading"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">leading</span>, </span></li>
+<li><span class="parameter" id="param-drawer"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">drawer</span>, </span></li>
+<li><span class="parameter" id="param-endDrawer"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">endDrawer</span>, </span></li>
 <li><span class="parameter" id="param-rowAcl"><span class="type-annotation">ZRowAclResolver<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">rowAcl</span>, </span></li>
 <li><span class="parameter" id="param-actionAclMode"><span class="type-annotation">ZActionAclMode</span> <span class="parameter-name">actionAclMode</span> = <span class="default-value">ZActionAclMode.hide</span>, </span></li>
 <li><span class="parameter" id="param-rowActionsPresentation"><span class="type-annotation"><a href="../../zcrud_screen/ZRowActionsPresentation.html">ZRowActionsPresentation</a></span> <span class="parameter-name">rowActionsPresentation</span> = <span class="default-value">ZRowActionsPresentation.inline</span>, </span></li>
@@ -126,6 +133,9 @@
   this.layout,
   this.itemBuilder,
   this.tabs,
+  this.tabsScrollable = false,
+  this.tabsStore,
+  this.tabsScopeKey,
   this.query = const ZListQueryPolicy(),
   this.header,
   this.canCreate = true,
@@ -147,13 +157,17 @@
   this.onSave,
   this.editionBuilder,
   this.defaultItemBuilder,
+  this.history,
   this.rowActions,
   this.trashRowActions,
   this.columnPolicy,
   this.collectionId,
   this.actions = const &lt;ZAppBarAction&gt;[],
+  this.actionsBuilder,
   this.appBarActions = const &lt;Widget&gt;[],
   this.leading,
+  this.drawer,
+  this.endDrawer,
   this.rowAcl,
   this.actionAclMode = ZActionAclMode.hide,
   this.rowActionsPresentation = ZRowActionsPresentation.inline,
@@ -192,7 +206,7 @@
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

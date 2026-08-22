@@ -68,6 +68,27 @@ première page, page suivante, recherche, vue corbeille comprise.</p>
 l'exercice courant »), pas un choix de l'usager : un filtre appliqué
 ensuite s'y <strong>ajoute</strong> en conjonction, il ne les remplace jamais. Vide
 (défaut) = aucun filtre permanent.</p>
+<p><strong>Une clause que seule la base sait trancher</strong> se déclare ici aussi, avec
+<code>ZFilter.servedBySource</code> :</p>
+<pre class="language-dart"><code class="language-dart">// `etat_depotage` est calculé côté source : aucune colonne ne le porte.
+baseFilters: &lt;ZFilter&gt;[
+  ZFilter.servedBySource('etat_depotage', ZFilterOp.isIn, &lt;String&gt;['termine']),
+],
+</code></pre>
+<p>Dès qu'un listing est servi en mémoire (voir <a href="../../zcrud_screen/ZListQueryPolicy/paginationMode.html">paginationMode</a>,
+<a href="../../zcrud_screen/ZListQueryPolicy/itemFilter.html">itemFilter</a>, <a href="../../zcrud_screen/ZListQueryPolicy/baseFilterGroups.html">baseFilterGroups</a>, ou une recherche en cours), les filtres
+de la requête sont <strong>ré-appliqués</strong> aux lignes projetées — c'est ce qui
+les rend exacts devant une source qui ne les traduit pas. Une clause
+visant un champ <strong>absent de la ligne</strong> n'y trouve alors rien et <strong>vide le
+listing</strong> dès le premier rendu ; la déclarer servie par la source la
+laisse partir dans la requête sans jamais être rejouée, ce qui supprime
+l'obligation d'ajouter une colonne « pont » au seul bénéfice du filtre.</p>
+<p>⚠️ C'est une <strong>promesse faite à la source</strong>, pas une garantie du socle :
+devant un dépôt qui ne sert pas la clause — ou sur la voie
+<code>ZCrudSource.items</code>, où il n'y a pas de source à qui adresser la promesse
+— elle ne filtre <strong>rien</strong>, et l'écran montre plus que ce qui a été
+déclaré, sans erreur ni avertissement. À réserver aux clauses dont le
+dépôt est connu capable ; sinon, une clause ordinaire ou un <a href="../../zcrud_screen/ZListQueryPolicy/itemFilter.html">itemFilter</a>.</p>
 </section>
 
       
@@ -102,7 +123,7 @@ ensuite s'y <strong>ajoute</strong> en conjonction, il ne les remplace jamais. V
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -57,7 +57,7 @@
       <span class="name ">ZFieldWidget</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-controller"><span>required</span> <span class="type-annotation"><a href="../../zcrud_core/ZFormController-class.html">ZFormController</a></span> <span class="parameter-name">controller</span>, </span></li>
 <li><span class="parameter" id="param-field"><span>required</span> <span class="type-annotation"><a href="../../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, </span></li>
 <li><span class="parameter" id="param-autovalidateMode"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/AutovalidateMode.html">AutovalidateMode</a>?</span> <span class="parameter-name">autovalidateMode</span>, </span></li>
-<li><span class="parameter" id="param-readMode"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readMode</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-readMode"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">readMode</span>, </span></li>
 <li><span class="parameter" id="param-onInit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onInit</span>, </span></li>
 <li><span class="parameter" id="param-onBuild"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onBuild</span>, </span></li>
 <li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
@@ -77,7 +77,7 @@
   required this.controller,
   required this.field,
   this.autovalidateMode,
-  this.readMode = false,
+  this.readMode,
   this.onInit,
   this.onBuild,
   super.key,
@@ -109,7 +109,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

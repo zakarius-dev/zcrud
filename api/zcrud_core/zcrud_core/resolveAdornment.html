@@ -58,6 +58,7 @@
 <span class="name ">resolveAdornment</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="resolveAdornment-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span></li>
 <li><span class="parameter" id="resolveAdornment-param-adornment"><span class="type-annotation"><a href="../zcrud_core/ZFieldAdornment-class.html">ZFieldAdornment</a>?</span> <span class="parameter-name">adornment</span>, {</span></li>
 <li><span class="parameter" id="resolveAdornment-param-field"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, </span></li>
+<li><span class="parameter" id="resolveAdornment-param-valueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">valueOf</span>, </span></li>
 </ol>})
 
         
@@ -68,6 +69,13 @@
   <p>Traduit <code>adornment</code> en <code>Widget?</code> <strong>défensivement</strong> (invariant AD-10) pour
 le <code>field</code> décoré. <code>null</code> (adornment absent OU clé non résolue) ⇒ aucun
 slot rendu.</p>
+<p><code>valueOf</code> est le <strong>lecteur nommé</strong> du formulaire hôte (typiquement fourni
+par le dispatcher de champ). Il sert un ornement <code>.widget</code> de deux façons :
+la <strong>valeur courante</strong> du champ orné (<code>valueOf(field.name)</code>, exposée en
+<code>ZFieldWidgetContext.value</code>) et la lecture d'un <strong>autre</strong> champ. Omis
+(<code>null</code>), l'ornement est rendu sans valeur — c'est le cas d'une composition
+hors formulaire, et le comportement des ornements <code>.text</code>/<code>.icon</code> est
+inchangé dans tous les cas.</p>
 <p>Aucune couleur en dur (invariant FR-26) : le texte hérite du <code>TextTheme</code>,
 l'icône du <code>IconTheme</code> ambiant. Les insets éventuels sont directionnels
 (invariant AD-13).</p>
@@ -81,6 +89,7 @@ l'icône du <code>IconTheme</code> ambiant. Les insets éventuels sont direction
   BuildContext context,
   ZFieldAdornment? adornment, {
   required ZFieldSpec field,
+  ZValueOf? valueOf,
 }) {
   if (adornment == null) return null;
   switch (adornment.kind) {
@@ -96,9 +105,9 @@ l'icône du <code>IconTheme</code> ambiant. Les insets éventuels sont direction
       &#47;&#47; Clé inconnue ⇒ slot omis (jamais de throw — invariant AD-10).
       return data == null ? null : Icon(data);
     case ZAdornmentKind.widget:
-      &#47;&#47; Cas état-dépendant : le widget host lit l&#39;état via son propre
-      &#47;&#47; context&#47;scope. `value`&#47;`onChanged` ne portent pas de sémantique
-      &#47;&#47; d&#39;édition pour un ornement décoratif (display-only).
+      &#47;&#47; Cas état-dépendant : l&#39;ornement reçoit la valeur COURANTE du champ
+      &#47;&#47; qu&#39;il orne et le lecteur nommé des autres champs. `onChanged` reste
+      &#47;&#47; inerte — un ornement est un affichage (display-only).
       final builder =
           ZcrudScope.maybeOf(context)?.widgetRegistry?.tryBuilderFor(adornment.value);
       if (builder == null) return null;
@@ -106,8 +115,9 @@ l'icône du <code>IconTheme</code> ambiant. Les insets éventuels sont direction
         context,
         ZFieldWidgetContext(
           field: field,
-          value: null,
+          value: valueOf?.call(field.name),
           onChanged: _noop,
+          valueOf: valueOf,
         ),
       );
   }
@@ -138,7 +148,7 @@ l'icône du <code>IconTheme</code> ambiant. Les insets éventuels sont direction
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

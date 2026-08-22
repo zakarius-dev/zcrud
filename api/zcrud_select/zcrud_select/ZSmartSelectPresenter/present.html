@@ -223,8 +223,22 @@ Widget present(BuildContext context, ZSelectPresentation presentation) {
   &#47;&#47; actions à `readOnly`. Ici elles suivent `enabled`, comme **Créer** — les
   &#47;&#47; trois écrivent la sélection (auto-sélection du résultat), et une écriture
   &#47;&#47; sur un champ en lecture seule n&#39;a pas de sens.
+  &#47;&#47; Les droits sont lus UNE fois pour ce rendu, jamais dans le builder de
+  &#47;&#47; chaque option : l&#39;ACL de l&#39;hôte reste hors du chemin de défilement
+  &#47;&#47; (AD-2&#47;SM-1). `offers*` est la lecture défensive AD-10 du port : un
+  &#47;&#47; getter qui lève ferme seulement le geste concerné.
+  final ZRelationCrudHandler? crud = presentation.crudHandler;
+  final bool offersCreate = crud?.offersCreate ?? false;
+  final bool offersEdit = crud?.offersEdit ?? false;
+  final bool offersCopy = crud?.offersCopy ?? false;
+
+  &#47;&#47; Ce booléen gouverne le SLOT SECONDAIRE des options (pas le
+  &#47;&#47; déclencheur). Un handler sans aucun geste offert n&#39;ajoute donc aucune
+  &#47;&#47; surface. Le déclencheur, lui, reste réactivable en lecture seule par le
+  &#47;&#47; seul `choiceBuilder`, conformément à sa règle documentée ci-dessus :
+  &#47;&#47; ouvrir une feuille sans action CRUD serait une affordance vide.
   final bool crudRowActions = presentation.choiceSecondaryBuilder == null &amp;&amp;
-      presentation.crudHandler != null &amp;&amp;
+      (offersEdit || offersCopy) &amp;&amp;
       enabled;
 
   &#47;&#47; FR-26 — infobulles RÉSOLUES ICI, dans le `context` du CHAMP, et
@@ -317,6 +331,8 @@ Widget present(BuildContext context, ZSelectPresentation presentation) {
                     presentation,
                     choice,
                     multiple: true,
+                    offersEdit: offersEdit,
+                    offersCopy: offersCopy,
                     editTooltip: editTooltip,
                     copyTooltip: copyTooltip,
                   )
@@ -336,6 +352,7 @@ Widget present(BuildContext context, ZSelectPresentation presentation) {
                 state,
                 presentation,
                 multiple: true,
+                offersCreate: offersCreate,
                 withFilterToggle: !presentation.searchable,
               )
           : null,
@@ -424,6 +441,8 @@ Widget present(BuildContext context, ZSelectPresentation presentation) {
                   presentation,
                   choice,
                   multiple: false,
+                  offersEdit: offersEdit,
+                  offersCopy: offersCopy,
                   editTooltip: editTooltip,
                   copyTooltip: copyTooltip,
                 )
@@ -437,6 +456,7 @@ Widget present(BuildContext context, ZSelectPresentation presentation) {
               state,
               presentation,
               multiple: false,
+              offersCreate: offersCreate,
               withFilterToggle: true,
             )
         : null,
@@ -507,7 +527,7 @@ Widget present(BuildContext context, ZSelectPresentation presentation) {
 <footer>
   <span class="no-break">
     zcrud_select
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -69,10 +69,20 @@ corrompu retourne N-1 entités.</p>
 <code>updated_at</code> (<code>ZSyncMeta</code>, snake_case, ISO-8601) sont <strong>fusionnées</strong> dans le
 document mais restent séparées côté modèle (aucun champ métier touché par
 <a href="../zcrud_firestore/FirebaseZRepositoryImpl/softDelete.html">softDelete</a>/<a href="../zcrud_firestore/FirebaseZRepositoryImpl/restore.html">restore</a>).</p>
-<p><strong>Recherche accent-insensible — limite documentée</strong> : Firestore n'a ni
+<p><strong>Recherche accent-insensible — limite DÉCLARÉE</strong> : Firestore n'a ni
 <code>LIKE</code>, ni full-text, ni pliage diacritique natif. <code>ZDataRequest.search</code>
 n'est donc <strong>pas</strong> servi ici (préfixe/égalité ou champ normalisé pré-calculé
 requis côté application). Aucune normalisation NFD n'est appliquée.</p>
+<p>Cette limite n'est plus seulement documentée : l'adaptateur applique le
+mixin <code>ZDelegatesSearch</code>, par lequel il <strong>déclare</strong> au socle qu'il délègue
+la recherche. Un listing assemblé (<code>ZCrudScreen</code>, <code>ZListController</code>) le lit
+et, <strong>dès qu'un terme est saisi</strong>, filtre en mémoire par le moteur du socle
+— recherche exacte, portée de colonnes et pliage diacritique compris — au
+lieu d'afficher une barre inerte. Le coût de ce chemin est une lecture
+<strong>non paginée</strong> de la collection, le temps de la recherche : il convient à
+un listing dont le jeu tient en mémoire. Au-delà, la voie recommandée reste
+un <strong>champ normalisé pré-calculé</strong> interrogeable par égalité ou préfixe —
+le dépôt sert alors la recherche, et n'applique pas ce mixin.</p>
 <p><strong>PRÉCONDITION — collection « zcrud-native »</strong> : cet adaptateur suppose
 une collection gérée <strong>exclusivement</strong> par zcrud, où <strong>tout</strong> document
 écrit par <a href="../zcrud_firestore/FirebaseZRepositoryImpl/save.html">save</a> porte SYSTÉMATIQUEMENT (invariant <strong>exécutoire</strong>, garanti
@@ -443,7 +453,7 @@ Cette constante est <strong>backend-spécifique</strong> et vit donc <strong>exc
 <footer>
   <span class="no-break">
     zcrud_firestore
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

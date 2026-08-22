@@ -59,6 +59,8 @@
 <li><span class="parameter" id="copyWith-param-builder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a>?</span> <span class="parameter-name">builder</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span>?</span> <span class="parameter-name">baseFilters</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-baseFilterGroups"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZFilterGroup-class.html">ZFilterGroup</a></span>&gt;</span>?</span> <span class="parameter-name">baseFilterGroups</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-itemFilter"><span class="type-annotation"><a href="../../zcrud_core/ZItemFilter-class.html">ZItemFilter</a>?</span> <span class="parameter-name">itemFilter</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-defaultItemBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">defaultItemBuilder</span>()?, </span></li>
 <li><span class="parameter" id="copyWith-param-pageKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">pageKey</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-canCreate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">canCreate</span>, </span></li>
@@ -89,6 +91,8 @@ celle qui vient d'être ajoutée.</p>
   WidgetBuilder? builder,
   IconData? icon,
   List&lt;ZFilter&gt;? baseFilters,
+  List&lt;ZFilterGroup&gt;? baseFilterGroups,
+  ZItemFilter? itemFilter,
   Object? Function()? defaultItemBuilder,
   String? pageKey,
   bool? canCreate,
@@ -101,6 +105,8 @@ celle qui vient d'être ajoutée.</p>
     builder: builder ?? this.builder,
     icon: icon ?? this.icon,
     baseFilters: baseFilters ?? this.baseFilters,
+    baseFilterGroups: baseFilterGroups ?? this.baseFilterGroups,
+    itemFilter: itemFilter ?? this.itemFilter,
     defaultItemBuilder: defaultItemBuilder ?? this.defaultItemBuilder,
     pageKey: pageKey ?? this.pageKey,
     canCreate: canCreate ?? this.canCreate,
@@ -136,7 +142,7 @@ celle qui vient d'être ajoutée.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

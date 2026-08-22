@@ -91,6 +91,11 @@ explicitement, <code>ZCrudScreenActions.updateOpener</code> reste l'édition ;</
 surface vers l'édition sans la refermer, si <code>ZCrudAction.update</code> est
 accordé.</li>
 </ul>
+<p>La fiche est offerte <strong>en vue corbeille aussi</strong>, aux mêmes conditions
+(<code>ZCrudAction.view</code>) : c'est là qu'on en a le plus besoin, la suppression
+définitive ne se rejouant pas. Les gestes d'<strong>écriture</strong>, eux, restent
+réservés aux vivants — la fiche ouverte depuis la corbeille n'offre donc
+aucun retour vers l'édition, quelle que soit l'ACL.</p>
 <p>Sans formulaire disponible (<a href="../../zcrud_screen/ZCrudScreen/editionBuilder.html">editionBuilder</a>, ou registre + schéma), il
 n'y a rien à consulter : le drapeau reste alors sans effet. En
 <a href="../../zcrud_screen/ZScreenMode.html">ZScreenMode.locked</a>, il est ignoré — l'écran verrouillé n'ouvre rien.</p>
@@ -128,7 +133,7 @@ n'y a rien à consulter : le drapeau reste alors sans effet. En
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

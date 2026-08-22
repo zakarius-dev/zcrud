@@ -68,6 +68,19 @@ porte aussi un canal textuel et un canal de forme
 <p>Une clé inconnue rend <code>null</code> côté <a href="../../zcrud_chat/ZChatNotebookSkin-class.html">ZChatNotebookSkin</a> : une capacité
 future n'a pas d'accent de référence, elle n'en fabrique pas un au
 hasard (invariant AD-10).</p>
+<h2 id="neuf-capacits-et-ce-que-la-table-garantit">Neuf capacités, et ce que la table garantit</h2>
+<p>Les neuf clés publiées (<a href="../../zcrud_chat/kZChatCapabilityMindmap-constant.html">kZChatCapabilityMindmap</a>,
+<a href="../../zcrud_chat/kZChatCapabilityFlashcards-constant.html">kZChatCapabilityFlashcards</a>, <a href="../../zcrud_chat/kZChatCapabilityStory-constant.html">kZChatCapabilityStory</a>,
+<a href="../../zcrud_chat/kZChatCapabilityHumour-constant.html">kZChatCapabilityHumour</a>, <a href="../../zcrud_chat/kZChatCapabilityClassroom-constant.html">kZChatCapabilityClassroom</a>,
+<a href="../../zcrud_chat/kZChatCapabilitySummary-constant.html">kZChatCapabilitySummary</a>, <a href="../../zcrud_chat/kZChatCapabilityElaboration-constant.html">kZChatCapabilityElaboration</a>,
+<a href="../../zcrud_chat/kZChatCapabilityExamples-constant.html">kZChatCapabilityExamples</a>, <a href="../../zcrud_chat/kZChatCapabilityPoem-constant.html">kZChatCapabilityPoem</a>) portent chacune un
+accent <strong>distinct</strong> : le code-couleur est le repère que l'utilisateur
+apprend, deux capacités ne partagent donc jamais une teinte.</p>
+<p>Cette table est un <strong>défaut</strong>, pas une liste fermée. Une clé qu'elle ne
+connaît pas reste servie par l'accent que l'appelant déclare — au niveau
+de la spec d'artefact, de <code>ZChatNotebookSkin.capabilityAccents</code> ou du
+jeton <code>ZcrudTheme.chatCapabilityAccents</code>. Un consommateur peut donc
+inventer ses propres capacités sans rien perdre du rendu.</p>
 </section>
 
       
@@ -75,6 +88,26 @@ hasard (invariant AD-10).</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static const Map&lt;String, ZChatNotebookCapabilityStyle&gt; capabilities =
     &lt;String, ZChatNotebookCapabilityStyle&gt;{
+      &#47;&#47; ── Note d&#39;implémentation — D&#39;OÙ viennent ces neuf valeurs ────────
+      &#47;&#47;
+      &#47;&#47; Le relevé initial n&#39;en portait que cinq ; l&#39;écran legacy en rend
+      &#47;&#47; NEUF. Les quatre dernières (`summary`, `elaboration`, `examples`,
+      &#47;&#47; `poem`) sont relevées sur la table d&#39;écran de
+      &#47;&#47; `chatbot_conversation_screen.dart`, lignes `:1297`, `:1306`,
+      &#47;&#47; `:1315`, `:1324`.
+      &#47;&#47;
+      &#47;&#47; 🔴 LE PIÈGE DE LA DOUBLE SOURCE. Deux sources coexistent chez
+      &#47;&#47; l&#39;hôte et elles DIVERGENT : le modèle (`ChatbotMessageTransformer`)
+      &#47;&#47; porte ses propres couleurs et donne `#2196F3` pour `summary`, là où
+      &#47;&#47; l&#39;écran donne `#607D8B`. Ce sont les valeurs d&#39;ÉCRAN qui sont
+      &#47;&#47; retenues — c&#39;est l&#39;écran qui décide de ce que l&#39;utilisateur voit.
+      &#47;&#47;
+      &#47;&#47; Un relevé futur reparti de l&#39;enum du modèle « corrigerait » donc
+      &#47;&#47; `summary` vers la teinte des flashcards : une régression
+      &#47;&#47; silencieuse, qui ne casse rien et change ce que l&#39;utilisateur
+      &#47;&#47; reconnaît. Le groupe A10 de `z_chat_cr84_artifacts_test.dart`
+      &#47;&#47; asserte la valeur d&#39;écran ET la divergence, pour que ce retour en
+      &#47;&#47; arrière rougisse.
       kZChatCapabilityMindmap: ZChatNotebookCapabilityStyle(
         accent: Color(0xFFFF9800),
         generatedLabelKey: kZChatLabelGenerated,
@@ -97,6 +130,32 @@ hasard (invariant AD-10).</p>
       ),
       kZChatCapabilityClassroom: ZChatNotebookCapabilityStyle(
         accent: Color(0xFF8BC34A),
+        generatedLabelKey: kZChatLabelGenerated,
+        generatedMarkSize: generatedMarkSize,
+      ),
+      &#47;&#47; ⚠️ Valeur d&#39;ÉCRAN (`:1297`), PAS celle de l&#39;enum du modèle, qui
+      &#47;&#47; porte `#2196F3` — cf. le piège de la double source ci-dessus.
+      kZChatCapabilitySummary: ZChatNotebookCapabilityStyle(
+        accent: Color(0xFF607D8B),
+        generatedLabelKey: kZChatLabelGenerated,
+        generatedMarkSize: generatedMarkSize,
+      ),
+      &#47;&#47; Valeur d&#39;écran `:1306`.
+      kZChatCapabilityElaboration: ZChatNotebookCapabilityStyle(
+        accent: Color(0xFF4CAF50),
+        generatedLabelKey: kZChatLabelGenerated,
+        generatedMarkSize: generatedMarkSize,
+      ),
+      &#47;&#47; Valeur d&#39;écran `:1315`.
+      kZChatCapabilityExamples: ZChatNotebookCapabilityStyle(
+        accent: Color(0xFFE91E63),
+        generatedLabelKey: kZChatLabelGenerated,
+        generatedMarkSize: generatedMarkSize,
+      ),
+      &#47;&#47; Valeur d&#39;écran `:1324`. 🔴 La seule des neuf qui échoue en thème
+      &#47;&#47; SOMBRE et tient en clair — cf. la table de contraste.
+      kZChatCapabilityPoem: ZChatNotebookCapabilityStyle(
+        accent: Color(0xFF9C27B0),
         generatedLabelKey: kZChatLabelGenerated,
         generatedMarkSize: generatedMarkSize,
       ),
@@ -129,7 +188,7 @@ hasard (invariant AD-10).</p>
 <footer>
   <span class="no-break">
     zcrud_chat
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

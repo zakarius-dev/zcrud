@@ -119,8 +119,8 @@ Widget build(BuildContext context) {
   final resolvedConfirm = confirmLabel ?? materialL10n.okButtonLabel;
   final resolvedCancel = cancelLabel ?? materialL10n.cancelButtonLabel;
 
-  return AlertDialog(
-    title: Text(title),
+  final dialog = AlertDialog(
+    title: title == null ? null : Text(title!),
     content: Text(message),
     &#47;&#47; `actions` disposées par le framework de façon directionnelle (RTL-safe).
     actions: &lt;Widget&gt;[
@@ -144,6 +144,19 @@ Widget build(BuildContext context) {
         child: Text(resolvedConfirm),
       ),
     ],
+  );
+
+  if (title != null) {
+    return dialog;
+  }
+
+  return Semantics(
+    key: _kNoTitleSemanticsKey,
+    label: message,
+    scopesRoute: true,
+    namesRoute: true,
+    explicitChildNodes: true,
+    child: dialog,
   );
 }</code></pre>
 </section>
@@ -173,7 +186,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_ui_kit
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

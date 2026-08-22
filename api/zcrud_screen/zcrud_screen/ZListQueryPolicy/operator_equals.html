@@ -109,8 +109,11 @@ bool operator ==(Object other) =&gt;
         pageSize == other.pageSize &amp;&amp;
         searchScope == other.searchScope &amp;&amp;
         searchFolding == other.searchFolding &amp;&amp;
+        paginationMode == other.paginationMode &amp;&amp;
+        itemFilter == other.itemFilter &amp;&amp;
         _sameSorts(sort, other.sort) &amp;&amp;
-        _sameFilters(baseFilters, other.baseFilters);</code></pre>
+        _sameFilters(baseFilters, other.baseFilters) &amp;&amp;
+        _sameGroups(baseFilterGroups, other.baseFilterGroups);</code></pre>
 </section>
 
 
@@ -138,7 +141,7 @@ bool operator ==(Object other) =&gt;
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

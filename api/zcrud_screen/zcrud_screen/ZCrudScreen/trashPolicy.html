@@ -67,7 +67,9 @@ définitivement (défaut : les trois, <code>ZTrashPolicy.full</code>).</p>
 <p>À distinguer de <a href="../../zcrud_screen/ZCrudScreen/trash.html">trash</a>, qui décide seulement si la corbeille <em>existe</em>.
 Un geste apparaît quand il est <strong>voulu</strong> (ici), <strong>possible</strong> (la source
 sait le servir) et <strong>autorisé</strong> (<code>ZAcl</code> : <code>delete</code>, <code>restore</code>, <code>clear</code>).
-Déclarer un geste ici n'accorde jamais un droit refusé par l'ACL.</p>
+Déclarer un geste ici n'accorde jamais un droit refusé par l'ACL.
+<code>ZTrashPolicy.viewAccess</code> peut remplacer le critère d'accès à la vue,
+mais ne modifie jamais les droits de restauration et de purge.</p>
 <pre class="language-dart"><code class="language-dart">// Corbeille consultable et restaurable, dont rien ne disparaît jamais :
 trashPolicy: ZTrashPolicy.withoutPurge,
 </code></pre>
@@ -105,7 +107,7 @@ trashPolicy: ZTrashPolicy.withoutPurge,
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

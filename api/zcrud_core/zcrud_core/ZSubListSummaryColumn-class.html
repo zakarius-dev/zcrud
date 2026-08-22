@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZSubListSummaryColumn class from the zcrud_core library, for the Dart programming language.">
+  <title>ZSubListSummaryColumn class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">ZSubListSummaryColumn class</li>
+  </ol>
+  <div class="self-name">ZSubListSummaryColumn</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+    data-below-sidebar="zcrud_core&#47;ZSubListSummaryColumn-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZSubListSummaryColumn</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p><strong>Colonne de résumé</strong> d'une sous-liste — pur-données <code>const</code> (invariants
+AD-3/AD-14 : aucune closure), déclarée dans <code>ZSubListConfig.summaryColumns</code>.</p>
+<p>Elle <strong>désigne une valeur</strong> de l'item (<a href="../zcrud_core/ZSubListSummaryColumn/name.html">name</a>) et dit comment l'afficher.
+Elle ne déclare <strong>pas un champ</strong> : rien n'est saisissable de son fait, aucune
+tranche n'est allouée, le formulaire d'item reste celui des <code>itemFields</code>.</p>
+<h2 id="primtre-de-mise-en-forme--born-et-volontairement">Périmètre de mise en forme — BORNÉ, et volontairement</h2>
+<p>Une colonne calculée sans mise en forme est à moitié utile : un montant rendu
+« 1500.0 » à côté d'une quantité rendue « 3 » n'apprend pas grand-chose. Deux
+réglages, pas trois :</p>
+<ul>
+<li><a href="../zcrud_core/ZSubListSummaryColumn/decimals.html">decimals</a> — nombre de décimales <strong>fixe</strong> (<code>toStringAsFixed</code>), appliqué au
+seul cas où la valeur est un <code>num</code>. Il vaut <strong>aussi</strong> déclaration de
+nature : une colonne qui fixe ses décimales est tenue pour <strong>numérique</strong>
+et cadrée en fin de colonne dans la table — c'est le seul signal dont
+dispose une colonne <strong>calculée</strong>, qui n'a pas de <code>ZFieldSpec</code> d'où lire
+son type ;</li>
+<li><a href="../zcrud_core/ZSubListSummaryColumn/suffixKey.html">suffixKey</a> — <strong>clé l10n</strong> d'un suffixe accolé à la valeur (« % », un
+symbole monétaire, une unité). Jamais un libellé codé en dur (FR-26).</li>
+</ul>
+<p><strong>Ce qui n'est PAS livré, et qu'il ne faut pas croire livré</strong> :</p>
+<ul>
+<li>aucun <strong>formatage monétaire localisé</strong> (séparateur de milliers, position du
+symbole, cadrage comptable) : cela demande un port de formatage, que ce
+socle n'a pas — le <code>isCurrency</code> du moteur legacy n'est donc <strong>pas</strong> porté,
+seulement son effet visible le plus simple (décimales + suffixe) ;</li>
+<li>aucun <strong>suffixe dérivé de l'item</strong> (le <code>suffixBuilder(item)</code> legacy, qui
+lisait l'unité de stock d'une ligne) : c'est une closure, elle ne peut pas
+vivre dans le domaine. Une colonne dont le suffixe varie par item se rend
+par le canal de seams (<code>itemTransformer</code> ou <code>itemBuilder</code>) ;</li>
+<li>aucun <strong>alignement ni largeur déclarés par colonne</strong> : la géométrie reste
+décidée par le socle. Elle n'est plus pour autant uniforme — la table
+dimensionne chaque colonne <strong>sur son contenu</strong> et cadre <strong>en fin</strong> les
+colonnes numériques (voir <a href="../zcrud_core/ZSubListSummaryColumn/decimals.html">decimals</a>) —, mais rien de tout cela ne se
+déclare ici : une colonne ne choisit pas sa largeur, elle la subit de ce
+qu'elle contient.</li>
+</ul>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZSubListSummaryColumn.new" class="callable">
+          <span class="name"><a href="../zcrud_core/ZSubListSummaryColumn/ZSubListSummaryColumn.html">ZSubListSummaryColumn</a></span><span class="signature">({<span class="parameter" id="param-name"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="param-labelKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">labelKey</span>, </span><span class="parameter" id="param-labelFallback"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">labelFallback</span>, </span><span class="parameter" id="param-decimals"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">decimals</span>, </span><span class="parameter" id="param-suffixKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">suffixKey</span>, </span><span class="parameter" id="param-suffixFallback"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">suffixFallback</span></span>})</span>
+        </dt>
+        <dd>
+          Construit une colonne de résumé <code>const</code>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="decimals" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSummaryColumn/decimals.html">decimals</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Nombre <strong>fixe</strong> de décimales (<code>toStringAsFixed</code>). <code>null</code> (défaut) ⇒ la
+valeur est rendue telle quelle, exactement comme aujourd'hui. Sans effet
+sur une valeur qui n'est pas un <code>num</code> (invariant AD-10 : une donnée d'une
+autre forme s'affiche, elle ne fait pas échouer la cellule).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSummaryColumn/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="labelFallback" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSummaryColumn/labelFallback.html">labelFallback</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Repli affiché quand <a href="../zcrud_core/ZSubListSummaryColumn/labelKey.html">labelKey</a> n'est résolue nulle part.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="labelKey" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSummaryColumn/labelKey.html">labelKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé l10n du <strong>libellé d'en-tête</strong> de la colonne (repli <a href="../zcrud_core/ZSubListSummaryColumn/labelFallback.html">labelFallback</a>,
+puis le <code>label</code> de l'<code>itemField</code> de même nom, puis <a href="../zcrud_core/ZSubListSummaryColumn/name.html">name</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="name" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSummaryColumn/name.html">name</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de la valeur affichée, dans l'item.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="suffixFallback" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSummaryColumn/suffixFallback.html">suffixFallback</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Repli affiché quand <a href="../zcrud_core/ZSubListSummaryColumn/suffixKey.html">suffixKey</a> n'est résolue nulle part.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="suffixKey" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSummaryColumn/suffixKey.html">suffixKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé l10n du <strong>suffixe</strong> accolé à la valeur, séparé par une espace
+insécable (« 1 500,00 F », « 12 % »). <code>null</code> (défaut) ⇒ aucun suffixe.
+Non appliqué à une cellule <strong>vide</strong> : un suffixe seul n'apprend rien.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_core/ZSubListSummaryColumn/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">ZSubListSummaryColumn class</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -85,8 +85,10 @@ mainly for debugging or logging.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 String toString() =&gt; &#39;ZListQueryPolicy(sort: $sort, &#39;
-    &#39;baseFilters: $baseFilters, pageSize: $pageSize, &#39;
-    &#39;searchScope: $searchScope, searchFolding: $searchFolding)&#39;;</code></pre>
+    &#39;baseFilters: $baseFilters, baseFilterGroups: $baseFilterGroups, &#39;
+    &#39;itemFilter: $itemFilter, pageSize: $pageSize, &#39;
+    &#39;searchScope: $searchScope, searchFolding: $searchFolding, &#39;
+    &#39;paginationMode: $paginationMode)&#39;;</code></pre>
 </section>
 
 
@@ -114,7 +116,7 @@ String toString() =&gt; &#39;ZListQueryPolicy(sort: $sort, &#39;
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -181,7 +181,8 @@ Widget build(BuildContext context) {
     validator: validator,
     &#47;&#47; Label enrichi + hint&#47;helper + ornements leading&#47;prefix&#47;suffix
     &#47;&#47; (répartis par `zFieldDecoration` selon `ZAdornmentKind`).
-    decoration: zFieldDecoration(context, field, bare: bare),
+    decoration:
+        zFieldDecoration(context, field, bare: bare, valueOf: valueOf),
     onChanged: onChanged,
   );
 }</code></pre>
@@ -212,7 +213,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

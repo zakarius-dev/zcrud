@@ -55,7 +55,10 @@
     <section class="multi-line-signature">
       const
       <span class="name ">ZSubListItemTemplate</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-labelKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span>, </span></li>
+<li><span class="parameter" id="param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">id</span>, </span></li>
+<li><span class="parameter" id="param-labelFallback"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">labelFallback</span>, </span></li>
 <li><span class="parameter" id="param-defaults"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">defaults</span> = <span class="default-value">const &lt;String, Object?&gt;{}</span>, </span></li>
+<li><span class="parameter" id="param-opensForm"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">opensForm</span> = <span class="default-value">true</span>, </span></li>
 </ol>})
     </section>
     
@@ -69,7 +72,10 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">const ZSubListItemTemplate({
   required this.labelKey,
+  this.id,
+  this.labelFallback,
   this.defaults = const &lt;String, Object?&gt;{},
+  this.opensForm = true,
 });</code></pre>
 </section>
 
@@ -98,7 +104,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

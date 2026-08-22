@@ -55,25 +55,35 @@
     
       <section class="multi-line-signature">
         
-        <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>
+        <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?
         <span class="name ">readMode</span>
         <div class="features"><span class="feature">final</span></div>
 
       </section>
       
 <section class="desc markdown">
-  <p><strong>Mode lecture GLOBAL</strong> — drapeau de PRÉSENTATION <strong>additif</strong>
-(défaut <code>false</code>), signal DISTINCT de <code>ZFieldSpec.readOnly</code>. Quand <code>true</code> et
-que la famille est « fiche-able » (<code>zReadModeCardable</code>), le champ est rendu
-en <strong>fiche de consultation</strong> (<a href="../../zcrud_core/ZReadOnlyFieldCard-class.html">ZReadOnlyFieldCard</a>) au lieu du widget
-d'édition grisé. Les familles non fiche-ables conservent leur rendu
-<code>readOnly</code> existant (jamais régressé). Propagé par <code>DynamicEdition.readOnly</code>.</p>
+  <p><strong>Mode de présentation</strong> de ce champ — signal DISTINCT de
+<code>ZFieldSpec.readOnly</code> (qui dit « ce champ-ci n'est pas modifiable », jamais
+comment le présenter).</p>
+<p><code>true</code> et famille « fiche-able » (<code>zReadModeCardable</code>) ⇒ le champ est rendu
+en <strong>fiche de consultation</strong> (<a href="../../zcrud_core/ZReadOnlyFieldCard-class.html">ZReadOnlyFieldCard</a>) : libellé au-dessus de
+la valeur, ni bordure, ni libellé flottant, ni ornement. Les familles non
+fiche-ables (sous-liste, item dynamique, signature, fichier…) conservent
+leur rendu <code>readOnly</code> existant.</p>
+<p><strong><code>null</code> (défaut) ⇒ le mode de la surface environnante</strong> (<a href="../../zcrud_core/ZReadModeScope-class.html">ZReadModeScope</a>,
+posé par <code>DynamicEdition</code>/<code>ZStepperEdition</code> d'après leur <code>readOnly</code>) ;
+<code>false</code> hors de toute surface. Le passer explicitement <strong>prime</strong> sur cette
+surface, dans les deux sens : <code>false</code> force la saisie au milieu d'une
+fiche, <code>true</code> force la fiche au milieu d'un formulaire.</p>
+<p>Le mode est arrêté au <strong>montage</strong> du champ (une fiche n'alloue ni
+contrôleur de texte ni clavier) : le faire changer suppose de remonter le
+champ, ce que fait l'écran assemblé en keyant la place sur le mode.</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final bool readMode;</code></pre>
+  <pre class="language-dart"><code class="language-dart">final bool? readMode;</code></pre>
 </section>
 
 
@@ -102,7 +112,7 @@ d'édition grisé. Les familles non fiche-ables conservent leur rendu
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

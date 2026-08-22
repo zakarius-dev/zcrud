@@ -56,9 +56,12 @@
       const
       <span class="name ">ZListQueryPolicy</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-sort"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSort</span>&gt;</span></span> <span class="parameter-name">sort</span> = <span class="default-value">const &lt;ZSort&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilter</span>&gt;</span></span> <span class="parameter-name">baseFilters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span></li>
+<li><span class="parameter" id="param-baseFilterGroups"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilterGroup</span>&gt;</span></span> <span class="parameter-name">baseFilterGroups</span> = <span class="default-value">const &lt;ZFilterGroup&gt;[]</span>, </span></li>
+<li><span class="parameter" id="param-itemFilter"><span class="type-annotation">ZItemFilter?</span> <span class="parameter-name">itemFilter</span>, </span></li>
 <li><span class="parameter" id="param-pageSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">pageSize</span>, </span></li>
 <li><span class="parameter" id="param-searchScope"><span class="type-annotation">ZSearchScope</span> <span class="parameter-name">searchScope</span> = <span class="default-value">ZSearchScope.searchableFields</span>, </span></li>
 <li><span class="parameter" id="param-searchFolding"><span class="type-annotation">ZSearchFolding</span> <span class="parameter-name">searchFolding</span> = <span class="default-value">ZSearchFolding.diacritics</span>, </span></li>
+<li><span class="parameter" id="param-paginationMode"><span class="type-annotation">ZListPaginationMode</span> <span class="parameter-name">paginationMode</span> = <span class="default-value">ZListPaginationMode.backendCursor</span>, </span></li>
 </ol>})
     </section>
     
@@ -74,9 +77,12 @@ défaut ne déclare rien et laisse le comportement inchangé.</p>
   <pre class="language-dart"><code class="language-dart">const ZListQueryPolicy({
   this.sort = const &lt;ZSort&gt;[],
   this.baseFilters = const &lt;ZFilter&gt;[],
+  this.baseFilterGroups = const &lt;ZFilterGroup&gt;[],
+  this.itemFilter,
   this.pageSize,
   this.searchScope = ZSearchScope.searchableFields,
   this.searchFolding = ZSearchFolding.diacritics,
+  this.paginationMode = ZListPaginationMode.backendCursor,
 });</code></pre>
 </section>
 
@@ -105,7 +111,7 @@ défaut ne déclare rien et laisse le comportement inchangé.</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

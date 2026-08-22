@@ -289,6 +289,15 @@ fonctions). Instanciable et <strong>isolé</strong> : deux instances ne partagen
   Config additive <code>const</code> du champ <strong>couleur</strong> (<code>color</code>).
 </dd>
 
+          <dt id="ZColorCycle">
+  <span class="name "><a href="../zcrud_core/ZColorCycle-class.html">ZColorCycle</a></span> 
+
+</dt>
+<dd>
+  Fait parcourir <a href="../zcrud_core/ZColorCycle/palette.html">palette</a> en boucle et confie la teinte courante à
+<a href="../zcrud_core/ZColorCycle/builder.html">builder</a>.
+</dd>
+
           <dt id="ZColorFieldWidget">
   <span class="name "><a href="../zcrud_core/ZColorFieldWidget-class.html">ZColorFieldWidget</a></span> 
 
@@ -509,10 +518,8 @@ des opérations.
 
 </dt>
 <dd>
-  Config triviale pur-cœur des champs <strong>date/heure</strong> (<code>dateTime</code>/<code>time</code>).
-Les bornes s'expriment soit comme <strong>clés d'autres champs</strong>
-(<a href="../zcrud_core/ZDateConfig/firstDateKey.html">firstDateKey</a>/<a href="../zcrud_core/ZDateConfig/lastDateKey.html">lastDateKey</a>, résolution cross-champ), soit comme
-<strong>littéraux ISO-8601</strong> (<a href="../zcrud_core/ZDateConfig/minDateIso.html">minDateIso</a>/<a href="../zcrud_core/ZDateConfig/maxDateIso.html">maxDateIso</a>).
+  Config triviale pur-cœur des champs <strong>date/heure</strong> (<code>dateTime</code>/<code>time</code>) et
+<strong>plage de dates</strong> (<code>dateRange</code>).
 </dd>
 
           <dt id="ZDateDisplayFormatter">
@@ -717,6 +724,14 @@ champs qu'elle regroupe. Peut être <strong>repliable</strong> (<a href="../zcru
   Contrat abstrait d'une entité canonique persistable.
 </dd>
 
+          <dt id="ZEntityHistorySource">
+  <span class="name "><a href="../zcrud_core/ZEntityHistorySource-class.html">ZEntityHistorySource</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Source optionnelle de l'historique d'une entité.
+</dd>
+
           <dt id="ZExportedBytes">
   <span class="name "><a href="../zcrud_core/ZExportedBytes-class.html">ZExportedBytes</a></span> 
 
@@ -819,7 +834,8 @@ décor-portantes en mode normal (<code>InputDecoration.label</code>) et par
 </dt>
 <dd>
   Contexte passé à un <a href="../zcrud_core/ZFieldWidgetBuilder.html">ZFieldWidgetBuilder</a> : la spec du champ, la valeur
-COURANTE de sa tranche et le callback d'écriture. Le builder <strong>lit</strong> <a href="../zcrud_core/ZFieldWidgetContext/value.html">value</a>
+COURANTE de sa tranche, le callback d'écriture et un <strong>lecteur nommé</strong>
+(<a href="../zcrud_core/ZFieldWidgetContext/valueOf.html">valueOf</a>) des autres champs du même formulaire. Le builder <strong>lit</strong> <a href="../zcrud_core/ZFieldWidgetContext/value.html">value</a>
 et <strong>écrit</strong> via <a href="../zcrud_core/ZFieldWidgetContext/onChanged.html">onChanged</a> — l'appel reste <strong>dans</strong> la frontière de rebuild
 du dispatcher (invariant AD-2 : aucune souscription élargie).
 </dd>
@@ -839,6 +855,15 @@ singleton statique — invariant AD-6).
 </dt>
 <dd>
   Prédicat de filtrage neutre : <code>field</code> <a href="../zcrud_core/ZFilter/op.html">op</a> <code>value</code>.
+</dd>
+
+          <dt id="ZFilterGroup">
+  <span class="name "><a href="../zcrud_core/ZFilterGroup-class.html">ZFilterGroup</a></span> 
+
+</dt>
+<dd>
+  <strong>Disjonction</strong> de prédicats : une ligne est retenue dès qu'<strong>au moins une</strong>
+des <a href="../zcrud_core/ZFilterGroup/clauses.html">clauses</a> la retient.
 </dd>
 
           <dt id="ZForegroundOverride">
@@ -885,6 +910,14 @@ le repli contrôlé si le <code>kind</code> n'est pas enregistré.
 seul ne permet pas de déduire un contraste fiable.
 </dd>
 
+          <dt id="ZHistoryEntry">
+  <span class="name "><a href="../zcrud_core/ZHistoryEntry-class.html">ZHistoryEntry</a></span> 
+
+</dt>
+<dd>
+  Une version antérieure fournie par l'hôte.
+</dd>
+
           <dt id="ZIndexController">
   <span class="name "><a href="../zcrud_core/ZIndexController-class.html">ZIndexController</a></span> 
 
@@ -920,6 +953,15 @@ persistance disque relève du binding/app, jamais du cœur.
 <dd>
   Surface dont le premier plan est <strong>retourné</strong> pour rester lisible sur un fond
 <code>ColorScheme.inverseSurface</code>.
+</dd>
+
+          <dt id="ZItemFilter">
+  <span class="name "><a href="../zcrud_core/ZItemFilter-class.html">ZItemFilter</a></span> 
+
+</dt>
+<dd>
+  Prédicat <strong>d'écran</strong> retenant ou écartant une entité du listing, écrit sur
+le type de l'entité.
 </dd>
 
           <dt id="ZLargeFieldCard">
@@ -1270,12 +1312,21 @@ rendu (étoiles) vit dans <code>ZRatingFieldWidget</code>. Défaut <code>5</code
   Champ d'édition <strong>note</strong> (<code>num</code> en tranche, étoiles ≥ 48 dp).
 </dd>
 
+          <dt id="ZReadModeScope">
+  <span class="name "><a href="../zcrud_core/ZReadModeScope-class.html">ZReadModeScope</a></span> 
+
+</dt>
+<dd>
+  Mode de présentation de la surface d'édition environnante.
+</dd>
+
           <dt id="ZReadOnlyFieldCard">
   <span class="name "><a href="../zcrud_core/ZReadOnlyFieldCard-class.html">ZReadOnlyFieldCard</a></span> 
 
 </dt>
 <dd>
-  Fiche de consultation d'un champ en mode lecture (label/valeur + copie).
+  Rendu d'un champ consulté (libellé + valeur + copie), dans la forme
+demandée par la surface.
 </dd>
 
           <dt id="ZReadOnlyRepository">
@@ -1463,6 +1514,22 @@ que si <a href="../zcrud_core/ZRestrictedAcl/base.html">base</a> <strong>et</str
   Port de (dé)chargement de l'ensemble des <strong>titres de sections repliées</strong>.
 </dd>
 
+          <dt id="ZSelectChoiceBuilderRegistry">
+  <span class="name "><a href="../zcrud_core/ZSelectChoiceBuilderRegistry-class.html">ZSelectChoiceBuilderRegistry</a></span> 
+
+</dt>
+<dd>
+  Registre des <a href="../zcrud_core/ZSelectChoiceBuilders-class.html">ZSelectChoiceBuilders</a>, indexé par une clé déclarative.
+</dd>
+
+          <dt id="ZSelectChoiceBuilders">
+  <span class="name "><a href="../zcrud_core/ZSelectChoiceBuilders-class.html">ZSelectChoiceBuilders</a></span> 
+
+</dt>
+<dd>
+  Ensemble immuable des builders riches associés à une même clé de select.
+</dd>
+
           <dt id="ZSelectChoiceContext">
   <span class="name "><a href="../zcrud_core/ZSelectChoiceContext-class.html">ZSelectChoiceContext</a></span> 
 
@@ -1630,6 +1697,32 @@ pas entré.
 <a href="../zcrud_core/ZFormController-class.html">ZFormController</a>.
 </dd>
 
+          <dt id="ZSubItemCrudOutcome">
+  <span class="name "><a href="../zcrud_core/ZSubItemCrudOutcome-class.html">ZSubItemCrudOutcome</a></span> 
+
+</dt>
+<dd>
+  Issue d'un appel de <a href="../zcrud_core/ZSubListSeams/onCrud.html">ZSubListSeams.onCrud</a>.
+</dd>
+
+          <dt id="ZSubItemCrudRequest">
+  <span class="name "><a href="../zcrud_core/ZSubItemCrudRequest-class.html">ZSubItemCrudRequest</a></span> 
+
+</dt>
+<dd>
+  Ce qui a déclenché un appel de <a href="../zcrud_core/ZSubListSeams/onCrud.html">ZSubListSeams.onCrud</a>.
+</dd>
+
+          <dt id="ZSubItemMenuOption">
+  <span class="name "><a href="../zcrud_core/ZSubItemMenuOption-class.html">ZSubItemMenuOption</a></span> 
+
+</dt>
+<dd>
+  <strong>Option de menu d'un item</strong> de sous-liste (mode <code>compact</code>) — une entrée
+déclarative, gouvernée par l'ACL du socle, qui déclenche
+<a href="../zcrud_core/ZSubListSeams/onCrud.html">ZSubListSeams.onCrud</a>.
+</dd>
+
           <dt id="ZSubListConfig">
   <span class="name "><a href="../zcrud_core/ZSubListConfig-class.html">ZSubListConfig</a></span> 
 
@@ -1658,6 +1751,14 @@ de menu) + <a href="../zcrud_core/ZSubListItemTemplate/defaults.html">defaults</
 <strong>par-dessus</strong> <code>ZSubListConfig.defaultNewItem</code>).
 </dd>
 
+          <dt id="ZSubListItemView">
+  <span class="name "><a href="../zcrud_core/ZSubListItemView-class.html">ZSubListItemView</a></span> 
+
+</dt>
+<dd>
+  Vue <strong>immuable</strong> d'un item telle qu'un seam de présentation la reçoit.
+</dd>
+
           <dt id="ZSubListScreen">
   <span class="name "><a href="../zcrud_core/ZSubListScreen-class.html">ZSubListScreen</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span></span> 
 
@@ -1665,6 +1766,43 @@ de menu) + <a href="../zcrud_core/ZSubListItemTemplate/defaults.html">defaults</
 <dd>
   Écran-liste d'entités <code>T</code> <strong>reliées à un parent</strong>, filtré en permanence par la
 relation <code>parentField == parentId</code>.
+</dd>
+
+          <dt id="ZSubListSeamRegistry">
+  <span class="name "><a href="../zcrud_core/ZSubListSeamRegistry-class.html">ZSubListSeamRegistry</a></span> 
+
+</dt>
+<dd>
+  Registre <strong>instanciable</strong> de <a href="../zcrud_core/ZSubListSeams-class.html">ZSubListSeams</a>, discriminés par clé
+(<code>String</code>). Injecté via <code>ZcrudScope.subListSeamRegistry</code> (invariant AD-4 —
+jamais un singleton statique mutable).
+</dd>
+
+          <dt id="ZSubListSeams">
+  <span class="name "><a href="../zcrud_core/ZSubListSeams-class.html">ZSubListSeams</a></span> 
+
+</dt>
+<dd>
+  <strong>Bundle immuable</strong> des seams de présentation d'un champ <code>subItems</code> /
+<code>dynamicItem</code>. Chaque seam est <strong>optionnel</strong> : <code>null</code> ⇒ rendu natif
+<strong>strictement</strong> inchangé (rétro-compatibilité stricte).
+</dd>
+
+          <dt id="ZSubListSummaryColumn">
+  <span class="name "><a href="../zcrud_core/ZSubListSummaryColumn-class.html">ZSubListSummaryColumn</a></span> 
+
+</dt>
+<dd>
+  <strong>Colonne de résumé</strong> d'une sous-liste — pur-données <code>const</code> (invariants
+AD-3/AD-14 : aucune closure), déclarée dans <code>ZSubListConfig.summaryColumns</code>.
+</dd>
+
+          <dt id="ZSubListViewData">
+  <span class="name "><a href="../zcrud_core/ZSubListViewData-class.html">ZSubListViewData</a></span> 
+
+</dt>
+<dd>
+  Vue <strong>immuable</strong> passée à <a href="../zcrud_core/ZSubListSeams/listViewBuilder.html">ZSubListSeams.listViewBuilder</a>.
 </dd>
 
           <dt id="ZSubmissionOutcome">
@@ -2013,6 +2151,15 @@ persisté</strong> (porté par la config <code>const</code>, jamais sérialisé)
 <code>@JsonKey(unknownEnumValue:)</code> ne s'applique donc pas ici.
 </dd>
 
+          <dt id="ZDateSpanVerdict">
+  <span class="name "><a href="../zcrud_core/ZDateSpanVerdict.html">ZDateSpanVerdict</a></span> 
+
+</dt>
+<dd>
+  Verdict d'<strong>amplitude</strong> d'une plage de dates confrontée à
+<a href="../zcrud_core/ZDateConfig/maxDays.html">ZDateConfig.maxDays</a>/<a href="../zcrud_core/ZDateConfig/minDays.html">ZDateConfig.minDays</a>.
+</dd>
+
           <dt id="ZDeletedScope">
   <span class="name "><a href="../zcrud_core/ZDeletedScope.html">ZDeletedScope</a></span> 
 
@@ -2118,6 +2265,14 @@ dit seulement combien d'éléments elle admet.
 </dt>
 <dd>
   Action décidée par le <a href="../zcrud_core/ZLwwResolver-class.html">ZLwwResolver</a> pour un <code>id</code> donné.
+</dd>
+
+          <dt id="ZReadFieldLayout">
+  <span class="name "><a href="../zcrud_core/ZReadFieldLayout.html">ZReadFieldLayout</a></span> 
+
+</dt>
+<dd>
+  Forme d'un champ présenté en consultation (défaut <a href="../zcrud_core/ZReadFieldLayout.html">card</a>).
 </dd>
 
           <dt id="ZSearchFolding">
@@ -2268,6 +2423,15 @@ token de LOOK, attribut COMPOSABLE.
 montrant l'élément courant) — token de LOOK, jamais de structure.
 </dd>
 
+          <dt id="ZSubItemFormPresentation">
+  <span class="name "><a href="../zcrud_core/ZSubItemFormPresentation.html">ZSubItemFormPresentation</a></span> 
+
+</dt>
+<dd>
+  <strong>Forme de présentation</strong> du formulaire d'édition d'un item de sous-liste
+(modes <code>compact</code> et <code>tags</code> — les seuls qui ouvrent un formulaire par item).
+</dd>
+
           <dt id="ZSubListDisplayMode">
   <span class="name "><a href="../zcrud_core/ZSubListDisplayMode.html">ZSubListDisplayMode</a></span> 
 
@@ -2317,6 +2481,15 @@ déterministe vit en présentation, invariants AD-2/AD-15).
     <section class="summary offset-anchor" id="mixins">
       <h2>Mixins</h2>
       <dl>
+          <dt id="ZDelegatesSearch">
+  <span class="name "><a href="../zcrud_core/ZDelegatesSearch-mixin.html">ZDelegatesSearch</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Déclare qu'un dépôt <strong>ne sert pas</strong> la recherche plein-texte et la
+<strong>délègue</strong> au moteur du socle.
+</dd>
+
           <dt id="ZDisplayStateOwnerMixin">
   <span class="name "><a href="../zcrud_core/ZDisplayStateOwnerMixin-mixin.html">ZDisplayStateOwnerMixin</a><span class="signature">&lt;<wbr><span class="type-parameter">W extends <a href="https://api.flutter.dev/flutter/widgets/StatefulWidget-class.html">StatefulWidget</a></span>&gt;</span></span> 
 
@@ -2368,6 +2541,18 @@ déterministe vit en présentation, invariants AD-2/AD-15).
   Appel <strong>blindé</strong> d'un exporteur (invariant AD-10).
 </dd>
 
+          <dt id="ZRelationCrudOffer">
+  <span class="name "><a href="../zcrud_core/ZRelationCrudOffer.html">ZRelationCrudOffer</a></span>
+  on <a href="../zcrud_core/ZRelationCrudHandler-class.html">ZRelationCrudHandler</a>
+  
+
+</dt>
+<dd>
+  Lecture <strong>défensive</strong> (AD-10) des gestes déclarés par un
+<a href="../zcrud_core/ZRelationCrudHandler-class.html">ZRelationCrudHandler</a> : ce que le handler <em>déclare</em> (<code>canCreate</code>…) vs ce que
+la surface <em>offre</em> réellement (<code>offersCreate</code>…).
+</dd>
+
       </dl>
     </section>
 
@@ -2382,6 +2567,19 @@ déterministe vit en présentation, invariants AD-2/AD-15).
 </dt>
 <dd>
   Clé de survie listant les champs <strong>absents</strong> à l'origine.
+  
+
+</dd>
+
+          <dt id="kZNonTextMinContrast" class="constant">
+    <span class="name "><a href="../zcrud_core/kZNonTextMinContrast-constant.html">kZNonTextMinContrast</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Plancher WCAG 2.2 §1.4.11 — <strong>composants d'interface et objets graphiques</strong>
+(bande d'accent, liseré, glyphe, pastille) : <strong>3.0:1</strong>.
   
 
 </dd>
@@ -2408,6 +2606,18 @@ plutôt qu'une exception).
 <dd>
   Débounce par défaut du cadencement de synchronisation : <strong>400 ms</strong>.
 Surchargeable par le constructeur.
+  
+
+</dd>
+
+          <dt id="kZTextMinContrast" class="constant">
+    <span class="name "><a href="../zcrud_core/kZTextMinContrast-constant.html">kZTextMinContrast</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Plancher WCAG 2.2 §1.4.3 AA — <strong>texte normal</strong> : <strong>4.5:1</strong>.
   
 
 </dd>
@@ -2581,7 +2791,7 @@ lisent/écrivent la tranche sans contrôleur de texte (invariant AD-2).
 </dd>
 
           <dt id="resolveAdornment" class="callable">
-  <span class="name"><a href="../zcrud_core/resolveAdornment.html">resolveAdornment</a></span><span class="signature">(<wbr><span class="parameter" id="resolveAdornment-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="resolveAdornment-param-adornment"><span class="type-annotation"><a href="../zcrud_core/ZFieldAdornment-class.html">ZFieldAdornment</a>?</span> <span class="parameter-name">adornment</span>, {</span><span class="parameter" id="resolveAdornment-param-field"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span></span>})
+  <span class="name"><a href="../zcrud_core/resolveAdornment.html">resolveAdornment</a></span><span class="signature">(<wbr><span class="parameter" id="resolveAdornment-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="resolveAdornment-param-adornment"><span class="type-annotation"><a href="../zcrud_core/ZFieldAdornment-class.html">ZFieldAdornment</a>?</span> <span class="parameter-name">adornment</span>, {</span><span class="parameter" id="resolveAdornment-param-field"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="resolveAdornment-param-valueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">valueOf</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span>
   </span>
   
@@ -2632,8 +2842,21 @@ les autres.
 </dt>
 <dd>
   Applique un <code>request</code> <strong>entièrement en mémoire</strong> à <code>rows</code> et retourne une
-<a href="../zcrud_core/ZListPage-class.html">ZListPage</a> (filtre → recherche → tri → saut curseur → <code>take(limit)</code> →
-dérivation <code>nextCursor</code>/<code>hasMore</code>).
+<a href="../zcrud_core/ZListPage-class.html">ZListPage</a> (filtres → disjonctions → recherche → tri → saut curseur →
+<code>take(limit)</code> → dérivation <code>nextCursor</code>/<code>hasMore</code>).
+  
+
+</dd>
+
+          <dt id="zColorCycleAt" class="callable">
+  <span class="name"><a href="../zcrud_core/zColorCycleAt.html">zColorCycleAt</a></span><span class="signature">(<wbr><span class="parameter" id="zColorCycleAt-param-palette"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span>&gt;</span></span> <span class="parameter-name">palette</span>, </span><span class="parameter" id="zColorCycleAt-param-progress"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">progress</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  La teinte de <code>palette</code> à l'avancement <code>progress</code>, en <strong>boucle</strong>.
   
 
 </dd>
@@ -2654,6 +2877,37 @@ lever de <code>RangeError</code>.
 
 </dd>
 
+          <dt id="zCompositeOver" class="callable">
+  <span class="name"><a href="../zcrud_core/zCompositeOver.html">zCompositeOver</a></span><span class="signature">(<wbr><span class="parameter" id="zCompositeOver-param-foreground"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">foreground</span>, </span><span class="parameter" id="zCompositeOver-param-background"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">background</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Compose <code>foreground</code> (avec SON alpha) <strong>par-dessus</strong> <code>background</code> supposé
+opaque, et rend la couleur OPAQUE réellement peinte — la seule contre
+laquelle un contraste a un sens quand un aplat est semi-transparent
+(ex. le fond <code>couleur du dossier @ tintAlpha</code> d'une carte teintée).
+  
+
+</dd>
+
+          <dt id="zContainsValue" class="callable">
+  <span class="name"><a href="../zcrud_core/zContainsValue.html">zContainsValue</a></span><span class="signature">(<wbr><span class="parameter" id="zContainsValue-param-container"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">container</span>, </span><span class="parameter" id="zContainsValue-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Appartenance</strong> pure et <strong>totale</strong> d'une valeur à une collection, pour
+l'opérateur <a href="../zcrud_core/ZConditionOp.html">ZConditionOp.contains</a> : <code>true</code> si <code>container</code> est un
+<code>Iterable</code> dont l'un des éléments est égal (<code>==</code>) à <code>value</code>.
+  
+
+</dd>
+
           <dt id="zContextGuardKeysOf" class="callable">
   <span class="name"><a href="../zcrud_core/zContextGuardKeysOf.html">zContextGuardKeysOf</a></span><span class="signature">(<wbr><span class="parameter" id="zContextGuardKeysOf-param-conditions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZCondition-class.html">ZCondition</a>?</span>&gt;</span></span> <span class="parameter-name">conditions</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
@@ -2665,6 +2919,20 @@ lever de <code>RangeError</code>.
   Extrait l'<strong>ensemble des clés de contexte</strong> d'un ensemble de conditions :
 l'union des <code>field</code> de source <a href="../zcrud_core/ZValueSource.html">ZValueSource.context</a> (récursif à travers
 <code>and</code>/<code>or</code>/<code>not</code>).
+  
+
+</dd>
+
+          <dt id="zContrastRatio" class="callable">
+  <span class="name"><a href="../zcrud_core/zContrastRatio.html">zContrastRatio</a></span><span class="signature">(<wbr><span class="parameter" id="zContrastRatio-param-a"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">a</span>, </span><span class="parameter" id="zContrastRatio-param-b"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">b</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Rapport de contraste WCAG 2.x</strong> entre les deux couleurs OPAQUES <code>a</code> et
+<code>b</code>, dans <code>[1.0, 21.0]</code>. Symétrique.
   
 
 </dd>
@@ -2693,6 +2961,20 @@ tous les chemins dégradés (cf. dartdoc de bibliothèque, AD-10).
 <dd>
   Mode d'affichage <strong>effectif</strong> d'un champ date (source unique — consommée par
 le widget d'édition ET par les voies de lecture, jamais recopiée).
+  
+
+</dd>
+
+          <dt id="zDateSpanRefusalMessage" class="callable">
+  <span class="name"><a href="../zcrud_core/zDateSpanRefusalMessage.html">zDateSpanRefusalMessage</a></span><span class="signature">(<wbr><span class="parameter" id="zDateSpanRefusalMessage-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zDateSpanRefusalMessage-param-config"><span class="type-annotation"><a href="../zcrud_core/ZDateConfig-class.html">ZDateConfig</a>?</span> <span class="parameter-name">config</span>, </span><span class="parameter" id="zDateSpanRefusalMessage-param-range"><span class="type-annotation"><a href="../zcrud_core/ZDateRange-class.html">ZDateRange</a></span> <span class="parameter-name">range</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Message de <strong>refus d'amplitude</strong> d'une plage, ou <code>null</code> si la période est
+admise.
   
 
 </dd>
@@ -2798,7 +3080,7 @@ AD-10). Commodité pour consommer l'échappatoire non typée sans cast risqué.
 </dd>
 
           <dt id="zFieldDecoration" class="callable">
-  <span class="name"><a href="../zcrud_core/zFieldDecoration.html">zFieldDecoration</a></span><span class="signature">(<wbr><span class="parameter" id="zFieldDecoration-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zFieldDecoration-param-field"><span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, {</span><span class="parameter" id="zFieldDecoration-param-bare"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">bare</span> = <span class="default-value">false</span>, </span><span class="parameter" id="zFieldDecoration-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span>, </span><span class="parameter" id="zFieldDecoration-param-suffixText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">suffixText</span></span>})
+  <span class="name"><a href="../zcrud_core/zFieldDecoration.html">zFieldDecoration</a></span><span class="signature">(<wbr><span class="parameter" id="zFieldDecoration-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zFieldDecoration-param-field"><span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, {</span><span class="parameter" id="zFieldDecoration-param-bare"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">bare</span> = <span class="default-value">false</span>, </span><span class="parameter" id="zFieldDecoration-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span>, </span><span class="parameter" id="zFieldDecoration-param-suffixText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">suffixText</span>, </span><span class="parameter" id="zFieldDecoration-param-valueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">valueOf</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/material/InputDecoration-class.html">InputDecoration</a></span>
   </span>
   
@@ -2905,6 +3187,20 @@ l'union des <code>field</code> référencés (récursivement à travers <code>an
 </dt>
 <dd>
   <code>true</code> si <code>value</code> compte comme <strong>vide</strong>.
+  
+
+</dd>
+
+          <dt id="zIsFieldActive" class="callable">
+  <span class="name"><a href="../zcrud_core/zIsFieldActive.html">zIsFieldActive</a></span><span class="signature">(<wbr><span class="parameter" id="zIsFieldActive-param-spec"><span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">spec</span>, </span><span class="parameter" id="zIsFieldActive-param-valueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a></span> <span class="parameter-name">valueOf</span>, {</span><span class="parameter" id="zIsFieldActive-param-persistedValueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">persistedValueOf</span>, </span><span class="parameter" id="zIsFieldActive-param-contextValueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">contextValueOf</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si le champ <code>spec</code> est <strong>actif</strong> : sa condition d'affichage est
+absente ou satisfaite.
   
 
 </dd>
@@ -3217,6 +3513,34 @@ COPIE</strong> quand le slot stocké est déjà propre.
 
 </dd>
 
+          <dt id="zNormalizeFieldValue" class="callable">
+  <span class="name"><a href="../zcrud_core/zNormalizeFieldValue.html">zNormalizeFieldValue</a></span><span class="signature">(<wbr><span class="parameter" id="zNormalizeFieldValue-param-spec"><span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">spec</span>, </span><span class="parameter" id="zNormalizeFieldValue-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Projette la valeur brute <code>value</code> du champ <code>spec</code> vers sa forme de
+<strong>persistance</strong>.
+  
+
+</dd>
+
+          <dt id="zNormalizeFormValues" class="callable">
+  <span class="name"><a href="../zcrud_core/zNormalizeFormValues.html">zNormalizeFormValues</a></span><span class="signature">(<wbr>{<span class="parameter" id="zNormalizeFormValues-param-fields"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">fields</span>, </span><span class="parameter" id="zNormalizeFormValues-param-controller"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFormController-class.html">ZFormController</a></span> <span class="parameter-name">controller</span>, </span><span class="parameter" id="zNormalizeFormValues-param-persistedValueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">persistedValueOf</span>, </span><span class="parameter" id="zNormalizeFormValues-param-contextValueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">contextValueOf</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Snapshot <strong>normalisé</strong> des valeurs de <code>controller</code>, restreint aux champs
+de <code>fields</code> qui ont le droit d'être écrits.
+  
+
+</dd>
+
           <dt id="zNullFieldsOf" class="callable">
   <span class="name"><a href="../zcrud_core/zNullFieldsOf.html">zNullFieldsOf</a></span><span class="signature">(<wbr><span class="parameter" id="zNullFieldsOf-param-sourceFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">sourceFields</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
@@ -3245,6 +3569,21 @@ fournit son propre canal).
 
 </dd>
 
+          <dt id="zReadableTintOn" class="callable">
+  <span class="name"><a href="../zcrud_core/zReadableTintOn.html">zReadableTintOn</a></span><span class="signature">(<wbr><span class="parameter" id="zReadableTintOn-param-base"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">base</span>, {</span><span class="parameter" id="zReadableTintOn-param-surface"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">surface</span>, </span><span class="parameter" id="zReadableTintOn-param-minContrast"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">minContrast</span> = <span class="default-value">kZNonTextMinContrast</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Teinte <strong>LISIBLE</strong> dérivée de <code>base</code>, garantie à au moins <code>minContrast</code>
+contre <code>surface</code> — pour une couleur d'entrée <strong>ARBITRAIRE</strong> (choisie par
+l'utilisateur ou déclarée par l'hôte), dans <strong>les deux luminosités</strong>.
+  
+
+</dd>
+
           <dt id="zRegroupPaths" class="callable">
   <span class="name"><a href="../zcrud_core/zRegroupPaths.html">zRegroupPaths</a></span><span class="signature">(<wbr><span class="parameter" id="zRegroupPaths-param-flat"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">flat</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
@@ -3254,6 +3593,48 @@ fournit son propre canal).
 </dt>
 <dd>
   Regroupe les clés <strong>pointées</strong> de <code>flat</code> en une <code>Map</code> <strong>imbriquée</strong>.
+  
+
+</dd>
+
+          <dt id="zRelativeLuminance" class="callable">
+  <span class="name"><a href="../zcrud_core/zRelativeLuminance.html">zRelativeLuminance</a></span><span class="signature">(<wbr><span class="parameter" id="zRelativeLuminance-param-color"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a></span> <span class="parameter-name">color</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Luminance relative WCAG 2.x</strong> de <code>color</code>, mesurée sur sa composante
+OPAQUE (un alpha est une décision de peinture, pas une propriété de la
+couleur — cf. <a href="../zcrud_core/zCompositeOver.html">zCompositeOver</a> pour mesurer un aplat semi-transparent).
+  
+
+</dd>
+
+          <dt id="zRemovedFilesKey" class="callable">
+  <span class="name"><a href="../zcrud_core/zRemovedFilesKey.html">zRemovedFilesKey</a></span><span class="signature">(<wbr><span class="parameter" id="zRemovedFilesKey-param-fieldName"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">fieldName</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Clé <strong>compagne</strong> sous laquelle les valeurs normalisées portent les fichiers
+que l'utilisateur a <strong>retirés</strong> du champ <code>fieldName</code>.
+  
+
+</dd>
+
+          <dt id="zRepositoryServesSearch" class="callable">
+  <span class="name"><a href="../zcrud_core/zRepositoryServesSearch.html">zRepositoryServesSearch</a></span><span class="signature">(<wbr><span class="parameter" id="zRepositoryServesSearch-param-repository"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">repository</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si <code>repository</code> sert lui-même <code>ZDataRequest.search</code>.
   
 
 </dd>
@@ -3373,6 +3754,20 @@ vide ; sinon rend <code>value</code> tel quel.
 
 </dd>
 
+          <dt id="zShowDateSpanRefusal" class="callable">
+  <span class="name"><a href="../zcrud_core/zShowDateSpanRefusal.html">zShowDateSpanRefusal</a></span><span class="signature">(<wbr><span class="parameter" id="zShowDateSpanRefusal-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zShowDateSpanRefusal-param-message"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Présente le refus d'amplitude <code>message</code> à l'utilisateur, <strong>au moment de la
+sélection</strong>.
+  
+
+</dd>
+
           <dt id="zUnknownLayoutKeys" class="callable">
   <span class="name"><a href="../zcrud_core/zUnknownLayoutKeys.html">zUnknownLayoutKeys</a></span><span class="signature">(<wbr><span class="parameter" id="zUnknownLayoutKeys-param-fieldNames"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">fieldNames</span>, </span><span class="parameter" id="zUnknownLayoutKeys-param-layout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../zcrud_core/ZResponsiveSpan-class.html">ZResponsiveSpan</a></span>&gt;</span></span> <span class="parameter-name">layout</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
@@ -3447,6 +3842,20 @@ chaque liste interne. Idempotente + zéro-copie.
   Vue non modifiable <strong>PEU PROFONDE</strong> d'une <code>map</code> à valeurs <strong>scalaires</strong> (aucune
 collection imbriquée : <code>Map&lt;int,int&gt;</code>, <code>Map&lt;String,int&gt;</code>…). Idempotente +
 zéro-copie (rend <code>map</code> si c'est déjà une <a href="https://api.flutter.dev/flutter/dart-collection/UnmodifiableMapView-class.html">UnmodifiableMapView</a>).
+  
+
+</dd>
+
+          <dt id="zValidateFormFields" class="callable">
+  <span class="name"><a href="../zcrud_core/zValidateFormFields.html">zValidateFormFields</a></span><span class="signature">(<wbr>{<span class="parameter" id="zValidateFormFields-param-fields"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">fields</span>, </span><span class="parameter" id="zValidateFormFields-param-controller"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFormController-class.html">ZFormController</a></span> <span class="parameter-name">controller</span>, </span><span class="parameter" id="zValidateFormFields-param-persistedValueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">persistedValueOf</span>, </span><span class="parameter" id="zValidateFormFields-param-contextValueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">contextValueOf</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Valide <strong>tous les champs actifs</strong> de <code>fields</code> contre l'état de <code>controller</code>
+et retourne la table <code>nom du champ → message d'erreur</code> (vide ⇒ valide).
   
 
 </dd>
@@ -3592,6 +4001,20 @@ via <code>ZcrudScope.iconResolver</code>. Le domaine ne porte JAMAIS d'<code>Ico
   </dt>
   <dd>
     Source de temps injectable pour la clé LWW <code>updated_at</code>.
+    
+
+  </dd>
+
+          
+  <dt id="ZColorCycleBuilder" class="callable">
+    <span class="name"><a href="../zcrud_core/ZColorCycleBuilder.html">ZColorCycleBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-color"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">color</span>, </span><span class="parameter" id="param-child"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">child</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Rend la teinte courante d'un <a href="../zcrud_core/ZColorCycle-class.html">ZColorCycle</a>.
     
 
   </dd>
@@ -4018,6 +4441,36 @@ n'appartient à aucune. <strong>Doit être pur et total</strong> (contrat identi
   </dd>
 
           
+  <dt id="ZSubItemActionsBuilder" class="callable">
+    <span class="name"><a href="../zcrud_core/ZSubItemActionsBuilder.html">ZSubItemActionsBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-item"><span class="type-annotation"><a href="../zcrud_core/ZSubListItemView-class.html">ZSubListItemView</a></span> <span class="parameter-name">item</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Actions <strong>supplémentaires</strong> d'un item — rendues <strong>en plus</strong> des actions
+natives, jamais à leur place (une action native reste gouvernée par l'ACL et
+par <code>readOnly</code>).
+    
+
+  </dd>
+
+          
+  <dt id="ZSubItemCrudHook" class="callable">
+    <span class="name"><a href="../zcrud_core/ZSubItemCrudHook.html">ZSubItemCrudHook</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSubItemCrudOutcome-class.html">ZSubItemCrudOutcome</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-request"><span class="type-annotation"><a href="../zcrud_core/ZSubItemCrudRequest-class.html">ZSubItemCrudRequest</a></span> <span class="parameter-name">request</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    <strong>Crochet CRUD</strong> d'une sous-liste — l'équivalent de <code>onCrud(item, crud, {option})</code> du moteur legacy.
+    
+
+  </dd>
+
+          
   <dt id="ZSubItemFieldBuilder" class="callable">
     <span class="name"><a href="../zcrud_core/ZSubItemFieldBuilder.html">ZSubItemFieldBuilder</a></span><span class="signature">
       <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-itemController"><span class="type-annotation"><a href="../zcrud_core/ZFormController-class.html">ZFormController</a></span> <span class="parameter-name">itemController</span>, </span><span class="parameter" id="param-field"><span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="param-itemId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">itemId</span></span>)</span></span>
@@ -4036,6 +4489,37 @@ porte est <code>@visibleForTesting</code> (production : toujours <code>null</cod
   </dd>
 
           
+  <dt id="ZSubItemFieldsResolver" class="callable">
+    <span class="name"><a href="../zcrud_core/ZSubItemFieldsResolver.html">ZSubItemFieldsResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-state"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">state</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Calcule la <strong>liste des sous-champs à rendre</strong> d'un <code>dynamicItem</code> à partir de
+son état courant. Défensif : le résultat est <strong>intersecté</strong> avec les
+<code>itemFields</code> de la config (aucune tranche orpheline, invariants AD-10/AD-2).
+    
+
+  </dd>
+
+          
+  <dt id="ZSubItemMenuVisibility" class="callable">
+    <span class="name"><a href="../zcrud_core/ZSubItemMenuVisibility.html">ZSubItemMenuVisibility</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a> Function<span class="signature">(<span class="parameter" id="param-item"><span class="type-annotation"><a href="../zcrud_core/ZSubListItemView-class.html">ZSubListItemView</a></span> <span class="parameter-name">item</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Prédicat de <strong>visibilité par item</strong> d'une option de menu
+(<a href="../zcrud_core/ZSubItemMenuOption/isVisible.html">ZSubItemMenuOption.isVisible</a>).
+    
+
+  </dd>
+
+          
   <dt id="ZSubItemTitleBuilder" class="callable">
     <span class="name"><a href="../zcrud_core/ZSubItemTitleBuilder.html">ZSubItemTitleBuilder</a></span><span class="signature">
       <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-item"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">item</span></span>)</span></span>
@@ -4045,9 +4529,101 @@ porte est <code>@visibleForTesting</code> (production : toujours <code>null</cod
   </dt>
   <dd>
     Seam de <strong>présentation</strong> : dérive un <strong>titre/résumé</strong> lisible d'un item
-(<code>Map</code>) — titre du dialog d'édition et repli de résumé de ligne en mode
-compact. Vit en couche widget (JAMAIS dans la config domaine — garde
-<code>domain_purity_test</code>).
+(<code>Map</code>) — titre du dialogue d'édition, repli de résumé de ligne (mode
+compact) et libellé de puce (mode tags). Vit en couche widget (JAMAIS dans
+la config domaine — garde <code>domain_purity_test</code>).
+    
+
+  </dd>
+
+          
+  <dt id="ZSubItemTransformer" class="callable">
+    <span class="name"><a href="../zcrud_core/ZSubItemTransformer.html">ZSubItemTransformer</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-item"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">item</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Transformation d'un item <strong>avant affichage seulement</strong>.
+    
+
+  </dd>
+
+          
+  <dt id="ZSubItemWidgetBuilder" class="callable">
+    <span class="name"><a href="../zcrud_core/ZSubItemWidgetBuilder.html">ZSubItemWidgetBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-item"><span class="type-annotation"><a href="../zcrud_core/ZSubListItemView-class.html">ZSubListItemView</a></span> <span class="parameter-name">item</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Rendu <strong>libre</strong> d'un item (remplace le contenu résumé de sa ligne).
+    
+
+  </dd>
+
+          
+  <dt id="ZSubListCaptionBuilder" class="callable">
+    <span class="name"><a href="../zcrud_core/ZSubListCaptionBuilder.html">ZSubListCaptionBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-addControl"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">addControl</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Habillage <strong>libre</strong> de l'en-tête de la sous-liste. Reçoit le <strong>contrôle
+d'ajout natif</strong> (bouton <code>+</code> ou menu de gabarits) déjà filtré par l'ACL :
+quand la création n'est pas autorisée, c'est un <code>SizedBox.shrink()</code> qui est
+passé — l'ACL n'est <strong>jamais</strong> contournée par ce seam.
+    
+
+  </dd>
+
+          
+  <dt id="ZSubListSchemaResolver" class="callable">
+    <span class="name"><a href="../zcrud_core/ZSubListSchemaResolver.html">ZSubListSchemaResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-parent"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a></span> <span class="parameter-name">parent</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Calcule le <strong>sous-schéma d'un item</strong> (<code>subItems</code>) depuis l'état du
+<strong>formulaire PARENT</strong> — l'équivalent du <code>subItemsFieldsBuilder(editionState)</code>
+du moteur legacy.
+    
+
+  </dd>
+
+          
+  <dt id="ZSubListTemplatesResolver" class="callable">
+    <span class="name"><a href="../zcrud_core/ZSubListTemplatesResolver.html">ZSubListTemplatesResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSubListItemTemplate-class.html">ZSubListItemTemplate</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-parent"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a></span> <span class="parameter-name">parent</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Calcule les <strong>gabarits de création</strong> d'une sous-liste depuis l'état du
+<strong>formulaire PARENT</strong> — l'équivalent du <code>popUpMenuOptions(crud)</code> legacy,
+dont les entrées étaient calculées dans une closure fermant sur
+<code>editionState</code>.
+    
+
+  </dd>
+
+          
+  <dt id="ZSubListViewBuilder" class="callable">
+    <span class="name"><a href="../zcrud_core/ZSubListViewBuilder.html">ZSubListViewBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-view"><span class="type-annotation"><a href="../zcrud_core/ZSubListViewData-class.html">ZSubListViewData</a></span> <span class="parameter-name">view</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Conteneur <strong>libre</strong> de la liste d'items (remplace le conteneur natif).
     
 
   </dd>
@@ -4123,6 +4699,20 @@ Chaque échec de dépôt et chaque cycle sauté est <strong>loggé</strong> (jam
   <dd>
     Sérialise un modèle en fournissant le <a href="../zcrud_core/ZDecodeContext-class.html">ZDecodeContext</a> injecté (provenance
 <code>source</code>) au <code>toMap</code> d'entité.
+    
+
+  </dd>
+
+          
+  <dt id="ZTrashViewAccessCondition" class="callable">
+    <span class="name"><a href="../zcrud_core/ZTrashViewAccessCondition.html">ZTrashViewAccessCondition</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a> Function<span class="signature">(<span class="parameter" id="param-acl"><span class="type-annotation"><a href="../zcrud_core/ZAcl-class.html">ZAcl</a></span> <span class="parameter-name">acl</span>, </span><span class="parameter" id="param-collectionId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">collectionId</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Règle applicative qui décide si la <strong>vue</strong> corbeille est accessible.
     
 
   </dd>
@@ -4205,7 +4795,7 @@ n'est présent dans l'arbre.
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

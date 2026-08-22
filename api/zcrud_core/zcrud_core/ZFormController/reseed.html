@@ -66,7 +66,9 @@
   <p><strong>Recharge</strong> des valeurs EXTERNES autoritaires : écrit
 <code>values</code> dans les tranches, <strong>re-définit la baseline</strong> sur ces valeurs
 (⇒ non-dirty), puis incrémente <a href="../../zcrud_core/ZFormController/reseedRevision.html">reseedRevision</a> pour re-amorcer les widgets
-bufferisés hors focus. Sert le chargement asynchrone d'un enregistrement.</p>
+bufferisés hors focus. Sert le chargement asynchrone d'un enregistrement.
+Les retraits de fichiers en attente (<a href="../../zcrud_core/ZFormController/removedFilesOf.html">removedFilesOf</a>) sont effacés : ils
+portaient sur l'état remplacé.</p>
 </section>
 
 
@@ -80,6 +82,7 @@ bufferisés hors focus. Sert le chargement asynchrone d'un enregistrement.</p>
   });
   _dirtyFields.clear();
   _touched.clear();
+  _removedFiles.clear();
   if (_isDirty.value) _isDirty.value = false;
   _reseedRevision.value = _reseedRevision.value + 1;
 }</code></pre>
@@ -110,7 +113,7 @@ bufferisés hors focus. Sert le chargement asynchrone d'un enregistrement.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

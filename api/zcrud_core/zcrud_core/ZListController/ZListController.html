@@ -61,6 +61,9 @@
 <li><span class="parameter" id="param-pageSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">pageSize</span>, </span></li>
 <li><span class="parameter" id="param-mode"><span class="type-annotation"><a href="../../zcrud_core/ZListPaginationMode.html">ZListPaginationMode</a></span> <span class="parameter-name">mode</span> = <span class="default-value">ZListPaginationMode.backendCursor</span>, </span></li>
 <li><span class="parameter" id="param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">baseFilters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span></li>
+<li><span class="parameter" id="param-baseFilterGroups"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZFilterGroup-class.html">ZFilterGroup</a></span>&gt;</span></span> <span class="parameter-name">baseFilterGroups</span> = <span class="default-value">const &lt;ZFilterGroup&gt;[]</span>, </span></li>
+<li><span class="parameter" id="param-itemFilter"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">itemFilter</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span></span></li>
+</ol>)?, </span></li>
 <li><span class="parameter" id="param-searchScope"><span class="type-annotation"><a href="../../zcrud_core/ZSearchScope.html">ZSearchScope</a></span> <span class="parameter-name">searchScope</span> = <span class="default-value">ZSearchScope.searchableFields</span>, </span></li>
 <li><span class="parameter" id="param-searchFolding"><span class="type-annotation"><a href="../../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> <span class="parameter-name">searchFolding</span> = <span class="default-value">ZSearchFolding.diacritics</span>, </span></li>
 <li><span class="parameter" id="param-initialSorts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZSort-class.html">ZSort</a></span>&gt;</span></span> <span class="parameter-name">initialSorts</span> = <span class="default-value">const &lt;ZSort&gt;[]</span>, </span></li>
@@ -99,6 +102,17 @@ seconde, soit une lecture de la source pour rien, et un premier rendu dans
 le mauvais ordre. Un <code>setSort</code> ultérieur <strong>remplace</strong> ce tri initial
 (même règle que pour les filtres utilisateur : un tri demandé remplace le
 tri par défaut). Défaut <code>const []</code> ⇒ comportement strictement inchangé.</p>
+<p><code>baseFilterGroups</code> est le pendant <strong>disjonctif</strong> de <code>baseFilters</code> : chaque
+<a href="../../zcrud_core/ZFilterGroup-class.html">ZFilterGroup</a> est ANDé au reste, mais ses clauses sont en OR (« cette
+valeur <strong>ou</strong> ce champ absent »). <code>itemFilter</code> est le <strong>post-filtre</strong>
+d'écran : un prédicat écrit sur l'entité, appliqué aux entités lues avant
+qu'elles ne deviennent des lignes. Tous deux sont <code>null</code>/vides par défaut
+⇒ comportement strictement inchangé.</p>
+<p><strong>Les déclarer impose la voie mémoire</strong> : ni l'un ni l'autre ne se traduit
+en requête — le socle ne peut les appliquer que sur un jeu déjà lu. Le
+contrôleur lit alors le jeu <strong>non paginé</strong> à chaque requête, exactement
+comme le mode <a href="../../zcrud_core/ZListPaginationMode.html">ZListPaginationMode.inMemory</a>, plutôt que de laisser une
+déclaration être silencieusement ignorée par la pagination curseur.</p>
 </section>
 
 
@@ -112,6 +126,8 @@ tri par défaut). Défaut <code>const []</code> ⇒ comportement strictement inc
   this.pageSize,
   this.mode = ZListPaginationMode.backendCursor,
   this.baseFilters = const &lt;ZFilter&gt;[],
+  this.baseFilterGroups = const &lt;ZFilterGroup&gt;[],
+  this.itemFilter,
   this.searchScope = ZSearchScope.searchableFields,
   this.searchFolding = ZSearchFolding.diacritics,
   List&lt;ZSort&gt; initialSorts = const &lt;ZSort&gt;[],
@@ -153,7 +169,7 @@ tri par défaut). Défaut <code>const []</code> ⇒ comportement strictement inc
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

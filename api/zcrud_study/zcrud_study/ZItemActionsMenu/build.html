@@ -126,6 +126,11 @@ Widget build(BuildContext context) {
   }
 
   final hote = menuBuilder;
+  &#47;&#47; Un builder par défaut ne doit pas rendre actionnable un déclencheur dont
+  &#47;&#47; toutes les entrées seront filtrées par ZActionMenu. Cette lecture ne
+  &#47;&#47; produit ni ne transmet une seconde liste filtrée : ZActionMenu reste le
+  &#47;&#47; site unique qui applique effectivement la règle d&#39;absence.
+  final hasVisibleAction = zVisibleMenuEntries(entries).isNotEmpty;
   return ZActionMenu(
     entries: entries,
     renderer: renderer,
@@ -139,20 +144,32 @@ Widget build(BuildContext context) {
       &#47;&#47; info-bulle qu&#39;avant : rendu INCHANGÉ pour un appelant sans tooltip.
       tooltip: tooltip,
     ),
-    contentBuilder: hote == null
+    contentBuilder: hote == null &amp;&amp; !hasVisibleAction
         ? null
-        : (surfaceContext, visibles, select) =&gt; hote(
-              surfaceContext,
-              &lt;ZItemAction&gt;[
+        : (surfaceContext, visibles, select) {
+            if (hote != null) {
+              return hote(
+                surfaceContext,
+                &lt;ZItemAction&gt;[
+                  for (final entry in visibles) versAction[entry]!,
+                ],
+                &#47;&#47; MÊME chemin de sortie que le défaut : l&#39;hôte ne peut ni
+                &#47;&#47; oublier de fermer, ni invoquer deux fois, ni diverger.
+                (action) {
+                  final entry = versEntree[action];
+                  if (entry != null) select(entry);
+                },
+              );
+            }
+            return _ZDefaultItemActionGrid(
+              actions: &lt;ZItemAction&gt;[
                 for (final entry in visibles) versAction[entry]!,
               ],
-              &#47;&#47; MÊME chemin de sortie que la colonne par défaut : l&#39;hôte ne
-              &#47;&#47; peut ni oublier de fermer, ni invoquer deux fois, ni diverger.
-              (action) {
-                final entry = versEntree[action];
-                if (entry != null) select(entry);
-              },
-            ),
+              entries: visibles,
+              crossAxisCount: crossAxisCount,
+              onSelected: select,
+            );
+          },
   );
 }</code></pre>
 </section>
@@ -182,7 +199,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_study
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

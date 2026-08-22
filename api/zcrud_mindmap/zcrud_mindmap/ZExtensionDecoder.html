@@ -60,8 +60,8 @@
     
 <section class="desc markdown">
   <p>Décodeur défensif OPTIONNEL d'une <code>ZExtension</code> concrète depuis sa map JSON.</p>
-<p>Les sous-classes concrètes de <code>ZExtension</code> vivent dans l'app hôte / les
-stories ultérieures (audio/sources/RAG/confiance), <strong>jamais</strong> dans le cœur.
+<p>Les sous-classes concrètes de <code>ZExtension</code> vivent dans l'app hôte ou dans
+un satellite (audio/sources/RAG/confiance), <strong>jamais</strong> dans le cœur.
 L'appelant qui sait les reconstruire fournit ce décodeur ; l'absence de
 décodeur laisse <code>extension</code> à <code>null</code>. Toute exception du décodeur est
 absorbée (<code>ZExtension.guard</code>, AD-10).</p>
@@ -96,7 +96,7 @@ absorbée (<code>ZExtension.guard</code>, AD-10).</p>
 <footer>
   <span class="no-break">
     zcrud_mindmap
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -60,6 +60,11 @@ un <code>ZRemoteStore</code> <strong>best-effort</strong>, un <code>ZLwwResolver
 canonique <code>const ZLwwResolver()</code>), une couture de connectivité <code>isConnected</code>
 <strong>optionnelle</strong> (défaut <code>null</code> — jamais court-circuitée), et un
 <a href="../zcrud_firestore/ZOfflineFirstLog.html">ZOfflineFirstLog</a> optionnel (défaut no-op).</p>
+<p><strong>Recherche déléguée</strong> : ce dépôt rend le snapshot local <strong>complet</strong> et ne
+traduit aucun <code>ZDataRequest</code> (recherche comprise). Il le <strong>déclare</strong> par le
+mixin <code>ZDelegatesSearch</code> : un listing assemblé au-dessus filtre alors le
+terme saisi par le moteur du socle, au lieu d'afficher une barre inerte. Le
+jeu étant déjà lu en entier, cette voie ne coûte aucune lecture de plus.</p>
 </section>
 
 
@@ -203,9 +208,7 @@ via <a href="../zcrud_firestore/ZOfflineFirstRepository/getAll.html">getAll</a> 
 
 </dt>
 <dd>
-  Persiste <code>item</code>. Matérialise l'éphémère (attribution d'<code>id</code>) et rejette
-une cible manquante via <code>Left(ZDomainFailure)</code> (AD-14). <code>collectionId</code>
-localise le conteneur si nécessaire.
+  Persiste <code>item</code> au local (autoritaire), puis propage au distant.
   
 
 </dd>
@@ -328,7 +331,7 @@ borné via <code>applyMergedAll</code>).
 <footer>
   <span class="no-break">
     zcrud_firestore
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

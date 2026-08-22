@@ -55,9 +55,48 @@
     
 <section class="desc markdown">
   <p>Contexte passé à un <a href="../zcrud_core/ZFieldWidgetBuilder.html">ZFieldWidgetBuilder</a> : la spec du champ, la valeur
-COURANTE de sa tranche et le callback d'écriture. Le builder <strong>lit</strong> <a href="../zcrud_core/ZFieldWidgetContext/value.html">value</a>
+COURANTE de sa tranche, le callback d'écriture et un <strong>lecteur nommé</strong>
+(<a href="../zcrud_core/ZFieldWidgetContext/valueOf.html">valueOf</a>) des autres champs du même formulaire. Le builder <strong>lit</strong> <a href="../zcrud_core/ZFieldWidgetContext/value.html">value</a>
 et <strong>écrit</strong> via <a href="../zcrud_core/ZFieldWidgetContext/onChanged.html">onChanged</a> — l'appel reste <strong>dans</strong> la frontière de rebuild
 du dispatcher (invariant AD-2 : aucune souscription élargie).</p>
+<h2 id="lire-un-autre-champ-du-mme-formulaire-valueof">Lire un AUTRE champ du même formulaire (<a href="../zcrud_core/ZFieldWidgetContext/valueOf.html">valueOf</a>)</h2>
+<p>Un widget hôte peut dépendre d'un champ voisin (afficher une action selon
+qu'un mot de passe a été saisi, résumer une date choisie plus haut…).
+<a href="../zcrud_core/ZFieldWidgetContext/valueOf.html">valueOf</a> donne cette lecture <strong>par nom</strong>, sans exposer le contrôleur :</p>
+<pre class="language-dart"><code class="language-dart">registre.register('reauth', (context, ctx) {
+  final ancien = ctx.valueOf?.call('ancienMotDePasse');
+  return Text(ancien == null || '$ancien'.isEmpty ? '' : 'Réauthentifier');
+});
+</code></pre>
+<p>Ce que <a href="../zcrud_core/ZFieldWidgetContext/valueOf.html">valueOf</a> <strong>garantit</strong> :</p>
+<ul>
+<li><strong>lecture nommée</strong> de la valeur courante d'une tranche du MÊME formulaire,
+telle qu'elle s'y trouve (aucune conversion, aucune projection) ;</li>
+<li><strong>abonnement ciblé</strong> : le socle observe les noms que le builder a
+réellement lus et reconstruit ce champ — et lui seul — quand l'une de ces
+valeurs change. Un champ jamais lu ne provoque aucun rebuild
+(invariant AD-2) ;</li>
+<li><strong>défensivité</strong> (invariant AD-10) : un nom inconnu rend <code>null</code>, jamais une
+exception.</li>
+</ul>
+<p>Ce que <a href="../zcrud_core/ZFieldWidgetContext/valueOf.html">valueOf</a> <strong>ne fait pas</strong> :</p>
+<ul>
+<li>il <strong>n'écrit rien</strong> — c'est une lecture ; l'écriture passe par <a href="../zcrud_core/ZFieldWidgetContext/onChanged.html">onChanged</a>,
+et un ornement (voir ci-dessous) n'écrit jamais ;</li>
+<li>il <strong>n'expose pas l'état complet</strong> du formulaire : ni la liste des champs,
+ni le <code>ZFormController</code>, ni les canaux de validation/soumission. La
+surface se limite à une valeur par nom ;</li>
+<li>il <strong>ne traverse pas</strong> les formulaires imbriqués : la lecture porte sur le
+formulaire qui rend le champ.</li>
+</ul>
+<p><a href="../zcrud_core/ZFieldWidgetContext/valueOf.html">valueOf</a> peut être <code>null</code> lorsque le widget est rendu <strong>hors</strong> d'un
+formulaire (composition manuelle, prévisualisation) : le builder doit donc
+l'appeler avec <code>?.call(...)</code> et prévoir le repli.</p>
+<h2 id="ornements-zfieldadornmentwidget">Ornements (<code>ZFieldAdornment.widget</code>)</h2>
+<p>Le même contexte sert les ornements <code>leading</code>/<code>prefix</code>/<code>suffix</code> de type
+<code>.widget</code>. Ils reçoivent <a href="../zcrud_core/ZFieldWidgetContext/value.html">value</a> (la valeur du champ qu'ils ornent) et
+<a href="../zcrud_core/ZFieldWidgetContext/valueOf.html">valueOf</a>, mais leur <a href="../zcrud_core/ZFieldWidgetContext/onChanged.html">onChanged</a> est <strong>inerte</strong> : un ornement est un
+affichage. Lire n'est pas écrire.</p>
 <h2 id="champ-custom--valeur-structure">Champ custom à valeur <strong>STRUCTURÉE</strong></h2>
 <p>Un champ composite (ex. <code>ressource → opérations autorisées</code>) n'a <strong>rien de
 spécial</strong> à obtenir : le socle le porte déjà de bout en bout.</p>
@@ -125,7 +164,7 @@ le moyen (tranche typée <code>Object?</code>, requis, granularité), jamais l'�
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZFieldWidgetContext.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZFieldWidgetContext/ZFieldWidgetContext.html">ZFieldWidgetContext</a></span><span class="signature">({<span class="parameter" id="param-field"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="param-value"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span>, </span><span class="parameter" id="param-onChanged"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">onChanged</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZFieldWidgetContext/ZFieldWidgetContext.html">ZFieldWidgetContext</a></span><span class="signature">({<span class="parameter" id="param-field"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="param-value"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span>, </span><span class="parameter" id="param-onChanged"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">onChanged</span>, </span><span class="parameter" id="param-valueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">valueOf</span></span>})</span>
         </dt>
         <dd>
           Construit le contexte d'un champ servi par le registre.
@@ -195,6 +234,19 @@ le moyen (tranche typée <code>Object?</code>, requis, granularité), jamais l'�
 </dt>
 <dd>
   Valeur COURANTE de la tranche <code>field.name</code> (lue par le builder hôte).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="valueOf" class="property">
+  <span class="name"><a href="../zcrud_core/ZFieldWidgetContext/valueOf.html">valueOf</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span>
+  
+
+</dt>
+<dd>
+  Lecteur <strong>nommé</strong> des autres champs du même formulaire — <code>null</code> hors
+formulaire.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -284,7 +336,7 @@ le moyen (tranche typée <code>Object?</code>, requis, granularité), jamais l'�
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

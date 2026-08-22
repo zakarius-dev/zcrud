@@ -70,12 +70,16 @@
 de la couleur primaire du type par transformation HSL, <strong>jamais</strong> une
 couleur nouvelle.</p>
 <p>Appliquée aux premiers plans TEINTÉS PAR LE TYPE : peindre le libellé de
-pied en <code>primaryColor</code> BRUT mesure <strong>2,30:1</strong> sur thème clair (<code>#4facfe</code>
-sur blanc), sous le plancher WCAG AA (4,5:1) que la garde de contraste du
-package impose à tout ce qui est peint. La saturation est bornée en bas
-(≥ 0.4, la teinte reste identifiable) et la clarté est ramenée dans la
-fenêtre lisible de la luminosité courante (0.25-0.45 en clair, 0.55-0.75
-en sombre). Les FONDS décoratifs (tuile à 15 %, pastille à 10 %) gardent
+pied en <code>primaryColor</code> BRUT mesure <strong>2,304:1</strong> sur le <code>surface</code> d'un thème
+clair Material 3 (<code>#4facfe</code> sur <code>#FEF7FF</code>) — et <strong>2,424:1</strong> sur blanc pur.
+🔴 Les deux chiffres sont exacts : un rapport de contraste n'existe que
+RELATIVEMENT à une surface (cf. <code>zReadableTintOn</code>, dont la surface est un
+argument REQUIS). Les deux sont sous le plancher WCAG AA (4,5:1) que la
+garde de contraste du package impose à tout ce qui est peint. La
+saturation est bornée en bas (≥ 0.4, la teinte reste identifiable) et la
+clarté est ramenée dans la fenêtre lisible de la luminosité courante
+(0.25-0.45 en clair, 0.55-0.75 en sombre). Les FONDS décoratifs (tuile à
+15 %, pastille à 10 %) gardent
 la couleur brute — seul le premier plan est ajusté.</p>
 <h2 id="la-fentre-hsl-ne-garantit-rien-surface-la-garantit">La fenêtre HSL ne GARANTIT rien, <code>surface</code> la garantit</h2>
 <p>Mesuré sur pièces : la fenêtre de clarté ci-dessus est une bande de
@@ -153,7 +157,7 @@ la surface est REQUISE — et qui préserve en outre les teintes achromatiques
 <footer>
   <span class="no-break">
     zcrud_study
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

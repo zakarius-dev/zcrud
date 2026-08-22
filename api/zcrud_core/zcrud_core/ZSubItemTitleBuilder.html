@@ -60,9 +60,17 @@
     
 <section class="desc markdown">
   <p>Seam de <strong>présentation</strong> : dérive un <strong>titre/résumé</strong> lisible d'un item
-(<code>Map</code>) — titre du dialog d'édition et repli de résumé de ligne en mode
-compact. Vit en couche widget (JAMAIS dans la config domaine — garde
-<code>domain_purity_test</code>).</p>
+(<code>Map</code>) — titre du dialogue d'édition, repli de résumé de ligne (mode
+compact) et libellé de puce (mode tags). Vit en couche widget (JAMAIS dans
+la config domaine — garde <code>domain_purity_test</code>).</p>
+<p><strong>Reçoit toujours la donnée BRUTE</strong> de l'item : ni
+<a href="../zcrud_core/ZSubListSeams/itemTransformer.html">ZSubListSeams.itemTransformer</a> ni aucune projection d'affichage ne
+s'appliquent à son entrée. C'est un contrat volontairement stable — un titre
+se dérive de la donnée, pas de son habillage.</p>
+<p>La donnée fournie est l'item tel qu'il serait <strong>agrégé vers le parent</strong> :
+les tranches des <code>itemFields</code> <strong>plus</strong> les clés hors sous-schéma conservées
+depuis la graine (<code>id</code> en premier). Un builder peut donc lire un
+identifiant technique sans que celui-ci soit déclaré au sous-schéma.</p>
 </section>
 
     
@@ -94,7 +102,7 @@ compact. Vit en couche widget (JAMAIS dans la config domaine — garde
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -112,64 +112,130 @@ Widget build(BuildContext context) {
   final tokens = ZcrudTheme.of(context);
   final theme = Theme.of(context);
   final scheme = theme.colorScheme;
-  final labelStyle =
-      tokens.readLabelTextStyle ?? theme.textTheme.labelMedium;
+  final form = layout ??
+      ZReadModeScope.layoutOf(context) ??
+      tokens.readLayout ??
+      ZReadFieldLayout.card;
 
-  final content = Padding(
-    padding: tokens.readPadding,
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: &lt;Widget&gt;[
-        Expanded(
-          &#47;&#47; Label + valeur visibles exclus de la sémantique : le conteneur
-          &#47;&#47; `Semantics` ci-dessous porte « label : valeur » (pas de double
-          &#47;&#47; annonce — invariant AD-13). Le bouton copie reste HORS de l&#39;exclusion.
-          child: ExcludeSemantics(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: &lt;Widget&gt;[
-                Text(label, style: labelStyle, textAlign: TextAlign.start),
-                SizedBox(height: tokens.readLabelGap),
-                DefaultTextStyle.merge(
-                  style: tokens.readValueTextStyle,
-                  child: value,
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (_copyable) _copyButton(context),
-      ],
-    ),
+  final labelStyle = _merged(
+    _labelStyleOf(form, theme.textTheme, scheme),
+    tokens.readLabelTextStyle,
+  );
+  final valueStyle = _merged(
+    _valueStyleOf(form, theme.textTheme, scheme),
+    tokens.readValueTextStyle,
+  );
+  final padding = tokens.readPadding ?? _paddingOf(form);
+  final gap = tokens.readLabelGap ?? _gapOf(form);
+
+  final labelWidget = ExcludeSemantics(
+    child: Text(label, style: labelStyle),
+  );
+  &#47;&#47; La valeur n&#39;est retirée de la sémantique que si le conteneur l&#39;annonce à
+  &#47;&#47; sa place : sinon elle serait affichée mais muette.
+  final valueWidget = DefaultTextStyle.merge(
+    style: valueStyle,
+    textAlign: form == ZReadFieldLayout.inlineRow
+        ? TextAlign.end
+        : TextAlign.start,
+    child: _announced == null ? value : ExcludeSemantics(child: value),
   );
 
+  final Widget visual;
+  switch (form) {
+    case ZReadFieldLayout.card:
+      visual = _card(context, tokens, scheme, labelWidget, valueWidget,
+          padding, gap);
+    case ZReadFieldLayout.listTile:
+      visual = _listTile(context, tokens, labelWidget, valueWidget);
+    case ZReadFieldLayout.definition:
+      visual = _dense(
+        context,
+        _stacked(labelWidget, valueWidget, padding, gap),
+      );
+    case ZReadFieldLayout.inlineRow:
+      visual = _dense(
+        context,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            &#47;&#47; Une ligne à deux colonnes n&#39;a plus de sens sur une surface
+            &#47;&#47; étroite : elle se replie alors en présentation empilée.
+            final replie = constraints.maxWidth.isFinite &amp;&amp;
+                constraints.maxWidth &lt; (tokens.readRowMinWidth ?? 360);
+            if (replie) {
+              return _stacked(
+                labelWidget,
+                valueWidget,
+                padding,
+                _gapOf(ZReadFieldLayout.definition),
+              );
+            }
+            return Padding(
+              padding: padding,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: &lt;Widget&gt;[
+                  SizedBox(
+                    width: tokens.readRowLabelWidth ?? 160,
+                    child: labelWidget,
+                  ),
+                  SizedBox(width: gap),
+                  Expanded(
+                    child: Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: valueWidget,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+    case ZReadFieldLayout.compact:
+      visual = _dense(
+        context,
+        Padding(
+          padding: padding,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: &lt;Widget&gt;[
+              labelWidget,
+              SizedBox(width: gap),
+              Expanded(child: valueWidget),
+            ],
+          ),
+        ),
+      );
+  }
+
+  &#47;&#47; Le fond et le filet sont une propriété de la **fiche**, pas de la
+  &#47;&#47; **forme** : les quatre formes qui ne construisent pas elles-mêmes de
+  &#47;&#47; conteneur le reçoivent ici, au niveau de l&#39;aiguillage — `listTile`
+  &#47;&#47; comprise, qui ne passe pas par `_dense`. [ZReadFieldLayout.card] le porte
+  &#47;&#47; déjà dans [_card] (avec sa hauteur minimale et son bouton, qui restent
+  &#47;&#47; propres à elle) : l&#39;enrober une seconde fois le doublerait.
+  final encadre = form == ZReadFieldLayout.card
+      ? visual
+      : _encadre(tokens, scheme, visual);
+
+  final margin = tokens.readCardMargin ?? EdgeInsetsDirectional.zero;
   return Semantics(
     container: true,
     label: label,
-    value: copyText,
-    child: Padding(
-      padding: tokens.readCardMargin,
-      child: Card(
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        color: scheme.surfaceContainerLow,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(tokens.inputRadius),
-          side: BorderSide(
-            color: scheme.outline,
-            width: tokens.inputBorderWidth,
-          ),
-        ),
-        child: InkWell(
-          &#47;&#47; `onLongPress` : copie la valeur textuelle. No-op si
-          &#47;&#47; non copiable (placeholder &#47; valeur-Widget).
-          onLongPress: _copyable ? () =&gt; _copy(context) : null,
-          borderRadius: BorderRadius.all(tokens.inputRadius),
-          child: content,
-        ),
-      ),
-    ),
+    value: _announced,
+    &#47;&#47; Formes denses : le bouton de copie n&#39;existe pas (il aurait imposé une
+    &#47;&#47; cible de 48 et annulé la densité). L&#39;action reste offerte aux lecteurs
+    &#47;&#47; d&#39;écran, et par appui long au doigt.
+    customSemanticsActions: _copyable &amp;&amp; !_showsCopyButton(form)
+        ? &lt;CustomSemanticsAction, VoidCallback&gt;{
+            CustomSemanticsAction(label: _copyLabel(context)):
+                () =&gt; _copy(context),
+          }
+        : null,
+    child: margin == EdgeInsetsDirectional.zero
+        ? encadre
+        : Padding(padding: margin, child: encadre),
   );
 }</code></pre>
 </section>
@@ -199,7 +265,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

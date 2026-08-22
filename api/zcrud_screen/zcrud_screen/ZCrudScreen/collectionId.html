@@ -62,7 +62,16 @@
       </section>
       
 <section class="desc markdown">
-  <p>Identifiant de collection passé à <code>ZAcl.can</code> et <code>repository.save</code>.</p>
+  <p>Identifiant de collection soumis à l'<strong>autorisation</strong>, et à elle seule :
+c'est la valeur passée à <code>ZAcl.can(action, collectionId:)</code> pour toutes les
+décisions de l'écran (consultation, création, édition, corbeille, purge).</p>
+<p>Il n'est <strong>jamais</strong> transmis à <code>repository.save</code> : un dépôt porte déjà son
+propre emplacement d'écriture, c'est sa raison d'être. Déclarer ici la clé
+de gouvernance de l'écran est donc sans effet sur l'endroit où les données
+atterrissent — l'écriture suit toujours le dépôt déclaré dans <a href="../../zcrud_screen/ZCrudScreen/source.html">source</a>.</p>
+<p>Pour rediriger réellement une écriture vers un autre conteneur, l'appel
+doit être explicite et direct : <code>repository.save(item, collectionId: …)</code>
+(voir <code>ZRepository.save</code>), jamais par le détour de cette déclaration.</p>
 </section>
 
       
@@ -97,7 +106,7 @@
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

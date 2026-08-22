@@ -54,10 +54,16 @@
 
     
 <section class="desc markdown">
-  <p>Config triviale pur-cœur des champs <strong>date/heure</strong> (<code>dateTime</code>/<code>time</code>).
-Les bornes s'expriment soit comme <strong>clés d'autres champs</strong>
-(<a href="../zcrud_core/ZDateConfig/firstDateKey.html">firstDateKey</a>/<a href="../zcrud_core/ZDateConfig/lastDateKey.html">lastDateKey</a>, résolution cross-champ), soit comme
-<strong>littéraux ISO-8601</strong> (<a href="../zcrud_core/ZDateConfig/minDateIso.html">minDateIso</a>/<a href="../zcrud_core/ZDateConfig/maxDateIso.html">maxDateIso</a>).</p>
+  <p>Config triviale pur-cœur des champs <strong>date/heure</strong> (<code>dateTime</code>/<code>time</code>) et
+<strong>plage de dates</strong> (<code>dateRange</code>).</p>
+<p>Deux familles de contraintes, à ne pas confondre :</p>
+<ul>
+<li><strong>où</strong> la plage se situe — <a href="../zcrud_core/ZDateConfig/firstDateKey.html">firstDateKey</a>/<a href="../zcrud_core/ZDateConfig/lastDateKey.html">lastDateKey</a> (clés d'autres
+champs, résolution cross-champ) ou <a href="../zcrud_core/ZDateConfig/minDateIso.html">minDateIso</a>/<a href="../zcrud_core/ZDateConfig/maxDateIso.html">maxDateIso</a> (littéraux
+ISO-8601) ;</li>
+<li><strong>quelle largeur</strong> elle peut avoir — <a href="../zcrud_core/ZDateConfig/maxDays.html">maxDays</a>/<a href="../zcrud_core/ZDateConfig/minDays.html">minDays</a> (amplitude, type
+<code>dateRange</code> uniquement).</li>
+</ul>
 <p><strong>const-safe</strong> : les bornes littérales sont des <code>String?</code> ISO-8601 (et
 <strong>non</strong> des <code>DateTime</code>, qui n'ont pas de constructeur <code>const</code>) ⇒ la config
 reste <code>const</code> et pur-données dans une annotation <code>@ZcrudField.config</code>. Le
@@ -94,7 +100,7 @@ ignorée).</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZDateConfig.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZDateConfig/ZDateConfig.html">ZDateConfig</a></span><span class="signature">({<span class="parameter" id="param-firstDateKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">firstDateKey</span>, </span><span class="parameter" id="param-lastDateKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">lastDateKey</span>, </span><span class="parameter" id="param-minDateIso"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">minDateIso</span>, </span><span class="parameter" id="param-maxDateIso"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">maxDateIso</span>, </span><span class="parameter" id="param-mode"><span class="type-annotation"><a href="../zcrud_core/ZDateMode.html">ZDateMode</a>?</span> <span class="parameter-name">mode</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZDateConfig/ZDateConfig.html">ZDateConfig</a></span><span class="signature">({<span class="parameter" id="param-firstDateKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">firstDateKey</span>, </span><span class="parameter" id="param-lastDateKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">lastDateKey</span>, </span><span class="parameter" id="param-minDateIso"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">minDateIso</span>, </span><span class="parameter" id="param-maxDateIso"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">maxDateIso</span>, </span><span class="parameter" id="param-mode"><span class="type-annotation"><a href="../zcrud_core/ZDateMode.html">ZDateMode</a>?</span> <span class="parameter-name">mode</span>, </span><span class="parameter" id="param-maxDays"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">maxDays</span>, </span><span class="parameter" id="param-minDays"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">minDays</span></span>})</span>
         </dt>
         <dd>
           Construit une config date <code>const</code>.
@@ -108,6 +114,33 @@ ignorée).</p>
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
+        <dt id="effectiveMaxDays" class="property">
+  <span class="name"><a href="../zcrud_core/ZDateConfig/effectiveMaxDays.html">effectiveMaxDays</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  <a href="../zcrud_core/ZDateConfig/maxDays.html">maxDays</a> <strong>retenue</strong>, ou <code>null</code> si aucune amplitude maximale ne
+s'applique (non déclarée, ou valeur <code>&lt; 1</code> ignorée — cf. <a href="../zcrud_core/ZDateConfig/maxDays.html">maxDays</a>).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="effectiveMinDays" class="property">
+  <span class="name"><a href="../zcrud_core/ZDateConfig/effectiveMinDays.html">effectiveMinDays</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  <a href="../zcrud_core/ZDateConfig/minDays.html">minDays</a> <strong>retenue</strong>, ou <code>null</code> si aucune amplitude minimale ne
+s'applique — non déclarée, valeur <code>&lt; 1</code>, ou déclaration contradictoire
+avec <a href="../zcrud_core/ZDateConfig/effectiveMaxDays.html">effectiveMaxDays</a> (cf. <a href="../zcrud_core/ZDateConfig/minDays.html">minDays</a>).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
         <dt id="firstDateKey" class="property">
   <span class="name"><a href="../zcrud_core/ZDateConfig/firstDateKey.html">firstDateKey</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
@@ -156,6 +189,19 @@ ignorée).</p>
 
 </dd>
 
+        <dt id="maxDays" class="property">
+  <span class="name"><a href="../zcrud_core/ZDateConfig/maxDays.html">maxDays</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Amplitude maximale</strong> d'une plage (<code>dateRange</code>), exprimée en <strong>nombre de
+jours couverts, bornes incluses</strong>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="minDateIso" class="property">
   <span class="name"><a href="../zcrud_core/ZDateConfig/minDateIso.html">minDateIso</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
@@ -164,6 +210,19 @@ ignorée).</p>
 </dt>
 <dd>
   Borne minimale <strong>littérale</strong> ISO-8601 (prime sur <a href="../zcrud_core/ZDateConfig/firstDateKey.html">firstDateKey</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="minDays" class="property">
+  <span class="name"><a href="../zcrud_core/ZDateConfig/minDays.html">minDays</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Amplitude minimale</strong> d'une plage (<code>dateRange</code>), même comptage que
+<a href="../zcrud_core/ZDateConfig/maxDays.html">maxDays</a> : <strong>nombre de jours couverts, bornes incluses</strong>.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -198,10 +257,24 @@ type du champ (<code>time</code> → time ; sinon → <code>dateTime</code> comb
 
     
   <section
-      class="summary offset-anchor inherited"
+      class="summary offset-anchor"
       id="instance-methods">
     <h2>Methods</h2>
     <dl class="callables">
+        <dt id="checkSpanDays" class="callable">
+  <span class="name"><a href="../zcrud_core/ZDateConfig/checkSpanDays.html">checkSpanDays</a></span><span class="signature">(<wbr><span class="parameter" id="checkSpanDays-param-spanDays"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">spanDays</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZDateSpanVerdict.html">ZDateSpanVerdict</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Confronte une amplitude (<a href="../zcrud_core/ZDateRange/spanDays.html">ZDateRange.spanDays</a> — <strong>jours couverts, bornes
+incluses</strong>) aux contraintes déclarées.
+  
+
+</dd>
+
         <dt id="noSuchMethod" class="callable inherited">
   <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
     <span class="returntype parameter">&#8594; dynamic</span>
@@ -278,7 +351,7 @@ type du champ (<code>time</code> → time ; sinon → <code>dateTime</code> comb
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

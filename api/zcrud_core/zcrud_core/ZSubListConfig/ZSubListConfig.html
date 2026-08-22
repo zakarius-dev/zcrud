@@ -56,14 +56,16 @@
       const
       <span class="name ">ZSubListConfig</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-itemFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">itemFields</span> = <span class="default-value">const &lt;ZFieldSpec&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-reorderable"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">reorderable</span> = <span class="default-value">true</span>, </span></li>
-<li><span class="parameter" id="param-displayMode"><span class="type-annotation"><a href="../../zcrud_core/ZSubListDisplayMode.html">ZSubListDisplayMode</a></span> <span class="parameter-name">displayMode</span> = <span class="default-value">ZSubListDisplayMode.inline</span>, </span></li>
+<li><span class="parameter" id="param-displayMode"><span class="type-annotation"><a href="../../zcrud_core/ZSubListDisplayMode.html">ZSubListDisplayMode</a></span> <span class="parameter-name">displayMode</span> = <span class="default-value">ZSubListDisplayMode.compact</span>, </span></li>
 <li><span class="parameter" id="param-summaryFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">summaryFields</span> = <span class="default-value">const &lt;String&gt;[]</span>, </span></li>
+<li><span class="parameter" id="param-summaryColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZSubListSummaryColumn-class.html">ZSubListSummaryColumn</a></span>&gt;</span></span> <span class="parameter-name">summaryColumns</span> = <span class="default-value">const &lt;ZSubListSummaryColumn&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-softDelete"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">softDelete</span> = <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="param-creationTemplates"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZSubListItemTemplate-class.html">ZSubListItemTemplate</a></span>&gt;</span></span> <span class="parameter-name">creationTemplates</span> = <span class="default-value">const &lt;ZSubListItemTemplate&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-defaultNewItem"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">defaultNewItem</span> = <span class="default-value">const &lt;String, Object?&gt;{}</span>, </span></li>
 <li><span class="parameter" id="param-createNewTextKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">createNewTextKey</span>, </span></li>
 <li><span class="parameter" id="param-aclCollectionId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">aclCollectionId</span>, </span></li>
-<li><span class="parameter" id="param-showSummaryHeaders"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showSummaryHeaders</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-showSummaryHeaders"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showSummaryHeaders</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="param-itemFormPresentation"><span class="type-annotation"><a href="../../zcrud_core/ZSubItemFormPresentation.html">ZSubItemFormPresentation</a></span> <span class="parameter-name">itemFormPresentation</span> = <span class="default-value">ZSubItemFormPresentation.dialog</span>, </span></li>
 </ol>})
     </section>
     
@@ -78,14 +80,16 @@
   <pre class="language-dart"><code class="language-dart">const ZSubListConfig({
   this.itemFields = const &lt;ZFieldSpec&gt;[],
   this.reorderable = true,
-  this.displayMode = ZSubListDisplayMode.inline,
+  this.displayMode = ZSubListDisplayMode.compact,
   this.summaryFields = const &lt;String&gt;[],
+  this.summaryColumns = const &lt;ZSubListSummaryColumn&gt;[],
   this.softDelete = false,
   this.creationTemplates = const &lt;ZSubListItemTemplate&gt;[],
   this.defaultNewItem = const &lt;String, Object?&gt;{},
   this.createNewTextKey,
   this.aclCollectionId,
-  this.showSummaryHeaders = false,
+  this.showSummaryHeaders = true,
+  this.itemFormPresentation = ZSubItemFormPresentation.dialog,
 });</code></pre>
 </section>
 
@@ -114,7 +118,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

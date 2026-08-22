@@ -144,9 +144,9 @@ la voie TYPÉE qui <strong>porte les données</strong>.
 <dd>
   Glyphe INJECTÉ du bouton d'ajout (<code>+</code>). <code>null</code> = l'appelant n'impose pas
 d'icône ; le layout se replie sur un glyphe « add » neutre documenté
-(<a href="../zcrud_study/ZSectionedStudyLayout-class.html">ZSectionedStudyLayout</a>). Solde DW-ES51-1 MEDIUM-1 : plus aucun
-<code>Icons.add</code> codé en dur INCONDITIONNELLEMENT dans le package (FR-26 — les
-<code>IconData</code> significatifs sont fournis par l'appelant).
+(<a href="../zcrud_study/ZSectionedStudyLayout-class.html">ZSectionedStudyLayout</a>). Aucun <code>Icons.add</code> n'est codé en dur
+inconditionnellement dans le package (FR-26 — les <code>IconData</code> significatifs
+sont fournis par l'appelant).
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -159,8 +159,8 @@ d'icône ; le layout se replie sur un glyphe « add » neutre documenté
 </dt>
 <dd>
   Label sémantique LOCALISÉ du bouton d'ajout (lecteur d'écran). <code>null</code> = le
-layout se replie sur <a href="../zcrud_study/ZStudyToolsSectionSpec/title.html">title</a> (toléré, documenté). Solde DW-ES51-1
-MEDIUM-1 : le label injecté PRIME sur <a href="../zcrud_study/ZStudyToolsSectionSpec/title.html">title</a> pour lever l'ambiguïté
+layout se replie sur <a href="../zcrud_study/ZStudyToolsSectionSpec/title.html">title</a> (toléré, documenté). Le label injecté PRIME
+sur <a href="../zcrud_study/ZStudyToolsSectionSpec/title.html">title</a> pour lever l'ambiguïté
 <code>« &lt;titre&gt;, bouton »</code> (le screen-reader annonce l'ACTION « ajouter … », pas
 l'en-tête homonyme). JAMAIS de « Ajouter »/« Add » codé en dur (i18n —
 AD-13/FR-23).
@@ -323,7 +323,7 @@ AD-13).
 </dt>
 <dd>
   Widget affiché quand la section est vide (<code>itemCount == 0</code>). Fourni par
-l'appelant (équivalent <code>EmtyFolderContent</code> IFFD) — jamais un <code>SizedBox</code>
+l'appelant — jamais un <code>SizedBox</code>
 silencieux imposé par le descripteur.
   <div class="features"><span class="feature">final</span></div>
 
@@ -413,7 +413,7 @@ de widget (<code>ValueKey('section:$id')</code>) — DOIT être unique dans une 
 </dt>
 <dd>
   Construit l'item à l'index donné (<code>0 &lt;= index &lt; itemCount</code>). L'appelant
-fournit ici la carte d'item (équivalent <code>_buildGridItemCard</code> IFFD) —
+fournit ici la carte d'item —
 couleurs/icônes/labels y sont injectés, jamais dans le descripteur.
   <div class="features"><span class="feature">final</span></div>
 
@@ -704,7 +704,7 @@ sur <a href="../zcrud_study/ZStudyToolsSectionSpec/title.html">title</a>, ou sur
 <footer>
   <span class="no-break">
     zcrud_study
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

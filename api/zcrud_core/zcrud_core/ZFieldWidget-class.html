@@ -90,7 +90,7 @@
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZFieldWidget.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZFieldWidget/ZFieldWidget.html">ZFieldWidget</a></span><span class="signature">({<span class="parameter" id="param-controller"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFormController-class.html">ZFormController</a></span> <span class="parameter-name">controller</span>, </span><span class="parameter" id="param-field"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="param-autovalidateMode"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/AutovalidateMode.html">AutovalidateMode</a>?</span> <span class="parameter-name">autovalidateMode</span>, </span><span class="parameter" id="param-readMode"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readMode</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-onInit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onInit</span>, </span><span class="parameter" id="param-onBuild"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onBuild</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZFieldWidget/ZFieldWidget.html">ZFieldWidget</a></span><span class="signature">({<span class="parameter" id="param-controller"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFormController-class.html">ZFormController</a></span> <span class="parameter-name">controller</span>, </span><span class="parameter" id="param-field"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="param-autovalidateMode"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/AutovalidateMode.html">AutovalidateMode</a>?</span> <span class="parameter-name">autovalidateMode</span>, </span><span class="parameter" id="param-readMode"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">readMode</span>, </span><span class="parameter" id="param-onInit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onInit</span>, </span><span class="parameter" id="param-onBuild"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onBuild</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
         </dt>
         <dd>
           Construit le champ pour <code>field</code>, lié à la tranche <code>field.name</code> du
@@ -197,17 +197,14 @@ de build par champ, invariant AD-2).
 
         <dt id="readMode" class="property">
   <span class="name"><a href="../zcrud_core/ZFieldWidget/readMode.html">readMode</a></span>
-  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span>
   
 
 </dt>
 <dd>
-  <strong>Mode lecture GLOBAL</strong> — drapeau de PRÉSENTATION <strong>additif</strong>
-(défaut <code>false</code>), signal DISTINCT de <code>ZFieldSpec.readOnly</code>. Quand <code>true</code> et
-que la famille est « fiche-able » (<code>zReadModeCardable</code>), le champ est rendu
-en <strong>fiche de consultation</strong> (<a href="../zcrud_core/ZReadOnlyFieldCard-class.html">ZReadOnlyFieldCard</a>) au lieu du widget
-d'édition grisé. Les familles non fiche-ables conservent leur rendu
-<code>readOnly</code> existant (jamais régressé). Propagé par <code>DynamicEdition.readOnly</code>.
+  <strong>Mode de présentation</strong> de ce champ — signal DISTINCT de
+<code>ZFieldSpec.readOnly</code> (qui dit « ce champ-ci n'est pas modifiable », jamais
+comment le présenter).
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -415,7 +412,7 @@ tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

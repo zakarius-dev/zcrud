@@ -115,7 +115,18 @@ Widget build(BuildContext context) {
   &#47;&#47; Si un présentateur riche est injecté au scope, on lui DÉLÈGUE la
   &#47;&#47; présentation via un DTO NEUTRE (jamais le controller — invariant AD-2).
   &#47;&#47; Défaut `null` ⇒ rendu natif ci-dessous strictement conservé.
-  final presenter = ZcrudScope.maybeOf(context)?.selectPresenter;
+  final scope = ZcrudScope.maybeOf(context);
+  final config = field.config is ZSelectConfig ? field.config as ZSelectConfig : null;
+  final registeredBuilders = config?.choiceBuilderKey == null
+      ? null
+      : scope?.selectChoiceBuilderRegistry
+          ?.tryBuildersFor(config!.choiceBuilderKey!);
+  &#47;&#47; Résolution ICI, et non au dispatcher : comme les seams de sous-listes,
+  &#47;&#47; le widget consommateur possède la liste exhaustive de ses slots.
+  final effectiveChoiceBuilder = choiceBuilder ?? registeredBuilders?.choiceBuilder;
+  final effectiveChoiceSecondaryBuilder =
+      choiceSecondaryBuilder ?? registeredBuilders?.choiceSecondaryBuilder;
+  final presenter = scope?.selectPresenter;
   if (presenter != null) {
     return presenter.present(
       context,
@@ -132,8 +143,8 @@ Widget build(BuildContext context) {
         &#47;&#47; de chargement — ses choix sont résolus SYNCHRONEMENT par le
         &#47;&#47; dispatcher (`_resolveSelectChoices`). Poser autre chose que le
         &#47;&#47; défaut `false` serait une donnée inventée.
-        choiceBuilder: choiceBuilder,
-        choiceSecondaryBuilder: choiceSecondaryBuilder,
+        choiceBuilder: effectiveChoiceBuilder,
+        choiceSecondaryBuilder: effectiveChoiceSecondaryBuilder,
         optionsLoader: optionsLoader,
       ),
     );
@@ -179,7 +190,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

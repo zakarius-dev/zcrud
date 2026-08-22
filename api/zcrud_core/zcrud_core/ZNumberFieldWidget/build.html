@@ -123,7 +123,7 @@ Widget build(BuildContext context) {
     &#47;&#47; Label enrichi + hint&#47;helper + ornements leading&#47;prefix&#47;suffix.
     &#47;&#47; Suffixe devise&#47;pourcentage NEUTRE lu depuis ZNumberConfig.
     decoration: zFieldDecoration(context, field,
-        bare: bare, suffixText: _suffixText(context)),
+        bare: bare, suffixText: _suffixText(context), valueOf: valueOf),
     onChanged: (raw) =&gt; onChanged(_parse(raw)),
   );
 }</code></pre>
@@ -154,7 +154,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

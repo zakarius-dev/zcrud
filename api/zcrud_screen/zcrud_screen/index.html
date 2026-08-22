@@ -85,6 +85,15 @@ généré (<code>kindOf</code> → <code>fieldSpecsFor</code> / <code>encode</co
     <section class="summary offset-anchor" id="classes">
       <h2>Classes</h2>
       <dl>
+          <dt id="ZAppBarActionsContext">
+  <span class="name "><a href="../zcrud_screen/ZAppBarActionsContext-class.html">ZAppBarActionsContext</a></span> 
+
+</dt>
+<dd>
+  État de l'écran offert à un <a href="../zcrud_screen/ZAppBarActionsBuilder.html">ZAppBarActionsBuilder</a> — les seules lectures
+dont une action de barre a besoin, sans couplage à l'état interne.
+</dd>
+
           <dt id="ZCrudEditionScope">
   <span class="name "><a href="../zcrud_screen/ZCrudEditionScope-class.html">ZCrudEditionScope</a></span> 
 
@@ -142,6 +151,32 @@ que l'écran sait ouvrir.
   Politique d'<strong>export</strong> d'un écran CRUD.
 </dd>
 
+          <dt id="ZFormOnly">
+  <span class="name "><a href="../zcrud_screen/ZFormOnly-class.html">ZFormOnly</a></span> 
+
+</dt>
+<dd>
+  Le formulaire déclaratif <strong>nu</strong> : les champs de <a href="../zcrud_screen/ZFormOnly/fields.html">fields</a>, et rien d'autre.
+</dd>
+
+          <dt id="ZFormOnlyController">
+  <span class="name "><a href="../zcrud_screen/ZFormOnlyController-class.html">ZFormOnlyController</a></span> 
+
+</dt>
+<dd>
+  Pilotage <strong>extérieur</strong> d'un <a href="../zcrud_screen/ZFormOnly-class.html">ZFormOnly</a> : valider, connaître la validité,
+obtenir les valeurs normalisées.
+</dd>
+
+          <dt id="ZInMemoryListTabsStore">
+  <span class="name "><a href="../zcrud_screen/ZInMemoryListTabsStore-class.html">ZInMemoryListTabsStore</a></span> 
+
+</dt>
+<dd>
+  Store mémoire (défaut testable) : conserve l'onglet actif et les
+défilements <strong>par portée</strong> pour la durée de vie de l'instance.
+</dd>
+
           <dt id="ZListQueryPolicy">
   <span class="name "><a href="../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a></span> 
 
@@ -157,6 +192,14 @@ recherche d'un listing <strong>déclarés</strong> sur l'écran.
 </dt>
 <dd>
   Contexte portant la <a href="../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a> d'un écran autour de son corps.
+</dd>
+
+          <dt id="ZListTabsStore">
+  <span class="name "><a href="../zcrud_screen/ZListTabsStore-class.html">ZListTabsStore</a></span> 
+
+</dt>
+<dd>
+  Port de (dé)chargement de l'<strong>onglet actif</strong> et de son <strong>défilement</strong>.
 </dd>
 
           <dt id="ZRowActionsMenu">
@@ -234,6 +277,33 @@ réclament.
     <section class="summary offset-anchor" id="functions">
       <h2>Functions</h2>
       <dl class="callables">
+          <dt id="presentFormEdition" class="callable">
+  <span class="name"><a href="../zcrud_screen/presentFormEdition.html">presentFormEdition</a></span><span class="signature">(<wbr><span class="parameter" id="presentFormEdition-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="presentFormEdition-param-fields"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span> <span class="parameter-name">fields</span>, </span><span class="parameter" id="presentFormEdition-param-initialValues"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span>?</span> <span class="parameter-name">initialValues</span>, </span><span class="parameter" id="presentFormEdition-param-title"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">title</span>, </span><span class="parameter" id="presentFormEdition-param-submitLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">submitLabel</span>, </span><span class="parameter" id="presentFormEdition-param-discardLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">discardLabel</span>, </span><span class="parameter" id="presentFormEdition-param-onConfirmDiscard"><span class="type-annotation">ZConfirmDiscard?</span> <span class="parameter-name">onConfirmDiscard</span>, </span><span class="parameter" id="presentFormEdition-param-formController"><span class="type-annotation">ZFormController?</span> <span class="parameter-name">formController</span>, </span><span class="parameter" id="presentFormEdition-param-conditionContext"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">conditionContext</span> = <span class="default-value">const &lt;String, Object?&gt;{}</span>, </span><span class="parameter" id="presentFormEdition-param-policy"><span class="type-annotation">ZPresentationPolicy</span> <span class="parameter-name">policy</span> = <span class="default-value">const ZPresentationPolicy()</span>, </span><span class="parameter" id="presentFormEdition-param-formWeight"><span class="type-annotation">ZFormWeight</span> <span class="parameter-name">formWeight</span> = <span class="default-value">ZFormWeight.light</span>, </span><span class="parameter" id="presentFormEdition-param-forcedMode"><span class="type-annotation">ZEditionPresentation?</span> <span class="parameter-name">forcedMode</span>, </span><span class="parameter" id="presentFormEdition-param-readOnly"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readOnly</span> = <span class="default-value">false</span>, </span><span class="parameter" id="presentFormEdition-param-sections"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZEditionSection</span>&gt;</span></span> <span class="parameter-name">sections</span> = <span class="default-value">const &lt;ZEditionSection&gt;[]</span>, </span><span class="parameter" id="presentFormEdition-param-steps"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZEditionStep</span>&gt;</span></span> <span class="parameter-name">steps</span> = <span class="default-value">const &lt;ZEditionStep&gt;[]</span>, </span><span class="parameter" id="presentFormEdition-param-stepperConfig"><span class="type-annotation">ZStepperConfig</span> <span class="parameter-name">stepperConfig</span> = <span class="default-value">const ZStepperConfig()</span>, </span><span class="parameter" id="presentFormEdition-param-bodyBuilder"><span class="type-annotation"><a href="../zcrud_screen/ZFormBodyBuilder.html">ZFormBodyBuilder</a>?</span> <span class="parameter-name">bodyBuilder</span>, </span><span class="parameter" id="presentFormEdition-param-bodyFit"><span class="type-annotation">ZEditionBodyFit?</span> <span class="parameter-name">bodyFit</span>, </span><span class="parameter" id="presentFormEdition-param-layout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">ZResponsiveSpan</span>&gt;</span></span> <span class="parameter-name">layout</span> = <span class="default-value">const &lt;String, ZResponsiveSpan&gt;{}</span>, </span><span class="parameter" id="presentFormEdition-param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">padding</span>, </span><span class="parameter" id="presentFormEdition-param-collapseStore"><span class="type-annotation">ZSectionCollapseStore?</span> <span class="parameter-name">collapseStore</span>, </span><span class="parameter" id="presentFormEdition-param-formId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">formId</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span>?</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Présente le formulaire déclaré par <code>fields</code> et retourne ses valeurs
+<strong>validées et normalisées</strong>.
+  
+
+</dd>
+
+          <dt id="showZEntityHistory" class="callable">
+  <span class="name"><a href="../zcrud_screen/showZEntityHistory.html">showZEntityHistory</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="showZEntityHistory-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="showZEntityHistory-param-entity"><span>required</span> <span class="type-annotation">T</span> <span class="parameter-name">entity</span>, </span><span class="parameter" id="showZEntityHistory-param-source"><span>required</span> <span class="type-annotation">ZEntityHistorySource<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">source</span>, </span><span class="parameter" id="showZEntityHistory-param-currentValue"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">currentValue</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Présente le journal sans imposer de route ou de backend à l'hôte.
+  
+
+</dd>
+
           <dt id="zCrudDetailsOpener" class="callable">
   <span class="name"><a href="../zcrud_screen/zCrudDetailsOpener.html">zCrudDetailsOpener</a></span><span class="signature">(<wbr><span class="parameter" id="zCrudDetailsOpener-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="zCrudDetailsOpener-param-entity"><span class="type-annotation">ZEntity</span> <span class="parameter-name">entity</span></span>)
     <span class="returntype parameter">&#8594; <a href="../zcrud_screen/ZCrudOpener.html">ZCrudOpener</a>?</span>
@@ -244,8 +314,8 @@ réclament.
 <dd>
   Le rappel qui ouvre la <strong>fiche de détail</strong> de <code>entity</code> sur l'écran
 englobant, ou <code>null</code> si la consultation n'est pas offerte — hors écran,
-écran verrouillé ou non déclaré consultable, vue corbeille, aucun
-formulaire, ou <code>ZCrudAction.view</code> refusé sur cette ligne.
+écran verrouillé ou non déclaré consultable, aucun formulaire, ou
+<code>ZCrudAction.view</code> refusé sur cette ligne.
   
 
 </dd>
@@ -298,6 +368,21 @@ en entrée de menu.
     <section class="summary offset-anchor" id="typedefs">
       <h2>Typedefs</h2>
       <dl>
+          
+  <dt id="ZAppBarActionsBuilder" class="callable">
+    <span class="name"><a href="../zcrud_screen/ZAppBarActionsBuilder.html">ZAppBarActionsBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZAppBarAction</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="../zcrud_screen/ZAppBarActionsContext-class.html">ZAppBarActionsContext</a></span> <span class="parameter-name">context</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Fabrique des actions d'app-bar <strong>additionnelles</strong>, réévaluée à chaque
+changement de l'état que porte <a href="../zcrud_screen/ZAppBarActionsContext-class.html">ZAppBarActionsContext</a>.
+    
+
+  </dd>
+
           
   <dt id="ZCrudBatchActions" class="callable">
     <span class="name"><a href="../zcrud_screen/ZCrudBatchActions.html">ZCrudBatchActions</a></span>&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;<span class="signature">
@@ -400,6 +485,20 @@ l'application.
   </dd>
 
           
+  <dt id="ZFormBodyBuilder" class="callable">
+    <span class="name"><a href="../zcrud_screen/ZFormBodyBuilder.html">ZFormBodyBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-controller"><span class="type-annotation"><a href="../zcrud_screen/ZFormOnlyController-class.html">ZFormOnlyController</a></span> <span class="parameter-name">controller</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Fabrique du <strong>corps</strong> d'une fenêtre d'édition de valeurs.
+    
+
+  </dd>
+
+          
   <dt id="ZRowTintBuilder" class="callable">
     <span class="name"><a href="../zcrud_screen/ZRowTintBuilder.html">ZRowTintBuilder</a></span>&lt;<wbr><span class="type-parameter">T</span>&gt;<span class="signature">
       <span class="returntype parameter">= <a href="../zcrud_screen/ZRowTint-class.html">ZRowTint</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>)</span></span>
@@ -443,7 +542,7 @@ l'application.
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

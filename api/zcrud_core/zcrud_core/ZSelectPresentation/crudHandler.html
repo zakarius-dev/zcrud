@@ -71,6 +71,15 @@ rendu natif exploite. Contrairement à <a href="../../zcrud_core/ZSelectPresenta
 celui-ci est donc alimenté <strong>de bout en bout, par le dispatcher
 déclaratif</strong> — un présentateur riche ne doit pas perdre une capacité que
 le rendu natif possède déjà.</p>
+<p>🔴 <strong>Un handler non <code>null</code> n'autorise pas les trois gestes.</strong> Depuis que
+le port les gouverne séparément, un présentateur DOIT gouverner chaque
+affordance par <code>offersCreate</code> / <code>offersEdit</code> / <code>offersCopy</code>
+(<code>ZRelationCrudOffer</code>, lecture défensive AD-10) — jamais par le seul
+<code>crudHandler != null</code>, qui rendrait des boutons que l'ACL de l'hôte
+refuse. Un geste refusé est <strong>absent</strong>, jamais grisé :</p>
+<pre class="language-dart"><code class="language-dart">if (presentation.crudHandler case final crud? when crud.offersCreate)
+  monBoutonCreer(),
+</code></pre>
 </section>
 
       
@@ -105,7 +114,7 @@ le rendu natif possède déjà.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

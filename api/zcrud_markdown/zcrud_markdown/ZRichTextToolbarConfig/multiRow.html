@@ -62,20 +62,19 @@
       </section>
       
 <section class="desc markdown">
-  <p>Barre <strong>multi-rangées</strong> (<code>multiRowsDisplay</code> Quill, parité <code>qmew:229</code>) —
-TRI-ÉTAT (CR toolbar multi-rangées par surface, 2026-08-11).</p>
+  <p>Barre <strong>multi-rangées</strong> (<code>multiRowsDisplay</code> Quill) — TRI-ÉTAT.</p>
 <p>La MÊME config sert le champ en flux ET le dialog plein-écran : un booléen
-unique ne peut pas être juste pour les deux surfaces. Constat device
-(pilote historique) : <code>true</code> en flux ⇒ la barre s'empile sur ~10 rangées et
-noie le formulaire ; <code>false</code> en plein écran ⇒ boutons rejetés hors écran
-alors que la place abonde.</p>
+unique ne peut pas être juste pour les deux surfaces. Mesuré sur appareil :
+<code>true</code> en flux ⇒ la barre s'empile sur ~10 rangées et noie le formulaire ;
+<code>false</code> en plein écran ⇒ boutons rejetés hors écran alors que la place
+abonde.</p>
 <ul>
 <li><code>null</code> (DÉFAUT) ⇒ <strong>AUTO</strong> : la bonne valeur dérive de la SURFACE —
 <strong>une rangée défilante</strong> pour toute barre rendue DANS LE FLUX d'un
 formulaire (mode <code>inline</code> ET voie <code>controller</code>), <strong>multi-rangées</strong> dans
 <code>ZRichTextFullscreenDialog</code>. Aucune configuration hôte requise.</li>
 <li><code>true</code>/<code>false</code> ⇒ <strong>forçage hôte</strong>, respecté SUR LES DEUX surfaces
-(AD-4). Un hôte qui posait <code>false</code> (contournement v0.82/v0.83) garde
+(AD-4). Un hôte qui posait <code>false</code> pour contourner l'ancien défaut garde
 exactement son comportement — mais il doit RETIRER ce forçage pour
 profiter de l'AUTO.</li>
 </ul>
@@ -84,9 +83,9 @@ toolbar (aperçu lecteur + bouton) — sa seule barre vit dans le dialog
 plein-écran, donc multi-rangées via l'AUTO. Mesure de la géométrie en
 flux (test widget, 400 dp de large, préset <a href="../../zcrud_markdown/ZRichTextToolbarConfig/markdown-constant.html">markdown</a> + undo/redo) :
 barre forcée multi-rangées = <strong>262 dp (~5,5 rangées)</strong>, AUTO = <strong>67 dp
-(1 rangée)</strong> — le critère CR « un champ inséré dans un formulaire ne doit
-jamais consommer la hauteur de l'écran » impose la rangée unique pour
-TOUTE barre en flux, quel que soit inline/block.</p>
+(1 rangée)</strong>. La règle : un champ inséré dans un formulaire ne consomme
+jamais la hauteur de l'écran — donc rangée unique pour TOUTE barre en
+flux, quel que soit inline/block.</p>
 </section>
 
       
@@ -121,7 +120,7 @@ TOUTE barre en flux, quel que soit inline/block.</p>
 <footer>
   <span class="no-break">
     zcrud_markdown
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -86,11 +86,19 @@
 <li><span class="parameter" id="param-largeLeadingIconSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">largeLeadingIconSize</span> = <span class="default-value">22</span>, </span></li>
 <li><span class="parameter" id="param-largeLeadingGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">largeLeadingGap</span> = <span class="default-value">12</span>, </span></li>
 <li><span class="parameter" id="param-largeLabelGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">largeLabelGap</span> = <span class="default-value">4</span>, </span></li>
-<li><span class="parameter" id="param-readCardMargin"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a></span> <span class="parameter-name">readCardMargin</span> = <span class="default-value">const EdgeInsetsDirectional.only(bottom: 12)</span>, </span></li>
-<li><span class="parameter" id="param-readPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a></span> <span class="parameter-name">readPadding</span> = <span class="default-value">const EdgeInsetsDirectional.all(16)</span>, </span></li>
-<li><span class="parameter" id="param-readLabelGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">readLabelGap</span> = <span class="default-value">8</span>, </span></li>
+<li><span class="parameter" id="param-readLayout"><span class="type-annotation"><a href="../../zcrud_core/ZReadFieldLayout.html">ZReadFieldLayout</a>?</span> <span class="parameter-name">readLayout</span>, </span></li>
+<li><span class="parameter" id="param-readCardMargin"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span> <span class="parameter-name">readCardMargin</span>, </span></li>
+<li><span class="parameter" id="param-readPadding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span> <span class="parameter-name">readPadding</span>, </span></li>
+<li><span class="parameter" id="param-readLabelGap"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">readLabelGap</span>, </span></li>
 <li><span class="parameter" id="param-readLabelTextStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">readLabelTextStyle</span>, </span></li>
-<li><span class="parameter" id="param-readValueTextStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">readValueTextStyle</span> = <span class="default-value">const TextStyle(fontWeight: FontWeight.w500)</span>, </span></li>
+<li><span class="parameter" id="param-readValueTextStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">readValueTextStyle</span>, </span></li>
+<li><span class="parameter" id="param-readFillColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">readFillColor</span>, </span></li>
+<li><span class="parameter" id="param-readBorderColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">readBorderColor</span>, </span></li>
+<li><span class="parameter" id="param-readBorderWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">readBorderWidth</span>, </span></li>
+<li><span class="parameter" id="param-readCardMinHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">readCardMinHeight</span>, </span></li>
+<li><span class="parameter" id="param-readRowLabelWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">readRowLabelWidth</span>, </span></li>
+<li><span class="parameter" id="param-readRowMinWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">readRowMinWidth</span>, </span></li>
+<li><span class="parameter" id="param-subListColumnMinWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">subListColumnMinWidth</span>, </span></li>
 <li><span class="parameter" id="param-accentBarHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">accentBarHeight</span>, </span></li>
 <li><span class="parameter" id="param-gradientBegin"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/AlignmentGeometry-class.html">AlignmentGeometry</a>?</span> <span class="parameter-name">gradientBegin</span>, </span></li>
 <li><span class="parameter" id="param-gradientEnd"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/AlignmentGeometry-class.html">AlignmentGeometry</a>?</span> <span class="parameter-name">gradientEnd</span>, </span></li>
@@ -295,11 +303,19 @@ des valeurs par défaut sémantiques (aucune couleur).</p>
   this.largeLeadingIconSize = 22,
   this.largeLeadingGap = 12,
   this.largeLabelGap = 4,
-  this.readCardMargin = const EdgeInsetsDirectional.only(bottom: 12),
-  this.readPadding = const EdgeInsetsDirectional.all(16),
-  this.readLabelGap = 8,
+  this.readLayout,
+  this.readCardMargin,
+  this.readPadding,
+  this.readLabelGap,
   this.readLabelTextStyle,
-  this.readValueTextStyle = const TextStyle(fontWeight: FontWeight.w500),
+  this.readValueTextStyle,
+  this.readFillColor,
+  this.readBorderColor,
+  this.readBorderWidth,
+  this.readCardMinHeight,
+  this.readRowLabelWidth,
+  this.readRowMinWidth,
+  this.subListColumnMinWidth,
   this.accentBarHeight,
   this.gradientBegin,
   this.gradientEnd,
@@ -474,7 +490,7 @@ des valeurs par défaut sémantiques (aucune couleur).</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

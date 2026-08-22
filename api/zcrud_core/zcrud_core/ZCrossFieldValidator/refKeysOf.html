@@ -63,9 +63,14 @@
     </section>
     
 <section class="desc markdown">
-  <p>Ensemble des <code>refKey</code> référencés par les specs inter-champs de <code>specs</code> —
-alimente l'abonnement CIBLÉ du champ dépendant (<code>fieldListenable(refKey)</code>),
+  <p>Ensemble des <strong>champs observés</strong> par les specs inter-champs de <code>specs</code> —
+alimente l'abonnement CIBLÉ du champ dépendant (<code>fieldListenable(nom)</code>),
 jamais un abonnement global.</p>
+<p>Réunit les <code>refKey</code> (<code>match</code>/<code>minKey</code>/<code>maxKey</code>) et les champs de garde des
+conditions de <code>requiredIf</code> (les feuilles de source <code>state</code>, seules
+susceptibles de changer sous une frappe) : sans eux, le message « requis »
+n'apparaîtrait ni ne disparaîtrait tant que l'usager n'aurait pas
+retouché le champ lui-même.</p>
 </section>
 
 
@@ -75,6 +80,10 @@ jamais un abonnement global.</p>
   <pre class="language-dart"><code class="language-dart">static Set&lt;String&gt; refKeysOf(List&lt;ZValidatorSpec&gt; specs) =&gt; &lt;String&gt;{
       for (final s in specs)
         if (_isCrossField(s) &amp;&amp; s.refKey != null) s.refKey!,
+      ...zGuardFieldsOf(&lt;ZCondition?&gt;[
+        for (final s in specs)
+          if (s.kind == ZValidatorKind.requiredIf) s.condition,
+      ]),
     };</code></pre>
 </section>
 
@@ -103,7 +112,7 @@ jamais un abonnement global.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

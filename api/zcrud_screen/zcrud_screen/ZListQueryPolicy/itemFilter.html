@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the itemFilter property from the ZListQueryPolicy class, for the Dart programming language.">
+  <title>itemFilter property - ZListQueryPolicy class - zcrud_screen library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/">zcrud_screen.dart</a></li>
+    <li><a href="../../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a></li>
+    <li class="self-crumb">itemFilter property</li>
+  </ol>
+  <div class="self-name">itemFilter</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_screen&#47;ZListQueryPolicy-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">itemFilter</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        ZItemFilter?
+        <span class="name ">itemFilter</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p><strong>Post-filtre de l'écran</strong> : le dernier mot sur ce qui est listé, écrit
+sur l'entité typée (<code>null</code> par défaut = aucun, rien ne change).</p>
+<p>Filtres et disjonctions supposent une règle exprimable en clauses. Quand
+le périmètre appartient au métier — un croisement de droits, une fenêtre
+de dates calculée, une catégorie qui n'existe pas en base — il s'écrit en
+Dart, et c'est ici qu'il se déclare :</p>
+<pre class="language-dart"><code class="language-dart">// Déclaré une fois, hors du `build` (voir plus bas).
+static bool _visiblePour(Dossier d) =&gt; d.habilitations.contains(agent);
+
+query: ZListQueryPolicy(itemFilter: ZItemFilter.of(_visiblePour)),
+</code></pre>
+<p>Le prédicat reçoit <strong>l'entité</strong>, jamais la ligne rendue : la règle se lit
+dans le vocabulaire du domaine, et renommer un champ devient une erreur
+de compilation au lieu d'un listing qui se met silencieusement à tout
+montrer.</p>
+<p><strong>Il ne peut que restreindre</strong> : le listing montre au plus ce qu'il
+montrait sans lui. Il s'applique aux entités <strong>lues</strong>, avant leur
+projection en lignes — donc avant la recherche, le tri et la pagination :
+une page pleine reste pleine, jamais trouée par un filtrage venu après
+coup. Le post-filtre d'un onglet (<code>ZListTab.itemFilter</code>) s'y ajoute en
+conjonction : l'onglet retire, il ne rouvre pas.</p>
+<p><strong>Ce que cela coûte</strong> : un prédicat Dart ne se traduit dans aucun langage
+de requête. Le socle ne peut l'appliquer que sur un jeu déjà lu — le
+listing bascule donc sur le <strong>chemin mémoire</strong> et lit le jeu <strong>entier</strong> à
+chaque requête, pour toute sa vie (là où la bascule d'une recherche ne
+dure que le temps du terme saisi). Raisonnable sur un listing borné,
+à proscrire sur une collection sans borne.</p>
+<p><strong>Quand ne PAS en déclarer</strong> : dès que la règle est exprimable en
+clauses. Un <a href="../../zcrud_screen/ZListQueryPolicy/baseFilters.html">baseFilters</a> — ou un <a href="../../zcrud_screen/ZListQueryPolicy/baseFilterGroups.html">baseFilterGroups</a> pour « cette valeur
+ou ce champ absent » — reste servi par la source, garde la pagination
+curseur et ne lit que la page affichée. Le post-filtre est la voie de ce
+qui n'est <strong>pas</strong> requêtable, jamais un raccourci d'écriture.</p>
+<p><strong>À déclarer hors du <code>build</code></strong> : deux politiques sont comparées par
+valeur, et changer de politique reconstruit les contrôleurs du listing.
+Une fonction nommée reste égale à elle-même d'une image à l'autre ; une
+lambda écrite dans <code>build</code> est une fonction neuve à chaque fois, et le
+listing se rechargerait sans fin.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final ZItemFilter? itemFilter;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/ZListQueryPolicy-class.html">ZListQueryPolicy</a></li>
+    <li class="self-crumb">itemFilter property</li>
+</ol>
+
+  <h5>ZListQueryPolicy class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_screen
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the spanDays property from the ZDateRange class, for the Dart programming language.">
+  <title>spanDays property - ZDateRange class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core.dart</a></li>
+    <li><a href="../../zcrud_core/ZDateRange-class.html">ZDateRange</a></li>
+    <li class="self-crumb">spanDays property</li>
+  </ol>
+  <div class="self-name">spanDays</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;ZDateRange-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">spanDays</span> property 
+</h1></div>
+
+    
+
+    
+        
+  <section id="getter">
+    <section class="multi-line-signature">
+      
+      <span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+      get
+      <span class="name ">spanDays</span>
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p><strong>Amplitude</strong> de la plage : le nombre de <strong>journées civiles couvertes,
+bornes incluses</strong>.</p>
+<p>C'est le comptage que l'on annonce à l'utilisateur — « du 1er au 7 janvier
+» fait <strong>7</strong> jours, pas 6 :</p>
+<table>
+<thead>
+<tr>
+<th>Plage</th>
+<th><a href="../../zcrud_core/ZDateRange/spanDays.html">spanDays</a></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1er janvier → 1er janvier</td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td>1er janvier → 7 janvier</td>
+<td><code>7</code></td>
+</tr>
+<tr>
+<td>1er janvier → 8 janvier</td>
+<td><code>8</code></td>
+</tr>
+</tbody>
+</table>
+<p>Le calcul porte sur la <strong>journée</strong> de chaque borne : l'heure est ignorée
+(une plage du 1er à 23 h au 2 à 1 h couvre 2 jours, pas 1). Les deux
+journées sont ramenées en UTC avant la soustraction, afin qu'un
+changement d'heure saisonnier ne retire ni n'ajoute jamais un jour au
+résultat.</p>
+</section>
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">int get spanDays =&gt;
+    DateTime.utc(end.year, end.month, end.day)
+        .difference(DateTime.utc(start.year, start.month, start.day))
+        .inDays +
+    1;</code></pre>
+</section>
+
+  </section>
+
+
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/ZDateRange-class.html">ZDateRange</a></li>
+    <li class="self-crumb">spanDays property</li>
+</ol>
+
+  <h5>ZDateRange class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

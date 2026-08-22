@@ -63,7 +63,8 @@
     
 <section class="desc markdown">
   <p><strong>Réinitialise</strong> le formulaire à sa baseline courante : restaure la
-valeur baseline de chaque tranche, efface l'état <em>dirty</em> et la révélation,
+valeur baseline de chaque tranche, efface l'état <em>dirty</em>, la révélation et
+les retraits de fichiers en attente (<a href="../../zcrud_core/ZFormController/removedFilesOf.html">removedFilesOf</a>),
 puis incrémente <a href="../../zcrud_core/ZFormController/reseedRevision.html">reseedRevision</a> pour re-amorcer les widgets bufferisés
 <strong>hors focus</strong>. Une saisie en cours (champ focalisé) n'est pas écrasée : le
 re-amorçage est différé à la perte de focus par le widget.</p>
@@ -79,6 +80,7 @@ re-amorçage est différé à la perte de focus par le widget.</p>
   }
   _dirtyFields.clear();
   _touched.clear();
+  _removedFiles.clear();
   if (_isDirty.value) _isDirty.value = false;
   _reveal.value = 0;
   _reseedRevision.value = _reseedRevision.value + 1;
@@ -110,7 +112,7 @@ re-amorçage est différé à la perte de focus par le widget.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

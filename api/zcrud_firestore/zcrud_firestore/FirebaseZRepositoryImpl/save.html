@@ -83,6 +83,13 @@ méta concurrente.</li>
 <p>Le <strong>merge Last-Write-Wins</strong> sur <code>updated_at</code> (offline-first, préservation
 des écritures concurrentes) est la responsabilité de la couche de
 synchronisation offline-first — hors du périmètre de cet adaptateur.</p>
+<p><strong><code>collectionId</code> est un CHEMIN DE COLLECTION</strong>, pas une clé de droits :
+renseigné, il <strong>remplace</strong> le <code>collectionPath</code> du dépôt pour cette
+écriture — c'est une redirection délibérée. Firestore crée toute
+collection nommée à la volée : une valeur qui ne désigne pas un conteneur
+réel n'échoue pas, elle <strong>fabrique un silo</strong> que les lectures de ce dépôt
+(toutes ancrées sur <code>collectionPath</code>) n'interrogeront jamais. Ne jamais y
+passer l'identifiant de collection soumis à <code>ZAcl.can</code>.</p>
 </section>
 
 
@@ -142,7 +149,7 @@ Future&lt;ZResult&lt;T&gt;&gt; save(T item, {String? collectionId}) =&gt; _guard
 <footer>
   <span class="no-break">
     zcrud_firestore
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -84,7 +84,9 @@ mainly for debugging or logging.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-String toString() =&gt; &#39;ZFilter($field, $op, $value)&#39;;</code></pre>
+String toString() =&gt; sourceOnly
+    ? &#39;ZFilter.servedBySource($field, $op, $value)&#39;
+    : &#39;ZFilter($field, $op, $value)&#39;;</code></pre>
 </section>
 
 
@@ -112,7 +114,7 @@ String toString() =&gt; &#39;ZFilter($field, $op, $value)&#39;;</code></pre>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

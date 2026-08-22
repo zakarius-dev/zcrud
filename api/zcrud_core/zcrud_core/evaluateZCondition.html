@@ -90,6 +90,9 @@ et non <strong>vide</strong> (<code>String</code>/<code>Iterable</code>/<code>Ma
 <code>(str ?? '').isEmpty</code> ;</li>
 <li><a href="../zcrud_core/ZConditionOp.html">ZConditionOp.lengthEquals</a>/<code>lengthGt</code>/<code>lengthGte</code>/<code>lengthLt</code>/<code>lengthLte</code> :
 comparaison de <a href="../zcrud_core/zLengthOf.html">zLengthOf</a> au seuil <code>condition.length</code> (<code>null</code> ⇒ <code>0</code>) ;</li>
+<li><a href="../zcrud_core/ZConditionOp.html">ZConditionOp.contains</a> : <strong>appartenance</strong> — la valeur du champ est un
+<code>Iterable</code> contenant <code>condition.value</code> (cf. <a href="../zcrud_core/zContainsValue.html">zContainsValue</a>) ; toute
+valeur qui n'est pas une collection (y compris une <strong>chaîne</strong>) ⇒ <code>false</code> ;</li>
 <li><a href="../zcrud_core/ZConditionOp.html">ZConditionOp.and</a> : conjonction de TOUS les <code>operands</code> (vide ⇒ <code>true</code>) ;</li>
 <li><a href="../zcrud_core/ZConditionOp.html">ZConditionOp.or</a> : disjonction d'AU MOINS un <code>operand</code> (vide ⇒ <code>false</code>) ;</li>
 <li><a href="../zcrud_core/ZConditionOp.html">ZConditionOp.not</a> : négation de l'unique <code>operand</code>.</li>
@@ -161,6 +164,8 @@ sur les combinateurs (les accesseurs sont propagés inchangés).</p>
       return zLengthOf(leafValue()) &lt; (condition.length ?? 0);
     case ZConditionOp.lengthLte:
       return zLengthOf(leafValue()) &lt;= (condition.length ?? 0);
+    case ZConditionOp.contains:
+      return zContainsValue(leafValue(), condition.value);
     case ZConditionOp.and:
       final operands = condition.operands;
       if (operands == null || operands.isEmpty) return true;
@@ -207,7 +212,7 @@ sur les combinateurs (les accesseurs sont propagés inchangés).</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

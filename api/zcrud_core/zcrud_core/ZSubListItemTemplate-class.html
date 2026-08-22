@@ -58,6 +58,18 @@
 (invariants AD-3/AD-14 : aucune closure) : <a href="../zcrud_core/ZSubListItemTemplate/labelKey.html">labelKey</a> (clé l10n du libellé
 de menu) + <a href="../zcrud_core/ZSubListItemTemplate/defaults.html">defaults</a> (valeurs pré-remplies du nouvel item, fusionnées
 <strong>par-dessus</strong> <code>ZSubListConfig.defaultNewItem</code>).</p>
+<h2 id="le-gabarit-choisi-atteint-le-crochet-crud">Le gabarit choisi ATTEINT le crochet CRUD</h2>
+<p>Le gabarit sélectionné est transmis tel quel à <code>ZSubItemCrudRequest.template</code>
+(<code>null</code> pour un ajout sans gabarit). C'est l'équivalent exact du <code>{option}</code>
+que le moteur legacy passait à <code>onCrudSubItem(item, Crud.create, state, {option})</code>, et sans lui la charge utile d'un gabarit — le <code>{"type": …}</code> d'une
+timeline, par exemple — n'atteignait le crochet que <strong>fondue dans la graine</strong>,
+donc indiscernable d'une saisie de l'utilisateur.</p>
+<p><a href="../zcrud_core/ZSubListItemTemplate/defaults.html">defaults</a> sert <strong>deux</strong> rôles, et c'est délibéré : les clés qui appartiennent
+au sous-schéma <strong>pré-remplissent</strong> le formulaire ; les autres sont une
+<strong>charge utile</strong> qui voyage avec l'item (voir la note de rupture de
+<code>ZSubListConfig.defaultNewItem</code>). Le legacy séparait <code>value</code>/<code>data</code> du
+libellé ; les fondre en un seul porteur évite d'avoir à choisir lequel des
+deux le socle doit écrire.</p>
 </section>
 
 
@@ -67,7 +79,7 @@ de menu) + <a href="../zcrud_core/ZSubListItemTemplate/defaults.html">defaults</
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZSubListItemTemplate.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZSubListItemTemplate/ZSubListItemTemplate.html">ZSubListItemTemplate</a></span><span class="signature">({<span class="parameter" id="param-labelKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span>, </span><span class="parameter" id="param-defaults"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">defaults</span> = <span class="default-value">const &lt;String, Object?&gt;{}</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZSubListItemTemplate/ZSubListItemTemplate.html">ZSubListItemTemplate</a></span><span class="signature">({<span class="parameter" id="param-labelKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span>, </span><span class="parameter" id="param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">id</span>, </span><span class="parameter" id="param-labelFallback"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">labelFallback</span>, </span><span class="parameter" id="param-defaults"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">defaults</span> = <span class="default-value">const &lt;String, Object?&gt;{}</span>, </span><span class="parameter" id="param-opensForm"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">opensForm</span> = <span class="default-value">true</span></span>})</span>
         </dt>
         <dd>
           Construit un gabarit <code>const</code>.
@@ -105,6 +117,33 @@ de menu) + <a href="../zcrud_core/ZSubListItemTemplate/defaults.html">defaults</
 
 </dd>
 
+        <dt id="id" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListItemTemplate/id.html">id</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Identité <strong>stable</strong> et optionnelle du gabarit, à l'usage du crochet
+(<code>ZSubItemCrudRequest.template?.id</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="labelFallback" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListItemTemplate/labelFallback.html">labelFallback</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Repli affiché quand <a href="../zcrud_core/ZSubListItemTemplate/labelKey.html">labelKey</a> n'est résolue nulle part — même contrat que
+<code>ZSubItemMenuOption.labelFallback</code>. <code>null</code> (défaut) ⇒ la clé elle-même
+s'affiche, comme avant.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="labelKey" class="property">
   <span class="name"><a href="../zcrud_core/ZSubListItemTemplate/labelKey.html">labelKey</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
@@ -112,7 +151,20 @@ de menu) + <a href="../zcrud_core/ZSubListItemTemplate/defaults.html">defaults</
 
 </dt>
 <dd>
-  Clé l10n (ou libellé brut en repli) de l'entrée de menu de création.
+  Clé l10n de l'entrée de menu de création (repli <a href="../zcrud_core/ZSubListItemTemplate/labelFallback.html">labelFallback</a>, puis la
+clé elle-même). <strong>Jamais un libellé codé en dur</strong> (invariant FR-26).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="opensForm" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListItemTemplate/opensForm.html">opensForm</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Ce gabarit ouvre-t-il le <strong>formulaire d'item</strong> avant de créer ?
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -214,7 +266,7 @@ de menu) + <a href="../zcrud_core/ZSubListItemTemplate/defaults.html">defaults</
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

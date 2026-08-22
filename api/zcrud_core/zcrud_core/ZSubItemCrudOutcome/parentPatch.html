@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the parentPatch property from the ZSubItemCrudOutcome class, for the Dart programming language.">
+  <title>parentPatch property - ZSubItemCrudOutcome class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core.dart</a></li>
+    <li><a href="../../zcrud_core/ZSubItemCrudOutcome-class.html">ZSubItemCrudOutcome</a></li>
+    <li class="self-crumb">parentPatch property</li>
+  </ol>
+  <div class="self-name">parentPatch</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;ZSubItemCrudOutcome-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">parentPatch</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span>?
+        <span class="name ">parentPatch</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p><strong>Correctif du formulaire PARENT</strong> : les tranches à écrire (<code>nom → valeur</code>)
+une fois la mutation appliquée. <code>null</code> (défaut) ⇒ rien n'est écrit,
+comportement d'avant à l'identique.</p>
+<h2 id="pourquoi-un-correctif-dcrit-et-pas-le-contrleur-parent">Pourquoi un correctif décrit, et pas le contrôleur parent</h2>
+<p>C'est le besoin mesuré des <strong>lignes d'un document</strong> : le crochet recalcule
+les totaux (« total HT », « total TVA », « total TTC ») et les dépose dans
+des tranches <strong>voisines</strong> du formulaire parent, que des champs calculés
+affichent. Sans ce canal, l'hôte n'a aucun moyen de le faire depuis un
+crochet — il devrait remplacer le champ entier.</p>
+<p>Exposer le <code>ZFormController</code> parent l'aurait permis aussi, et bien plus :
+écrire pendant une mutation en cours, déclencher une re-résolution qui
+rappelle le crochet, casser l'invariant AD-2 depuis un seam de
+présentation. Le correctif <strong>décrit</strong> ; c'est le socle qui écrit, <strong>une
+seule fois</strong>, après l'agrégation de la sous-liste — de sorte que le parent
+voit la liste à jour <strong>et</strong> ses totaux dans le même état cohérent.</p>
+<p><strong>Trois bornes, à connaître avant d'écrire un crochet :</strong></p>
+<ol>
+<li><strong>un véto n'applique rien</strong>, correctif compris — c'est le sens même du
+véto (le constructeur de véto ne l'accepte donc pas) ;</li>
+<li><strong>la tranche de la sous-liste elle-même est ignorée</strong> : une entrée
+nommée comme le champ conteneur écraserait l'agrégation que le socle
+vient de publier. Pour changer les items, il y a
+<a href="../../zcrud_core/ZSubItemCrudOutcome/ZSubItemCrudOutcome.replace.html">ZSubItemCrudOutcome.replace</a> ;</li>
+<li>l'écriture passe par le canal <strong>granulaire</strong> du contrôleur parent (une
+tranche à la fois) : seuls les champs nommés se reconstruisent, jamais
+le formulaire entier (invariant AD-2).</li>
+</ol>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final Map&lt;String, Object?&gt;? parentPatch;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/ZSubItemCrudOutcome-class.html">ZSubItemCrudOutcome</a></li>
+    <li class="self-crumb">parentPatch property</li>
+</ol>
+
+  <h5>ZSubItemCrudOutcome class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

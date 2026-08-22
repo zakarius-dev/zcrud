@@ -65,6 +65,27 @@
   <p><strong>Valeurs par défaut</strong> d'un nouvel item (pur-données <code>const</code>). Amorce le
 <code>ZFormController</code> d'un item créé (mode compact <strong>et</strong> inline). Vide
 (défaut) ⇒ item vide (rétro-compat).</p>
+<h2 id="-les-cls-hors-sous-schma-sont-dsormais-conserves">🔴 Les clés HORS sous-schéma sont désormais CONSERVÉES</h2>
+<p><strong>C'est une rupture de comportement, et elle est assumée.</strong> Auparavant,
+une clé de cette carte (ou des <a href="../../zcrud_core/ZSubListConfig/creationTemplates.html">creationTemplates</a>) que les <a href="../../zcrud_core/ZSubListConfig/itemFields.html">itemFields</a>
+<strong>ne déclarent pas</strong> était <strong>perdue</strong> à la création : le formulaire d'item
+n'alloue une tranche que pour les champs déclarés, et l'item créé était
+recomposé à partir de ces seules tranches. Une charge utile de gabarit —
+<code>{'type': 'depotageDebut'}</code> sur une timeline dont le type n'est pas un
+champ saisissable — n'atteignait donc <strong>jamais</strong> la donnée.</p>
+<p>Ce n'était pas un détail : c'est précisément la charge que le moteur
+legacy faisait voyager (<code>option.data</code>), et sans elle un item créé depuis
+un gabarit était indiscernable d'un item créé à vide.</p>
+<p>Désormais, ces clés rejoignent le <strong>résidu hors sous-schéma</strong> du nouvel
+item — le même mécanisme qui préserve déjà l'<code>id</code> d'un item venu du parent
+— et sont réémises vers la tranche parente, <strong>avant</strong> les tranches (une
+clé déclarée l'emporte donc toujours sur son homonyme du gabarit).</p>
+<p><strong>Périmètre exact de la rupture</strong> : uniquement un hôte qui (1) déclare
+<a href="../../zcrud_core/ZSubListConfig/defaultNewItem.html">defaultNewItem</a> ou <a href="../../zcrud_core/ZSubListConfig/creationTemplates.html">creationTemplates</a>, (2) avec au moins une clé absente
+des <a href="../../zcrud_core/ZSubListConfig/itemFields.html">itemFields</a>, (3) en mode <code>compact</code> ou <code>tags</code>, (4) à la <strong>création</strong>.
+Hors de cette intersection, la donnée produite est identique au <strong>byte
+près</strong> : <code>_unmappedOf</code> d'une graine sans clé étrangère rend la constante
+vide, et rien de plus n'est écrit.</p>
 </section>
 
       
@@ -99,7 +120,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

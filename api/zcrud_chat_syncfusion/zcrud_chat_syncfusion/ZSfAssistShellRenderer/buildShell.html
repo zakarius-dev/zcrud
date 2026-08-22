@@ -80,7 +80,10 @@ neutre</strong> (<code>ListView.builder</code>).</p>
   <pre class="language-dart"><code class="language-dart">@override
 Widget? buildShell(BuildContext context, ZChatShellRenderRequest request) {
   final String userName = zSfAssistLabel(context, kZSfAssistLabelUserAuthor);
-  final String assistantName = zSfAssistLabel(context, kZSfAssistLabelAssistantAuthor);
+  final String assistantName = zSfAssistLabel(
+    context,
+    kZSfAssistLabelAssistantAuthor,
+  );
 
   final List&lt;AssistMessage&gt; assistMessages = &lt;AssistMessage&gt;[
     for (final ZChatMessage m in request.messages)
@@ -117,10 +120,18 @@ Widget? buildShell(BuildContext context, ZChatShellRenderRequest request) {
     messages: assistMessages,
     requestMessageSettings: style == null
         ? const AssistMessageSettings()
-        : _settings(style: style, radius: style.requestBubbleRadius),
+        : _settings(
+            style: style,
+            radius: style.requestBubbleRadius,
+            textDirection: Directionality.of(context),
+          ),
     responseMessageSettings: style == null
         ? const AssistMessageSettings()
-        : _settings(style: style, radius: style.responseBubbleRadius),
+        : _settings(
+            style: style,
+            radius: style.responseBubbleRadius,
+            textDirection: Directionality.of(context),
+          ),
     composer: composerBuilder == null
         ? null
         : AssistComposer.builder(builder: composerBuilder!),
@@ -161,7 +172,7 @@ Widget? buildShell(BuildContext context, ZChatShellRenderRequest request) {
 <footer>
   <span class="no-break">
     zcrud_chat_syncfusion
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

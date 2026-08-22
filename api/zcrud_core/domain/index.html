@@ -329,10 +329,8 @@ des opérations.
 
 </dt>
 <dd>
-  Config triviale pur-cœur des champs <strong>date/heure</strong> (<code>dateTime</code>/<code>time</code>).
-Les bornes s'expriment soit comme <strong>clés d'autres champs</strong>
-(<a href="../zcrud_core/ZDateConfig/firstDateKey.html">firstDateKey</a>/<a href="../zcrud_core/ZDateConfig/lastDateKey.html">lastDateKey</a>, résolution cross-champ), soit comme
-<strong>littéraux ISO-8601</strong> (<a href="../zcrud_core/ZDateConfig/minDateIso.html">minDateIso</a>/<a href="../zcrud_core/ZDateConfig/maxDateIso.html">maxDateIso</a>).
+  Config triviale pur-cœur des champs <strong>date/heure</strong> (<code>dateTime</code>/<code>time</code>) et
+<strong>plage de dates</strong> (<code>dateRange</code>).
 </dd>
 
           <dt id="ZDateDisplayFormatter">
@@ -403,6 +401,14 @@ publie les cibles qui ne sont pas la valeur du champ (<code>options</code>, <cod
   Contrat abstrait d'une entité canonique persistable.
 </dd>
 
+          <dt id="ZEntityHistorySource">
+  <span class="name "><a href="../zcrud_core/ZEntityHistorySource-class.html">ZEntityHistorySource</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Source optionnelle de l'historique d'une entité.
+</dd>
+
           <dt id="ZExtension">
   <span class="name "><a href="../zcrud_core/ZExtension-class.html">ZExtension</a></span> 
 
@@ -469,6 +475,23 @@ concrètes sans forker le cœur.
 </dt>
 <dd>
   Prédicat de filtrage neutre : <code>field</code> <a href="../zcrud_core/ZFilter/op.html">op</a> <code>value</code>.
+</dd>
+
+          <dt id="ZFilterGroup">
+  <span class="name "><a href="../zcrud_core/ZFilterGroup-class.html">ZFilterGroup</a></span> 
+
+</dt>
+<dd>
+  <strong>Disjonction</strong> de prédicats : une ligne est retenue dès qu'<strong>au moins une</strong>
+des <a href="../zcrud_core/ZFilterGroup/clauses.html">clauses</a> la retient.
+</dd>
+
+          <dt id="ZHistoryEntry">
+  <span class="name "><a href="../zcrud_core/ZHistoryEntry-class.html">ZHistoryEntry</a></span> 
+
+</dt>
+<dd>
+  Une version antérieure fournie par l'hôte.
 </dd>
 
           <dt id="ZLocalStore">
@@ -733,6 +756,15 @@ de menu) + <a href="../zcrud_core/ZSubListItemTemplate/defaults.html">defaults</
 <strong>par-dessus</strong> <code>ZSubListConfig.defaultNewItem</code>).
 </dd>
 
+          <dt id="ZSubListSummaryColumn">
+  <span class="name "><a href="../zcrud_core/ZSubListSummaryColumn-class.html">ZSubListSummaryColumn</a></span> 
+
+</dt>
+<dd>
+  <strong>Colonne de résumé</strong> d'une sous-liste — pur-données <code>const</code> (invariants
+AD-3/AD-14 : aucune closure), déclarée dans <code>ZSubListConfig.summaryColumns</code>.
+</dd>
+
           <dt id="ZSyncable">
   <span class="name "><a href="../zcrud_core/ZSyncable-class.html">ZSyncable</a></span> 
 
@@ -920,6 +952,15 @@ persisté</strong> (porté par la config <code>const</code>, jamais sérialisé)
 <code>@JsonKey(unknownEnumValue:)</code> ne s'applique donc pas ici.
 </dd>
 
+          <dt id="ZDateSpanVerdict">
+  <span class="name "><a href="../zcrud_core/ZDateSpanVerdict.html">ZDateSpanVerdict</a></span> 
+
+</dt>
+<dd>
+  Verdict d'<strong>amplitude</strong> d'une plage de dates confrontée à
+<a href="../zcrud_core/ZDateConfig/maxDays.html">ZDateConfig.maxDays</a>/<a href="../zcrud_core/ZDateConfig/minDays.html">ZDateConfig.minDays</a>.
+</dd>
+
           <dt id="ZDeletedScope">
   <span class="name "><a href="../zcrud_core/ZDeletedScope.html">ZDeletedScope</a></span> 
 
@@ -984,6 +1025,14 @@ par la config.
   Action décidée par le <a href="../zcrud_core/ZLwwResolver-class.html">ZLwwResolver</a> pour un <code>id</code> donné.
 </dd>
 
+          <dt id="ZReadFieldLayout">
+  <span class="name "><a href="../zcrud_core/ZReadFieldLayout.html">ZReadFieldLayout</a></span> 
+
+</dt>
+<dd>
+  Forme d'un champ présenté en consultation (défaut <a href="../zcrud_core/ZReadFieldLayout.html">card</a>).
+</dd>
+
           <dt id="ZSearchFolding">
   <span class="name "><a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> 
 
@@ -1009,6 +1058,15 @@ requête. Valeurs en <strong>camelCase</strong> (canonique §5).
 </dt>
 <dd>
   Sens de tri d'un <a href="../zcrud_core/ZSort-class.html">ZSort</a>. Valeurs en <strong>camelCase</strong> (canonique §5).
+</dd>
+
+          <dt id="ZSubItemFormPresentation">
+  <span class="name "><a href="../zcrud_core/ZSubItemFormPresentation.html">ZSubItemFormPresentation</a></span> 
+
+</dt>
+<dd>
+  <strong>Forme de présentation</strong> du formulaire d'édition d'un item de sous-liste
+(modes <code>compact</code> et <code>tags</code> — les seuls qui ouvrent un formulaire par item).
 </dd>
 
           <dt id="ZSubListDisplayMode">
@@ -1051,6 +1109,15 @@ déterministe vit en présentation, invariants AD-2/AD-15).
     <section class="summary offset-anchor" id="mixins">
       <h2>Mixins</h2>
       <dl>
+          <dt id="ZDelegatesSearch">
+  <span class="name "><a href="../zcrud_core/ZDelegatesSearch-mixin.html">ZDelegatesSearch</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Déclare qu'un dépôt <strong>ne sert pas</strong> la recherche plein-texte et la
+<strong>délègue</strong> au moteur du socle.
+</dd>
+
           <dt id="ZExtensible">
   <span class="name "><a href="../zcrud_core/ZExtensible-mixin.html">ZExtensible</a></span> 
 
@@ -1082,6 +1149,18 @@ déterministe vit en présentation, invariants AD-2/AD-15).
 </dt>
 <dd>
   Classification <strong>lecture / écriture</strong> d'une action CRUD.
+</dd>
+
+          <dt id="ZRelationCrudOffer">
+  <span class="name "><a href="../zcrud_core/ZRelationCrudOffer.html">ZRelationCrudOffer</a></span>
+  on <a href="../zcrud_core/ZRelationCrudHandler-class.html">ZRelationCrudHandler</a>
+  
+
+</dt>
+<dd>
+  Lecture <strong>défensive</strong> (AD-10) des gestes déclarés par un
+<a href="../zcrud_core/ZRelationCrudHandler-class.html">ZRelationCrudHandler</a> : ce que le handler <em>déclare</em> (<code>canCreate</code>…) vs ce que
+la surface <em>offre</em> réellement (<code>offersCreate</code>…).
 </dd>
 
       </dl>
@@ -1170,6 +1249,21 @@ Surchargeable par le constructeur.
   Lit les champs marqués absents. <strong>DÉFENSIF</strong> (AD-10) : ne throw jamais, quel
 que soit l'état de <code>extra</code> — une entrée corrompue est écartée sans emporter
 les autres.
+  
+
+</dd>
+
+          <dt id="zContainsValue" class="callable">
+  <span class="name"><a href="../zcrud_core/zContainsValue.html">zContainsValue</a></span><span class="signature">(<wbr><span class="parameter" id="zContainsValue-param-container"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">container</span>, </span><span class="parameter" id="zContainsValue-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>Appartenance</strong> pure et <strong>totale</strong> d'une valeur à une collection, pour
+l'opérateur <a href="../zcrud_core/ZConditionOp.html">ZConditionOp.contains</a> : <code>true</code> si <code>container</code> est un
+<code>Iterable</code> dont l'un des éléments est égal (<code>==</code>) à <code>value</code>.
   
 
 </dd>
@@ -1628,6 +1722,19 @@ COPIE</strong> quand le slot stocké est déjà propre.
 </dt>
 <dd>
   Regroupe les clés <strong>pointées</strong> de <code>flat</code> en une <code>Map</code> <strong>imbriquée</strong>.
+  
+
+</dd>
+
+          <dt id="zRepositoryServesSearch" class="callable">
+  <span class="name"><a href="../zcrud_core/zRepositoryServesSearch.html">zRepositoryServesSearch</a></span><span class="signature">(<wbr><span class="parameter" id="zRepositoryServesSearch-param-repository"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">repository</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si <code>repository</code> sert lui-même <code>ZDataRequest.search</code>.
   
 
 </dd>
@@ -2104,7 +2211,7 @@ registre (collision).
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

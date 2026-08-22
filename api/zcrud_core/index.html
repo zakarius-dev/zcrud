@@ -169,6 +169,10 @@ nus. Les adaptateurs concrets vivent dans <code>zcrud_firestore</code>.</li>
 <td>Contrôleur <code>ChangeNotifier</code> du formulaire — une <code>ValueListenable</code> par champ.</td>
 </tr>
 <tr>
+<td><code>ZEntityHistorySource</code> / <code>ZHistoryEntry</code></td>
+<td>Port de lecture optionnel d'un journal d'entité : flux nu, action CRUD localisable ou libellé métier hôte, jamais de backend ni d'écriture dans zcrud.</td>
+</tr>
+<tr>
 <td><code>ZDependencyResolver</code> / <code>ZcrudScope</code></td>
 <td>Seam d'injection et son <code>InheritedWidget</code> par défaut (resolver, l10n, thème, registres).</td>
 </tr>
@@ -186,11 +190,51 @@ nus. Les adaptateurs concrets vivent dans <code>zcrud_firestore</code>.</li>
 </tr>
 <tr>
 <td><code>ZStepperEdition</code></td>
-<td>Assistant multi-étapes sur le même <code>ZFormController</code>, validation par étape.</td>
+<td>Assistant multi-étapes sur le même <code>ZFormController</code>, validation par étape. <code>stepStore</code> reprend l'étape courante ; <code>collapseStore</code> conserve le repli des sections d'étape (chaque étape sous <strong>sa</strong> portée, dérivée de <code>formId</code> et du titre de l'étape). <code>null</code> (défaut) ⇒ aucune lecture, aucune écriture.</td>
 </tr>
 <tr>
 <td><code>ZEditionSubmitController</code> / <code>ZSubmitButton</code></td>
 <td>Soumission agrégée (<code>Either&lt;ZFailure,T&gt;</code>) et chrome accessible scellé sur l'état.</td>
+</tr>
+<tr>
+<td><code>ZRelationCrudHandler</code> / <code>ZRelationCrudRegistry</code></td>
+<td><strong>CRUD inline</strong> d'une entité liée depuis un sélecteur <code>relation</code> (créer/modifier/copier sans quitter le formulaire, option résultante auto-sélectionnée). Les trois gestes se gouvernent <strong>séparément</strong> — <code>canCreate</code> / <code>canEdit</code> / <code>canCopy</code>, à <code>true</code> par défaut : modifier sans pouvoir créer s'exprime. Un geste refusé est <strong>absent</strong>, jamais inerte (ni bouton, ni icône, ni action sémantique) ; le socle <strong>ne connaît pas</strong> l'ACL de l'hôte, il lit ce que l'implémentation du port déclare. Lecture par <code>ZRelationCrudOffer</code> (<code>offersCreate</code>…) : un getter hôte qui lève <strong>ferme</strong> le geste (invariant AD-10).</td>
+</tr>
+<tr>
+<td><code>ZSelectChoiceBuilderRegistry</code> / <code>ZSelectChoiceBuilders</code></td>
+<td>Rendu riche déclaré d'une option <code>select</code> : <code>ZSelectConfig(choiceBuilderKey: '…')</code> garde la clé <code>const</code>; l'hôte injecte les closures <code>choiceBuilder</code> et/ou <code>choiceSecondaryBuilder</code> par <code>ZcrudScope.selectChoiceBuilderRegistry</code>. Le widget de sélection résout lui-même la clé (pas de relais du dispatcher), enfant &gt; parent; clé absente ⇒ rendu par défaut silencieux. En consultation, une clé effectivement résolue conserve ce rendu riche (sous <code>ZReadModeScope</code> et avec la spec verrouillée) au lieu de la fiche générique ; sans clé ou sans résolution, la fiche historique reste la règle.</td>
+</tr>
+<tr>
+<td><code>ZSubListSeamRegistry</code> / <code>ZSubListSeams</code></td>
+<td><strong>Canal déclaratif des seams de présentation</strong> des champs <code>subItems</code>/<code>dynamicItem</code> : titre d'item, rendu libre de ligne, actions supplémentaires, conteneur de liste, habillage d'en-tête, transformation d'affichage, sous-champs dynamiques, ACL du champ, <strong>options de menu par item</strong>, <strong>crochet CRUD</strong>, <strong>sous-schéma dérivé</strong> et <strong>gabarits de création dérivés</strong> de l'état du formulaire parent. Injecté par <code>ZcrudScope.subListSeamRegistry</code>, résolu <strong>par le chemin nominal</strong> (aucun <code>fieldBuilder</code> de remplacement). Chaînable (<code>parent:</code>), ombrage enfant &gt; parent, clé résolue par <code>widgetKind</code> → <code>name</code> → <code>type.name</code>. Rien de déclaré ⇒ rendu natif inchangé ; un seam qui lève est traité comme absent (invariant AD-10).</td>
+</tr>
+<tr>
+<td><code>ZSubItemMenuOption</code></td>
+<td><strong>Option de menu déclarative par item</strong> (mode <code>compact</code>) : libellé <strong>localisable</strong> (<code>labelKey</code> + repli), icône, prédicat de visibilité <strong>par item</strong>, charge utile opaque, marqueur destructif, droit exigé. Rendue dans un menu de débordement <strong>après</strong> les actions natives et après <code>itemActionsBuilder</code>. <strong>ACL d'abord, prédicat ensuite</strong> : une option ne peut jamais élargir un droit refusé. Aucune (dé)sérialisation — un seam de présentation ne traverse pas la persistance.</td>
+</tr>
+<tr>
+<td><code>ZSubItemCrudHook</code> / <code>ZSubItemCrudRequest</code> / <code>ZSubItemCrudOutcome</code></td>
+<td><strong>Crochet d'arbitrage</strong> appelé <strong>avant</strong> chaque mutation d'item (<code>create</code>/<code>update</code>/<code>delete</code> natifs et option choisie), modes <code>compact</code> et <code>tags</code>. Trois issues explicites — <code>proceed</code> / <code>replace(data)</code> / <code>veto</code> — au lieu du <code>Future&lt;Map?&gt;</code> ambigu du moteur legacy. Un crochet qui lève <strong>refuse</strong> la mutation et son erreur part à <code>FlutterError.reportError</code> : jamais avalée, jamais fatale au rendu.</td>
+</tr>
+<tr>
+<td><code>ZSubListSchemaResolver</code> / <code>ZSubListTemplatesResolver</code></td>
+<td><strong>Dérivation depuis le formulaire parent</strong> — l'équivalent du <code>subItemsFieldsBuilder(editionState)</code> et du <code>popUpMenuOptions(crud)</code> du moteur legacy, que <code>ZSubListConfig</code> (<code>const</code>, pur-données) ne peut structurellement pas exprimer. Le résolveur reçoit une <strong>lecture par nom</strong> (<code>ZValueOf</code>) : le socle l'exécute une première fois <strong>en le traçant</strong> et ne s'abonne qu'aux tranches réellement lues — taper dans un champ parent non lu ne déclenche rien (invariant AD-2). La tranche du champ lui-même n'est <strong>jamais</strong> abonnée. Quand le schéma change, les <code>ZFormController</code> d'item <strong>ne sont pas recréés</strong> : le socle réconcilie les tranches et déplace dans le résidu la valeur des champs disparus. Un résolveur qui lève ⇒ repli sur la config déclarée (invariant AD-10).</td>
+</tr>
+<tr>
+<td><code>ZSubListConfig.displayMode</code> / <code>showSummaryHeaders</code></td>
+<td>🔴 <strong>Ruptures assumées (défauts changés)</strong>. <code>displayMode</code> vaut désormais <strong><code>compact</code></strong> (table de résumé + formulaire par item) et non plus <code>inline</code> : le moteur legacy rendait un item par <code>itemBuilder?.call(item) ?? Container()</code> — <strong>sans builder, un item legacy s'affiche vide</strong> — et éditait par une fenêtre ; le mode legacy est donc <code>compact</code>, <code>inline</code> étant un mode natif zcrud sans contrepartie. Retour arrière <strong>en une ligne</strong> : <code>displayMode: ZSubListDisplayMode.inline</code>, qui rend exactement l'ancien défaut. <code>showSummaryHeaders</code> vaut désormais <strong><code>true</code></strong> : c'est l'interrupteur du <strong>rendu tabulaire</strong> (colonnes suivant le contenu, en-têtes solidaires — les <em>mêmes</em> colonnes d'une même <code>Table</code>, valeurs numériques cadrées en fin) ; <code>false</code> conserve au byte près le résumé <strong>défilant</strong> historique. Un hôte qui <strong>déclarait</strong> l'un ou l'autre est strictement inchangé de ce fait.</td>
+</tr>
+<tr>
+<td><code>ZSubListFieldWidget.summaryTableRowBudget</code></td>
+<td><strong>Budget de lignes</strong> (60) au-delà duquel la table cède la place à un rendu <strong>construit à la demande</strong> (<code>ListView.builder</code>, colonnes de largeur égale sous une ligne d'en-têtes de même géométrie — le rendu de v1.4.1). Une table ne se virtualise pas : dimensionner une colonne sur son contenu oblige à mesurer <strong>toutes</strong> ses cellules. La bascule est <strong>observable des deux côtés</strong> (<code>find.byType(Table)</code>). Sous le seuil de largeur du thème (<code>subListColumnMinWidth</code>), aucune table n'est construite : le repli en couples libellé/valeur garde la main. Tri, pagination, virtualisation restent le domaine de <code>zcrud_list</code> (invariant AD-8).</td>
+</tr>
+<tr>
+<td><code>ZSubItemFormPresentation</code></td>
+<td><strong>Forme déclarée du formulaire d'édition d'un item</strong> : <code>dialog</code> (<strong>défaut</strong>, rendu inchangé), <code>sheet</code> (feuille modale) ou <code>page</code> (route entière avec barre de titre et retour système). Les trois montent <strong>le même</strong> corps de formulaire et la <strong>même</strong> voie de sortie de données : la même saisie rend la même <code>Map</code> dans les trois formes. Une forme non montable (aucun <code>Navigator</code>) n'ouvre rien, <strong>ne lève pas</strong>, et l'incident part à <code>FlutterError.reportError</code>.</td>
+</tr>
+<tr>
+<td><code>ZSubListItemTemplate</code></td>
+<td><strong>Gabarit de création</strong> : <code>labelKey</code>/<code>labelFallback</code> (libellé localisable), <code>id</code> (identité stable transmise au crochet), <code>defaults</code> (pré-remplissage <strong>et</strong> charge utile hors sous-schéma) et <code>opensForm</code> — <code>false</code> reproduit le geste legacy « ajouter sans rien saisir », où le crochet fabrique l'item depuis la charge du gabarit. Le gabarit choisi atteint le crochet via <code>ZSubItemCrudRequest.template</code>. ⚠️ <strong>Rupture assumée</strong> : les clés de <code>defaults</code>/<code>defaultNewItem</code> <strong>hors</strong> <code>itemFields</code> sont désormais <strong>conservées</strong> dans la donnée créée (elles étaient perdues) — voir la dartdoc de <code>ZSubListConfig.defaultNewItem</code> pour le périmètre exact.</td>
 </tr>
 <tr>
 <td><strong>Liste</strong></td>
@@ -253,8 +297,8 @@ nus. Les adaptateurs concrets vivent dans <code>zcrud_firestore</code>.</li>
 <td>Méta de synchronisation hors-entité, résolution Last-Write-Wins, orchestrateur offline-first.</td>
 </tr>
 <tr>
-<td><code>ZTypeRegistry</code> / <code>ZWidgetRegistry</code> / <code>ZcrudRegistry</code></td>
-<td>Registres ouverts d'extensibilité (types, widgets, modèles).</td>
+<td><code>ZTypeRegistry</code> / <code>ZWidgetRegistry</code> / <code>ZSubListSeamRegistry</code> / <code>ZcrudRegistry</code></td>
+<td>Registres ouverts d'extensibilité (types, widgets, seams de sous-liste, modèles).</td>
 </tr>
 <tr>
 <td><strong>Thème &amp; l10n</strong></td>
@@ -368,7 +412,7 @@ catalogue <code>EditionFieldType</code> + types-valeur <code>const</code>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

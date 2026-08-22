@@ -61,8 +61,8 @@
 au-dessus d'un contenu Delta</strong> (<code>HtmlToDelta</code> à l'ouverture,
 <code>QuillDeltaToHtmlConverter</code> à la sauvegarde). C'est EXACTEMENT le rôle d'un
 <a href="../zcrud_markdown/ZCodec-class.html">ZCodec</a> (AD-7) : <code>ZHtmlCodec</code> réutilise l'éditeur/lecteur rich-text isolé
-(<code>ZMarkdownField.fromContext</code> / <code>ZMarkdownReader</code> / dialog plein-écran de
-) plutôt qu'un WYSIWYG HTML tiers (<code>html_editor_enhanced</code> + WebView).
+(<code>ZMarkdownField.fromContext</code> / <code>ZMarkdownReader</code> / dialog plein-écran)
+plutôt qu'un WYSIWYG HTML tiers (<code>html_editor_enhanced</code> + WebView).
 Cela respecte AD-7 (Delta interne + <code>ZCodec</code> pluggable), AD-1 (aucun SDK
 d'éditeur ni type de contenu HTML natif exposé) et /AD-2 (le codec opère
 HORS du chemin chaud de frappe). Un futur besoin WYSIWYG HTML natif resterait
@@ -318,7 +318,7 @@ convertible dégrade proprement en texte (AD-10), jamais de throw.</p>
 <footer>
   <span class="no-break">
     zcrud_markdown
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

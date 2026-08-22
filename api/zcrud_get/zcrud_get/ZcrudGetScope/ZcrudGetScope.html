@@ -81,7 +81,8 @@ chaque formulaire (locator dédié) ou un scope <code>get_it</code> par formulai
 scope actif « possède » l'enregistrement GetX à la fois.
 <code>createController</code> : fabrique du <code>ZFormController</code> possédé par ce scope
 (par défaut un <code>ZFormController()</code> vide). <code>acl</code> : port d'autorisation
-exposé au cœur (défaut permissif). <code>registerController</code> : enregistre le
+exposé au cœur (défaut <strong>refusant</strong> : <code>ZDenyAllAcl</code>, aucun geste offert
+tant qu'aucune ACL n'est déclarée). <code>registerController</code> : enregistre le
 controller dans le locator (défaut vrai). <code>registerInGetX</code> : bridge GetX
 optionnel (défaut faux — évite tout état global partagé).</p>
 </section>
@@ -126,7 +127,7 @@ optionnel (défaut faux — évite tout état global partagé).</p>
 <footer>
   <span class="no-break">
     zcrud_get
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

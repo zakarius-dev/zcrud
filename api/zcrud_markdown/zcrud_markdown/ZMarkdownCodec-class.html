@@ -66,20 +66,9 @@ sérialisé</strong> est tolérée et normalisée en ops neutres.</li>
 </ul>
 <h2 id="table-des-pertes-round-trip-born">Table des pertes (round-trip borné)</h2>
 <blockquote>
-<p><strong>Cette table a été FAUSSE de la v0.1.0 à la v0.6.0 incluse</strong> sur deux
-lignes, et INCOMPLÈTE sur trois pertes. Elle annonçait « titres H1–H6 »
-alors que H4–H6 étaient écrasés, et « barré conservé » alors que le
-décodeur ne savait pas relire <code>~~</code>. Aucun test ne l'exécutait : le groupe
-« assertion EXPLICITE de chaque perte » n'en couvrait que 2 sur 8. Les deux
-défauts sont CORRIGÉS depuis la v0.7.0, et chaque ligne
-ci-dessous est désormais assertée par exécution.</p>
-</blockquote>
-<blockquote>
-<p><strong>Elle était encore INCOMPLÈTE au tag v0.18.0</strong> : elle rangeait les
-« images via <code>![](src)</code> » parmi ce que le round-trip PRÉSERVE, alors que le
-<strong>texte ALT</strong> était détruit dès le premier enregistrement et n'apparaissait
-sur AUCUNE ligne de perte. Le ALT est désormais PRÉSERVÉ ; ce
-qui en reste perdu est explicitement listé ci-dessous.</p>
+<p><strong>Cette table est la SPÉCIFICATION du round-trip, pas un commentaire</strong> :
+chaque ligne ci-dessous est assertée par exécution. Une perte qui n'y
+figure pas est un défaut, pas une dégradation tolérée.</p>
 </blockquote>
 <p>Le round-trip <code>decode(encode(ops))</code> PRÉSERVE la sémantique du <strong>sous-ensemble
 Markdown</strong> : titres <strong>H1–H6</strong>, gras, italique, <strong>souligné</strong> via <code>&lt;u&gt;</code>,
@@ -350,7 +339,7 @@ motif qui correspond gagne (d'où <code>$$…$$</code> avant <code>$…$</code>)
 <footer>
   <span class="no-break">
     zcrud_markdown
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

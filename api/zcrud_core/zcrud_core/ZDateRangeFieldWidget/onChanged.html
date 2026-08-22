@@ -63,6 +63,13 @@
       
 <section class="desc markdown">
   <p>Notifié avec la <a href="../../zcrud_core/ZDateRange-class.html">ZDateRange</a> choisie.</p>
+<p><strong>Amplitude</strong> (<a href="../../zcrud_core/ZDateConfig/maxDays.html">ZDateConfig.maxDays</a>/<a href="../../zcrud_core/ZDateConfig/minDays.html">ZDateConfig.minDays</a>) : comme les
+bornes, la contrainte est honorée par le <strong>dispatcher</strong> de champ
+(<code>ZFieldWidget</code>), seul point qui détient la déclaration ET l'écriture de
+la tranche. Une période trop large ou trop courte n'est <strong>pas écrite</strong> —
+le champ garde sa valeur précédente — et <a href="../../zcrud_core/zShowDateSpanRefusal.html">zShowDateSpanRefusal</a> l'annonce.
+Un hôte qui monte ce widget à la main garde donc la main sur ce qu'il
+accepte : <a href="../../zcrud_core/zDateSpanRefusalMessage.html">zDateSpanRefusalMessage</a> lui rend le même verdict.</p>
 </section>
 
       
@@ -97,7 +104,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

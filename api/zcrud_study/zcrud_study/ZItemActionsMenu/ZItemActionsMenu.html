@@ -58,6 +58,7 @@
 <li><span class="parameter" id="param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span></li>
 <li><span class="parameter" id="param-tooltip"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">tooltip</span>, </span></li>
 <li><span class="parameter" id="param-menuBuilder"><span class="type-annotation"><a href="../../zcrud_study/ZItemActionsMenuBuilder.html">ZItemActionsMenuBuilder</a>?</span> <span class="parameter-name">menuBuilder</span>, </span></li>
+<li><span class="parameter" id="param-crossAxisCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">crossAxisCount</span> = <span class="default-value">3</span>, </span></li>
 <li><span class="parameter" id="param-renderer"><span class="type-annotation"><a href="../../zcrud_study/ZMenuRenderer-class.html">ZMenuRenderer</a>?</span> <span class="parameter-name">renderer</span>, </span></li>
 <li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
 </ol>})
@@ -67,8 +68,8 @@
   <p>Construit le menu à partir des actions (ordre préservé).</p>
 <p><code>icon</code> : glyphe INJECTÉ du déclencheur (<code>null</code> ⇒ repli neutre documenté).
 <code>tooltip</code> : label a11y LOCALISÉ INJECTÉ du déclencheur (optionnel).
-<code>menuBuilder</code> : présentation INJECTÉE du contenu (<code>null</code> ⇒ <strong>colonne
-unique</strong>, rendu strictement inchangé).
+<code>menuBuilder</code> : présentation INJECTÉE du contenu (<code>null</code> ⇒ grille dont
+<code>crossAxisCount</code> vaut 3 par défaut).
 <code>renderer</code> : surcharge PONCTUELLE du <a href="../../zcrud_study/ZMenuRenderer-class.html">ZMenuRenderer</a> (prioritaire sur
 <a href="../../zcrud_study/ZMenuScope-class.html">ZMenuScope</a>). <code>null</code> ⇒ scope de l'hôte, puis repli <code>ZDefaultMenuRenderer</code>.</p>
 </section>
@@ -82,9 +83,13 @@ unique</strong>, rendu strictement inchangé).
   this.icon,
   this.tooltip,
   this.menuBuilder,
+  this.crossAxisCount = 3,
   this.renderer,
   super.key,
-});</code></pre>
+}) : assert(
+       crossAxisCount &gt; 0,
+       &#39;ZItemActionsMenu: crossAxisCount doit être strictement positif.&#39;,
+     );</code></pre>
 </section>
 
 
@@ -112,7 +117,7 @@ unique</strong>, rendu strictement inchangé).
 <footer>
   <span class="no-break">
     zcrud_study
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

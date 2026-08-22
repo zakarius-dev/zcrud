@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zContainsValue function from the zcrud_core library, for the Dart programming language.">
+  <title>zContainsValue function - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">zContainsValue function</li>
+  </ol>
+  <div class="self-name">zContainsValue</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zContainsValue</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+<span class="name ">zContainsValue</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="zContainsValue-param-container"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">container</span>, </span></li>
+<li><span class="parameter" id="zContainsValue-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span></span></li>
+</ol>)
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p><strong>Appartenance</strong> pure et <strong>totale</strong> d'une valeur à une collection, pour
+l'opérateur <a href="../zcrud_core/ZConditionOp.html">ZConditionOp.contains</a> : <code>true</code> si <code>container</code> est un
+<code>Iterable</code> dont l'un des éléments est égal (<code>==</code>) à <code>value</code>.</p>
+<p>Seul un <code>Iterable</code> (<code>List</code>, <code>Set</code>…) compte comme collection :</p>
+<ul>
+<li><code>null</code>, valeur absente, scalaire (<code>num</code>/<code>bool</code>/objet) ⇒ <code>false</code> ;</li>
+<li><code>Map</code> ⇒ <code>false</code> — « contenir » y désignerait tantôt une clé, tantôt une
+valeur ; l'ambiguïté est écartée plutôt que tranchée en silence ;</li>
+<li><code>String</code> ⇒ <strong><code>false</code></strong> — une chaîne répondrait par une recherche de
+<strong>sous-chaîne</strong> (<code>'lome-port'.contains('lome')</code>), qui n'est pas une
+appartenance. Voir <a href="../zcrud_core/ZCondition/ZCondition.contains.html">ZCondition.contains</a> pour le détail de ce choix.</li>
+</ul>
+<p><strong>Ne lève jamais</strong> (invariant AD-10) : une collection dont un élément jette
+à la comparaison ne fait pas échouer l'évaluation, elle rend <code>false</code>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">bool zContainsValue(Object? container, Object? value) {
+  if (container is! Iterable) return false;
+  try {
+    return container.contains(value);
+  } catch (_) {
+    &#47;&#47; Collection paresseuse dont le parcours échoue : indéterminé ⇒ `false`,
+    &#47;&#47; jamais une exception qui remonterait au rendu d&#39;un formulaire.
+    return false;
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">zContainsValue function</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

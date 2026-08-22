@@ -89,7 +89,7 @@ const ZTrashPolicy(purge: false)
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZTrashPolicy.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZTrashPolicy/ZTrashPolicy.html">ZTrashPolicy</a></span><span class="signature">({<span class="parameter" id="param-softDelete"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">softDelete</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-restore"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">restore</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-purge"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">purge</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showCount</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-visibleWhenEmpty"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">visibleWhenEmpty</span> = <span class="default-value">true</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZTrashPolicy/ZTrashPolicy.html">ZTrashPolicy</a></span><span class="signature">({<span class="parameter" id="param-softDelete"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">softDelete</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-restore"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">restore</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-purge"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">purge</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-showCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showCount</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-visibleWhenEmpty"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">visibleWhenEmpty</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-viewAccess"><span class="type-annotation"><a href="../zcrud_core/ZTrashViewAccessCondition.html">ZTrashViewAccessCondition</a>?</span> <span class="parameter-name">viewAccess</span></span>})</span>
         </dt>
         <dd>
           Déclare les gestes offerts (tous par défaut), l'affichage du <strong>compteur</strong>
@@ -189,6 +189,18 @@ const ZTrashPolicy(purge: false)
 
 </dd>
 
+        <dt id="viewAccess" class="property">
+  <span class="name"><a href="../zcrud_core/ZTrashPolicy/viewAccess.html">viewAccess</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZTrashViewAccessCondition.html">ZTrashViewAccessCondition</a>?</span>
+  
+
+</dt>
+<dd>
+  Condition applicative optionnelle d'accès à la <strong>vue</strong> corbeille.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="visibleWhenEmpty" class="property">
   <span class="name"><a href="../zcrud_core/ZTrashPolicy/visibleWhenEmpty.html">visibleWhenEmpty</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
@@ -212,7 +224,7 @@ historique).
     <h2>Methods</h2>
     <dl class="callables">
         <dt id="copyWith" class="callable">
-  <span class="name"><a href="../zcrud_core/ZTrashPolicy/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-softDelete"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">softDelete</span>, </span><span class="parameter" id="copyWith-param-restore"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">restore</span>, </span><span class="parameter" id="copyWith-param-purge"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">purge</span>, </span><span class="parameter" id="copyWith-param-showCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showCount</span>, </span><span class="parameter" id="copyWith-param-visibleWhenEmpty"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">visibleWhenEmpty</span></span>})
+  <span class="name"><a href="../zcrud_core/ZTrashPolicy/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-softDelete"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">softDelete</span>, </span><span class="parameter" id="copyWith-param-restore"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">restore</span>, </span><span class="parameter" id="copyWith-param-purge"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">purge</span>, </span><span class="parameter" id="copyWith-param-showCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showCount</span>, </span><span class="parameter" id="copyWith-param-visibleWhenEmpty"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">visibleWhenEmpty</span>, </span><span class="parameter" id="copyWith-param-viewAccess"><span class="type-annotation"><a href="../zcrud_core/ZTrashViewAccessCondition.html">ZTrashViewAccessCondition</a>?</span> <span class="parameter-name">viewAccess</span></span>})
     <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZTrashPolicy-class.html">ZTrashPolicy</a></span>
   </span>
   
@@ -344,7 +356,7 @@ réglementaire) dont le dépôt sait pourtant purger.
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

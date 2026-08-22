@@ -71,7 +71,7 @@ pas le contourner par inadvertance ;</li>
 <li><code>select</code> — invoque l'action ET ferme la surface, par le <strong>MÊME chemin</strong> que
 le rendu par défaut. L'hôte n'a ni à fermer à la main, ni à appeler
 <code>action.onSelected</code> : une présentation alternative ne peut pas diverger du
-comportement de la colonne par défaut. Sans effet sur une action
+comportement du rendu par défaut. Sans effet sur une action
 DÉSACTIVÉE (garanti par <code>ZMenuRequest.select</code>, pas par la bonne volonté de
 l'hôte).</li>
 </ul>
@@ -82,11 +82,12 @@ multiples, sections…) : c'est précisément l'objet du slot.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">typedef ZItemActionsMenuBuilder = Widget Function(
-  BuildContext context,
-  List&lt;ZItemAction&gt; actions,
-  void Function(ZItemAction action) select,
-);</code></pre>
+  <pre class="language-dart"><code class="language-dart">typedef ZItemActionsMenuBuilder =
+    Widget Function(
+      BuildContext context,
+      List&lt;ZItemAction&gt; actions,
+      void Function(ZItemAction action) select,
+    );</code></pre>
 </section>
 
   </div> <!-- /.main-content -->
@@ -112,7 +113,7 @@ multiples, sections…) : c'est précisément l'objet du slot.</p>
 <footer>
   <span class="no-break">
     zcrud_study
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

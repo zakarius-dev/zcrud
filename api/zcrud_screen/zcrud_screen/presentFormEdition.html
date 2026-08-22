@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the presentFormEdition function from the zcrud_screen library, for the Dart programming language.">
+  <title>presentFormEdition function - zcrud_screen library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_screen</a></li>
+    <li><a href="../zcrud_screen/">zcrud_screen.dart</a></li>
+    <li class="self-crumb">presentFormEdition function</li>
+  </ol>
+  <div class="self-name">presentFormEdition</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_screen&#47;zcrud_screen-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">presentFormEdition</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span>?</span>&gt;</span></span>
+<span class="name ">presentFormEdition</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="presentFormEdition-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span></li>
+<li><span class="parameter" id="presentFormEdition-param-fields"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span> <span class="parameter-name">fields</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-initialValues"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span>?</span> <span class="parameter-name">initialValues</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-title"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">title</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-submitLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">submitLabel</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-discardLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">discardLabel</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-onConfirmDiscard"><span class="type-annotation">ZConfirmDiscard?</span> <span class="parameter-name">onConfirmDiscard</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-formController"><span class="type-annotation">ZFormController?</span> <span class="parameter-name">formController</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-conditionContext"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">conditionContext</span> = <span class="default-value">const &lt;String, Object?&gt;{}</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-policy"><span class="type-annotation">ZPresentationPolicy</span> <span class="parameter-name">policy</span> = <span class="default-value">const ZPresentationPolicy()</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-formWeight"><span class="type-annotation">ZFormWeight</span> <span class="parameter-name">formWeight</span> = <span class="default-value">ZFormWeight.light</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-forcedMode"><span class="type-annotation">ZEditionPresentation?</span> <span class="parameter-name">forcedMode</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-readOnly"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readOnly</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-sections"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZEditionSection</span>&gt;</span></span> <span class="parameter-name">sections</span> = <span class="default-value">const &lt;ZEditionSection&gt;[]</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-steps"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZEditionStep</span>&gt;</span></span> <span class="parameter-name">steps</span> = <span class="default-value">const &lt;ZEditionStep&gt;[]</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-stepperConfig"><span class="type-annotation">ZStepperConfig</span> <span class="parameter-name">stepperConfig</span> = <span class="default-value">const ZStepperConfig()</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-bodyBuilder"><span class="type-annotation"><a href="../zcrud_screen/ZFormBodyBuilder.html">ZFormBodyBuilder</a>?</span> <span class="parameter-name">bodyBuilder</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-bodyFit"><span class="type-annotation">ZEditionBodyFit?</span> <span class="parameter-name">bodyFit</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-layout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">ZResponsiveSpan</span>&gt;</span></span> <span class="parameter-name">layout</span> = <span class="default-value">const &lt;String, ZResponsiveSpan&gt;{}</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsGeometry-class.html">EdgeInsetsGeometry</a>?</span> <span class="parameter-name">padding</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-collapseStore"><span class="type-annotation">ZSectionCollapseStore?</span> <span class="parameter-name">collapseStore</span>, </span></li>
+<li><span class="parameter" id="presentFormEdition-param-formId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">formId</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Présente le formulaire déclaré par <code>fields</code> et retourne ses valeurs
+<strong>validées et normalisées</strong>.</p>
+<ul>
+<li>L'utilisateur enregistre ⇒ la carte des valeurs (types coercés, dates en
+ISO-8601, valeurs d'énumération en camelCase). Les champs en lecture seule
+et ceux qu'une condition d'affichage masque en sont <strong>absents</strong>.</li>
+<li>L'utilisateur renonce (bouton d'abandon, retour, barrière) ⇒ <code>null</code>.</li>
+<li>Un champ est en erreur ⇒ les messages s'affichent et <strong>la fenêtre reste
+ouverte</strong> : rien n'est rendu tant que la saisie n'est pas complète.</li>
+</ul>
+<pre class="language-dart"><code class="language-dart">final reglages = await presentFormEdition(
+  context,
+  fields: reglagesExportFields,
+  initialValues: &lt;String, Object?&gt;{'format': 'pdf', 'paysage': true},
+  title: 'Réglages d\'export',
+);
+if (reglages != null) await monService.exporter(reglages);
+</code></pre>
+<p>Le conteneur (page / feuille / dialogue) est choisi par <code>policy</code> à partir de
+la largeur de fenêtre, comme partout ailleurs dans le socle ; <code>forcedMode</code>
+impose un conteneur pour cet appel précis.</p>
+<p>Le formulaire est monté avec un garde d'abandon : une saisie en cours n'est
+pas perdue par une fermeture accidentelle dès lors qu'un
+<code>onConfirmDiscard</code> est fourni (à défaut, la fermeture reste immédiate).</p>
+<p><code>formController</code> permet de réutiliser un contrôleur d'état existant — il
+reste alors sous la responsabilité de l'appelant, qui le libère ; sinon la
+fonction crée le sien et le libère à la fermeture.</p>
+<h2 id="le-formulaire-en-tapes-steps">Le formulaire en ÉTAPES (<code>steps</code>)</h2>
+<p>Un formulaire long se présente en assistant : <code>steps</code> déclare les étapes,
+<code>fields</code> reste le <strong>catalogue</strong> complet des champs. Les deux se <strong>complètent</strong>
+— une étape ne porte pas de champs à elle, elle nomme ceux du catalogue
+qu'elle regroupe :</p>
+<pre class="language-dart"><code class="language-dart">final valeurs = await presentFormEdition(
+  context,
+  fields: dossierFields, // le catalogue COMPLET, toutes étapes confondues
+  steps: const &lt;ZEditionStep&gt;[
+    ZEditionStep(title: 'Navire', fields: &lt;String&gt;['nom', 'pavillon']),
+    ZEditionStep(title: 'Escale', fields: &lt;String&gt;['quai', 'arrivee']),
+  ],
+  title: 'Escale',
+);
+</code></pre>
+<p>Le <strong>nombre d'étapes peut dépendre des données</strong> : <code>steps</code> est une liste
+ordinaire, construite à l'appel comme n'importe quelle autre — une étape par
+type de document présent, par exemple :</p>
+<pre class="language-dart"><code class="language-dart">final valeurs = await presentFormEdition(
+  context,
+  fields: &lt;ZFieldSpec&gt;[
+    for (final type in typesPresents)
+      ZFieldSpec(name: 'doc_${type.code}', type: EditionFieldType.text),
+  ],
+  steps: &lt;ZEditionStep&gt;[
+    for (final type in typesPresents)
+      ZEditionStep(title: type.libelle, fields: &lt;String&gt;['doc_${type.code}']),
+  ],
+);
+</code></pre>
+<p><code>stepperConfig</code> règle la présentation de l'assistant — orientation verticale,
+toutes les étapes dépliées, accordéon, gate de navigation :
+<code>ZStepperConfig(stepsDisplay: ZStepsDisplay.allExpanded)</code> reproduit un
+« tout affiché », <code>ZStepperConfig(orientation: ZStepOrientation.vertical)</code>
+une bande verticale.</p>
+<p><strong>Ce qui ne change pas avec les étapes</strong> : la soumission reste la même — elle
+valide et normalise le <strong>catalogue entier</strong>, pas seulement l'étape affichée.
+Un champ invalide dans une étape <strong>jamais visitée</strong> empêche donc
+l'enregistrement, et les valeurs de <strong>toutes</strong> les étapes sont rendues. Le
+bouton d'enregistrement du chrome reste disponible à tout moment ; le bouton
+final de la dernière étape soumet exactement de la même façon.</p>
+<p>⚠️ Un champ du catalogue qu'<strong>aucune</strong> étape ne nomme n'est jamais affiché,
+mais reste validé : s'il porte un validateur qui échoue, la fenêtre devient
+insoumissible. Ce cas est signalé en mode développement.</p>
+<h2 id="le-corps-compos-par-lappelant-bodybuilder">Le corps composé par l'appelant (<code>bodyBuilder</code>)</h2>
+<p>Quand la présentation sort de ces deux formes — un corps mêlant formulaire
+et contenu applicatif, un assistant maison, un en-tête de récapitulatif —
+<code>bodyBuilder</code> rend la main : vous montez le corps, le socle garde le
+conteneur adaptatif, le garde d'abandon, le chrome et le <strong>contrat de
+sortie</strong>.</p>
+<pre class="language-dart"><code class="language-dart">final valeurs = await presentFormEdition(
+  context,
+  fields: dossierFields,
+  bodyBuilder: (context, controller) =&gt; Column(
+    children: &lt;Widget&gt;[
+      const _RappelReglementaire(),
+      Expanded(child: ZFormOnly(controller: controller)),
+    ],
+  ),
+);
+</code></pre>
+<h2 id="quand-plusieurs-corps-sont-dclars">Quand plusieurs corps sont déclarés</h2>
+<p><code>bodyBuilder</code> et <code>steps</code> déclarent deux corps concurrents ; <code>sections</code> décrit
+la mise en page d'un formulaire <strong>à plat</strong> et n'a pas de sens sous des étapes
+(chaque <code>ZEditionStep</code> porte ses propres sections). Ces combinaisons sont
+<strong>refusées par une assertion</strong> en développement. En production, la
+<strong>préséance est définie</strong> et jamais une exception (invariant AD-10) :
+<code>bodyBuilder</code> l'emporte sur <code>steps</code>, qui l'emporte sur le formulaire à plat ;
+<code>sections</code> et <code>layout</code> sont alors ignorés.</p>
+<h2 id="bodyfit--le-corps-qui-dfile"><code>bodyFit</code> — le corps qui défile</h2>
+<p><code>null</code> (défaut) ⇒ <strong>dérivé</strong> : <code>intrinsic</code> pour le formulaire à plat et pour
+un <code>bodyBuilder</code> (comportement historique, inchangé), <code>scrollable</code> pour un
+assistant (<code>ZStepperEdition</code> défile lui-même et veut une hauteur bornée).
+Un <code>bodyBuilder</code> qui monte un corps défilant déclare
+<code>bodyFit: ZEditionBodyFit.scrollable</code>.</p>
+<h2 id="le-repli-des-sections-qui-survit-collapsestore-formid">Le repli des sections qui SURVIT (<code>collapseStore</code>, <code>formId</code>)</h2>
+<p>Une section déclarée <code>collapsible</code> se replie ; sans rien de plus, ce repli
+meurt avec la fenêtre. Sur une fiche ouverte trente fois par jour, replier
+« Finances » est pourtant une habitude de travail, pas un confort : elle doit
+tenir d'une ouverture à la suivante, et d'un lancement au suivant.</p>
+<p><code>collapseStore</code> est l'endroit où ce repli est conservé. <strong>Le stockage
+appartient à l'application</strong> : le socle n'en fournit ni n'en impose aucun
+(invariant AD-1) — vous branchez le vôtre derrière le contrat
+<code>ZSectionCollapseStore</code>, qui tient en deux méthodes synchrones.</p>
+<pre class="language-dart"><code class="language-dart">class ReplisPersistants extends ZSectionCollapseStore {
+  @override
+  Set&lt;String&gt; loadCollapsed(String? formId) =&gt; …; // titres repliés
+  @override
+  void saveCollapsed(String? formId, Set&lt;String&gt; collapsed) =&gt; …;
+}
+
+await presentFormEdition(
+  context,
+  fields: ficheAgentFields,
+  sections: const &lt;ZEditionSection&gt;[
+    ZEditionSection(
+      title: 'Finances',
+      fields: &lt;String&gt;['salaire', 'prime'],
+      collapsible: true,
+    ),
+  ],
+  collapseStore: ReplisPersistants(),
+  formId: 'fiche-agent',
+);
+</code></pre>
+<p><code>formId</code> est la <strong>portée</strong> : l'unité persistée étant le <em>titre</em> de la
+section, deux formulaires qui nomment tous deux une section « Finances » se
+marcheraient dessus sous une portée commune. Un <code>formId</code> distinct les
+isole ; <code>null</code> (défaut) ⇒ portée globale, ce qui convient tant qu'un titre
+ne désigne qu'une seule chose dans l'application. La valeur est <strong>opaque</strong>,
+transmise telle quelle au store.</p>
+<p><code>null</code> (défaut) ⇒ <strong>rien ne change</strong> : ni lecture, ni écriture, et le repli
+reste celui de la vie du widget.</p>
+<p>Les deux paramètres suivent le corps réellement monté : le formulaire à plat
+(<a href="../zcrud_screen/ZFormOnly-class.html">ZFormOnly</a>) et l'assistant (<code>steps</code> — chaque étape reçoit alors <strong>sa
+propre portée</strong>, dérivée de <code>formId</code> et du titre de l'étape). Un
+<code>bodyBuilder</code>, lui, compose son corps : c'est à lui de les passer au
+<code>ZFormOnly</code> ou au <code>DynamicEdition</code> qu'il monte.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;Map&lt;String, dynamic&gt;?&gt; presentFormEdition(
+  BuildContext context, {
+  required List&lt;ZFieldSpec&gt; fields,
+  Map&lt;String, Object?&gt;? initialValues,
+  String? title,
+  String? submitLabel,
+  String? discardLabel,
+  ZConfirmDiscard? onConfirmDiscard,
+  ZFormController? formController,
+  Map&lt;String, Object?&gt; conditionContext = const &lt;String, Object?&gt;{},
+  ZPresentationPolicy policy = const ZPresentationPolicy(),
+  ZFormWeight formWeight = ZFormWeight.light,
+  ZEditionPresentation? forcedMode,
+  bool readOnly = false,
+  List&lt;ZEditionSection&gt; sections = const &lt;ZEditionSection&gt;[],
+  List&lt;ZEditionStep&gt; steps = const &lt;ZEditionStep&gt;[],
+  ZStepperConfig stepperConfig = const ZStepperConfig(),
+  ZFormBodyBuilder? bodyBuilder,
+  ZEditionBodyFit? bodyFit,
+  Map&lt;String, ZResponsiveSpan&gt; layout = const &lt;String, ZResponsiveSpan&gt;{},
+  EdgeInsetsGeometry? padding,
+  ZSectionCollapseStore? collapseStore,
+  String? formId,
+}) {
+  assert(
+    bodyBuilder == null || steps.isEmpty,
+    &#39;presentFormEdition : `bodyBuilder` et `steps` déclarent deux corps &#39;
+    &#39;concurrents. Montez le `ZStepperEdition` vous-même dans le &#39;
+    &#39;`bodyBuilder`, ou renoncez au `bodyBuilder`.&#39;,
+  );
+  assert(
+    steps.isEmpty || sections.isEmpty,
+    &#39;presentFormEdition : `sections` décrit la mise en page d\&#39;un formulaire à &#39;
+    &#39;plat et n\&#39;est pas appliqué sous des étapes. Déclarez les sections sur &#39;
+    &#39;chaque `ZEditionStep(sections: …)`.&#39;,
+  );
+  assert(
+    _assertStepFieldsKnown(fields, steps),
+    &#39;presentFormEdition : une étape nomme un champ absent du catalogue.&#39;,
+  );
+  final controller = ZFormOnlyController(
+    fields: fields,
+    initialValues: initialValues,
+    form: formController,
+    conditionContext: conditionContext,
+  );
+  &#47;&#47; Le contexte du CORPS, capté au montage : c&#39;est lui qui porte la route de
+  &#47;&#47; la fenêtre, donc le seul par lequel on peut la refermer en rendant les
+  &#47;&#47; valeurs. Le contexte d&#39;appel, lui, est au-dessus de la route.
+  BuildContext? body;
+
+  void submit() {
+    final values = controller.submit();
+    &#47;&#47; Invalide : les messages viennent d&#39;être révélés, la fenêtre reste
+    &#47;&#47; ouverte, et rien n&#39;est rendu.
+    if (values == null) return;
+    final ctx = body;
+    if (ctx == null || !ctx.mounted) return;
+    &#47;&#47; Le garde d&#39;abandon lit l&#39;état « modifié » : le formulaire enregistré ne
+    &#47;&#47; l&#39;est plus, sinon la fermeture demanderait de confirmer un abandon qui
+    &#47;&#47; n&#39;a pas lieu.
+    controller.form.markPristine();
+    Navigator.of(ctx).pop(values);
+  }
+
+  &#47;&#47; Préséance DÉFINIE (AD-10) : le corps de l&#39;appelant, puis les étapes, puis
+  &#47;&#47; le formulaire à plat. Les assertions ci-dessus signalent la combinaison en
+  &#47;&#47; développement ; en production rien ne lève.
+  final bool stepped = bodyBuilder == null &amp;&amp; steps.isNotEmpty;
+  if (stepped) _warnFieldsOutsideSteps(fields, steps);
+
+  return presentEdition&lt;Map&lt;String, dynamic&gt;&gt;(
+    context,
+    policy: policy,
+    formWeight: formWeight,
+    forcedMode: forcedMode,
+    bodyFit: bodyFit ??
+        (stepped ? ZEditionBodyFit.scrollable : ZEditionBodyFit.intrinsic),
+    chrome: ZEditionChrome(
+      title: title,
+      submitLabel: submitLabel,
+      discardLabel: discardLabel,
+      onSubmit: readOnly ? null : submit,
+      formController: controller.form,
+      onConfirmDiscard: onConfirmDiscard,
+    ),
+    builder: (ctx) {
+      body = ctx;
+      final custom = bodyBuilder;
+      if (custom != null) return custom(ctx, controller);
+      if (stepped) {
+        return ZStepperEdition(
+          controller: controller.form,
+          &#47;&#47; Le CATALOGUE complet : les étapes n&#39;en nomment que des
+          &#47;&#47; sous-ensembles, et la soumission valide l&#39;ensemble.
+          fields: controller.fields,
+          steps: steps,
+          config: stepperConfig,
+          padding: padding,
+          readOnly: readOnly,
+          layout: layout,
+          &#47;&#47; Une étape porte ses propres sections repliables : le seam la suit
+          &#47;&#47; jusque-là. Le stepper donne à chaque étape SA portée (dérivée de
+          &#47;&#47; `formId`), sinon la dernière étape repliée effacerait le repli des
+          &#47;&#47; autres.
+          collapseStore: collapseStore,
+          formId: formId,
+          &#47;&#47; Le bouton final de la dernière étape soumet par la MÊME voie que le
+          &#47;&#47; bouton d&#39;enregistrement du chrome — une seconde voie de soumission
+          &#47;&#47; finirait par diverger de la première.
+          onComplete: readOnly ? null : submit,
+        );
+      }
+      return ZFormOnly(
+        controller: controller,
+        readOnly: readOnly,
+        sections: sections,
+        layout: layout,
+        padding: padding,
+        shrinkWrap: true,
+        &#47;&#47; Relayés tels quels jusqu&#39;à `DynamicEdition`, qui porte le seam.
+        collapseStore: collapseStore,
+        formId: formId,
+      );
+    },
+  ).whenComplete(controller.dispose);
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_screen</a></li>
+    <li><a href="../zcrud_screen/">zcrud_screen</a></li>
+    <li class="self-crumb">presentFormEdition function</li>
+</ol>
+
+    <h5>zcrud_screen library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_screen
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

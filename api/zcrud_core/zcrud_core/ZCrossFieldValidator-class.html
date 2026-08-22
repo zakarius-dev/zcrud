@@ -164,8 +164,10 @@
 
 </dt>
 <dd>
-  Compile les seules specs <strong>inter-champs</strong> (<code>refKey != null</code>) de <code>specs</code> en
-un unique <code>FormFieldValidator&lt;String&gt;</code> <strong>mémoïsable</strong>, ou <code>null</code> si aucune.
+  Compile les seules specs <strong>inter-champs</strong> de <code>specs</code> — celles qui
+référencent un autre champ (<code>refKey</code>) et celles qui portent une condition
+(<code>requiredIf</code>) — en un unique <code>FormFieldValidator&lt;String&gt;</code> <strong>mémoïsable</strong>,
+ou <code>null</code> si aucune.
   
 
 </dd>
@@ -193,8 +195,8 @@ par le widget de champ ET par la soumission agrégée (source unique).
 
 </dt>
 <dd>
-  Ensemble des <code>refKey</code> référencés par les specs inter-champs de <code>specs</code> —
-alimente l'abonnement CIBLÉ du champ dépendant (<code>fieldListenable(refKey)</code>),
+  Ensemble des <strong>champs observés</strong> par les specs inter-champs de <code>specs</code> —
+alimente l'abonnement CIBLÉ du champ dépendant (<code>fieldListenable(nom)</code>),
 jamais un abonnement global.
   
 
@@ -227,7 +229,7 @@ jamais un abonnement global.
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

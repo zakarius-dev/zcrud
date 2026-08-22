@@ -107,6 +107,7 @@ like <a href="https://api.flutter.dev/flutter/dart-collection/HashSet-class.html
 int get hashCode =&gt; Object.hash(
       runtimeType,
       Object.hashAll(filters),
+      Object.hashAll(filterGroups),
       Object.hashAll(sorts),
       search,
       limit,
@@ -144,7 +145,7 @@ int get hashCode =&gt; Object.hash(
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

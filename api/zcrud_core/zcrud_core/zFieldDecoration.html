@@ -60,6 +60,7 @@
 <li><span class="parameter" id="zFieldDecoration-param-bare"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">bare</span> = <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="zFieldDecoration-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span>, </span></li>
 <li><span class="parameter" id="zFieldDecoration-param-suffixText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">suffixText</span>, </span></li>
+<li><span class="parameter" id="zFieldDecoration-param-valueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">valueOf</span>, </span></li>
 </ol>})
 
         
@@ -75,6 +76,9 @@ l10n, et ornements <code>leading</code>/<code>prefix</code>/<code>suffix</code> 
 <p>En mode <code>bare</code> (Card large) : <strong>aucun label</strong> (porté par la Card) et
 <code>leading</code>/<code>suffix</code> sont <strong>omis</strong> (le dispatcher les branche sur les slots
 <code>ZLargeFieldCard.leading</code>/<code>.suffix</code>) ; seul le <code>prefix</code> <strong>interne</strong> subsiste.</p>
+<p><code>valueOf</code> est transmis tel quel aux ornements <code>.widget</code> (voir
+<a href="../zcrud_core/resolveAdornment.html">resolveAdornment</a>) : il leur donne la valeur du champ décoré et la lecture
+nommée de ses voisins. Omis, la décoration est exactement celle d'avant.</p>
 <p>Résolution <strong>statique</strong> et <strong>défensive</strong> (invariants AD-2/AD-10) :
 fonctions pures cheap, aucune allocation de contrôleur/<code>Listenable</code>,
 aucune couleur en dur (invariant FR-26).</p>
@@ -90,20 +94,23 @@ aucune couleur en dur (invariant FR-26).</p>
   bool bare = false,
   String? errorText,
   String? suffixText,
+  ZValueOf? valueOf,
 }) {
   final tokens = ZcrudTheme.of(context);
   String? l10n(String? key) =&gt;
       key == null ? null : label(context, key, fallback: key);
 
   &#47;&#47; `leading` → tête hors bordure (`icon`). Omis en `bare` (porté par la Card).
-  final leadingIcon =
-      bare ? null : resolveAdornment(context, field.leading, field: field);
+  final leadingIcon = bare
+      ? null
+      : resolveAdornment(context, field.leading,
+          field: field, valueOf: valueOf);
 
   Widget? prefix;
   Widget? prefixIcon;
   final p = field.prefix;
   if (p != null) {
-    final w = resolveAdornment(context, p, field: field);
+    final w = resolveAdornment(context, p, field: field, valueOf: valueOf);
     if (w != null) {
       if (p.kind == ZAdornmentKind.icon) {
         prefixIcon = w;
@@ -118,7 +125,7 @@ aucune couleur en dur (invariant FR-26).</p>
   &#47;&#47; `suffix` interne en normal ; en `bare` il est porté par la Card (dispatcher).
   final s = bare ? null : field.suffix;
   if (s != null) {
-    final w = resolveAdornment(context, s, field: field);
+    final w = resolveAdornment(context, s, field: field, valueOf: valueOf);
     if (w != null) {
       if (s.kind == ZAdornmentKind.icon) {
         suffixIcon = w;
@@ -175,7 +182,7 @@ aucune couleur en dur (invariant FR-26).</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

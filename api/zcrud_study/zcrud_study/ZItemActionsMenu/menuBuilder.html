@@ -63,20 +63,16 @@
       
 <section class="desc markdown">
   <p>Présentation INJECTÉE du contenu du menu.</p>
-<p><code>null</code> (défaut) ⇒ <strong>colonne unique</strong> de <code>PopupMenuItem</code> — rendu
-<strong>strictement inchangé</strong> pour tout hôte qui ne renseigne pas ce slot.</p>
+<p><code>null</code> (défaut) ⇒ grille de <a href="../../zcrud_study/ZMenuEntryTile-class.html">ZMenuEntryTile</a> gouvernée par
+<a href="../../zcrud_study/ZItemActionsMenu/crossAxisCount.html">crossAxisCount</a>.</p>
 <p>Non-null ⇒ la surface flottante ne contient plus qu'UNE entrée, dont le
 contenu est celui rendu par l'hôte. Ce qui reste <strong>la propriété du socle</strong>,
 et qui ne peut donc pas régresser : la liste transmise est déjà filtrée par
 la règle d'absence (AD-4), et la sélection passe par le même chemin que le
 rendu par défaut.</p>
-<p><strong>Pourquoi un SLOT et pas une option de grille</strong> : au-delà de six ou
-sept entrées, une colonne unique impose un balayage
-vertical long sur une surface flottante — le plafond de lisibilité est
-réel. Mais y répondre par un <code>crossAxisMaxColumns</code> figerait dans le socle
-<em>une</em> ergonomie de menu flottant (largeur de panneau, ordre de lecture,
-parcours clavier, position du séparateur destructif) alors que ces
-décisions dépendent de l'hôte.</p>
+<p>Le slot reste l'échappatoire complète pour les sections, séparateurs ou
+dispositions adaptatives propres à l'hôte ; <a href="../../zcrud_study/ZItemActionsMenu/crossAxisCount.html">crossAxisCount</a> ne gouverne
+que le défaut du socle.</p>
 <p><strong>A11y (AD-13) — le renoncement est LEVÉ.</strong> La cellule
 <a href="../../zcrud_study/ZMenuEntryTile-class.html">ZMenuEntryTile</a> est offerte à l'hôte : <code>ZMenuEntryTile(entry: action.toMenuEntry(), onSelected: () =&gt; select(action))</code> lui donne la cible
 ≥ 48 dp, les <code>Semantics</code> NON dupliquées et la directionnalité sans les
@@ -116,7 +112,7 @@ du socle. S'il rend autre chose, l'a11y de ce qu'il rend est à sa charge.</p>
 <footer>
   <span class="no-break">
     zcrud_study
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

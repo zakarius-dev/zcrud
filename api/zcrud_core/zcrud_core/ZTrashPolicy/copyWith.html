@@ -60,6 +60,7 @@
 <li><span class="parameter" id="copyWith-param-purge"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">purge</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-showCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showCount</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-visibleWhenEmpty"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">visibleWhenEmpty</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-viewAccess"><span class="type-annotation"><a href="../../zcrud_core/ZTrashViewAccessCondition.html">ZTrashViewAccessCondition</a>?</span> <span class="parameter-name">viewAccess</span>, </span></li>
 </ol>})
 
       
@@ -80,14 +81,15 @@
   bool? purge,
   bool? showCount,
   bool? visibleWhenEmpty,
-}) =&gt;
-    ZTrashPolicy(
-      softDelete: softDelete ?? this.softDelete,
-      restore: restore ?? this.restore,
-      purge: purge ?? this.purge,
-      showCount: showCount ?? this.showCount,
-      visibleWhenEmpty: visibleWhenEmpty ?? this.visibleWhenEmpty,
-    );</code></pre>
+  ZTrashViewAccessCondition? viewAccess,
+}) =&gt; ZTrashPolicy(
+  softDelete: softDelete ?? this.softDelete,
+  restore: restore ?? this.restore,
+  purge: purge ?? this.purge,
+  showCount: showCount ?? this.showCount,
+  visibleWhenEmpty: visibleWhenEmpty ?? this.visibleWhenEmpty,
+  viewAccess: viewAccess ?? this.viewAccess,
+);</code></pre>
 </section>
 
 
@@ -115,7 +117,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

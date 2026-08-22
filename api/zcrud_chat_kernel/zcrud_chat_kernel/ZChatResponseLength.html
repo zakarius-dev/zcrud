@@ -61,10 +61,8 @@
 <section class="desc markdown">
   <p><strong>LONGUEUR</strong> attendue de la réponse de l'assistant.</p>
 <h2 id="deux-concepts-nomms--effort--jamais-fusionns">Deux concepts nommés « effort », jamais fusionnés</h2>
-<p>La verbosité d'une réponse (ce type, dont l'origine est
-<code>domain/enums/chat_enums.dart:20-26</code>) et le budget de calcul demandé au
-fournisseur (<a href="../zcrud_chat_kernel/ZChatComputeEffort-class.html">ZChatComputeEffort</a>, dont l'origine est
-<code>lib/src/domain/models/ai/ai_models.dart:119-122</code>) sont deux intégrations
+<p>La verbosité d'une réponse (ce type) et le budget de calcul demandé au
+fournisseur (<a href="../zcrud_chat_kernel/ZChatComputeEffort-class.html">ZChatComputeEffort</a>) sont deux intégrations
 vues sous le même nom générique « effort » ailleurs dans l'écosystème,
 avec des valeurs incompatibles (<code>concis</code>/<code>standard</code>/<code>detaille</code> d'un côté,
 <code>low</code>/<code>medium</code>/<code>high</code> de l'autre). Les fusionner produirait un enum vide de
@@ -334,7 +332,7 @@ jamais <code>Effort</code> seul.</p>
 <footer>
   <span class="no-break">
     zcrud_chat_kernel
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

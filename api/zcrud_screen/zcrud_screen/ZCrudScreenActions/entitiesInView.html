@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the entitiesInView property from the ZCrudScreenActions class, for the Dart programming language.">
+  <title>entitiesInView property - ZCrudScreenActions class - zcrud_screen library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/">zcrud_screen.dart</a></li>
+    <li><a href="../../zcrud_screen/ZCrudScreenActions-class.html">ZCrudScreenActions</a></li>
+    <li class="self-crumb">entitiesInView property</li>
+  </ol>
+  <div class="self-name">entitiesInView</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_screen&#47;ZCrudScreenActions-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">entitiesInView</span> property 
+</h1></div>
+
+    
+
+    
+        
+  <section id="getter">
+    <section class="multi-line-signature">
+      
+      <span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZEntity</span>&gt;</span></span>
+      get
+      <span class="name ">entitiesInView</span>
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Les entités <strong>actuellement listées</strong>, dans l'ordre où elles sont peintes.</p>
+<p>C'est la lecture qui manque à une application dont la liste alimente
+autre chose que l'écran — un document métier, un compte, un tableau de
+bord. Sans elle, il faut relire la source en parallèle : deux lectures,
+deux instants, deux règles de filtrage à tenir d'accord. Ici, la matière
+rendue et la matière lue sont <strong>la même</strong>, relevée au même endroit que
+celle de l'export intégré.</p>
+<p><strong>Ce qu'elle garantit</strong> :</p>
+<ul>
+<li>l'<strong>ordre peint</strong> — le tri demandé (<code>sortBy</code>) ou celui déclaré sur
+l'écran, tel qu'il est à l'écran ;</li>
+<li>la <strong>portée</strong> — les vivants en vue normale, les supprimés en vue
+corbeille, et l'onglet <strong>actif</strong> quand l'écran en assemble ;</li>
+<li>ce que la <strong>recherche</strong> et les <strong>filtres</strong> ont retenu, y compris les
+filtres permanents du listing et son post-filtre déclaré ;</li>
+<li>les <strong>pages chargées</strong> — « ce qui est listé » veut dire ce qui est
+listé : ni plus, ni moins que les lignes rendues.</li>
+</ul>
+<p><strong>Ce qu'elle n'est pas</strong> : ni un flux de données (elle ne va pas chercher
+ce que l'écran n'a pas lu), ni un accès au contrôleur de liste (elle
+<strong>lit</strong>, elle ne pilote pas — le tri et les filtres se demandent par
+<a href="../../zcrud_screen/ZCrudScreenActions/sortBy.html">sortBy</a> et <a href="../../zcrud_screen/ZCrudScreenActions/filterBy.html">filterBy</a>).</p>
+<p><strong>Écran qui ne montre rien</strong> — chargement, erreur, liste vide, aucun
+résultat — la lecture est <strong>vide</strong>, jamais le rendu précédent : un
+document ne part pas sur ce que l'utilisateur ne voit plus.</p>
+<p>Le type est <code>ZEntity</code>, comme partout sur cette interface : l'appelant
+connaît le sien et le retrouve par <code>whereType</code>.</p>
+<pre class="language-dart"><code class="language-dart">final actions = ZCrudScreenScope.maybeOf(context);
+final demandes =
+    actions?.entitiesInView.whereType&lt;DemandeDepotage&gt;().toList() ??
+        const &lt;DemandeDepotage&gt;[];
+await imprimerListeDesDemandes(demandes);
+</code></pre>
+<p>Hors d'un <code>ZCrudScreen</code> — <a href="../../zcrud_screen/ZCrudScreenScope/maybeOf.html">ZCrudScreenScope.maybeOf</a> rend <code>null</code> — il n'y
+a pas de listing, donc rien à lire.</p>
+</section>
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">List&lt;ZEntity&gt; get entitiesInView;</code></pre>
+</section>
+
+  </section>
+
+
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/ZCrudScreenActions-class.html">ZCrudScreenActions</a></li>
+    <li class="self-crumb">entitiesInView property</li>
+</ol>
+
+  <h5>ZCrudScreenActions class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_screen
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

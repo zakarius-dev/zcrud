@@ -64,7 +64,8 @@
 <section class="desc markdown">
   <p>Re-capture la <strong>baseline</strong> depuis les valeurs courantes ⇒ <a href="../../zcrud_core/ZFormController/isDirty.html">isDirty</a> repasse
 à <code>false</code>. Appelé après une soumission réussie (<code>onSubmit</code> → <code>Right</code>).
-N'affecte NI la révélation NI la révision de re-seed.</p>
+N'affecte NI la révélation NI la révision de re-seed. Les retraits de
+fichiers (<a href="../../zcrud_core/ZFormController/removedFilesOf.html">removedFilesOf</a>) sont <strong>oubliés</strong> : ils ont été soumis.</p>
 </section>
 
 
@@ -79,6 +80,7 @@ N'affecte NI la révélation NI la révision de re-seed.</p>
     );
   _dirtyFields.clear();
   _touched.clear();
+  _removedFiles.clear();
   if (_isDirty.value) _isDirty.value = false;
 }</code></pre>
 </section>
@@ -108,7 +110,7 @@ N'affecte NI la révélation NI la révision de re-seed.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

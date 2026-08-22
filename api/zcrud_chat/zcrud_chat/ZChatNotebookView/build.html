@@ -118,7 +118,12 @@ Widget build(BuildContext context) {
     reverse: reverse,
     &#47;&#47; Identité : pas de paramètre sur cette surface — le masquage n&#39;est pas
     &#47;&#47; un défaut réglable, c&#39;est la définition de l&#39;usage notebook.
-    actionsBuilder: actionsBuilder,
+    actionsBuilder: _actionsSlot(),
+    &#47;&#47; La coquille DÉCLARÉE traverse la racine commune jusqu&#39;à la fabrique
+    &#47;&#47; de tuile unique : elle ne peut donc pas diverger entre les deux
+    &#47;&#47; surfaces, et le notebook n&#39;en construit aucune lui-même. Non
+    &#47;&#47; déclarée, c&#39;est `null` qui passe — l&#39;arbre est inchangé.
+    shell: skin?.tile,
     &#47;&#47; Relai, jamais une seconde saisie : la fabrique unique rend les deux
     &#47;&#47; surfaces.
     composer: composer,
@@ -151,7 +156,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_chat
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

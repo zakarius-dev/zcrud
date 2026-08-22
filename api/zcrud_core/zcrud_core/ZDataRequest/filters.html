@@ -63,6 +63,11 @@
       
 <section class="desc markdown">
   <p>Prédicats de filtrage (conjonction). Par défaut : aucun.</p>
+<p>Toutes les clauses partent à la source, <strong>y compris</strong> celles déclarées
+<a href="../../zcrud_core/ZFilter/ZFilter.servedBySource.html">ZFilter.servedBySource</a> : un adaptateur les traduit sans avoir à les
+distinguer. La distinction ne joue qu'au retour — le moteur du socle
+ré-applique les clauses ordinaires aux lignes projetées et laisse les
+autres à la source qui a promis de les servir.</p>
 </section>
 
       
@@ -97,7 +102,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

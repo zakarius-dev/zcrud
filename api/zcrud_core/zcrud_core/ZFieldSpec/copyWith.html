@@ -69,6 +69,7 @@
 <li><span class="parameter" id="copyWith-param-multiple"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">multiple</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-isId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">isId</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-fieldSize"><span class="type-annotation"><a href="../../zcrud_core/ZFieldSize.html">ZFieldSize</a>?</span> <span class="parameter-name">fieldSize</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-readLayout"><span class="type-annotation"><a href="../../zcrud_core/ZReadFieldLayout.html">ZReadFieldLayout</a>?</span> <span class="parameter-name">readLayout</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-leading"><span class="type-annotation"><a href="../../zcrud_core/ZFieldAdornment-class.html">ZFieldAdornment</a>?</span> <span class="parameter-name">leading</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-prefix"><span class="type-annotation"><a href="../../zcrud_core/ZFieldAdornment-class.html">ZFieldAdornment</a>?</span> <span class="parameter-name">prefix</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-suffix"><span class="type-annotation"><a href="../../zcrud_core/ZFieldAdornment-class.html">ZFieldAdornment</a>?</span> <span class="parameter-name">suffix</span>, </span></li>
@@ -109,6 +110,7 @@ respectent déjà <code>field.readOnly</code>.</p>
   bool? multiple,
   bool? isId,
   ZFieldSize? fieldSize,
+  ZReadFieldLayout? readLayout,
   ZFieldAdornment? leading,
   ZFieldAdornment? prefix,
   ZFieldAdornment? suffix,
@@ -133,6 +135,7 @@ respectent déjà <code>field.readOnly</code>.</p>
       multiple: multiple ?? this.multiple,
       isId: isId ?? this.isId,
       fieldSize: fieldSize ?? this.fieldSize,
+      readLayout: readLayout ?? this.readLayout,
       leading: leading ?? this.leading,
       prefix: prefix ?? this.prefix,
       suffix: suffix ?? this.suffix,
@@ -169,7 +172,7 @@ respectent déjà <code>field.readOnly</code>.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -91,8 +91,11 @@ bool updateShouldNotify(ZcrudScope oldWidget) =&gt;
     !identical(labels, oldWidget.labels) ||
     !identical(theme, oldWidget.theme) ||
     !identical(widgetRegistry, oldWidget.widgetRegistry) ||
+    !identical(subListSeamRegistry, oldWidget.subListSeamRegistry) ||
     !identical(relationSourceRegistry, oldWidget.relationSourceRegistry) ||
     !identical(choicesSourceRegistry, oldWidget.choicesSourceRegistry) ||
+    !identical(selectChoiceBuilderRegistry,
+        oldWidget.selectChoiceBuilderRegistry) ||
     !identical(relationCrudRegistry, oldWidget.relationCrudRegistry) ||
     !identical(filePicker, oldWidget.filePicker) ||
     !identical(cloudStorage, oldWidget.cloudStorage) ||
@@ -139,7 +142,7 @@ bool updateShouldNotify(ZcrudScope oldWidget) =&gt;
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

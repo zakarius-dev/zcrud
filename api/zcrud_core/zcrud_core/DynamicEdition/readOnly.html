@@ -62,9 +62,19 @@
       </section>
       
 <section class="desc markdown">
-  <p><strong>Mode lecture global</strong> : quand <code>true</code>, chaque champ est rendu non
-éditable via une spec effective <code>readOnly: true</code> (le per-champ reste
-respecté hors mode global). Active aussi le filtre <code>showIfNull</code>.</p>
+  <p><strong>Mode lecture global</strong> : quand <code>true</code>, le formulaire est une
+<strong>consultation</strong>.</p>
+<p>Trois effets, tous portés par ce seul drapeau :</p>
+<ul>
+<li>chaque champ est rendu non éditable via une spec effective
+<code>readOnly: true</code> (le per-champ reste respecté hors mode global) ;</li>
+<li>le mode de <strong>présentation</strong> est posé pour tous les champs du sous-arbre
+(<a href="../../zcrud_core/ZReadModeScope-class.html">ZReadModeScope</a>) : les familles qui savent se présenter en <strong>fiche</strong>
+(libellé au-dessus de la valeur, sans bordure ni libellé flottant ni
+ornement) le font — y compris les champs montés par un <code>fieldBuilder</code>
+fourni, par une fenêtre à étapes ou au fond d'une sous-liste ;</li>
+<li>le filtre <code>showIfNull</code> est actif (un champ vide n'occupe pas la fiche).</li>
+</ul>
 </section>
 
       
@@ -99,7 +109,7 @@ respecté hors mode global). Active aussi le filtre <code>showIfNull</code>.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

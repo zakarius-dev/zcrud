@@ -182,13 +182,11 @@ ZcrudTheme lerp(ThemeExtension&lt;ZcrudTheme&gt;? other, double t) {
     largeLeadingGap:
         largeLeadingGap + (other.largeLeadingGap - largeLeadingGap) * t,
     largeLabelGap: largeLabelGap + (other.largeLabelGap - largeLabelGap) * t,
+    readLayout: t &lt; 0.5 ? readLayout : other.readLayout,
     readCardMargin:
-        EdgeInsetsDirectional.lerp(readCardMargin, other.readCardMargin, t) ??
-        readCardMargin,
-    readPadding:
-        EdgeInsetsDirectional.lerp(readPadding, other.readPadding, t) ??
-        readPadding,
-    readLabelGap: readLabelGap + (other.readLabelGap - readLabelGap) * t,
+        EdgeInsetsDirectional.lerp(readCardMargin, other.readCardMargin, t),
+    readPadding: EdgeInsetsDirectional.lerp(readPadding, other.readPadding, t),
+    readLabelGap: _lerpNullableDouble(readLabelGap, other.readLabelGap, t),
     readLabelTextStyle: TextStyle.lerp(
       readLabelTextStyle,
       other.readLabelTextStyle,
@@ -197,6 +195,33 @@ ZcrudTheme lerp(ThemeExtension&lt;ZcrudTheme&gt;? other, double t) {
     readValueTextStyle: TextStyle.lerp(
       readValueTextStyle,
       other.readValueTextStyle,
+      t,
+    ),
+    readFillColor: Color.lerp(readFillColor, other.readFillColor, t),
+    readBorderColor: Color.lerp(readBorderColor, other.readBorderColor, t),
+    readBorderWidth: _lerpNullableDouble(
+      readBorderWidth,
+      other.readBorderWidth,
+      t,
+    ),
+    readCardMinHeight: _lerpNullableDouble(
+      readCardMinHeight,
+      other.readCardMinHeight,
+      t,
+    ),
+    readRowLabelWidth: _lerpNullableDouble(
+      readRowLabelWidth,
+      other.readRowLabelWidth,
+      t,
+    ),
+    readRowMinWidth: _lerpNullableDouble(
+      readRowMinWidth,
+      other.readRowMinWidth,
+      t,
+    ),
+    subListColumnMinWidth: _lerpNullableDouble(
+      subListColumnMinWidth,
+      other.subListColumnMinWidth,
       t,
     ),
     accentBarHeight: _lerpNullableDouble(
@@ -1055,7 +1080,7 @@ ZcrudTheme lerp(ThemeExtension&lt;ZcrudTheme&gt;? other, double t) {
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

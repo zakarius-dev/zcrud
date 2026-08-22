@@ -89,7 +89,7 @@ dépli <strong>inline</strong>.</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZChatMessageTile.new" class="callable">
-          <span class="name"><a href="../zcrud_chat/ZChatMessageTile/ZChatMessageTile.html">ZChatMessageTile</a></span><span class="signature">({<span class="parameter" id="param-message"><span>required</span> <span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span>, </span><span class="parameter" id="param-collapsedMaxHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">collapsedMaxHeight</span>, </span><span class="parameter" id="param-isStreaming"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isStreaming</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-expandController"><span class="type-annotation">ZToggleController?</span> <span class="parameter-name">expandController</span>, </span><span class="parameter" id="param-identityBuilder"><span class="type-annotation"><a href="../zcrud_chat/ZChatMessageSlotBuilder.html">ZChatMessageSlotBuilder</a>?</span> <span class="parameter-name">identityBuilder</span>, </span><span class="parameter" id="param-actionsBuilder"><span class="type-annotation"><a href="../zcrud_chat/ZChatMessageSlotBuilder.html">ZChatMessageSlotBuilder</a>?</span> <span class="parameter-name">actionsBuilder</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+          <span class="name"><a href="../zcrud_chat/ZChatMessageTile/ZChatMessageTile.html">ZChatMessageTile</a></span><span class="signature">({<span class="parameter" id="param-message"><span>required</span> <span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span>, </span><span class="parameter" id="param-collapsedMaxHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">collapsedMaxHeight</span>, </span><span class="parameter" id="param-isStreaming"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isStreaming</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-expandController"><span class="type-annotation">ZToggleController?</span> <span class="parameter-name">expandController</span>, </span><span class="parameter" id="param-identityBuilder"><span class="type-annotation"><a href="../zcrud_chat/ZChatMessageSlotBuilder.html">ZChatMessageSlotBuilder</a>?</span> <span class="parameter-name">identityBuilder</span>, </span><span class="parameter" id="param-actionsBuilder"><span class="type-annotation"><a href="../zcrud_chat/ZChatMessageSlotBuilder.html">ZChatMessageSlotBuilder</a>?</span> <span class="parameter-name">actionsBuilder</span>, </span><span class="parameter" id="param-shell"><span class="type-annotation"><a href="../zcrud_chat/ZChatTileShell-class.html">ZChatTileShell</a>?</span> <span class="parameter-name">shell</span>, </span><span class="parameter" id="param-topic"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">topic</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
         </dt>
         <dd>
           Construit la tuile d'un message.
@@ -213,6 +213,32 @@ seule (comportement par défaut).
 <dd class="inherited">
   A representation of the runtime type of the object.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="shell" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatMessageTile/shell.html">shell</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat/ZChatTileShell-class.html">ZChatTileShell</a>?</span>
+  
+
+</dt>
+<dd>
+  La <strong>coquille</strong> de cette tuile : carte, filet, horodatage, style du
+bouton de dépli.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="topic" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatMessageTile/topic.html">topic</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Le <strong>sujet du tour</strong> qui coiffe ce message — typiquement la question qui
+a produit cette réponse.
+  <div class="features"><span class="feature">final</span></div>
 
 </dd>
 
@@ -407,7 +433,7 @@ tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode
 <footer>
   <span class="no-break">
     zcrud_chat
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

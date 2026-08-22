@@ -65,6 +65,9 @@
   <p>Socle de filtres <strong>persistant</strong> (relation parent / catégorie d'onglet),
 <strong>toujours ANDé en tête</strong> des filtres utilisateur dans chaque requête ; jamais
 écrasé par <code>setFilters</code>. Défaut <code>const []</code> ⇒ rétro-compatible.</p>
+<p>Une clause déclarée <code>ZFilter.servedBySource</code> y a sa place : elle voyage
+dans chaque requête, et le socle ne la rejoue pas sur les lignes — la
+voie d'un périmètre que seule la base sait trancher.</p>
 </section>
 
       
@@ -99,7 +102,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

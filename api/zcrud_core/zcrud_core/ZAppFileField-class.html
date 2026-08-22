@@ -88,7 +88,7 @@
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZAppFileField.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZAppFileField/ZAppFileField.html">ZAppFileField</a></span><span class="signature">({<span class="parameter" id="param-field"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="param-value"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span>, </span><span class="parameter" id="param-onChanged"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">onChanged</span>, </span><span class="parameter" id="param-liveValue"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">liveValue</span>()?, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZAppFileField/ZAppFileField.html">ZAppFileField</a></span><span class="signature">({<span class="parameter" id="param-field"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="param-value"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span>, </span><span class="parameter" id="param-onChanged"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">onChanged</span>, </span><span class="parameter" id="param-liveValue"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">liveValue</span>()?, </span><span class="parameter" id="param-onRemoved"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span>&gt;</span>?</span> <span class="parameter-name">onRemoved</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
         </dt>
         <dd>
           Construit le champ pour <code>field</code>, valeur courante <code>value</code> (<code>AppFile?</code> ou
@@ -163,6 +163,19 @@ autonome ⇒ repli sur <a href="../zcrud_core/ZAppFileField/value.html">value</a
 </dt>
 <dd>
   Écrit une nouvelle valeur dans la tranche (branché sur <code>setValue</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onRemoved" class="property">
+  <span class="name"><a href="../zcrud_core/ZAppFileField/onRemoved.html">onRemoved</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Notifie qu'une entrée a été <strong>détachée</strong> du champ : suppression par
+l'utilisateur, ou remplacement du fichier d'un champ à valeur unique.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -382,7 +395,7 @@ tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

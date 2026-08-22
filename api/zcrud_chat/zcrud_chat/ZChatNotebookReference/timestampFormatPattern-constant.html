@@ -63,13 +63,15 @@
       
 <section class="desc markdown">
   <p>Motif d'horodatage de référence.</p>
-<p>Le socle ne l'applique pas automatiquement : c'est un format figé,
-insensible à la locale, et l'imposer à tout hôte reproduirait un
-défaut de libellé en dur une couche plus bas. La valeur est publiée
-pour l'hôte qui veut une parité stricte
-(<code>DateFormat(ZChatNotebookReference.timestampFormatPattern)</code>) ; à
-défaut, le format reste celui du backend de coquille, qui suit la
-locale.</p>
+<p>C'est un format figé, insensible à la locale : il n'est appliqué qu'à
+une tuile dont la coquille est <strong>déclarée</strong>, où il est le rendu de
+référence (<code>zChatReferenceTimestamp</code> le produit sans aucune dépendance
+de date). Une tuile sans coquille n'affiche aucun horodatage, et aucun
+hôte ne se voit imposer ce format.</p>
+<p>Le motif reste publié sous cette forme pour l'hôte qui formate
+lui-même — <code>DateFormat(ZChatNotebookReference.timestampFormatPattern)</code>
+— et tout autre besoin passe par un <code>ZChatTimestampFormatter</code>, qui,
+lui, connaît la locale.</p>
 </section>
 
       
@@ -104,7 +106,7 @@ locale.</p>
 <footer>
   <span class="no-break">
     zcrud_chat
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

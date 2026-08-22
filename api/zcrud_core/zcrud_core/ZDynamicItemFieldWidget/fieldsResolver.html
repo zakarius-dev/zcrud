@@ -63,7 +63,9 @@
       
 <section class="desc markdown">
   <p>Seam de champs dynamiques (voir <a href="../../zcrud_core/ZDynamicItemFieldsResolver.html">ZDynamicItemFieldsResolver</a>).
-<code>null</code> (défaut) ⇒ rendu de tous les <code>itemFields</code> de la config (rétro-compat).</p>
+<code>null</code> (défaut) ⇒ le seam <code>itemFieldsResolver</code> du registre
+(<code>ZcrudScope.subListSeamRegistry</code>) est consulté ; à défaut, rendu de tous
+les <code>itemFields</code> de la config (rétro-compat).</p>
 </section>
 
       
@@ -98,7 +100,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

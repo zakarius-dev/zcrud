@@ -63,11 +63,11 @@
       
 <section class="desc markdown">
   <p>Glyphe du chevron (<code>arrow_forward_ios</code> — legacy l.469).</p>
-<p><strong>MESURÉ, et il INFIRME le grief RTL</strong> porté contre le legacy : <code>Icon</code>
-<strong>n'a pas</strong> de propriété <code>matchTextDirection</code> (elle vit sur <code>IconData</code>), et
-<code>Icons.arrow_forward_ios</code> la porte <strong>déjà à <code>true</code></strong> dans le SDK
-(<code>icons.dart:2510-2514</code>). Le chevron legacy <strong>se retourne donc bien</strong> en
-RTL. Le socle ne s'en remet pas au glyphe pour autant : il <strong>force</strong>
+<p><strong>Le retournement RTL ne vient PAS du widget</strong> : <code>Icon</code> n'a pas de
+propriété <code>matchTextDirection</code> (elle vit sur <code>IconData</code>), et
+<code>Icons.arrow_forward_ios</code> la porte <strong>déjà à <code>true</code></strong> dans le SDK. Ce
+glyphe-là se retourne donc bien en RTL. Le socle ne s'en remet pas au
+glyphe pour autant : il <strong>force</strong>
 <code>matchTextDirection</code> sur le chevron RÉELLEMENT rendu, y compris quand un
 hôte en injecte un autre (garde dédiée).</p>
 </section>
@@ -104,7 +104,7 @@ hôte en injecte un autre (garde dédiée).</p>
 <footer>
   <span class="no-break">
     zcrud_study
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

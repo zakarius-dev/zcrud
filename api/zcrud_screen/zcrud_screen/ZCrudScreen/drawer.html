@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the drawer property from the ZCrudScreen class, for the Dart programming language.">
+  <title>drawer property - ZCrudScreen class - zcrud_screen library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/">zcrud_screen.dart</a></li>
+    <li><a href="../../zcrud_screen/ZCrudScreen-class.html">ZCrudScreen<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></a></li>
+    <li class="self-crumb">drawer property</li>
+  </ol>
+  <div class="self-name">drawer</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_screen&#47;ZCrudScreen-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">drawer</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?
+        <span class="name ">drawer</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p><strong>Navigation de l'application</strong> — tiroir latéral de tête, relayé tel quel
+au <code>Scaffold</code> du socle (<code>ZPageScaffold.drawer</code>).</p>
+<p>L'écran assemblé <strong>construit</strong> le <code>Scaffold</code> : sans ce relais, une
+application à modules n'avait aucun moyen d'attacher son menu à un écran
+migré — il fallait imbriquer un second <code>Scaffold</code> porteur du tiroir et un
+<code>GlobalKey&lt;ScaffoldState&gt;</code> pour l'ouvrir.</p>
+<p><strong>Le menu appartient à l'application</strong> : le paquet n'en fournit aucun, ne
+décide d'aucun responsive (tiroir sur mobile, colonne fixe sur desktop :
+c'est l'hôte qui tranche) et n'y applique aucune règle de droits. Il
+transmet le widget, rien de plus.</p>
+<pre class="language-dart"><code class="language-dart">ZCrudScreen&lt;Navire&gt;(
+  title: 'ships',
+  source: ZCrudSource&lt;Navire&gt;.repository(repo),
+  drawer: MonMenuLateral(), // votre menu, votre ACL, votre responsive
+);
+</code></pre>
+<p><strong>Le bouton d'ouverture est inséré par Material</strong>, pas par zcrud : un
+<code>Scaffold</code> porteur d'un tiroir voit son <code>AppBar</code> se doter du bouton
+« hamburger » <strong>si et seulement si</strong> aucun <code>leading</code> n'occupe la place
+(<code>automaticallyImplyLeading</code>, comportement natif que le socle ne
+réimplémente pas). Trois conséquences <strong>voulues</strong> :</p>
+<ul>
+<li>un <a href="../../zcrud_screen/ZCrudScreen/leading.html">leading</a> déclaré par l'hôte <strong>prime</strong> sur le bouton de menu — le
+tiroir reste alors atteignable par <strong>glissement depuis le bord</strong> ;</li>
+<li>en <strong>vue corbeille</strong>, le socle impose son bouton de retour : le bouton
+de menu y est donc masqué, même avec un tiroir déclaré. C'est le
+comportement retenu — sortir de la corbeille prime sur changer de
+module, et le glissement depuis le bord reste offert ;</li>
+<li>pendant une <strong>recherche ouverte</strong>, le leading est le bouton de
+fermeture de la recherche : même règle, même repli.</li>
+</ul>
+<p><code>null</code> (défaut) ⇒ <strong>aucun</strong> tiroir, aucun bouton, rendu strictement
+identique à celui d'avant l'introduction du paramètre.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final Widget? drawer;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/ZCrudScreen-class.html">ZCrudScreen<span class="signature">&lt;<wbr><span class="type-parameter">T extends ZEntity</span>&gt;</span></a></li>
+    <li class="self-crumb">drawer property</li>
+</ol>
+
+  <h5>ZCrudScreen class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_screen
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

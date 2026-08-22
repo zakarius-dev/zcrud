@@ -55,11 +55,13 @@
     
 <section class="desc markdown">
   <p>Source de données déclarative d'un <code>ZCrudScreen&lt;T&gt;</code>.</p>
-<p>Immuable ; construite par l'une des deux fabriques (<a href="../zcrud_screen/ZCrudSource/repository.html">repository</a> /
-<a href="../zcrud_screen/ZCrudSource/items.html">items</a>). L'écran interroge ses capacités (<a href="../zcrud_screen/ZCrudSource/canWrite.html">canWrite</a>, <a href="../zcrud_screen/ZCrudSource/supportsTrash.html">supportsTrash</a>)
-pour dériver les gestes offerts — un journal immuable ou un référentiel
-distant en lecture seule s'exprime donc <strong>par déclaration</strong>
-(<code>ZCrudSource.items(rows)</code> sans callback), jamais par contournement.</p>
+<p>Immuable ; construite par l'une des trois fabriques (<a href="../zcrud_screen/ZCrudSource/repository.html">repository</a> /
+<a href="../zcrud_screen/ZCrudSource/ZCrudSource.readOnlyRepository.html">readOnlyRepository</a> / <a href="../zcrud_screen/ZCrudSource/items.html">items</a>). L'écran interroge ses capacités
+(<a href="../zcrud_screen/ZCrudSource/canWrite.html">canWrite</a>, <a href="../zcrud_screen/ZCrudSource/supportsTrash.html">supportsTrash</a>, <a href="../zcrud_screen/ZCrudSource/supportsPurge.html">supportsPurge</a>) pour dériver les gestes
+offerts — un journal immuable ou un référentiel distant en lecture seule
+s'exprime donc <strong>par déclaration</strong> (<a href="../zcrud_screen/ZCrudSource/ZCrudSource.readOnlyRepository.html">ZCrudSource.readOnlyRepository</a> sur la
+voie dépôt, <code>ZCrudSource.items(rows)</code> sans callback sur l'autre), jamais par
+contournement.</p>
 </section>
 
 
@@ -73,6 +75,19 @@ distant en lecture seule s'exprime donc <strong>par déclaration</strong>
         </dt>
         <dd>
           Voie <strong>cohabitation</strong> : <code>items</code> arrive déjà chargé (flux de l'hôte).
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZCrudSource.readOnlyRepository" class="callable">
+          <span class="name"><a href="../zcrud_screen/ZCrudSource/ZCrudSource.readOnlyRepository.html">ZCrudSource.readOnlyRepository</a></span><span class="signature">(<span class="parameter" id="readOnlyRepository-param-repository"><span class="type-annotation">ZRepository<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">repository</span></span>)</span>
+        </dt>
+        <dd>
+          Voie <strong>repository en lecture seule</strong> : le dépôt sert toute la lecture
+(pagination, tri, recherche serveur, périmètre de requête) et la source
+déclare que la ressource <strong>ne s'écrit pas</strong>. <a href="../zcrud_screen/ZCrudSource/canWrite.html">canWrite</a>, <a href="../zcrud_screen/ZCrudSource/supportsTrash.html">supportsTrash</a>
+et <a href="../zcrud_screen/ZCrudSource/supportsPurge.html">supportsPurge</a> valent tous <code>false</code>, dépôt présent ou non — l'écran
+n'offre alors ni création, ni édition, ni bascule corbeille, et ses gestes
+programmatiques (<code>ZCrudScreenActions.openCreation</code>/<code>openEdition</code>…) restent
+inertes.
             <div class="constructor-modifier features">const</div>
         </dd>
         <dt id="ZCrudSource.repository" class="callable">
@@ -99,8 +114,8 @@ listing corbeille via <code>ZDataRequest.deletedScope</code>).
 
 </dt>
 <dd>
-  <code>true</code> si la source sait <strong>écrire</strong> (création/édition) : repository, ou
-callback <a href="../zcrud_screen/ZCrudSource/onSave.html">onSave</a> fourni.
+  <code>true</code> si la source sait <strong>écrire</strong> (création/édition) : dépôt d'écriture
+(<a href="../zcrud_screen/ZCrudSource/writeRepository.html">writeRepository</a>), ou callback <a href="../zcrud_screen/ZCrudSource/onSave.html">onSave</a> fourni.
   <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
@@ -224,8 +239,8 @@ absente).
 
 </dt>
 <dd>
-  <code>true</code> si la source sait <strong>supprimer définitivement</strong> : dépôt appliquant
-le mixin <code>ZPurgeable</code>, ou rappel <a href="../zcrud_screen/ZCrudSource/onPurge.html">onPurge</a> déclaré.
+  <code>true</code> si la source sait <strong>supprimer définitivement</strong> : dépôt d'écriture
+appliquant le mixin <code>ZPurgeable</code>, ou rappel <a href="../zcrud_screen/ZCrudSource/onPurge.html">onPurge</a> déclaré.
   <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
@@ -237,9 +252,24 @@ le mixin <code>ZPurgeable</code>, ou rappel <a href="../zcrud_screen/ZCrudSource
 
 </dt>
 <dd>
-  <code>true</code> si la source sait servir une <strong>corbeille</strong> : repository
+  <code>true</code> si la source sait servir une <strong>corbeille</strong> : dépôt d'écriture
 (<code>deletedScope</code> + <code>softDelete</code>/<code>restore</code>), ou partition <a href="../zcrud_screen/ZCrudSource/isDeleted.html">isDeleted</a> +
 au moins une écriture de corbeille.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="writeRepository" class="property">
+  <span class="name"><a href="../zcrud_screen/ZCrudSource/writeRepository.html">writeRepository</a></span>
+  <span class="signature">&#8594; ZRepository<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Dépôt utilisable pour <strong>écrire</strong> (sauvegarde, corbeille, purge), ou
+<code>null</code> — soit qu'il n'y ait pas de dépôt (voie <code>items</code>), soit que la
+source ait déclaré la ressource en lecture seule
+(<a href="../zcrud_screen/ZCrudSource/ZCrudSource.readOnlyRepository.html">ZCrudSource.readOnlyRepository</a>).
   <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
@@ -329,7 +359,7 @@ au moins une écriture de corbeille.
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the entitiesInViewListenable property from the ZCrudScreenActions class, for the Dart programming language.">
+  <title>entitiesInViewListenable property - ZCrudScreenActions class - zcrud_screen library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/">zcrud_screen.dart</a></li>
+    <li><a href="../../zcrud_screen/ZCrudScreenActions-class.html">ZCrudScreenActions</a></li>
+    <li class="self-crumb">entitiesInViewListenable property</li>
+  </ol>
+  <div class="self-name">entitiesInViewListenable</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_screen&#47;ZCrudScreenActions-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">entitiesInViewListenable</span> property 
+</h1></div>
+
+    
+
+    
+        
+  <section id="getter">
+    <section class="multi-line-signature">
+      
+      <span class="returntype"><a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZEntity</span>&gt;</span></span>&gt;</span></span>
+      get
+      <span class="name ">entitiesInViewListenable</span>
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>La même lecture que <a href="../../zcrud_screen/ZCrudScreenActions/entitiesInView.html">entitiesInView</a>, <strong>notifiée</strong> quand ce qui est listé
+change réellement.</p>
+<p>À préférer quand une vue doit <strong>refléter</strong> le listing en continu — un
+compteur, un en-tête « 42 dossiers », un total. Pour un geste ponctuel
+(le tap d'un bouton d'export), <a href="../../zcrud_screen/ZCrudScreenActions/entitiesInView.html">entitiesInView</a> suffit : un document est
+un geste, pas un flux.</p>
+<p><strong>Elle ne reconstruit pas l'écran.</strong> Rien n'est notifié tant que personne
+n'écoute, et la notification n'est émise que si le contenu <strong>diffère</strong>
+du précédent : un simple rendu de l'écran, une frappe qui ne change pas
+le résultat, un changement d'onglet qui revient au même — aucun d'eux
+n'émet. Ce qui écoute se reconstruit ; le corps du listing, lui, est
+construit par l'écran et ne l'est pas une fois de plus (invariant AD-2).</p>
+<p>Même contrat que <a href="../../zcrud_screen/ZCrudScreenActions/entitiesInView.html">entitiesInView</a> pour l'ordre, la portée, les pages
+chargées et l'écran vide.</p>
+<pre class="language-dart"><code class="language-dart">ValueListenableBuilder&lt;List&lt;ZEntity&gt;&gt;(
+  valueListenable: actions.entitiesInViewListenable,
+  builder: (context, entites, _) =&gt; Text('${entites.length} dossiers'),
+)
+</code></pre>
+<p>Elle appartient à l'écran : ne la libérez pas, il s'en charge.</p>
+</section>
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ValueListenable&lt;List&lt;ZEntity&gt;&gt; get entitiesInViewListenable;</code></pre>
+</section>
+
+  </section>
+
+
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/">zcrud_screen</a></li>
+    <li><a href="../../zcrud_screen/ZCrudScreenActions-class.html">ZCrudScreenActions</a></li>
+    <li class="self-crumb">entitiesInViewListenable property</li>
+</ol>
+
+  <h5>ZCrudScreenActions class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_screen
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

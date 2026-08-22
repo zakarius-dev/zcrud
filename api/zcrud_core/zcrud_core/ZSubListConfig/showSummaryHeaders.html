@@ -62,19 +62,54 @@
       </section>
       
 <section class="desc markdown">
-  <p><strong>En-têtes de colonnes</strong> du résumé (mode compact).</p>
-<p><strong>Opt-in</strong>, et c'est délibéré : activer les en-têtes change la <strong>hauteur</strong>
-de la table ET la <strong>mise en page des cellules</strong> chez tout hôte en mode
-compact. <code>false</code> (<strong>défaut</strong>) ⇒ rendu strictement inchangé.</p>
-<p><code>true</code> ⇒ (1) une ligne d'en-tête reprenant le <code>label</code> (résolu l10n) de
-chaque <code>ZFieldSpec</code> de <a href="../../zcrud_core/ZSubListConfig/summaryFields.html">summaryFields</a> est rendue au-dessus des lignes ;
-(2) les cellules passent d'un défilement horizontal <strong>par ligne</strong> à des
-<strong>colonnes de largeur égale</strong> (<code>Expanded</code> + ellipse). Ce second point n'est
-pas cosmétique : des cellules de largeur intrinsèque défilant chacune
-indépendamment ne s'alignent JAMAIS sous un en-tête — l'en-tête mentirait.
-Le texte tronqué reste atteignable par le dialog consulter/modifier.</p>
-<p>⇒ à réserver à un petit nombre de colonnes. Une vraie grille (colonnes
-dimensionnées, tri, défilement synchronisé) relève de <code>zcrud_list</code>.</p>
+  <p><strong>Rendu tabulaire</strong> du résumé, en-têtes de colonnes compris (mode
+compact). <strong><code>true</code> est désormais le défaut</strong> — c'est l'interrupteur de la
+table, pas seulement de sa première ligne.</p>
+<p>Le nom est resté celui de v0.x (le renommer casserait les hôtes qui le
+déclarent) mais il gouverne <strong>deux</strong> propriétés indissociables : des
+colonnes alignées, et les en-têtes qui les nomment. Elles sont
+indissociables par construction — des cellules de largeur intrinsèque
+défilant chacune pour son compte ne tomberaient JAMAIS sous un en-tête,
+qui mentirait.</p>
+<p><code>true</code> (<strong>défaut</strong>) ⇒ une vraie <code>Table</code> : <strong>une</strong> géométrie de colonnes
+partagée par la ligne d'en-têtes et par toutes les cellules (elles ne
+s'alignent pas, elles sont <em>les mêmes colonnes</em>), largeurs <strong>suivant le
+contenu</strong>, valeurs <strong>numériques cadrées en fin</strong> de colonne. Les en-têtes
+reprennent le <code>label</code> l10n de chaque colonne. Une cellule plus large que
+sa colonne est coupée à l'ellipse — et reste atteignable par le formulaire
+consulter/modifier.</p>
+<p><code>false</code> ⇒ <strong>résumé défilant</strong> : les cellules d'une ligne défilent
+horizontalement, sans en-tête, sans alignement inter-lignes et sans repli.
+C'est le rendu historique de v0.x, <strong>conservé au byte près</strong> pour l'hôte
+qui le déclare — la sortie de la table, pas une dégradation subie.</p>
+<h2 id="-le-dfaut-est-pass-de-false--true--rupture-assume">🔴 Le défaut est passé de <code>false</code> à <code>true</code> — rupture assumée</h2>
+<p>Elle ne concerne que les hôtes en mode <code>compact</code> qui ne déclaraient pas ce
+drapeau : leur résumé défilant devient une table. Un hôte qui déclarait
+<code>true</code> <strong>ou</strong> <code>false</code> garde exactement le sens qu'il avait déclaré.</p>
+<h2 id="au-del-dun-budget-de-lignes-les-colonnes-redeviennent-gales">Au-delà d'un budget de lignes, les colonnes redeviennent égales</h2>
+<p>Une table ne se virtualise pas : mesurer la largeur intrinsèque d'une
+colonne oblige à visiter <strong>toutes</strong> ses cellules. Au-delà de
+<code>ZSubListFieldWidget.summaryTableRowBudget</code> lignes, le socle retombe donc
+sur un rendu <strong>construit à la demande</strong> (<code>ListView.builder</code>, colonnes de
+largeur égale sous une ligne d'en-têtes de même géométrie). Voir cette
+constante pour le budget et sa justification.</p>
+<h2 id="sur-une-surface-troite-la-table-se-replie">Sur une surface étroite, la table se replie</h2>
+<p>Des colonnes ne tiennent que si la largeur suffit — qu'elles suivent le
+contenu ou non. En deçà, la sous-liste <strong>empile</strong> chaque ligne en couples
+libellé/valeur (aucune <code>Table</code> n'est alors construite) : la
+valeur est alors rendue en entier (elle revient à la ligne au lieu d'être
+coupée) et le libellé qui coiffait la colonne <strong>descend dans la ligne</strong>,
+la ligne d'en-têtes s'effaçant avec elle — il n'y a donc jamais d'en-tête
+au-dessus d'un empilement.</p>
+<p>Le basculement est <strong>mesuré</strong>, pas déclaré : la table est conservée tant
+que la largeur restante — actions de ligne et marges déduites — laisse à
+chaque colonne au moins la largeur minimale lisible du thème
+(<code>ZcrudTheme.subListColumnMinWidth</code>, dérivée de <code>readRowLabelWidth</code>, 160
+par défaut). Le repli vaut en consultation <strong>comme</strong> en saisie : il ne se
+déclenche que là où la table ne délivrait plus rien.</p>
+<p>⇒ à réserver à un petit nombre de colonnes : au-delà, la table se repliera
+sur la plupart des téléphones. Une vraie grille (colonnes dimensionnées,
+tri, défilement synchronisé) relève de <code>zcrud_list</code>.</p>
 </section>
 
       
@@ -109,7 +144,7 @@ dimensionnées, tri, défilement synchronisé) relève de <code>zcrud_list</code
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

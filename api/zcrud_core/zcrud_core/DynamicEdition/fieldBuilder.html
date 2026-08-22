@@ -64,6 +64,8 @@
 <section class="desc markdown">
   <p>Seam de rendu de champ. À défaut : le dispatcher par type <a href="../../zcrud_core/ZFieldWidget-class.html">ZFieldWidget</a>.
 La place stable est garantie par <a href="../../zcrud_core/DynamicEdition-class.html">DynamicEdition</a> (KeyedSubtree).</p>
+<p>Le builder fourni <strong>ne perd pas</strong> le mode de consultation : celui-ci
+descend par le contexte (<a href="../../zcrud_core/ZReadModeScope-class.html">ZReadModeScope</a>), pas par le paramètre du champ.</p>
 </section>
 
       
@@ -98,7 +100,7 @@ La place stable est garantie par <a href="../../zcrud_core/DynamicEdition-class.
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

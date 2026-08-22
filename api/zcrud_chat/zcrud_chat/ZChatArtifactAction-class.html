@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZChatArtifactAction class from the zcrud_chat library, for the Dart programming language.">
+  <title>ZChatArtifactAction class - zcrud_chat library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat.dart</a></li>
+    <li class="self-crumb">ZChatArtifactAction class</li>
+  </ol>
+  <div class="self-name">ZChatArtifactAction</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat&#47;zcrud_chat-library-sidebar.html"
+    data-below-sidebar="zcrud_chat&#47;ZChatArtifactAction-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZChatArtifactAction</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Un <strong>verbe</strong> offert sur un artefact : sa condition de visibilité, sa
+teinte facultative, et son rappel.</p>
+<p>Le libellé vient soit d'un texte <strong>déjà localisé</strong> par l'hôte (<a href="../zcrud_chat/ZChatArtifactAction/label.html">label</a>),
+soit d'une <strong>clé</strong> du socle (<a href="../zcrud_chat/ZChatArtifactAction/labelKey.html">labelKey</a>) résolue par <code>zChatLabel</code> — même
+contrat que <code>ZChatModelOption</code>. Les cinq constructeurs nommés posent la
+clé du socle correspondante : un hôte obtient un menu localisé sans
+alimenter quoi que ce soit.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://api.flutter.dev/flutter/meta/immutable-constant.html">immutable</a></li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZChatArtifactAction.new" class="callable">
+          <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/ZChatArtifactAction.html">ZChatArtifactAction</a></span><span class="signature">({<span class="parameter" id="param-onSelected"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactCallback.html">ZChatArtifactCallback</a></span> <span class="parameter-name">onSelected</span>, </span><span class="parameter" id="param-label"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">label</span>, </span><span class="parameter" id="param-labelKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">labelKey</span>, </span><span class="parameter" id="param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="param-accent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">accent</span>, </span><span class="parameter" id="param-visible"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactVisibility.html">ZChatArtifactVisibility</a>?</span> <span class="parameter-name">visible</span>, </span><span class="parameter" id="param-destructive"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">destructive</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-confirmMessage"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">confirmMessage</span></span>})</span>
+        </dt>
+        <dd>
+          Verbe entièrement décrit par l'hôte. Au moins l'un de <code>label</code> et
+<code>labelKey</code> doit être fourni — sans quoi le menu rendrait une ligne
+muette.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZChatArtifactAction.create" class="callable">
+          <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/ZChatArtifactAction.create.html">ZChatArtifactAction.create</a></span><span class="signature">({<span class="parameter" id="create-param-onSelected"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactCallback.html">ZChatArtifactCallback</a></span> <span class="parameter-name">onSelected</span>, </span><span class="parameter" id="create-param-label"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">label</span>, </span><span class="parameter" id="create-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="create-param-accent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">accent</span></span>})</span>
+        </dt>
+        <dd>
+          « Créer » — visible <strong>si l'artefact est absent</strong>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZChatArtifactAction.delete" class="callable">
+          <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/ZChatArtifactAction.delete.html">ZChatArtifactAction.delete</a></span><span class="signature">({<span class="parameter" id="delete-param-onSelected"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactCallback.html">ZChatArtifactCallback</a></span> <span class="parameter-name">onSelected</span>, </span><span class="parameter" id="delete-param-label"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">label</span>, </span><span class="parameter" id="delete-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="delete-param-accent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">accent</span>, </span><span class="parameter" id="delete-param-confirmMessage"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">confirmMessage</span></span>})</span>
+        </dt>
+        <dd>
+          « Supprimer » — visible si l'artefact est présent, et <strong>destructeur</strong> :
+le socle demande confirmation avant d'appeler <code>onSelected</code>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZChatArtifactAction.edit" class="callable">
+          <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/ZChatArtifactAction.edit.html">ZChatArtifactAction.edit</a></span><span class="signature">({<span class="parameter" id="edit-param-onSelected"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactCallback.html">ZChatArtifactCallback</a></span> <span class="parameter-name">onSelected</span>, </span><span class="parameter" id="edit-param-label"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">label</span>, </span><span class="parameter" id="edit-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="edit-param-accent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">accent</span></span>})</span>
+        </dt>
+        <dd>
+          « Modifier » — visible si l'artefact est présent.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZChatArtifactAction.open" class="callable">
+          <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/ZChatArtifactAction.open.html">ZChatArtifactAction.open</a></span><span class="signature">({<span class="parameter" id="open-param-onSelected"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactCallback.html">ZChatArtifactCallback</a></span> <span class="parameter-name">onSelected</span>, </span><span class="parameter" id="open-param-label"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">label</span>, </span><span class="parameter" id="open-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="open-param-accent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">accent</span></span>})</span>
+        </dt>
+        <dd>
+          « Ouvrir » — visible <strong>si l'artefact est présent</strong>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZChatArtifactAction.regenerate" class="callable">
+          <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/ZChatArtifactAction.regenerate.html">ZChatArtifactAction.regenerate</a></span><span class="signature">({<span class="parameter" id="regenerate-param-onSelected"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactCallback.html">ZChatArtifactCallback</a></span> <span class="parameter-name">onSelected</span>, </span><span class="parameter" id="regenerate-param-label"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">label</span>, </span><span class="parameter" id="regenerate-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="regenerate-param-accent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">accent</span></span>})</span>
+        </dt>
+        <dd>
+          « Régénérer » — visible si l'artefact est présent.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="accent" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/accent.html">accent</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span>
+  
+
+</dt>
+<dd>
+  Teinte <strong>propre à ce verbe</strong>, portée au plancher de contraste avant
+d'être peinte. <code>null</code> signifie la couleur ambiante.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="confirmMessage" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/confirmMessage.html">confirmMessage</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Message de confirmation, <strong>déjà localisé</strong> par l'hôte. <code>null</code> avec
+<a href="../zcrud_chat/ZChatArtifactAction/destructive.html">destructive</a> laisse le socle poser sa question générique.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="destructive" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/destructive.html">destructive</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> ⇒ le socle demande une <strong>confirmation</strong> avant <a href="../zcrud_chat/ZChatArtifactAction/onSelected.html">onSelected</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="icon" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/icon.html">icon</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span>
+  
+
+</dt>
+<dd>
+  Glyphe du verbe. <code>null</code> signifie aucun glyphe (invariant AD-4 : un
+créneau nul est absent de l'arbre, jamais un espace réservé).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="label" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/label.html">label</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé <strong>déjà localisé</strong> par l'hôte. Prioritaire sur <a href="../zcrud_chat/ZChatArtifactAction/labelKey.html">labelKey</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="labelKey" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/labelKey.html">labelKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé de libellé, résolue par le registre de l'hôte puis le repli du
+socle. Consultée seulement si <a href="../zcrud_chat/ZChatArtifactAction/label.html">label</a> est nul.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="onSelected" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/onSelected.html">onSelected</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat/ZChatArtifactCallback.html">ZChatArtifactCallback</a></span>
+  
+
+</dt>
+<dd>
+  Le rappel de l'hôte. Le socle ne fait rien d'autre que l'appeler — et,
+pour un verbe destructeur, seulement après confirmation.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="visible" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/visible.html">visible</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat/ZChatArtifactVisibility.html">ZChatArtifactVisibility</a>?</span>
+  
+
+</dt>
+<dd>
+  Condition de visibilité. <code>null</code> signifie <strong>toujours visible</strong>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="isVisible" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatArtifactAction/isVisible.html">isVisible</a></span><span class="signature">(<wbr><span class="parameter" id="isVisible-param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span>, {</span><span class="parameter" id="isVisible-param-present"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">present</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Ce verbe est-il visible sur <code>message</code>, sachant <code>present</code> ?
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat</a></li>
+    <li class="self-crumb">ZChatArtifactAction class</li>
+</ol>
+
+    <h5>zcrud_chat library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

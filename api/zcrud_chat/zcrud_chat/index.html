@@ -124,6 +124,41 @@ dans ce paquet.</p>
   Porte le résolveur d'annonce de l'hôte jusqu'à la tuile et à la coquille.
 </dd>
 
+          <dt id="ZChatArtifactAction">
+  <span class="name "><a href="../zcrud_chat/ZChatArtifactAction-class.html">ZChatArtifactAction</a></span> 
+
+</dt>
+<dd>
+  Un <strong>verbe</strong> offert sur un artefact : sa condition de visibilité, sa
+teinte facultative, et son rappel.
+</dd>
+
+          <dt id="ZChatArtifactBar">
+  <span class="name "><a href="../zcrud_chat/ZChatArtifactBar-class.html">ZChatArtifactBar</a></span> 
+
+</dt>
+<dd>
+  La rangée d'artefacts d'<strong>un</strong> message.
+</dd>
+
+          <dt id="ZChatArtifactConfirmRequest">
+  <span class="name "><a href="../zcrud_chat/ZChatArtifactConfirmRequest-class.html">ZChatArtifactConfirmRequest</a></span> 
+
+</dt>
+<dd>
+  Ce qu'un hôte reçoit quand le socle lui demande de confirmer un verbe
+destructeur.
+</dd>
+
+          <dt id="ZChatArtifactSpec">
+  <span class="name "><a href="../zcrud_chat/ZChatArtifactSpec-class.html">ZChatArtifactSpec</a></span> 
+
+</dt>
+<dd>
+  La déclaration d'un artefact : une clé opaque, un glyphe, un libellé,
+trois lectures d'état, et des verbes.
+</dd>
+
           <dt id="ZChatAttachmentController">
   <span class="name "><a href="../zcrud_chat/ZChatAttachmentController-class.html">ZChatAttachmentController</a></span> 
 
@@ -433,6 +468,14 @@ tranches réactives <strong>granulaires</strong>, un jeton <strong>par requête<
   Un badge de statut piloté par prédicat.
 </dd>
 
+          <dt id="ZChatConversationGroup">
+  <span class="name "><a href="../zcrud_chat/ZChatConversationGroup-class.html">ZChatConversationGroup</a></span> 
+
+</dt>
+<dd>
+  Groupe de conversations transmis aux actions déclarées par l'hôte.
+</dd>
+
           <dt id="ZChatConversationList">
   <span class="name "><a href="../zcrud_chat/ZChatConversationList-class.html">ZChatConversationList</a></span> 
 
@@ -545,6 +588,14 @@ paramètres recopiés sur la liste.
 </dt>
 <dd>
   Les mots que l'export écrit et que le socle ne doit pas décider.
+</dd>
+
+          <dt id="ZChatGroupAction">
+  <span class="name "><a href="../zcrud_chat/ZChatGroupAction-class.html">ZChatGroupAction</a></span> 
+
+</dt>
+<dd>
+  Action d'en-tête de groupe entièrement décrite par l'hôte.
 </dd>
 
           <dt id="ZChatGroupExpansion">
@@ -856,6 +907,31 @@ conversation.
   Un export <strong>textuel</strong> (Markdown, texte brut, HTML, références).
 </dd>
 
+          <dt id="ZChatTileShell">
+  <span class="name "><a href="../zcrud_chat/ZChatTileShell-class.html">ZChatTileShell</a></span> 
+
+</dt>
+<dd>
+  La coquille déclarée d'une tuile de message.
+</dd>
+
+          <dt id="ZChatTileShellStyle">
+  <span class="name "><a href="../zcrud_chat/ZChatTileShellStyle-class.html">ZChatTileShellStyle</a></span> 
+
+</dt>
+<dd>
+  Les valeurs <strong>résolues</strong> d'une coquille : ce que la tuile peint réellement.
+</dd>
+
+          <dt id="ZChatTileToggleStyle">
+  <span class="name "><a href="../zcrud_chat/ZChatTileToggleStyle-class.html">ZChatTileToggleStyle</a></span> 
+
+</dt>
+<dd>
+  Style du <strong>bouton de dépli</strong> d'une tuile : sa forme, son alignement, son
+remplissage.
+</dd>
+
           <dt id="ZChatToggleControl">
   <span class="name "><a href="../zcrud_chat/ZChatToggleControl-class.html">ZChatToggleControl</a></span> 
 
@@ -974,6 +1050,30 @@ la feuille appartient à l'hôte, elle ne se monte pas d'elle-même.
 
 </dd>
 
+          <dt id="kZChatCapabilityElaboration" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatCapabilityElaboration-constant.html">kZChatCapabilityElaboration</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de variante « élaboration » (développement d'une réponse).
+  
+
+</dd>
+
+          <dt id="kZChatCapabilityExamples" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatCapabilityExamples-constant.html">kZChatCapabilityExamples</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de variante « exemples ».
+  
+
+</dd>
+
           <dt id="kZChatCapabilityFlashcards" class="constant">
     <span class="name "><a href="../zcrud_chat/kZChatCapabilityFlashcards-constant.html">kZChatCapabilityFlashcards</a></span>
   <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
@@ -1010,6 +1110,18 @@ la feuille appartient à l'hôte, elle ne se monte pas d'elle-même.
 
 </dd>
 
+          <dt id="kZChatCapabilityPoem" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatCapabilityPoem-constant.html">kZChatCapabilityPoem</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de variante « poème ».
+  
+
+</dd>
+
           <dt id="kZChatCapabilityStory" class="constant">
     <span class="name "><a href="../zcrud_chat/kZChatCapabilityStory-constant.html">kZChatCapabilityStory</a></span>
   <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
@@ -1018,6 +1130,18 @@ la feuille appartient à l'hôte, elle ne se monte pas d'elle-même.
 </dt>
 <dd>
   Clé de variante « histoire fantastique ».
+  
+
+</dd>
+
+          <dt id="kZChatCapabilitySummary" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatCapabilitySummary-constant.html">kZChatCapabilitySummary</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de variante « résumé ».
   
 
 </dd>
@@ -1092,6 +1216,155 @@ traduction d'hôte.
 </dt>
 <dd>
   Action « insérer le texte relu dans le message ».
+  
+
+</dd>
+
+          <dt id="kZChatLabelArtifactBusy" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatLabelArtifactBusy-constant.html">kZChatLabelArtifactBusy</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  État « génération en cours » pour CET artefact — le canal non chromatique
+de l'occupation. L'animation, elle, est un autre sujet : l'annonce ne
+dépend pas d'elle.
+  
+
+</dd>
+
+          <dt id="kZChatLabelArtifactCancel" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatLabelArtifactCancel-constant.html">kZChatLabelArtifactCancel</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Action « annuler » de la confirmation en place — elle n'exécute rien.
+  
+
+</dd>
+
+          <dt id="kZChatLabelArtifactConfirm" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatLabelArtifactConfirm-constant.html">kZChatLabelArtifactConfirm</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Action « confirmer » de la confirmation en place.
+  
+
+</dd>
+
+          <dt id="kZChatLabelArtifactConfirmPrompt" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatLabelArtifactConfirmPrompt-constant.html">kZChatLabelArtifactConfirmPrompt</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Question générique de confirmation d'un verbe destructeur, quand l'hôte
+n'a pas fourni la sienne (<code>confirmMessage</code>).
+  
+
+</dd>
+
+          <dt id="kZChatLabelArtifactCount" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatLabelArtifactCount-constant.html">kZChatLabelArtifactCount</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Compte d'éléments d'un artefact — porte <a href="../zcrud_chat/kZChatCountPlaceholder-constant.html">kZChatCountPlaceholder</a>. C'est le
+canal TEXTUEL de la pastille, qui n'est jamais annoncée elle-même.
+  
+
+</dd>
+
+          <dt id="kZChatLabelArtifactCreate" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatLabelArtifactCreate-constant.html">kZChatLabelArtifactCreate</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Verbe standard « créer » — visible quand l'artefact est absent.
+  
+
+</dd>
+
+          <dt id="kZChatLabelArtifactDelete" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatLabelArtifactDelete-constant.html">kZChatLabelArtifactDelete</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Verbe standard « supprimer » — destructeur, donc confirmé.
+  
+
+</dd>
+
+          <dt id="kZChatLabelArtifactEdit" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatLabelArtifactEdit-constant.html">kZChatLabelArtifactEdit</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Verbe standard « modifier ».
+  
+
+</dd>
+
+          <dt id="kZChatLabelArtifactEmpty" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatLabelArtifactEmpty-constant.html">kZChatLabelArtifactEmpty</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  État « aucun contenu pour cet artefact » — le pendant explicite de
+<a href="../zcrud_chat/kZChatLabelGenerated-constant.html">kZChatLabelGenerated</a>.
+  
+
+</dd>
+
+          <dt id="kZChatLabelArtifactOpen" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatLabelArtifactOpen-constant.html">kZChatLabelArtifactOpen</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Verbe standard « ouvrir » — visible quand l'artefact est présent.
+  
+
+</dd>
+
+          <dt id="kZChatLabelArtifactRegenerate" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatLabelArtifactRegenerate-constant.html">kZChatLabelArtifactRegenerate</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Verbe standard « régénérer ».
+  
+
+</dd>
+
+          <dt id="kZChatLabelArtifacts" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatLabelArtifacts-constant.html">kZChatLabelArtifacts</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Étiquette sémantique de la rangée d'artefacts d'un message.
   
 
 </dd>
@@ -2198,6 +2471,18 @@ injectable.
 
 </dd>
 
+          <dt id="kZChatSeamArtifactSpec" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatSeamArtifactSpec-constant.html">kZChatSeamArtifactSpec</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nom du seam des <strong>lectures d'état d'un artefact déclaré</strong> — idem.
+  
+
+</dd>
+
           <dt id="kZChatSeamBlock" class="constant">
     <span class="name "><a href="../zcrud_chat/kZChatSeamBlock-constant.html">kZChatSeamBlock</a></span>
   <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
@@ -2230,6 +2515,30 @@ injectable.
 </dt>
 <dd>
   Nom du seam de <strong>coquille</strong> — idem.
+  
+
+</dd>
+
+          <dt id="kZChatSeamTimestamp" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatSeamTimestamp-constant.html">kZChatSeamTimestamp</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nom du seam du <strong>format d'horodatage</strong> d'une tuile — idem.
+  
+
+</dd>
+
+          <dt id="kZChatSeamTopic" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatSeamTopic-constant.html">kZChatSeamTopic</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nom du seam du <strong>sujet de tour</strong> (la coiffe d'une tuile) — idem.
   
 
 </dd>
@@ -2482,6 +2791,34 @@ biais, budget, raisonnement) — les entrées d'hôte sans
     <section class="summary offset-anchor" id="functions">
       <h2>Functions</h2>
       <dl class="callables">
+          <dt id="zChatArtifactWhenAbsent" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatArtifactWhenAbsent.html">zChatArtifactWhenAbsent</a></span><span class="signature">(<wbr><span class="parameter" id="zChatArtifactWhenAbsent-param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span>, </span><span class="parameter" id="zChatArtifactWhenAbsent-param-present"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">present</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Condition « visible seulement si l'artefact est ABSENT » — celle de
+<a href="../zcrud_chat/ZChatArtifactAction/ZChatArtifactAction.create.html">ZChatArtifactAction.create</a>.
+  
+
+</dd>
+
+          <dt id="zChatArtifactWhenPresent" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatArtifactWhenPresent.html">zChatArtifactWhenPresent</a></span><span class="signature">(<wbr><span class="parameter" id="zChatArtifactWhenPresent-param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span>, </span><span class="parameter" id="zChatArtifactWhenPresent-param-present"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">present</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Condition « visible seulement si l'artefact est PRÉSENT » — celle de
+<a href="../zcrud_chat/ZChatArtifactAction/ZChatArtifactAction.open.html">ZChatArtifactAction.open</a>, <code>.regenerate</code>, <code>.edit</code> et <code>.delete</code>.
+  
+
+</dd>
+
           <dt id="zChatComposerChromeOf" class="callable">
   <span class="name"><a href="../zcrud_chat/zChatComposerChromeOf.html">zChatComposerChromeOf</a></span><span class="signature">(<wbr><span class="parameter" id="zChatComposerChromeOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zChatComposerChromeOf-param-chrome"><span class="type-annotation"><a href="../zcrud_chat/ZChatComposerChrome-class.html">ZChatComposerChrome</a>?</span> <span class="parameter-name">chrome</span></span>})
     <span class="returntype parameter">&#8594; <a href="../zcrud_chat/ZChatComposerChromeStyle-class.html">ZChatComposerChromeStyle</a></span>
@@ -2603,6 +2940,34 @@ chevauchement, dans l'ordre.
 
 </dd>
 
+          <dt id="zChatPrecedingRequestTopic" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatPrecedingRequestTopic.html">zChatPrecedingRequestTopic</a></span><span class="signature">(<wbr><span class="parameter" id="zChatPrecedingRequestTopic-param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span>, </span><span class="parameter" id="zChatPrecedingRequestTopic-param-request"><span class="type-annotation">ZChatMessage?</span> <span class="parameter-name">request</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Résolveur prêt à l'emploi : coiffe une <strong>réponse</strong> du texte de la
+<strong>question</strong> qui l'a produite.
+  
+
+</dd>
+
+          <dt id="zChatReferenceTimestamp" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatReferenceTimestamp.html">zChatReferenceTimestamp</a></span><span class="signature">(<wbr><span class="parameter" id="zChatReferenceTimestamp-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">value</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Rendu de <strong>référence</strong> d'un horodatage : jour, mois, année, puis heures,
+minutes et secondes sur deux chiffres.
+  
+
+</dd>
+
           <dt id="zChatReportSeamFailure" class="callable">
   <span class="name"><a href="../zcrud_chat/zChatReportSeamFailure.html">zChatReportSeamFailure</a></span><span class="signature">(<wbr>{<span class="parameter" id="zChatReportSeamFailure-param-error"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">error</span>, </span><span class="parameter" id="zChatReportSeamFailure-param-stack"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/StackTrace-class.html">StackTrace</a></span> <span class="parameter-name">stack</span>, </span><span class="parameter" id="zChatReportSeamFailure-param-seam"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">seam</span></span>})
     <span class="returntype parameter">&#8594; void</span>
@@ -2641,6 +3006,20 @@ chevauchement, dans l'ordre.
 <dd>
   <code>listEquals</code> re-exporté pour les implémentations d'égalité d'hôte — évite
 un import <code>foundation</code> de plus chez le consommateur.
+  
+
+</dd>
+
+          <dt id="zChatTileShellStyleOf" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatTileShellStyleOf.html">zChatTileShellStyleOf</a></span><span class="signature">(<wbr><span class="parameter" id="zChatTileShellStyleOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zChatTileShellStyleOf-param-shell"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatTileShell-class.html">ZChatTileShell</a></span> <span class="parameter-name">shell</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat/ZChatTileShellStyle-class.html">ZChatTileShellStyle</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Résout une coquille contre le thème ambiant : paramètre, puis jeton, puis
+référence.
   
 
 </dd>
@@ -2688,6 +3067,95 @@ un import <code>foundation</code> de plus chez le consommateur.
   <dd>
     Construit l'icône d'une action — couture d'hôte (le socle n'embarque aucun
 catalogue d'icônes : <code>material</code> lui est interdit).
+    
+
+  </dd>
+
+          
+  <dt id="ZChatArtifactBusy" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactBusy.html">ZChatArtifactBusy</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a> Function<span class="signature">(<span class="parameter" id="param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Lecture de l'<strong>occupation</strong> — une génération en cours POUR CET ARTEFACT.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatArtifactCallback" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactCallback.html">ZChatArtifactCallback</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Rappel d'un verbe — ce qu'il fait reste <strong>entièrement</strong> à l'hôte (une
+suppression en cascade, un <code>runAction</code>, une navigation).
+    
+
+  </dd>
+
+          
+  <dt id="ZChatArtifactConfirm" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactConfirm.html">ZChatArtifactConfirm</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-request"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactConfirmRequest-class.html">ZChatArtifactConfirmRequest</a></span> <span class="parameter-name">request</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Couture de confirmation d'un verbe destructeur — <code>true</code> exécute le verbe.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatArtifactCount" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactCount.html">ZChatArtifactCount</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>? Function<span class="signature">(<span class="parameter" id="param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Lecture du <strong>compte</strong> d'un artefact. <code>null</code> signifie « pas de pastille » —
+distinct de <code>0</code>, qui signifie « zéro élément » (et ne montre pas de
+pastille non plus : une pastille « 0 » est du bruit).
+    
+
+  </dd>
+
+          
+  <dt id="ZChatArtifactPresence" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactPresence.html">ZChatArtifactPresence</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a> Function<span class="signature">(<span class="parameter" id="param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Lecture de <strong>présence</strong> d'un artefact sur un message brut.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatArtifactVisibility" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactVisibility.html">ZChatArtifactVisibility</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a> Function<span class="signature">(<span class="parameter" id="zChatArtifactWhenAbsent-param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span>, </span><span class="parameter" id="zChatArtifactWhenAbsent-param-present"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">present</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Condition de visibilité d'un verbe. <code>present</code> est le résultat <strong>déjà
+résolu</strong> de <a href="../zcrud_chat/ZChatArtifactSpec/presence.html">ZChatArtifactSpec.presence</a> : l'hôte n'a pas à réécrire la
+même lecture deux fois.
     
 
   </dd>
@@ -2801,6 +3269,20 @@ catalogue d'icônes : <code>material</code> lui est interdit).
   </dt>
   <dd>
     Choisit la date affichée par la tuile — couture d'hôte.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatGroupActionsBuilder" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatGroupActionsBuilder.html">ZChatGroupActionsBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatGroupAction-class.html">ZChatGroupAction</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-group"><span class="type-annotation"><a href="../zcrud_chat/ZChatConversationGroup-class.html">ZChatConversationGroup</a></span> <span class="parameter-name">group</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit les actions d'un <code>group</code> donné.
     
 
   </dd>
@@ -2966,6 +3448,34 @@ UUID v4).
 
   </dd>
 
+          
+  <dt id="ZChatTimestampFormatter" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatTimestampFormatter.html">ZChatTimestampFormatter</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">value</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Formate l'horodatage d'un message — couture d'hôte.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatTurnTopicResolver" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatTurnTopicResolver.html">ZChatTurnTopicResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>? Function<span class="signature">(<span class="parameter" id="zChatPrecedingRequestTopic-param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span>, </span><span class="parameter" id="zChatPrecedingRequestTopic-param-request"><span class="type-annotation">ZChatMessage?</span> <span class="parameter-name">request</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Choisit le <strong>sujet du tour</strong> qui coiffe un message.
+    
+
+  </dd>
+
       </dl>
     </section>
 
@@ -2996,7 +3506,7 @@ UUID v4).
 <footer>
   <span class="no-break">
     zcrud_chat
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

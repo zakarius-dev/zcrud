@@ -142,10 +142,8 @@ et la testabilité).
 
 </dt>
 <dd>
-  Config triviale pur-cœur des champs <strong>date/heure</strong> (<code>dateTime</code>/<code>time</code>).
-Les bornes s'expriment soit comme <strong>clés d'autres champs</strong>
-(<a href="../zcrud_core/ZDateConfig/firstDateKey.html">firstDateKey</a>/<a href="../zcrud_core/ZDateConfig/lastDateKey.html">lastDateKey</a>, résolution cross-champ), soit comme
-<strong>littéraux ISO-8601</strong> (<a href="../zcrud_core/ZDateConfig/minDateIso.html">minDateIso</a>/<a href="../zcrud_core/ZDateConfig/maxDateIso.html">maxDateIso</a>).
+  Config triviale pur-cœur des champs <strong>date/heure</strong> (<code>dateTime</code>/<code>time</code>) et
+<strong>plage de dates</strong> (<code>dateRange</code>).
 </dd>
 
           <dt id="ZDateRange">
@@ -359,6 +357,15 @@ produit par le générateur).
 <code>EditionFieldType</code>) — valeurs <strong>camelCase</strong>. Neutre, pur-Dart, <strong>non
 persisté</strong> (porté par la config <code>const</code>, jamais sérialisé) : la discipline
 <code>@JsonKey(unknownEnumValue:)</code> ne s'applique donc pas ici.
+</dd>
+
+          <dt id="ZDateSpanVerdict">
+  <span class="name "><a href="../zcrud_core/ZDateSpanVerdict.html">ZDateSpanVerdict</a></span> 
+
+</dt>
+<dd>
+  Verdict d'<strong>amplitude</strong> d'une plage de dates confrontée à
+<a href="../zcrud_core/ZDateConfig/maxDays.html">ZDateConfig.maxDays</a>/<a href="../zcrud_core/ZDateConfig/minDays.html">ZDateConfig.minDays</a>.
 </dd>
 
           <dt id="ZDerivationOverwrite">
@@ -652,7 +659,7 @@ registre (collision).
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -66,18 +66,16 @@
 rendu du legacy : IA (<code>purple</code>), création manuelle (<code>blue</code>), téléversement
 (<code>orange</code>), numérisation (<code>teal</code>), note (<code>green</code>), carte mentale
 (<strong><code>deepPurple</code></strong>).</p>
-<p><strong>La sixième n'est PAS l'indigo annoncé par la CR.</strong> Le legacy pose
-<code>iconColor: Colors.deepPurple</code> (<code>folder_content_add_dialog_widget.dart:337</code>),
-soit <code>0xFF673AB7</code> — et non <code>Colors.indigo</code> (<code>0xFF3F51B5</code>), qui n'apparaît
-<strong>nulle part</strong> dans le fichier legacy (recherche négative exécutée). La CR
-(§ ② et sa vérification par défilement § ⑤) confond deux teintes Material
-distinctes.</p>
+<p><strong>La sixième est <code>deepPurple</code>, pas <code>indigo</code>.</strong> Le legacy pose
+<code>iconColor: Colors.deepPurple</code>, soit <code>0xFF673AB7</code> — et non
+<code>Colors.indigo</code> (<code>0xFF3F51B5</code>). Les deux teintes Material se confondent à
+l'œil ; c'est la première qui fait foi.</p>
 <p><strong>C'est une PALETTE, pas une table par type.</strong> Le socle ne connaît
 aucun « type de contenu » : une entrée reçoit sa teinte par
 <code>ZContentHubEntry.tint</code> (injectée), ou à défaut par un créneau
 <strong>déterministe de son identité</strong> (<code>colorKey</code>, à défaut son libellé) — donc
-<strong>stable quand une application insère un type au milieu</strong> (« non mesuré »
-n°4 de la CR, mesuré par garde). Jamais par sa POSITION.</p>
+<strong>stable quand une application insère un type au milieu</strong>. Jamais par sa
+POSITION.</p>
 </section>
 
       
@@ -119,7 +117,7 @@ n°4 de la CR, mesuré par garde). Jamais par sa POSITION.</p>
 <footer>
   <span class="no-break">
     zcrud_study
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

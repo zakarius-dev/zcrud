@@ -56,7 +56,10 @@
 <section class="desc markdown">
   <p>Expression <code>const</code> de visibilité conditionnelle (pur-données).</p>
 <p>Feuilles (dépendent d'un champ) : <a href="../zcrud_core/ZCondition/ZCondition.equals.html">ZCondition.equals</a>, <a href="../zcrud_core/ZCondition/ZCondition.notEquals.html">ZCondition.notEquals</a>,
-<a href="../zcrud_core/ZCondition/ZCondition.isNull.html">ZCondition.isNull</a>, <a href="../zcrud_core/ZCondition/ZCondition.notNull.html">ZCondition.notNull</a>, <a href="../zcrud_core/ZCondition/ZCondition.truthy.html">ZCondition.truthy</a>.
+<a href="../zcrud_core/ZCondition/ZCondition.isNull.html">ZCondition.isNull</a>, <a href="../zcrud_core/ZCondition/ZCondition.notNull.html">ZCondition.notNull</a>, <a href="../zcrud_core/ZCondition/ZCondition.truthy.html">ZCondition.truthy</a>,
+<a href="../zcrud_core/ZCondition/ZCondition.isEmpty.html">ZCondition.isEmpty</a>, <a href="../zcrud_core/ZCondition/ZCondition.isNotEmpty.html">ZCondition.isNotEmpty</a>, les opérateurs de longueur
+(<a href="../zcrud_core/ZCondition/ZCondition.lengthEquals.html">ZCondition.lengthEquals</a> et ses variantes) et <a href="../zcrud_core/ZCondition/ZCondition.contains.html">ZCondition.contains</a>
+(appartenance à une sélection multiple).
 Combinateurs : <a href="../zcrud_core/ZCondition/ZCondition.and.html">ZCondition.and</a>, <a href="../zcrud_core/ZCondition/ZCondition.or.html">ZCondition.or</a>, <a href="../zcrud_core/ZCondition/ZCondition.not.html">ZCondition.not</a>.</p>
 </section>
 
@@ -71,6 +74,14 @@ Combinateurs : <a href="../zcrud_core/ZCondition/ZCondition.and.html">ZCondition
         </dt>
         <dd>
           Conjonction (<code>ET</code>) de <code>operands</code>.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZCondition.contains" class="callable">
+          <span class="name"><a href="../zcrud_core/ZCondition/ZCondition.contains.html">ZCondition.contains</a></span><span class="signature">(<span class="parameter" id="contains-param-field"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="contains-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span>, {</span><span class="parameter" id="contains-param-source"><span class="type-annotation"><a href="../zcrud_core/ZValueSource.html">ZValueSource</a></span> <span class="parameter-name">source</span> = <span class="default-value">ZValueSource.state</span></span>})</span>
+        </dt>
+        <dd>
+          Vrai si la valeur du champ <code>field</code> (lue sur <code>source</code>) est une
+<strong>collection contenant</strong> <code>value</code> — « cette option est-elle cochée ? ».
             <div class="constructor-modifier features">const</div>
         </dd>
         <dt id="ZCondition.equals" class="callable">
@@ -376,7 +387,7 @@ rétro-compatible). Ignorée par les combinateurs (<code>and</code>/<code>or</co
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

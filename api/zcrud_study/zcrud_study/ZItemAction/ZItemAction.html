@@ -61,6 +61,9 @@
 <li><span class="parameter" id="param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">id</span>, </span></li>
 <li><span class="parameter" id="param-permitted"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">permitted</span> = <span class="default-value">true</span>, </span></li>
 <li><span class="parameter" id="param-disabledReason"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">disabledReason</span>, </span></li>
+<li><span class="parameter" id="param-state"><span class="type-annotation"><a href="../../zcrud_study/ZItemActionState.html">ZItemActionState</a>?</span> <span class="parameter-name">state</span>, </span></li>
+<li><span class="parameter" id="param-stateSemanticLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">stateSemanticLabel</span>, </span></li>
+<li><span class="parameter" id="param-count"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">count</span>, </span></li>
 </ol>})
     </section>
     
@@ -91,13 +94,29 @@ pas être à la fois actionnable et désactivée.</p>
   this.id,
   this.permitted = true,
   this.disabledReason,
+  this.state,
+  this.stateSemanticLabel,
+  this.count,
 }) : assert(
-        onSelected == null || disabledReason == null,
-        &#39;ZItemAction: une action ACTIONNABLE (onSelected non nul) ne peut pas &#39;
-        &#39;porter un disabledReason — les deux états sont exclusifs. Pour une &#39;
-        &#39;action désactivée, laisser onSelected nul et fournir le motif ; pour &#39;
-        &#39;une action absente, laisser les deux nuls.&#39;,
-      );</code></pre>
+       onSelected == null || disabledReason == null,
+       &#39;ZItemAction: une action ACTIONNABLE (onSelected non nul) ne peut pas &#39;
+       &#39;porter un disabledReason — les deux états sont exclusifs. Pour une &#39;
+       &#39;action désactivée, laisser onSelected nul et fournir le motif ; pour &#39;
+       &#39;une action absente, laisser les deux nuls.&#39;,
+     ),
+     assert(
+       (state == null &amp;&amp; stateSemanticLabel == null) ||
+           (state != null &amp;&amp;
+               stateSemanticLabel != null &amp;&amp;
+               stateSemanticLabel != &#39;&#39;),
+       &#39;ZItemAction: state et stateSemanticLabel vont ensemble. Le libellé &#39;
+       &quot;d&#39;état doit être localisé et non vide afin que l&#39;état ne soit &quot;
+       &#39;jamais porté par la seule couleur.&#39;,
+     ),
+     assert(
+       count == null || count &gt;= 0,
+       &#39;ZItemAction: count doit être positif ou nul.&#39;,
+     );</code></pre>
 </section>
 
 
@@ -125,7 +144,7 @@ pas être à la fois actionnable et désactivée.</p>
 <footer>
   <span class="no-break">
     zcrud_study
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -62,8 +62,10 @@
 <li><span class="parameter" id="copyWith-param-labels"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">labels</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-theme"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">theme</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-widgetRegistry"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">widgetRegistry</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-subListSeamRegistry"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">subListSeamRegistry</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-relationSourceRegistry"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">relationSourceRegistry</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-choicesSourceRegistry"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">choicesSourceRegistry</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-selectChoiceBuilderRegistry"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">selectChoiceBuilderRegistry</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-relationCrudRegistry"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">relationCrudRegistry</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-filePicker"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">filePicker</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-cloudStorage"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">cloudStorage</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
@@ -119,8 +121,10 @@ autres seams. Voir aussi <a href="../../zcrud_core/ZcrudScope/derive.html">deriv
   Object? labels = _zScopeUndefined,
   Object? theme = _zScopeUndefined,
   Object? widgetRegistry = _zScopeUndefined,
+  Object? subListSeamRegistry = _zScopeUndefined,
   Object? relationSourceRegistry = _zScopeUndefined,
   Object? choicesSourceRegistry = _zScopeUndefined,
+  Object? selectChoiceBuilderRegistry = _zScopeUndefined,
   Object? relationCrudRegistry = _zScopeUndefined,
   Object? filePicker = _zScopeUndefined,
   Object? cloudStorage = _zScopeUndefined,
@@ -149,6 +153,9 @@ autres seams. Voir aussi <a href="../../zcrud_core/ZcrudScope/derive.html">deriv
       widgetRegistry: identical(widgetRegistry, _zScopeUndefined)
           ? this.widgetRegistry
           : widgetRegistry as ZWidgetRegistry?,
+      subListSeamRegistry: identical(subListSeamRegistry, _zScopeUndefined)
+          ? this.subListSeamRegistry
+          : subListSeamRegistry as ZSubListSeamRegistry?,
       relationSourceRegistry:
           identical(relationSourceRegistry, _zScopeUndefined)
               ? this.relationSourceRegistry
@@ -156,7 +163,11 @@ autres seams. Voir aussi <a href="../../zcrud_core/ZcrudScope/derive.html">deriv
       choicesSourceRegistry:
           identical(choicesSourceRegistry, _zScopeUndefined)
               ? this.choicesSourceRegistry
-              : choicesSourceRegistry as ZChoicesSourceRegistry?,
+          : choicesSourceRegistry as ZChoicesSourceRegistry?,
+      selectChoiceBuilderRegistry:
+          identical(selectChoiceBuilderRegistry, _zScopeUndefined)
+              ? this.selectChoiceBuilderRegistry
+              : selectChoiceBuilderRegistry as ZSelectChoiceBuilderRegistry?,
       relationCrudRegistry: identical(relationCrudRegistry, _zScopeUndefined)
           ? this.relationCrudRegistry
           : relationCrudRegistry as ZRelationCrudRegistry?,
@@ -228,7 +239,7 @@ autres seams. Voir aussi <a href="../../zcrud_core/ZcrudScope/derive.html">deriv
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

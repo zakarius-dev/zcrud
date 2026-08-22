@@ -55,20 +55,44 @@
     
       <section class="multi-line-signature">
         
-        <a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a>
+        <a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a>?
         <span class="name ">builder</span>
         <div class="features"><span class="feature">final</span></div>
 
       </section>
       
 <section class="desc markdown">
-  <p>Construit la vue de l'onglet (une <code>DynamicList</code>/<code>ZSubListScreen</code>, etc.).</p>
+  <p>Construit la vue de l'onglet (une <code>DynamicList</code>/<code>ZSubListScreen</code>, etc.),
+ou <code>null</code> pour un <strong>onglet assemblé</strong>.</p>
+<p><strong>Onglet à builder</strong> (<code>builder</code> fourni) : l'onglet rend ce que l'on veut —
+une vue carte, une carte mentale, un tableau de bord. Ce que l'onglet
+rend, l'assembleur ne le connaît pas : il ne peut donc y accrocher ni
+actions de ligne, ni recherche. C'est le prix de la liberté totale.</p>
+<p><strong>Onglet assemblé</strong> (<code>builder</code> à <code>null</code>) : l'onglet ne déclare que sa
+<strong>catégorie</strong> (<a href="../../zcrud_core/ZListTab/baseFilters.html">baseFilters</a>) et, s'il y a lieu, sa restriction de droits
+(<a href="../../zcrud_core/ZListTab/acl.html">acl</a>) — l'assembleur qui l'héberge construit la vue lui-même, avec tout
+ce qu'il sait faire (liste dérivée du schéma, actions de ligne, filtrage
+par les droits, recherche). C'est le défaut à préférer pour un onglet qui
+n'est qu'une <strong>partition de la même collection</strong>.</p>
+<pre class="language-dart"><code class="language-dart">// Trois partitions d'une même collection, sans une ligne de vue.
+tabs: &lt;ZListTab&gt;[
+  ZListTab(labelKey: 'enCours', baseFilters: &lt;ZFilter&gt;[
+    ZFilter('statut', ZFilterOp.eq, 'enCours'),
+  ]),
+  ZListTab(labelKey: 'clos', baseFilters: &lt;ZFilter&gt;[
+    ZFilter('statut', ZFilterOp.eq, 'clos'),
+  ]),
+],
+</code></pre>
+<p>Un onglet assemblé n'a de sens que <strong>sous un assembleur</strong> : monté
+directement dans un <a href="../../zcrud_core/ZTabbedList-class.html">ZTabbedList</a>, il n'a rien à rendre et sa page reste
+vide (jamais d'exception — AD-10).</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final WidgetBuilder builder;</code></pre>
+  <pre class="language-dart"><code class="language-dart">final WidgetBuilder? builder;</code></pre>
 </section>
 
 
@@ -97,7 +121,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -55,20 +55,22 @@
     
       <section class="multi-line-signature">
         
-        <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>
+        <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?
         <span class="name ">readLabelGap</span>
         <div class="features"><span class="feature">final</span></div>
 
       </section>
       
 <section class="desc markdown">
-  <p>Écart vertical entre le label et la valeur dans la fiche (défaut <code>8</code>).</p>
+  <p>Écart entre le libellé et la valeur. <code>null</code> (défaut) ⇒ l'écart propre à la
+forme rendue (<code>0</code> en fiche — libellé et valeur sur deux lignes contiguës,
+<code>2</code> en liste de définitions, <code>8</code> à l'horizontale).</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final double readLabelGap;</code></pre>
+  <pre class="language-dart"><code class="language-dart">final double? readLabelGap;</code></pre>
 </section>
 
 
@@ -97,7 +99,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

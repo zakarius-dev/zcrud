@@ -67,17 +67,19 @@
     </section>
     
 <section class="desc markdown">
-  <p><code>true</code> si la source sait <strong>supprimer définitivement</strong> : dépôt appliquant
-le mixin <code>ZPurgeable</code>, ou rappel <a href="../../zcrud_screen/ZCrudSource/onPurge.html">onPurge</a> déclaré.</p>
+  <p><code>true</code> si la source sait <strong>supprimer définitivement</strong> : dépôt d'écriture
+appliquant le mixin <code>ZPurgeable</code>, ou rappel <a href="../../zcrud_screen/ZCrudSource/onPurge.html">onPurge</a> déclaré.</p>
 <p>Faux par défaut : la purge est une capacité qu'on <strong>déclare</strong>, jamais une
 capacité qu'on suppose. Une source qui ne l'a pas ne fait apparaître aucun
-geste de suppression définitive — sans erreur ni avertissement.</p>
+geste de suppression définitive — sans erreur ni avertissement. Un dépôt
+<code>ZPurgeable</code> branché en lecture seule n'en offre donc aucun non plus : la
+ressource prime sur ce que le dépôt saurait faire.</p>
 </section>
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">bool get supportsPurge =&gt; repository is ZPurgeable&lt;T&gt; || onPurge != null;</code></pre>
+  <pre class="language-dart"><code class="language-dart">bool get supportsPurge =&gt; writeRepository is ZPurgeable&lt;T&gt; || onPurge != null;</code></pre>
 </section>
 
   </section>
@@ -107,7 +109,7 @@ geste de suppression définitive — sans erreur ni avertissement.</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -70,6 +70,11 @@
 <li><code>autoListen</code> : démarre le listener temps réel à la construction (défaut
 <code>true</code> ; <code>false</code> pour piloter la synchro à la main / en test).</li>
 </ul>
+<p><strong>Recherche déléguée</strong> : ce dépôt rend le snapshot local <strong>complet</strong> et ne
+traduit aucun <code>ZDataRequest</code> (recherche comprise). Il le <strong>déclare</strong> par le
+mixin <code>ZDelegatesSearch</code> : un listing assemblé au-dessus filtre alors le
+terme saisi par le moteur du socle, au lieu d'afficher une barre inerte. Le
+jeu étant déjà lu en entier, cette voie ne coûte aucune lecture de plus.</p>
 </section>
 
 
@@ -478,7 +483,7 @@ offline-first du package). Le flux nu complet est renvoyé — jamais un
 <footer>
   <span class="no-break">
     zcrud_firestore
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

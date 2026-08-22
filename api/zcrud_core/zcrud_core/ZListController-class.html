@@ -90,7 +90,7 @@ SEULE tranche <a href="../zcrud_core/ZListController/state.html">state</a> via <
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZListController.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZListController/ZListController.html">ZListController</a></span><span class="signature">({<span class="parameter" id="param-repository"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZRepository-class.html">ZRepository</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">repository</span>, </span><span class="parameter" id="param-toRow"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">toRow</span>(<span class="parameter" id="param-"><span class="type-annotation">T</span></span>), </span><span class="parameter" id="param-schema"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">schema</span>, </span><span class="parameter" id="param-pageSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">pageSize</span>, </span><span class="parameter" id="param-mode"><span class="type-annotation"><a href="../zcrud_core/ZListPaginationMode.html">ZListPaginationMode</a></span> <span class="parameter-name">mode</span> = <span class="default-value">ZListPaginationMode.backendCursor</span>, </span><span class="parameter" id="param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">baseFilters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span><span class="parameter" id="param-searchScope"><span class="type-annotation"><a href="../zcrud_core/ZSearchScope.html">ZSearchScope</a></span> <span class="parameter-name">searchScope</span> = <span class="default-value">ZSearchScope.searchableFields</span>, </span><span class="parameter" id="param-searchFolding"><span class="type-annotation"><a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> <span class="parameter-name">searchFolding</span> = <span class="default-value">ZSearchFolding.diacritics</span>, </span><span class="parameter" id="param-initialSorts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSort-class.html">ZSort</a></span>&gt;</span></span> <span class="parameter-name">initialSorts</span> = <span class="default-value">const &lt;ZSort&gt;[]</span>, </span><span class="parameter" id="param-watchMutations"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">watchMutations</span> = <span class="default-value">false</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZListController/ZListController.html">ZListController</a></span><span class="signature">({<span class="parameter" id="param-repository"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZRepository-class.html">ZRepository</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">repository</span>, </span><span class="parameter" id="param-toRow"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">toRow</span>(<span class="parameter" id="param-"><span class="type-annotation">T</span></span>), </span><span class="parameter" id="param-schema"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">schema</span>, </span><span class="parameter" id="param-pageSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">pageSize</span>, </span><span class="parameter" id="param-mode"><span class="type-annotation"><a href="../zcrud_core/ZListPaginationMode.html">ZListPaginationMode</a></span> <span class="parameter-name">mode</span> = <span class="default-value">ZListPaginationMode.backendCursor</span>, </span><span class="parameter" id="param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">baseFilters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span><span class="parameter" id="param-baseFilterGroups"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilterGroup-class.html">ZFilterGroup</a></span>&gt;</span></span> <span class="parameter-name">baseFilterGroups</span> = <span class="default-value">const &lt;ZFilterGroup&gt;[]</span>, </span><span class="parameter" id="param-itemFilter"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">itemFilter</span>(<span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span></span>)?, </span><span class="parameter" id="param-searchScope"><span class="type-annotation"><a href="../zcrud_core/ZSearchScope.html">ZSearchScope</a></span> <span class="parameter-name">searchScope</span> = <span class="default-value">ZSearchScope.searchableFields</span>, </span><span class="parameter" id="param-searchFolding"><span class="type-annotation"><a href="../zcrud_core/ZSearchFolding.html">ZSearchFolding</a></span> <span class="parameter-name">searchFolding</span> = <span class="default-value">ZSearchFolding.diacritics</span>, </span><span class="parameter" id="param-initialSorts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSort-class.html">ZSort</a></span>&gt;</span></span> <span class="parameter-name">initialSorts</span> = <span class="default-value">const &lt;ZSort&gt;[]</span>, </span><span class="parameter" id="param-watchMutations"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">watchMutations</span> = <span class="default-value">false</span></span>})</span>
         </dt>
         <dd>
           Construit le contrôleur et <strong>lance immédiatement</strong> la première requête
@@ -104,6 +104,20 @@ SEULE tranche <a href="../zcrud_core/ZListController/state.html">state</a> via <
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
+        <dt id="baseFilterGroups" class="property">
+  <span class="name"><a href="../zcrud_core/ZListController/baseFilterGroups.html">baseFilterGroups</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilterGroup-class.html">ZFilterGroup</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Socle de <strong>disjonctions</strong> persistantes, ANDées au reste dans chaque
+requête émise, chacune résolue en OR de ses clauses. Défaut <code>const []</code>
+⇒ rétro-compatible.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="baseFilters" class="property">
   <span class="name"><a href="../zcrud_core/ZListController/baseFilters.html">baseFilters</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span>
@@ -139,6 +153,19 @@ SEULE tranche <a href="../zcrud_core/ZListController/state.html">state</a> via <
 <dd class="inherited">
   Whether any listeners are currently registered.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="itemFilter" class="property">
+  <span class="name"><a href="../zcrud_core/ZListController/itemFilter.html">itemFilter</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a> Function<span class="signature">(<span class="parameter" id="param-item"><span class="type-annotation">T</span> <span class="parameter-name">item</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  <strong>Post-filtre</strong> d'écran : dernier mot sur ce qui est listé, écrit sur
+l'entité <code>T</code> (<code>null</code> = aucun, défaut).
+  <div class="features"><span class="feature">final</span></div>
 
 </dd>
 
@@ -457,7 +484,7 @@ notified when the object changes.
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

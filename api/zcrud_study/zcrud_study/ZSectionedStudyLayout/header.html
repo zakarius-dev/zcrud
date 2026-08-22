@@ -62,14 +62,13 @@
       </section>
       
 <section class="desc markdown">
-  <p>CR-53 — contenu LIBRE rendu <strong>au-dessus de la première section</strong>, dans le
+  <p>Contenu LIBRE rendu <strong>au-dessus de la première section</strong>, dans le
 <strong>MÊME défilement</strong> qu'elles (premier item du <code>ListView.builder</code>, jamais
 un second <code>Scrollable</code> ni un bandeau figé hors-scroll).</p>
-<p>Répond au constat lex : la page-détail rend quatre blocs au-dessus des
-sections (CTA « Réviser », chips de sous-dossiers, bandeau de génération,
-filtre par tags) qui ne sont PAS des sections d'outils — les verser dans
-<a href="../../zcrud_study/ZSectionedStudyLayout/sections.html">sections</a> serait un détournement (ni titre, ni compteur, ni sémantique de
-section).</p>
+<p>Pour tout ce qu'une page-détail rend au-dessus de ses sections sans que ce
+soit une section d'outils : appel à réviser, chips de sous-dossiers,
+bandeau de génération, filtre par tags. Les verser dans <a href="../../zcrud_study/ZSectionedStudyLayout/sections.html">sections</a> serait
+un détournement (ni titre, ni compteur, ni sémantique de section).</p>
 <p><strong>AD-4</strong> : <code>null</code> ⇒ capacité absente — AUCUN item n'est réservé, aucun
 <code>SizedBox.shrink</code> fantôme n'est inséré, <code>itemCount</code> est inchangé.</p>
 <p><strong>AD-2</strong> : c'est un <code>Widget</code> DÉJÀ CONSTRUIT (jamais un builder ré-invoqué
@@ -115,7 +114,7 @@ c'est la raison EXPLICITE du choix <code>Widget?</code> plutôt que builder ici.
 <footer>
   <span class="no-break">
     zcrud_study
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

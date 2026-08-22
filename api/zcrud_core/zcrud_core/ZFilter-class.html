@@ -58,6 +58,10 @@
 <p><a href="../zcrud_core/ZFilter/value.html">value</a> est <strong>opaque</strong> (<code>Object?</code>) — aucune contrainte de type backend. Pour
 <a href="../zcrud_core/ZFilterOp.html">ZFilterOp.isIn</a>, <a href="../zcrud_core/ZFilter/value.html">value</a> est une <code>List</code> ; pour <a href="../zcrud_core/ZFilterOp.html">ZFilterOp.isNull</a>, <a href="../zcrud_core/ZFilter/value.html">value</a>
 est ignorée.</p>
+<p>Une clause ordinaire est <strong>doublement honorée</strong> : elle part dans la requête,
+et le moteur du socle la ré-applique aux lignes chaque fois qu'il sert la
+liste en mémoire. C'est ce qui la rend fiable devant une source qui ne la
+traduit pas. <a href="../zcrud_core/ZFilter/ZFilter.servedBySource.html">ZFilter.servedBySource</a> déclare l'exception à cette règle.</p>
 </section>
 
 
@@ -70,7 +74,17 @@ est ignorée.</p>
           <span class="name"><a href="../zcrud_core/ZFilter/ZFilter.html">ZFilter</a></span><span class="signature">(<span class="parameter" id="param-field"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="param-op"><span class="type-annotation"><a href="../zcrud_core/ZFilterOp.html">ZFilterOp</a></span> <span class="parameter-name">op</span>, [</span><span class="parameter" id="param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span></span>])</span>
         </dt>
         <dd>
-          Construit un filtre <code>field op value</code>.
+          Construit un filtre <code>field op value</code>, <strong>servi par la source ET
+ré-appliqué</strong> aux lignes projetées.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZFilter.servedBySource" class="callable">
+          <span class="name"><a href="../zcrud_core/ZFilter/ZFilter.servedBySource.html">ZFilter.servedBySource</a></span><span class="signature">(<span class="parameter" id="servedBySource-param-field"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="servedBySource-param-op"><span class="type-annotation"><a href="../zcrud_core/ZFilterOp.html">ZFilterOp</a></span> <span class="parameter-name">op</span>, [</span><span class="parameter" id="servedBySource-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span></span>])</span>
+        </dt>
+        <dd>
+          Construit une clause <strong>servie par la source uniquement</strong> : elle part dans
+la requête comme n'importe quelle autre, mais le socle ne la ré-applique
+<strong>jamais</strong> aux lignes projetées.
             <div class="constructor-modifier features">const</div>
         </dd>
     </dl>
@@ -126,6 +140,21 @@ est ignorée.</p>
 <dd class="inherited">
   A representation of the runtime type of the object.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="sourceOnly" class="property">
+  <span class="name"><a href="../zcrud_core/ZFilter/sourceOnly.html">sourceOnly</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> quand la clause est <strong>servie par la source uniquement</strong> : le
+moteur du socle ne l'évalue jamais sur les lignes projetées (ni en
+conjonction, ni dans une disjonction). Défaut <code>false</code> — une clause
+ordinaire est ré-appliquée, comme elle l'a toujours été.
+  <div class="features"><span class="feature">final</span></div>
 
 </dd>
 
@@ -226,7 +255,7 @@ est ignorée.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

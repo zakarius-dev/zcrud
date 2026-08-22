@@ -62,9 +62,39 @@
       </section>
       
 <section class="desc markdown">
-  <p>Onglets de catégorisation. Non-<code>null</code> ⇒ le corps est un <code>ZTabbedList</code>
-(chaque onglet possède sa vue) ; le bouton de création lit <code>canCreate</code>
-et <code>defaultItemBuilder</code> de l'<strong>onglet actif</strong>.</p>
+  <p>Onglets de catégorisation. Non-<code>null</code> ⇒ le corps est un <code>ZTabbedList</code> ;
+le bouton de création lit <code>canCreate</code> et <code>defaultItemBuilder</code> de
+l'<strong>onglet actif</strong>.</p>
+<p>Un onglet se déclare sous l'une de deux formes, et la présence de son
+<code>ZListTab.builder</code> suffit à trancher :</p>
+<ul>
+<li><strong>onglet assemblé</strong> (<code>builder</code> absent — la forme à préférer) : l'onglet
+ne déclare que sa <strong>catégorie</strong> (<code>baseFilters</code>) et, s'il y a lieu, sa
+restriction de droits (<code>acl</code>). L'écran construit alors sa liste
+<strong>exactement comme il construirait la sienne</strong> — même schéma de
+colonnes, mêmes tuiles, mêmes actions de ligne (consulter, modifier,
+dupliquer, mettre à la corbeille), même filtrage par les droits, même
+recherche. L'écran n'a rien à redéclarer : la catégorie de l'onglet
+s'ajoute aux filtres permanents de <a href="../../zcrud_screen/ZCrudScreen/query.html">query</a>, et ses droits se composent
+en <strong>conjonction</strong> avec ceux de l'écran ;</li>
+<li><strong>onglet à builder</strong> : l'onglet rend ce qu'il veut (vue carte, carte
+mentale, tableau de bord). L'écran ne connaît pas ce qu'il rend et n'y
+accroche donc <strong>ni actions de ligne, ni recherche</strong> — c'est le prix de
+la liberté totale, et il est assumé.</li>
+</ul>
+<p>Les deux formes cohabitent dans une même barre. Mais un seul onglet à
+builder suffit à retirer la <strong>barre de recherche partagée</strong> de l'écran
+(voir <a href="../../zcrud_screen/ZCrudScreen/searchEnabled.html">searchEnabled</a>) et les <strong>onglets de la corbeille</strong> : l'écran ne
+propose pas ce qu'il ne pourrait honorer que sur une partie des onglets.</p>
+<pre class="language-dart"><code class="language-dart">tabs: &lt;ZListTab&gt;[
+  ZListTab(labelKey: 'enCours', baseFilters: &lt;ZFilter&gt;[
+    ZFilter('statut', ZFilterOp.eq, 'enCours'),
+  ]),
+  ZListTab(labelKey: 'clos', baseFilters: &lt;ZFilter&gt;[
+    ZFilter('statut', ZFilterOp.eq, 'clos'),
+  ], acl: const MesDroitsEnLecture()),
+],
+</code></pre>
 </section>
 
       
@@ -99,7 +129,7 @@ et <code>defaultItemBuilder</code> de l'<strong>onglet actif</strong>.</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -298,8 +298,7 @@ intrinsèque (comportement inchangé).
 
 </dt>
 <dd>
-  Placeholder (texte indicatif) affiché dans l'éditeur VIDE, CR
-parité 2026-08-11 (legacy <code>mef:438</code>).
+  Placeholder (texte indicatif) affiché dans l'éditeur VIDE.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -365,8 +364,8 @@ l'éditeur, au lecteur ET au dialog plein-écran.
 <dd>
   Facteur d'échelle du TEXTE de l'éditeur/lecteur (parité
 <code>textScaleFactor</code> legacy). Appliqué par <a href="https://api.flutter.dev/flutter/painting/TextScaler/TextScaler.linear.html">TextScaler.linear</a> via
-<code>MediaQuery</code> LOCAL au contenu (mesuré : Quill lit
-<code>MediaQuery.textScalerOf</code>, <code>text_line.dart:182</code>) — la toolbar et le
+<code>MediaQuery</code> LOCAL au contenu (mesuré : Quill peint via
+<code>MediaQuery.textScalerOf</code>) — la toolbar et le
 libellé ne changent pas. <code>null</code> ⇒ échelle ambiante inchangée.
   <div class="features"><span class="feature">final</span></div>
 
@@ -594,7 +593,7 @@ tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode
 <footer>
   <span class="no-break">
     zcrud_markdown
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

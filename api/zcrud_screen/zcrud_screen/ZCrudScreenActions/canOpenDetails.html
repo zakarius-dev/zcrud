@@ -69,8 +69,13 @@ le formulaire entier, tous ses champs, rendu en lecture seule.</p>
 gouverné par <code>ZCrudAction.view</code> — lire une fiche n'est pas la modifier.</p>
 <p><code>false</code> tant que la consultation n'est pas <strong>offerte par l'écran</strong> : mode
 <code>ZScreenMode.details</code>, ou mode <code>ZScreenMode.full</code> déclaré
-<code>detailsEnabled: true</code>. <code>false</code> aussi en <code>ZScreenMode.locked</code>, en vue
-corbeille, et sans formulaire disponible.</p>
+<code>detailsEnabled: true</code>. <code>false</code> aussi en <code>ZScreenMode.locked</code> et sans
+formulaire disponible.</p>
+<p><strong>Vrai en vue corbeille</strong> comme sur les vivants, aux mêmes conditions :
+consulter ce qu'on s'apprête à restaurer — ou à détruire définitivement —
+est la vérification qui précède le geste. Seule l'<strong>écriture</strong> est
+réservée aux vivants ; la fiche ouverte depuis la corbeille reste donc
+strictement en lecture, sans retour vers l'édition.</p>
 </section>
 
 
@@ -105,7 +110,7 @@ corbeille, et sans formulaire disponible.</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

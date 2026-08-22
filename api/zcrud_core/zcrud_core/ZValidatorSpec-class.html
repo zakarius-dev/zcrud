@@ -59,6 +59,24 @@
 <code>const</code> ; les paramètres non pertinents restent <code>null</code>. <code>errorText</code>
 (optionnel, partout) porte un message d'erreur littéral ou une clé l10n
 (résolu côté UI en E3).</p>
+<h2 id="forme-et-prsence-sont-deux-exigences-distinctes">Forme et présence sont deux exigences distinctes</h2>
+<p>Un validateur de <strong>forme</strong> — <a href="../zcrud_core/ZValidatorSpec/pattern.html">ZValidatorSpec.pattern</a>, <a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.email.html">ZValidatorSpec.email</a>,
+<a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.minLength.html">ZValidatorSpec.minLength</a>, <a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.min.html">ZValidatorSpec.min</a>… — décrit ce à quoi une
+valeur doit ressembler <strong>quand il y en a une</strong>. Il laisse donc passer un
+champ laissé vide.</p>
+<p>La <strong>présence</strong> est exigée par la famille « requis », et par elle seule :
+<a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.required.html">ZValidatorSpec.required</a> l'exige toujours, <a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.requiredIf.html">ZValidatorSpec.requiredIf</a>
+l'exige quand sa condition tient. Un champ obligatoire ET contraint dans sa
+forme déclare les deux :</p>
+<pre class="language-dart"><code class="language-dart">// Téléphone facultatif, mais valide dès qu'il est rempli :
+validators: [ZValidatorSpec.pattern(r'^\+228[0-9]{8}$')],
+
+// E-mail obligatoire ET bien formé :
+validators: [ZValidatorSpec.required(), ZValidatorSpec.email()],
+
+// Motif obligatoire seulement si le dossier est marqué « contentieux » :
+validators: [ZValidatorSpec.requiredIf(ZCondition.truthy('contentieux'))],
+</code></pre>
 </section>
 
 
@@ -221,7 +239,17 @@ numérique libre). La plage n'est vérifiée que si
           <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.required.html">ZValidatorSpec.required</a></span><span class="signature">({<span class="parameter" id="required-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
         </dt>
         <dd>
-          Valeur requise.
+          Valeur requise — le <strong>seul</strong> validateur qui exige une présence : un champ
+vide n'est refusé que s'il le déclare.
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ZValidatorSpec.requiredIf" class="callable">
+          <span class="name"><a href="../zcrud_core/ZValidatorSpec/ZValidatorSpec.requiredIf.html">ZValidatorSpec.requiredIf</a></span><span class="signature">(<span class="parameter" id="requiredIf-param-condition"><span class="type-annotation"><a href="../zcrud_core/ZCondition-class.html">ZCondition</a></span> <span class="parameter-name">condition</span>, {</span><span class="parameter" id="requiredIf-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span></span>})</span>
+        </dt>
+        <dd>
+          Valeur requise <strong>seulement quand <code>condition</code> tient</strong> — la présence
+devient une exigence conditionnelle, sans cesser d'être portée par un
+validateur (jamais par un validateur de forme).
             <div class="constructor-modifier features">const</div>
         </dd>
         <dt id="ZValidatorSpec.url" class="callable">
@@ -247,6 +275,19 @@ numérique libre). La plage n'est vérifiée que si
 </dt>
 <dd>
   Borne numérique <strong>littérale</strong> (<a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind.min</a>/<a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind.max</a>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="condition" class="property">
+  <span class="name"><a href="../zcrud_core/ZValidatorSpec/condition.html">condition</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZCondition-class.html">ZCondition</a>?</span>
+  
+
+</dt>
+<dd>
+  Condition d'exigence de <a href="../zcrud_core/ZValidatorKind.html">ZValidatorKind.requiredIf</a> ; <code>null</code> pour toutes
+les autres familles.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -556,7 +597,7 @@ numérique libre). La plage n'est vérifiée que si
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

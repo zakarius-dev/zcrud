@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the summaryColumns property from the ZSubListConfig class, for the Dart programming language.">
+  <title>summaryColumns property - ZSubListConfig class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core.dart</a></li>
+    <li><a href="../../zcrud_core/ZSubListConfig-class.html">ZSubListConfig</a></li>
+    <li class="self-crumb">summaryColumns property</li>
+  </ol>
+  <div class="self-name">summaryColumns</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;ZSubListConfig-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">summaryColumns</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZSubListSummaryColumn-class.html">ZSubListSummaryColumn</a></span>&gt;</span>
+        <span class="name ">summaryColumns</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p><strong>Colonnes de résumé déclarées</strong> (modes <code>compact</code> et <code>tags</code>).</p>
+<p>Vide (<strong>défaut</strong>) ⇒ ce sont les <a href="../../zcrud_core/ZSubListConfig/summaryFields.html">summaryFields</a> qui gouvernent le résumé,
+<strong>à l'identique</strong> : aucune colonne déclarée, aucune allocation, aucun
+changement de rendu.</p>
+<p>Non vide ⇒ cette liste <strong>remplace</strong> <a href="../../zcrud_core/ZSubListConfig/summaryFields.html">summaryFields</a> (elle ne s'y ajoute
+pas) : deux sources de colonnes qui fusionneraient rendraient impossible
+de <strong>retirer</strong> une colonne, et feraient d'un même résumé deux
+déclarations à tenir d'accord.</p>
+<h2 id="ce-quelle-apporte-et-pourquoi-ce-nest-pas-un-second-sous-schma">Ce qu'elle apporte, et pourquoi ce n'est PAS un second sous-schéma</h2>
+<p>Une colonne n'est pas un champ : elle <strong>désigne une valeur de l'item</strong> et
+dit comment l'afficher. C'est la différence avec le moteur legacy, qui
+tenait deux listes parallèles (<code>subItemsFieldsBuilder</code> pour les colonnes,
+<code>subItemsFormFieldsBuilder</code> pour les champs) et pouvait donc les laisser
+diverger.</p>
+<p>Deux cas, un seul mécanisme :</p>
+<ul>
+<li><a href="../../zcrud_core/ZSubListSummaryColumn/name.html">ZSubListSummaryColumn.name</a> <strong>est</strong> un <code>itemField</code> ⇒ la valeur vient de
+sa tranche, projetée exactement comme aujourd'hui (libellé de choix,
+port de date) ;</li>
+<li><a href="../../zcrud_core/ZSubListSummaryColumn/name.html">ZSubListSummaryColumn.name</a> n'est <strong>pas</strong> un <code>itemField</code> ⇒ la valeur
+est lue dans la <strong>donnée de l'item</strong> (le résidu hors sous-schéma, celui
+que la graine du parent ou une issue <code>replace</code> du crochet CRUD y ont
+déposé). La colonne s'affiche donc <strong>sans</strong> que le champ devienne
+saisissable : le formulaire d'item ne rend que les <code>itemFields</code>, et
+aucune tranche n'est allouée pour elle.</li>
+</ul>
+<p>C'est le cas mesuré des <strong>lignes d'un document</strong> : « Montant HT » et
+« Montant TTC » sont calculés par le crochet CRUD, déposés dans l'item, et
+<strong>affichés sans jamais être saisis</strong>.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final List&lt;ZSubListSummaryColumn&gt; summaryColumns;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/ZSubListConfig-class.html">ZSubListConfig</a></li>
+    <li class="self-crumb">summaryColumns property</li>
+</ol>
+
+  <h5>ZSubListConfig class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

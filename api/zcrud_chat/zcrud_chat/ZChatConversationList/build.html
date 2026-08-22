@@ -115,10 +115,7 @@ Widget build(BuildContext context) {
   &#47;&#47; repliement retire des lignes, la sélection change l&#39;état de chacune) :
   &#47;&#47; ils sont donc écoutés au-dessus de l&#39;aplatissement, jamais dedans. Un
   &#47;&#47; abonnement pris sous `_flatten` verrait l&#39;ancienne liste.
-  final List&lt;Listenable&gt; sources = &lt;Listenable&gt;[
-    ?selection,
-    ?groupExpansion,
-  ];
+  final List&lt;Listenable&gt; sources = &lt;Listenable&gt;[?selection, ?groupExpansion];
   final Widget content = sources.isEmpty
       ? _content(context, theme, pad)
       : ListenableBuilder(
@@ -132,7 +129,10 @@ Widget build(BuildContext context) {
     child: header == null
         ? content
         : Column(
-            children: &lt;Widget&gt;[header!, Expanded(child: content)],
+            children: &lt;Widget&gt;[
+              header!,
+              Expanded(child: content),
+            ],
           ),
   );
 }</code></pre>
@@ -163,7 +163,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_chat
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

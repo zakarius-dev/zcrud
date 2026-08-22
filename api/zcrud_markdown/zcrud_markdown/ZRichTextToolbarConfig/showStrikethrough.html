@@ -63,14 +63,9 @@
       
 <section class="desc markdown">
   <p>Bouton barré.</p>
-<p>(CR parité 2026-08-11) : défaut <code>false</code> — ALIGNÉ sur le legacy
-l'éditeur historique, qui désactive le barré sur TOUS ses éditeurs
-(<code>showStrikeThrough: false</code>, <code>qmew:85</code>, hors de portée des presets
-legacy). MESURÉ avant le changement : AUCUN hôte (l'éditeur historique / lex_douane /
-un consommateur legacy / un autre consommateur legacy) ne référence <code>ZRichTextToolbarConfig</code> ni ne passe
-<code>toolbarConfig</code> — le seul consommateur du défaut est le pilote historique via
-le registre, qui demande précisément ce retrait. Un hôte qui VEUT le
-bouton opte : <code>copyWith(showStrikethrough: true)</code>.</p>
+<p>Défaut <code>false</code> — ALIGNÉ sur l'éditeur historique, qui désactive le barré
+sur TOUS ses éditeurs. Un hôte qui VEUT le bouton opte :
+<code>copyWith(showStrikethrough: true)</code>.</p>
 </section>
 
       
@@ -105,7 +100,7 @@ bouton opte : <code>copyWith(showStrikethrough: true)</code>.</p>
 <footer>
   <span class="no-break">
     zcrud_markdown
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

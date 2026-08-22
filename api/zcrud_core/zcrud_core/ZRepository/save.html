@@ -65,8 +65,26 @@
     
 <section class="desc markdown">
   <p>Persiste <code>item</code>. Matérialise l'éphémère (attribution d'<code>id</code>) et rejette
-une cible manquante via <code>Left(ZDomainFailure)</code> (AD-14). <code>collectionId</code>
-localise le conteneur si nécessaire.</p>
+une cible manquante via <code>Left(ZDomainFailure)</code> (AD-14).</p>
+<h2 id="collectionid--une-redirection-dcriture-pas-une-cl-de-droits"><code>collectionId</code> — une <strong>redirection d'écriture</strong>, pas une clé de droits</h2>
+<p>Quand un adaptateur l'honore, <code>collectionId</code> <strong>localise le conteneur</strong> :
+il désigne l'emplacement où le document est écrit, <strong>à la place</strong> de celui
+que le dépôt porte. C'est le cas de l'adaptateur Firestore, où la valeur
+est prise comme chemin de collection.</p>
+<p><strong>Ne jamais y passer un identifiant d'autorisation.</strong> L'homonymie avec
+le <code>collectionId</code> de <code>ZAcl.can</code> est trompeuse : les deux mots désignent des
+choses différentes. Passer ici la clé de gouvernance d'un écran envoie les
+données <strong>ailleurs</strong> — l'écriture réussit (<code>Right</code>), aucune erreur n'est
+levée, et les lectures continuent d'interroger l'emplacement du dépôt :
+les documents écrits deviennent invisibles sans qu'aucun signal ne le
+laisse voir. Un backend qui crée toute collection nommée à la volée
+(Firestore) ne protège pas de cette confusion.</p>
+<p>Le laisser à <code>null</code> — cas normal — écrit là où le dépôt écrit. Ne le
+renseigner que pour une redirection <strong>voulue et explicite</strong>, vers un
+conteneur dont l'appelant connaît le nom réel.</p>
+<p>Un adaptateur n'est pas tenu de l'honorer : certaines implémentations
+(offline-first sur store local) l'ignorent, l'emplacement étant déterminé
+par leur propre topologie.</p>
 </section>
 
 
@@ -101,7 +119,7 @@ localise le conteneur si nécessaire.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zNormalizeFormValues function from the zcrud_core library, for the Dart programming language.">
+  <title>zNormalizeFormValues function - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core.dart</a></li>
+    <li class="self-crumb">zNormalizeFormValues function</li>
+  </ol>
+  <div class="self-name">zNormalizeFormValues</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_core&#47;zcrud_core-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zNormalizeFormValues</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+<span class="name ">zNormalizeFormValues</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="zNormalizeFormValues-param-fields"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">fields</span>, </span></li>
+<li><span class="parameter" id="zNormalizeFormValues-param-controller"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFormController-class.html">ZFormController</a></span> <span class="parameter-name">controller</span>, </span></li>
+<li><span class="parameter" id="zNormalizeFormValues-param-persistedValueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">persistedValueOf</span>, </span></li>
+<li><span class="parameter" id="zNormalizeFormValues-param-contextValueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">contextValueOf</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Snapshot <strong>normalisé</strong> des valeurs de <code>controller</code>, restreint aux champs
+de <code>fields</code> qui ont le droit d'être écrits.</p>
+<p>Sont <strong>écartés</strong> :</p>
+<ul>
+<li>les champs dont la condition d'affichage est fausse — ce que l'utilisateur
+ne voit pas, il ne l'a pas décidé ;</li>
+<li>les champs en <strong>lecture seule</strong> (<code>ZFieldSpec.readOnly</code>), qu'aucune saisie
+ne peut avoir modifiés.</li>
+</ul>
+<p>Chaque valeur retenue passe par <a href="../zcrud_core/zNormalizeFieldValue.html">zNormalizeFieldValue</a>. Le résultat est une
+carte <strong>immuable</strong> de données pures, prête à être persistée ou rendue à
+l'appelant — jamais l'état brut des contrôleurs de saisie.</p>
+<p><strong>Champs fichier</strong> — chaque champ de la famille fichier
+(<code>file</code>/<code>image</code>/<code>document</code>) retenu ci-dessus ajoute une entrée compagne
+<a href="../zcrud_core/zRemovedFilesKey.html">zRemovedFilesKey</a> portant ce que l'utilisateur a <strong>retiré</strong> du champ : les
+objets fichier que le champ tenait, ou leur référence opaque quand il ne les
+avait pas résolus. La clé est <strong>toujours présente</strong> pour ces champs — liste
+<strong>vide</strong> quand rien n'a été retiré, jamais <code>null</code> — de sorte que l'appelant
+n'ait pas à distinguer « rien retiré » de « pas suivi ». Un formulaire sans
+champ fichier rend exactement les mêmes clés qu'auparavant. Une clé
+compagne qui entrerait en collision avec un champ réellement déclaré ne
+l'écrase jamais : le champ déclaré fait foi.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Map&lt;String, dynamic&gt; zNormalizeFormValues({
+  required List&lt;ZFieldSpec&gt; fields,
+  required ZFormController controller,
+  ZValueOf? persistedValueOf,
+  ZValueOf? contextValueOf,
+}) {
+  final out = &lt;String, dynamic&gt;{};
+  final removed = &lt;String, List&lt;Object&gt;&gt;{};
+  for (final field in fields) {
+    if (field.readOnly) continue;
+    if (!zIsFieldActive(
+      field,
+      controller.valueOf,
+      persistedValueOf: persistedValueOf,
+      contextValueOf: contextValueOf,
+    )) {
+      continue;
+    }
+    out[field.name] =
+        zNormalizeFieldValue(field, controller.valueOf(field.name));
+    if (familyOf(field.type) == EditionFamily.file) {
+      removed[zRemovedFilesKey(field.name)] =
+          controller.removedFilesOf(field.name);
+    }
+  }
+  &#47;&#47; Écrites APRÈS les champs : un champ réellement déclaré sous ce nom garde sa
+  &#47;&#47; valeur — une convention du socle ne recouvre pas une déclaration de l&#39;hôte.
+  removed.forEach((key, value) {
+    if (!out.containsKey(key)) out[key] = value;
+  });
+  return Map&lt;String, dynamic&gt;.unmodifiable(out);
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_core</a></li>
+    <li><a href="../zcrud_core/">zcrud_core</a></li>
+    <li class="self-crumb">zNormalizeFormValues function</li>
+</ol>
+
+    <h5>zcrud_core library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      3.3.1
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

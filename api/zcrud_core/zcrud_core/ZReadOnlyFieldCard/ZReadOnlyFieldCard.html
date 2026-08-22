@@ -57,13 +57,18 @@
       <span class="name ">ZReadOnlyFieldCard</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-label"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">label</span>, </span></li>
 <li><span class="parameter" id="param-value"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">value</span>, </span></li>
 <li><span class="parameter" id="param-copyText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">copyText</span>, </span></li>
+<li><span class="parameter" id="param-valueSemantics"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">valueSemantics</span>, </span></li>
+<li><span class="parameter" id="param-layout"><span class="type-annotation"><a href="../../zcrud_core/ZReadFieldLayout.html">ZReadFieldLayout</a>?</span> <span class="parameter-name">layout</span>, </span></li>
 <li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
 </ol>})
     </section>
     
 <section class="desc markdown">
-  <p>Construit la fiche portant <code>label</code> au-dessus de <code>value</code>. <code>copyText</code> <code>null</code>
-⇒ aucune affordance de copie (placeholder « — » / valeur-Widget).</p>
+  <p>Construit le rendu de consultation portant <code>label</code> et <code>value</code>.</p>
+<p><code>copyText</code> <code>null</code> ⇒ aucune affordance de copie (placeholder « — » /
+valeur-Widget). <code>valueSemantics</code> est le texte <strong>annoncé</strong> aux lecteurs
+d'écran ; à défaut, <code>copyText</code> fait office. <code>layout</code> force la forme et
+prime sur la surface comme sur le thème.</p>
 </section>
 
 
@@ -74,6 +79,8 @@
   required this.label,
   required this.value,
   this.copyText,
+  this.valueSemantics,
+  this.layout,
   super.key,
 });</code></pre>
 </section>
@@ -103,7 +110,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

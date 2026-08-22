@@ -122,7 +122,12 @@ Widget build(BuildContext context) {
   }
   return builder(
     context,
-    ZFieldWidgetContext(field: field, value: value, onChanged: onChanged),
+    ZFieldWidgetContext(
+      field: field,
+      value: value,
+      onChanged: onChanged,
+      valueOf: valueOf,
+    ),
   );
 }</code></pre>
 </section>
@@ -152,7 +157,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

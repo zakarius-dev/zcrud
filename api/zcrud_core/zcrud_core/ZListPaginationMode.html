@@ -66,7 +66,10 @@
 curseur</strong> bascule automatiquement sur le repli in-memory (AD-16).</li>
 <li><a href="../zcrud_core/ZListPaginationMode.html">inMemory</a> : le backend ne supporte PAS le curseur (ou on force le repli) —
 le jeu non paginé est récupéré puis paginé <strong>en mémoire</strong> via
-<a href="../zcrud_core/zApplyListRequest.html">zApplyListRequest</a>.</li>
+<a href="../zcrud_core/zApplyListRequest.html">zApplyListRequest</a>. C'est aussi le mode à déclarer quand le listing tient
+en mémoire et doit offrir recherche, tri et filtres complets quelle que
+soit la source ; son coût est une lecture non paginée du jeu à chaque
+requête.</li>
 </ul>
 </section>
 
@@ -286,7 +289,7 @@ le jeu non paginé est récupéré puis paginé <strong>en mémoire</strong> via
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

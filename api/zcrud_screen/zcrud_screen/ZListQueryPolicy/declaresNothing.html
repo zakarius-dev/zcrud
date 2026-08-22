@@ -77,9 +77,12 @@ exactement comme sans politique du tout.</p>
   <pre class="language-dart"><code class="language-dart">bool get declaresNothing =&gt;
     sort.isEmpty &amp;&amp;
     baseFilters.isEmpty &amp;&amp;
+    baseFilterGroups.isEmpty &amp;&amp;
+    itemFilter == null &amp;&amp;
     pageSize == null &amp;&amp;
     searchScope == ZSearchScope.searchableFields &amp;&amp;
-    searchFolding == ZSearchFolding.diacritics;</code></pre>
+    searchFolding == ZSearchFolding.diacritics &amp;&amp;
+    paginationMode == ZListPaginationMode.backendCursor;</code></pre>
 </section>
 
   </section>
@@ -109,7 +112,7 @@ exactement comme sans politique du tout.</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

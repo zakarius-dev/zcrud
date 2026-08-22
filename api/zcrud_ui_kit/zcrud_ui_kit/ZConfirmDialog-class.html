@@ -55,13 +55,15 @@
     
 <section class="desc markdown">
   <p>Dialog de confirmation (<code>AlertDialog</code>) à thème injecté, dark-mode-aware.</p>
-<p>Expose un titre, un message et deux actions (confirmer / annuler). La couleur
+<p>Expose un titre optionnel, un message et deux actions (confirmer / annuler). La couleur
 du bouton de confirmation est <strong>dérivée</strong> du <code>ColorScheme</code> courant selon
 <a href="../zcrud_ui_kit/ZConfirmDialog/tone.html">tone</a> (<code>destructive</code> → <code>ColorScheme.error</code>; <code>neutral</code> → <code>ColorScheme.primary</code>)
 — jamais un littéral hex. Les labels par défaut proviennent de
 <code>MaterialLocalizations.of(context)</code> (jamais de chaîne « Confirmer »/« Annuler »
 codée en dur). Confirmer → <code>Navigator.pop(context, true)</code>; annuler →
-<code>Navigator.pop(context, false)</code>.</p>
+<code>Navigator.pop(context, false)</code>. Avec <code>title: null</code>, le titre est retiré
+entièrement de l'arbre du <code>AlertDialog</code> : ce widget n'invente délibérément
+aucun titre par défaut ou localisé.</p>
 <p>Généralement affiché via <a href="../zcrud_ui_kit/showZConfirmDialog.html">showZConfirmDialog</a>, mais utilisable directement
 avec <code>showDialog&lt;bool&gt;</code>.</p>
 </section>
@@ -97,11 +99,13 @@ avec <code>showDialog&lt;bool&gt;</code>.</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZConfirmDialog.new" class="callable">
-          <span class="name"><a href="../zcrud_ui_kit/ZConfirmDialog/ZConfirmDialog.html">ZConfirmDialog</a></span><span class="signature">({<span class="parameter" id="param-title"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span>, </span><span class="parameter" id="param-message"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span>, </span><span class="parameter" id="param-confirmLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">confirmLabel</span>, </span><span class="parameter" id="param-cancelLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">cancelLabel</span>, </span><span class="parameter" id="param-tone"><span class="type-annotation"><a href="../zcrud_ui_kit/ZConfirmTone.html">ZConfirmTone</a></span> <span class="parameter-name">tone</span> = <span class="default-value">ZConfirmTone.neutral</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+          <span class="name"><a href="../zcrud_ui_kit/ZConfirmDialog/ZConfirmDialog.html">ZConfirmDialog</a></span><span class="signature">({<span class="parameter" id="param-title"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">title</span>, </span><span class="parameter" id="param-message"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span>, </span><span class="parameter" id="param-confirmLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">confirmLabel</span>, </span><span class="parameter" id="param-cancelLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">cancelLabel</span>, </span><span class="parameter" id="param-tone"><span class="type-annotation"><a href="../zcrud_ui_kit/ZConfirmTone.html">ZConfirmTone</a></span> <span class="parameter-name">tone</span> = <span class="default-value">ZConfirmTone.neutral</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
         </dt>
         <dd>
-          Construit le dialog. <code>title</code> et <code>message</code> sont requis; les labels et la
-<code>tone</code> ont des défauts sûrs (l10n Flutter + <code>neutral</code>).
+          Construit le dialog. <code>message</code> est requis; les labels et la <code>tone</code> ont des
+défauts sûrs (l10n Flutter + <code>neutral</code>). <code>title: null</code> retire entièrement
+le titre de l'arbre du <code>AlertDialog</code>, sans titre par défaut ou localisé
+inventé par ce widget.
             <div class="constructor-modifier features">const</div>
         </dd>
     </dl>
@@ -186,12 +190,12 @@ avec <code>showDialog&lt;bool&gt;</code>.</p>
 
         <dt id="title" class="property">
   <span class="name"><a href="../zcrud_ui_kit/ZConfirmDialog/title.html">title</a></span>
-  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
   
 
 </dt>
 <dd>
-  Titre du dialog.
+  Titre optionnel du dialog.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -399,7 +403,7 @@ tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode
 <footer>
   <span class="no-break">
     zcrud_ui_kit
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

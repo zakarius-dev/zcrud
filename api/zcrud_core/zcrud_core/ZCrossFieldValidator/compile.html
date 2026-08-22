@@ -64,10 +64,13 @@
     </section>
     
 <section class="desc markdown">
-  <p>Compile les seules specs <strong>inter-champs</strong> (<code>refKey != null</code>) de <code>specs</code> en
-un unique <code>FormFieldValidator&lt;String&gt;</code> <strong>mémoïsable</strong>, ou <code>null</code> si aucune.</p>
-<p>Chaque closure lit <code>c.valueOf(refKey)</code> à l'invocation (jamais capturée en
-dur). Le message d'erreur est <code>spec.errorText</code> (repli littéral minimal).</p>
+  <p>Compile les seules specs <strong>inter-champs</strong> de <code>specs</code> — celles qui
+référencent un autre champ (<code>refKey</code>) et celles qui portent une condition
+(<code>requiredIf</code>) — en un unique <code>FormFieldValidator&lt;String&gt;</code> <strong>mémoïsable</strong>,
+ou <code>null</code> si aucune.</p>
+<p>Chaque closure lit l'état du formulaire à l'invocation (jamais capturé en
+dur). Le message d'erreur est <code>spec.errorText</code> (repli littéral minimal,
+ou message localisé de <code>required</code> pour <code>requiredIf</code>).</p>
 </section>
 
 
@@ -120,7 +123,7 @@ dur). Le message d'erreur est <code>spec.errorText</code> (repli littéral minim
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

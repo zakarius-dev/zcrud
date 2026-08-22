@@ -55,20 +55,22 @@
     
       <section class="multi-line-signature">
         
-        <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>
+        <a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?
         <span class="name ">readPadding</span>
         <div class="features"><span class="feature">final</span></div>
 
       </section>
       
 <section class="desc markdown">
-  <p>Padding interne <strong>directionnel</strong> de la fiche de lecture (défaut <code>all(16)</code>).</p>
+  <p>Padding interne <strong>directionnel</strong> d'un champ consulté. <code>null</code> (défaut) ⇒ le
+padding propre à la forme rendue (<code>16</code>/<code>8</code> en fiche, <code>16</code>/<code>4</code> en ligne
+dense) ; <a href="../../zcrud_core/ZReadFieldLayout.html">ZReadFieldLayout.listTile</a> garde le retrait de Material.</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final EdgeInsetsDirectional readPadding;</code></pre>
+  <pre class="language-dart"><code class="language-dart">final EdgeInsetsDirectional? readPadding;</code></pre>
 </section>
 
 
@@ -97,7 +99,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

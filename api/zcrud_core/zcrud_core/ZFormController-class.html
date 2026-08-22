@@ -173,6 +173,20 @@ champ s'écarte de la baseline ; revient à <code>false</code> quand tous y revi
 
 </dd>
 
+        <dt id="removedFiles" class="property">
+  <span class="name"><a href="../zcrud_core/ZFormController/removedFiles.html">removedFiles</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Snapshot <strong>immuable</strong> de tous les retraits en attente
+(<code>nom du champ → entrées retirées</code>). Les champs sans retrait en sont
+absents.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
         <dt id="reseedRevision" class="property">
   <span class="name"><a href="../zcrud_core/ZFormController/reseedRevision.html">reseedRevision</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>
@@ -323,7 +337,8 @@ remise à zéro (<a href="../zcrud_core/ZFormController/reset.html">reset</a>/<a
 <dd>
   Re-capture la <strong>baseline</strong> depuis les valeurs courantes ⇒ <a href="../zcrud_core/ZFormController/isDirty.html">isDirty</a> repasse
 à <code>false</code>. Appelé après une soumission réussie (<code>onSubmit</code> → <code>Right</code>).
-N'affecte NI la révélation NI la révision de re-seed.
+N'affecte NI la révélation NI la révision de re-seed. Les retraits de
+fichiers (<a href="../zcrud_core/ZFormController/removedFilesOf.html">removedFilesOf</a>) sont <strong>oubliés</strong> : ils ont été soumis.
   
 
 </dd>
@@ -354,6 +369,34 @@ N'affecte NI la révélation NI la révision de re-seed.
 
 </dd>
 
+        <dt id="recordRemovedFile" class="callable">
+  <span class="name"><a href="../zcrud_core/ZFormController/recordRemovedFile.html">recordRemovedFile</a></span><span class="signature">(<wbr><span class="parameter" id="recordRemovedFile-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="recordRemovedFile-param-entry"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">entry</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Consigne que <code>entry</code> a été <strong>retirée</strong> du champ <code>name</code>.
+  
+
+</dd>
+
+        <dt id="removedFilesOf" class="callable">
+  <span class="name"><a href="../zcrud_core/ZFormController/removedFilesOf.html">removedFilesOf</a></span><span class="signature">(<wbr><span class="parameter" id="removedFilesOf-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Entrées <strong>retirées</strong> du champ <code>name</code> depuis l'ouverture du formulaire,
+dans l'ordre des retraits. Liste <strong>vide</strong> quand rien n'a été retiré —
+jamais <code>null</code>.
+  
+
+</dd>
+
         <dt id="removeListener" class="callable inherited">
   <span class="name"><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier/removeListener.html">removeListener</a></span><span class="signature">(<wbr><span class="parameter" id="removeListener-param-listener"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a></span> <span class="parameter-name">listener</span></span>)
     <span class="returntype parameter">&#8594; void</span>
@@ -380,6 +423,8 @@ notified when the object changes.
 <code>values</code> dans les tranches, <strong>re-définit la baseline</strong> sur ces valeurs
 (⇒ non-dirty), puis incrémente <a href="../zcrud_core/ZFormController/reseedRevision.html">reseedRevision</a> pour re-amorcer les widgets
 bufferisés hors focus. Sert le chargement asynchrone d'un enregistrement.
+Les retraits de fichiers en attente (<a href="../zcrud_core/ZFormController/removedFilesOf.html">removedFilesOf</a>) sont effacés : ils
+portaient sur l'état remplacé.
   
 
 </dd>
@@ -393,7 +438,8 @@ bufferisés hors focus. Sert le chargement asynchrone d'un enregistrement.
 </dt>
 <dd>
   <strong>Réinitialise</strong> le formulaire à sa baseline courante : restaure la
-valeur baseline de chaque tranche, efface l'état <em>dirty</em> et la révélation,
+valeur baseline de chaque tranche, efface l'état <em>dirty</em>, la révélation et
+les retraits de fichiers en attente (<a href="../zcrud_core/ZFormController/removedFilesOf.html">removedFilesOf</a>),
 puis incrémente <a href="../zcrud_core/ZFormController/reseedRevision.html">reseedRevision</a> pour re-amorcer les widgets bufferisés
 <strong>hors focus</strong>. Une saisie en cours (champ focalisé) n'est pas écrasée : le
 re-amorçage est différé à la perte de focus par le widget.
@@ -517,7 +563,7 @@ Appelé par la soumission agrégée en échec de validation.
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

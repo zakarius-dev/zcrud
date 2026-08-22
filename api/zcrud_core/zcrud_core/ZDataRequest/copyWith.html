@@ -56,6 +56,7 @@
       
 <span class="returntype"><a href="../../zcrud_core/ZDataRequest-class.html">ZDataRequest</a></span>
 <span class="name ">copyWith</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="copyWith-param-filters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span>?</span> <span class="parameter-name">filters</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-filterGroups"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZFilterGroup-class.html">ZFilterGroup</a></span>&gt;</span>?</span> <span class="parameter-name">filterGroups</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-sorts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZSort-class.html">ZSort</a></span>&gt;</span>?</span> <span class="parameter-name">sorts</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-search"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">search</span> = <span class="default-value">_unset</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-limit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">limit</span> = <span class="default-value">_unset</span>, </span></li>
@@ -80,6 +81,7 @@ les <strong>réinitialise</strong> ; les omettre conserve la valeur courante.</p
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">ZDataRequest copyWith({
   List&lt;ZFilter&gt;? filters,
+  List&lt;ZFilterGroup&gt;? filterGroups,
   List&lt;ZSort&gt;? sorts,
   Object? search = _unset,
   Object? limit = _unset,
@@ -90,6 +92,7 @@ les <strong>réinitialise</strong> ; les omettre conserve la valeur courante.</p
 }) {
   return ZDataRequest(
     filters: filters ?? this.filters,
+    filterGroups: filterGroups ?? this.filterGroups,
     sorts: sorts ?? this.sorts,
     search: identical(search, _unset) ? this.search : search as String?,
     limit: identical(limit, _unset) ? this.limit : limit as int?,
@@ -127,7 +130,7 @@ les <strong>réinitialise</strong> ; les omettre conserve la valeur courante.</p
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

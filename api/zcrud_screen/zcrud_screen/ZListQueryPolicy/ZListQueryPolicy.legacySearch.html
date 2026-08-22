@@ -56,7 +56,10 @@
       const
       <span class="name ">ZListQueryPolicy.legacySearch</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="legacySearch-param-sort"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZSort</span>&gt;</span></span> <span class="parameter-name">sort</span> = <span class="default-value">const &lt;ZSort&gt;[]</span>, </span></li>
 <li><span class="parameter" id="legacySearch-param-baseFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilter</span>&gt;</span></span> <span class="parameter-name">baseFilters</span> = <span class="default-value">const &lt;ZFilter&gt;[]</span>, </span></li>
+<li><span class="parameter" id="legacySearch-param-baseFilterGroups"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFilterGroup</span>&gt;</span></span> <span class="parameter-name">baseFilterGroups</span> = <span class="default-value">const &lt;ZFilterGroup&gt;[]</span>, </span></li>
+<li><span class="parameter" id="legacySearch-param-itemFilter"><span class="type-annotation">ZItemFilter?</span> <span class="parameter-name">itemFilter</span>, </span></li>
 <li><span class="parameter" id="legacySearch-param-pageSize"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">pageSize</span>, </span></li>
+<li><span class="parameter" id="legacySearch-param-paginationMode"><span class="type-annotation">ZListPaginationMode</span> <span class="parameter-name">paginationMode</span> = <span class="default-value">ZListPaginationMode.backendCursor</span>, </span></li>
 </ol>})
     </section>
     
@@ -77,7 +80,10 @@ restent déclarables.</p>
   <pre class="language-dart"><code class="language-dart">const ZListQueryPolicy.legacySearch({
   this.sort = const &lt;ZSort&gt;[],
   this.baseFilters = const &lt;ZFilter&gt;[],
+  this.baseFilterGroups = const &lt;ZFilterGroup&gt;[],
+  this.itemFilter,
   this.pageSize,
+  this.paginationMode = ZListPaginationMode.backendCursor,
 })  : searchScope = ZSearchScope.allColumns,
       searchFolding = ZSearchFolding.diacriticsAndSpaces;</code></pre>
 </section>
@@ -107,7 +113,7 @@ restent déclarables.</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

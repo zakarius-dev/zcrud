@@ -61,6 +61,7 @@
 <li><span class="parameter" id="param-acl"><span class="type-annotation"><a href="../../zcrud_core/ZAcl-class.html">ZAcl</a>?</span> <span class="parameter-name">acl</span>, </span></li>
 <li><span class="parameter" id="param-collectionId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">collectionId</span>, </span></li>
 <li><span class="parameter" id="param-itemTitleBuilder"><span class="type-annotation"><a href="../../zcrud_core/ZSubItemTitleBuilder.html">ZSubItemTitleBuilder</a>?</span> <span class="parameter-name">itemTitleBuilder</span>, </span></li>
+<li><span class="parameter" id="param-parentController"><span class="type-annotation"><a href="../../zcrud_core/ZFormController-class.html">ZFormController</a>?</span> <span class="parameter-name">parentController</span>, </span></li>
 <li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
 </ol>})
     </section>
@@ -68,12 +69,19 @@
 <section class="desc markdown">
   <p>Construit le champ sous-liste pour <code>field</code>, valeur initiale <code>initialValue</code>
 (<code>List&lt;Map&gt;</code> ou <code>null</code>), agrégeant vers la tranche parente via <code>onChanged</code>.</p>
-<p><code>acl</code> filtre les actions du mode compact. <code>null</code> (défaut) ⇒ l'ACL du
-<code>ZcrudScope</code> ambiant est consultée ; sans scope, le repli est <strong>refusant</strong>
+<p><code>acl</code> filtre les actions du mode compact. <code>null</code> (défaut) ⇒ le seam <code>acl</code>
+du registre (<code>ZcrudScope.subListSeamRegistry</code>) est consulté, puis l'ACL du
+<code>ZcrudScope</code> ambiant ; sans scope, le repli est <strong>refusant</strong>
 (<code>ZDenyAllAcl</code>) : aucune action d'item n'est offerte. <code>collectionId</code> est
 transmis à <code>ZAcl.can(..., collectionId:)</code> ;
-<code>itemTitleBuilder</code> dérive le titre du dialog / résumé de ligne. Ces
-paramètres sont <strong>ignorés</strong> en mode <code>inline</code> (comportement inchangé).</p>
+<code>itemTitleBuilder</code> dérive le titre du dialog / résumé de ligne — <code>null</code>
+(défaut) ⇒ le seam <code>itemTitleBuilder</code> du registre est consulté. Ces deux
+paramètres sont <strong>ignorés</strong> en mode <code>inline</code> (comportement inchangé) ;
+<code>itemTitleBuilder</code> vaut en revanche aussi en mode <code>tags</code>.</p>
+<p>Priorité, pour l'un comme pour l'autre : <strong>paramètre &gt; registre &gt; défaut</strong>.
+Les autres seams (rendu libre, actions supplémentaires, conteneur,
+en-tête, transformation d'affichage) n'ont <strong>pas</strong> de paramètre : ils se
+déclarent uniquement par le registre — un canal, pas vingt paramètres.</p>
 </section>
 
 
@@ -88,6 +96,7 @@ paramètres sont <strong>ignorés</strong> en mode <code>inline</code> (comporte
   this.acl,
   this.collectionId,
   this.itemTitleBuilder,
+  this.parentController,
   super.key,
 });</code></pre>
 </section>
@@ -117,7 +126,7 @@ paramètres sont <strong>ignorés</strong> en mode <code>inline</code> (comporte
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

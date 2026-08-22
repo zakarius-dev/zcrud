@@ -69,9 +69,11 @@
     </section>
     
 <section class="desc markdown">
-  <p>Persiste <code>item</code>. Matérialise l'éphémère (attribution d'<code>id</code>) et rejette
-une cible manquante via <code>Left(ZDomainFailure)</code> (AD-14). <code>collectionId</code>
-localise le conteneur si nécessaire.</p>
+  <p>Persiste <code>item</code> au local (autoritaire), puis propage au distant.</p>
+<p><strong><code>collectionId</code> est IGNORÉ</strong> : l'emplacement des données est déterminé
+par la topologie du store local et du store distant injectés, jamais par
+l'appelant. Aucune redirection d'écriture n'est possible par cette voie —
+et donc aucun silo accidentel.</p>
 </section>
 
 
@@ -120,7 +122,7 @@ Future&lt;ZResult&lt;T&gt;&gt; save(T item, {String? collectionId}) async {
 <footer>
   <span class="no-break">
     zcrud_firestore
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

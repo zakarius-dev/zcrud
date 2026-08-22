@@ -66,13 +66,15 @@
 <section class="desc markdown">
   <p>Le rappel qui ouvre la <strong>fiche de détail</strong> de <code>entity</code> sur l'écran
 englobant, ou <code>null</code> si la consultation n'est pas offerte — hors écran,
-écran verrouillé ou non déclaré consultable, vue corbeille, aucun
-formulaire, ou <code>ZCrudAction.view</code> refusé sur cette ligne.</p>
+écran verrouillé ou non déclaré consultable, aucun formulaire, ou
+<code>ZCrudAction.view</code> refusé sur cette ligne.</p>
 <p>Raccourci de <code>ZCrudScreenScope.maybeOf(context)?.detailsOpener(entity)</code>.
 C'est la <strong>forme de geste de ligne</strong> de la fiche : elle s'utilise sur un
 écran <code>ZScreenMode.full</code> — qui continue de créer, de mettre à la corbeille
 et de restaurer — sans avoir à basculer l'écran entier en mode
-consultation.</p>
+consultation. Elle est offerte <strong>en vue corbeille aussi</strong>, aux mêmes
+conditions : la fiche y est le seul moyen de vérifier avant de restaurer ou
+de purger.</p>
 </section>
 
 
@@ -107,7 +109,7 @@ consultation.</p>
 <footer>
   <span class="no-break">
     zcrud_screen
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

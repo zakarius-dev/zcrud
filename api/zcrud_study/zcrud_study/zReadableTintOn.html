@@ -67,7 +67,14 @@
 <section class="desc markdown">
   <p>Teinte <strong>LISIBLE</strong> dérivée de <code>base</code>, garantie à au moins <code>minContrast</code>
 contre <code>surface</code> — pour une couleur d'entrée <strong>ARBITRAIRE</strong> (choisie par
-l'utilisateur), dans <strong>les deux luminosités</strong>.</p>
+l'utilisateur ou déclarée par l'hôte), dans <strong>les deux luminosités</strong>.</p>
+<p>🔴 <strong>La mesure porte sur <code>surface</code>, et sur rien d'autre.</strong> <code>surface</code> est
+ramenée à son opaque (<code>withValues(alpha: 1)</code>) avant mesure ; si la surface
+réellement peinte est semi-transparente, la composer d'abord par
+<a href="../zcrud_study/zCompositeOver.html">zCompositeOver</a>. Les chiffres de référence de cette bibliothèque sont
+exprimés sur <strong>blanc pur</strong> — la <code>surface</code> d'un thème clair réel est teintée
+et rend donc un contraste un peu plus faible (cf. la table en tête de
+bibliothèque). La <strong>garantie</strong>, elle, porte toujours sur la surface passée.</p>
 <ul>
 <li>Si <code>base</code> satisfait DÉJÀ le plancher, elle est rendue <strong>inchangée</strong> :
 le choix de l'utilisateur n'est jamais réécrit sans nécessité.</li>
@@ -92,6 +99,11 @@ meilleure des deux extrémités est rendue — jamais un échec de rendu.</li>
   required Color surface,
   double minContrast = kZNonTextMinContrast,
 }) {
+  &#47;&#47; Historique, à ne pas rejouer : cet algorithme a d&#39;abord vécu dans
+  &#47;&#47; `zcrud_study`, puis a été RECOPIÉ à l&#39;identique dans `zcrud_chat` (le cœur
+  &#47;&#47; n&#39;était alors pas touchable). Les deux copies ont commencé à diverger.
+  &#47;&#47; Une garde de source interdit désormais toute réimplémentation dans
+  &#47;&#47; `packages&#47;*&#47;lib` — elle se repère au motif des trois coefficients WCAG.
   final double floor = minContrast.clamp(1.0, 21.0);
   final Color opaqueSurface = surface.withValues(alpha: 1);
   double contrastAt(double t) =&gt;
@@ -99,12 +111,13 @@ meilleure des deux extrémités est rendue — jamais un échec de rendu.</li>
 
   if (contrastAt(0) &gt;= floor) return base;
 
-  &#47;&#47; Côté SOMBRE : le plus petit assombrissement suffisant (t le plus proche
-  &#47;&#47; de 0 dans [-1, 0]). La luminance étant monotone en t, le prédicat est
-  &#47;&#47; vrai sur [-1, seuil] et faux au-delà — la dichotomie est valide.
-  double? darker;
-  if (contrastAt(-1) &gt;= floor) {
-    double ok = -1;
+  &#47;&#47; Le plus petit déplacement suffisant du côté [edge] (`-1` assombrir, `1`
+  &#47;&#47; éclaircir), ou `null` si même l&#39;extrémité ne tient pas le plancher. La
+  &#47;&#47; luminance étant monotone en `t`, le prédicat est vrai sur `[edge, seuil]`
+  &#47;&#47; et faux au-delà — la dichotomie est valide.
+  double? search(double edge) {
+    if (contrastAt(edge) &lt; floor) return null;
+    double ok = edge;
     double ko = 0;
     for (int i = 0; i &lt; _kSearchIterations; i++) {
       final double mid = (ok + ko) &#47; 2;
@@ -114,30 +127,15 @@ meilleure des deux extrémités est rendue — jamais un échec de rendu.</li>
         ko = mid;
       }
     }
-    darker = ok;
+    return ok;
   }
 
-  &#47;&#47; Côté CLAIR, symétrique.
-  double? lighter;
-  if (contrastAt(1) &gt;= floor) {
-    double ok = 1;
-    double ko = 0;
-    for (int i = 0; i &lt; _kSearchIterations; i++) {
-      final double mid = (ok + ko) &#47; 2;
-      if (contrastAt(mid) &gt;= floor) {
-        ok = mid;
-      } else {
-        ko = mid;
-      }
-    }
-    lighter = ok;
-  }
+  final double? darker = search(-1);
+  final double? lighter = search(1);
 
   if (darker == null &amp;&amp; lighter == null) {
     &#47;&#47; Plancher inatteignable : la MEILLEURE extrémité, jamais un échec.
-    return contrastAt(-1) &gt;= contrastAt(1)
-        ? _shift(base, -1)
-        : _shift(base, 1);
+    return contrastAt(-1) &gt;= contrastAt(1) ? _shift(base, -1) : _shift(base, 1);
   }
   if (lighter == null) return _shift(base, darker!);
   if (darker == null) return _shift(base, lighter);
@@ -180,7 +178,7 @@ meilleure des deux extrémités est rendue — jamais un échec de rendu.</li>
 <footer>
   <span class="no-break">
     zcrud_study
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

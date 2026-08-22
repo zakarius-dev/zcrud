@@ -64,8 +64,13 @@
     </section>
     
 <section class="desc markdown">
-  <p><strong>Rapport de contraste WCAG 2.x</strong> entre deux couleurs OPAQUES, dans
-<code>[1.0, 21.0]</code>. Symétrique.</p>
+  <p><strong>Rapport de contraste WCAG 2.x</strong> entre les deux couleurs OPAQUES <code>a</code> et
+<code>b</code>, dans <code>[1.0, 21.0]</code>. Symétrique.</p>
+<p>🔴 Le chiffre rendu <strong>n'a de sens que pour ce couple</strong> : mesurer la même
+teinte contre le blanc pur ou contre le <code>surface</code> teinté d'un thème clair
+Material 3 ne donne pas le même nombre (cf. la table « sur quelle surface »
+en tête de bibliothèque — <code>#FF9800</code> vaut <code>2.155</code> sur <code>#FFFFFF</code> et <code>2.049</code>
+sur <code>#FEF7FF</code>). Passer la surface <strong>réellement peinte</strong>.</p>
 </section>
 
 
@@ -105,7 +110,7 @@
 <footer>
   <span class="no-break">
     zcrud_study
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

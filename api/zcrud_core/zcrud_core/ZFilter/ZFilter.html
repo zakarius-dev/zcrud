@@ -61,14 +61,15 @@
     </section>
     
 <section class="desc markdown">
-  <p>Construit un filtre <code>field op value</code>.</p>
+  <p>Construit un filtre <code>field op value</code>, <strong>servi par la source ET
+ré-appliqué</strong> aux lignes projetées.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">const ZFilter(this.field, this.op, [this.value]);</code></pre>
+  <pre class="language-dart"><code class="language-dart">const ZFilter(this.field, this.op, [this.value]) : sourceOnly = false;</code></pre>
 </section>
 
 
@@ -96,7 +97,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>

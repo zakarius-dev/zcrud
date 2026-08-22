@@ -96,7 +96,7 @@ repli 1900/2100.</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZDateFieldWidget.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZDateFieldWidget/ZDateFieldWidget.html">ZDateFieldWidget</a></span><span class="signature">({<span class="parameter" id="param-field"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="param-value"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span>, </span><span class="parameter" id="param-onChanged"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">onChanged</span>, </span><span class="parameter" id="param-firstDate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueGetter.html">ValueGetter</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span>&gt;</span>?</span> <span class="parameter-name">firstDate</span>, </span><span class="parameter" id="param-lastDate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueGetter.html">ValueGetter</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span>&gt;</span>?</span> <span class="parameter-name">lastDate</span>, </span><span class="parameter" id="param-onCleared"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onCleared</span>, </span><span class="parameter" id="param-decorated"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">decorated</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZDateFieldWidget/ZDateFieldWidget.html">ZDateFieldWidget</a></span><span class="signature">({<span class="parameter" id="param-field"><span>required</span> <span class="type-annotation"><a href="../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span> <span class="parameter-name">field</span>, </span><span class="parameter" id="param-value"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span>, </span><span class="parameter" id="param-onChanged"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">onChanged</span>, </span><span class="parameter" id="param-firstDate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueGetter.html">ValueGetter</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span>&gt;</span>?</span> <span class="parameter-name">firstDate</span>, </span><span class="parameter" id="param-lastDate"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueGetter.html">ValueGetter</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span>&gt;</span>?</span> <span class="parameter-name">lastDate</span>, </span><span class="parameter" id="param-onCleared"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onCleared</span>, </span><span class="parameter" id="param-decorated"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">decorated</span>, </span><span class="parameter" id="param-valueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">valueOf</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
         </dt>
         <dd>
           Construit le champ date lié à <code>field</code>, valeur courante <code>value</code> (ISO-8601
@@ -236,6 +236,20 @@ antérieur strictement inchangé).
 </dt>
 <dd>
   Valeur courante de la tranche.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="valueOf" class="property">
+  <span class="name"><a href="../zcrud_core/ZDateFieldWidget/valueOf.html">valueOf</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span>
+  
+
+</dt>
+<dd>
+  Lecteur <strong>nommé</strong> du formulaire hôte, transmis aux ornements <code>.widget</code>
+(valeur du champ décoré + lecture d'un champ voisin). <code>null</code> ⇒ ornement
+rendu sans valeur (comportement d'une composition hors formulaire).
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -431,7 +445,7 @@ tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode
 <footer>
   <span class="no-break">
     zcrud_core
-      0.94.0
+      3.3.1
   </span>
   
 </footer>
