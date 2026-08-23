@@ -35,10 +35,20 @@ export 'src/presentation/z_chat_material_attachment_chips.dart';
 export 'src/presentation/z_chat_material_badge.dart';
 export 'src/presentation/z_chat_material_budget_slider.dart';
 export 'src/presentation/z_chat_material_composer.dart';
+// Feuille de RÉGLAGES : un builder Material par famille standard (en-tête,
+// préréglages, verbosité, biais, raisonnement, capacités, portée
+// documentaire, repli d'entrée inconnue), les canaux de libellé de l'hôte, la
+// géométrie de référence, et l'assemblage par défaut sur la feuille du socle.
+export 'src/presentation/z_chat_material_corpus_chips.dart';
 export 'src/presentation/z_chat_material_effort_chips.dart';
 export 'src/presentation/z_chat_material_labelled_slider.dart';
-
 export 'src/presentation/z_chat_material_send_fab.dart';
+export 'src/presentation/z_chat_material_settings_chips.dart';
+export 'src/presentation/z_chat_material_settings_header.dart';
+export 'src/presentation/z_chat_material_settings_labels.dart';
+export 'src/presentation/z_chat_material_settings_reference.dart';
+export 'src/presentation/z_chat_material_settings_sheet.dart';
+export 'src/presentation/z_chat_material_settings_switches.dart';
 // Feuille d'OUTILS : les tuiles par nature (bascule, cycle, choix, échelle,
 // catalogue filtrable, action), les canaux de libellé de l'hôte, et la feuille
 // assemblée sur la structure que le domaine résout.

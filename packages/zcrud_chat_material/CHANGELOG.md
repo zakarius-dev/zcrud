@@ -3,6 +3,16 @@
 Toutes les modifications notables de `zcrud_chat_material` sont documentées
 dans ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.7.0 — 2026-08-23
+
+### Ajouté
+- **Feuille de réglages riche par défaut** : `ZChatMaterialSettingsSheet` pose un builder Material pour **chacune des neuf familles** de `ZChatSettingsSheet` (`header`, `presets`, `responseLength`, `lengthBias`, `computeBudget`, `revealThinking`, `capabilities`, `corpus`, `unknownEntry`), chacun remplaçable par paramètre nommé — un builder fourni par l'hôte **gagne** sur le défaut. Formes : `ChoiceChip` en `Wrap` (longueur, biais, préréglages), `SwitchListTile` à **sous-titre d'état** fourni par l'hôte (raisonnement, capacités), `FilterChip` avec puce « Tous » et entrée indisponible **grisée avec sa raison** (corpus), en-tête titre + réinitialiser + fermer, titres de section `titleSmall` en couleur de rôle.
+- `ZChatMaterialSettingsLabels` : tous les libellés viennent de l'hôte ; libellé absent ⇒ affordance absente.
+- `ZChatMaterialSettingsReference` : la géométrie, sans littéral dans les widgets.
+
+### Garde
+- Aucun `ZChatTool*` dans les builders des familles standard : un réglage standard ne se redéclare pas comme outil d'hôte (deux états pour un même réglage, dont un seul part dans la requête).
+
 ## 3.6.0 — 2026-08-23
 
 ### Ajouté
