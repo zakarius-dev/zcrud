@@ -136,10 +136,12 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
 
   /// Résolveur `ZListRow → T?` fournissant l'entité d'une ligne.
   ///
-  /// **Une seule déclaration, trois usages** : le filtrage ACL row-level, le
-  /// binding `onInvoke` des actions de ligne, et le rendu des **tuiles
-  /// typées** (`ZEntityTileBuilder`, cf. `ZListLayout.withEntityTiles`). Requis
-  /// si [rowActions] est non nul, et si le [layout] porte une tuile d'entité.
+  /// **Une seule déclaration, tous les usages** : le filtrage ACL row-level,
+  /// le binding `onInvoke` des actions de ligne, le rendu des **tuiles
+  /// typées** (`ZEntityTileBuilder`, cf. `ZListLayout.withEntityTiles`) et la
+  /// vue personnalisée typée (`ZListCustomLayout.forEntity`, qui reçoit ce
+  /// résolveur tel quel). Requis si [rowActions] est non nul, et si le
+  /// [layout] porte une tuile ou une vue d'entité.
   ///
   /// Une ligne dont l'entité est `null` voit ses actions **omises** et sa
   /// tuile retomber sur le builder de ligne du layout (s'il en porte un).
@@ -386,7 +388,12 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
                 },
           actionsFor: interaction?.actionsFor,
         ),
-      ZListCustomLayout(:final customView) => customView(context, request),
+      // Vue entière : le résolveur descend tel quel (le cast vers `T` est
+      // l'affaire de `forEntity`). `entityFor` absent ⇒ résolveur nul partout.
+      ZListCustomLayout(:final customView, :final entityView) =>
+        entityView != null
+            ? entityView(context, request, (row) => entityFor?.call(row))
+            : customView!(context, request),
     };
   }
 

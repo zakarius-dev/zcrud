@@ -100,6 +100,19 @@ export 'src/presentation/render/z_chat_seam_failure.dart';
 export 'src/presentation/render/z_chat_shell_render_request.dart';
 export 'src/presentation/render/z_chat_shell_renderer.dart';
 export 'src/presentation/render/z_chat_shell_renderer_scope.dart';
+// Le ROUTAGE par tâche, côté assemblage : `ZChatRouteSession` porte le
+// routeur choisi et les replis par tâche en tranches granulaires, et résout
+// PUREMENT (`resolve`/`resolveArtifact`, branchés sur les seams
+// `routeResolver` des contrôleurs — avant tout message optimiste, tout appel
+// de port) ; `ZChatRoutedStreamPort`/`ZChatRoutedArtifactGenerationPort`
+// répartissent vers le port de la route (gestionnaire → fournisseur → nom de
+// route → repli) sans résoudre ni gater ; `zChatRouteSettingsEntries`
+// projette le choix de repli par tâche dans la feuille, libellés d'hôte
+// obligatoires. Le gate refuse par défaut.
+export 'src/presentation/routing/z_chat_route_session.dart';
+export 'src/presentation/routing/z_chat_route_settings_adapter.dart';
+export 'src/presentation/routing/z_chat_routed_artifact_port.dart';
+export 'src/presentation/routing/z_chat_routed_stream_port.dart';
 // Réglages de génération, du contrat à l'écran : `ZChatSettingsController`
 // porte l'état hors de `ZChatController` ; `ZChatController.send(settings:,
 // corpusScope:)` le transporte après le builder de l'hôte, de sorte qu'aucun
@@ -163,6 +176,10 @@ export 'src/presentation/view/z_chat_composer_model_selector.dart';
 export 'src/presentation/view/z_chat_composer_reference.dart';
 export 'src/presentation/view/z_chat_conversation_actions.dart';
 export 'src/presentation/view/z_chat_conversation_list.dart';
+// L'écran assemblé du CHAT, miroir de l'écran de fil de travail : contrôleur
+// créé une fois, vue, composer partagé, feuille, session de routage — et
+// l'échappatoire vers les briques.
+export 'src/presentation/view/z_chat_conversation_screen.dart';
 export 'src/presentation/view/z_chat_conversation_tile.dart';
 export 'src/presentation/view/z_chat_conversation_view.dart';
 export 'src/presentation/view/z_chat_diffusion_bar.dart';
@@ -188,6 +205,11 @@ export 'src/presentation/view/z_chat_notebook_reference.dart';
 export 'src/presentation/view/z_chat_notebook_screen.dart';
 export 'src/presentation/view/z_chat_notebook_skin.dart';
 export 'src/presentation/view/z_chat_notebook_view.dart';
+// L'assemblage COMMUN du routage sur les pièces partagées : le créneau du
+// sélecteur de routeur pour `ZDefaultChatComposer.modelBuilder` et la feuille
+// projetée des outils et de la session — utilisés par les deux écrans et
+// offerts à l'assemblage maison.
+export 'src/presentation/view/z_chat_route_assembly.dart';
 // Le modèle d'entrées déclaratif de la feuille de réglages (nature ouverte,
 // invariant AD-4 ; une nature inconnue est simplement absente, sans lever,
 // invariant AD-10), sur lequel les familles standard sont ré-exprimées en

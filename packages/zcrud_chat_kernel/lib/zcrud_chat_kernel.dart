@@ -99,6 +99,31 @@ export 'src/domain/notebook/z_chat_artifact_store_port.dart';
 export 'src/domain/notebook/z_chat_notebook_defaults.dart';
 export 'src/domain/notebook/z_chat_transcript_port.dart';
 export 'src/domain/notebook/z_chat_unsupported_action_executor.dart';
+// Catalogue de routes : le routeur (`ZChatRouter`, entité extensible au
+// schéma d'édition complet), ses routes par clé de tâche, la référence de
+// modèle opaque avec fournisseur, la résolution pure (repli tâche → racine,
+// projection sur la requête sans écraser un choix explicite), et trois ports
+// — catalogue, gate de gouvernance (refus par défaut), annuaire de
+// gestionnaires — avec leurs implémentations inertes et mémoire.
+// `catalog/` : l'assemblage d'un catalogue réel — sources (`Right(null)` =
+// absent ici, `Left` = panne), décodeur à forme déclarée, cache à durée de
+// vie, cascade ordonnée avec repli DÉCLARÉ, dépôt mémoire et décorateur
+// d'invalidation. Aucune bibliothèque HTTP : l'ouverture reste à l'hôte.
+export 'src/domain/route/catalog/z_chat_cascade_route_catalog.dart';
+export 'src/domain/route/catalog/z_chat_in_memory_router_repository.dart';
+export 'src/domain/route/catalog/z_chat_invalidating_router_repository.dart';
+export 'src/domain/route/catalog/z_chat_remote_route_catalog_source.dart';
+export 'src/domain/route/catalog/z_chat_repository_route_catalog_source.dart';
+export 'src/domain/route/catalog/z_chat_route_catalog_decoder.dart';
+export 'src/domain/route/catalog/z_chat_route_catalog_source.dart';
+export 'src/domain/route/catalog/z_chat_ttl_route_catalog.dart';
+export 'src/domain/route/z_chat_model_ref.dart';
+export 'src/domain/route/z_chat_route_catalog_port.dart';
+export 'src/domain/route/z_chat_route_gate.dart';
+export 'src/domain/route/z_chat_route_handlers.dart';
+export 'src/domain/route/z_chat_route_resolution.dart';
+export 'src/domain/route/z_chat_route_spec.dart';
+export 'src/domain/route/z_chat_router.dart';
 // Feuille d'outils déclarative : la feuille devient une DONNÉE
 // (`ZChatToolCatalog`) au lieu d'un aiguillage codé. Un outil est déclaré une
 // fois, les surfaces (bande, feuille) le projettent ; la résolution rend

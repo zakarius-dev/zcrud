@@ -271,6 +271,12 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// métier se déclare `layout: const ZListGridLayout(mainAxisExtent: 180)` +
   /// `itemBuilder: (context, entity, columns) => MaCarte(entity)`, sans que
   /// l'application n'ait à reconstruire l'index `ligne → entité`.
+  ///
+  /// Ce même index sert à **tous** les layouts. Une vue personnalisée le
+  /// reçoit en résolveur, par `ZListCustomLayout.forEntity` (la vue est
+  /// appelée avec `(context, request, entityFor)`). La grille de données
+  /// (`ZListDataGridLayout`) n'a pas de tuile — elle rend des cellules — et
+  /// n'invoque donc pas [itemBuilder].
   final ZListLayout? layout;
 
   /// Rendu d'une tuile — il **reçoit l'entité `T`**, pas la ligne neutre.

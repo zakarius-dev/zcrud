@@ -45,11 +45,13 @@ void main() {
       expect(out['key'], 'open');
       expect(out['extra'], <String, dynamic>{'host': 'kept'});
       // Voie constructeur : même garde.
-      _expectClean(ZChatArtifactVerb(
-        key: 'x',
-        availability: ZChatArtifactVerbAvailability.whenAbsent,
-        extra: _polluted,
-      ).extra);
+      _expectClean(
+        ZChatArtifactVerb(
+          key: 'x',
+          availability: ZChatArtifactVerbAvailability.whenAbsent,
+          extra: _polluted,
+        ).extra,
+      );
       // Un `extra` propre est rendu sans copie.
       expect(identical(verb.extra, verb.extra), isTrue);
     });
@@ -100,8 +102,10 @@ void main() {
     });
 
     test('ZChatArtifactContent : constructeur', () {
-      final ZChatArtifactContent content =
-          ZChatArtifactContent('data', extra: _polluted);
+      final ZChatArtifactContent content = ZChatArtifactContent(
+        'data',
+        extra: _polluted,
+      );
       expect(content.extra.containsKey(ZSyncMeta.kUpdatedAt), isFalse);
       expect(content.extra.containsKey(ZSyncMeta.kIsDeleted), isFalse);
       expect(content.extra['host'], 'kept');
@@ -127,12 +131,75 @@ void main() {
       expect(out['extra'], <String, dynamic>{'host': 'kept'});
       // `_copy` (withState/cleared/reset) repasse par la garde.
       _expectClean(entry.cleared().extra);
-      _expectClean(ZChatToolEntry(
-        key: 'x',
-        state: const ZChatToggleState(),
-        extra: _polluted,
-      ).extra);
+      _expectClean(
+        ZChatToolEntry(
+          key: 'x',
+          state: const ZChatToggleState(),
+          extra: _polluted,
+        ).extra,
+      );
       expect(identical(entry.extra, entry.extra), isTrue);
+    });
+
+    test('ZChatRouter : `extra` ET `params` (racine, route) ne réémettent '
+        'jamais les clés réservées — fromMap, constructeur, copyWith', () {
+      // Voie `fromMap` : pollution dans le corps (extra), dans `params` et
+      // dans les `params` d'une route.
+      final ZChatRouter decoded = ZChatRouter.fromMap(<String, dynamic>{
+        'id': 'r',
+        ..._polluted,
+        'params': _polluted,
+        'routes': <Object?>[
+          <String, dynamic>{'task_key': 'k', 'params': _polluted},
+        ],
+      });
+      // `extra` : `key` n'est pas une clé du schéma du routeur ⇒ conservée ;
+      // seules `updated_at`/`is_deleted` sont retirées.
+      expect(decoded.extra, <String, dynamic>{
+        'host': 'kept',
+        'key': 'smuggled',
+      });
+      expect(decoded.extra.containsKey(ZSyncMeta.kUpdatedAt), isFalse);
+      expect(decoded.extra.containsKey(ZSyncMeta.kIsDeleted), isFalse);
+      expect(decoded.params, <String, dynamic>{
+        'host': 'kept',
+        'key': 'smuggled',
+      });
+      expect(decoded.routeOf('k')!.params, <String, dynamic>{
+        'host': 'kept',
+        'key': 'smuggled',
+      });
+      final Map<String, dynamic> out = decoded.toMap();
+      expect(out.containsKey(ZSyncMeta.kUpdatedAt), isFalse);
+      expect(out.containsKey(ZSyncMeta.kIsDeleted), isFalse);
+      final Map<String, dynamic> params = out['params'] as Map<String, dynamic>;
+      expect(params.containsKey(ZSyncMeta.kUpdatedAt), isFalse);
+      expect(params.containsKey(ZSyncMeta.kIsDeleted), isFalse);
+      final Map<String, dynamic> routeOut =
+          (out['routes'] as List<Object?>).single as Map<String, dynamic>;
+      final Map<String, dynamic> routeParams =
+          routeOut['params'] as Map<String, dynamic>;
+      expect(routeParams.containsKey(ZSyncMeta.kUpdatedAt), isFalse);
+      expect(routeParams.containsKey(ZSyncMeta.kIsDeleted), isFalse);
+      expect(out['host'], 'kept', reason: 'AD-4 : une clé ordinaire survit');
+
+      // Voie constructeur `const` : l'ACCESSEUR filtre.
+      const ZChatRouter built = ZChatRouter(
+        extra: _polluted,
+        params: _polluted,
+      );
+      expect(built.extra.containsKey(ZSyncMeta.kUpdatedAt), isFalse);
+      expect(built.params.containsKey(ZSyncMeta.kIsDeleted), isFalse);
+      expect(built.toMap().containsKey(ZSyncMeta.kUpdatedAt), isFalse);
+
+      // Voie `copyWith` : sanitisation EAGER.
+      final ZChatRouter copied = const ZChatRouter().copyWith(
+        extra: _polluted,
+        params: _polluted,
+      );
+      expect(copied.extra.containsKey(ZSyncMeta.kUpdatedAt), isFalse);
+      expect(copied.params.containsKey(ZSyncMeta.kUpdatedAt), isFalse);
+      expect(copied.toMap().containsKey(ZSyncMeta.kIsDeleted), isFalse);
     });
 
     test('un extra sans clé réservée est rendu tel quel (pas de copie)', () {
@@ -141,8 +208,7 @@ void main() {
         ZChatArtifactVerb.fromJson(<String, dynamic>{
           'key': 'k',
           'extra': clean,
-        })!
-            .toJson()['extra'],
+        })!.toJson()['extra'],
         clean,
       );
       expect(

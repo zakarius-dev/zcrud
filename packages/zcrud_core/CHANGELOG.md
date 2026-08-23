@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.8.0 — 2026-08-23
+
+### Ajouté
+- `ZListCustomLayout.entityView` / `ZListCustomLayout.forEntity<T>` (`ZEntityResolver<T>`, `ZEntityListViewBuilder<T>`) : une vue entière reçoit `entityFor` comme tous les autres layouts — le résolveur ne lève jamais. `entityFor` est passé à la vue **hors** `ZListRenderRequest` : la mémoïsation de la requête de rendu reste intacte. Nuance : `ZListCustomLayout.customView` devient nullable.
+
 ## 3.6.0 — 2026-08-23
 
 ### Garde

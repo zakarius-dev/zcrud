@@ -142,6 +142,8 @@ dependency_overrides:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_chat_study }
   zcrud_chat_markdown:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_chat_markdown }
+  zcrud_chat_firestore:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_chat_firestore }
   zcrud_chat_material:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_chat_material }
   zcrud_core:

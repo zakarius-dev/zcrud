@@ -3,6 +3,15 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.8.0 — 2026-08-23
+
+### Ajouté
+- **`ZChatRouteSession`** : le routeur courant et ses routes en tranches granulaires (`routerId`, `router`, `routeOf(k)` stable, `overrideOf(k)`, `catalogFailure`), `selectRouter`/`refresh`/`setModelOverride`, et des résolveurs **purs** `resolve`/`resolveArtifact` — aucun membre n'envoie. Sans catalogue, rien ne change ; avec un catalogue **sans gate, toute route est refusée**.
+- **Seams partagés Chat et Notebook** : `ZChatController(routeResolver:)` appliqué dans le cycle unique d'envoi **avant** l'état, le message optimiste et tout appel de port (un refus publie `lastFailure` typé et laisse la saisie intacte) ; `ZChatNotebookController(routeResolver:, artifactRouteResolver:)` avant le marquage d'occupation.
+- **Ports routés** `ZChatRoutedStreamPort` / `ZChatRoutedArtifactGenerationPort` : répartition `handlerId → providerId → routeName → fallback`, un inconnu rend un seul `Left` ; ils ne résolvent ni ne gatent.
+- `zChatRouteSettingsEntries` : le choix du modèle de repli par tâche dans la feuille de réglages, libellés hôte obligatoires.
+- **`ZChatConversationScreen`** : l'écran de conversation assemblé (couche mince, même assembleur que l'écran Notebook : session → sélecteur de routeur du composer partagé + entrées de feuille) ; `ZChatNotebookScreen(routeSession:, routerOptions:, modelLabelOf:, taskLabelKeyOf:)`.
+
 ## 3.6.0 — 2026-08-23
 
 ### Ajouté

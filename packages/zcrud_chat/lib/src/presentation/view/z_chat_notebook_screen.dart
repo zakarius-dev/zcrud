@@ -55,6 +55,8 @@ import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 import 'package:zcrud_core/domain.dart';
 
 import '../notebook/z_chat_notebook_controller.dart';
+import '../routing/z_chat_route_session.dart';
+import '../routing/z_chat_route_settings_adapter.dart';
 import '../settings/z_chat_settings_controller.dart';
 import '../tools/z_chat_tool_controller.dart';
 import '../tools/z_chat_tool_settings_adapter.dart';
@@ -70,6 +72,7 @@ import 'z_chat_labels.dart';
 import 'z_chat_message_tile.dart';
 import 'z_chat_notebook_skin.dart';
 import 'z_chat_notebook_view.dart';
+import 'z_chat_route_assembly.dart';
 import 'z_chat_settings_sheet.dart';
 import 'z_default_chat_composer.dart';
 
@@ -155,9 +158,10 @@ class ZChatNotebookScreen extends StatefulWidget {
   /// [conversationId], [registry], [generationPort], [store], [statePort],
   /// [actionExecutor], [confirm], [confirmArtifactVerb], [newRequestId],
   /// [buildRequest], [decorateRequest], [lifecycle], [liveLabels],
-  /// [maxResumeAttempts]) sont **lus une fois**, à la création du contrôleur :
-  /// pour changer de conversation, donner une `key` différente à l'écran.
-  /// [readOnly] et [toolCatalog], eux, sont suivis à chaque mise à jour.
+  /// [maxResumeAttempts], [routeSession]) sont **lus une fois**, à la
+  /// création du contrôleur : pour changer de conversation, donner une `key`
+  /// différente à l'écran. [readOnly] et [toolCatalog], eux, sont suivis à
+  /// chaque mise à jour.
   const ZChatNotebookScreen({
     required this.streamPort,
     required this.transcript,
@@ -199,6 +203,12 @@ class ZChatNotebookScreen extends StatefulWidget {
     this.modelOptions = const <ZChatModelOption>[],
     this.modelActiveId,
     this.onSelectModel,
+    this.modelSelectionMark,
+    this.routeSession,
+    this.routerOptions = const <ZChatModelOption>[],
+    this.modelLabelOf,
+    this.taskLabelKeyOf,
+    this.routeSectionId,
     this.toolCatalog,
     this.toolReasonOf,
     this.onToolCommand,
@@ -352,6 +362,34 @@ class ZChatNotebookScreen extends StatefulWidget {
   /// Sélection d'un modèle.
   final ValueChanged<String>? onSelectModel;
 
+  /// Glyphe d'hôte posé devant l'option active du sélecteur.
+  final Widget? modelSelectionMark;
+
+  // ── Routage ───────────────────────────────────────────────────────────────
+
+  /// Session de routage **de l'hôte** (possédée par lui, partagée entre ses
+  /// écrans). Déclarée, elle route chaque tour et chaque artefact avant
+  /// l'envoi, monte le sélecteur de routeur dans le composer (à la place du
+  /// sélecteur de modèle) et le choix de repli par tâche dans la feuille.
+  /// `null` ⇒ l'écran est **strictement inchangé**.
+  final ZChatRouteSession? routeSession;
+
+  /// Catalogue du sélecteur de routeur (un id = un routeur du catalogue).
+  /// Vide signifie sélecteur absent.
+  final List<ZChatModelOption> routerOptions;
+
+  /// Libellé d'un modèle candidat, déjà localisé. `null` ⇒ candidat absent.
+  /// Sans résolveur, aucune entrée de repli n'est projetée.
+  final ZChatModelLabelResolver? modelLabelOf;
+
+  /// Clé de libellé d'une tâche routée. `null` ⇒ tâche absente de la
+  /// feuille. Sans résolveur, aucune entrée de repli n'est projetée.
+  final ZChatTaskLabelKeyResolver? taskLabelKeyOf;
+
+  /// Section de la feuille qui reçoit les entrées de repli. `null` signifie
+  /// la section de génération du socle.
+  final String? routeSectionId;
+
   // ── Réglages et outils ────────────────────────────────────────────────────
 
   /// Catalogue d'outils de l'hôte. Renseigné, l'écran possède un
@@ -438,6 +476,10 @@ class _ZChatNotebookScreenState extends State<ZChatNotebookScreen> {
       buildRequest: widget.buildRequest,
       decorateRequest: widget.decorateRequest,
       lifecycle: widget.lifecycle,
+      // La session résout, le contrôleur décide : les deux résolveurs sont
+      // les fonctions PURES de la session, jamais un port.
+      routeResolver: widget.routeSession?.resolve,
+      artifactRouteResolver: widget.routeSession?.resolveArtifact,
       liveLabels: widget.liveLabels,
       maxResumeAttempts: widget.maxResumeAttempts,
       readOnly: widget.readOnly,
@@ -564,6 +606,7 @@ class _ZChatNotebookScreenState extends State<ZChatNotebookScreen> {
     if (custom != null) return custom(context, _nb, _settings);
     final ZChatNotebookSheetPresenter? present = widget.presentTools;
     final ZChatToolController? tools = _tools;
+    final ZChatRouteSession? session = widget.routeSession;
     return ZDefaultChatComposer(
       controller: _nb.chat,
       settings: _settings,
@@ -593,40 +636,38 @@ class _ZChatNotebookScreenState extends State<ZChatNotebookScreen> {
       modelOptions: widget.modelOptions,
       modelActiveId: widget.modelActiveId,
       onSelectModel: widget.onSelectModel,
+      modelSelectionMark: widget.modelSelectionMark,
+      // Le sélecteur de ROUTEUR remplace le sélecteur de modèle de l'hôte
+      // (règle des trois cas) — seulement si une session est déclarée.
+      modelBuilder: session == null
+          ? null
+          : zChatRouteModelSlot(
+              session: session,
+              options: widget.routerOptions,
+              selectionMark: widget.modelSelectionMark,
+            ),
     );
   }
 
   Widget _sheet(BuildContext context) {
     final ZChatNotebookToolsSheetBuilder? custom = widget.toolsSheetBuilder;
     if (custom != null) return custom(context, _settings, _tools);
-    final ZChatToolController? tools = _tools;
-    if (tools == null) {
-      return ZChatSettingsSheet(
-        controller: _settings,
-        corpusCatalog: widget.corpusCatalog,
-        presetCatalog: widget.presetCatalog,
-        capabilityCatalog: widget.capabilityCatalog,
-        onClose: widget.onCloseTools,
-      );
-    }
-    // La feuille suit le contrôleur d'outils : une projection se refait
-    // quand le catalogue change, jamais sur un jeton du fil.
-    return ListenableBuilder(
-      listenable: tools,
-      builder: (BuildContext context, Widget? _) => ZChatSettingsSheet(
-        controller: _settings,
-        corpusCatalog: widget.corpusCatalog,
-        presetCatalog: widget.presetCatalog,
-        capabilityCatalog: widget.capabilityCatalog,
-        onClose: widget.onCloseTools,
-        sections: zChatToolSettingsSections(tools),
-        entries: zChatToolSettingsEntries(
-          tools,
-          query: tools.query.value,
-          reasonOf: widget.toolReasonOf,
-          onCommand: widget.onToolCommand,
-        ),
-      ),
+    // L'assemblage COMMUN aux deux écrans : outils et routage projetés dans
+    // la même feuille, qui ne suit que ses contrôleurs.
+    return zChatSettingsSheetOf(
+      context,
+      controller: _settings,
+      tools: _tools,
+      toolReasonOf: widget.toolReasonOf,
+      onToolCommand: widget.onToolCommand,
+      session: widget.routeSession,
+      modelLabelOf: widget.modelLabelOf,
+      taskLabelKeyOf: widget.taskLabelKeyOf,
+      routeSectionId: widget.routeSectionId,
+      corpusCatalog: widget.corpusCatalog,
+      presetCatalog: widget.presetCatalog,
+      capabilityCatalog: widget.capabilityCatalog,
+      onClose: widget.onCloseTools,
     );
   }
 }

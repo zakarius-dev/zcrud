@@ -160,7 +160,51 @@ final List<ZManualProbe> kManualProbes = <ZManualProbe>[
       ),
     ],
   ),
+  // `ZChatRouter` (`zcrud_chat_kernel`, domaine `route/`) : même patron que
+  // `ZChatConversation` — ctor `const` (l'ACCESSEUR filtre) et `copyWith`
+  // sanitisant EAGER. Entité ZExtensible écrite à la main, hors registre par
+  // construction (le kernel n'a pas de codegen) : sans cette sonde, la règle
+  // (3) du gate (`E_disk \ E_covered ≠ ∅`) rend `melos run verify` ROUGE.
+  ZManualProbe(
+    className: 'ZChatRouter',
+    body: const <String, dynamic>{'id': 'r', 'name': 'n'},
+    decode: ZChatRouter.fromMap,
+    encode: (Object e) => (e as ZChatRouter).toMap(),
+    writes: <ZExtraWriter>[
+      ZExtraWriter(
+        voie: 'ctor',
+        eagerlyNormalized: false, // ctor `const` ⇒ l'ACCESSEUR filtre.
+        write: _ctorChatRouter,
+      ),
+      ZExtraWriter(
+        voie: 'copyWith',
+        eagerlyNormalized: true,
+        write: _copyWithChatRouter,
+      ),
+    ],
+  ),
 ];
+
+Object _copyWithChatRouter(Object e, Map<String, dynamic> x) =>
+    (e as ZChatRouter).copyWith(extra: x);
+
+Object _ctorChatRouter(Object e, Map<String, dynamic> x) {
+  final ZChatRouter r = e as ZChatRouter;
+  return ZChatRouter(
+    id: r.id,
+    name: r.name,
+    description: r.description,
+    isActive: r.isActive,
+    tier: r.tier,
+    model: r.model,
+    fallbacks: r.fallbacks,
+    computeEffort: r.computeEffort,
+    routes: r.routes,
+    params: r.params,
+    extension: r.extension,
+    extra: x,
+  );
+}
 
 Object _copyWithMindmap(Object e, Map<String, dynamic> x) =>
     (e as ZMindmap).copyWithPreservingTree(extra: x);

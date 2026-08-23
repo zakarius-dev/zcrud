@@ -255,6 +255,11 @@ abstract final class ZChatFailureCodes {
 
   /// Capacité absente chez l'hôte ⇒ `ZUnsupportedOperationFailure` (EXISTANT).
   static const String unsupported = 'unsupported';
+
+  /// Route refusée par la gouvernance (palier insuffisant, jeton d'accès
+  /// manquant) ⇒ [ZChatProviderFailure] portant ce code — émis par un
+  /// `ZChatRouteGate` comme par un backend.
+  static const String upgradeRequired = 'upgradeRequired';
 }
 
 /// Normalise un code brut : `SCREAMING_SNAKE` → camelCase canonique.
@@ -276,6 +281,8 @@ String _canonicalCode(String raw) {
       return ZChatFailureCodes.streamInterrupted;
     case 'UNSUPPORTED':
       return ZChatFailureCodes.unsupported;
+    case 'UPGRADE_REQUIRED':
+      return ZChatFailureCodes.upgradeRequired;
     default:
       return raw;
   }
@@ -338,6 +345,12 @@ ZFailure zChatFailureFromWire(
       return ZUnsupportedOperationFailure(
         message,
         operation: zJsonString(map['operation']),
+      );
+    case ZChatFailureCodes.upgradeRequired:
+      // Le code CANONIQUE est réémis : c'est lui qu'un hôte compare.
+      return ZChatProviderFailure(
+        message,
+        code: ZChatFailureCodes.upgradeRequired,
       );
     default:
       // Un code non catalogué n'est pas jeté : il traverse intact.

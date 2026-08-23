@@ -1,0 +1,40 @@
+# zcrud_chat_firestore — membre du workspace zcrud (resolution: workspace).
+#
+# Adaptateurs Firestore du catalogue de routeurs IA du chat : une fabrique de
+# `ZRepository<ZChatRouter>` sur le repository Firestore générique, le point
+# d'accroche d'un codec legacy, et la sémantique de suppression choisie par
+# l'hôte. PUITS du graphe (AD-1) : aucune arête entrante ; dépend de
+# `zcrud_core`, `zcrud_chat_kernel` et `zcrud_firestore`. Ne jamais faire
+# dépendre `zcrud_firestore` de `zcrud_chat*` (les consommateurs Firestore
+# sans chat ne doivent pas tirer le chat).
+name: zcrud_chat_firestore
+description: "Firestore adapters for the zcrud chat route catalog: a factory building ZRepository<ZChatRouter> on the generic Firestore repository, a legacy codec hook, and host-chosen deletion semantics. Graph sink: depends on zcrud_core, zcrud_chat_kernel and zcrud_firestore."
+version: 3.8.0
+publish_to: none
+resolution: workspace
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_chat_firestore
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - chat
+  - firestore
+  - ai-router
+
+environment:
+  sdk: ^3.12.2
+  flutter: ">=3.38.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cloud_firestore: ^6.0.0
+  dartz: ^0.10.1
+  zcrud_core: ^3.8.0
+  zcrud_chat_kernel: ^3.8.0
+  zcrud_firestore: ^3.8.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  fake_cloud_firestore: ^4.0.0

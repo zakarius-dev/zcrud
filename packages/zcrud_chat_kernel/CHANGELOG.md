@@ -3,6 +3,18 @@
 Toutes les modifications notables de `zcrud_chat_kernel` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.8.0 — 2026-08-23
+
+### Ajouté
+- **Catalogue de routeurs IA** (`domain/route/`) : `ZChatRouter` — entité `ZEntity` extensible écrite à la main (routes par tâche, modèle et replis racine, `tier` opaque, `computeEffort`, `params`, `extension`, `extra` filtré) avec **`$ZChatRouterFieldSpecs`** et **`registerZChatRouter(registry)`** : le formulaire et la liste d'administration viennent de l'éditeur zcrud sans code hôte (`routes` en `subItems`, replis en jetons `provider:model`). `ZChatRouteSpec` (par tâche : route, fournisseur, modèle, replis, effort, paramètres, jetons d'accès, handler). **`ZChatModelRef {providerId?, modelId}`** partout où un modèle est nommé — le fournisseur voyage par tâche et par repli, jamais interprété.
+- **`ZChatRouteResolution.from(router, taskKey)`** : repli tâche → racine, le couple (modèle, replis) replie ensemble ; `toRequest(base, {settings})` applique la route sans jamais l'emporter sur un choix explicite de l'appelant.
+- Ports : `ZChatRouteCatalogPort` (`resolveRouter`, `listRouters`, `invalidate`) + `ZChatInertRouteCatalog` + `ZChatInMemoryRouteCatalog` ; **`ZChatRouteGate`** + **`ZDenyAllChatRouteGate` par défaut** + `ZAllowAllChatRouteGate` ; `ZChatRouteHandlers` (`streamPortFor`, `generationPortFor`) + `Inert` + `Map`.
+- **Catalogue composable** (`domain/route/catalog/`) : sources (`ZChatStaticRouteCatalogSource`, `ZChatRepositoryRouteCatalogSource` sur tout `ZReadOnlyRepository<ZChatRouter>`, `ZChatRemoteRouteCatalogSource` HTTP-agnostique — l'hôte ouvre, le socle décode), décodeur défensif `ZChatRouteCatalogDecoder` + formes `ZChatRouteCatalogShape` (`canonical`, `lex`, `suffixPairs` à clés d'hôte ; un routeur corrompu est compté, jamais la liste perdue), cache `ZChatTtlRouteCatalog` (TTL, cache négatif, service périmé sur panne distante, invalidation ciblée), `ZChatCascadeRouteCatalog` (repli **déclaré** par l'hôte seulement, sinon `Left(ZNotFoundFailure)`), `ZChatInMemoryRouterRepository`, `ZChatInvalidatingRouterRepository`.
+- `ZChatGenerationRequest.providerId` (opaque, additif) ; `ZChatFailureCodes.upgradeRequired` (`UPGRADE_REQUIRED` absorbé à l'entrée).
+
+### Garde
+- Un alias d'effort d'une forme de catalogue ne peut viser que `tier` (contre-preuve : toute autre cible rougit) ; la règle « aucun symbole `*Effort*` hors `computeEffort` » est inchangée.
+
 ## 3.6.0 — 2026-08-23
 
 ### Ajouté

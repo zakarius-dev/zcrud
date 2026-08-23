@@ -88,6 +88,17 @@ typedef ZChatArtifactRequestDecorator =
 typedef ZChatArtifactVerbConfirm =
     Future<bool> Function(ZChatArtifactVerbAction verb);
 
+/// **Route** la requête de génération d'un artefact avant son envoi — seam
+/// d'hôte, pur. Pendant de `ZChatRouteResolver` pour les artefacts : sur
+/// `Left`, la génération n'est **pas** lancée (port jamais appelé, couple
+/// jamais occupé, aucune annonce) et l'échec est publié sur la tranche du
+/// couple. Un résolveur qui lève vaut un refus.
+/// `ZChatRouteSession.resolveArtifact` en est l'implémentation de référence.
+typedef ZChatArtifactRouteResolver =
+    ZResult<ZChatArtifactGenerationRequest> Function(
+      ZChatArtifactGenerationRequest request,
+    );
+
 /// Confirmation d'artefact **sans dialogue** : refuse tout verbe qui exige
 /// une question. Même règle que [zChatConfirmWithoutDialog] — un verbe
 /// destructeur reste refusé tant qu'un vrai dialogue n'est pas branché,
@@ -219,8 +230,10 @@ class ZChatNotebookController extends ChangeNotifier {
   /// * [buildRequest] — défaut [ZChatDraftRequestBuilder] sur le style
   ///   `converse`, copiant tout le brouillon ;
   /// * [decorateRequest] — ajuste la requête de génération d'un artefact ;
-  /// * [lifecycle], [liveLabels], [maxResumeAttempts] — relayés au
-  ///   contrôleur de conversation ;
+  /// * [lifecycle], [liveLabels], [maxResumeAttempts], [routeResolver] —
+  ///   relayés au contrôleur de conversation ;
+  /// * [artifactRouteResolver] — route la requête de chaque artefact avant
+  ///   son envoi (cf. [ZChatArtifactRouteResolver]) ;
   /// * [readOnly] — mode initial de lecture seule ([setReadOnly] le change).
   ZChatNotebookController({
     required ZChatStreamPort streamPort,
@@ -238,6 +251,8 @@ class ZChatNotebookController extends ChangeNotifier {
     ZChatRequestBuilder? buildRequest,
     ZChatArtifactRequestDecorator? decorateRequest,
     ZChatConversationLifecyclePort? lifecycle,
+    ZChatRouteResolver? routeResolver,
+    ZChatArtifactRouteResolver? artifactRouteResolver,
     ZChatLiveLabels liveLabels = ZChatLiveLabels.none,
     int maxResumeAttempts = 2,
     bool readOnly = false,
@@ -246,6 +261,8 @@ class ZChatNotebookController extends ChangeNotifier {
     // surface du contrôleur. Même arbitrage que `ZChatController`.
     // ignore: prefer_initializing_formals
   })  : _transcript = transcript,
+        // ignore: prefer_initializing_formals
+        _artifactRouteResolver = artifactRouteResolver,
         _conversationId = conversationId,
         _registry = registry ?? ZChatArtifactRegistry.empty,
         // ignore: prefer_initializing_formals
@@ -273,6 +290,7 @@ class ZChatNotebookController extends ChangeNotifier {
             conversationId: conversationId,
           ).call,
       lifecycle: lifecycle,
+      routeResolver: routeResolver,
       liveLabels: liveLabels,
       maxResumeAttempts: maxResumeAttempts,
       conversationId: conversationId,
@@ -303,6 +321,7 @@ class ZChatNotebookController extends ChangeNotifier {
   final ZChatArtifactStatePort? _statePort;
   final ZChatArtifactVerbConfirm _confirmArtifactVerb;
   final ZChatArtifactRequestDecorator? _decorateRequest;
+  final ZChatArtifactRouteResolver? _artifactRouteResolver;
   final ZChatLiveLabels _labels;
   late final ZChatRequestIdFactory _newRequestId;
 
@@ -534,9 +553,9 @@ class ZChatNotebookController extends ChangeNotifier {
         ZNotFoundFailure('chat message ${verb.messageId} is not in the thread'),
       );
     }
-    final ZChatArtifactGenerationRequest request;
+    final ZChatArtifactGenerationRequest built;
     try {
-      request = _requestFor(message, verb);
+      built = _requestFor(message, verb);
     } catch (error) {
       return Left<ZFailure, Unit>(ZChatArtifactGenerationFailure(
         'artifact request decorator threw: $error',
@@ -544,6 +563,34 @@ class ZChatNotebookController extends ChangeNotifier {
         artifactKey: verb.artifactKey,
         cause: error,
       ));
+    }
+    // Le ROUTAGE vient ici : après l'ajusteur, AVANT le jeton, l'annonce et
+    // la séquence (donc avant `mark(busy)` et tout appel de port). Sans
+    // résolveur, `request` EST `built`.
+    final ZChatArtifactGenerationRequest request;
+    final ZChatArtifactRouteResolver? route = _artifactRouteResolver;
+    if (route == null) {
+      request = built;
+    } else {
+      ZResult<ZChatArtifactGenerationRequest> routed;
+      try {
+        routed = route(built);
+      } catch (error) {
+        routed = Left<ZFailure, ZChatArtifactGenerationRequest>(
+          ZChatArtifactGenerationFailure(
+            'artifact route resolver threw: $error',
+            messageId: verb.messageId,
+            artifactKey: verb.artifactKey,
+            cause: error,
+          ),
+        );
+      }
+      final ZFailure? refused = routed.fold(
+        (ZFailure f) => f,
+        (ZChatArtifactGenerationRequest _) => null,
+      );
+      if (refused != null) return Left<ZFailure, Unit>(refused);
+      request = routed.getOrElse(() => built);
     }
     final ZChatRequestToken token = ZChatRequestToken(_newRequestId());
     _artifactTokens[pair] = token;

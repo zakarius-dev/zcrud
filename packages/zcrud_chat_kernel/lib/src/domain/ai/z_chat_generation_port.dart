@@ -78,6 +78,7 @@ class ZChatGenerationRequest {
     this.languageTag,
     this.instructions,
     this.modelId,
+    this.providerId,
     Map<String, dynamic> extra = const <String, dynamic>{},
   }) : context = List<ZChatContextFragment>.unmodifiable(
          ZChatContextFragment.ordered(context),
@@ -190,6 +191,12 @@ class ZChatGenerationRequest {
   /// comme sur `ZFlashcardGenerationRequest.modelId`.
   final String? modelId;
 
+  /// Identifiant de fournisseur **opaque**, même statut que [modelId] :
+  /// transporté verbatim, jamais interprété, aucun défaut. `null` ⇒
+  /// l'exécuteur de l'hôte décide. Ce n'est **pas** un endpoint (AD-12) :
+  /// c'est une donnée de routage que l'adaptateur de l'hôte lit.
+  final String? providerId;
+
   /// Échappatoire non typée, **normalisée dès la construction** : les clés
   /// de synchronisation réservées sont écartées et ne peuvent jamais être
   /// réémises.
@@ -247,6 +254,7 @@ class ZChatGenerationRequest {
       languageTag: languageTag,
       instructions: instructions,
       modelId: modelId,
+      providerId: providerId,
       extra: extra,
     );
   }
@@ -275,6 +283,7 @@ class ZChatGenerationRequest {
         languageTag: languageTag,
         instructions: instructions,
         modelId: modelId,
+        providerId: providerId,
         extra: extra,
       );
 
@@ -299,6 +308,7 @@ class ZChatGenerationRequest {
           languageTag == other.languageTag &&
           instructions == other.instructions &&
           modelId == other.modelId &&
+          providerId == other.providerId &&
           zJsonEquals(extra, other.extra);
 
   @override
@@ -320,13 +330,15 @@ class ZChatGenerationRequest {
     languageTag,
     instructions,
     modelId,
+    providerId,
     zJsonHash(extra),
   );
 
   @override
   String toString() =>
       'ZChatGenerationRequest(style: ${style.kind}, '
-      'conversationId: $conversationId)';
+      'conversationId: $conversationId, providerId: $providerId, '
+      'modelId: $modelId)';
 }
 
 /// Port **one-shot** de génération de texte, paramétré par style.

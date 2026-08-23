@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.8.0 — 2026-08-23
+
+### Documentation
+- `layout` : tous les layouts reçoivent `entityFor` et honorent la tuile typée ; `ZListDataGridLayout` n'a pas de tuile et n'invoque donc pas `itemBuilder` (gardé). Une vue entière se déclare `ZListCustomLayout.forEntity<T>(…)`, jamais avec un index maison.
+
 ## 2.5.0 — 2026-08-18
 
 ### Ajouté

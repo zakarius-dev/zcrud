@@ -274,13 +274,78 @@ final class ZListGridLayout extends ZListLayout {
             );
 }
 
+/// Résout l'entité `T` d'une ligne neutre ; `null` si la ligne n'en a pas
+/// (ou si aucun résolveur n'a été déclaré sur `DynamicList.entityFor`).
+typedef ZEntityResolver<T extends ZEntity> = T? Function(ZListRow row);
+
+/// Construit une vue de liste **entière** à partir de la requête neutre et du
+/// résolveur d'entités de la liste.
+///
+/// C'est la forme typée de [ZListCustomLayout] : la vue reçoit, en plus de
+/// [ZListRenderRequest], le même `entityFor` que celui qui sert aux actions de
+/// ligne et aux tuiles typées — elle n'a jamais à reconstruire l'index
+/// `ligne → entité`.
+typedef ZEntityListViewBuilder<T extends ZEntity> = Widget Function(
+  BuildContext context,
+  ZListRenderRequest request,
+  ZEntityResolver<T> entityFor,
+);
+
 /// Vue **personnalisée** : rend un widget **arbitraire** fourni par l'app à
 /// partir du `ZListRenderRequest` complet. N'exige AUCUN renderer.
+///
+/// Deux façons de décrire la vue, au choix :
+/// * [customView] — la requête neutre seule (lignes + colonnes dérivées) ;
+/// * [entityView] — la requête **et** le résolveur `ZListRow → entité`
+///   (forme typée via [ZListCustomLayout.forEntity]). Prioritaire sur
+///   [customView] quand les deux sont présents.
+///
+/// Une vue personnalisée n'a pas de tuile : [withEntityTiles] la rend
+/// inchangée. Le rendu d'un écran assemblé (`ZCrudScreen.itemBuilder`) ne
+/// descend donc pas dans cette variante — c'est la vue qui décide de tout.
 final class ZListCustomLayout extends ZListLayout {
-  /// Construit la vue personnalisée avec son [customView].
-  const ZListCustomLayout({required this.customView});
+  /// Construit la vue personnalisée avec [customView] et/ou [entityView] —
+  /// au moins l'un des deux.
+  const ZListCustomLayout({this.customView, this.entityView})
+      : assert(
+          customView != null || entityView != null,
+          'ZListCustomLayout exige customView ou entityView.',
+        );
+
+  /// Construit la vue personnalisée **typée** : [view] reçoit le résolveur
+  /// `ZListRow → T?` de la liste.
+  ///
+  /// Le résolveur **ne lève jamais** (AD-10) : une entité d'un autre type que
+  /// `T` est résolue `null`, comme une ligne inconnue.
+  ///
+  /// ```dart
+  /// ZListCustomLayout.forEntity<Consignee>(
+  ///   (context, request, entityFor) => ConsigneeBoard(
+  ///     consignees: request.rows.map(entityFor).nonNulls.toList(),
+  ///   ),
+  /// )
+  /// ```
+  static ZListCustomLayout forEntity<T extends ZEntity>(
+    ZEntityListViewBuilder<T> view,
+  ) =>
+      ZListCustomLayout(
+        entityView: (context, request, entityFor) => view(
+          context,
+          request,
+          (row) {
+            final entity = entityFor(row);
+            return entity is T ? entity : null;
+          },
+        ),
+      );
 
   /// Construit le widget de liste à partir de la requête neutre complète.
-  final Widget Function(BuildContext context, ZListRenderRequest request)
+  /// `null` ⇒ la vue est décrite par [entityView].
+  final Widget Function(BuildContext context, ZListRenderRequest request)?
       customView;
+
+  /// Construit le widget de liste à partir de la requête neutre **et** du
+  /// résolveur d'entités — prioritaire sur [customView]. `null` ⇒ la vue est
+  /// décrite par [customView].
+  final ZEntityListViewBuilder<ZEntity>? entityView;
 }

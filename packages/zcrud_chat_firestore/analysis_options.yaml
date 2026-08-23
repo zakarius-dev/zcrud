@@ -1,0 +1,9 @@
+# Hérite de la baseline de lint partagée du monorepo (E1-3).
+include: ../../analysis_options.yaml
+
+# Exige un dartdoc sur chaque membre public exporté par le barrel —
+# l'exhaustivité dartdoc est un invariant vérifié par l'analyse
+# (cf. docs/site/charte.md).
+linter:
+  rules:
+    - public_member_api_docs

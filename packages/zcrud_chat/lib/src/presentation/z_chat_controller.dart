@@ -123,6 +123,18 @@ typedef ZChatRequestIdFactory = String Function();
 typedef ZChatRequestBuilder =
     ZChatGenerationRequest Function(ZChatDraft draft);
 
+/// **Route** la requête d'un tour avant son envoi — seam d'hôte, pur.
+///
+/// Reçoit la requête **après** le builder et les réglages, rend la requête
+/// routée (fournisseur, modèle, budget de repli, paramètres) ou un refus
+/// typé. Sur `Left`, le tour n'est **pas** ouvert : aucun message optimiste,
+/// aucun appel de port, saisie intacte ; l'échec est publié sur
+/// `ZChatController.lastFailure` et rendu à l'appelant. Un résolveur qui
+/// lève vaut un refus. `ZChatRouteSession.resolve` en est l'implémentation
+/// de référence.
+typedef ZChatRouteResolver =
+    ZResult<ZChatGenerationRequest> Function(ZChatGenerationRequest request);
+
 /// Nombre de requêtes **terminées** dont les tranches restent vivantes.
 ///
 /// Assez large pour couvrir la transition d'un tour vers son message établi (un
@@ -233,6 +245,11 @@ class ZChatController extends ChangeNotifier {
   ///
   /// [liveLabels] porte les libellés des annonces de région live ; omis,
   /// les jalons sans contenu sont silencieux (cf. [ZChatLiveLabels]).
+  ///
+  /// [routeResolver] est **optionnel** : présent, chaque requête — envoi,
+  /// édition rejouée, régénération — lui est soumise après les réglages et
+  /// avant toute trace dans le fil ; absent, la requête envoyée est celle du
+  /// builder, inchangée (cf. [ZChatRouteResolver]).
   ZChatController({
     required ZChatStreamPort streamPort,
     required ZChatActionExecutor actionExecutor,
@@ -240,6 +257,7 @@ class ZChatController extends ChangeNotifier {
     required ZChatRequestIdFactory newRequestId,
     required ZChatRequestBuilder buildRequest,
     ZChatConversationLifecyclePort? lifecycle,
+    ZChatRouteResolver? routeResolver,
     ZChatLiveLabels liveLabels = ZChatLiveLabels.none,
     this.maxResumeAttempts = 2,
     String conversationId = '',
@@ -260,6 +278,8 @@ class ZChatController extends ChangeNotifier {
        _buildRequest = buildRequest,
        // ignore: prefer_initializing_formals
        _lifecycle = lifecycle,
+       // ignore: prefer_initializing_formals
+       _routeResolver = routeResolver,
        // ignore: prefer_initializing_formals
        _labels = liveLabels,
        // ignore: prefer_initializing_formals
@@ -283,6 +303,10 @@ class ZChatController extends ChangeNotifier {
   /// Port de cycle de vie — **optionnel, à défaut inerte** : `null` laisse
   /// l'édition rejouée et la régénération à l'exécuteur de l'hôte.
   final ZChatConversationLifecyclePort? _lifecycle;
+
+  /// Résolveur de route — **optionnel, à défaut inerte** : `null` envoie la
+  /// requête du builder telle quelle.
+  final ZChatRouteResolver? _routeResolver;
 
   /// Libellés d'annonce fournis par l'hôte (aucune phrase n'est écrite ici).
   final ZChatLiveLabels _labels;
@@ -727,9 +751,38 @@ class ZChatController extends ChangeNotifier {
     // UN SEUL site d'application des réglages, hors d'atteinte de l'hôte.
     // `withSettings(null)` rend `identical(built)` : sans argument, la
     // requête envoyée est l'objet même du builder — aucun défaut n'a bougé.
-    final ZChatGenerationRequest sent = corpusScope == null
+    final ZChatGenerationRequest settled = corpusScope == null
         ? built.withSettings(settings)
         : built.withSettings(settings).withCorpusScope(corpusScope);
+    // Le ROUTAGE vient ici : après les réglages, AVANT l'état, le message
+    // optimiste et tout appel de port. Un refus ne laisse aucune trace dans
+    // le fil — et les messages retirés localement pour ce tour (édition,
+    // régénération) sont restitués. Sans résolveur, `sent` EST `settled`.
+    final ZChatGenerationRequest sent;
+    final ZChatRouteResolver? route = _routeResolver;
+    if (route == null) {
+      sent = settled;
+    } else {
+      ZResult<ZChatGenerationRequest> routed;
+      try {
+        routed = route(settled);
+      } catch (e) {
+        routed = Left<ZFailure, ZChatGenerationRequest>(
+          ZDomainFailure('chat route resolver threw ${e.runtimeType}'),
+        );
+      }
+      final ZFailure? refused = routed.fold(
+        (ZFailure f) => f,
+        (ZChatGenerationRequest _) => null,
+      );
+      if (refused != null) {
+        _restoreRollback(
+          _ZRequestState(settled, rollback: rollback, rollbackAt: rollbackAt),
+        );
+        return _refuse(requestId, refused);
+      }
+      sent = routed.getOrElse(() => settled);
+    }
     _states[requestId] = _ZRequestState(
       sent,
       emitsUserMessage: emitsUserMessage,
@@ -1060,8 +1113,13 @@ class ZChatController extends ChangeNotifier {
   static String _announce(List<ZContentBlock> blocks) =>
       zChatAccessibleTextOf(blocks);
 
-  Future<ZResult<ZChatRequestToken>> _abort(String requestId, String message) {
-    final ZFailure failure = ZDomainFailure(message);
+  Future<ZResult<ZChatRequestToken>> _abort(String requestId, String message) =>
+      _refuse(requestId, ZDomainFailure(message));
+
+  /// Refuse un tour **avant** son ouverture : l'échec typé est publié, le
+  /// jeton retiré, et rien d'autre n'a bougé — ni message optimiste, ni
+  /// saisie, ni annonce.
+  Future<ZResult<ZChatRequestToken>> _refuse(String requestId, ZFailure failure) {
     _lastFailure.value = failure;
     _tokens.remove(requestId);
     _states.remove(requestId);
