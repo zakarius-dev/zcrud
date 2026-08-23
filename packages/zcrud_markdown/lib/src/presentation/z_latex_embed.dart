@@ -198,6 +198,11 @@ class ZLatexEmbedBuilder extends EmbedBuilder {
 /// `expanded == true` : occupe sa ligne (bloc). Le rendu est enveloppé d'un
 /// [Center] directionnel (parité legacy `_CenteredMathWidget`). Sans état ⇒
 /// instance `const` STABLE (AD-2).
+///
+/// Une formule plus large que la place disponible **défile horizontalement**
+/// au lieu de déborder : le début reste visible, la fin est atteignable par
+/// défilement (glisser, molette, clavier — aucun geste exclusif, AD-13). Une
+/// formule qui tient garde son rendu centré inchangé.
 class ZLatexBlockEmbedBuilder extends EmbedBuilder {
   /// Builder `const` (sans état).
   const ZLatexBlockEmbedBuilder();
@@ -215,7 +220,18 @@ class ZLatexBlockEmbedBuilder extends EmbedBuilder {
       alignment: AlignmentDirectional.center,
       child: Padding(
         padding: const EdgeInsetsDirectional.symmetric(vertical: 6),
-        child: _buildMath(context, embedContext, MathStyle.display),
+        // Le geste de l'aperçu du dialogue, appliqué au lecteur : `Math.tex`
+        // ne se replie pas et débordait (`RIGHT OVERFLOWED`), la fin de la
+        // formule perdue. Le viewport borne la largeur et rend la fin
+        // atteignable. Contraintes NON bornées (cellule de tableau en
+        // `IntrinsicColumnWidth`) : le viewport se dimensionne alors à la
+        // formule — aucune exception de layout, la colonne s'élargit.
+        // La sémantique de la formule est celle du child (le viewport
+        // n'introduit aucun nœud qui la masque).
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: _buildMath(context, embedContext, MathStyle.display),
+        ),
       ),
     );
   }

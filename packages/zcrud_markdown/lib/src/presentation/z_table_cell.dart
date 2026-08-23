@@ -20,6 +20,10 @@ import 'z_table_cell_scope.dart';
 
 /// Cellule de tableau, rendue en texte brut ou en Markdown selon le
 /// [ZTableCellScope] hérité.
+///
+/// Une cellule rend son contenu **nu** — sans cadre ni padding propre, quel
+/// que soit le chemin (texte brut ou riche) : c'est le tableau qui habille ses
+/// cellules, et lui seul.
 class ZTableCell extends StatefulWidget {
   /// Construit la cellule pour [text], stylée par [style].
   const ZTableCell({
@@ -120,6 +124,19 @@ class _ZTableCellState extends State<ZTableCell> {
     if (!_rich || ops == null || ops.isEmpty) {
       return Text(widget.text, style: widget.style, textAlign: TextAlign.start);
     }
-    return ZMarkdownReader(value: ops, placeholder: '');
+    // La cellule rend son contenu NU : dans un tableau, l'appelant qui
+    // habille est le tableau lui-même (grille + padding de cellule). Le chrome
+    // `bordered` du lecteur y superposerait un second cadre et un padding
+    // propre — deux bordures concentriques, lignes désalignées, et une
+    // asymétrie avec les cellules en texte pur (rendues `Text` nu ci-dessus).
+    // Aucun canal d'échappement : une cellule encadrée n'a pas de cas d'usage,
+    // et en offrir un sur `ZTableCellScope` ajouterait une surface publique
+    // pour un besoin jamais constaté — si un besoin réel émerge, le canal
+    // vivra là-bas, avec `none` pour défaut.
+    return ZMarkdownReader(
+      value: ops,
+      placeholder: '',
+      chrome: ZMarkdownReaderChrome.none,
+    );
   }
 }

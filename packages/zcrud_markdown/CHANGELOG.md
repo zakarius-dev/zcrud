@@ -3,6 +3,12 @@
 Toutes les modifications notables de `zcrud_markdown` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.12.0 — 2026-08-24
+
+### Corrigé
+- **Cellule de tableau nue** : une cellule riche (gras, lien, formule) est rendue sans cadre ni padding propres — c'est le tableau qui habille ses cellules, et lui seul. Les retraits d'une cellule riche et d'une cellule en texte pur sont identiques.
+- **Formule LaTeX bloc** : un bloc plus large que la place disponible **défile horizontalement** au lieu de déborder ; une formule étroite garde son rendu centré. Un bloc dans une cellule de tableau se dimensionne sans exception.
+
 ## [0.86.0] — Chantier documentation
 
 ### Ajouté
