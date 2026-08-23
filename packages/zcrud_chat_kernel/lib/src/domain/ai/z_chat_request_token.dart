@@ -99,6 +99,13 @@ class ZChatRequestToken {
 
   /// Annule **cette** requête, et elle seule. Idempotent (invariant AD-10 :
   /// un second appel ne lève pas).
+  ///
+  /// L'annulation est **au mieux** du côté du serveur : le port est notifié
+  /// par [whenCancelled] et doit fermer son transport, mais rien ne garantit
+  /// que la génération distante s'arrête ni qu'elle cesse d'être facturée —
+  /// cela dépend du backend. Ce qui est garanti vit côté client : le partiel
+  /// reçu est conservé et marqué interrompu, et aucun événement ultérieur
+  /// n'est appliqué.
   void cancel() {
     if (_cancelled.isCompleted) return;
     _cancelled.complete();
