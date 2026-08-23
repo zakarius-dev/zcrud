@@ -602,3 +602,13 @@ d'un paquet pendant qu'un agent y écrit (`.dart_tool/package_config` est partag
 agents en vol, écritures des fichiers racine (`pubspec.yaml`, `melos.yaml`, sprint-status) sérialisées
 par l'orchestrateur. La limite haute ne dispense pas de vérifier le graphe de dépendances entre lots :
 un lot qui consomme le contrat d'un autre attend sa fin.
+
+## 🔴 Un plan ancien se MESURE avant de s'exécuter (mesuré le 2026-08-23)
+
+Le plan « parité `ZCrudScreen` » (douze lots) a été resoumis et approuvé alors que **tout était livré
+depuis dix jours** (`7f3026e06`, v0.93.0) — sa section « déjà sur disque, non commité » décrivait un
+état antérieur à la release. Un agent a été lancé sur un lot dont le défaut n'existait plus ; un
+explorateur a ensuite établi, `fichier:ligne` à l'appui, que les onze autres l'étaient aussi.
+**Règle** : avant de lancer un lot d'un plan écrit dans une session antérieure, prouver sur disque
+que son défaut existe encore (`grep` du symbole attendu, `git log -S`) ; un plan qui survit à une
+release doit être **daté et remesuré**, jamais relancé sur la foi de son texte.
