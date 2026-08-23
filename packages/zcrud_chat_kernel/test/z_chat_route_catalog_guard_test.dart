@@ -183,6 +183,38 @@ void main() {
       );
     });
 
+    test('`taskAliases` est une table d\'HÔTE : aucune clé de tâche de '
+        'session ni entrée d\'alias en dur dans `catalog/`', () {
+      final RegExp taskKeys = RegExp(
+        r'\b(summarize|summary|elaborate|elaboration|story|history|classroom'
+        r'|chatStyle)\b',
+      );
+      final List<String> offenders = <String>[];
+      bool declared = false;
+      for (final File f in _catalogFiles()) {
+        int no = 0;
+        for (final String line in strippedLines(f)) {
+          no++;
+          if (line.contains('this.taskAliases = const <String, String>{}')) {
+            declared = true;
+          }
+          if (taskKeys.hasMatch(line)) {
+            offenders.add('${f.path}:$no: ${line.trim()}');
+          }
+        }
+      }
+      expect(declared, isTrue, reason: 'la table par défaut doit être VIDE');
+      expect(
+        offenders,
+        isEmpty,
+        reason:
+            '🔴 FR-26 : alias de tâche d\'hôte dans le socle :\n'
+            '${offenders.join('\n')}',
+      );
+      expect(taskKeys.hasMatch("'summary': 'summarize',"), isTrue);
+      expect(taskKeys.hasMatch('final String task ='), isFalse);
+    });
+
     test('le repli de la cascade est NULLABLE et sans défaut', () {
       final String src = strippedLines(
         File('${_catalogDir().path}/z_chat_cascade_route_catalog.dart'),

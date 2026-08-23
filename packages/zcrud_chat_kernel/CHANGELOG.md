@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_chat_kernel` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.10.0 — 2026-08-23
+
+### Ajouté
+- `ZChatRouteCatalogShape.taskAliases` (constructeur général et `suffixPairs`) : les noms de tâche lus dans un document — préfixe d'une paire à suffixe, ou clé d'objet d'une route nommée — sont traduits **après** extraction, par une table fournie par l'hôte. Sans alias, le nom lu est la clé. Deux noms traduits vers la même clé : la dernière déclaration gagne ; un alias vers une clé vide écarte la route sans exception.
+
 ## 3.9.0 — 2026-08-23
 
 ### Ajouté

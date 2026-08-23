@@ -21,6 +21,11 @@
 ///   chacune une route ; l'hôte nomme ses suffixes et ses clés racine — le
 ///   socle n'en code aucune.
 ///
+/// Dans les deux cas, le **nom de tâche** lu dans le document (la clé de
+/// l'objet de routes, ou le préfixe extrait de la paire) est traduit par
+/// [ZChatRouteCatalogShape.taskAliases] avant de devenir `task_key` ; sans
+/// alias, le nom lu est la clé.
+///
 /// Dans les deux cas, une clé racine traduite par
 /// [ZChatRouteCatalogShape.rootAliases] rejoint le schéma du routeur ; une clé
 /// restée inconnue rejoint `extra` (hors clés de synchronisation réservées,
@@ -48,6 +53,7 @@ class ZChatRouteCatalogShape {
     this.rootAliases = const <String, String>{},
     this.routeMapKeys = const <String>[],
     this.routeAliases = const <String, String>{},
+    this.taskAliases = const <String, String>{},
     this.modelSuffix,
     this.fallbackSuffix,
     this.rootModelKey,
@@ -97,6 +103,10 @@ class ZChatRouteCatalogShape {
   /// fournisseur **appliqué à toute référence de modèle sans fournisseur**
   /// (racine, routes, replis). Les quatre sont optionnelles. Les autres clés
   /// racine passent par [rootAliases] puis rejoignent `extra`.
+  ///
+  /// [taskAliases] traduit le **préfixe** extrait d'une paire vers la clé de
+  /// tâche que la session résout (`fooModel` → `foo` → la clé que l'hôte
+  /// déclare pour `foo`) ; sans alias, le préfixe est la clé.
   factory ZChatRouteCatalogShape.suffixPairs({
     required String modelSuffix,
     required String fallbackSuffix,
@@ -106,9 +116,11 @@ class ZChatRouteCatalogShape {
     String? providerKey,
     List<String> envelopeKeys = const <String>['routers'],
     Map<String, String> rootAliases = const <String, String>{},
+    Map<String, String> taskAliases = const <String, String>{},
   }) => ZChatRouteCatalogShape(
     envelopeKeys: envelopeKeys,
     rootAliases: rootAliases,
+    taskAliases: taskAliases,
     modelSuffix: modelSuffix,
     fallbackSuffix: fallbackSuffix,
     rootModelKey: rootModel,
@@ -129,6 +141,19 @@ class ZChatRouteCatalogShape {
   /// Traduction des clés **d'une entrée de route** : clé reçue → clé
   /// canonique (`model_provider_id`, `model_id`, `fallbacks`, …).
   final Map<String, String> routeAliases;
+
+  /// Traduction des **noms de tâche** lus dans le document : nom lu → clé de
+  /// tâche canonique (`task_key`). S'applique **après** l'extraction du
+  /// préfixe d'une paire à suffixe et **après** la lecture de la clé d'un
+  /// objet de routes ([routeMapKeys]) ; un nom absent de la table est sa
+  /// propre clé. La table est une donnée de l'hôte : le socle n'en code
+  /// aucune entrée.
+  ///
+  /// Deux noms traduits vers la **même** clé fusionnent en une seule route,
+  /// clé par clé dans l'ordre du document : la dernière déclaration gagne.
+  /// Un alias vers une clé vide (ou blanche) fait **ignorer** la route, sans
+  /// erreur.
+  final Map<String, String> taskAliases;
 
   /// Suffixe des clés racine portant le modèle d'une tâche, ou `null`.
   final String? modelSuffix;
@@ -308,7 +333,11 @@ class ZChatRouteCatalogDecoder {
         for (final MapEntry<String, dynamic> t in byTask.entries) {
           final Map<String, dynamic>? body = zJsonMap(t.value);
           if (body == null) continue;
-          _mergeRoute(derived, t.key, _normalizeRouteEntry(body, provider));
+          _mergeRoute(
+            derived,
+            _taskKeyOf(shape, t.key),
+            _normalizeRouteEntry(body, provider),
+          );
         }
         continue;
       }
@@ -348,14 +377,20 @@ class ZChatRouteCatalogDecoder {
         final String fs = shape.fallbackSuffix!;
         final String ms = shape.modelSuffix!;
         if (key.endsWith(fs) && key.length > fs.length) {
-          final String task = key.substring(0, key.length - fs.length);
+          final String task = _taskKeyOf(
+            shape,
+            key.substring(0, key.length - fs.length),
+          );
           _mergeRoute(derived, task, <String, dynamic>{
             'fallbacks': _fallbackList(value, provider),
           });
           continue;
         }
         if (key.endsWith(ms) && key.length > ms.length) {
-          final String task = key.substring(0, key.length - ms.length);
+          final String task = _taskKeyOf(
+            shape,
+            key.substring(0, key.length - ms.length),
+          );
           if (ZChatModelRef.fromJson(value) != null) {
             _mergeRoute(derived, task, <String, dynamic>{'model': value});
           }
@@ -443,11 +478,21 @@ class ZChatRouteCatalogDecoder {
     return out;
   }
 
+  /// La clé de tâche d'un nom lu dans le document, traduit par
+  /// [ZChatRouteCatalogShape.taskAliases] — l'unique point de traduction,
+  /// pour l'objet de routes comme pour les paires à suffixe.
+  static String _taskKeyOf(ZChatRouteCatalogShape shape, String raw) =>
+      shape.taskAliases[raw] ?? raw;
+
   static void _mergeRoute(
     Map<String, Map<String, dynamic>> derived,
     String task,
     Map<String, dynamic> body,
   ) {
+    // Une clé vide — reçue telle quelle ou produite par un alias — n'a pas
+    // de route : elle est ignorée sans erreur (AD-10). Deux noms du document
+    // traduits vers la même clé fusionnent ici, clé par clé : la dernière
+    // déclaration gagne.
     final String key = task.trim();
     if (key.isEmpty) return;
     derived[key] = <String, dynamic>{...?derived[key], ...body};

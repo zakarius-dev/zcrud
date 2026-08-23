@@ -352,6 +352,161 @@ void main() {
       );
     });
 
+    group(
+      '`taskAliases` — le NOM de tâche lu est traduit après extraction',
+      () {
+        // Document à paires : le préfixe du document (`summary`) n'est pas la
+        // clé que la session résout (`summarize`) — l'hôte déclare la table.
+        const Map<String, dynamic> pairs = <String, dynamic>{
+          'id': 'rt',
+          'aiModel': 'root',
+          'summaryModel': 'sum-m',
+          'summaryFallbackModels': <String>['sum-f'],
+          'fooModel': 'foo-m',
+        };
+        ZChatRouteCatalogDecoder pairsDec(Map<String, String> aliases) =>
+            ZChatRouteCatalogDecoder(
+              shape: ZChatRouteCatalogShape.suffixPairs(
+                modelSuffix: 'Model',
+                fallbackSuffix: 'FallbackModels',
+                rootModel: 'aiModel',
+                providerKey: 'aiProvider',
+                taskAliases: aliases,
+              ),
+            );
+
+        test(
+          'paires : la route est RÉSOLUE sous la clé traduite, avec SON '
+          'modèle et SES replis — plus de repli silencieux sur la racine',
+          () {
+            final ZChatRouter r = pairsDec(const <String, String>{
+              'summary': 'summarize',
+            }).decodeList(<Object?>[pairs]).routers.single;
+            final ZChatRouteResolution res = ZChatRouteResolution.from(
+              r,
+              'summarize',
+            );
+            expect(res.declared, isTrue);
+            expect(res.model, const ZChatModelRef(modelId: 'sum-m'));
+            expect(res.fallbacks, <ZChatModelRef>[
+              const ZChatModelRef(modelId: 'sum-f'),
+            ]);
+            expect(
+              r.routeOf('summary'),
+              isNull,
+              reason: 'le préfixe brut disparaît',
+            );
+            expect(
+              r.routeOf('foo')!.model,
+              const ZChatModelRef(modelId: 'foo-m'),
+              reason: 'un préfixe hors table est sa propre clé',
+            );
+            expect(r.extra, isEmpty);
+          },
+        );
+
+        test(
+          'forme nommée (`lex`) : la clé de l\'objet de routes est traduite',
+          () {
+            const ZChatRouteCatalogDecoder dec = ZChatRouteCatalogDecoder(
+              shape: ZChatRouteCatalogShape(
+                routeMapKeys: <String>['agentModels'],
+                routeAliases: <String, String>{'model': 'model_id'},
+                taskAliases: <String, String>{'agent_a': 'alpha'},
+              ),
+            );
+            final ZChatRouter r = dec
+                .decodeList(<Object?>[
+                  <String, dynamic>{
+                    'id': 'rt',
+                    'agentModels': <String, dynamic>{
+                      'agent_a': <String, dynamic>{'model': 'm-a'},
+                      'agent_b': <String, dynamic>{'model': 'm-b'},
+                    },
+                  },
+                ])
+                .routers
+                .single;
+            expect(
+              ZChatRouteResolution.from(r, 'alpha').model,
+              const ZChatModelRef(modelId: 'm-a'),
+            );
+            expect(r.routeOf('agent_a'), isNull);
+            expect(
+              r.routeOf('agent_b')!.model,
+              const ZChatModelRef(modelId: 'm-b'),
+            );
+          },
+        );
+
+        test('ÉTALON : sans alias, le document se lit EXACTEMENT comme avant '
+            '(préfixe = clé, même map canonique)', () {
+          final Map<String, dynamic> before = pairsDec(
+            const <String, String>{},
+          ).normalize(pairs);
+          final Map<String, dynamic> expected = <String, dynamic>{
+            'id': 'rt',
+            'model_id': 'root',
+            'routes': <Object?>[
+              <String, dynamic>{
+                'model_id': 'sum-m',
+                'fallbacks': <Object?>['sum-f'],
+                'task_key': 'summary',
+              },
+              <String, dynamic>{'model_id': 'foo-m', 'task_key': 'foo'},
+            ],
+          };
+          expect(before, equals(expected));
+          expect(
+            ZChatRouteResolution.from(
+              pairsDec(
+                const <String, String>{},
+              ).decodeList(<Object?>[pairs]).routers.single,
+              'summarize',
+            ).declared,
+            isFalse,
+            reason: 'sans table, la session replie sur la racine — inchangé',
+          );
+        });
+
+        test('FUSION : deux noms traduits vers la même clé ⇒ une route, la '
+            'DERNIÈRE déclaration du document gagne clé par clé', () {
+          final ZChatRouter r = pairsDec(const <String, String>{
+            'summary': 'merged',
+            'foo': 'merged',
+          }).decodeList(<Object?>[pairs]).routers.single;
+          expect(r.routes, hasLength(1));
+          final ZChatRouteSpec merged = r.routeOf('merged')!;
+          expect(merged.model, const ZChatModelRef(modelId: 'foo-m'));
+          expect(merged.fallbacks, <ZChatModelRef>[
+            const ZChatModelRef(modelId: 'sum-f'),
+          ], reason: 'une clé non redéclarée survit à la fusion');
+        });
+
+        test('alias vers une clé VIDE ou blanche ⇒ route ignorée, aucune '
+            'exception, aucun rejet (AD-10)', () {
+          final ZChatRouteCatalogDecodeReport rep = pairsDec(
+            const <String, String>{'summary': '', 'foo': '  '},
+          ).decodeList(<Object?>[pairs]);
+          expect(rep.rejected, isEmpty);
+          final ZChatRouter r = rep.routers.single;
+          expect(r.routes, isEmpty);
+          expect(r.model, const ZChatModelRef(modelId: 'root'));
+          expect(r.extra, isEmpty, reason: 'les paires ignorées ne fuient pas');
+          // Au niveau du DÉCODEUR, pas seulement du routeur : la forme
+          // canonique émise ne porte aucune route à clé vide (le routeur en
+          // aval les sauterait aussi — la garde vise cette couche-ci).
+          expect(
+            pairsDec(const <String, String>{
+              'summary': '',
+              'foo': '  ',
+            }).normalize(pairs).containsKey('routes'),
+            isFalse,
+          );
+        });
+      },
+    );
+
     test('la normalisation est PURE : la map reçue n\'est pas mutée', () {
       final Map<String, dynamic> raw = <String, dynamic>{
         'id': 'a',
