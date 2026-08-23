@@ -556,6 +556,52 @@ void main() {
     });
   });
 
+  group('NB-8 — requête d\'artefact : `providerId` TYPÉ, même statut que '
+      '`modelId`', () {
+    ZChatArtifactGenerationRequest req({String? providerId = 'prov'}) =>
+        ZChatArtifactGenerationRequest(
+          messageId: 'm1',
+          artifactKey: 'mindmap',
+          notes: 'n',
+          modelId: 'model',
+          providerId: providerId,
+          extra: const <String, dynamic>{'k': 1},
+        );
+
+    test('transporté verbatim, nul par défaut, jamais dans `extra`', () {
+      expect(req().providerId, 'prov');
+      expect(req(providerId: null).providerId, isNull);
+      expect(
+        ZChatArtifactGenerationRequest(
+          messageId: 'm',
+          artifactKey: 'k',
+          notes: 'n',
+        ).providerId,
+        isNull,
+      );
+      expect(req().extra.containsKey('provider_id'), isFalse);
+    });
+
+    test('participe à `==`, `hashCode` et `toString`', () {
+      expect(req(), req());
+      expect(req().hashCode, req().hashCode);
+      expect(req(providerId: 'autre'), isNot(req()));
+      expect(req(providerId: null), isNot(req()));
+      expect(req().toString(), contains('providerId: prov'));
+      expect(req().toString(), contains('modelId: model'));
+    });
+
+    test('copyWith : omis conservé, `null` explicite retiré, seul lui bouge',
+        () {
+      expect(req().copyWith(subject: 'x').providerId, 'prov');
+      expect(req().copyWith(providerId: null).providerId, isNull);
+      expect(req().copyWith(providerId: 'p2').providerId, 'p2');
+      expect(req().copyWith(providerId: 'p2').copyWith(providerId: 'prov'),
+          req());
+      expect(req().copyWith(), req());
+    });
+  });
+
   group('NB-7 — défauts des seams triviaux', () {
     test('le builder copie le brouillon ENTIER — pièces jointes comprises', () {
       final ZChatDraftRequestBuilder build = ZChatDraftRequestBuilder(

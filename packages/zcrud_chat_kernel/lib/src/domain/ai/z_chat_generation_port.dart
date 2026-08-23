@@ -236,26 +236,13 @@ class ZChatGenerationRequest {
   /// rejoignent la requête effectivement envoyée au port.
   ZChatGenerationRequest withSettings(ZChatGenerationSettings? settings) {
     if (settings == null) return this;
-    return ZChatGenerationRequest(
-      style: style,
-      subject: subject,
-      notes: notes,
-      conversationId: conversationId,
-      sourceMessageId: sourceMessageId,
-      context: context,
-      attachmentIds: attachmentIds,
+    return copyWith(
       responseLength: settings.responseLength,
       lengthBias: settings.lengthBias,
       computeEffort: settings.computeEffort,
       revealThinkingSteps: settings.revealThinkingSteps,
       webSearch: settings.webSearch,
       capabilities: settings.capabilities,
-      corpusScope: corpusScope,
-      languageTag: languageTag,
-      instructions: instructions,
-      modelId: modelId,
-      providerId: providerId,
-      extra: extra,
     );
   }
 
@@ -265,27 +252,94 @@ class ZChatGenerationRequest {
   /// [withSettings] parce que ce sont deux axes distincts : régler la verbosité
   /// ne doit jamais, par effet de bord, élargir ou restreindre le corpus.
   ZChatGenerationRequest withCorpusScope(ZChatCorpusScope? scope) =>
-      ZChatGenerationRequest(
-        style: style,
-        subject: subject,
-        notes: notes,
-        conversationId: conversationId,
-        sourceMessageId: sourceMessageId,
-        context: context,
-        attachmentIds: attachmentIds,
-        responseLength: responseLength,
-        lengthBias: lengthBias,
-        computeEffort: computeEffort,
-        revealThinkingSteps: revealThinkingSteps,
-        webSearch: webSearch,
-        capabilities: capabilities,
-        corpusScope: scope,
-        languageTag: languageTag,
-        instructions: instructions,
-        modelId: modelId,
-        providerId: providerId,
-        extra: extra,
-      );
+      copyWith(corpusScope: scope);
+
+  /// Copie **à sentinelle** : un argument omis conserve la valeur courante,
+  /// `null` explicite remet un champ nullable à `null`
+  /// (`copyWith(modelId: null)` retire le modèle). C'est l'**unique** voie de
+  /// recopie de la requête : [withSettings], [withCorpusScope] et la
+  /// projection d'une résolution de route passent tous par elle.
+  ///
+  /// Les invariants du constructeur s'appliquent à la copie comme à
+  /// l'original : `context` réordonné, `capabilities` canonicalisées (la clé
+  /// réservée `web_search` est hissée dans [webSearch] si celui-ci est `null`),
+  /// `extra` expurgé des clés réservées. Une copie sans argument est **égale**
+  /// à l'original.
+  ZChatGenerationRequest copyWith({
+    Object? style = _unset,
+    Object? subject = _unset,
+    Object? notes = _unset,
+    Object? conversationId = _unset,
+    Object? sourceMessageId = _unset,
+    Object? context = _unset,
+    Object? attachmentIds = _unset,
+    Object? responseLength = _unset,
+    Object? lengthBias = _unset,
+    Object? computeEffort = _unset,
+    Object? revealThinkingSteps = _unset,
+    Object? webSearch = _unset,
+    Object? capabilities = _unset,
+    Object? corpusScope = _unset,
+    Object? languageTag = _unset,
+    Object? instructions = _unset,
+    Object? modelId = _unset,
+    Object? providerId = _unset,
+    Object? extra = _unset,
+  }) => ZChatGenerationRequest(
+    style: identical(style, _unset)
+        ? this.style
+        : style! as ZChatGenerationStyle,
+    subject: identical(subject, _unset) ? this.subject : subject! as String,
+    notes: identical(notes, _unset) ? this.notes : notes! as String,
+    conversationId: identical(conversationId, _unset)
+        ? this.conversationId
+        : conversationId as String?,
+    sourceMessageId: identical(sourceMessageId, _unset)
+        ? this.sourceMessageId
+        : sourceMessageId as String?,
+    context: identical(context, _unset)
+        ? this.context
+        : context! as List<ZChatContextFragment>,
+    attachmentIds: identical(attachmentIds, _unset)
+        ? this.attachmentIds
+        : attachmentIds! as List<String>,
+    responseLength: identical(responseLength, _unset)
+        ? this.responseLength
+        : responseLength as ZChatResponseLength?,
+    lengthBias: identical(lengthBias, _unset)
+        ? this.lengthBias
+        : lengthBias as ZChatLengthBias?,
+    computeEffort: identical(computeEffort, _unset)
+        ? this.computeEffort
+        : computeEffort as ZChatComputeEffort?,
+    revealThinkingSteps: identical(revealThinkingSteps, _unset)
+        ? this.revealThinkingSteps
+        : revealThinkingSteps as bool?,
+    webSearch: identical(webSearch, _unset)
+        ? this.webSearch
+        : webSearch as bool?,
+    capabilities: identical(capabilities, _unset)
+        ? this.capabilities
+        : capabilities! as Map<String, bool>,
+    corpusScope: identical(corpusScope, _unset)
+        ? this.corpusScope
+        : corpusScope as ZChatCorpusScope?,
+    languageTag: identical(languageTag, _unset)
+        ? this.languageTag
+        : languageTag as String?,
+    instructions: identical(instructions, _unset)
+        ? this.instructions
+        : instructions as String?,
+    modelId: identical(modelId, _unset) ? this.modelId : modelId as String?,
+    providerId: identical(providerId, _unset)
+        ? this.providerId
+        : providerId as String?,
+    extra: identical(extra, _unset)
+        ? this.extra
+        : extra! as Map<String, dynamic>,
+  );
+
+  static const Object _unset = Object();
 
   @override
   bool operator ==(Object other) =>

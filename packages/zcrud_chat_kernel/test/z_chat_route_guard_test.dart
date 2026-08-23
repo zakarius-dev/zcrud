@@ -345,10 +345,11 @@ void main() {
           ),
           isTrue,
         );
-        expect((cfg as ZSubListConfig).summaryFields, <String>[
-          'task_key',
-          'model_id',
-        ]);
+        expect(
+          (cfg as ZSubListConfig).summaryFields,
+          <String>['task_key', 'model_id', 'fallbacks'],
+          reason: 'le résumé d\'une route montre le COMPTE de ses replis',
+        );
       },
     );
 
@@ -356,6 +357,7 @@ void main() {
       for (final ZFieldSpec s in <ZFieldSpec>[
         ...$ZChatRouterFieldSpecs,
         ...$ZChatRouteSpecFieldSpecs,
+        ...$ZChatModelRefFieldSpecs,
       ]) {
         expect(s.label, isNull, reason: '`${s.name}` porte un libellé');
       }
@@ -366,7 +368,135 @@ void main() {
         isTrue,
       );
     });
+
+    test('référence de modèle : `\$ZChatModelRefFieldSpecs` ≡ clés de '
+        '`toJson()` ; `model_id` requis, `provider_id` optionnel', () {
+      final Set<String> keys = const ZChatModelRef(
+        providerId: 'p',
+        modelId: 'm',
+      ).toJson().keys.toSet();
+      final Set<String> names = <String>{
+        for (final ZFieldSpec s in $ZChatModelRefFieldSpecs) s.name,
+      };
+      expect(names, keys, reason: 'dérive schéma ↔ `toJson` du repli');
+      expect(
+        $ZChatModelRefFieldSpecs
+            .singleWhere((ZFieldSpec s) => s.name == 'model_id')
+            .isRequired,
+        isTrue,
+      );
+      expect(
+        $ZChatModelRefFieldSpecs
+            .singleWhere((ZFieldSpec s) => s.name == 'provider_id')
+            .isRequired,
+        isFalse,
+      );
+      for (final ZFieldSpec s in $ZChatModelRefFieldSpecs) {
+        expect(s.type, EditionFieldType.text, reason: s.name);
+      }
+    });
   });
+
+  group(
+    'G-R11 — FORME DES REPLIS : sous-liste emboîtée, jamais des jetons',
+    () {
+      ZFieldSpec fallbacksOf(List<ZFieldSpec> specs) =>
+          specs.singleWhere((ZFieldSpec s) => s.name == 'fallbacks');
+
+      test(
+        '`fallbacks` (racine ET route) est un `subItems` dont les items sont '
+        'EXACTEMENT `\$ZChatModelRefFieldSpecs`',
+        () {
+          for (final (String where, List<ZFieldSpec> specs)
+              in <(String, List<ZFieldSpec>)>[
+                ('routeur', $ZChatRouterFieldSpecs),
+                ('route', $ZChatRouteSpecFieldSpecs),
+              ]) {
+            final ZFieldSpec f = fallbacksOf(specs);
+            expect(
+              f.type,
+              EditionFieldType.subItems,
+              reason: '$where : les replis ne s\'éditent plus en `tags`',
+            );
+            final ZFieldConfig? cfg = f.config;
+            expect(cfg, isA<ZSubListConfig>(), reason: where);
+            expect(
+              identical(
+                (cfg! as ZSubListConfig).itemFields,
+                $ZChatModelRefFieldSpecs,
+              ),
+              isTrue,
+              reason: '$where : sous-schéma du repli divergent',
+            );
+            expect((cfg as ZSubListConfig).summaryFields, <String>[
+              'provider_id',
+              'model_id',
+            ], reason: where);
+          }
+        },
+      );
+
+      test('la route est bien emboîtée : `routes` → item → `fallbacks` → item '
+          '(deux niveaux de `ZSubListConfig`)', () {
+        final ZSubListConfig routes =
+            $ZChatRouterFieldSpecs
+                    .singleWhere((ZFieldSpec s) => s.name == 'routes')
+                    .config!
+                as ZSubListConfig;
+        final ZSubListConfig nested =
+            fallbacksOf(routes.itemFields).config! as ZSubListConfig;
+        expect(identical(nested.itemFields, $ZChatModelRefFieldSpecs), isTrue);
+      });
+
+      test('SOURCE : `toJson`/`toMap` n\'appellent PAS `toCompactJson` pour '
+          'les replis (le jeton n\'est plus une forme persistée)', () {
+        for (final String name in <String>[
+          'z_chat_route_spec.dart',
+          'z_chat_router.dart',
+        ]) {
+          final String src = strippedLines(_routeFile(name)).join('\n');
+          expect(
+            src.contains('toCompactJson'),
+            isFalse,
+            reason: '$name émet encore la forme compacte',
+          );
+          expect(
+            RegExp(
+              r"out\['fallbacks'\]\s*=\s*<Map<String, dynamic>>\[",
+            ).hasMatch(src),
+            isTrue,
+            reason: '$name : `fallbacks` doit être émis en liste de maps',
+          );
+        }
+      });
+
+      test('🔬 CONTRE-PREUVE — le routeur COMPLET émet ses replis en maps, et '
+          'un jeton à la même place est relu à l\'identique', () {
+        final ZChatRouter full = _fullRouter();
+        final Map<String, dynamic> out = full.toMap();
+        expect(out['fallbacks'], <Object?>[
+          <String, dynamic>{'model_id': 'f'},
+        ]);
+        final Map<String, dynamic> route =
+            (out['routes'] as List<Object?>).single as Map<String, dynamic>;
+        expect(route['fallbacks'], <Object?>[
+          <String, dynamic>{'model_id': 'f'},
+        ]);
+        // Une liste de jetons `['f']` à la place de la liste de maps relit
+        // les MÊMES replis, et les réécrit en maps.
+        final ZChatRouter viaToken = ZChatRouter.fromMap(<String, dynamic>{
+          ...out,
+          'fallbacks': <Object?>['f'],
+        });
+        expect(
+          viaToken.fallbacks,
+          full.fallbacks,
+          reason: 'lecture tolérante des jetons conservée',
+        );
+        expect(viaToken.toMap()['fallbacks'], out['fallbacks']);
+      });
+    },
+  );
 
   group('G-R9 — méta-garde : toute garde DISQUE porte `@TestOn(\'vm\')`', () {
     test('chaque `*_test.dart` du kernel qui importe `dart:io` est annoté', () {
@@ -394,6 +524,92 @@ void main() {
             'gate web : une garde disque sans `@TestOn(\'vm\')` casse la '
             'compilation JS de TOUTE la suite :\n${offenders.join('\n')}',
       );
+    });
+  });
+
+  group('G-R10 — UNE SEULE voie de recopie de la requête : `copyWith`', () {
+    final File port = File(
+      '${repoRoot().path}/packages/zcrud_chat_kernel/lib/src/domain/ai/'
+      'z_chat_generation_port.dart',
+    );
+
+    test('`copyWith` couvre CHAQUE paramètre du constructeur (19), et '
+        'chacun participe à `==`', () {
+      final String src = strippedLines(port).join('\n');
+      final List<String> ctor = namedParameterNames(
+        sourceSegment(src, 'ZChatGenerationRequest({', '})'),
+      );
+      final List<String> copy = namedParameterNames(
+        sourceSegment(src, 'ZChatGenerationRequest copyWith({', '})'),
+      );
+      expect(ctor.length, 19, reason: 'garde VACUELLE : $ctor');
+      expect(copy, ctor, reason: 'copyWith ≠ constructeur (ordre inclus)');
+      final String body = sourceSegment(
+        src,
+        'ZChatGenerationRequest copyWith({',
+        'static const Object _unset',
+      );
+      final String equality = sourceSegment(
+        src,
+        'other is ZChatGenerationRequest &&',
+        'int get hashCode',
+      );
+      for (final String name in ctor) {
+        expect(
+          body,
+          contains('identical($name, _unset)'),
+          reason: '`$name` déclaré mais jamais recopié par copyWith',
+        );
+        expect(
+          equality,
+          contains('other.$name'),
+          reason: '`$name` absent de `==`',
+        );
+      }
+    });
+
+    test('`withSettings`, `withCorpusScope` et `toRequest` n\'appellent PAS '
+        'le constructeur — seul `copyWith` le fait', () {
+      // Un APPEL du constructeur : ni sa déclaration (`({`), ni le nom cité
+      // dans un littéral de chaîne (`toString`).
+      final RegExp call = RegExp(
+        r'''(?<![\w'"])ZChatGenerationRequest\((?!\{)''',
+      );
+      final String portSrc = strippedLines(port).join('\n');
+      final Iterable<RegExpMatch> inPort = call.allMatches(portSrc);
+      expect(
+        inPort.length,
+        1,
+        reason:
+            'le constructeur de la requête a ${inPort.length} site(s) '
+            'd\'appel dans son propre fichier ; un seul est permis : copyWith',
+      );
+      final int copyWithAt = portSrc.indexOf(
+        'ZChatGenerationRequest copyWith({',
+      );
+      expect(
+        inPort.single.start,
+        greaterThan(copyWithAt),
+        reason: 'l\'unique appel du constructeur n\'est pas dans copyWith',
+      );
+      for (final String member in <String>['withSettings', 'withCorpusScope']) {
+        expect(
+          portSrc.substring(portSrc.indexOf('ZChatGenerationRequest $member(')),
+          contains('copyWith('),
+          reason: '`$member` ne passe plus par copyWith',
+        );
+      }
+      final String resolution = strippedLines(
+        _routeFile('z_chat_route_resolution.dart'),
+      ).join('\n');
+      expect(
+        call.hasMatch(resolution),
+        isFalse,
+        reason:
+            '`toRequest` recopie la requête champ par champ au lieu de '
+            'passer par copyWith : un champ ajouté demain y serait PERDU',
+      );
+      expect(resolution, contains('.copyWith('), reason: 'garde VACUELLE');
     });
   });
 }

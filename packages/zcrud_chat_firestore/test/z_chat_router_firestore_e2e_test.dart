@@ -63,6 +63,19 @@ Map<String, dynamic> _legacyToCanonical(Map<String, dynamic> raw) {
   return out;
 }
 
+// La forme legacy porte ses replis en JETONS `provider:model` ; la forme
+// canonique est une liste de maps. La retraduction est le travail du codec
+// hôte, jamais du socle — ce helper est le gabarit de ce que l'hôte écrit.
+List<String> _legacyTokensOf(Object? v) => <String>[
+  for (final Object? e in (v is List ? v : const <Object?>[]))
+    if (e is String)
+      e
+    else if (e is Map)
+      e['provider_id'] == null
+          ? '${e['model_id']}'
+          : '${e['provider_id']}:${e['model_id']}',
+];
+
 /// Forme canonique → camelCase d'hôte (inverse exact sur le sous-ensemble
 /// que le test exerce).
 Map<String, dynamic> _canonicalToLegacy(Map<String, dynamic> canonical) {
@@ -76,7 +89,7 @@ Map<String, dynamic> _canonicalToLegacy(Map<String, dynamic> canonical) {
       case 'model_id':
         out[_kRootModelKey] = v;
       case 'fallbacks':
-        out['aiFallbackModels'] = v;
+        out['aiFallbackModels'] = _legacyTokensOf(v);
       case 'tier':
         out['workflowEffort'] = v;
       case 'routes':
@@ -85,7 +98,7 @@ Map<String, dynamic> _canonicalToLegacy(Map<String, dynamic> canonical) {
           final String task = m['task_key'] as String;
           if (m['model_id'] != null) out['${task}Model'] = m['model_id'];
           if (m['fallbacks'] != null) {
-            out['${task}FallbackModels'] = m['fallbacks'];
+            out['${task}FallbackModels'] = _legacyTokensOf(m['fallbacks']);
           }
           final Object? params = m['params'];
           if (task == 'flashcards' && params is Map) {

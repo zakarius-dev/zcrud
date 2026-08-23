@@ -99,14 +99,15 @@ class ZChatRouteSpec {
 
   /// Forme persistée (clés snake_case) : les valeurs vides sont omises, le
   /// modèle est écrit à plat (`model_provider_id`, `model_id`), les replis en
-  /// forme compacte.
+  /// **liste de maps** `{provider_id?, model_id}` ([ZChatModelRef.toJson]) —
+  /// la forme que produit le sous-formulaire `fallbacks`.
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> out = <String, dynamic>{'task_key': taskKey};
     if (routeName != null) out['route_name'] = routeName;
     ZChatModelRef.writeEmbedded(out, model);
     if (fallbacks.isNotEmpty) {
-      out['fallbacks'] = <Object>[
-        for (final ZChatModelRef f in fallbacks) f.toCompactJson(),
+      out['fallbacks'] = <Map<String, dynamic>>[
+        for (final ZChatModelRef f in fallbacks) f.toJson(),
       ];
     }
     if (computeEffort != null) out['compute_effort'] = computeEffort!.toJson();
@@ -150,9 +151,10 @@ class ZChatRouteSpec {
 /// Sous-schéma d'édition d'une route — items de la sous-liste `routes` d'un
 /// routeur. Aucun libellé : les textes viennent de l'hôte.
 ///
-/// Les replis s'éditent comme une liste de jetons `fournisseur:modèle`
-/// (lecture tolérante par [ZChatModelRef.fromJson]). Les `params` ne sont
-/// pas un champ : ils sont conservés tels quels par le sous-formulaire.
+/// Les replis s'éditent en sous-liste (`subItems`) emboîtée dans l'item de
+/// route, chaque repli étant décrit par [$ZChatModelRefFieldSpecs] ; le résumé
+/// d'un repli montre son fournisseur et son modèle. Les `params` ne sont pas
+/// un champ : ils sont conservés tels quels par le sous-formulaire.
 const List<ZFieldSpec> $ZChatRouteSpecFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(
     name: 'task_key',
@@ -162,7 +164,15 @@ const List<ZFieldSpec> $ZChatRouteSpecFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'route_name', type: EditionFieldType.text),
   ZFieldSpec(name: 'model_provider_id', type: EditionFieldType.text),
   ZFieldSpec(name: 'model_id', type: EditionFieldType.text),
-  ZFieldSpec(name: 'fallbacks', type: EditionFieldType.tags, multiple: true),
+  ZFieldSpec(
+    name: 'fallbacks',
+    type: EditionFieldType.subItems,
+    multiple: true,
+    config: ZSubListConfig(
+      itemFields: $ZChatModelRefFieldSpecs,
+      summaryFields: <String>['provider_id', 'model_id'],
+    ),
+  ),
   ZFieldSpec(
     name: 'compute_effort',
     type: EditionFieldType.integer,

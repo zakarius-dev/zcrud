@@ -3,6 +3,14 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.9.0 — 2026-08-23
+
+### Changé
+- La résolution et le port routé d'artefact transportent le fournisseur par `ZChatArtifactGenerationRequest.providerId` ; `extra['provider_id']` n'est plus ni écrit ni lu.
+
+### Retiré
+- `kZChatArtifactProviderIdKey` (un seul canal par donnée). Rupture compilée pour un hôte qui l'importait — lire `request.providerId`.
+
 ## 3.8.0 — 2026-08-23
 
 ### Ajouté

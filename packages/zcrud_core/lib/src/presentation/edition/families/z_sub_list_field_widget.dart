@@ -146,6 +146,7 @@ import '../../l10n/z_localizations.dart';
 import '../../theme/z_theme.dart';
 import '../../z_form_controller.dart';
 import '../../zcrud_scope.dart';
+import '../edition_field_family.dart';
 import '../z_field_widget.dart';
 import '../z_read_mode_scope.dart';
 import '../z_read_only_value.dart';
@@ -968,6 +969,13 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         display == null ? item.controller.valueOf(name) : display[name];
     if (zIsEmptyValue(raw)) return '';
     final spec = _specOf(name);
+    // Une sous-liste imbriquée (niveau 2) se résume par son COMPTE d'items :
+    // un `List<Map>` sérialisé en texte n'apprendrait rien au lecteur. Une
+    // valeur qui n'est pas une liste est ce que le formulaire d'item relira
+    // comme une liste VIDE : la cellule est vide aussi (invariant AD-10).
+    if (spec != null && spec.type == EditionFieldType.subItems) {
+      return raw is List ? '${raw.length}' : '';
+    }
     if (spec == null || !_projectedTypes.contains(spec.type)) {
       return _stringOf(raw);
     }
@@ -1711,6 +1719,12 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     // formulaire naîtra hors de cet arbre et ne l'hériterait pas.
     final formeHeritee = ZReadModeScope.maybeOf(context)?.layout;
     final presentation = _itemFormPresentation;
+    // Même relevé pour le `ZcrudScope` : un scope posé SOUS le `Navigator`
+    // (sous `home`, le cas courant) n'est pas visible d'une route. Sans ce
+    // report, le formulaire d'item perdrait l'ACL, les libellés, le thème et
+    // les registres — et une sous-liste imbriquée dans l'item (niveau 2)
+    // retomberait sur le refus par défaut : aucune action offerte.
+    final scope = ZcrudScope.maybeOf(context);
 
     // La route naît dans une AUTRE branche de l'arbre : le mode de présentation
     // de la surface ne l'atteint pas par héritage. Il est donc REPOSÉ ici, avec
@@ -1718,18 +1732,24 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     // ⇒ champs de saisie, même à l'intérieur d'un formulaire ouvert en lecture
     // — ET avec la forme de la surface, faute de quoi les fiches retomberaient
     // sur la forme par défaut.
-    Widget body(BuildContext routeContext) => ZReadModeScope(
-          readMode: readOnly,
-          layout: formeHeritee,
-          child: _ZSubItemForm(
-            title: _dialogTitle(routeContext, initial),
-            itemFields: _itemFields,
-            initial: initial,
-            readOnly: readOnly,
-            presentation: presentation,
-            itemFieldBuilder: widget.itemFieldBuilder,
-          ),
-        );
+    Widget body(BuildContext routeContext) {
+      final form = ZReadModeScope(
+        readMode: readOnly,
+        layout: formeHeritee,
+        child: _ZSubItemForm(
+          title: _dialogTitle(context, initial),
+          itemFields: _itemFields,
+          initial: initial,
+          readOnly: readOnly,
+          presentation: presentation,
+          itemFieldBuilder: widget.itemFieldBuilder,
+        ),
+      );
+      // Un scope déjà visible de la route (posé au-dessus du `Navigator`) est
+      // simplement re-posé à l'identique : `copyWith` sans argument n'altère
+      // aucun seam.
+      return scope == null ? form : scope.copyWith(child: form);
+    }
 
     final navigator = Navigator.maybeOf(context);
     if (navigator == null) {
@@ -3086,6 +3106,26 @@ class _ZSubItemFormState extends State<_ZSubItemForm> {
 
   void _cancel() => Navigator.of(context).pop();
 
+  /// `true` si [fields] contient, à n'importe quelle profondeur des
+  /// `itemFields` d'une [ZSubListConfig], un champ `subItems` ou
+  /// `dynamicItem`. Sans limite de profondeur : un niveau 3 est traité comme
+  /// un niveau 2. Une config absente ou d'un autre type est une feuille
+  /// (invariant AD-10).
+  static bool _nestsStructuralFamily(List<ZFieldSpec> fields) {
+    for (final f in fields) {
+      final family = familyOf(f.type);
+      if (family == EditionFamily.subList ||
+          family == EditionFamily.dynamicItem) {
+        return true;
+      }
+      final cfg = f.config;
+      if (cfg is ZSubListConfig && _nestsStructuralFamily(cfg.itemFields)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /// **Corps commun** aux trois formes : un sous-champ par `itemField`, à place
   /// stable (`KeyedSubtree`). La clé de place reste `dialog/<name>` dans les
   /// trois formes — la changer aurait rebattu l'identité des sous-champs chez
@@ -3135,15 +3175,26 @@ class _ZSubItemFormState extends State<_ZSubItemForm> {
   /// voit un hôte qui ne déclare rien, et il ne doit rien voir bouger. Le titre
   /// d'un `AlertDialog` est **déjà** annoncé comme en-tête par Material.
   Widget _buildDialog(BuildContext context) {
+    final body = SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: _fields,
+      ),
+    );
     return AlertDialog(
       title: Text(widget.title),
-      content: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: _fields,
-        ),
-      ),
+      // `AlertDialog` dimensionne son contenu à sa largeur INTRINSÈQUE. Une
+      // sous-liste imbriquée (niveau 2) mesure la place offerte à sa table par
+      // un `LayoutBuilder`, qui n'a pas de largeur intrinsèque : sans largeur
+      // définie, le dialogue ne peut pas être mis en page (assertion du
+      // framework en debug). Une largeur tendue coupe court à la mesure
+      // intrinsèque — le dialogue prend alors toute la largeur qui lui est
+      // permise. Réservé aux formulaires qui emboîtent une famille
+      // structurelle : un formulaire plat garde sa largeur d'avant.
+      content: _nestsStructuralFamily(widget.itemFields)
+          ? SizedBox(width: double.maxFinite, child: body)
+          : body,
       actions: <Widget>[
         _cancelButton(context),
         if (!widget.readOnly) _saveButton(context),

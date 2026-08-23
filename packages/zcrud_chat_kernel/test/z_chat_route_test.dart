@@ -199,9 +199,167 @@ void main() {
       expect(persisted['routes'], isA<List<Object?>>());
       expect(persisted['model_provider_id'], 'p0');
       expect(persisted['model_id'], 'm0');
-      expect(persisted['fallbacks'], <Object>['p0:f0']);
+      expect(persisted['fallbacks'], <Object>[
+        <String, dynamic>{'provider_id': 'p0', 'model_id': 'f0'},
+      ]);
       expect(ZChatRouter.fromMap(persisted), x);
       expect(ZChatRouter.fromMap(persisted).hashCode, x.hashCode);
+    });
+  });
+
+  group('replis — FORME SUR LE FIL (liste de maps) et EMBOÎTEMENT', () {
+    // La map telle que `DynamicEdition` l'enregistre depuis le schéma
+    // `$ZChatRouterFieldSpecs` : `routes` en liste de maps, chacune portant
+    // `fallbacks` en liste de maps `{provider_id, model_id}` (sous-liste de
+    // niveau 2), et les replis racine en liste de maps.
+    Map<String, dynamic> edited() => <String, dynamic>{
+      'id': 'edited',
+      'is_active': true,
+      'model_provider_id': 'p0',
+      'model_id': 'm0',
+      'fallbacks': <Object?>[
+        <String, dynamic>{'provider_id': 'p0', 'model_id': 'f0'},
+        // Sans fournisseur, identifiant contenant `:` : non réversible en
+        // jeton — seule la forme map le transporte sans le couper.
+        <String, dynamic>{'model_id': 'x:y'},
+      ],
+      'routes': <Object?>[
+        <String, dynamic>{
+          'task_key': 'k',
+          'model_id': 'm1',
+          'fallbacks': <Object?>[
+            <String, dynamic>{'provider_id': 'q', 'model_id': 'n'},
+            <String, dynamic>{'provider_id': '', 'model_id': 'bare'},
+          ],
+        },
+        <String, dynamic>{'task_key': 'noFallbacks'},
+      ],
+    };
+
+    test('`toMap` n\'émet JAMAIS un jeton : chaque repli est une map '
+        '`{provider_id?, model_id}` — racine ET routes', () {
+      final Map<String, dynamic> out = ZChatRouter.fromMap(edited()).toMap();
+      final List<Object?> root = out['fallbacks'] as List<Object?>;
+      expect(root, <Object?>[
+        <String, dynamic>{'provider_id': 'p0', 'model_id': 'f0'},
+        <String, dynamic>{'model_id': 'x:y'},
+      ]);
+      final List<Object?> routes = out['routes'] as List<Object?>;
+      final Map<String, dynamic> k = routes.first as Map<String, dynamic>;
+      expect(k['fallbacks'], <Object?>[
+        <String, dynamic>{'provider_id': 'q', 'model_id': 'n'},
+        <String, dynamic>{'model_id': 'bare'},
+      ]);
+      expect(
+        (routes[1] as Map<String, dynamic>).containsKey('fallbacks'),
+        isFalse,
+        reason: 'liste vide omise',
+      );
+      // Contre-preuve : aucune chaîne nulle part dans les listes de replis.
+      for (final Object? f in <Object?>[...root, ...k['fallbacks'] as List]) {
+        expect(f, isA<Map<String, dynamic>>(), reason: 'jeton émis : $f');
+      }
+    });
+
+    test('round-trip ÉDITEUR : `fromMap(edited)` → `toMap` → `fromMap` ≡, '
+        'replis imbriqués inclus', () {
+      final ZChatRouter a = ZChatRouter.fromMap(edited());
+      final ZChatRouter b = ZChatRouter.fromMap(a.toMap());
+      expect(b, a);
+      expect(b.hashCode, a.hashCode);
+      expect(a.fallbacks, const <ZChatModelRef>[
+        ZChatModelRef(providerId: 'p0', modelId: 'f0'),
+        ZChatModelRef(modelId: 'x:y'),
+      ]);
+      expect(a.routeOf('k')!.fallbacks, const <ZChatModelRef>[
+        ZChatModelRef(providerId: 'q', modelId: 'n'),
+        ZChatModelRef(modelId: 'bare'),
+      ]);
+      expect(a.routeOf('noFallbacks')!.fallbacks, isEmpty);
+      // Et la forme émise est elle-même stable (idempotence).
+      expect(b.toMap(), a.toMap());
+    });
+
+    test('un repli CORROMPU dans la sous-liste d\'une route est sauté — '
+        'la route survit, les replis valides aussi', () {
+      final ZChatRouter r = ZChatRouter.fromMap(<String, dynamic>{
+        'routes': <Object?>[
+          <String, dynamic>{
+            'task_key': 'k',
+            'fallbacks': <Object?>[
+              <String, dynamic>{'provider_id': 'q', 'model_id': 'n'},
+              42,
+              null,
+              <String, dynamic>{'provider_id': 'orphan'},
+              <String, dynamic>{'model_id': '  '},
+              'legacy:token',
+              <String, dynamic>{'model_id': 'tail'},
+            ],
+          },
+          <String, dynamic>{'task_key': 'corrupt', 'fallbacks': 'oops:'},
+          <String, dynamic>{'task_key': 'notAList', 'fallbacks': 7},
+        ],
+      });
+      expect(r.routes.keys, <String>['k', 'corrupt', 'notAList']);
+      expect(r.routeOf('k')!.fallbacks, const <ZChatModelRef>[
+        ZChatModelRef(providerId: 'q', modelId: 'n'),
+        ZChatModelRef(providerId: 'legacy', modelId: 'token'),
+        ZChatModelRef(modelId: 'tail'),
+      ]);
+      expect(r.routeOf('corrupt')!.fallbacks, isEmpty);
+      expect(r.routeOf('notAList')!.fallbacks, isEmpty);
+    });
+
+    test('`modelCandidates` lit les replis imbriqués dans l\'ordre, sans '
+        'doublon, route puis racine', () {
+      final ZChatRouter r = ZChatRouter.fromMap(edited());
+      expect(ZChatRouteResolution.from(r, 'k').modelCandidates, const [
+        ZChatModelRef(modelId: 'm1'),
+        ZChatModelRef(providerId: 'q', modelId: 'n'),
+        ZChatModelRef(modelId: 'bare'),
+      ]);
+      // Route sans modèle ni repli ⇒ couple solidaire de la racine.
+      expect(
+        ZChatRouteResolution.from(r, 'noFallbacks').modelCandidates,
+        const <ZChatModelRef>[
+          ZChatModelRef(providerId: 'p0', modelId: 'm0'),
+          ZChatModelRef(providerId: 'p0', modelId: 'f0'),
+          ZChatModelRef(modelId: 'x:y'),
+        ],
+      );
+    });
+
+    test('un hôte qui persistait des JETONS est relu à l\'identique, puis '
+        'réécrit en maps', () {
+      final ZChatRouter legacy = ZChatRouter.fromMap(<String, dynamic>{
+        'fallbacks': <Object?>['p0:f0', 'bare'],
+        'routes': <Object?>[
+          <String, dynamic>{
+            'task_key': 'k',
+            'fallbacks': <Object?>['q:n'],
+          },
+        ],
+      });
+      final ZChatRouter canonical = ZChatRouter.fromMap(<String, dynamic>{
+        'fallbacks': <Object?>[
+          <String, dynamic>{'provider_id': 'p0', 'model_id': 'f0'},
+          <String, dynamic>{'model_id': 'bare'},
+        ],
+        'routes': <Object?>[
+          <String, dynamic>{
+            'task_key': 'k',
+            'fallbacks': <Object?>[
+              <String, dynamic>{'provider_id': 'q', 'model_id': 'n'},
+            ],
+          },
+        ],
+      });
+      expect(legacy, canonical);
+      expect(legacy.toMap(), canonical.toMap());
+      expect(
+        legacy.toMap()['fallbacks'],
+        everyElement(isA<Map<String, dynamic>>()),
+      );
     });
 
     test('`requiredAccessTokens` dédupliqués, rognés, triés', () {
@@ -339,7 +497,45 @@ void main() {
       ).toRequest(_base());
       expect(out.providerId, 'p1');
       expect(out.modelId, 'm1');
-      expect(out.computeEffort, ZChatComputeEffort(4));
+      // La base DEMANDE un budget (1) : la route (4) ne le recouvre pas.
+      expect(out.computeEffort, ZChatComputeEffort(1));
+    });
+
+    test('effort SANS settings : `base.computeEffort ?? route ?? racine` '
+        '(tableau)', () {
+      final ZChatGenerationRequest sansEffort = _base().copyWith(
+        computeEffort: null,
+      );
+      final ZChatGenerationRequest avecEffort = _base();
+      final List<(String, String, ZChatGenerationRequest, int?)> cases =
+          <(String, String, ZChatGenerationRequest, int?)>[
+            ('base 1, route 4', 'full', avecEffort, 1),
+            ('base null, route 4', 'full', sansEffort, 4),
+            ('base 1, route nue ⇒ racine 2 ignorée', 'bare', avecEffort, 1),
+            ('base null, route nue ⇒ racine 2', 'bare', sansEffort, 2),
+            ('base null, tâche inconnue ⇒ racine 2', 'zzz', sansEffort, 2),
+          ];
+      for (final (
+            String label,
+            String task,
+            ZChatGenerationRequest base,
+            int? want,
+          )
+          in cases) {
+        final ZChatComputeEffort? got = ZChatRouteResolution.from(
+          _router(),
+          task,
+        ).toRequest(base).computeEffort;
+        expect(got?.level, want, reason: label);
+      }
+      // Ni route ni racine ni base : reste `null`.
+      expect(
+        ZChatRouteResolution.from(
+          const ZChatRouter(),
+          'k',
+        ).toRequest(sansEffort).computeEffort,
+        isNull,
+      );
     });
 
     test('`base.modelId` PRIME, avec SON fournisseur (même null)', () {
@@ -386,7 +582,8 @@ void main() {
       expect(out.extra, <String, dynamic>{'ok': 1});
     });
 
-    test('effort : réglage > résolution > base ; autres réglages remplacés', () {
+    test('effort AVEC settings : feuille > résolution (la feuille REMPLACE '
+        'le budget de la base, même vide) ; autres réglages remplacés', () {
       final ZChatRouteResolution res = ZChatRouteResolution.from(
         _router(),
         'full',
@@ -404,12 +601,22 @@ void main() {
         base,
         settings: const ZChatGenerationSettings(),
       );
+      // Feuille vide ⇒ le budget 1 de la base est RETIRÉ, la route comble.
       expect(sansEffort.computeEffort, ZChatComputeEffort(4));
       final ZChatGenerationRequest sansRien = ZChatRouteResolution.from(
         const ZChatRouter(),
         'k',
       ).toRequest(base);
       expect(sansRien.computeEffort, ZChatComputeEffort(1));
+      // `toRequest` est un appelant de `copyWith` : la forme `withSettings`
+      // est respectée à l'identique.
+      expect(
+        ZChatRouteResolution.from(
+          const ZChatRouter(),
+          'k',
+        ).toRequest(base, settings: const ZChatGenerationSettings()),
+        base.withSettings(const ZChatGenerationSettings()),
+      );
     });
 
     test('`providerId` transporté par withSettings / withCorpusScope / '

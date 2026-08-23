@@ -187,4 +187,42 @@ void main() {
           reason: 'une capture muette avalerait l\'échec');
     });
   });
+
+  group('G-N7 — la requête d\'artefact : constructeur, copyWith et `==` '
+      'couvrent les MÊMES champs (dont `providerId`)', () {
+    test('aucun champ déclaré n\'échappe à la recopie ni à l\'égalité', () {
+      final String src = strippedLines(
+        File('${_notebookDir().path}/z_chat_artifact_generation_port.dart'),
+      ).join('\n');
+      final List<String> ctor = namedParameterNames(
+        sourceSegment(src, 'ZChatArtifactGenerationRequest({', '})'),
+      );
+      final List<String> copy = namedParameterNames(
+        sourceSegment(src, 'ZChatArtifactGenerationRequest copyWith({', '})'),
+      );
+      expect(ctor, contains('providerId'), reason: 'le fournisseur est TYPÉ');
+      expect(ctor, contains('modelId'));
+      expect(ctor.length, 12, reason: 'garde VACUELLE : $ctor');
+      expect(copy, ctor, reason: 'copyWith ≠ constructeur');
+      // Ancrage sur l'égalité de CETTE classe : le fichier porte d'autres
+      // `hashCode` (familles d'échec, contenu) qui ne la concernent pas.
+      final String tail = src.substring(
+        src.indexOf('other is ZChatArtifactGenerationRequest'),
+      );
+      final String equality = sourceSegment(
+        tail,
+        'other is ZChatArtifactGenerationRequest',
+        'int get hashCode',
+      );
+      final String hash = sourceSegment(
+        tail,
+        'int get hashCode',
+        'String toString()',
+      );
+      for (final String name in ctor) {
+        expect(equality, contains('other.$name'), reason: '`$name` hors `==`');
+        expect(hash, contains(name), reason: '`$name` hors hashCode');
+      }
+    });
+  });
 }

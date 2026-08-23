@@ -3,6 +3,15 @@
 Toutes les modifications notables de `zcrud_chat_kernel` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.9.0 — 2026-08-23
+
+### Ajouté
+- `ZChatArtifactGenerationRequest.providerId` (opaque) ; `ZChatGenerationRequest.copyWith` — `withSettings`, `withCorpusScope` et `ZChatRouteResolution.toRequest` en sont des appelants (un seul site de recopie).
+
+### Changé
+- Précédence de l'effort dans `ZChatRouteResolution.toRequest` : sans réglages, `base.computeEffort ?? route ?? racine` — la route ne recouvre plus un budget explicite ; avec réglages, la feuille reste un remplacement.
+- Les **replis** d'une route et de la racine sont déclarés en `subItems` imbriqué (`$ZChatModelRefFieldSpecs`) à la place de jetons, et émis sur le fil en **liste de maps** `{provider_id, model_id}` ; la lecture reste tolérante (maps, `"p:m"`, chaînes nues).
+
 ## 3.8.0 — 2026-08-23
 
 ### Ajouté

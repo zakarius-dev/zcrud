@@ -109,17 +109,22 @@ class ZChatRouteResolution {
   /// ni budget, ni paramètre.
   bool get isEmpty => model == null && computeEffort == null && params.isEmpty;
 
-  /// Projette la résolution sur [base].
+  /// Projette la résolution sur [base] — une copie (`copyWith`) de [base],
+  /// jamais une reconstruction champ par champ.
   ///
   /// - fournisseur et modèle : ceux de la résolution, **sauf** si [base]
   ///   nomme déjà un modèle — le choix explicite de l'appelant prime, avec
   ///   son propre fournisseur ;
-  /// - budget de calcul : `settings?.computeEffort`, sinon la résolution,
-  ///   sinon [base] ;
-  /// - les autres réglages : ceux de [settings] s'il est fourni (même
-  ///   remplacement que `withSettings`), ceux de [base] sinon ;
+  /// - réglages : la feuille **effective** est [settings] s'il est fourni
+  ///   (même remplacement que `withSettings` : une feuille vide retire les
+  ///   réglages de [base]), sinon `base.settings` ;
+  /// - budget de calcul : celui de la feuille effective, **sinon** la
+  ///   résolution (route, sinon racine). Sans [settings], c'est donc
+  ///   `base.computeEffort ?? route ?? racine` : la route **ne recouvre
+  ///   jamais** un budget explicitement demandé par l'appelant, elle ne fait
+  ///   que combler son absence ;
   /// - `extra` : les paramètres résolus, **recouverts** par ceux de [base] ;
-  /// - tout le reste est recopié tel quel.
+  /// - tout le reste est conservé tel quel.
   ///
   /// Une résolution vide sans [settings] rend une requête **égale** à [base].
   ZChatGenerationRequest toRequest(
@@ -127,34 +132,15 @@ class ZChatRouteResolution {
     ZChatGenerationSettings? settings,
   }) {
     final bool explicitModel = base.modelId != null;
-    return ZChatGenerationRequest(
-      style: base.style,
-      subject: base.subject,
-      notes: base.notes,
-      conversationId: base.conversationId,
-      sourceMessageId: base.sourceMessageId,
-      context: base.context,
-      attachmentIds: base.attachmentIds,
-      responseLength: settings == null
-          ? base.responseLength
-          : settings.responseLength,
-      lengthBias: settings == null ? base.lengthBias : settings.lengthBias,
-      computeEffort:
-          settings?.computeEffort ?? computeEffort ?? base.computeEffort,
-      revealThinkingSteps: settings == null
-          ? base.revealThinkingSteps
-          : settings.revealThinkingSteps,
-      webSearch: settings == null ? base.webSearch : settings.webSearch,
-      capabilities: settings == null
-          ? base.capabilities
-          : settings.capabilities,
-      corpusScope: base.corpusScope,
-      languageTag: base.languageTag,
-      instructions: base.instructions,
-      modelId: explicitModel ? base.modelId : model?.modelId,
-      providerId: explicitModel ? base.providerId : model?.providerId,
-      extra: <String, dynamic>{...params, ...base.extra},
-    );
+    final ZChatGenerationSettings effective = settings ?? base.settings;
+    return base
+        .withSettings(effective)
+        .copyWith(
+          computeEffort: effective.computeEffort ?? computeEffort,
+          modelId: explicitModel ? base.modelId : model?.modelId,
+          providerId: explicitModel ? base.providerId : model?.providerId,
+          extra: <String, dynamic>{...params, ...base.extra},
+        );
   }
 
   @override

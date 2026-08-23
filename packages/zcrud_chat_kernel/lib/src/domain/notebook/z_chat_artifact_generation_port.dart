@@ -46,11 +46,8 @@ import 'z_chat_artifact_store_port.dart';
 ///
 /// Tenu par le contrôleur (seul à savoir qu'une génération est en vol) ;
 /// jamais par le port de stockage ni par celui d'existence.
-typedef ZChatArtifactOccupancyMarker = void Function(
-  String messageId,
-  String artifactKey, {
-  required bool busy,
-});
+typedef ZChatArtifactOccupancyMarker =
+    void Function(String messageId, String artifactKey, {required bool busy});
 
 /// Échec : la génération a été **refusée** parce que la matière (ou le sujet
 /// exigé) est vide. Aucun appel n'a eu lieu, aucune occupation n'a été posée.
@@ -155,6 +152,7 @@ class ZChatArtifactGenerationRequest {
     this.languageTag,
     this.instructions,
     this.modelId,
+    this.providerId,
     Map<String, dynamic> extra = const <String, dynamic>{},
   }) : _extra = zSanitizeExtra(extra, _reservedKeys);
 
@@ -189,6 +187,13 @@ class ZChatArtifactGenerationRequest {
   /// Identifiant de modèle opaque, transporté verbatim.
   final String? modelId;
 
+  /// Identifiant de fournisseur **opaque**, même statut que [modelId] :
+  /// transporté verbatim, jamais interprété, aucun défaut. `null` ⇒ le port
+  /// de l'hôte décide. Ce n'est pas un endpoint : c'est une donnée de
+  /// routage que l'adaptateur de l'hôte lit. Le fournisseur voyage dans ce
+  /// champ typé, pas dans [extra].
+  final String? providerId;
+
   /// Échappatoire non typée (invariant AD-4), immuable.
   ///
   /// Les clés réservées de synchronisation (`ZSyncMeta.reservedKeys`) en sont
@@ -201,9 +206,7 @@ class ZChatArtifactGenerationRequest {
 
   // La requête n'est pas persistée (aucun `toJson`) : seules les clés de sync
   // hors-entité (AD-9) sont réservées.
-  static const Set<String> _reservedKeys = <String>{
-    ...ZSyncMeta.reservedKeys,
-  };
+  static const Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
   /// `true` si la requête doit être **refusée** sans appel : matière vide,
   /// ou sujet vide alors qu'il est exigé.
@@ -227,37 +230,40 @@ class ZChatArtifactGenerationRequest {
     Object? languageTag = _unset,
     Object? instructions = _unset,
     Object? modelId = _unset,
+    Object? providerId = _unset,
     Object? extra = _unset,
-  }) =>
-      ZChatArtifactGenerationRequest(
-        messageId:
-            identical(messageId, _unset) ? this.messageId : messageId! as String,
-        artifactKey: identical(artifactKey, _unset)
-            ? this.artifactKey
-            : artifactKey! as String,
-        notes: identical(notes, _unset) ? this.notes : notes! as String,
-        subject: identical(subject, _unset) ? this.subject : subject! as String,
-        subjectRequired: identical(subjectRequired, _unset)
-            ? this.subjectRequired
-            : subjectRequired! as bool,
-        style: identical(style, _unset)
-            ? this.style
-            : style as ZChatGenerationStyle?,
-        conversationId: identical(conversationId, _unset)
-            ? this.conversationId
-            : conversationId as String?,
-        languageTag: identical(languageTag, _unset)
-            ? this.languageTag
-            : languageTag as String?,
-        instructions: identical(instructions, _unset)
-            ? this.instructions
-            : instructions as String?,
-        modelId:
-            identical(modelId, _unset) ? this.modelId : modelId as String?,
-        extra: identical(extra, _unset)
-            ? this.extra
-            : extra! as Map<String, dynamic>,
-      );
+  }) => ZChatArtifactGenerationRequest(
+    messageId: identical(messageId, _unset)
+        ? this.messageId
+        : messageId! as String,
+    artifactKey: identical(artifactKey, _unset)
+        ? this.artifactKey
+        : artifactKey! as String,
+    notes: identical(notes, _unset) ? this.notes : notes! as String,
+    subject: identical(subject, _unset) ? this.subject : subject! as String,
+    subjectRequired: identical(subjectRequired, _unset)
+        ? this.subjectRequired
+        : subjectRequired! as bool,
+    style: identical(style, _unset)
+        ? this.style
+        : style as ZChatGenerationStyle?,
+    conversationId: identical(conversationId, _unset)
+        ? this.conversationId
+        : conversationId as String?,
+    languageTag: identical(languageTag, _unset)
+        ? this.languageTag
+        : languageTag as String?,
+    instructions: identical(instructions, _unset)
+        ? this.instructions
+        : instructions as String?,
+    modelId: identical(modelId, _unset) ? this.modelId : modelId as String?,
+    providerId: identical(providerId, _unset)
+        ? this.providerId
+        : providerId as String?,
+    extra: identical(extra, _unset)
+        ? this.extra
+        : extra! as Map<String, dynamic>,
+  );
 
   static const Object _unset = Object();
 
@@ -275,26 +281,29 @@ class ZChatArtifactGenerationRequest {
           languageTag == other.languageTag &&
           instructions == other.instructions &&
           modelId == other.modelId &&
+          providerId == other.providerId &&
           zJsonEquals(extra, other.extra);
 
   @override
   int get hashCode => Object.hash(
-        messageId,
-        artifactKey,
-        notes,
-        subject,
-        subjectRequired,
-        style,
-        conversationId,
-        languageTag,
-        instructions,
-        modelId,
-        zJsonHash(extra),
-      );
+    messageId,
+    artifactKey,
+    notes,
+    subject,
+    subjectRequired,
+    style,
+    conversationId,
+    languageTag,
+    instructions,
+    modelId,
+    providerId,
+    zJsonHash(extra),
+  );
 
   @override
   String toString() =>
-      'ZChatArtifactGenerationRequest($artifactKey on $messageId)';
+      'ZChatArtifactGenerationRequest($artifactKey on $messageId, '
+      'providerId: $providerId, modelId: $modelId)';
 }
 
 /// Contenu **opaque** produit par un port de génération d'artefact.
@@ -319,9 +328,7 @@ class ZChatArtifactContent {
   // Slot brut, lu uniquement par l'accesseur `extra`.
   final Map<String, dynamic> _extra;
 
-  static const Set<String> _reservedKeys = <String>{
-    ...ZSyncMeta.reservedKeys,
-  };
+  static const Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
   /// `true` si [data] est blanc — un tel contenu n'est **jamais** écrit.
   bool get isEmpty => data.trim().isEmpty;
@@ -381,10 +388,12 @@ Future<ZResult<T>> zChatRunArtifactGeneration<T>({
   required Future<ZResult<Unit>> Function(T result) write,
 }) async {
   if (notes.trim().isEmpty || (subjectRequired && subject.trim().isEmpty)) {
-    return Left<ZFailure, T>(ZChatArtifactEmptyInputFailure(
-      messageId: messageId,
-      artifactKey: artifactKey,
-    ));
+    return Left<ZFailure, T>(
+      ZChatArtifactEmptyInputFailure(
+        messageId: messageId,
+        artifactKey: artifactKey,
+      ),
+    );
   }
   mark(messageId, artifactKey, busy: true);
   try {
@@ -392,39 +401,44 @@ Future<ZResult<T>> zChatRunArtifactGeneration<T>({
     try {
       produced = await generate();
     } catch (error) {
-      return Left<ZFailure, T>(ZChatArtifactGenerationFailure(
-        'artifact generation threw: $error',
-        messageId: messageId,
-        artifactKey: artifactKey,
-        cause: error,
-      ));
+      return Left<ZFailure, T>(
+        ZChatArtifactGenerationFailure(
+          'artifact generation threw: $error',
+          messageId: messageId,
+          artifactKey: artifactKey,
+          cause: error,
+        ),
+      );
     }
-    return await produced.fold(
-      (ZFailure f) async => Left<ZFailure, T>(f),
-      (T result) async {
-        if (isEmpty(result)) {
-          return Left<ZFailure, T>(ZChatArtifactEmptyResultFailure(
+    return await produced.fold((ZFailure f) async => Left<ZFailure, T>(f), (
+      T result,
+    ) async {
+      if (isEmpty(result)) {
+        return Left<ZFailure, T>(
+          ZChatArtifactEmptyResultFailure(
             messageId: messageId,
             artifactKey: artifactKey,
-          ));
-        }
-        final ZResult<Unit> written;
-        try {
-          written = await write(result);
-        } catch (error) {
-          return Left<ZFailure, T>(ZChatArtifactGenerationFailure(
+          ),
+        );
+      }
+      final ZResult<Unit> written;
+      try {
+        written = await write(result);
+      } catch (error) {
+        return Left<ZFailure, T>(
+          ZChatArtifactGenerationFailure(
             'artifact write threw: $error',
             messageId: messageId,
             artifactKey: artifactKey,
             cause: error,
-          ));
-        }
-        return written.fold(
-          (ZFailure f) => Left<ZFailure, T>(f),
-          (Unit _) => Right<ZFailure, T>(result),
+          ),
         );
-      },
-    );
+      }
+      return written.fold(
+        (ZFailure f) => Left<ZFailure, T>(f),
+        (Unit _) => Right<ZFailure, T>(result),
+      );
+    });
   } finally {
     // Le démarquage est la garantie qui compte : il a lieu sur chaque chemin
     // de sortie, exception comprise.
@@ -453,20 +467,19 @@ class ZChatArtifactGenerationRunner {
     ZChatArtifactGenerationRequest request, {
     required ZChatRequestToken token,
     required ZChatArtifactOccupancyMarker mark,
-  }) =>
-      zChatRunArtifactGeneration<ZChatArtifactContent>(
-        messageId: request.messageId,
-        artifactKey: request.artifactKey,
-        notes: request.notes,
-        subject: request.subject,
-        subjectRequired: request.subjectRequired,
-        mark: mark,
-        generate: () => port.generate(request, token: token),
-        isEmpty: (ZChatArtifactContent c) => c.isEmpty,
-        write: (ZChatArtifactContent c) => store.write(
-          messageId: request.messageId,
-          artifactKey: request.artifactKey,
-          content: c.data,
-        ),
-      );
+  }) => zChatRunArtifactGeneration<ZChatArtifactContent>(
+    messageId: request.messageId,
+    artifactKey: request.artifactKey,
+    notes: request.notes,
+    subject: request.subject,
+    subjectRequired: request.subjectRequired,
+    mark: mark,
+    generate: () => port.generate(request, token: token),
+    isEmpty: (ZChatArtifactContent c) => c.isEmpty,
+    write: (ZChatArtifactContent c) => store.write(
+      messageId: request.messageId,
+      artifactKey: request.artifactKey,
+      content: c.data,
+    ),
+  );
 }

@@ -696,6 +696,149 @@ void main() {
     });
   });
 
+  group('ZChatGenerationRequest.copyWith — sentinelle, 19 champs', () {
+    ZChatGenerationRequest full() => ZChatGenerationRequest(
+          style: ZChatGenerationStyle('s'),
+          subject: 'subj',
+          notes: 'notes',
+          conversationId: 'c',
+          sourceMessageId: 'sm',
+          context: const <ZChatContextFragment>[
+            ZChatContextFragment(kind: 'k', text: 't'),
+          ],
+          attachmentIds: const <String>['a'],
+          responseLength: ZChatResponseLength.concise,
+          lengthBias: ZChatLengthBias.longer,
+          computeEffort: ZChatComputeEffort(2),
+          revealThinkingSteps: true,
+          webSearch: true,
+          capabilities: const <String, bool>{'cap': true},
+          corpusScope: ZChatCorpusScope.ofKeys(const <String>['corpus']),
+          languageTag: 'fr',
+          instructions: 'i',
+          modelId: 'm',
+          providerId: 'p',
+          extra: const <String, dynamic>{'x': 1},
+        );
+
+    test('sans argument ⇒ copie ÉGALE (et même hash)', () {
+      final ZChatGenerationRequest base = full();
+      expect(base.copyWith(), base);
+      expect(base.copyWith().hashCode, base.hashCode);
+    });
+
+    test('chaque champ, seul, change la copie et ne change QUE lui (tableau)',
+        () {
+      final ZChatGenerationRequest base = full();
+      final Map<String, ZChatGenerationRequest> variants =
+          <String, ZChatGenerationRequest>{
+        'style': base.copyWith(style: ZChatGenerationStyle('autre')),
+        'subject': base.copyWith(subject: 'autre'),
+        'notes': base.copyWith(notes: 'autre'),
+        'conversationId': base.copyWith(conversationId: 'autre'),
+        'sourceMessageId': base.copyWith(sourceMessageId: 'autre'),
+        'context': base.copyWith(context: const <ZChatContextFragment>[]),
+        'attachmentIds': base.copyWith(attachmentIds: const <String>[]),
+        'responseLength':
+            base.copyWith(responseLength: ZChatResponseLength.detailed),
+        'lengthBias': base.copyWith(lengthBias: ZChatLengthBias.shorter),
+        'computeEffort': base.copyWith(computeEffort: ZChatComputeEffort(5)),
+        'revealThinkingSteps': base.copyWith(revealThinkingSteps: false),
+        'webSearch': base.copyWith(webSearch: false),
+        'capabilities':
+            base.copyWith(capabilities: const <String, bool>{'cap': false}),
+        'corpusScope': base.copyWith(
+          corpusScope: ZChatCorpusScope.ofKeys(const <String>['z']),
+        ),
+        'languageTag': base.copyWith(languageTag: 'en'),
+        'instructions': base.copyWith(instructions: 'autre'),
+        'modelId': base.copyWith(modelId: 'autre'),
+        'providerId': base.copyWith(providerId: 'autre'),
+        'extra': base.copyWith(extra: const <String, dynamic>{'x': 2}),
+      };
+      expect(variants.length, 19, reason: 'un champ de la requête manque');
+      for (final MapEntry<String, ZChatGenerationRequest> e
+          in variants.entries) {
+        expect(e.value, isNot(base), reason: '`${e.key}` ignoré par copyWith');
+        // Revenir sur CE champ seul rend l'égalité : rien d'autre n'a bougé.
+        final ZChatGenerationRequest back = switch (e.key) {
+          'style' => e.value.copyWith(style: base.style),
+          'subject' => e.value.copyWith(subject: base.subject),
+          'notes' => e.value.copyWith(notes: base.notes),
+          'conversationId' =>
+            e.value.copyWith(conversationId: base.conversationId),
+          'sourceMessageId' =>
+            e.value.copyWith(sourceMessageId: base.sourceMessageId),
+          'context' => e.value.copyWith(context: base.context),
+          'attachmentIds' => e.value.copyWith(attachmentIds: base.attachmentIds),
+          'responseLength' =>
+            e.value.copyWith(responseLength: base.responseLength),
+          'lengthBias' => e.value.copyWith(lengthBias: base.lengthBias),
+          'computeEffort' => e.value.copyWith(computeEffort: base.computeEffort),
+          'revealThinkingSteps' =>
+            e.value.copyWith(revealThinkingSteps: base.revealThinkingSteps),
+          'webSearch' => e.value.copyWith(webSearch: base.webSearch),
+          'capabilities' => e.value.copyWith(capabilities: base.capabilities),
+          'corpusScope' => e.value.copyWith(corpusScope: base.corpusScope),
+          'languageTag' => e.value.copyWith(languageTag: base.languageTag),
+          'instructions' => e.value.copyWith(instructions: base.instructions),
+          'modelId' => e.value.copyWith(modelId: base.modelId),
+          'providerId' => e.value.copyWith(providerId: base.providerId),
+          'extra' => e.value.copyWith(extra: base.extra),
+          _ => throw StateError(e.key),
+        };
+        expect(back, base, reason: '`${e.key}` a entraîné un autre champ');
+      }
+    });
+
+    test('`null` EXPLICITE retire un champ nullable ; omis le conserve', () {
+      final ZChatGenerationRequest base = full();
+      expect(base.copyWith(providerId: null).providerId, isNull);
+      expect(base.copyWith(modelId: null).modelId, isNull);
+      expect(base.copyWith(corpusScope: null).corpusScope, isNull);
+      expect(base.copyWith(computeEffort: null).computeEffort, isNull);
+      expect(base.copyWith(subject: 'z').providerId, 'p');
+      expect(base.copyWith(subject: 'z').modelId, 'm');
+    });
+
+    test('les invariants du constructeur s\'appliquent à la copie', () {
+      final ZChatGenerationRequest base = full();
+      final ZChatGenerationRequest c = base.copyWith(
+        webSearch: null,
+        capabilities: const <String, bool>{'web_search': false, 'b': true},
+        extra: const <String, dynamic>{'ok': 1, 'updated_at': 'triche'},
+        context: const <ZChatContextFragment>[
+          ZChatContextFragment(kind: 'b', text: 'B'),
+          ZChatContextFragment(kind: 'a', text: 'A', priority: 3),
+        ],
+      );
+      expect(c.webSearch, isFalse, reason: 'clé réservée hissée');
+      expect(c.capabilities.containsKey('web_search'), isFalse);
+      expect(c.extra.containsKey('updated_at'), isFalse);
+      expect(c.context.first.kind, 'a', reason: 'contexte réordonné');
+    });
+
+    test('`withSettings` / `withCorpusScope` sont des appelants de copyWith',
+        () {
+      final ZChatGenerationRequest base = full();
+      expect(base.withSettings(base.settings), base);
+      expect(base.withSettings(null), same(base));
+      expect(
+        base.withSettings(const ZChatGenerationSettings()),
+        base.copyWith(
+          responseLength: null,
+          lengthBias: null,
+          computeEffort: null,
+          revealThinkingSteps: null,
+          webSearch: null,
+          capabilities: const <String, bool>{},
+        ),
+      );
+      expect(base.withCorpusScope(null), base.copyWith(corpusScope: null));
+      expect(base.withCorpusScope(null).providerId, 'p');
+    });
+  });
+
   group('ZChatComputeEffort — DEUX AXES, jamais fusionnés', () {
     test('l\'axe CALCUL est l\'entier 1..5 commun aux DEUX backends', () {
       expect(ZChatComputeEffort.min, 1);

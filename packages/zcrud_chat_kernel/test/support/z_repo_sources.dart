@@ -42,10 +42,12 @@ List<File> packageLibDartFiles() {
       .where((Directory d) => d.existsSync())
       .expand((Directory d) => d.listSync(recursive: true, followLinks: false))
       .whereType<File>()
-      .where((File f) =>
-          f.path.endsWith('.dart') &&
-          !f.path.endsWith('.g.dart') &&
-          !f.path.endsWith('.freezed.dart'))
+      .where(
+        (File f) =>
+            f.path.endsWith('.dart') &&
+            !f.path.endsWith('.g.dart') &&
+            !f.path.endsWith('.freezed.dart'),
+      )
       .toList();
 }
 
@@ -63,22 +65,30 @@ List<File> chatDartFiles() {
   final Directory dir = Directory(
     '${repoRoot().path}/packages/zcrud_chat_kernel/lib',
   );
-  expect(dir.existsSync(), isTrue,
-      reason: 'zcrud_chat_kernel/lib/ introuvable — la garde serait VACUELLE');
+  expect(
+    dir.existsSync(),
+    isTrue,
+    reason: 'zcrud_chat_kernel/lib/ introuvable — la garde serait VACUELLE',
+  );
   final List<File> files = dir
       .listSync(recursive: true, followLinks: false)
       .whereType<File>()
       .where((File f) => f.path.endsWith('.dart'))
       .toList();
-  expect(files.length, greaterThanOrEqualTo(20),
-      reason: '🔴 GARDE VACUELLE : ${files.length} fichier(s) scanné(s) dans '
-          'zcrud_chat_kernel/lib. Le kernel en porte plusieurs dizaines ; un '
-          'balayage quasi vide signale un chemin cassé, pas un paquet propre.');
+  expect(
+    files.length,
+    greaterThanOrEqualTo(20),
+    reason:
+        '🔴 GARDE VACUELLE : ${files.length} fichier(s) scanné(s) dans '
+        'zcrud_chat_kernel/lib. Le kernel en porte plusieurs dizaines ; un '
+        'balayage quasi vide signale un chemin cassé, pas un paquet propre.',
+  );
   // Volet ANTI-RÉGRESSION du périmètre : le barrel DOIT être vu.
   expect(
     files.map((File f) => f.uri.pathSegments.last),
     contains('zcrud_chat_kernel.dart'),
-    reason: '🔴 le barrel n\'est pas scanné : c\'est exactement le trou que '
+    reason:
+        '🔴 le barrel n\'est pas scanné : c\'est exactement le trou que '
         'l\'élargissement de fin d\'epic a fermé.',
   );
   return files;
@@ -86,8 +96,8 @@ List<File> chatDartFiles() {
 
 /// Le dossier du contrat d'action (CHAT-0b).
 Directory actionDir() => Directory(
-      '${repoRoot().path}/packages/zcrud_chat_kernel/lib/src/domain/action',
-    );
+  '${repoRoot().path}/packages/zcrud_chat_kernel/lib/src/domain/action',
+);
 
 /// Un fichier du contrat d'action, par nom.
 File actionFile(String name) => File('${actionDir().path}/$name');
@@ -161,4 +171,37 @@ List<String> strippedLines(File f) {
     out.add(buf.toString());
   }
   return out;
+}
+
+/// Segment de [src] compris entre la première occurrence de [opener] et la
+/// première occurrence de [closer] qui la suit. Échoue (garde VACUELLE) si
+/// l'un des deux est introuvable.
+String sourceSegment(String src, String opener, String closer) {
+  final int start = src.indexOf(opener);
+  expect(start, greaterThanOrEqualTo(0), reason: '`$opener` introuvable');
+  final int end = src.indexOf(closer, start + opener.length);
+  expect(
+    end,
+    greaterThan(start),
+    reason: '`$closer` introuvable après `$opener`',
+  );
+  return src.substring(start + opener.length, end);
+}
+
+/// Noms des paramètres NOMMÉS déclarés dans un segment de liste de
+/// paramètres (`this.x,`, `required this.x,`, `Type x = défaut,`,
+/// `Object? x = _unset,`) — un par ligne, dans l'ordre de déclaration.
+List<String> namedParameterNames(String segment) {
+  final List<String> names = <String>[];
+  for (final String raw in segment.split('\n')) {
+    String line = stripComment(raw).trim();
+    if (!line.endsWith(',')) continue;
+    line = line.substring(0, line.length - 1);
+    final int eq = line.indexOf('=');
+    if (eq >= 0) line = line.substring(0, eq);
+    line = line.replaceFirst('required ', '').replaceFirst('this.', '').trim();
+    final String name = line.split(RegExp(r'\s+')).last;
+    if (RegExp(r'^[a-z][A-Za-z0-9]*$').hasMatch(name)) names.add(name);
+  }
+  return names;
 }

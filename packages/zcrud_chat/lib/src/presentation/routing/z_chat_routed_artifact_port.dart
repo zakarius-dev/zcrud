@@ -5,7 +5,8 @@
 /// répartition (gestionnaire de la route → fournisseur de la requête → nom
 /// de route → repli), même refus typé, même délégation de la requête telle
 /// quelle. La clé de tâche est le `kind` du style, sinon la clé de l'artefact ;
-/// le fournisseur est lu dans `extra` sous `kZChatArtifactProviderIdKey`.
+/// le fournisseur est le champ typé `ZChatArtifactGenerationRequest.providerId`
+/// — jamais une clé d'`extra`.
 ///
 /// Un `ZChatGenerationPort` de l'annuaire est **adapté** : le texte de ses
 /// blocs de texte, concaténé, devient le `ZChatArtifactContent` (`extra`
@@ -52,7 +53,7 @@ class ZChatRoutedArtifactGenerationPort implements ZChatArtifactGenerationPort {
     final String taskKey = zChatArtifactTaskKeyOf(request);
     final List<String> ids = zChatRouteDispatchIds(
       route: routeOf(taskKey),
-      providerId: zJsonStringOrNull(request.extra[kZChatArtifactProviderIdKey]),
+      providerId: request.providerId,
     );
     ZChatArtifactGenerationPort? port;
     for (final String id in ids) {
@@ -102,9 +103,7 @@ class _ZGenerationPortAdapter implements ZChatArtifactGenerationPort {
         languageTag: request.languageTag,
         instructions: request.instructions,
         modelId: request.modelId,
-        providerId: zJsonStringOrNull(
-          request.extra[kZChatArtifactProviderIdKey],
-        ),
+        providerId: request.providerId,
         extra: request.extra,
       ),
       token: token,

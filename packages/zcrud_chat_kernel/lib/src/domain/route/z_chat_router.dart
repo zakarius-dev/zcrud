@@ -169,7 +169,8 @@ class ZChatRouter extends ZEntity with ZExtensible {
   ZChatRouteSpec? routeOf(String taskKey) => routes[taskKey];
 
   /// Sérialise vers la map persistée (clés snake_case), [extra] étalé
-  /// d'abord, routes en **liste**.
+  /// d'abord, routes en **liste**, replis en **liste de maps**
+  /// `{provider_id?, model_id}` ([ZChatModelRef.toJson]).
   ///
   /// **N'émet NI `updated_at` NI `is_deleted`** — sans exception.
   Map<String, dynamic> toMap() {
@@ -181,8 +182,8 @@ class ZChatRouter extends ZEntity with ZExtensible {
     if (tier != null) out['tier'] = tier;
     ZChatModelRef.writeEmbedded(out, model);
     if (fallbacks.isNotEmpty) {
-      out['fallbacks'] = <Object>[
-        for (final ZChatModelRef f in fallbacks) f.toCompactJson(),
+      out['fallbacks'] = <Map<String, dynamic>>[
+        for (final ZChatModelRef f in fallbacks) f.toJson(),
       ];
     }
     if (computeEffort != null) out['compute_effort'] = computeEffort!.toJson();
@@ -331,10 +332,11 @@ bool _routesEqual(
 /// d'édition et le moteur de liste via [registerZChatRouter]. Aucun libellé.
 ///
 /// Les routes s'éditent en sous-liste (`subItems`) d'items décrits par
-/// [$ZChatRouteSpecFieldSpecs] ; le résumé d'un item montre sa clé de tâche
-/// et son modèle. Les replis s'éditent comme une liste de jetons
-/// `fournisseur:modèle`. `params`, `extension` et `extra` ne sont pas des
-/// champs : ils traversent l'édition tels quels.
+/// [$ZChatRouteSpecFieldSpecs] ; le résumé d'un item montre sa clé de tâche,
+/// son modèle et le **compte** de ses replis. Les replis — de la racine comme
+/// d'une route — s'éditent en sous-liste d'items décrits par
+/// [$ZChatModelRefFieldSpecs]. `params`, `extension` et `extra` ne sont pas
+/// des champs : ils traversent l'édition tels quels.
 const List<ZFieldSpec> $ZChatRouterFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),
   ZFieldSpec(name: 'name', type: EditionFieldType.text, searchable: true),
@@ -347,7 +349,15 @@ const List<ZFieldSpec> $ZChatRouterFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'tier', type: EditionFieldType.text),
   ZFieldSpec(name: 'model_provider_id', type: EditionFieldType.text),
   ZFieldSpec(name: 'model_id', type: EditionFieldType.text),
-  ZFieldSpec(name: 'fallbacks', type: EditionFieldType.tags, multiple: true),
+  ZFieldSpec(
+    name: 'fallbacks',
+    type: EditionFieldType.subItems,
+    multiple: true,
+    config: ZSubListConfig(
+      itemFields: $ZChatModelRefFieldSpecs,
+      summaryFields: <String>['provider_id', 'model_id'],
+    ),
+  ),
   ZFieldSpec(
     name: 'compute_effort',
     type: EditionFieldType.integer,
@@ -362,7 +372,7 @@ const List<ZFieldSpec> $ZChatRouterFieldSpecs = <ZFieldSpec>[
     multiple: true,
     config: ZSubListConfig(
       itemFields: $ZChatRouteSpecFieldSpecs,
-      summaryFields: <String>['task_key', 'model_id'],
+      summaryFields: <String>['task_key', 'model_id', 'fallbacks'],
     ),
   ),
 ];

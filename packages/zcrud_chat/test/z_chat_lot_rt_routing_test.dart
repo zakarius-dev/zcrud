@@ -1087,42 +1087,101 @@ void main() {
       }
     });
 
-    test('le port d\'ARTEFACT routé : même répartition, fournisseur lu dans '
-        '`extra`, inconnu ⇒ `Left`', () async {
-      final List<ZChatArtifactGenerationRequest> seen =
-          <ZChatArtifactGenerationRequest>[];
+    test(
+      'le port d\'ARTEFACT routé : même répartition, fournisseur lu dans '
+      'le champ TYPÉ `providerId` (jamais `extra`), inconnu ⇒ `Left`',
+      () async {
+        final List<ZChatArtifactGenerationRequest> seen =
+            <ZChatArtifactGenerationRequest>[];
+        final List<ZChatArtifactGenerationRequest> byName =
+            <ZChatArtifactGenerationRequest>[];
+        final ZChatRoutedArtifactGenerationPort port =
+            ZChatRoutedArtifactGenerationPort(
+              routeOf: (String _) =>
+                  ZChatRouteSpec(taskKey: 'art', routeName: 'rn'),
+              handlers: const ZChatInertRouteHandlers(),
+              artifactPorts: <String, ZChatArtifactGenerationPort>{
+                'px': _ArtPort(seen.add),
+                'rn': _ArtPort(byName.add),
+              },
+            );
+        final ZChatArtifactGenerationRequest req =
+            ZChatArtifactGenerationRequest(
+              messageId: 'm',
+              artifactKey: 'art',
+              notes: 'n',
+              providerId: 'px',
+            );
+        final ZResult<ZChatArtifactContent> ok = await port.generate(
+          req,
+          token: ZChatRequestToken('r'),
+        );
+        expect(ok.isRight(), isTrue);
+        expect(
+          identical(seen.single, req),
+          isTrue,
+          reason: 'le fournisseur TYPÉ prime le nom de route',
+        );
+        expect(byName, isEmpty);
+
+        // Un `provider_id` glissé dans `extra` n'est PAS un fournisseur : il
+        // n'est pas lu, la répartition tombe sur le nom de route.
+        await port.generate(
+          ZChatArtifactGenerationRequest(
+            messageId: 'm',
+            artifactKey: 'art',
+            notes: 'n',
+            extra: const <String, dynamic>{'provider_id': 'px'},
+          ),
+          token: ZChatRequestToken('r'),
+        );
+        expect(seen, hasLength(1), reason: '🔴 `extra[provider_id]` a été LU');
+        expect(byName, hasLength(1));
+
+        final ZResult<ZChatArtifactContent> ko =
+            await ZChatRoutedArtifactGenerationPort(
+              routeOf: (String _) => null,
+              handlers: const ZChatInertRouteHandlers(),
+            ).generate(
+              ZChatArtifactGenerationRequest(
+                messageId: 'm',
+                artifactKey: 'art',
+                notes: 'n',
+              ),
+              token: ZChatRequestToken('r'),
+            );
+        expect(
+          ko.fold((ZFailure f) => f, (_) => null),
+          isA<ZUnsupportedOperationFailure>(),
+        );
+      },
+    );
+
+    test('l\'ADAPTATEUR de port texte reporte `providerId` typé sur la '
+        'requête de conversation', () async {
+      final List<ZChatGenerationRequest> inner = <ZChatGenerationRequest>[];
       final ZChatRoutedArtifactGenerationPort port =
           ZChatRoutedArtifactGenerationPort(
             routeOf: (String _) => null,
-            handlers: const ZChatInertRouteHandlers(),
-            artifactPorts: <String, ZChatArtifactGenerationPort>{
-              'px': _ArtPort(seen.add),
-            },
+            handlers: ZChatMapRouteHandlers(
+              generationPorts: <String, ZChatGenerationPort>{
+                'px': _GenPort(inner.add),
+              },
+            ),
           );
-      final ZChatArtifactGenerationRequest req = ZChatArtifactGenerationRequest(
-        messageId: 'm',
-        artifactKey: 'art',
-        notes: 'n',
-        extra: const <String, dynamic>{kZChatArtifactProviderIdKey: 'px'},
-      );
-      final ZResult<ZChatArtifactContent> ok = await port.generate(
-        req,
-        token: ZChatRequestToken('r'),
-      );
-      expect(ok.isRight(), isTrue);
-      expect(identical(seen.single, req), isTrue);
-      final ZResult<ZChatArtifactContent> ko = await port.generate(
+      await port.generate(
         ZChatArtifactGenerationRequest(
           messageId: 'm',
           artifactKey: 'art',
           notes: 'n',
+          providerId: 'px',
+          modelId: 'mx',
         ),
         token: ZChatRequestToken('r'),
       );
-      expect(
-        ko.fold((ZFailure f) => f, (_) => null),
-        isA<ZUnsupportedOperationFailure>(),
-      );
+      expect(inner.single.providerId, 'px');
+      expect(inner.single.modelId, 'mx');
+      expect(inner.single.extra.containsKey('provider_id'), isFalse);
     });
   });
 
@@ -1272,7 +1331,87 @@ void main() {
           )
           .getOrElse(() => throw StateError('refused'));
       expect(got.modelId, 'my');
-      expect(got.extra[kZChatArtifactProviderIdKey], 'py');
+      expect(got.providerId, 'py', reason: 'le fournisseur voyage TYPÉ');
+      expect(
+        got.extra.containsKey('provider_id'),
+        isFalse,
+        reason: '🔴 deux canaux pour le fournisseur (`extra[provider_id]`)',
+      );
+    });
+
+    test('artefact, RT-G5 : `providerId`/`modelId` = route sans repli ; un '
+        'modèle DÉJÀ nommé garde son fournisseur (même `null`)', () async {
+      final ZChatRouteSession s = await _session();
+      ZChatArtifactGenerationRequest art({
+        String? modelId,
+        String? providerId,
+      }) => ZChatArtifactGenerationRequest(
+        messageId: 'm',
+        artifactKey: 'art',
+        notes: 'n',
+        modelId: modelId,
+        providerId: providerId,
+      );
+      final ZChatArtifactGenerationRequest fromRoute = s
+          .resolveArtifact(art())
+          .getOrElse(() => throw StateError('refused'));
+      expect(fromRoute.providerId, 'px');
+      expect(fromRoute.modelId, 'mx');
+      expect(fromRoute.extra.containsKey('provider_id'), isFalse);
+
+      s.setModelOverride('art', _my);
+      final ZChatArtifactGenerationRequest mine = s
+          .resolveArtifact(art(modelId: 'mine'))
+          .getOrElse(() => throw StateError('refused'));
+      expect(mine.modelId, 'mine');
+      expect(
+        mine.providerId,
+        isNull,
+        reason: '🔴 un fournisseur de route posé sur un modèle de l\'hôte',
+      );
+      final ZChatArtifactGenerationRequest both = s
+          .resolveArtifact(art(modelId: 'mine', providerId: 'mineP'))
+          .getOrElse(() => throw StateError('refused'));
+      expect(both.providerId, 'mineP');
+    });
+  });
+
+  group('🔴 RT-G12 — le fournisseur d\'artefact n\'a qu\'UN canal', () {
+    test('grep NÉGATIF : `lib/` ne cite ni `provider_id` ni '
+        '`kZChatArtifactProviderIdKey`', () {
+      final List<String> offenders = <String>[];
+      int scanned = 0;
+      final RegExp motif = RegExp(
+        r'''['"]provider_id['"]|kZChatArtifactProviderIdKey''',
+      );
+      for (final MapEntry<String, List<String>> e in strippedLib().entries) {
+        scanned++;
+        for (int i = 0; i < e.value.length; i++) {
+          if (motif.hasMatch(e.value[i])) {
+            offenders.add('${e.key}:${i + 1}: ${e.value[i].trim()}');
+          }
+        }
+      }
+      expect(scanned, greaterThan(20), reason: '🔴 GARDE VACUELLE');
+      expect(
+        offenders,
+        isEmpty,
+        reason:
+            '🔴 le fournisseur d\'un artefact voyage dans `providerId` '
+            'typé — un second canal dans `extra` :\n${offenders.join('\n')}',
+      );
+    });
+
+    test('🔬 contre-preuve — le motif VOIT la clé', () {
+      final RegExp motif = RegExp(
+        r'''['"]provider_id['"]|kZChatArtifactProviderIdKey''',
+      );
+      expect(motif.hasMatch("extra['provider_id']"), isTrue);
+      expect(
+        motif.hasMatch('const String kZChatArtifactProviderIdKey ='),
+        isTrue,
+      );
+      expect(motif.hasMatch("'model_provider_id'"), isFalse);
     });
   });
 
@@ -1401,6 +1540,19 @@ class _SpyGate implements ZChatRouteGate {
   }) {
     onSeen(taskKey, tier, requiredAccessTokens);
     return const Right<ZFailure, Unit>(unit);
+  }
+}
+
+class _GenPort implements ZChatGenerationPort {
+  const _GenPort(this.onCall);
+  final void Function(ZChatGenerationRequest) onCall;
+  @override
+  Future<ZResult<List<ZContentBlock>>> generate(
+    ZChatGenerationRequest request, {
+    required ZChatRequestToken token,
+  }) async {
+    onCall(request);
+    return Right<ZFailure, List<ZContentBlock>>(<ZContentBlock>[]);
   }
 }
 

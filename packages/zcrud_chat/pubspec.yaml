@@ -14,7 +14,7 @@
 # et le kernel reste pur.
 name: zcrud_chat
 description: "Flutter-native conversation controller for zcrud: ZChatController with granular ValueListenable slices, one request token per request, resumable streams and a single dispatch site per action verb."
-version: 3.8.0
+version: 3.9.0
 publish_to: none
 resolution: workspace
 
@@ -54,8 +54,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  zcrud_chat_kernel: ^3.8.0
-  zcrud_core: ^3.8.0
+  zcrud_chat_kernel: ^3.9.0
+  zcrud_core: ^3.9.0
 
 # Package Flutter → tests via `flutter test`. Aucun codegen (aucun
 # `@ZcrudModel` : l'état de conversation est un runtime NON persisté ⇒ pas de

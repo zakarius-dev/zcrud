@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.9.0 — 2026-08-23
+
+### Corrigé
+- **Sous-listes imbriquées** : un `subItems` déclaré dans les `itemFields` d'un `subItems` est désormais réellement éditable — le dialogue d'item pose une largeur finie quand le sous-schéma emboîte une liste, le formulaire d'item re-pose `ZcrudScope` (un scope sous `home` était perdu en traversant la route : niveau 2 sans ACL, libellés ni thème), et un `summaryFields` nommant une sous-liste rend son **compte**. Sans limite de profondeur ; lecture seule propagée ; éditer au niveau 2 ne reconstruit pas le niveau 1.
+
 ## 3.8.0 — 2026-08-23
 
 ### Ajouté

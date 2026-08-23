@@ -17,6 +17,47 @@
 /// d'édition imbriqué (dans un formulaire) ; l'écran de sous-liste autonome
 /// (mini-CRUD de niveau liste) est un moteur distinct. Le sous-schéma `const`
 /// est la brique commune réutilisable entre les deux.
+///
+/// ## Emboîtement
+///
+/// [ZSubListConfig.itemFields] peut lui-même déclarer un champ `subItems` (ou
+/// `dynamicItem`) : une sous-liste dans l'item d'une sous-liste, **sans limite
+/// de profondeur** déclarée — le formulaire d'item passe par le même
+/// dispatcher que le formulaire racine, un `subItems` de niveau N rend le même
+/// widget qu'au niveau 0.
+///
+/// ```dart
+/// ZFieldSpec(
+///   name: 'routes', type: EditionFieldType.subItems,
+///   config: ZSubListConfig(itemFields: <ZFieldSpec>[
+///     ZFieldSpec(name: 'name', type: EditionFieldType.text),
+///     ZFieldSpec(
+///       name: 'fallbacks', type: EditionFieldType.subItems,
+///       config: ZSubListConfig(itemFields: <ZFieldSpec>[
+///         ZFieldSpec(name: 'provider_id', type: EditionFieldType.text),
+///         ZFieldSpec(name: 'model_id', type: EditionFieldType.text),
+///       ]),
+///     ),
+///   ]),
+/// )
+/// ```
+///
+/// Contrat de l'emboîtement :
+/// - **valeur** : la `Map` d'un item porte la sous-liste imbriquée sous le
+///   `name` du champ, en `List<Map<String, dynamic>>` — c'est la forme
+///   persistée, à tous les niveaux ;
+/// - **lecture seule** : un item consulté rend ses sous-listes en consultation
+///   (aucun ajout, aucune modification, formulaire d'item sans enregistrer) ;
+/// - **résumé** : un `subItems` nommé dans [ZSubListConfig.summaryFields] (ou
+///   [ZSubListConfig.summaryColumns]) rend le **compte** de ses items ;
+/// - **défensif** : une sous-liste absente ou d'une autre forme dans la `Map`
+///   de l'item est rendue comme une liste vide, jamais une exception ;
+/// - **scope** : le formulaire d'item re-pose le `ZcrudScope` ambiant dans sa
+///   route — ACL, libellés, thème et registres valent au niveau N comme au
+///   niveau 0, que le scope soit posé au-dessus ou au-dessous du `Navigator` ;
+/// - **forme** : en présentation `dialog`, un formulaire d'item qui emboîte une
+///   sous-liste prend toute la largeur permise au dialogue (une table se mesure
+///   contre sa largeur) ; un formulaire plat garde sa largeur intrinsèque.
 library;
 
 import 'z_field_config.dart';

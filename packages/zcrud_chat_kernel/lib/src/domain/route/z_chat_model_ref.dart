@@ -13,8 +13,10 @@
 /// - un jeton `"fournisseur:modèle"` — coupé sur le **premier** `:` ;
 /// - un identifiant nu — le fournisseur est alors `null`.
 ///
-/// [toJson] écrit toujours la map ; [toCompactJson] écrit le jeton quand il
-/// est réversible (c'est la forme qu'édite une liste d'étiquettes).
+/// [toJson] écrit toujours la map — c'est la forme des listes de replis d'une
+/// route et d'un routeur, celle que produit le sous-formulaire décrit par
+/// [$ZChatModelRefFieldSpecs]. [toCompactJson] reste disponible pour un hôte
+/// qui transporte une référence isolée en jeton.
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -91,9 +93,9 @@ class ZChatModelRef {
     'model_id': modelId,
   };
 
-  /// Forme persistée **compacte** : le [token] quand il est réversible, la
-  /// map de [toJson] sinon. C'est la forme des listes de replis, éditables
-  /// comme une liste d'étiquettes.
+  /// Forme **compacte** : le [token] quand il est réversible, la map de
+  /// [toJson] sinon. Toujours relue par [fromJson] ; ce n'est **pas** la
+  /// forme persistée des replis (voir [toJson]).
   Object toCompactJson() => isTokenReversible ? token : toJson();
 
   @override
@@ -109,6 +111,22 @@ class ZChatModelRef {
   @override
   String toString() => 'ZChatModelRef($token)';
 }
+
+/// Sous-schéma d'édition d'une référence de modèle — items des sous-listes
+/// `fallbacks` d'une route et d'un routeur. Aucun libellé : les textes
+/// viennent de l'hôte, par clé.
+///
+/// Un item édité est la map `{provider_id?, model_id}` que [ZChatModelRef.toJson]
+/// écrit et que [ZChatModelRef.fromJson] relit ; `model_id` est requis, un
+/// item sans identifiant lisible est sauté à la lecture.
+const List<ZFieldSpec> $ZChatModelRefFieldSpecs = <ZFieldSpec>[
+  ZFieldSpec(name: 'provider_id', type: EditionFieldType.text),
+  ZFieldSpec(
+    name: 'model_id',
+    type: EditionFieldType.text,
+    validators: <ZValidatorSpec>[ZValidatorSpec.required()],
+  ),
+];
 
 ZChatModelRef? _fromToken(String raw) {
   final String trimmed = raw.trim();

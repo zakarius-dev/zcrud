@@ -49,11 +49,6 @@ import 'package:flutter/foundation.dart';
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 import 'package:zcrud_core/domain.dart';
 
-/// Clé d'`extra` sous laquelle une requête d'artefact transporte le
-/// **fournisseur** résolu par la route, verbatim (`ZChatModelRef.providerId`).
-/// Une valeur déjà présente sous cette clé chez l'hôte prime.
-const String kZChatArtifactProviderIdKey = 'provider_id';
-
 /// Clé de tâche d'une requête de conversation : le `kind` de son style.
 String zChatTaskKeyOf(ZChatGenerationRequest request) => request.style.kind;
 
@@ -93,10 +88,11 @@ ZResult<ZChatGenerationRequest> zChatApplyRoute({
 
 /// Projette une route sur une requête d'artefact — **fonction pure**.
 ///
-/// Même règles que [zChatApplyRoute] ; la requête d'artefact n'ayant ni
-/// fournisseur ni budget typés, le fournisseur résolu rejoint `extra` sous
-/// [kZChatArtifactProviderIdKey] et les paramètres de la route s'y placent
-/// **sous** ceux de l'hôte.
+/// Même règles que [zChatApplyRoute] : le modèle et le fournisseur résolus
+/// rejoignent les champs typés `modelId` / `providerId` de la requête (un
+/// modèle déjà nommé par la requête prime tout, fournisseur compris) ; les
+/// paramètres de la route rejoignent `extra` **sous** ceux de l'hôte. Le
+/// fournisseur ne voyage **jamais** dans `extra` : un seul canal par donnée.
 ZResult<ZChatArtifactGenerationRequest> zChatApplyArtifactRoute({
   required ZChatRouter? router,
   required ZChatRouteGate gate,
@@ -116,12 +112,14 @@ ZResult<ZChatArtifactGenerationRequest> zChatApplyArtifactRoute({
         : (override ?? res.model);
     final Map<String, dynamic> extra = <String, dynamic>{
       ...res.params,
-      if (chosen?.providerId != null)
-        kZChatArtifactProviderIdKey: chosen!.providerId,
       ...request.extra,
     };
+    // Modèle explicite ⇒ la requête est reprise telle quelle (modèle ET
+    // fournisseur) ; sinon le couple de la route (ou du repli) remplace les
+    // deux — un fournisseur seul sur un modèle de route serait incohérent.
     return request.copyWith(
       modelId: explicitModel ? request.modelId : chosen?.modelId,
+      providerId: explicitModel ? request.providerId : chosen?.providerId,
       extra: extra,
     );
   });
