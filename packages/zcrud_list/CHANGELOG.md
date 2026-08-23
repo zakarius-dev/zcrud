@@ -3,6 +3,10 @@
 Toutes les modifications notables de `zcrud_list` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+`zcrud_list` n'est pas l'écran de liste : c'est le backend de rendu Syncfusion
+du port `ZListRenderer` déclaré dans `zcrud_core` ; pour l'écran CRUD assemblé,
+voir `zcrud_screen`.
+
 ## 0.93.0 — 2026-08-13
 
 ### Ajouté
