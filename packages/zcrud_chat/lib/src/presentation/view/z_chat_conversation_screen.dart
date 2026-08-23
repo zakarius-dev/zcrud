@@ -2,8 +2,10 @@
 ///
 /// ## Une couche mince au-dessus des briques publiques
 ///
-/// Le pendant de `ZChatNotebookScreen` pour le chat : `ZChatController`
-/// (créé dans `initState`, libéré dans `dispose`, **jamais** dans `build`),
+/// Le pendant de `ZChatNotebookScreen` pour le chat :
+/// `ZChatConversationController` (créé dans `initState`, libéré dans
+/// `dispose`, **jamais** dans `build` — il compose le `ZChatController` et,
+/// si un dépôt est fourni, la persistance du fil),
 /// `ZChatConversationView` (la surface, avec sa région live), le composer
 /// assemblé (`ZDefaultChatComposer`), la feuille de réglages
 /// (`ZChatSettingsSheet`), le contrôleur d'outils (`ZChatToolController`) et
@@ -23,7 +25,8 @@
 /// Un hôte qui a besoin d'autre chose descend d'un cran sans rien perdre :
 /// `ZChatController` + `ZChatConversationView(composer:
 /// ZDefaultChatComposer(...))` rendent **exactement** l'arbre que cet écran
-/// rend avec ses défauts.
+/// rend avec ses défauts. Avec un dépôt, la brique est
+/// `ZChatConversationController(transcript: …)`.
 ///
 /// ## Invariant AD-2
 ///
@@ -45,6 +48,7 @@ import '../settings/z_chat_settings_controller.dart';
 import '../tools/z_chat_tool_controller.dart';
 import '../tools/z_chat_tool_settings_adapter.dart';
 import '../z_chat_controller.dart';
+import '../z_chat_conversation_controller.dart';
 import '../z_chat_live_labels.dart';
 import 'z_chat_composer_band.dart';
 import 'z_chat_composer_chrome.dart';
@@ -92,16 +96,18 @@ typedef ZChatConversationSlotBuilder =
 class ZChatConversationScreen extends StatefulWidget {
   /// Construit l'écran.
   ///
-  /// Les ports et réglages du contrôleur ([streamPort], [actionExecutor],
-  /// [confirm], [newRequestId], [buildRequest], [lifecycle], [liveLabels],
-  /// [maxResumeAttempts], [conversationId], [initialMessages],
-  /// [routeSession]) sont **lus une fois**, à la création du contrôleur :
-  /// pour changer de conversation, donner une `key` différente à l'écran.
-  /// [readOnly] et [toolCatalog], eux, sont suivis à chaque mise à jour.
+  /// Les ports et réglages du contrôleur ([streamPort], [transcript],
+  /// [actionExecutor], [confirm], [newRequestId], [buildRequest],
+  /// [lifecycle], [liveLabels], [maxResumeAttempts], [conversationId],
+  /// [initialMessages], [routeSession]) sont **lus une fois**, à la création
+  /// du contrôleur : pour changer de conversation, donner une `key`
+  /// différente à l'écran. [readOnly] et [toolCatalog], eux, sont suivis à
+  /// chaque mise à jour.
   const ZChatConversationScreen({
     required this.streamPort,
     required this.cursorColor,
     this.conversationId = '',
+    this.transcript,
     this.initialMessages = const <ZChatMessage>[],
     this.actionExecutor = const ZChatUnsupportedActionExecutor(),
     this.confirm = zChatConfirmWithoutDialog,
@@ -158,7 +164,14 @@ class ZChatConversationScreen extends StatefulWidget {
   /// Identité de la conversation.
   final String conversationId;
 
-  /// Fil initial.
+  /// Dépôt du fil. Fourni, le fil vient du dépôt (abonnement à
+  /// `messages(conversationId)`, amorce sur le premier instantané) et chaque
+  /// tour y est écrit ; les échecs d'écriture sont présentés à
+  /// [failureBuilder]. Absent, [initialMessages] est la source du fil et rien
+  /// n'est persisté.
+  final ZChatTranscriptPort? transcript;
+
+  /// Fil initial — lu seulement sans [transcript].
   final List<ZChatMessage> initialMessages;
 
   /// Exécuteur des verbes de l'hôte.
@@ -315,8 +328,9 @@ class ZChatConversationScreen extends StatefulWidget {
 
   // ── Échecs et action globale ──────────────────────────────────────────────
 
-  /// Rend les échecs de tour (`lastFailure` de la conversation) au-dessus du
-  /// fil. `null` signifie rien de rendu. Les échecs tus par
+  /// Rend les échecs de tour (`lastFailure` de la conversation) et, avec un
+  /// [transcript], les échecs d'écriture du fil, au-dessus du fil. `null`
+  /// signifie rien de rendu. Les échecs tus par
   /// [zChatNotebookFailureIsReportable] ne lui sont jamais présentés.
   final ZChatConversationFailureBuilder? failureBuilder;
 
@@ -330,37 +344,34 @@ class ZChatConversationScreen extends StatefulWidget {
 }
 
 class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
-  late final ZChatController _chat;
+  late final ZChatConversationController _conversation;
   ZChatSettingsController? _ownedSettings;
   ZChatToolController? _tools;
+
+  /// Le contrôleur de conversation composé — celui que les briques reçoivent.
+  ZChatController get _chat => _conversation.chat;
 
   @override
   void initState() {
     super.initState();
     // UNE création, ici et nulle part ailleurs : un contrôleur créé dans
-    // `build` serait recréé à chaque frame, perdant requêtes en vol et
-    // saisie.
-    final String conversationId = widget.conversationId;
-    _chat = ZChatController(
+    // `build` serait recréé à chaque frame, perdant requêtes en vol,
+    // abonnement au fil et saisie.
+    _conversation = ZChatConversationController(
       streamPort: widget.streamPort,
+      transcript: widget.transcript,
+      conversationId: widget.conversationId,
+      initialMessages: widget.initialMessages,
       actionExecutor: widget.actionExecutor,
       confirm: widget.confirm,
-      newRequestId:
-          widget.newRequestId ?? ZChatSequentialRequestIds(conversationId).call,
-      buildRequest:
-          widget.buildRequest ??
-          ZChatDraftRequestBuilder(
-            style: ZChatGenerationStyle.converse,
-            conversationId: conversationId,
-          ).call,
+      newRequestId: widget.newRequestId,
+      buildRequest: widget.buildRequest,
       lifecycle: widget.lifecycle,
       // La session résout, le contrôleur décide : le résolveur est la
       // fonction PURE de la session, jamais un port.
       routeResolver: widget.routeSession?.resolve,
       liveLabels: widget.liveLabels,
       maxResumeAttempts: widget.maxResumeAttempts,
-      conversationId: conversationId,
-      initialMessages: widget.initialMessages,
     );
     if (widget.settings == null) _ownedSettings = ZChatSettingsController();
     final ZChatToolCatalog? catalog = widget.toolCatalog;
@@ -386,7 +397,7 @@ class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
   void dispose() {
     _tools?.dispose();
     _ownedSettings?.dispose();
-    _chat.dispose();
+    _conversation.dispose();
     super.dispose();
   }
 
@@ -410,11 +421,19 @@ class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
           builder: (BuildContext context) =>
               widget.headerBuilder!(context, _chat),
         ),
-      if (widget.failureBuilder != null)
+      if (widget.failureBuilder != null) ...<Widget>[
+        // La tranche d'écriture du fil n'existe qu'avec un dépôt : sans lui,
+        // l'arbre est strictement celui d'aujourd'hui.
+        if (_conversation.isPersisted)
+          _ZChatFailureSlice(
+            failure: _conversation.lastFailure,
+            builder: widget.failureBuilder!,
+          ),
         _ZChatFailureSlice(
           failure: _chat.lastFailure,
           builder: widget.failureBuilder!,
         ),
+      ],
     ];
     // Sans créneau déclaré, l'arbre est EXACTEMENT celui de l'échappatoire :
     // la vue, et rien autour (invariant AD-4).

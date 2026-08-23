@@ -225,5 +225,10 @@ export 'src/presentation/view/z_chat_tile_shell.dart';
 export 'src/presentation/view/z_default_chat_composer.dart';
 export 'src/presentation/z_chat_assembly_contract.dart';
 export 'src/presentation/z_chat_controller.dart';
+// La conversation simple, pendant du fil de travail : `ZChatConversationController`
+// compose un `ZChatController` et, si un dépôt est fourni, la pièce de
+// persistance du fil (`ZChatTranscriptBinding`) — la même que le notebook.
+export 'src/presentation/z_chat_conversation_controller.dart';
 export 'src/presentation/z_chat_live_labels.dart';
 export 'src/presentation/z_chat_stream_progress.dart';
+export 'src/presentation/z_chat_transcript_binding.dart';

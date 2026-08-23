@@ -67,6 +67,7 @@ import 'package:zcrud_core/domain.dart';
 
 import '../z_chat_controller.dart';
 import '../z_chat_live_labels.dart';
+import '../z_chat_transcript_binding.dart';
 
 /// Ajuste la requête de génération d'un artefact avant son envoi au port.
 ///
@@ -260,9 +261,7 @@ class ZChatNotebookController extends ChangeNotifier {
     // sont interdits en Dart, et rendre ces champs publics élargirait la
     // surface du contrôleur. Même arbitrage que `ZChatController`.
     // ignore: prefer_initializing_formals
-  })  : _transcript = transcript,
-        // ignore: prefer_initializing_formals
-        _artifactRouteResolver = artifactRouteResolver,
+  })  : _artifactRouteResolver = artifactRouteResolver,
         _conversationId = conversationId,
         _registry = registry ?? ZChatArtifactRegistry.empty,
         // ignore: prefer_initializing_formals
@@ -295,25 +294,22 @@ class ZChatNotebookController extends ChangeNotifier {
       maxResumeAttempts: maxResumeAttempts,
       conversationId: conversationId,
     );
-    chat.messages.addListener(_onThreadChanged);
-    // UN abonnement, tenu jusqu'à `dispose`. Le premier instantané amorce le
-    // fil (`attach`) ; les suivants ne rafraîchissent que les tranches des
-    // messages qui ont changé — `attach` annulerait toute requête en vol.
-    //
-    // L'abonnement est pris sur le flux de l'hôte LUI-MÊME, avec la règle du
-    // fil vierge appliquée au listener (`onError`), plutôt qu'à travers
-    // `zChatTranscriptOrEmpty` : un générateur `async*` suspendu dans son
-    // `await for` ne propage un `cancel` à sa source qu'à l'ÉVÉNEMENT
-    // SUIVANT — l'écouteur de l'hôte (un snapshot distant) survivrait au
-    // `dispose` jusqu'à la prochaine écriture. Ici, `cancel` atteint la
-    // source immédiatement.
-    _subscription = _listen(() => transcript.messages(conversationId));
+    // La persistance du fil est la pièce PARTAGÉE avec la conversation
+    // simple : un abonnement, une amorce, chaque tour écrit. Les instantanés
+    // suivants ne rafraîchissent ici que les tranches des messages qui ont
+    // changé.
+    _binding = ZChatTranscriptBinding(
+      transcript: transcript,
+      chat: chat,
+      conversationId: conversationId,
+      onChanged: _onTranscriptChanged,
+    );
   }
 
   /// Le contrôleur de conversation composé — celui que les vues reçoivent.
   late final ZChatController chat;
 
-  final ZChatTranscriptPort _transcript;
+  late final ZChatTranscriptBinding _binding;
   final String _conversationId;
   final ZChatArtifactRegistry _registry;
   final ZChatArtifactGenerationPort? _generationPort;
@@ -325,15 +321,7 @@ class ZChatNotebookController extends ChangeNotifier {
   final ZChatLiveLabels _labels;
   late final ZChatRequestIdFactory _newRequestId;
 
-  StreamSubscription<List<ZChatMessage>>? _subscription;
-  bool _attached = false;
   bool _disposed = false;
-
-  /// Dernier instantané reçu du transcript.
-  List<ZChatMessage> _latest = const <ZChatMessage>[];
-
-  /// Messages déjà écrits au transcript, par identité, tels qu'écrits.
-  final Map<String, ZChatMessage> _written = <String, ZChatMessage>{};
 
   /// L'occupation : les couples `(message, artefact)` dont une génération
   /// est en vol. Écrite **uniquement** par le marqueur passé à la séquence.
@@ -354,7 +342,6 @@ class ZChatNotebookController extends ChangeNotifier {
       <(String, String), ZChatRequestToken>{};
 
   final ValueNotifier<bool> _readOnly;
-  final ValueNotifier<ZFailure?> _lastFailure = ValueNotifier<ZFailure?>(null);
   final ValueNotifier<String> _liveAnnouncement = ValueNotifier<String>('');
 
   // ── Surface de LECTURE ────────────────────────────────────────────────────
@@ -370,7 +357,7 @@ class ZChatNotebookController extends ChangeNotifier {
   ValueListenable<bool> get readOnly => _readOnly;
 
   /// Dernier échec du **transcript** (écriture d'un tour), ou `null`.
-  ValueListenable<ZFailure?> get lastFailure => _lastFailure;
+  ValueListenable<ZFailure?> get lastFailure => _binding.lastFailure;
 
   /// Texte à annoncer dans une région live pour les jalons d'artefact
   /// (génération lancée, terminée, échouée ; suppression). Silencieux sans
@@ -711,88 +698,16 @@ class ZChatNotebookController extends ChangeNotifier {
     }
   }
 
-  // ── Le fil : lecture (instantanés) et écriture (tours) ───────────────────
+  // ── Le fil : instantanés postérieurs à l'amorce ───────────────────────────
 
-  /// La règle du fil vierge, au listener : une erreur avant tout instantané
-  /// ouvre un fil vide ; après, le dernier instantané reste. Un port dont
-  /// `messages` lève à l'appel vaut une erreur immédiate.
-  StreamSubscription<List<ZChatMessage>> _listen(
-    Stream<List<ZChatMessage>> Function() open,
-  ) {
-    Stream<List<ZChatMessage>> source;
-    try {
-      source = open();
-    } catch (error) {
-      source = Stream<List<ZChatMessage>>.error(error);
-    }
-    return source.listen(
-      _onSnapshot,
-      onError: (Object _, StackTrace _) {
-        if (!_attached) _onSnapshot(const <ZChatMessage>[]);
-      },
-      cancelOnError: false,
-    );
-  }
-
-  void _onSnapshot(List<ZChatMessage> snapshot) {
+  /// Un instantané après l'amorce : SEULES les tranches des messages qui ont
+  /// changé sont relues. Le fil du contrôleur de conversation n'est pas
+  /// rebranché — c'est la pièce de transcript qui en répond.
+  void _onTranscriptChanged(List<ZChatMessage> _, Set<String> changed) {
     if (_disposed) return;
-    if (!_attached) {
-      _attached = true;
-      _latest = snapshot;
-      // Base d'écriture : ce qui vient du transcript n'y retourne pas.
-      for (final ZChatMessage m in snapshot) {
-        final String? id = m.id;
-        if (id != null) _written[id] = m;
-      }
-      chat.attach(conversationId: _conversationId, messages: snapshot);
-      return;
+    for (final (String, String) pair in _statuses.keys) {
+      if (changed.contains(pair.$1)) unawaited(_refresh(pair));
     }
-    // Instantanés suivants : SEULES les tranches des messages qui ont changé
-    // sont relues. Le fil du contrôleur de conversation n'est pas rebranché.
-    final Map<String, ZChatMessage> before = <String, ZChatMessage>{
-      for (final ZChatMessage m in _latest)
-        if (m.id != null) m.id!: m,
-    };
-    _latest = snapshot;
-    for (final ZChatMessage m in snapshot) {
-      final String? id = m.id;
-      if (id == null) continue;
-      if (before[id] == m) continue;
-      for (final (String, String) pair in _statuses.keys) {
-        if (pair.$1 == id) unawaited(_refresh(pair));
-      }
-    }
-  }
-
-  /// Écrit au transcript ce que le fil du contrôleur de conversation a de
-  /// neuf : un message inconnu est ajouté, un message connu qui a changé est
-  /// mis à jour. Chaque `Left` est publié dans [lastFailure].
-  void _onThreadChanged() {
-    if (_disposed) return;
-    for (final ZChatMessage m in chat.messages.value) {
-      final String? id = m.id;
-      if (id == null) continue;
-      final ZChatMessage? known = _written[id];
-      if (known == m) continue;
-      _written[id] = m;
-      unawaited(_write(known == null ? _transcript.append(m) : _transcript.update(m)));
-    }
-  }
-
-  Future<void> _write(Future<ZResult<ZChatMessage>> pending) async {
-    ZResult<ZChatMessage> result;
-    try {
-      result = await pending;
-    } catch (error) {
-      result = Left<ZFailure, ZChatMessage>(
-        ZDomainFailure('chat transcript port threw ${error.runtimeType}'),
-      );
-    }
-    if (_disposed) return;
-    result.fold(
-      (ZFailure f) => _lastFailure.value = f,
-      (ZChatMessage _) {},
-    );
   }
 
   void _say(String? text) {
@@ -804,13 +719,12 @@ class ZChatNotebookController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    unawaited(_subscription?.cancel());
-    _subscription = null;
+    // L'abonnement au fil d'abord : rien ne doit plus entrer.
+    _binding.dispose();
     for (final ZChatRequestToken token in _artifactTokens.values) {
       token.cancel();
     }
     _artifactTokens.clear();
-    chat.messages.removeListener(_onThreadChanged);
     for (final ValueNotifier<ZChatArtifactStatus> n in _statuses.values) {
       n.dispose();
     }
@@ -820,7 +734,6 @@ class ZChatNotebookController extends ChangeNotifier {
     }
     _failures.clear();
     _readOnly.dispose();
-    _lastFailure.dispose();
     _liveAnnouncement.dispose();
     chat.dispose();
     super.dispose();

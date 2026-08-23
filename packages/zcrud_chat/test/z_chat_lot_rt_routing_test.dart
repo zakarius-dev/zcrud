@@ -1481,10 +1481,20 @@ void main() {
       );
     });
 
-    test('garde de source : `ZChatController(` n\'est construit QUE dans '
-        '`initState`', () {
+    test('garde de source : le contrôleur de conversation n\'est construit '
+        'QUE dans `initState`', () {
       final List<String> src = stripped(libFile(_screenFile));
-      final RegExp ctor = RegExp(r'\bZChatController\(');
+      // L'écran construit `ZChatConversationController`, qui compose le
+      // `ZChatController` : c'est LUI le site unique à surveiller. Un
+      // `ZChatController(` nu dans l'écran serait un second site de
+      // composition — il est interdit au même titre.
+      final RegExp ctor = RegExp(r'\bZChatConversationController\(');
+      expect(
+        src.any((String l) => RegExp(r'\bZChatController\(').hasMatch(l)),
+        isFalse,
+        reason: '🔴 l\'écran construit un `ZChatController` nu à côté du '
+            'contrôleur de conversation : deux compositions',
+      );
       final List<int> sites = <int>[
         for (int i = 0; i < src.length; i++)
           if (ctor.hasMatch(src[i])) i,

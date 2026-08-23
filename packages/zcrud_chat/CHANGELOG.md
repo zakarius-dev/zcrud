@@ -3,6 +3,13 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.11.0 — 2026-08-23
+
+### Ajouté
+- **`ZChatTranscriptBinding`** : la mécanique « flux → messages, envoi → persistance » écrite une fois — abonnement unique à `transcript.messages(id)`, `attach` au premier instantané seulement, `append` d'un message nouveau / `update` d'un message connu quand un tour se règle, `Left` publiés, `dispose` qui annule. `ZChatNotebookController` la **compose** (plus de copie).
+- **`ZChatConversationController`** : symétrique du contrôleur de Notebook — `ZChatController` + transcript ; sans `transcript`, comportement identique sur `initialMessages`.
+- **`ZChatConversationScreen(transcript:)`** : fourni, le fil vient du dépôt et chaque tour y est écrit ; absent, `initialMessages` reste la source (arbre identique).
+
 ## 3.9.0 — 2026-08-23
 
 ### Changé
