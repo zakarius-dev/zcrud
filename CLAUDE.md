@@ -593,3 +593,12 @@ modèle par défaut et ses callbacks — **récupérables depuis le backend** (c
 À terme, Lex migrera vers ce mode. Conséquence pour toute conception de `ZChatStreamPort` /
 `ZChatGenerationRequest` : jamais présupposer le corps unique ; la route est une donnée de la
 requête, résolue par un catalogue déclaré par l'hôte ou servi par le backend.
+
+## Concurrence des sous-agents — limite relevée à 10 (consigne owner, 2026-08-23)
+
+Jusqu'à **10 sous-agents simultanés** (au lieu de 3). Les garde-fous sont **inchangés et s'appliquent
+à chacun** : un seul rédacteur par paquet, scratchpads distincts nommés dans le prompt, aucune mesure
+d'un paquet pendant qu'un agent y écrit (`.dart_tool/package_config` est partagé), health-check des
+agents en vol, écritures des fichiers racine (`pubspec.yaml`, `melos.yaml`, sprint-status) sérialisées
+par l'orchestrateur. La limite haute ne dispense pas de vérifier le graphe de dépendances entre lots :
+un lot qui consomme le contrat d'un autre attend sa fin.
