@@ -34,7 +34,7 @@
 /// | [streamText] (par requestId) | à chaque jeton | le composer se reconstruirait sous les doigts de l'utilisateur |
 /// | [progress] (par requestId) | réflexion, sources, quota | l'indicateur clignoterait à chaque jeton |
 /// | [lastFailure] | échec typé | — |
-/// | [liveAnnouncement] | fin d'un tour | une région live qui parle à chaque jeton est inutilisable |
+/// | [liveAnnouncement] | jalons d'un tour (début, fin, arrêt, échec, édition) | une région live qui parle à chaque jeton est inutilisable |
 ///
 /// Les tranches par requête sont stables par identité (même instance pour un
 /// même `requestId`), sur le patron de `ZFormController.fieldListenable` :
@@ -55,6 +55,31 @@
 /// `requestId`, même `ZChatGenerationRequest`, texte accumulé conservé,
 /// message utilisateur non ré-émis. Le tour n'est pas rejoué — c'est la
 /// seule obligation active du client dans un protocole de reprise de flux.
+///
+/// ## Garantie d'annulation
+///
+/// Arrêter une génération (`runAction(ZChatCancelAction(requestId))`) est un
+/// **contrat**, pas un effet de bord :
+///
+/// 1. le jeton désigné — et lui seul — est annulé ; son `whenCancelled`
+///    se résout, et le port **doit** s'en servir pour fermer son transport ;
+/// 2. le contenu déjà reçu est **conservé** comme message d'assistant et
+///    **marqué interrompu** ([ZChatController.isInterrupted]) ; il n'est
+///    jamais perdu ;
+/// 3. la phase de la requête passe à `ZChatPhase.cancelled` ; aucune
+///    reprise n'est tentée ;
+/// 4. la saisie en cours n'est **pas** touchée ;
+/// 5. le résultat de `send` est un `Left(ZChatStreamInterruptedFailure)` avec
+///    `cancelledByUser == true` — un arrêt voulu n'est pas une panne.
+///
+/// ## Ports optionnels, à défaut inerte
+///
+/// Le contrôleur reste une classe **concrète** : une capacité s'ajoute par
+/// un port optionnel du constructeur, jamais par héritage. Port absent ⇒
+/// capacité absente, tout le reste fonctionne. Ainsi `lifecycle`
+/// (`ZChatConversationLifecyclePort`) rend l'édition rejouée et la
+/// régénération **natives** (consommées par le cycle de flux unique) ; sans
+/// lui, ces verbes restent délégués à l'exécuteur de l'hôte, inchangés.
 library;
 
 import 'dart:async';
@@ -72,6 +97,7 @@ import 'package:flutter/widgets.dart' show TextEditingController;
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 import 'package:zcrud_core/domain.dart';
 
+import 'z_chat_live_labels.dart';
 import 'z_chat_stream_progress.dart';
 
 /// Demande de confirmation à l'utilisateur — seam d'hôte.
@@ -113,11 +139,32 @@ const int _kRetainedSlices = 8;
 /// écoutant de la progression se reconstruirait des centaines de fois par
 /// tour.
 class _ZRequestState {
-  _ZRequestState(this.request);
+  _ZRequestState(
+    this.request, {
+    this.emitsUserMessage = true,
+    this.insertAt,
+    this.rollback = const <ZChatMessage>[],
+    this.rollbackAt = 0,
+  });
 
   /// Requête d'origine — **réutilisée telle quelle** par une reprise (aucun
   /// rejeu, aucune reconstruction de prompt).
   final ZChatGenerationRequest request;
+
+  /// `true` si un message utilisateur optimiste (id = `requestId`) a été
+  /// ajouté au fil — c'est lui qu'un échec sans production retire.
+  final bool emitsUserMessage;
+
+  /// Position où la réponse doit être **insérée** (régénération : à la place
+  /// de l'ancienne), ou `null` pour l'ajouter en fin de fil.
+  final int? insertAt;
+
+  /// Messages retirés localement **avant** le tour (régénération, édition
+  /// rejouée) — restitués si le tour n'a rien produit.
+  final List<ZChatMessage> rollback;
+
+  /// Index du premier message de [rollback] dans le fil d'origine.
+  final int rollbackAt;
 
   /// Position du dernier événement **effectivement reçu**, ou `null`.
   String? lastSequenceId;
@@ -177,12 +224,23 @@ class ZChatController extends ChangeNotifier {
   ///
   /// [maxResumeAttempts] borne la **reprise** d'un flux subi (jamais d'une
   /// annulation volontaire). `0` la désactive.
+  ///
+  /// [lifecycle] est **optionnel** : présent, l'édition rejouée
+  /// (`ZChatEditAction`) et la régénération (`ZChatRegenerateAction`) sont
+  /// exécutées **nativement** — élagage par `trimAfter`, troncature locale,
+  /// puis nouveau tour consommé par le même cycle de flux que [send] ; absent,
+  /// ces deux verbes restent délégués à [actionExecutor].
+  ///
+  /// [liveLabels] porte les libellés des annonces de région live ; omis,
+  /// les jalons sans contenu sont silencieux (cf. [ZChatLiveLabels]).
   ZChatController({
     required ZChatStreamPort streamPort,
     required ZChatActionExecutor actionExecutor,
     required ZChatConfirm confirm,
     required ZChatRequestIdFactory newRequestId,
     required ZChatRequestBuilder buildRequest,
+    ZChatConversationLifecyclePort? lifecycle,
+    ZChatLiveLabels liveLabels = ZChatLiveLabels.none,
     this.maxResumeAttempts = 2,
     String conversationId = '',
     List<ZChatMessage> initialMessages = const <ZChatMessage>[],
@@ -201,6 +259,10 @@ class ZChatController extends ChangeNotifier {
        // ignore: prefer_initializing_formals
        _buildRequest = buildRequest,
        // ignore: prefer_initializing_formals
+       _lifecycle = lifecycle,
+       // ignore: prefer_initializing_formals
+       _labels = liveLabels,
+       // ignore: prefer_initializing_formals
        _conversationId = conversationId,
        _messages = ValueNotifier<List<ZChatMessage>>(
          List<ZChatMessage>.unmodifiable(initialMessages),
@@ -218,10 +280,26 @@ class ZChatController extends ChangeNotifier {
   final ZChatRequestIdFactory _newRequestId;
   final ZChatRequestBuilder _buildRequest;
 
+  /// Port de cycle de vie — **optionnel, à défaut inerte** : `null` laisse
+  /// l'édition rejouée et la régénération à l'exécuteur de l'hôte.
+  final ZChatConversationLifecyclePort? _lifecycle;
+
+  /// Libellés d'annonce fournis par l'hôte (aucune phrase n'est écrite ici).
+  final ZChatLiveLabels _labels;
+
   /// Nombre maximal de **reprises** d'un flux interrompu subi.
   final int maxResumeAttempts;
 
   String _conversationId;
+
+  /// Identités des messages d'assistant **interrompus** (arrêt volontaire ou
+  /// panne) dont le contenu partiel a été conservé.
+  final Set<String> _interrupted = <String>{};
+
+  /// Requête d'origine de chaque message d'assistant produit **dans cette
+  /// session** — c'est elle qu'une régénération rejoue telle quelle.
+  final Map<String, ZChatGenerationRequest> _requestByMessageId =
+      <String, ZChatGenerationRequest>{};
 
   // ── Tranches réactives ────────────────────────────────────────────────────
 
@@ -284,6 +362,11 @@ class ZChatController extends ChangeNotifier {
 
   /// Messages **établis** de la conversation (jamais le texte en cours de
   /// rédaction — il vit dans [streamText]).
+  ///
+  /// Identités : le message utilisateur optimiste d'un tour porte son
+  /// `requestId` ; la réponse porte l'identité annoncée par l'événement
+  /// terminal, ou, à défaut (tour interrompu), `<requestId>/reply`. Deux
+  /// messages du fil ne partagent jamais une identité.
   ///
   /// Cette tranche est une **liste**, pas un widget : rien ici n'empêche la
   /// virtualisation. Le rendu doit rester un `ListView.builder`.
@@ -353,6 +436,70 @@ class ZChatController extends ChangeNotifier {
   ValueListenable<ZChatStreamProgress> progress(String requestId) =>
       _progressOf(requestId);
 
+  // ── Requêtes PURES sur le fil (jamais d'exception, `null` si absent) ──────
+
+  /// Le message d'identité [messageId], ou `null` s'il n'est pas dans
+  /// [messages]. Balayage linéaire — O(n) sur la longueur du fil.
+  ZChatMessage? messageById(String messageId) {
+    for (final ZChatMessage m in _messages.value) {
+      if (m.id == messageId) return m;
+    }
+    return null;
+  }
+
+  /// Le message **apparié** à [messageId] dans l'échange, ou `null`.
+  ///
+  /// Pour un message **utilisateur** : la première réponse d'assistant qui le
+  /// suit, avant tout autre message utilisateur. Pour un message
+  /// **assistant** : le dernier message utilisateur qui le précède. Tout
+  /// autre rôle, ou une identité absente, rend `null`. O(n).
+  ZChatMessage? replyToOf(String messageId) {
+    final List<ZChatMessage> thread = _messages.value;
+    final int at = thread.indexWhere((ZChatMessage m) => m.id == messageId);
+    if (at < 0) return null;
+    switch (thread[at].role) {
+      case ZChatRole.user:
+        for (int i = at + 1; i < thread.length; i++) {
+          final ZChatMessage m = thread[i];
+          if (m.role == ZChatRole.assistant) return m;
+          if (m.role == ZChatRole.user) return null;
+        }
+        return null;
+      case ZChatRole.assistant:
+        for (int i = at - 1; i >= 0; i--) {
+          if (thread[i].role == ZChatRole.user) return thread[i];
+        }
+        return null;
+      case ZChatRole.system:
+      case ZChatRole.unknown:
+        return null;
+    }
+  }
+
+  /// Texte **brut** du message [messageId] — ses blocs de texte concaténés
+  /// par un saut de ligne, sans les blocs structurés — ou `null` s'il est
+  /// absent. O(n).
+  String? contentOf(String messageId) {
+    final ZChatMessage? m = messageById(messageId);
+    if (m == null) return null;
+    return <String>[
+      for (final ZContentBlock b in m.contentBlocks)
+        if (b is ZTextBlock) b.text,
+    ].join('\n');
+  }
+
+  /// Nombre de messages **postérieurs** à [messageId] — ceux qu'une édition
+  /// rejouée retire. `0` si l'identité est absente. Calcul pur, O(n).
+  int previewEditImpact(String messageId) {
+    final List<ZChatMessage> thread = _messages.value;
+    final int at = thread.indexWhere((ZChatMessage m) => m.id == messageId);
+    return at < 0 ? 0 : thread.length - at - 1;
+  }
+
+  /// `true` si le message d'assistant [messageId] est un contenu **partiel**
+  /// conservé après un arrêt volontaire ou une panne du flux.
+  bool isInterrupted(String messageId) => _interrupted.contains(messageId);
+
   // ── Écriture de la saisie — UN SEUL site ──────────────────────────────────
 
   /// Remplace les pièces jointes de la saisie.
@@ -384,6 +531,7 @@ class ZChatController extends ChangeNotifier {
     _setComposer(
       ZChatDraft(text: originalText, attachmentIds: _attachmentIds.value),
     );
+    _say(_labels.editingStarted);
   }
 
   /// Sort du mode édition **sans soumettre**.
@@ -461,6 +609,8 @@ class ZChatController extends ChangeNotifier {
     }
     _progress.clear();
     _retained.clear();
+    _interrupted.clear();
+    _requestByMessageId.clear();
     _conversationId = conversationId;
     _messages.value = List<ZChatMessage>.unmodifiable(messages);
     _activeRequests.value = const <String>[];
@@ -537,39 +687,75 @@ class ZChatController extends ChangeNotifier {
       return const Left<ZFailure, ZChatRequestToken>(failure);
     }
 
+    return _launch(draft: draft, settings: settings, corpusScope: corpusScope);
+  }
+
+  /// Ouvre **un** tour — le seul site qui fabrique un jeton, construit la
+  /// requête et entre dans le cycle [_consume]. [send], l'édition rejouée et
+  /// la régénération passent tous ici : il n'existe pas de second cycle.
+  ///
+  /// [request] est la requête **d'origine** à rejouer (régénération) ; sans
+  /// elle, la requête est construite par le builder de l'hôte à partir de
+  /// [draft]. [emitsUserMessage] ajoute le message utilisateur optimiste ;
+  /// [insertAt] place la réponse dans le fil ; [rollback]/[rollbackAt]
+  /// décrivent les messages retirés localement avant le tour, restitués si
+  /// rien n'est produit.
+  Future<ZResult<ZChatRequestToken>> _launch({
+    required ZChatDraft draft,
+    ZChatGenerationRequest? request,
+    ZChatGenerationSettings? settings,
+    ZChatCorpusScope? corpusScope,
+    bool emitsUserMessage = true,
+    int? insertAt,
+    List<ZChatMessage> rollback = const <ZChatMessage>[],
+    int rollbackAt = 0,
+  }) {
     final String requestId = _newRequestId();
     final ZChatRequestToken token = ZChatRequestToken(requestId);
     _tokens[requestId] = token;
 
-    final ZChatGenerationRequest built;
-    try {
-      built = _buildRequest(draft);
-    } catch (e) {
-      return _abort(requestId, 'chat request builder threw ${e.runtimeType}');
+    ZChatGenerationRequest built;
+    if (request != null) {
+      built = request;
+    } else {
+      try {
+        built = _buildRequest(draft);
+      } catch (e) {
+        return _abort(requestId, 'chat request builder threw ${e.runtimeType}');
+      }
     }
     // UN SEUL site d'application des réglages, hors d'atteinte de l'hôte.
     // `withSettings(null)` rend `identical(built)` : sans argument, la
     // requête envoyée est l'objet même du builder — aucun défaut n'a bougé.
-    final ZChatGenerationRequest request = corpusScope == null
+    final ZChatGenerationRequest sent = corpusScope == null
         ? built.withSettings(settings)
         : built.withSettings(settings).withCorpusScope(corpusScope);
-    _states[requestId] = _ZRequestState(request);
+    _states[requestId] = _ZRequestState(
+      sent,
+      emitsUserMessage: emitsUserMessage,
+      insertAt: insertAt,
+      rollback: rollback,
+      rollbackAt: rollbackAt,
+    );
 
-    _setComposer(const ZChatDraft());
-    _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
-      ..._messages.value,
-      ZChatMessage(
-        id: requestId,
-        conversationId: _conversationId,
-        role: ZChatRole.user,
-        contentBlocks: <ZContentBlock>[ZTextBlock(text: draft.text)],
-      ),
-    ]);
+    if (emitsUserMessage) {
+      _setComposer(const ZChatDraft());
+      _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
+        ..._messages.value,
+        ZChatMessage(
+          id: requestId,
+          conversationId: _conversationId,
+          role: ZChatRole.user,
+          contentBlocks: <ZContentBlock>[ZTextBlock(text: draft.text)],
+        ),
+      ]);
+    }
     _activeRequests.value = List<String>.unmodifiable(<String>[
       ..._activeRequests.value,
       requestId,
     ]);
     _publish(requestId, (ZChatStreamProgress p) => p.copyWith(phase: ZChatPhase.streaming));
+    _say(_labels.generationStarted);
 
     return _consume(requestId: requestId, first: token, draft: draft);
   }
@@ -735,19 +921,64 @@ class ZChatController extends ChangeNotifier {
       ...?state?.blocks,
     ];
     if (state != null && blocks.isNotEmpty) {
-      _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
-        ..._messages.value,
+      final String id = state.messageId ?? _replyIdFor(requestId);
+      _insertReply(
+        state,
         ZChatMessage(
-          id: state.messageId ?? requestId,
+          id: id,
           conversationId: state.conversationId ?? _conversationId,
           role: ZChatRole.assistant,
           contentBlocks: blocks,
         ),
-      ]);
+      );
+      _requestByMessageId[id] = state.request;
     }
-    _liveAnnouncement.value = _announce(blocks);
+    final String content = _announce(blocks);
+    _say(_labels.generationCompleted?.call(content) ?? content);
     _publish(requestId, (ZChatStreamProgress p) => p.copyWith(phase: ZChatPhase.done));
     _release(requestId);
+  }
+
+  /// Identité locale d'une réponse que l'événement terminal n'a pas nommée
+  /// (tour interrompu, ou port muet). Distincte de `requestId`, qui est
+  /// l'identité du message utilisateur optimiste : deux messages du fil ne
+  /// partagent jamais une identité.
+  static String _replyIdFor(String requestId) => '$requestId/reply';
+
+  /// Place une réponse dans le fil : à la position demandée par la requête
+  /// (régénération — **remplacement**, jamais ajout), sinon en fin.
+  void _insertReply(_ZRequestState state, ZChatMessage reply) {
+    final List<ZChatMessage> thread = _messages.value;
+    final int? at = state.insertAt;
+    final int index = at == null ? thread.length : at.clamp(0, thread.length);
+    _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
+      ...thread.take(index),
+      reply,
+      ...thread.skip(index),
+    ]);
+  }
+
+  /// Restitue les messages retirés localement avant un tour qui n'a rien
+  /// produit — la régénération ou l'édition rejouée ne coûte jamais la
+  /// réponse qu'elle voulait remplacer.
+  void _restoreRollback(_ZRequestState? state) {
+    if (state == null || state.rollback.isEmpty) return;
+    final List<ZChatMessage> thread = _messages.value;
+    final int index = state.rollbackAt.clamp(0, thread.length);
+    _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
+      ...thread.take(index),
+      ...state.rollback,
+      ...thread.skip(index),
+    ]);
+  }
+
+  /// Écrit une annonce de région live. `null` ou vide ⇒ **silence**, rien
+  /// n'est écrit. Un texte identique au précédent est d'abord effacé pour
+  /// que chaque jalon notifie (un `ValueNotifier` ignore une valeur égale).
+  void _say(String? text) {
+    if (text == null || text.isEmpty) return;
+    if (_liveAnnouncement.value == text) _liveAnnouncement.value = '';
+    _liveAnnouncement.value = text;
   }
 
   /// Termine un tour échoué. **Ne touche jamais la saisie** quand l'arrêt est
@@ -763,28 +994,47 @@ class ZChatController extends ChangeNotifier {
       if (text.isNotEmpty) ZTextBlock(text: text),
       ...?state?.blocks,
     ];
+    final String partial = blocks.isEmpty ? '' : _announce(blocks);
     if (blocks.isNotEmpty) {
-      // Contenu partiel déjà rendu : il est CONSERVÉ (AD-10). L'utilisateur a
-      // lu ce texte ; le faire disparaître serait une perte silencieuse.
-      _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
-        ..._messages.value,
-        ZChatMessage(
-          id: state?.messageId ?? requestId,
-          conversationId: state?.conversationId ?? _conversationId,
-          role: ZChatRole.assistant,
-          contentBlocks: blocks,
-        ),
-      ]);
-      _liveAnnouncement.value = _announce(blocks);
-    } else if (!byUser) {
-      // Rien n'a été produit : le tour n'a pas eu lieu. Le message optimiste
-      // est retiré et la saisie RESTITUÉE — une panne ne coûte pas la frappe.
-      _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
-        for (final ZChatMessage m in _messages.value)
-          if (m.id != requestId) m,
-      ]);
-      if (composer.text.isEmpty) _setComposer(draft);
+      // Contenu partiel déjà rendu : il est CONSERVÉ (AD-10) et MARQUÉ
+      // interrompu. L'utilisateur a lu ce texte ; le faire disparaître serait
+      // une perte silencieuse.
+      final String id = state?.messageId ?? _replyIdFor(requestId);
+      final ZChatMessage reply = ZChatMessage(
+        id: id,
+        conversationId: state?.conversationId ?? _conversationId,
+        role: ZChatRole.assistant,
+        contentBlocks: blocks,
+      );
+      if (state == null) {
+        _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
+          ..._messages.value,
+          reply,
+        ]);
+      } else {
+        _insertReply(state, reply);
+        _requestByMessageId[id] = state.request;
+      }
+      _interrupted.add(id);
+    } else {
+      // Rien n'a été produit : ce que le tour avait retiré localement
+      // (régénération, édition rejouée) est RESTITUÉ.
+      _restoreRollback(state);
+      if (!byUser && (state?.emitsUserMessage ?? true)) {
+        // Le tour n'a pas eu lieu. Le message optimiste est retiré et la
+        // saisie RESTITUÉE — une panne ne coûte pas la frappe.
+        _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
+          for (final ZChatMessage m in _messages.value)
+            if (m.id != requestId) m,
+        ]);
+        if (composer.text.isEmpty) _setComposer(draft);
+      }
     }
+    _say(
+      byUser
+          ? (_labels.generationCancelled?.call(partial) ?? partial)
+          : (_labels.generationFailed ?? partial),
+    );
 
     _lastFailure.value = failure;
     _publish(
@@ -912,6 +1162,18 @@ class ZChatController extends ChangeNotifier {
     // seul. Aucune autre requête en vol n'est touchée.
     if (action is ZChatCancelAction) _tokens[action.requestId]?.cancel();
 
+    // Avec le port de cycle de vie, l'édition rejouée et la régénération
+    // sont NATIVES : élagage, troncature locale, nouveau tour par le cycle
+    // unique. La planification et la confirmation ci-dessus ont déjà eu
+    // lieu — le protocole est le même que pour tout autre verbe.
+    final ZChatConversationLifecyclePort? lifecycle = _lifecycle;
+    if (lifecycle != null && action is ZChatEditAction) {
+      return _editNatively(lifecycle, action);
+    }
+    if (lifecycle != null && action is ZChatRegenerateAction) {
+      return _regenerateNatively(lifecycle, action);
+    }
+
     final ZResult<ZChatActionOutcome> outcome = await _dispatcher.execute(
       ticket,
     );
@@ -958,6 +1220,140 @@ class ZChatController extends ChangeNotifier {
     ]);
   }
 
+  // ── Édition rejouée et régénération NATIVES ───────────────────────────────
+
+  /// Élague le fil côté hôte — **avant** toute destruction locale. Un port
+  /// qui lève rend un `Left` (AD-10).
+  Future<ZResult<int>> _trim(
+    ZChatConversationLifecyclePort lifecycle,
+    String messageId,
+  ) async {
+    try {
+      return await lifecycle.trimAfter(
+        conversationId: _conversationId,
+        messageId: messageId,
+      );
+    } catch (e) {
+      return Left<ZFailure, int>(
+        ZDomainFailure(
+          'chat lifecycle port threw ${e.runtimeType} during trimAfter',
+        ),
+      );
+    }
+  }
+
+  /// Édition rejouée, en trois temps et dans cet ordre strict :
+  /// `trimAfter` (hôte) → troncature locale → nouveau tour. Un échec du
+  /// premier temps ne détruit **rien** localement et laisse la session
+  /// d'édition ouverte.
+  Future<ZResult<ZChatActionOutcome>> _editNatively(
+    ZChatConversationLifecyclePort lifecycle,
+    ZChatEditAction action,
+  ) async {
+    final List<ZChatMessage> thread = _messages.value;
+    final int at = thread.indexWhere(
+      (ZChatMessage m) => m.id == action.messageId,
+    );
+    if (at < 0) {
+      final ZFailure failure = ZNotFoundFailure(
+        'chat message ${action.messageId} is not in the thread',
+      );
+      _lastFailure.value = failure;
+      return Left<ZFailure, ZChatActionOutcome>(failure);
+    }
+    final ZResult<int> trimmed = await _trim(lifecycle, action.messageId);
+    final ZFailure? refused = trimmed.fold((ZFailure f) => f, (int _) => null);
+    if (refused != null) {
+      _lastFailure.value = refused;
+      return Left<ZFailure, ZChatActionOutcome>(refused);
+    }
+
+    // Troncature locale : le message édité ET ses postérieurs quittent le fil
+    // (le nouveau tour ré-émet la question, avec son nouveau texte).
+    final List<ZChatMessage> removed = thread.sublist(at);
+    _messages.value = List<ZChatMessage>.unmodifiable(thread.take(at));
+    // La session d'édition se clôt ici, par le même chemin que l'issue
+    // déléguée : la saisie d'AVANT l'édition est restituée.
+    final ZChatActionOutcome outcome = ZChatActionOutcome(
+      verb: action.verb,
+      affectedMessageIds: <String>[
+        for (final ZChatMessage m in removed)
+          if (m.id != null) m.id!,
+      ],
+      preservedDraft: action.draft,
+    );
+    _applyOutcome(action, outcome);
+
+    final ZResult<ZChatRequestToken> sent = await _launch(
+      draft: ZChatDraft(
+        text: action.newText,
+        attachmentIds: action.draft.attachmentIds,
+      ),
+      rollback: removed,
+      rollbackAt: at,
+    );
+    return sent.map((ZChatRequestToken _) => outcome);
+  }
+
+  /// Régénération : la réponse [ZChatRegenerateAction.messageId] est
+  /// **remplacée** (jamais ajoutée) par un nouveau tour rejouant la requête
+  /// d'origine — celle de la session si elle est connue, sinon reconstruite
+  /// par le builder de l'hôte à partir de la question appariée. Les réglages
+  /// de l'action s'appliquent par-dessus, comme pour [send]. Si le tour ne
+  /// produit rien, l'ancienne réponse est restituée.
+  Future<ZResult<ZChatActionOutcome>> _regenerateNatively(
+    ZChatConversationLifecyclePort lifecycle,
+    ZChatRegenerateAction action,
+  ) async {
+    final ZChatMessage? reply = messageById(action.messageId);
+    final ZChatMessage? question = reply == null
+        ? null
+        : replyToOf(action.messageId);
+    final String? questionId = question?.id;
+    if (reply == null || question == null || questionId == null) {
+      final ZFailure failure = ZNotFoundFailure(
+        'chat message ${action.messageId} has no paired question in the thread',
+      );
+      _lastFailure.value = failure;
+      return Left<ZFailure, ZChatActionOutcome>(failure);
+    }
+    final ZResult<int> trimmed = await _trim(lifecycle, questionId);
+    final ZFailure? refused = trimmed.fold((ZFailure f) => f, (int _) => null);
+    if (refused != null) {
+      _lastFailure.value = refused;
+      return Left<ZFailure, ZChatActionOutcome>(refused);
+    }
+
+    final List<ZChatMessage> thread = _messages.value;
+    final int at = thread.indexWhere((ZChatMessage m) => m.id == questionId) + 1;
+    final List<ZChatMessage> removed = thread.sublist(at);
+    _messages.value = List<ZChatMessage>.unmodifiable(thread.take(at));
+
+    final ZChatDraft draft = ZChatDraft(
+      text: contentOf(questionId) ?? '',
+      attachmentIds: <String>[
+        for (final ZChatAttachment a in question.attachments ?? const <ZChatAttachment>[])
+          if (a.id.isNotEmpty) a.id,
+      ],
+    );
+    final ZResult<ZChatRequestToken> sent = await _launch(
+      draft: draft,
+      request: _requestByMessageId[action.messageId],
+      settings: action.settings,
+      corpusScope: action.corpusScope,
+      emitsUserMessage: false,
+      insertAt: at,
+      rollback: removed,
+      rollbackAt: at,
+    );
+    return sent.map(
+      (ZChatRequestToken _) => ZChatActionOutcome(
+        verb: action.verb,
+        affectedMessageIds: <String>[action.messageId],
+      ),
+    );
+  }
+
   // ── Tranches par requête (instances STABLES) ──────────────────────────────
 
   ValueNotifier<String> _textOf(String requestId) =>
@@ -983,6 +1379,8 @@ class ZChatController extends ChangeNotifier {
     }
     _tokens.clear();
     _states.clear();
+    _interrupted.clear();
+    _requestByMessageId.clear();
     composer.removeListener(_onComposerChanged);
     composer.dispose();
     _attachmentIds.dispose();

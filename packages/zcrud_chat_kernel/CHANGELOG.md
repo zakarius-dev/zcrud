@@ -3,6 +3,20 @@
 Toutes les modifications notables de `zcrud_chat_kernel` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.6.0 — 2026-08-23
+
+### Ajouté
+- **Vocabulaire déclaratif de la feuille d'outils** (`domain/tools/`) : `ZChatToolEntry` (bascule, cycle 0..N, choix, échelle à repères, catalogue filtrable, action ponctuelle ; proéminence `auto`/bande/feuille ; révélation conditionnelle ; règles d'exclusion et de désactivation **avec raison** ; `iconKey` et `itemLabels` opaques), `ZChatToolSection`, `ZChatToolCatalog` immuable (`setState`/`advance`/`reset` en `Either`) et `resolve()` — visibilité, grisage, ordre, comptage, liste des actifs et recherche calculés **une fois**, pour les deux surfaces.
+- **Ports du Notebook** (`domain/notebook/`) : `ZChatArtifactRegistry`/`ZChatArtifactDeclaration` (artefacts et verbes déclarés par jetons, `subjectRequired`, `style`), `ZChatArtifactStatus.resolve` (occupation > existence), `ZChatArtifactStatePort`, `ZChatArtifactGenerationPort` + `zChatRunArtifactGeneration` (refus sur vide → marquer → générer → écrire si non vide → **démarquer dans un `finally`**, échecs typés jamais avalés), `ZChatArtifactStorePort` (`delete` atomique, anti-résurrection, toutes représentations), `ZChatTranscriptPort` lecture **et** écriture + `zChatTranscriptOrEmpty` (erreur ⇒ fil vierge), `ZChatUnsupportedActionExecutor`, `ZChatDraftRequestBuilder` (copie `attachmentIds`), `ZChatSequentialRequestIds`, `zChatConfirmWithoutDialog`.
+- **Transport SSE** (`data/sse/`) : `zChatSseLines` (octets → lignes, `data:` retiré une fois, lignes vides conservées, `id:` ⇒ reprise, `[DONE]`, annulation par jeton **immédiate**) et `ZChatSseStreamPort` (l'hôte fournit l'ouverture authentifiée et le décodeur de ligne ; le socle ne connaît ni URL, ni auth, ni JSON). Aucune dépendance HTTP.
+- `copyWith` sur `ZChatArtifactGenerationRequest`.
+
+### Corrigé
+- `zChatTranscriptOrEmpty` propageait l'annulation avec un événement de retard : l'écouteur distant survivait au `dispose`. Désabonnement immédiat.
+- Trois octets NUL bruts dans des littéraux Dart remplacés par `\u0000` (un `grep` sans `-a` voyait un binaire).
+- Les trois types à `extra` concret (`ZChatArtifactDeclaration`, `ZChatArtifactGenerationRequest`, `ZChatToolEntry`) filtrent désormais les clés réservées de synchronisation et leurs clés propres (`_reservedKeys` ∋ `ZSyncMeta.reservedKeys`, AD-19.1) — une clé `updated_at` glissée dans `extra` n'est plus réémise.
+- Les gardes de source du Notebook déclarent `@TestOn('vm')` (elles lisent le disque ; la gate web les compilait vers Node).
+
 ## 3.3.1 — 2026-08-21
 
 ### Corrigé — un faux VERT refermé dans la garde de contrat des verbes

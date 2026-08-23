@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_export_pdf` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.6.0 — 2026-08-23
+
+### Corrigé
+- Octet VT brut (0x0B) dans un littéral de test remplacé par `\v` — même intention, source lisible.
+
 ## 0.93.0 — 2026-08-13
 
 ### Ajouté

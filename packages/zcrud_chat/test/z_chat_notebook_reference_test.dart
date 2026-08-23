@@ -375,8 +375,21 @@ void main() {
         //    transportent un `ZChatTileShell?` nullable, asserté sur leur
         //    source par le test suivant.
         'view/z_chat_tile_shell.dart',
+        // Lot F (notebook, 2026-08-22) — le cardinal passe de 5 à 6. Le
+        // créneau dérivé du contrôleur de notebook (`zChatNotebookArtifactsSlot`)
+        // TRANSPORTE un `ZChatNotebookSkin?` nullable jusqu'à la rangée,
+        // exactement comme la vue ci-dessus : il ne résout rien, ne cite ni
+        // la référence ni le style, et ne monte rien sans déclaration.
+        'view/z_chat_artifact_binding.dart',
+        // Lot G2 (écran assemblé, 2026-08-22) — le cardinal passe de 6 à 7.
+        // `ZChatNotebookScreen` TRANSPORTE un `ZChatNotebookSkin?` nullable
+        // vers la vue et vers le créneau dérivé, sans le construire ni le
+        // résoudre : `skin: null` par défaut, donc l'arbre de l'écran sans
+        // réglage est celui d'un hôte passif (asserté par la garde
+        // d'échappatoire de `z_chat_lot_g2_screen_test.dart`).
+        'view/z_chat_notebook_screen.dart',
       };
-      expect(proprietaires, hasLength(5),
+      expect(proprietaires, hasLength(7),
           reason: '🔴 un fichier a été AJOUTÉ aux propriétaires du rendu de '
               'référence. Chaque entrée est un endroit de plus où un hôte '
               'passif peut se mettre à hériter du rendu IFFD : justifiez-la '

@@ -86,6 +86,12 @@ export 'src/presentation/export/z_chat_export_format.dart';
 export 'src/presentation/export/z_chat_export_ports.dart';
 export 'src/presentation/export/z_chat_export_result.dart';
 export 'src/presentation/export/z_chat_export_service.dart';
+// Le fil de travail (notebook) : `ZChatNotebookController` compose un
+// `ZChatController`, tient l'occupation des artefacts, expose une tranche
+// d'état par `(message, artefact)`, dérive les verbes du registre du kernel,
+// fait passer chaque verbe d'artefact par `runAction` (planification,
+// confirmation, exécution) et persiste le fil par `ZChatTranscriptPort`.
+export 'src/presentation/notebook/z_chat_notebook_controller.dart';
 export 'src/presentation/render/z_chat_accessible_text_scope.dart';
 export 'src/presentation/render/z_chat_render_request.dart';
 export 'src/presentation/render/z_chat_renderer.dart';
@@ -110,7 +116,27 @@ export 'src/presentation/settings/z_chat_settings_controller.dart';
 // condition tient, confirmation d'un verbe destructeur, état ANNONCÉ), et
 // consomme enfin `capabilityAccents` — la table que le socle offrait sans
 // que personne ne la lise.
+/// Surface d'OUTILS déclaratifs :
+/// - `ZChatToolController` : l'état réactif du `ZChatToolCatalog` du kernel,
+///   en tranches granulaires (structure de la feuille, structure de la bande,
+///   une tranche par entrée, comptage agrégé) — une tuile n'écoute que la
+///   sienne (invariant AD-2).
+/// - `zChatToolSettingsEntries` / `zChatToolSettingsSections` : la projection
+///   du catalogue vers les entrées déclaratives de `ZChatSettingsSheet`, sans
+///   qu'aucune décision du domaine (visibilité, grisage, ordre, comptage) ne
+///   soit reprise ici.
+/// - `ZChatToolSheetReference` : les géométries de référence de la feuille
+///   d'outils (priorité paramètre > jeton > référence).
+export 'src/presentation/tools/z_chat_tool_controller.dart';
+export 'src/presentation/tools/z_chat_tool_settings_adapter.dart';
+export 'src/presentation/tools/z_chat_tool_sheet_reference.dart';
 export 'src/presentation/view/z_chat_artifact_bar.dart';
+// La dérivation déclaration → rendu : `zChatArtifactSpecOf` lit l'état dans
+// le contrôleur de notebook et résout les jetons par les résolveurs de
+// l'hôte (jeton non résolu ⇒ glyphe/couleur absents, libellé vide) ;
+// `zChatNotebookArtifactsSlot` rend la barre de chaque message sous
+// l'écouteur de ses seules tranches.
+export 'src/presentation/view/z_chat_artifact_binding.dart';
 export 'src/presentation/view/z_chat_artifact_spec.dart';
 export 'src/presentation/view/z_chat_attachment_strip.dart';
 export 'src/presentation/view/z_chat_block_view.dart';
@@ -132,6 +158,7 @@ export 'src/presentation/view/z_chat_composer.dart';
 // opt-in de ces pièces.
 export 'src/presentation/view/z_chat_composer_band.dart';
 export 'src/presentation/view/z_chat_composer_chrome.dart';
+export 'src/presentation/view/z_chat_composer_keys.dart';
 export 'src/presentation/view/z_chat_composer_model_selector.dart';
 export 'src/presentation/view/z_chat_composer_reference.dart';
 export 'src/presentation/view/z_chat_conversation_actions.dart';
@@ -155,6 +182,10 @@ export 'src/presentation/view/z_chat_message_tile.dart';
 // vue ne le monte d'elle-même, il est consommé par le backend de coquille
 // auquel l'hôte le passe — l'arbre d'un hôte passif ne change pas.
 export 'src/presentation/view/z_chat_notebook_reference.dart';
+// L'écran assemblé : une couche mince qui câble contrôleur de fil de
+// travail, vue, créneau d'artefacts, composer et feuille d'outils — chaque
+// pièce restant remplaçable, et l'échappatoire vers les briques garantie.
+export 'src/presentation/view/z_chat_notebook_screen.dart';
 export 'src/presentation/view/z_chat_notebook_skin.dart';
 export 'src/presentation/view/z_chat_notebook_view.dart';
 // Le modèle d'entrées déclaratif de la feuille de réglages (nature ouverte,
@@ -172,4 +203,5 @@ export 'src/presentation/view/z_chat_tile_shell.dart';
 export 'src/presentation/view/z_default_chat_composer.dart';
 export 'src/presentation/z_chat_assembly_contract.dart';
 export 'src/presentation/z_chat_controller.dart';
+export 'src/presentation/z_chat_live_labels.dart';
 export 'src/presentation/z_chat_stream_progress.dart';

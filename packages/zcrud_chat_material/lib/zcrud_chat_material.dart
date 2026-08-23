@@ -36,4 +36,12 @@ export 'src/presentation/z_chat_material_badge.dart';
 export 'src/presentation/z_chat_material_budget_slider.dart';
 export 'src/presentation/z_chat_material_composer.dart';
 export 'src/presentation/z_chat_material_effort_chips.dart';
+export 'src/presentation/z_chat_material_labelled_slider.dart';
+
 export 'src/presentation/z_chat_material_send_fab.dart';
+// Feuille d'OUTILS : les tuiles par nature (bascule, cycle, choix, échelle,
+// catalogue filtrable, action), les canaux de libellé de l'hôte, et la feuille
+// assemblée sur la structure que le domaine résout.
+export 'src/presentation/z_chat_material_tool_labels.dart';
+export 'src/presentation/z_chat_material_tool_tile.dart';
+export 'src/presentation/z_chat_material_tools_sheet.dart';

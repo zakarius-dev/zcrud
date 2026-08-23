@@ -2,6 +2,11 @@
 
 All notable changes to `zcrud_firestore` are documented in this file.
 
+## 3.6.0 — 2026-08-23
+
+### Corrigé
+- Octet NUL brut dans un littéral Dart remplacé par `\u0000` (un `grep` sans `-a` voyait un fichier binaire ; `git diff` aussi).
+
 ## 0.98.0 — 2026-08-14
 
 ### Corrigé

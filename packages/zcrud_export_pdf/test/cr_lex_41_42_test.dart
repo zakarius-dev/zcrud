@@ -73,7 +73,7 @@ void main() {
         () async {
       final txt = await _texteExtrait(_deck(const <ZFlashcardPdfCard>[
         ZFlashcardPdfCard(
-          question: 'ALPHA\r\nBRAVO\rCHARLIE DELTA ECHOFOX',
+          question: 'ALPHA\r\nBRAVO\rCHARLIE DELTA ECHO\vFOX',
         ),
       ]));
       for (final mot in <String>[

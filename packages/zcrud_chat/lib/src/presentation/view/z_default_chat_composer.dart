@@ -52,6 +52,7 @@ import '../z_chat_controller.dart';
 import 'z_chat_composer.dart';
 import 'z_chat_composer_band.dart';
 import 'z_chat_composer_chrome.dart';
+import 'z_chat_composer_keys.dart';
 import 'z_chat_composer_model_selector.dart';
 import 'z_chat_composer_reference.dart';
 import 'z_chat_labels.dart';
@@ -76,9 +77,11 @@ class ZDefaultChatComposer extends StatelessWidget {
     this.clipBehavior = Clip.none,
     this.focusNode,
     this.hints = const <String>[],
+    this.submitPolicy = ZChatComposerSubmitPolicy.standard,
     this.pickers = const <ZChatComposerPickerAction>[],
     this.onOpenTools,
     this.toolsBadge,
+    this.showToolsBadge = true,
     this.modelOptions = const <ZChatModelOption>[],
     this.modelActiveId,
     this.onSelectModel,
@@ -162,6 +165,9 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// signifie l'invite par défaut du composer (pas d'animation).
   final List<String> hints;
 
+  /// Ce que la touche Entrée fait — cf. [ZChatComposer.submitPolicy].
+  final ZChatComposerSubmitPolicy submitPolicy;
+
   /// Glyphe de tête du placeholder animé.
   final Widget? hintLeading;
 
@@ -175,8 +181,17 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// jamais montée inline.
   final VoidCallback? onOpenTools;
 
-  /// Badge compteur du bouton « outils » — rendu dans la cible tactile.
+  /// Badge compteur d'HÔTE du bouton « outils » — rendu dans la cible
+  /// tactile. `null` signifie le badge par défaut du socle, qui rend
+  /// `ZChatSettingsController.activeCount`.
   final Widget? toolsBadge;
+
+  /// Présence du badge par défaut (le compte des réglages actifs).
+  ///
+  /// `true` par défaut : le déclencheur d'outils porte le nombre de réglages
+  /// actifs, rien tant qu'il vaut zéro. `false` retire ce canal — un
+  /// [toolsBadge] d'hôte, lui, reste rendu quoi qu'il arrive.
+  final bool showToolsBadge;
 
   /// Catalogue du sélecteur de modèle. Vide signifie sélecteur absent
   /// (invariant AD-4).
@@ -332,6 +347,7 @@ class ZDefaultChatComposer extends StatelessWidget {
         focusNode: focusNode,
         minLines: ZChatComposerReference.fieldMinLines,
         maxLines: ZChatComposerReference.fieldMaxLines,
+        submitPolicy: submitPolicy,
         padding: style.fieldContentPadding,
         hint: _hintSlot(),
         capture: _captureSlot(),
@@ -510,6 +526,10 @@ class ZDefaultChatComposer extends StatelessWidget {
               : ZChatComposerToolsTrigger(
                   onOpen: openTools,
                   badge: toolsBadge,
+                  // Le compte des réglages actifs est rendu PAR DÉFAUT : la
+                  // tranche existait, elle n'était affichée nulle part. Sous
+                  // le seuil compact, le badge remplace le libellé.
+                  badgeCount: showToolsBadge ? settings.activeCount : null,
                   glyph: toolsGlyph,
                   showLabel: labels,
                 ),

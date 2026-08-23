@@ -20,6 +20,14 @@
 /// littéralement le même site d'appel. C'est la forme locale de l'invariant
 /// « un verbe = un seul site d'appel » qui fonde tout ce paquet.
 ///
+/// ## La touche Entrée
+///
+/// Un champ multiligne ne déclenche jamais `onSubmitted` : le raccourci
+/// clavier est donc porté par une table de `Shortcuts` — Entrée soumet,
+/// Maj+Entrée et Ctrl+Entrée insèrent une nouvelle ligne, et rien de tout
+/// cela ne s'applique sur une plateforme tactile. La table invoque la MÊME
+/// fermeture que le bouton d'envoi. Cf. [ZChatComposer.submitPolicy].
+///
 /// ## Les quatre créneaux, et pourquoi ce sont des builders
 ///
 /// ```
@@ -68,6 +76,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 import '../settings/z_chat_settings_controller.dart';
 import '../z_chat_controller.dart';
+import 'z_chat_composer_keys.dart';
 import 'z_chat_labels.dart';
 import 'z_chat_message_tile.dart' show kZChatMinTapTarget;
 
@@ -142,6 +151,7 @@ class ZChatComposer extends StatefulWidget {
     this.padding,
     this.minLines = 1,
     this.maxLines = 5,
+    this.submitPolicy = ZChatComposerSubmitPolicy.standard,
     super.key,
   });
 
@@ -219,6 +229,18 @@ class ZChatComposer extends StatefulWidget {
 
   /// Hauteur maximale du champ, en lignes.
   final int maxLines;
+
+  /// Ce que la touche Entrée fait dans le champ.
+  ///
+  /// Par défaut, et sur bureau et Web seulement : **Entrée soumet**,
+  /// **Maj+Entrée** et **Ctrl+Entrée** insèrent une nouvelle ligne. Sur une
+  /// plateforme tactile, Entrée insère une nouvelle ligne — un clavier
+  /// virtuel n'a pas de modificateur. Cf. [ZChatComposerSubmitPolicy] pour la
+  /// convention inverse et pour le retrait du raccourci.
+  ///
+  /// Le raccourci n'ouvre aucun second chemin d'envoi : il emprunte le site
+  /// de soumission unique du composer, celui de [ZChatComposerSlot.submit].
+  final ZChatComposerSubmitPolicy submitPolicy;
 
   @override
   State<ZChatComposer> createState() => _ZChatComposerState();
@@ -310,6 +332,7 @@ class _ZChatComposerState extends State<ZChatComposer> {
                     suppressHint: suppressHint,
                     // Le MÊME site de soumission que celui du créneau d'envoi.
                     onSubmit: _submit,
+                    submitPolicy: widget.submitPolicy,
                   ),
                 ),
                 if (trailing != null) _ZChatComposerTarget(child: trailing),
@@ -336,6 +359,7 @@ class _ZChatComposerField extends StatelessWidget {
     required this.minLines,
     required this.maxLines,
     required this.onSubmit,
+    required this.submitPolicy,
     this.hint,
     this.suppressHint = false,
   });
@@ -347,6 +371,10 @@ class _ZChatComposerField extends StatelessWidget {
   final int maxLines;
   final VoidCallback onSubmit;
 
+  /// La politique de raccourci clavier — résolue au rendu contre la
+  /// plateforme réelle.
+  final ZChatComposerSubmitPolicy submitPolicy;
+
   /// Invite visuelle d'hôte — `null` signifie le libellé par défaut (sauf
   /// [suppressHint]).
   final Widget? hint;
@@ -357,6 +385,27 @@ class _ZChatComposerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Un champ MULTILIGNE ne déclenche jamais `onSubmitted` : sans cette
+    // table, un composer à `maxLines > 1` n'a aucun chemin d'envoi au
+    // clavier. `onSubmitted` reste câblé — il redevient le chemin dès qu'un
+    // hôte règle `maxLines: 1`, ou quand la politique est retirée.
+    final ZChatComposerSubmitKey resolved = submitPolicy.resolve();
+    final Widget field = EditableText(
+      // La tranche du contrôleur, telle quelle. Instance stable : elle
+      // n'est ni créée ni recréée ici, donc le curseur et la sélection
+      // survivent à tout rebuild du composer (invariant AD-2).
+      controller: controller.composer,
+      focusNode: focusNode,
+      // Invariant AD-13 : jamais `TextAlign.left`.
+      textAlign: TextAlign.start,
+      minLines: minLines,
+      maxLines: maxLines,
+      style: DefaultTextStyle.of(context).style,
+      cursorColor: cursorColor,
+      backgroundCursorColor: cursorColor,
+      // Le MÊME site de soumission que celui du créneau d'envoi.
+      onSubmitted: (String _) => onSubmit(),
+    );
     return Semantics(
       container: true,
       textField: true,
@@ -372,22 +421,29 @@ class _ZChatComposerField extends StatelessWidget {
         alignment: AlignmentDirectional.topStart,
         children: <Widget>[
           if (!suppressHint) _ZChatComposerHint(controller: controller, hint: hint),
-          EditableText(
-            // La tranche du contrôleur, telle quelle. Instance stable : elle
-            // n'est ni créée ni recréée ici, donc le curseur et la sélection
-            // survivent à tout rebuild du composer (invariant AD-2).
-            controller: controller.composer,
-            focusNode: focusNode,
-            // Invariant AD-13 : jamais `TextAlign.left`.
-            textAlign: TextAlign.start,
-            minLines: minLines,
-            maxLines: maxLines,
-            style: DefaultTextStyle.of(context).style,
-            cursorColor: cursorColor,
-            backgroundCursorColor: cursorColor,
-            // Le MÊME site de soumission que celui du créneau d'envoi.
-            onSubmitted: (String _) => onSubmit(),
-          ),
+          if (resolved == ZChatComposerSubmitKey.none)
+            field
+          else
+            Shortcuts(
+              // Posée SOUS `DefaultTextEditingShortcuts` (inséré par
+              // `WidgetsApp`), donc consultée avant lui : c'est ce qui permet
+              // à Entrée de soumettre au lieu d'atteindre la saisie de texte.
+              shortcuts: zChatComposerSubmitShortcuts(resolved),
+              child: Actions(
+                actions: <Type, Action<Intent>>{
+                  ZChatComposerSubmitIntent:
+                      CallbackAction<ZChatComposerSubmitIntent>(
+                        // Le MÊME site que le créneau d'envoi — jamais un
+                        // second appel à `send()`.
+                        onInvoke: (ZChatComposerSubmitIntent _) {
+                          onSubmit();
+                          return null;
+                        },
+                      ),
+                },
+                child: field,
+              ),
+            ),
         ],
       ),
     );

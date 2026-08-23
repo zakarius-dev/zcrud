@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.6.0 — 2026-08-23
+
+### Garde
+- **Octets de contrôle bruts interdits dans toute source Dart du dépôt** (`z_source_control_bytes_guard_test`) : lecture en octets, tolère `\t`/`\n`/`\r`, nomme `fichier:ligne:octet`. Sept occurrences (six NUL, un VT) corrigées à cette version.
+
 ## 3.5.0 — 2026-08-22
 
 ### Ajouté — deux jetons de premier plan

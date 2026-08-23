@@ -52,6 +52,7 @@
 library;
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
@@ -505,6 +506,7 @@ class _ZChatComposerBandTarget extends StatelessWidget {
     this.toggled,
     this.liveRegion = false,
     this.foreground,
+    this.minTarget = kZChatMinTapTarget,
   });
 
   final String semanticsLabel;
@@ -524,6 +526,10 @@ class _ZChatComposerBandTarget extends StatelessWidget {
   /// `null` ⇒ couleur ambiante — l'arbre est alors celui d'avant ce canal.
   final Color? foreground;
 
+  /// Côté demandé de la cible — ÉCRÊTÉ au plancher [kZChatMinTapTarget] : une
+  /// demande plus basse est inexprimable, pas seulement déconseillée.
+  final double minTarget;
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
@@ -537,9 +543,11 @@ class _ZChatComposerBandTarget extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minWidth: kZChatMinTapTarget,
-            minHeight: kZChatMinTapTarget,
+          constraints: BoxConstraints(
+            // Écrêtage au plancher : une demande plus basse que
+            // `kZChatMinTapTarget` est inexprimable (invariant AD-13).
+            minWidth: math.max(minTarget, kZChatMinTapTarget),
+            minHeight: math.max(minTarget, kZChatMinTapTarget),
           ),
           child: Align(
             // AD-13 : alignement DIRECTIONNEL.
@@ -787,6 +795,7 @@ class ZChatComposerToolsTrigger extends StatelessWidget {
   const ZChatComposerToolsTrigger({
     required this.onOpen,
     this.badge,
+    this.badgeCount,
     this.glyph,
     this.showLabel = true,
     super.key,
@@ -797,9 +806,22 @@ class ZChatComposerToolsTrigger extends StatelessWidget {
   /// montée inline (sous peine de débordement visuel).
   final VoidCallback onOpen;
 
-  /// Badge compteur (réglages actifs). Rendu DANS la cible — décoratif pour
-  /// le lecteur d'écran (le compte vit dans la feuille).
+  /// Badge compteur d'HÔTE. Rendu DANS la cible — décoratif pour le lecteur
+  /// d'écran (le compte vit dans la feuille). Il prime sur [badgeCount].
   final Widget? badge;
+
+  /// Le nombre de réglages actifs, en tranche.
+  ///
+  /// Renseigné (et sans [badge] d'hôte), le déclencheur rend lui-même le
+  /// compte : rien tant qu'il vaut zéro, un badge dès qu'il est non nul.
+  /// C'est aussi ce qui rend la règle du mode compact exprimable — sous le
+  /// seuil, le badge **remplace** le libellé au lieu de s'y ajouter — sans
+  /// jamais laisser le déclencheur sans aucun canal visible : à zéro, le
+  /// libellé reste.
+  ///
+  /// Seule cette tranche est écoutée : une frappe dans le champ ne
+  /// reconstruit pas ce bouton (invariant AD-2).
+  final ValueListenable<int>? badgeCount;
 
   /// Glyphe d'HÔTE. `null` ⇒ libellé seul.
   final Widget? glyph;
@@ -815,14 +837,32 @@ class ZChatComposerToolsTrigger extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ValueListenable<int>? count = badgeCount;
+    if (badge != null || count == null) {
+      return _body(context, badge, hasBadge: badge != null);
+    }
+    return ValueListenableBuilder<int>(
+      // LA tranche du compte, et elle seule.
+      valueListenable: count,
+      builder: (BuildContext context, int value, Widget? _) => _body(
+        context,
+        value <= 0 ? null : ZChatComposerCountBadge(count: value),
+        hasBadge: value > 0,
+      ),
+    );
+  }
+
+  /// [hasBadge] compte comme un canal VISIBLE : c'est lui qui autorise le
+  /// mode compact à masquer le libellé même sans glyphe — et qui le garde
+  /// quand le compte est nul, où le badge ne rend rien.
+  Widget _body(BuildContext context, Widget? counter, {required bool hasBadge}) {
     final String resolved = zChatLabel(context, kZChatLabelTools);
     final Widget? face = glyph;
     final bool labelVisible = _labelVisible(
       showLabel: showLabel,
-      hasGlyph: face != null,
+      hasGlyph: face != null || hasBadge,
       stateful: false,
     );
-    final Widget? counter = badge;
     return _ZChatComposerBandTarget(
       semanticsLabel: resolved,
       onTap: onOpen,
@@ -832,12 +872,42 @@ class ZChatComposerToolsTrigger extends StatelessWidget {
           const SizedBox(width: kZChatSettingsReferenceMarkGap),
         if (labelVisible) Text(resolved, textAlign: TextAlign.start),
         if (counter != null) ...<Widget>[
-          SizedBox(width: ZChatComposerReference.badgeStartGap),
+          if (face != null || labelVisible)
+            SizedBox(width: ZChatComposerReference.badgeStartGap),
           // DANS la cible, donc DANS le hit-test du bouton — et hors de
           // l'arbre sémantique (le nombre est un rappel visuel).
           ExcludeSemantics(child: counter),
         ],
       ],
+    );
+  }
+}
+
+/// Le badge compteur par défaut du socle — un nombre, sans couleur inventée.
+///
+/// Un chiffre n'est pas un libellé : il ne passe par aucune table de
+/// localisation. La forme (rayon, marge interne) vient de la référence du
+/// composer ; la teinte reste l'affaire du satellite de design qui la porte —
+/// ce paquet n'invente aucune couleur (FR-26).
+class ZChatComposerCountBadge extends StatelessWidget {
+  /// Construit le badge.
+  const ZChatComposerCountBadge({required this.count, super.key});
+
+  /// Le nombre rendu. Zéro ou négatif ⇒ rien (invariant AD-4).
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    if (count <= 0) return const SizedBox.shrink();
+    // Un NOMBRE, pas un libellé : il ne traverse aucune table de
+    // localisation, et la garde des chaînes en dur (ancrée sur `Text('`) n'a
+    // rien à dire ici. Il est formaté avant le rendu pour que sa nature soit
+    // lisible au lieu d'être noyée dans l'appel.
+    final String rendered = count.toString();
+    return Padding(
+      // Invariant AD-13 : marge directionnelle.
+      padding: ZChatComposerReference.badgePadding,
+      child: Text(rendered, textAlign: TextAlign.start),
     );
   }
 }
@@ -1245,6 +1315,11 @@ class ZChatComposerEditingBanner extends StatelessWidget {
                     ),
                   ),
                   _ZChatComposerBandTarget(
+                    // La cible de sortie est déclarée par la référence, et la
+                    // primitive l'écrête au plancher : compacte visuellement,
+                    // jamais compacte au toucher.
+                    minTarget:
+                        ZChatComposerReference.editingCancelTargetSize,
                     semanticsLabel: cancel,
                     // Le verbe EXISTANT du contrôleur — la saisie d'avant
                     // l'édition est restituée par lui.

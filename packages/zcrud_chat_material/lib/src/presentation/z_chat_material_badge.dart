@@ -93,3 +93,35 @@ class ZChatMaterialToolsBadge extends StatelessWidget {
 
 /// Zéro réglage actif.
 const int _kNone = 0;
+
+/// Le badge vivant d'un **catalogue d'outils** — lié à
+/// [ZChatToolController.activeCount].
+///
+/// C'est le même nombre sur les deux surfaces : le comptage est calculé une
+/// fois par le domaine, sur la feuille, quelle que soit la surface interrogée.
+/// La bande du composer et l'en-tête de la feuille ne peuvent donc pas
+/// afficher deux nombres différents.
+class ZChatMaterialToolCatalogBadge extends StatelessWidget {
+  /// Construit le badge lié.
+  const ZChatMaterialToolCatalogBadge({
+    required this.controller,
+    this.chrome,
+    super.key,
+  });
+
+  /// Le contrôleur d'outils.
+  final ZChatToolController controller;
+
+  /// {@macro zcrud.chat_material.chrome_param}
+  final ZChatComposerChrome? chrome;
+
+  @override
+  Widget build(BuildContext context) {
+    // Abonné uniquement à la tranche `activeCount` (invariant AD-2).
+    return ValueListenableBuilder<int>(
+      valueListenable: controller.activeCount,
+      builder: (BuildContext context, int count, Widget? _) =>
+          ZChatMaterialBadge(count: count, chrome: chrome),
+    );
+  }
+}

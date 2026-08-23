@@ -29,6 +29,8 @@ import 'package:flutter/material.dart';
 import 'package:zcrud_chat/zcrud_chat.dart';
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 
+import 'z_chat_material_labelled_slider.dart';
+
 /// Builder prêt-à-brancher sur `ZChatSettingsSheet.computeBudgetBuilder`.
 ZChatSettingsTileBuilder zChatMaterialBudgetSlider() =>
     (BuildContext context, ZChatSettingsSlot slot) =>
@@ -55,51 +57,23 @@ class ZChatMaterialBudgetSlider extends StatelessWidget {
           ) {
             final int level =
                 settings.computeEffort?.level ?? ZChatComputeEffort.medium.level;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Text(
-                  zChatLabel(context, kZChatLabelComputeBudget),
-                  // Invariant AD-13 : jamais `TextAlign.left`.
-                  textAlign: TextAlign.start,
-                ),
-                // Invariant AD-13 : la cible du pouce est tenue ≥ 48 dp en
-                // géométrie rendue par la contrainte plancher.
-                ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: kZChatMinTapTarget,
-                  ),
-                  child: Slider(
-                    value: level.toDouble(),
-                    min: ZChatComputeEffort.min.toDouble(),
-                    max: ZChatComputeEffort.max.toDouble(),
-                    // 1..5 ⇒ 4 pas — dérivé des bornes du kernel, jamais un
-                    // littéral.
-                    divisions: ZChatComputeEffort.max - ZChatComputeEffort.min,
-                    label: _tierLabel(context, level),
-                    semanticFormatterCallback: (double value) =>
-                        _tierLabel(context, value.round()),
-                    onChanged: (double value) => controller.setComputeEffort(
-                      ZChatComputeEffort(value.round()),
-                    ),
-                  ),
-                ),
-                // Échelle décorative sous le rail : le `Slider` annonce déjà
-                // le palier à l'accessibilité.
-                ExcludeSemantics(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Text(zChatLabel(context, kZChatLabelComputeBudgetFast)),
-                      Text(
-                        zChatLabel(context, kZChatLabelComputeBudgetBalanced),
-                      ),
-                      Text(zChatLabel(context, kZChatLabelComputeBudgetDeep)),
-                    ],
-                  ),
-                ),
+            return ZChatMaterialLabelledSlider(
+              title: zChatLabel(context, kZChatLabelComputeBudget),
+              value: level.toDouble(),
+              min: ZChatComputeEffort.min.toDouble(),
+              max: ZChatComputeEffort.max.toDouble(),
+              // 1..5 ⇒ 4 pas — dérivé des bornes du kernel, jamais un
+              // littéral.
+              divisions: ZChatComputeEffort.max - ZChatComputeEffort.min,
+              valueLabelOf: (double value) => _tierLabel(context, value.round()),
+              marks: <String>[
+                zChatLabel(context, kZChatLabelComputeBudgetFast),
+                zChatLabel(context, kZChatLabelComputeBudgetBalanced),
+                zChatLabel(context, kZChatLabelComputeBudgetDeep),
               ],
+              onChanged: (double value) => controller.setComputeEffort(
+                ZChatComputeEffort(value.round()),
+              ),
             );
           },
     );

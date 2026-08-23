@@ -3,6 +3,15 @@
 Toutes les modifications notables de `zcrud_chat_material` sont documentées
 dans ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.6.0 — 2026-08-23
+
+### Ajouté
+- **Feuille d'outils Material** : `ZChatMaterialToolsSheet` (`DraggableScrollableSheet`, en-tête titre + badge + réinitialiser + fermer, en-tête **« Actifs »** en puces retirables, recherche conditionnelle, sections séparées **entre** elles — aucun index magique), `ZChatMaterialToolTile` (une forme par nature : `SwitchListTile` à sous-titre d'**état**, cycle à badge de cran, `SegmentedButton`, curseur à repères, `FilterChip` + puce « tout », bouton ; entrée désactivée **grisée avec sa raison**, jamais masquée), `ZChatMaterialToolLabels` (tous les libellés viennent de l'hôte — absent ⇒ affordance absente), `ZChatMaterialToolCatalogBadge`.
+- `ZChatMaterialLabelledSlider` extrait du curseur de budget, qui en devient l'appelant.
+
+### Garde
+- Aucun libellé écrit dans le satellite (nouvelle garde de source).
+
 ## [0.86.0] — Chantier documentation
 
 ### Ajouté

@@ -25,9 +25,12 @@
 /// ## Ce que ce fichier ne déclare délibérément pas
 ///
 /// Une valeur qui ne peut pas être lue ici ne peut pas être reproduite par
-/// inadvertance : ce fichier ne déclare aucune cible tactile sous 48 dp,
-/// aucun décalage non directionnel, et publie les durées d'une animation de
-/// placeholder sans jamais dispenser le widget du socle de sa garde
+/// inadvertance. Toute cible tactile déclarée ici vaut donc au moins 48 dp et
+/// tout décalage déclaré ici est directionnel — y compris ceux des deux
+/// affordances les plus souvent rétrécies, la sortie du bandeau d'édition
+/// ([editingCancelTargetSize]) et le retrait d'une pièce jointe
+/// ([attachmentRemoveTargetSize]). Les durées d'une animation de placeholder
+/// sont publiées sans jamais dispenser le widget du socle de sa garde
 /// Reduce Motion. Les rôles de thème (couleur de filet, couleur de fond) ne
 /// sont pas portés ici : ils se câblent par paramètre ou par jeton, seule
 /// leur épaisseur ou leur forme relève de la référence.
@@ -35,6 +38,8 @@ library;
 
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
+
+import 'z_chat_message_tile.dart' show kZChatMinTapTarget;
 
 /// Les valeurs de référence du composer — le point d'audit unique de la
 /// famille « composer » (la famille « notebook » a le sien :
@@ -145,9 +150,16 @@ abstract final class ZChatComposerReference {
 
   /// Côté du glyphe d'édition du bandeau.
   ///
-  /// Le bouton « fermer » du même bandeau n'est pas déclaré ici : sa cible
-  /// est sous 48 dp (cf. dartdoc de bibliothèque).
+  /// C'est la taille du GLYPHE, jamais celle de la cible : la sortie du
+  /// bandeau a la sienne, [editingCancelTargetSize].
   static const double editingIconSize = 16;
+
+  /// Côté de la cible de sortie du bandeau — au plancher tactile.
+  ///
+  /// Un glyphe compact n'autorise pas une cible compacte : la zone touchable
+  /// reste ≥ 48 dp quelle que soit la taille rendue du glyphe (invariant
+  /// AD-13).
+  static const double editingCancelTargetSize = kZChatMinTapTarget;
 
   // ── Placeholder animé ──────────────────────────────────────────────────
 
@@ -178,12 +190,18 @@ abstract final class ZChatComposerReference {
   static const Radius attachmentThumbRadius = Radius.circular(8);
 
   /// Écart de fin entre deux vignettes.
-  ///
-  /// Le bouton « retirer » et son décalage ne sont pas déclarés ici : leur
-  /// cible est sous 48 dp et leur positionnement n'est pas directionnel ;
-  /// la bande du socle (`ZChatAttachmentStrip`) fait déjà mieux sur ces deux
-  /// points.
   static const double attachmentEndGap = 8;
+
+  /// Côté de la cible de retrait d'une pièce jointe — au plancher tactile.
+  ///
+  /// Le retrait n'est pas une pastille posée en coin de vignette : c'est une
+  /// cible ≥ 48 dp, rendue dans le flux directionnel de la vignette, jamais
+  /// à un décalage `left`/`right` (invariant AD-13).
+  static const double attachmentRemoveTargetSize = kZChatMinTapTarget;
+
+  /// Écart de début entre le nom du fichier et sa cible de retrait —
+  /// directionnel par construction, comme tous les écarts de ce fichier.
+  static const double attachmentRemoveStartGap = 4;
 
   // ── Couleurs — exception encadrée (cf. dartdoc de bibliothèque) ────────
 

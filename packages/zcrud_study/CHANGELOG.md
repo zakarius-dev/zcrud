@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.6.0 — 2026-08-23
+
+### Corrigé
+- Octet NUL brut dans un littéral de test remplacé par `\u0000`.
+
 ## 3.3.0 — 2026-08-21
 
 ### Modifié — le calculateur de teinte lisible est remonté au cœur

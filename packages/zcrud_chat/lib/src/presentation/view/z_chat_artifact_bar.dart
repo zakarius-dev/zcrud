@@ -531,13 +531,25 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
   /// pas déborder sur ses voisins. Et l'`AnimatedBuilder` de [ZColorCycle]
   /// étant sous ce `build`, l'animation ne reconstruit ni ce bouton, ni la
   /// rangée, ni la vue (invariant AD-2).
-  Widget _icon(BuildContext context, Color? color) => Icon(
-    widget.spec.icon,
-    size: ZChatNotebookReference.perMessageActionIconSize,
-    // 🔴 L'ÉTAT, et rien d'autre : teinte si le contenu existe ou si une
-    // génération est en cours, couleur ambiante sinon.
-    color: color,
-  );
+  Widget _icon(BuildContext context, Color? color) {
+    final IconData? icon = widget.spec.icon;
+    if (icon == null) {
+      // Aucun glyphe déclaré : le libellé de l'hôte tient lieu de cible,
+      // teinté par le même état. Rien n'est inventé à sa place.
+      final TextStyle ambient = DefaultTextStyle.of(context).style;
+      return Text(
+        widget.spec.label,
+        style: color == null ? ambient : ambient.copyWith(color: color),
+      );
+    }
+    return Icon(
+      icon,
+      size: ZChatNotebookReference.perMessageActionIconSize,
+      // 🔴 L'ÉTAT, et rien d'autre : teinte si le contenu existe ou si une
+      // génération est en cours, couleur ambiante sinon.
+      color: color,
+    );
+  }
 
   /// Le glyphe et sa pastille — la cible tactile, jamais la seule icône.
   Widget _glyph(

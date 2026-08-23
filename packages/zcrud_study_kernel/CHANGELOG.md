@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_study_kernel` sont documentées
 dans ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.6.0 — 2026-08-23
+
+### Corrigé
+- Octet NUL brut dans un littéral Dart remplacé par `\u0000` (un `grep` sans `-a` voyait un fichier binaire ; `git diff` aussi).
+
 ## [0.86.0] — Chantier documentation
 
 ### Ajouté

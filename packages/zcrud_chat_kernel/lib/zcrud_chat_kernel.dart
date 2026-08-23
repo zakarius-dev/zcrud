@@ -26,6 +26,12 @@
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
 library;
 
+// Couche data (ports & adapters) : décodage Server-Sent Events d'un flux
+// d'octets (`zChatSseLines`) et adaptateur `ZChatStreamPort` paramétré par
+// l'ouvreur et le décodeur de l'hôte. Aucune bibliothèque HTTP : l'ouverture
+// du POST reste à l'hôte, le socle absorbe la mécanique de transport.
+export 'src/data/sse/z_chat_sse_line.dart';
+export 'src/data/sse/z_chat_sse_stream_port.dart';
 // Contrat d'action de message : intentions scellées et répartiteur unique.
 export 'src/domain/action/z_chat_action.dart';
 export 'src/domain/action/z_chat_action_executor.dart';
@@ -80,6 +86,27 @@ export 'src/domain/conversation/z_chat_conversation_ports.dart';
 // Diffusion vocale : la chaîne de repli devient une donnée
 // (`ZChatSpeechChain`), site unique du repli, échecs conservés.
 export 'src/domain/diffusion/z_chat_speech_port.dart';
+// Vocabulaire et ports du fil de travail (« notebook ») : artefacts
+// déclarés par jetons (registre, verbes, disponibilité dérivée), état
+// dérivé « occupation > existence », séquence de génération gardée (refus
+// sur vide, marquage, écriture conditionnelle, démarquage inconditionnel),
+// stockage à suppression anti-résurrection, fil lu ET écrit, exécuteur
+// d'actions par défaut, et défauts des seams triviaux.
+export 'src/domain/notebook/z_chat_artifact_declaration.dart';
+export 'src/domain/notebook/z_chat_artifact_generation_port.dart';
+export 'src/domain/notebook/z_chat_artifact_status.dart';
+export 'src/domain/notebook/z_chat_artifact_store_port.dart';
+export 'src/domain/notebook/z_chat_notebook_defaults.dart';
+export 'src/domain/notebook/z_chat_transcript_port.dart';
+export 'src/domain/notebook/z_chat_unsupported_action_executor.dart';
+// Feuille d'outils déclarative : la feuille devient une DONNÉE
+// (`ZChatToolCatalog`) au lieu d'un aiguillage codé. Un outil est déclaré une
+// fois, les surfaces (bande, feuille) le projettent ; la résolution rend
+// l'état dérivé — visibilité motivée, désactivation avec sa raison, comptage
+// agrégé et liste des actifs.
+export 'src/domain/tools/z_chat_tool_catalog.dart';
+export 'src/domain/tools/z_chat_tool_entry.dart';
+export 'src/domain/tools/z_chat_tool_state.dart';
 export 'src/domain/z_chat_attachment.dart';
 export 'src/domain/z_chat_conversation.dart';
 export 'src/domain/z_chat_enums.dart';

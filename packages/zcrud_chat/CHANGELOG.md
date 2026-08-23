@@ -3,6 +3,23 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.6.0 — 2026-08-23
+
+### Ajouté
+- **Composer** : politique de soumission déclarable `ZChatComposerSubmitPolicy` — défaut **Entrée = envoyer, Maj+Entrée et Ctrl+Entrée = nouvelle ligne, bureau et Web uniquement** (sur tactile, Entrée insère une ligne) ; `ZChatComposerCountBadge` et badge `activeCount` sur le déclencheur d'outils (`showToolsBadge`, défaut `true`) ; en compact, le badge **remplace** le libellé.
+- **Feuille d'outils** : `ZChatToolController` (tranches granulaires : structure, bande, une par entrée, actifs, recherche), adaptateur `zChatToolSettingsEntries` vers les neuf créneaux existants de `ZChatSettingsSheet` (intacts), `ZChatToolSheetReference`.
+- **`ZChatController`** : contrat d'annulation **écrit et gardé** (partiel conservé et marqué `isInterrupted`, phase `cancelled`, port notifié par `whenCancelled`) ; `lifecycle` optionnel (`trimAfter`) rendant l'édition et la régénération natives derrière `runAction` — réponse remplacée à sa place, rollback ; `previewEditImpact` ; `messageById`/`replyToOf`/`contentOf` ; `ZChatLiveLabels` (annonces à repli **silencieux**).
+- **`ZChatNotebookController`** : compose `ZChatController` ; occupation tenue ici ; une `ValueListenable<ZChatArtifactStatus>` par (message, artefact) ; verbes via le registre (aucun pour `role == user`, `readOnly`) ; confirmation dérivée ; échecs de génération **publiés** par tranche ; abonnement unique au transcript, `attach` au premier instantané. `ZChatArtifactResolvers`/`zChatArtifactSpecOf` (jeton non résolu ⇒ rien d'inventé), `zChatNotebookArtifactsSlot`.
+- **`ZChatNotebookScreen`** : couche mince au-dessus des briques (contrôleur créé dans `initState`), composer et feuille branchés, deux régions live, créneaux d'échec, créneau d'action globale, `readOnly`, échappatoire garantie vers `ZChatNotebookView` (inchangée).
+
+### Corrigé
+- Le chemin d'envoi au clavier était **mort** : `onSubmitted` n'est jamais atteint sous `maxLines > 1`.
+- Cibles de retrait de pièce jointe et de sortie du mode édition portées à 48 dp, positionnement directionnel — la référence les documentait sous le plancher au lieu de les corriger.
+- La question optimiste et la réponse partielle partageaient un identifiant ; la réponse sans identité serveur porte `<requestId>/reply`.
+
+### Changements de défaut (hôte passif)
+Badge d'outils visible ; Entrée envoie sur bureau/Web ; identifiant du partiel ; 4 dp devant la cible de retrait. Un hôte qui **compensait** (raccourci clavier maison, comptage à côté, recherche du partiel par `requestId`) doit retirer sa compensation — voir `docs/handoff-v3.6.0.md`.
+
 ## 3.5.0 — 2026-08-22
 
 ### ⚠️ Corrigé — le libellé d'une pastille n'est plus la couleur de surface

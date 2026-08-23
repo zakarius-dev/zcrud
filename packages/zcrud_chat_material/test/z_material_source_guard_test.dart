@@ -47,6 +47,46 @@ String _stripped(String line) {
   return out.toString();
 }
 
+
+/// Littéraux de chaîne d'une ligne de CODE, interpolations retirées (leur
+/// contenu est du code, pas du texte affiché).
+List<String> _stringLiterals(String line) {
+  final List<String> out = <String>[];
+  final StringBuffer current = StringBuffer();
+  bool inString = false;
+  String quote = '';
+  for (int i = 0; i < line.length; i++) {
+    final String c = line[i];
+    if (inString) {
+      if (c == quote) {
+        inString = false;
+        out.add(_withoutInterpolation(current.toString()));
+        current.clear();
+        continue;
+      }
+      current.write(c);
+      continue;
+    }
+    if (c == "'" || c == '"') {
+      inString = true;
+      quote = c;
+      continue;
+    }
+    if (c == '/' && i + 1 < line.length && line[i + 1] == '/') break;
+  }
+  return out;
+}
+
+/// Retire les interpolations (`\${…}` et `\$ident`) : leur contenu est du
+/// CODE, jamais du texte affiché.
+String _withoutInterpolation(String raw) => raw
+    .replaceAll(RegExp(r'\$\{[^}]*\}'), '')
+    .replaceAll(RegExp(r'\$[A-Za-z_][A-Za-z0-9_]*'), '');
+
+/// Un littéral **porteur de mot** : quatre lettres consécutives. Un `'$count'`
+/// ou un `'.'` n'en est pas un.
+final RegExp _wordBearing = RegExp(r'[A-Za-zÀ-ÖØ-öø-ÿ]{4,}');
+
 void main() {
   final List<File> sources = Directory('lib')
       .listSync(recursive: true)
@@ -126,5 +166,64 @@ void main() {
                 'K2');
       }
     }
+  });
+
+  test('🔴 MAT-L6 — FR-26 : aucun LIBELLÉ inventé par le socle', () {
+    // Les libellés de ce paquet viennent de l'hôte (`ZChatMaterialToolLabels`)
+    // ou du registre du socle (`zChatLabel`). Un mot écrit ici serait une
+    // régression de localisation SILENCIEUSE pour tout consommateur.
+    final List<String> offenders = <String>[];
+    int scanned = 0;
+    for (final File f in sources) {
+      final List<String> lines = f.readAsLinesSync();
+      bool inToString = false;
+      for (int n = 0; n < lines.length; n++) {
+        final String line = lines[n];
+        final String trimmed = line.trimLeft();
+        if (trimmed.startsWith('import ') ||
+            trimmed.startsWith('export ') ||
+            trimmed.startsWith('library')) {
+          continue;
+        }
+        if (RegExp(r'\bString\s+toString\s*\(').hasMatch(line)) {
+          inToString = true;
+        }
+        if (inToString) {
+          if (line.trimRight().endsWith(';')) inToString = false;
+          continue;
+        }
+        // Une clé de JETON d'état n'est pas un texte : elle indexe la table de
+        // libellés que l'HÔTE a fournie, et n'atteint jamais l'écran.
+        if (line.contains('stateLabels[')) continue;
+        for (final String literal in _stringLiterals(line)) {
+          scanned++;
+          if (_wordBearing.hasMatch(literal)) {
+            offenders.add('${f.path}:${n + 1} → "$literal"');
+          }
+        }
+      }
+    }
+    expect(scanned, greaterThan(0),
+        reason: '🔴 GARDE VACUELLE : aucun littéral extrait');
+    expect(offenders, isEmpty,
+        reason: '🔴 FR-26 : un libellé écrit dans le socle. Il vient de '
+            '`ZChatMaterialToolLabels` (hôte) ou de `zChatLabel` '
+            '(registre) :\n${offenders.join('\n')}');
+  });
+
+  test('🔬 contre-preuve — l\'extracteur voit un libellé et ignore le reste',
+      () {
+    expect(
+      _stringLiterals("      child: Text(allLabel ?? 'Tous'),")
+          .where(_wordBearing.hasMatch)
+          .toList(),
+      <String>['Tous'],
+    );
+    expect(_stringLiterals("        Text('\$count'),")
+        .where(_wordBearing.hasMatch), isEmpty);
+    expect(_stringLiterals("  // Tous les libellés viennent de l'hôte")
+        .where(_wordBearing.hasMatch), isEmpty,
+        reason: '🔴 FAUX POSITIF : la prose d\'un commentaire n\'est pas un '
+            'libellé rendu');
   });
 }

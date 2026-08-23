@@ -237,13 +237,14 @@ class ZChatArtifactAction {
 /// trois lectures d'état, et des verbes.
 @immutable
 class ZChatArtifactSpec {
-  /// Déclare un artefact. Seuls [key], [icon], [label] et [presence] sont
-  /// requis : un artefact sans verbe est un **indicateur d'état**, ce qui est
-  /// une déclaration légitime.
+  /// Déclare un artefact. Seuls [key], [label] et [presence] sont requis :
+  /// un artefact sans verbe est un **indicateur d'état**, ce qui est une
+  /// déclaration légitime ; un artefact sans [icon] est rendu par son
+  /// [label].
   const ZChatArtifactSpec({
     required this.key,
-    required this.icon,
     required this.label,
+    this.icon,
     required this.presence,
     this.count,
     this.busy,
@@ -256,9 +257,10 @@ class ZChatArtifactSpec {
   /// distinguer deux entrées.
   final String key;
 
-  /// Le glyphe de l'artefact. Le socle le **teinte** selon l'état — c'est la
-  /// seule chose qu'il en fait.
-  final IconData icon;
+  /// Le glyphe de l'artefact, ou `null` si l'hôte n'en fournit aucun. Le
+  /// socle le **teinte** selon l'état — c'est la seule chose qu'il en fait ;
+  /// sans glyphe, c'est le [label] teinté qui tient lieu de cible.
+  final IconData? icon;
 
   /// Libellé **déjà localisé** par l'hôte — annoncé et affiché dans le menu.
   final String label;

@@ -31,6 +31,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 import '../attachment/z_chat_attachment_controller.dart';
 import '../attachment/z_pending_attachment.dart';
+import 'z_chat_composer_reference.dart';
 import 'z_chat_labels.dart';
 import 'z_chat_message_tile.dart' show kZChatMinTapTarget;
 
@@ -181,6 +182,11 @@ class _ZAttachmentChip extends StatelessWidget {
             ),
           ),
         ),
+        // Écart directionnel par construction : la cible suit le nom dans le
+        // sens de lecture, elle n'est pas posée à un décalage `left`/`right`.
+        const SizedBox(
+          width: ZChatComposerReference.attachmentRemoveStartGap,
+        ),
         _ZRemoveButton(onRemove: onRemove),
       ],
     );
@@ -203,8 +209,10 @@ class _ZRemoveButton extends StatelessWidget {
         onTap: onRemove,
         child: ConstrainedBox(
           constraints: const BoxConstraints(
-            minHeight: kZChatMinTapTarget,
-            minWidth: kZChatMinTapTarget,
+            // La valeur de référence, elle-même au plancher : une cible de
+            // retrait compacte est inexprimable des deux côtés.
+            minHeight: ZChatComposerReference.attachmentRemoveTargetSize,
+            minWidth: ZChatComposerReference.attachmentRemoveTargetSize,
           ),
           child: Align(
             // Invariant AD-13 : alignement directionnel.

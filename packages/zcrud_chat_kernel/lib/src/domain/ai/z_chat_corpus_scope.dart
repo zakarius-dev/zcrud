@@ -320,7 +320,7 @@ List<ZChatCorpusSelector> _normalize(Iterable<ZChatCorpusSelector> raw) {
   out.sort((ZChatCorpusSelector a, ZChatCorpusSelector b) {
     final int byType = (a.sourceType ?? '').compareTo(b.sourceType ?? '');
     if (byType != 0) return byType;
-    return a.corpusKeys.join(' ').compareTo(b.corpusKeys.join(' '));
+    return a.corpusKeys.join('\u0000').compareTo(b.corpusKeys.join('\u0000'));
   });
   return out;
 }

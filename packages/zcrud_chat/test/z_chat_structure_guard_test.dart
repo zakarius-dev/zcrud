@@ -75,6 +75,11 @@ Set<String> _publicMembers(List<String> body) {
   return names;
 }
 
+/// Le SEUL `setState` admis dans `lib/` : l'écriture d'une valeur immuable du
+/// domaine (`ZChatToolCatalog.setState`), homonyme du `setState` de Flutter et
+/// sans aucun rapport avec lui. Le motif exige le receveur nominal.
+final RegExp _kDomainSetState = RegExp(r'\b_?catalog\.setState\s*\(');
+
 void main() {
   group('🔴 G-CH1 — la surface publique du contrôleur, en ÉGALITÉ d\'ENSEMBLE',
       () {
@@ -116,6 +121,23 @@ void main() {
           'startEditing',
           'cancelEditing',
           'seedDraft',
+          // 🔴 EXTENSION ARBITRÉE (lot E, 2026-08-22) : CINQ requêtes PURES
+          // sur le fil — jamais un verbe. `messageById`/`replyToOf`/`contentOf`
+          // remplacent les quatre balayages linéaires qu'IFFD écrit à la main
+          // dans l'écran ; `previewEditImpact` est le calcul d'impact d'une
+          // édition que lex fait dans `chat_screen.dart:900-960` (mauvais
+          // placement : c'est un calcul pur du contrôleur) ; `isInterrupted`
+          // est la marque de la garantie d'annulation (partiel conservé ET
+          // marqué). Aucune n'écrit, aucune ne notifie, aucune ne lève.
+          // L'édition rejouée et la régénération natives, elles, passent
+          // TOUJOURS par `runAction` — pas de `editAndResend()` ni de
+          // `regenerate()` public : la garde a rougi en montrant exactement
+          // ces cinq noms de lecture, puis a été étendue ICI.
+          'messageById',
+          'replyToOf',
+          'contentOf',
+          'previewEditImpact',
+          'isInterrupted',
           // 🔴 L'UNIQUE point d'entrée des verbes.
           'runAction',
           'dispose',
@@ -402,14 +424,32 @@ void main() {
 
     test('AUCUN `setState` nulle part — rendu compris (AD-2)', () {
       final List<String> offenders = <String>[];
+      final List<String> domainWrites = <String>[];
       int scanned = 0;
       for (final MapEntry<String, List<String>> e in strippedLib().entries) {
         for (int i = 0; i < e.value.length; i++) {
           scanned++;
-          if (RegExp(r'\bsetState\s*\(').hasMatch(e.value[i])) {
-            offenders.add('${e.key}:${i + 1}: ${e.value[i].trim()}');
+          if (!RegExp(r'\bsetState\s*\(').hasMatch(e.value[i])) continue;
+          // 🔴 HOMONYMIE, pas relâchement. `ZChatToolCatalog.setState` est
+          // l'écriture d'une VALEUR immuable du domaine (elle rend un nouveau
+          // catalogue) : elle ne reconstruit aucun sous-arbre. Seul l'appel
+          // QUALIFIÉ par le catalogue est admis ; `setState(` nu et
+          // `this.setState(` restent interdits (contre-preuve ci-dessous).
+          if (_kDomainSetState.hasMatch(e.value[i])) {
+            domainWrites.add('${e.key}:${i + 1}');
+            continue;
           }
+          offenders.add('${e.key}:${i + 1}: ${e.value[i].trim()}');
         }
+      }
+      // L'exemption ne doit pas devenir PENDANTE : si plus personne n'écrit le
+      // catalogue d'outils, elle se retire.
+      expect(domainWrites, isNotEmpty,
+          reason: '🔴 exemption PENDANTE : aucune écriture de catalogue vue');
+      for (final String site in domainWrites) {
+        expect(site, contains('presentation/tools/'),
+            reason: '🔴 l\'exemption d\'homonymie ne vaut que pour '
+                'l\'écriture du catalogue d\'outils : $site');
       }
       expect(scanned, greaterThan(200),
           reason: '🔴 GARDE VACUELLE : seulement $scanned lignes scannées');
@@ -422,6 +462,25 @@ void main() {
             'signifie re-rendre TOUS ses blocs à chaque bascule de dépli.\n'
             '${offenders.join('\n')}',
       );
+    });
+
+    test('🔬 contre-preuve — l\'exemption d\'HOMONYMIE reste étroite', () {
+      // Ce que l'exemption laisse passer…
+      expect(_kDomainSetState.hasMatch('    _catalog.setState(key, next);'),
+          isTrue);
+      // …et tout ce qu'elle NE laisse PAS passer : un `setState` de widget,
+      // sous chacune de ses formes.
+      for (final String witness in <String>[
+        '    setState(() {});',
+        '    this.setState(() {});',
+        '    widget.setState(() {});',
+        '    _controller.setState(() {});',
+      ]) {
+        expect(_kDomainSetState.hasMatch(witness), isFalse,
+            reason: '🔴 l\'exemption attrape `$witness` : ce n\'est plus une '
+                'homonymie, c\'est une porte');
+        expect(RegExp(r'\bsetState\s*\(').hasMatch(witness), isTrue);
+      }
     });
 
     test('🔬 contre-preuve — le motif `setState` voit son témoin', () {
