@@ -612,3 +612,13 @@ explorateur a ensuite établi, `fichier:ligne` à l'appui, que les onze autres l
 **Règle** : avant de lancer un lot d'un plan écrit dans une session antérieure, prouver sur disque
 que son défaut existe encore (`grep` du symbole attendu, `git log -S`) ; un plan qui survit à une
 release doit être **daté et remesuré**, jamais relancé sur la foi de son texte.
+
+## ⚠️ `dart test` exige pub.dev ; `flutter test --no-pub` non (mesuré le 2026-08-23)
+
+`dart test` (= `dart run test:test`) appelle `https://pub.dev/api/` **avant** de lancer la moindre
+suite ; sans réseau il échoue en `SocketException` même après `dart pub get --offline`, et
+`--packages` n'y change rien. `flutter test --no-pub` n'a pas cette dépendance. Conséquence pour le
+balayage des 41 paquets avant un tag : une coupure réseau rend les paquets **pur-Dart** non
+mesurables. Conduite tenue : ne jamais les déclarer verts ; les qualifier par **identité à l'octet**
+avec le dernier tag balayé vert (`git diff --quiet <tag> -- lib test pubspec.yaml`) ou par une mesure
+faite **avant** la coupure, le dire dans le handoff, et remesurer dès le retour du réseau.
