@@ -557,3 +557,27 @@ BMAD v6.10 installé (`_bmad/`). `/bmad-help` pour découvrir les commandes ; li
 | 2. Planification | Définir | `bmad-prd`, `bmad-ux` |
 | 3. Solution | Concevoir | `bmad-architecture`, `bmad-create-epics-and-stories`, `bmad-check-implementation-readiness` |
 | 4. Implémentation | Construire | `bmad-sprint-planning`, puis cycle strict `bmad-create-story` → `bmad-dev-story` → `bmad-code-review` → `bmad-retrospective` |
+
+## 🔴 Le scratchpad est PURGÉ au redémarrage de session (mesuré le 2026-08-23)
+
+Onze rapports d'analyse et de lots (quatre relevés comparatifs, six lots) ont disparu entre deux
+sessions ; seuls les deux écrits après le redémarrage existaient encore. **Le handoff est le seul
+support durable** : l'écrire **tôt**, dès que la synthèse est établie, et le compléter lot par lot —
+jamais « à la fin ». Une analyse qui ne vit que dans le scratchpad n'existe pas.
+
+## 🔴 Vert par paquet ≠ vert pour `verify` (mesuré le 2026-08-23, deux fois dans la même release)
+
+2 153 tests verts sur trois paquets, 104 injections R3 rouges par assertion — et `melos run verify`
+a attrapé **deux défauts réels** avant publication :
+- **`gate:web`** compile les paquets pur-Dart vers Node : toute garde de source qui lit le disque
+  (`dart:io`) doit porter **`@TestOn('vm')`** en tête de fichier, sinon elle rougit en JS. À rappeler
+  dans chaque brief de lot touchant `zcrud_chat_kernel`, `zcrud_study_kernel`, `zcrud_exam`,
+  `zcrud_annotations`.
+- **`gate:reserved-keys`** (AD-19.1) : tout type neuf à `extra` **concret** doit filtrer par
+  `zSanitizeExtra`/`zNormalizeExtra` avec un `_reservedKeys` qui **consomme** `ZSyncMeta.reservedKeys`
+  (patron `z_chat_message.dart`). Trois types d'une même livraison l'avaient omis.
+Autres constats de la même release : un run de tests qui passe de 13 s à **10 min** est un défaut
+même s'il finit vert (flux laissé ouvert, `pumpEventQueue` sous `testWidgets`) — la durée est un
+critère ; **sept octets de contrôle bruts** (NUL, VT) vivaient dans des littéraux Dart, invisibles à
+l'analyseur, et rendaient `grep` sans `-a` aveugle — garde `z_source_control_bytes_guard_test` dans
+`zcrud_core` ; en **zsh**, `PIPESTATUS` s'écrit `pipestatus` (un `RC=` vide n'est pas un RC=0).
