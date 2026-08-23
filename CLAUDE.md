@@ -581,3 +581,15 @@ même s'il finit vert (flux laissé ouvert, `pumpEventQueue` sous `testWidgets`)
 critère ; **sept octets de contrôle bruts** (NUL, VT) vivaient dans des littéraux Dart, invisibles à
 l'analyseur, et rendaient `grep` sans `-a` aveugle — garde `z_source_control_bytes_guard_test` dans
 `zcrud_core` ; en **zsh**, `PIPESTATUS` s'écrit `pipestatus` (un `RC=` vide n'est pas un RC=0).
+
+## Décision d'owner — transport PAR ROUTE (2026-08-23)
+
+Deux modes de transport coexistent chez les hôtes : **un endpoint unique à corps riche** (Lex,
+`POST /`) et **une route par intention / type de génération** (IFFD, `generate_subject_explanation`,
+`summarize_explanation`…). **Le mode par route doit être pleinement prévu et supporté par le
+socle**, au même rang que l'autre : il porte la **gouvernance** (une route et ses accès associés à
+un **plan d'abonnement**), et permet à l'app de déclarer **par tâche et par type de génération** le
+modèle par défaut et ses callbacks — **récupérables depuis le backend** (catalogue de routes).
+À terme, Lex migrera vers ce mode. Conséquence pour toute conception de `ZChatStreamPort` /
+`ZChatGenerationRequest` : jamais présupposer le corps unique ; la route est une donnée de la
+requête, résolue par un catalogue déclaré par l'hôte ou servi par le backend.
