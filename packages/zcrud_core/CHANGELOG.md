@@ -3,6 +3,21 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.18.0 — 2026-08-24
+
+### Ajouté
+- **La poignée de sous-liste se personnalise** : `subListDragHandleIcon`, `subListDragHandleSize`, `subListDragHandleColor`. Jetons absents ⇒ `Icons.drag_indicator_rounded` à taille et couleur ambiantes — l'ambiant reste ambiant, aucun littéral n'est posé.
+- **Les marges horizontales d'une ligne deviennent réglables** : `subListRowHorizontalPadding` (⇒ 16) et `subListRowInnerPadding` (⇒ 12), deux scalaires plutôt qu'un insets unique — les deux quantités vivent dans des couches distinctes et se composent (début = externe + interne, fin = externe seul), et les faces verticales d'un insets doubleraient le jeton d'espacement vertical déjà en place.
+- **La bordure d'une ligne peut dépendre de l'item** : `ZSubListSeams.itemBorderColorKey` (`ZSubItemColorKey = String? Function(ZSubListItemView)`), résolu par la chaîne **seam → `ZcrudScope.colorKeyResolver` → rôles Material 3 → `fieldBorderColor`**. Sans seam déclaré, aucune résolution n'est même tentée.
+
+### Modifié
+- La **poignée par défaut** rend `Icons.drag_indicator_rounded` : la grille de points est l'affordance reconnue d'un déplacement, là où les deux barres se lisent comme un séparateur. Cible tactile, libellé sémantique et déclencheur de geste inchangés.
+
+### Attention
+- `subListRowHorizontalPadding` gouverne **aussi** l'en-tête de colonnes et le **seuil d'empilement** du résumé compact : le réduire peut faire redevenir tabulaire un résumé jusqu'ici empilé. Le libellé du bloc conserve sa propre marge de 16 dp — posé à 0, le jeton ne l'aligne pas sur le cadre.
+- La marge avant le glyphe ne descend pas sous **12 dp** (centrage du glyphe 24 dp dans la cible de 48 dp), et **remonte à 14 dp** si l'on pose `subListDragHandleSize: 20` : rétrécir le glyphe élargit son centrage. Ce plancher relève de l'accessibilité et reste non réglable.
+- En résumé **tabulaire**, le cadre appartient à la table entière : il n'y a pas de bordure par ligne à teinter.
+
 ## 3.17.0 — 2026-08-24
 
 ### Ajouté

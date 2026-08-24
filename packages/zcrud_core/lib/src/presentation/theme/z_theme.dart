@@ -392,9 +392,14 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.subListAddControlRadius,
     this.subListAddControlSize,
     this.subListAddControlIconColor,
+    this.subListDragHandleIcon,
+    this.subListDragHandleSize,
+    this.subListDragHandleColor,
     this.subListCaptionTopPadding,
     this.subListHeaderTopPadding,
     this.subListRowVerticalPadding,
+    this.subListRowHorizontalPadding,
+    this.subListRowInnerPadding,
     this.subListCellVerticalPadding,
     this.subListTableVerticalMargin,
     this.subListBlockEndPadding,
@@ -951,6 +956,28 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// (défaut) ⇒ couleur d'icône ambiante — rendu inchangé.
   final Color? subListAddControlIconColor;
 
+  /// **Glyphe** de la poignée de glisser-déposer d'une ligne de sous-liste
+  /// (modes `compact` et `inline`, quand l'ordre est éditable). `null`
+  /// (défaut) ⇒ `Icons.drag_indicator_rounded` — rendu strictement inchangé.
+  ///
+  /// Un `IconData` est un **glyphe**, jamais un libellé : il ne se traduit
+  /// pas. Il reste un choix de LOOK, donc injecté et non figé.
+  final IconData? subListDragHandleIcon;
+
+  /// **Taille** (dp) du glyphe de la poignée de glissement. `null` (défaut) ⇒
+  /// taille d'icône ambiante (`IconTheme`, 24 dp sous Material) — rendu
+  /// strictement inchangé.
+  ///
+  /// Ce jeton ne touche **pas** la cible tactile : la poignée reste une
+  /// affordance de 48 dp de côté (invariant AD-13), plancher qu'aucun jeton ne
+  /// descend. Réduire le glyphe **augmente** donc le jeu qui l'entoure dans la
+  /// cible — un glyphe de 20 dp laisse 14 dp de part et d'autre au lieu de 12.
+  final double? subListDragHandleSize;
+
+  /// **Couleur** du glyphe de la poignée de glissement. `null` (défaut) ⇒
+  /// couleur d'icône ambiante (`IconTheme`) — rendu strictement inchangé.
+  final Color? subListDragHandleColor;
+
   /// Réserve verticale (dp) **au-dessus du libellé** d'une sous-liste — le
   /// haut du bloc, dans les trois modes d'affichage (`compact`, `inline`,
   /// `tags`). `null` (défaut) ⇒ `8` — rendu strictement inchangé.
@@ -979,6 +1006,35 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// porte une poignée dont la cible tactile reste ≥ 48 dp (invariant AD-13),
   /// plancher qu'aucun jeton ne descend.
   final double? subListRowVerticalPadding;
+
+  /// Padding horizontal (dp) appliqué **de part et d'autre de chaque ligne**
+  /// d'une sous-liste — la marge **externe**, hors du cadre : ligne de résumé
+  /// du mode `compact` non tabulaire, carte d'item du mode `inline`, et la
+  /// ligne d'en-têtes de colonnes qui reproduit leur géométrie. `null`
+  /// (défaut) ⇒ `16` — rendu strictement inchangé.
+  ///
+  /// Jumeau horizontal de [subListRowVerticalPadding] : même granularité, même
+  /// règle d'inertie. Il gouverne aussi le seuil d'empilement du résumé
+  /// tabulaire, qui décompte l'emprise réellement perdue par les colonnes.
+  ///
+  /// Porte sur les **lignes** et leur en-tête de colonnes ; le libellé du bloc
+  /// garde sa propre marge (jamais réglé par ce jeton).
+  final double? subListRowHorizontalPadding;
+
+  /// Padding horizontal (dp) **à l'intérieur du cadre** d'une ligne de résumé
+  /// compacte, au **début** de la ligne : ce qui sépare la bordure de la
+  /// poignée de glissement — ou, sans poignée, de la première colonne. `null`
+  /// (défaut) ⇒ `12` — rendu strictement inchangé.
+  ///
+  /// Il s'**ajoute** à [subListRowHorizontalPadding] : la distance entre le
+  /// bord de la surface et le premier glyphe vaut la somme des deux, plus le
+  /// jeu de centrage du glyphe dans sa cible tactile de 48 dp (invariant
+  /// AD-13, non réglable).
+  ///
+  /// La réserve de **fin** du cadre (4 dp, gouttière des actions) n'est pas
+  /// gouvernée par ce jeton. Sans objet en mode `inline` : une carte d'item n'a
+  /// pas de marge interne de cadre.
+  final double? subListRowInnerPadding;
 
   /// Padding vertical (dp) **à l'intérieur d'une cellule** du résumé
   /// **tabulaire** (en-têtes et valeurs). `null` (défaut) ⇒ `8` — rendu
@@ -2488,9 +2544,14 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Radius? subListAddControlRadius,
     double? subListAddControlSize,
     Color? subListAddControlIconColor,
+    IconData? subListDragHandleIcon,
+    double? subListDragHandleSize,
+    Color? subListDragHandleColor,
     double? subListCaptionTopPadding,
     double? subListHeaderTopPadding,
     double? subListRowVerticalPadding,
+    double? subListRowHorizontalPadding,
+    double? subListRowInnerPadding,
     double? subListCellVerticalPadding,
     double? subListTableVerticalMargin,
     double? subListBlockEndPadding,
@@ -2712,12 +2773,22 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         subListAddControlSize ?? this.subListAddControlSize,
     subListAddControlIconColor:
         subListAddControlIconColor ?? this.subListAddControlIconColor,
+    subListDragHandleIcon:
+        subListDragHandleIcon ?? this.subListDragHandleIcon,
+    subListDragHandleSize:
+        subListDragHandleSize ?? this.subListDragHandleSize,
+    subListDragHandleColor:
+        subListDragHandleColor ?? this.subListDragHandleColor,
     subListCaptionTopPadding:
         subListCaptionTopPadding ?? this.subListCaptionTopPadding,
     subListHeaderTopPadding:
         subListHeaderTopPadding ?? this.subListHeaderTopPadding,
     subListRowVerticalPadding:
         subListRowVerticalPadding ?? this.subListRowVerticalPadding,
+    subListRowHorizontalPadding:
+        subListRowHorizontalPadding ?? this.subListRowHorizontalPadding,
+    subListRowInnerPadding:
+        subListRowInnerPadding ?? this.subListRowInnerPadding,
     subListCellVerticalPadding:
         subListCellVerticalPadding ?? this.subListCellVerticalPadding,
     subListTableVerticalMargin:
@@ -3142,6 +3213,20 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.subListAddControlIconColor,
         t,
       ),
+      // Un `IconData` n'a pas d'entre-deux : bascule au milieu, comme les
+      // jetons de chevron de fratrie.
+      subListDragHandleIcon:
+          t < 0.5 ? subListDragHandleIcon : other.subListDragHandleIcon,
+      subListDragHandleSize: _lerpNullableDouble(
+        subListDragHandleSize,
+        other.subListDragHandleSize,
+        t,
+      ),
+      subListDragHandleColor: _lerpNullableColor(
+        subListDragHandleColor,
+        other.subListDragHandleColor,
+        t,
+      ),
       subListCaptionTopPadding: _lerpNullableDouble(
         subListCaptionTopPadding,
         other.subListCaptionTopPadding,
@@ -3155,6 +3240,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       subListRowVerticalPadding: _lerpNullableDouble(
         subListRowVerticalPadding,
         other.subListRowVerticalPadding,
+        t,
+      ),
+      subListRowHorizontalPadding: _lerpNullableDouble(
+        subListRowHorizontalPadding,
+        other.subListRowHorizontalPadding,
+        t,
+      ),
+      subListRowInnerPadding: _lerpNullableDouble(
+        subListRowInnerPadding,
+        other.subListRowInnerPadding,
         t,
       ),
       subListCellVerticalPadding: _lerpNullableDouble(

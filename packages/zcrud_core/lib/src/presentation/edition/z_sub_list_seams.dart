@@ -421,6 +421,26 @@ typedef ZSubListTemplatesResolver = List<ZSubListItemTemplate> Function(
 /// geste, jamais de l'offrir).
 typedef ZSubItemMenuVisibility = bool Function(ZSubListItemView item);
 
+/// **Clé de couleur par item** — traduit un item en une clé neutre (`String`)
+/// que la chaîne `ZcrudScope.colorKeyResolver` sait teindre
+/// ([ZSubListSeams.itemBorderColorKey]).
+///
+/// Il reçoit la **vue** de l'item, comme [ZSubItemMenuVisibility] : la clé peut
+/// donc dépendre des données affichées, de la position, de l'état soft-deleted
+/// ou de la lecture seule.
+///
+/// Rendre `null` — ou lever (invariant AD-10) — laisse la ligne à sa couleur
+/// par défaut : c'est ce qui permet de teindre **quelques** lignes sans avoir à
+/// nommer une clé pour toutes les autres.
+///
+/// La clé est un **mot du domaine applicatif**, jamais une `Color` : c'est
+/// l'hôte qui décide de la teinte, par son `ZcrudScope.colorKeyResolver`
+/// (invariant FR-26 — aucun paquet zcrud ne code une couleur en dur ;
+/// invariant AD-3 — le domaine ne porte pas de `Color`). Sans resolver injecté,
+/// seul le vocabulaire de rôles Material 3 (`primary`, `secondary`, `tertiary`,
+/// `error`, `neutral`) est reconnu.
+typedef ZSubItemColorKey = String? Function(ZSubListItemView item);
+
 /// **Option de menu d'un item** de sous-liste (mode `compact`) — une entrée
 /// déclarative, gouvernée par l'ACL du socle, qui déclenche
 /// [ZSubListSeams.onCrud].
@@ -813,6 +833,7 @@ typedef ZSubItemCrudHook = Future<ZSubItemCrudOutcome> Function(
 /// | [creationTemplatesResolver] | — | ✅ menu d'ajout | ✅ menu d'ajout | — |
 /// | [itemMenuOptions] | — | ✅ menu de débordement de ligne | — | — |
 /// | [onCrud] | — | ✅ create/update/delete + option + gabarit | ✅ create/update/delete + gabarit | — |
+/// | [itemBorderColorKey] | ✅ cadre de la carte d'item | ✅ cadre de la ligne (hors table) | — | — |
 ///
 /// **« — » signifie : le seam est ignoré, silencieusement et sans effet de
 /// bord.** Un seam déclaré pour un mode qui ne le sert pas ne dégrade rien et
@@ -894,6 +915,7 @@ class ZSubListSeams {
     this.creationTemplatesResolver,
     this.itemMenuOptions = const <ZSubItemMenuOption>[],
     this.onCrud,
+    this.itemBorderColorKey,
   });
 
   /// Surcharge d'**ACL propre à ce champ**, prioritaire sur `ZcrudScope.acl`.
@@ -979,6 +1001,23 @@ class ZSubListSeams {
   /// **strictement** ceux d'avant : aucun `await` supplémentaire, aucun appel,
   /// aucune bifurcation.
   final ZSubItemCrudHook? onCrud;
+
+  /// **Couleur de bordure par item** (voir [ZSubItemColorKey]) — modes
+  /// `compact` et `inline`.
+  ///
+  /// C'est le seul canal qui peint le **cadre** d'une ligne ; [itemBuilder] en
+  /// peint le **contenu**. Les deux coexistent sans se recouvrir.
+  ///
+  /// Chaîne appliquée, dans cet ordre :
+  ///
+  /// > seam (ici) → `ZcrudScope.colorKeyResolver` → rôles Material 3
+  /// > → `ZcrudTheme.fieldBorderColor`
+  ///
+  /// `null` (défaut), clé inconnue de toute la chaîne, ou seam qui lève
+  /// (invariant AD-10) ⇒ `ZcrudTheme.fieldBorderColor` : la bordure d'avant, à
+  /// la couleur près. Le seam n'est **pas consulté** quand il est absent —
+  /// aucun appel, aucune allocation.
+  final ZSubItemColorKey? itemBorderColorKey;
 }
 
 /// Registre **instanciable** de [ZSubListSeams], discriminés par clé

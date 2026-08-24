@@ -8,7 +8,7 @@
 # émet `toMap`/`fromMap`/`copyWith` + `ZFieldSpec[]` + `register(ZcrudRegistry)`.
 name: zcrud_generator
 description: "build_runner code generator for zcrud: (de)serialization, ZFieldSpec[] and registry from @ZcrudModel-annotated models."
-version: 3.17.0
+version: 3.18.0
 publish_to: none
 resolution: workspace
 
@@ -30,8 +30,8 @@ environment:
 # `ZcrudRegistry` référencés par le code émis).
 # Toolchain codegen (autorisée ICI SEULEMENT — AD-1) : analyzer/build/source_gen.
 dependencies:
-  zcrud_core: ^3.17.0
-  zcrud_annotations: ^3.17.0
+  zcrud_core: ^3.18.0
+  zcrud_annotations: ^3.18.0
   # Borne LARGE >=12 <14 (cr-generator-analyzer-constraint, 2026-08-11) : chez un
   # hôte git, analyzer 13 est la fenêtre commune avec reflectable_builder 1.2.3 et
   # riverpod_generator ^4 — la borne ^12 seule rendait la résolution INSOLUBLE.

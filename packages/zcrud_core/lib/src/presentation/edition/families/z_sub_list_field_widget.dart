@@ -160,6 +160,7 @@ import '../../../domain/ports/z_number_display_formatter.dart';
 import '../../l10n/z_localizations.dart';
 import '../../reorder/z_reorder_render_request.dart';
 import '../../reorder/z_reorder_renderer.dart';
+import '../../theme/z_color_key_resolver.dart';
 import '../../theme/z_theme.dart';
 import '../../z_form_controller.dart';
 import '../../zcrud_scope.dart';
@@ -935,13 +936,23 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     Widget card(BuildContext cardContext, int i) => KeyedSubtree(
           key: ValueKey<String>(_items[i].id),
           child: _SubItemCard(
-            borderColor: theme.fieldBorderColor,
+            // Seam absent ⇒ `theme.fieldBorderColor`, l'expression d'avant.
+            // `display` est `null` : ce mode n'applique pas le transformateur
+            // d'affichage (même règle que `_extraActions` ici).
+            borderColor: _itemBorderColor(
+              cardContext,
+              theme,
+              _items[i],
+              i,
+              readOnly: readOnly,
+            ),
             radius: theme.radiusM,
             removable: !readOnly,
             removeLabel: removeLabel,
             handle: reorderable ? _dragHandle(cardContext, i) : null,
             // Jeton absent ⇒ `_rowVerticalPadding` rend le littéral d'avant.
             verticalPadding: _rowVerticalPadding(theme),
+            horizontalPadding: _rowHorizontalPadding(theme),
             onRemove: () => _removeAt(i),
             // Seul seam servi en `inline` : des actions **en plus** des
             // contrôles de la carte. Les autres seams remplaceraient ou
@@ -1507,10 +1518,17 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   static const double _stackedPairGap = 8;
 
   /// Emprise horizontale d'une ligne de résumé **hors colonnes**, actions
-  /// exclues : les marges externes de `_CompactRow` (16 de chaque côté) et ses
-  /// marges internes (12 au début, 4 à la fin). La ligne d'en-têtes reproduit
-  /// exactement la même emprise — c'est ce qui fait tomber les colonnes en face.
-  static const double _rowChromeExtent = 16 + 16 + 12 + 4;
+  /// exclues : les marges externes de `_CompactRow` (de chaque côté) et ses
+  /// marges internes (au début, puis la gouttière d'actions à la fin). La ligne
+  /// d'en-têtes reproduit exactement la même emprise — c'est ce qui fait tomber
+  /// les colonnes en face.
+  ///
+  /// Elle se **calcule** depuis les jetons, elle n'est plus une constante : le
+  /// seuil d'empilement décompte la place réellement perdue par les colonnes,
+  /// et une marge réglée à 8 dp en rend seize aux colonnes. La figer aurait
+  /// rendu le repli en empilement faux dès qu'un hôte pose un jeton.
+  double _rowChromeExtent(ZcrudTheme tokens) =>
+      2 * _rowHorizontalPadding(tokens) + _rowInnerPadding(tokens) + 4;
 
   /// Largeur minimale qu'une colonne de résumé doit conserver pour rester
   /// lisible, **gouttière comprise**.
@@ -1557,6 +1575,17 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   double _rowVerticalPadding(ZcrudTheme tokens) =>
       tokens.subListRowVerticalPadding ?? 4;
 
+  /// Marge horizontale **externe** d'une ligne (`compact` non tabulaire) ou
+  /// d'une carte d'item (`inline`), et de la ligne d'en-têtes qui les coiffe.
+  double _rowHorizontalPadding(ZcrudTheme tokens) =>
+      tokens.subListRowHorizontalPadding ?? 16;
+
+  /// Marge horizontale **interne** du cadre d'une ligne, côté début (`compact`
+  /// non tabulaire). La réserve de fin (4 dp) est la gouttière des actions et
+  /// n'est pas réglée par un jeton.
+  double _rowInnerPadding(ZcrudTheme tokens) =>
+      tokens.subListRowInnerPadding ?? 12;
+
   /// Padding vertical à l'intérieur d'une cellule du résumé tabulaire.
   double _cellVerticalPadding(ZcrudTheme tokens) =>
       tokens.subListCellVerticalPadding ?? 8;
@@ -1591,7 +1620,8 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     if (!_showSummaryHeaders || !width.isFinite) return false;
     final columns = _summaryColumns.length;
     if (columns == 0) return false;
-    final available = width - _rowChromeExtent - actionCount * _actionExtent;
+    final available =
+        width - _rowChromeExtent(tokens) - actionCount * _actionExtent;
     return available < columns * _minColumnWidth(tokens);
   }
 
@@ -1616,15 +1646,18 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   }) {
     final summaryColumns = _summaryColumns;
     return Padding(
-      // Reproduit la géométrie de `_CompactRow` : marge externe 16, marge
-      // interne de début 12, réserve de fin = actions + marge interne 4.
+      // Reproduit la géométrie de `_CompactRow` : marge externe + marge
+      // interne de début au départ, marge externe à la fin (la réserve de fin
+      // du cadre, 4 dp, est déjà absorbée par la réserve d'actions du Row).
+      // Les deux postes sont LUS AUX MÊMES RÉSOLVEURS que la ligne : recopier
+      // les littéraux ici décalerait les en-têtes dès qu'un hôte pose un jeton.
       // [leadingExtent] réserve en TÊTE la largeur de la poignée de
       // glissement quand l'ordre est éditable — sans elle, les en-têtes
       // tomberaient décalés d'une poignée par rapport aux cellules.
       padding: EdgeInsetsDirectional.fromSTEB(
-        28,
+        _rowHorizontalPadding(theme) + _rowInnerPadding(theme),
         _headerTopPadding(theme),
-        16,
+        _rowHorizontalPadding(theme),
         0,
       ),
       child: Row(
@@ -2426,6 +2459,35 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         readOnly: readOnly,
       );
 
+  /// Couleur du **cadre** de la ligne de cet item.
+  ///
+  /// Chaîne : seam [ZSubListSeams.itemBorderColorKey] → `zResolveColorKey`
+  /// (resolver hôte du scope, puis rôles Material 3) →
+  /// `ZcrudTheme.fieldBorderColor`. Chaque maillon qui ne se prononce pas passe
+  /// la main au suivant ; le dernier est la bordure d'avant.
+  ///
+  /// Ce qui garantit l'inertie : sans seam déclaré, on **sort avant** toute
+  /// résolution — la valeur rendue est littéralement l'expression d'hier
+  /// (`theme.fieldBorderColor`), et aucun appel n'a lieu.
+  Color? _itemBorderColor(
+    BuildContext context,
+    ZcrudTheme theme,
+    _SubItem item,
+    int index, {
+    required bool readOnly,
+    Map<String, dynamic>? display,
+  }) {
+    final resolver = _seams?.itemBorderColorKey;
+    if (resolver == null) return theme.fieldBorderColor;
+    // Un seam qui lève est un seam absent (invariant AD-10) : `_safe` rend
+    // `null`, et le repli est la bordure du thème.
+    final key = _safe(
+      () => resolver(_viewOf(item, index, display, readOnly: readOnly)),
+    );
+    if (key == null) return theme.fieldBorderColor;
+    return zResolveColorKey(context, key)?.color ?? theme.fieldBorderColor;
+  }
+
   /// **Actions supplémentaires** d'un item ([ZSubListSeams.itemActionsBuilder])
   /// — rendues **en plus** des actions natives, jamais à leur place.
   ///
@@ -2819,7 +2881,18 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
             return KeyedSubtree(
               key: ValueKey<String>(item.id),
               child: _CompactRow(
-                borderColor: theme.fieldBorderColor,
+                // Seam absent ⇒ `theme.fieldBorderColor`, l'expression
+                // d'avant. La vue passée au seam porte la donnée d'AFFICHAGE
+                // (transformateur appliqué), comme celle des autres seams de ce
+                // mode : la clé se lit sur ce que la ligne montre.
+                borderColor: _itemBorderColor(
+                  rowContext,
+                  theme,
+                  item,
+                  i,
+                  readOnly: readOnly,
+                  display: display,
+                ),
                 radius: theme.radiusM,
                 leading: withHandle && !item.deleted
                     ? _dragHandle(rowContext, i)
@@ -2831,6 +2904,8 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                 // Jeton absent ⇒ `_rowVerticalPadding` rend le littéral
                 // d'avant.
                 verticalPadding: _rowVerticalPadding(theme),
+                horizontalPadding: _rowHorizontalPadding(theme),
+                innerPadding: _rowInnerPadding(theme),
                 summary: _rowSummary(
                   rowContext,
                   item,
@@ -3225,6 +3300,8 @@ class _CompactRow extends StatelessWidget {
     this.editColor,
     this.deleteColor,
     this.verticalPadding = 4,
+    this.horizontalPadding = 16,
+    this.innerPadding = 12,
     this.extraActions = const <Widget>[],
     this.menu,
   });
@@ -3233,6 +3310,17 @@ class _CompactRow extends StatelessWidget {
   /// l'appelant depuis `ZcrudTheme.subListRowVerticalPadding`. Le défaut `4`
   /// est le littéral d'avant le jeton.
   final double verticalPadding;
+
+  /// Padding horizontal (dp) de part et d'autre de la ligne, HORS du cadre —
+  /// résolu par l'appelant depuis `ZcrudTheme.subListRowHorizontalPadding`. Le
+  /// défaut `16` est le littéral d'avant le jeton.
+  final double horizontalPadding;
+
+  /// Padding horizontal (dp) au DÉBUT du cadre, avant la poignée ou la
+  /// première colonne — résolu par l'appelant depuis
+  /// `ZcrudTheme.subListRowInnerPadding`. Le défaut `12` est le littéral
+  /// d'avant le jeton. La réserve de fin (4) reste la gouttière des actions.
+  final double innerPadding;
 
   final Color? borderColor;
   final Radius radius;
@@ -3303,9 +3391,9 @@ class _CompactRow extends StatelessWidget {
         : summary;
     return Padding(
       padding: EdgeInsetsDirectional.fromSTEB(
-        16,
+        horizontalPadding,
         verticalPadding,
-        16,
+        horizontalPadding,
         verticalPadding,
       ),
       child: DecoratedBox(
@@ -3314,7 +3402,7 @@ class _CompactRow extends StatelessWidget {
           borderRadius: BorderRadius.all(radius),
         ),
         child: Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 4, 0),
+          padding: EdgeInsetsDirectional.fromSTEB(innerPadding, 0, 4, 0),
           child: Row(
             children: <Widget>[
               ?leading,
@@ -3747,6 +3835,7 @@ class _SubItemCard extends StatelessWidget {
     required this.fields,
     this.handle,
     this.verticalPadding = 4,
+    this.horizontalPadding = 16,
     this.extraActions = const <Widget>[],
   });
 
@@ -3754,6 +3843,12 @@ class _SubItemCard extends StatelessWidget {
   /// l'appelant depuis `ZcrudTheme.subListRowVerticalPadding`. Le défaut `4`
   /// est le littéral d'avant le jeton.
   final double verticalPadding;
+
+  /// Padding horizontal (dp) de part et d'autre de la carte — résolu par
+  /// l'appelant depuis `ZcrudTheme.subListRowHorizontalPadding`. Le défaut `16`
+  /// est le littéral d'avant le jeton. Une carte d'item n'a pas de marge
+  /// interne de cadre : `subListRowInnerPadding` est sans objet ici.
+  final double horizontalPadding;
 
   /// Actions **supplémentaires** de l'hôte (seam `itemActionsBuilder`), déjà
   /// contraintes à ≥ 48 dp, rendues **après** poignée et retrait.
@@ -3774,9 +3869,9 @@ class _SubItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsetsDirectional.fromSTEB(
-        16,
+        horizontalPadding,
         verticalPadding,
-        16,
+        horizontalPadding,
         verticalPadding,
       ),
       child: DecoratedBox(
@@ -4017,12 +4112,24 @@ class _ZSubListDragHandle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Habillage du GLYPHE seul (jetons `subListDragHandle*`). La cible tactile
+    // de 48 dp reste hors de portée des jetons : c'est le plancher d'AD-13, pas
+    // une décoration. Jeton absent ⇒ le littéral d'avant pour le glyphe, `null`
+    // pour la taille et la couleur (soit l'ambiant de l'`IconTheme`, à
+    // l'identique) — l'inertie est portée par le `??`, pas par une promesse.
+    final tokens = ZcrudTheme.of(context);
     final Widget handle = Semantics(
       label: semanticLabel,
-      child: const SizedBox(
+      child: SizedBox(
         width: 48,
         height: 48,
-        child: Center(child: Icon(Icons.drag_indicator_rounded)),
+        child: Center(
+          child: Icon(
+            tokens.subListDragHandleIcon ?? Icons.drag_indicator_rounded,
+            size: tokens.subListDragHandleSize,
+            color: tokens.subListDragHandleColor,
+          ),
+        ),
       ),
     );
     final scope = _ZSubListDragScope.maybeOf(context);
