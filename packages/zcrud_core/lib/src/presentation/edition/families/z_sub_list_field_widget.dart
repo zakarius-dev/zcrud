@@ -561,10 +561,22 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     return config is ZSubListConfig ? config.itemFields : const <ZFieldSpec>[];
   }
 
-  bool get _reorderable {
+  /// Déclaration d'ordre du champ — `null` quand la config est absente/non
+  /// conforme OU quand l'hôte n'a rien déclaré (tri-état, voir
+  /// `ZSubListConfig.reorderable`).
+  bool? get _declaredReorderable {
     final config = widget.field.config;
-    return config is ZSubListConfig ? config.reorderable : true;
+    return config is ZSubListConfig ? config.reorderable : null;
   }
+
+  /// Réordonnancement du mode `inline` : comportement historique — actif par
+  /// défaut (`null` ⇒ flèches rendues, comme depuis toujours).
+  bool get _inlineReorderable => _declaredReorderable ?? true;
+
+  /// Réordonnancement du mode `compact` : actif UNIQUEMENT sur déclaration
+  /// EXPLICITE (`reorderable: true`). Le défaut `null` laisse le rendu compact
+  /// strictement inchangé — un hôte passif ne voit aucun contrôle apparaître.
+  bool get _compactReorderable => _declaredReorderable == true;
 
   /// Mode de rendu — `compact` (défaut) si config absente/non conforme.
   ///
@@ -626,6 +638,26 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   bool get _softDelete {
     final config = widget.field.config;
     return config is ZSubListConfig && config.softDelete;
+  }
+
+  /// Préférence d'affichage de l'action « consulter » (défaut `true` — config
+  /// absente/non conforme comprise). Voir `ZSubListConfig.showViewAction` :
+  /// montré = permis (ACL) ET préféré.
+  bool get _showViewAction {
+    final config = widget.field.config;
+    return config is! ZSubListConfig || config.showViewAction;
+  }
+
+  /// Préférence d'affichage de l'action « modifier » (défaut `true`).
+  bool get _showEditAction {
+    final config = widget.field.config;
+    return config is! ZSubListConfig || config.showEditAction;
+  }
+
+  /// Préférence d'affichage de l'action « supprimer » (défaut `true`).
+  bool get _showDeleteAction {
+    final config = widget.field.config;
+    return config is! ZSubListConfig || config.showDeleteAction;
   }
 
   /// Gabarits de création **effectifs** : ceux dérivés de l'état du formulaire
@@ -784,6 +816,33 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     _syncToParent();
   }
 
+  /// Déplace l'item d'indice [from] à l'indice [to] — le rappel d'ordre servi
+  /// aux seams (`ZSubListViewData.onReorder`). Défensif (invariant AD-10) :
+  /// indices hors bornes ou déplacement sur place ⇒ no-op, jamais une
+  /// exception. Le `setState` ne reconstruit que ce conteneur (canal
+  /// structurel — invariant AD-2), et l'ordre agrégé est republié vers la
+  /// tranche parente : l'ordre est une donnée, il est persisté.
+  void _moveTo(int from, int to) {
+    if (from < 0 || from >= _items.length) return;
+    if (to < 0 || to >= _items.length) return;
+    if (from == to) return;
+    setState(() {
+      final item = _items.removeAt(from);
+      _items.insert(to, item);
+    });
+    _syncToParent();
+  }
+
+  /// Nombre d'items **agrégés vers le parent** (soft-deleted exclus) — le
+  /// compte servi à l'en-tête (`ZSubListHeaderView.itemCount`).
+  int get _aggregatedCount {
+    var count = 0;
+    for (final item in _items) {
+      if (!item.deleted) count++;
+    }
+    return count;
+  }
+
   /// **La lecture seule DESCEND dans les sous-champs.**
   ///
   /// `DynamicEdition._effective` ne force `readOnly: true` que sur les specs de
@@ -861,7 +920,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                 radius: theme.radiusM,
                 index: i,
                 count: _items.length,
-                reorderable: _reorderable && !readOnly,
+                reorderable: _inlineReorderable && !readOnly,
                 removable: !readOnly,
                 removeLabel: removeLabel,
                 upLabel: upLabel,
@@ -1515,6 +1574,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     BuildContext context, {
     required ZcrudTheme theme,
     required int actionCount,
+    required bool reorderable,
     required bool canView,
     required bool canUpdate,
     required bool canDelete,
@@ -1603,6 +1663,17 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                     ),
                   _RowActions(
                     deleted: item.deleted,
+                    reorderable: reorderable,
+                    canMoveUp: i > 0,
+                    canMoveDown: i < _items.length - 1,
+                    upLabel: label(context, 'moveItemUp'),
+                    downLabel: label(context, 'moveItemDown'),
+                    onMoveUp: () => _move(i, -1),
+                    onMoveDown: () => _move(i, 1),
+                    actionIconSize: theme.subListActionIconSize,
+                    viewColor: theme.subListViewActionColor,
+                    editColor: theme.subListEditActionColor,
+                    deleteColor: theme.subListDeleteActionColor,
                     canView: canView,
                     canUpdate: canUpdate,
                     canDelete: canDelete,
@@ -2128,11 +2199,16 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// pré-remplit le dialog.
   Widget _buildAddControl(BuildContext context) {
     final templates = _creationTemplates;
+    final theme = ZcrudTheme.of(context);
+    final iconColor = theme.subListAddControlIconColor;
     if (templates.isEmpty) {
-      return IconButton(
-        icon: const Icon(Icons.add),
-        tooltip: _addLabel(context),
-        onPressed: () => _openAddDialog(),
+      return _decorateAddControl(
+        theme,
+        IconButton(
+          icon: Icon(Icons.add, color: iconColor),
+          tooltip: _addLabel(context),
+          onPressed: () => _openAddDialog(),
+        ),
       );
     }
     // Résolution par IDENTITÉ, JAMAIS par position : la valeur portée est le
@@ -2144,21 +2220,52 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     // un gestionnaire de tap. Même sémantique que `ZDefaultMenuRenderer`
     // (`zcrud_menu`) — non importable ici (invariant AD-1, out-degree zcrud
     // de 0).
-    return PopupMenuButton<ZSubListItemTemplate>(
-      icon: const Icon(Icons.add),
-      tooltip: _addLabel(context),
-      onSelected: (template) => _openAddDialog(template: template),
-      itemBuilder: (context) => <PopupMenuEntry<ZSubListItemTemplate>>[
-        for (final template in templates)
-          PopupMenuItem<ZSubListItemTemplate>(
-            value: template,
-            child: Text(label(
-              context,
-              template.labelKey,
-              fallback: template.labelFallback ?? template.labelKey,
-            )),
-          ),
-      ],
+    return _decorateAddControl(
+      theme,
+      PopupMenuButton<ZSubListItemTemplate>(
+        icon: Icon(Icons.add, color: iconColor),
+        tooltip: _addLabel(context),
+        onSelected: (template) => _openAddDialog(template: template),
+        itemBuilder: (context) => <PopupMenuEntry<ZSubListItemTemplate>>[
+          for (final template in templates)
+            PopupMenuItem<ZSubListItemTemplate>(
+              value: template,
+              child: Text(label(
+                context,
+                template.labelKey,
+                fallback: template.labelFallback ?? template.labelKey,
+              )),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Habillage **déclaré** du contrôle d'ajout (jetons `subListAddControl*` de
+  /// `ZcrudTheme`). Aucun jeton déclaré ⇒ le contrôle **nu**, strictement le
+  /// widget d'avant — aucun conteneur n'est ajouté à l'arbre.
+  ///
+  /// Le contrôle interne reste un `IconButton`/`PopupMenuButton` natif :
+  /// tooltip, sémantique et cible tactile (≥ 48 dp — invariant AD-13) sont
+  /// inchangés, quel que soit l'habillage. Le dégradé prime sur le fond uni
+  /// (voir `ZcrudTheme.subListAddControlGradient`).
+  Widget _decorateAddControl(ZcrudTheme theme, Widget control) {
+    final color = theme.subListAddControlColor;
+    final gradient = theme.subListAddControlGradient;
+    final radius = theme.subListAddControlRadius;
+    final size = theme.subListAddControlSize;
+    if (color == null && gradient == null && radius == null && size == null) {
+      return control;
+    }
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: gradient == null ? color : null,
+        gradient: gradient,
+        borderRadius: radius == null ? null : BorderRadius.all(radius),
+      ),
+      child: control,
     );
   }
 
@@ -2419,11 +2526,27 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         const ZDenyAllAcl();
     final canCreate =
         !readOnly && acl.can(ZCrudAction.create, collectionId: cid);
-    final canView = acl.can(ZCrudAction.view, collectionId: cid);
-    final canUpdate =
-        !readOnly && acl.can(ZCrudAction.update, collectionId: cid);
-    final canDelete =
-        !readOnly && acl.can(ZCrudAction.delete, collectionId: cid);
+    // Montré = PERMIS (ACL) ET PRÉFÉRÉ (config) — la conjonction, dans cet
+    // ordre de responsabilités : une préférence d'affichage ne peut jamais
+    // MONTRER un geste que l'ACL refuse, elle ne peut que RETIRER un geste
+    // qu'elle autorise. L'ACL gouverne le droit, la préférence l'affichage.
+    final canView =
+        acl.can(ZCrudAction.view, collectionId: cid) && _showViewAction;
+    final canUpdate = !readOnly &&
+        acl.can(ZCrudAction.update, collectionId: cid) &&
+        _showEditAction;
+    final canDelete = !readOnly &&
+        acl.can(ZCrudAction.delete, collectionId: cid) &&
+        _showDeleteAction;
+    // Réordonnancement compact : les MÊMES flèches monter/descendre qu'en
+    // `inline`, jamais une poignée de glissement. Choix mesuré sur ce que ce
+    // mode rend : ses lignes vivent dans une `Table` (rendu nominal) ou un
+    // `ListView` non réordonnable (au-delà du budget) — un glisser-déposer
+    // exigerait un `ReorderableListView`, incompatible avec la table et avec
+    // le repli mesuré. Les flèches réutilisent `_move` tel quel : même geste,
+    // même canal structurel (invariant AD-2 — seule la liste se reconstruit),
+    // même identité de ligne préservée.
+    final canReorder = _compactReorderable && !readOnly;
 
     // Actions supplémentaires : précalculées **UNIQUEMENT** si le seam est
     // déclaré. La réserve de fin sous l'en-tête doit connaître leur NOMBRE
@@ -2493,7 +2616,8 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       }
     }
 
-    final actionCount = (canView ? 1 : 0) +
+    final actionCount = (canReorder ? 2 : 0) +
+        (canView ? 1 : 0) +
         (canUpdate ? 1 : 0) +
         (canDelete ? 1 : 0) +
         extraCount +
@@ -2546,6 +2670,17 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
               child: _CompactRow(
                 borderColor: theme.fieldBorderColor,
                 radius: theme.radiusM,
+                reorderable: canReorder,
+                canMoveUp: i > 0,
+                canMoveDown: i < _items.length - 1,
+                upLabel: label(rowContext, 'moveItemUp'),
+                downLabel: label(rowContext, 'moveItemDown'),
+                onMoveUp: () => _move(i, -1),
+                onMoveDown: () => _move(i, 1),
+                actionIconSize: theme.subListActionIconSize,
+                viewColor: theme.subListViewActionColor,
+                editColor: theme.subListEditActionColor,
+                deleteColor: theme.subListDeleteActionColor,
                 summary: _rowSummary(
                   rowContext,
                   item,
@@ -2608,6 +2743,15 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                       buildRow(context, i),
                   ],
                   itemBuilder: buildRow,
+                  // Rappel d'ordre servi au conteneur hôte : `null` quand
+                  // l'ordre n'est pas éditable (lecture seule, ou déclaration
+                  // explicite `reorderable: false`). Le défaut (`null` déclaré
+                  // nulle part) le SERT : un conteneur est un seam explicite,
+                  // il rend lui-même son contrôle — rien n'apparaît chez un
+                  // hôte passif.
+                  onReorder: readOnly || _declaredReorderable == false
+                      ? null
+                      : _moveTo,
                 ),
               ),
             );
@@ -2633,7 +2777,27 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
               ],
             ),
           );
-          if (captionSeam != null) {
+          // Précédence des seams d'en-tête : `headerBuilder` (informé) PRIME
+          // sur `captionBuilder` (historique) — jamais les deux pour un même
+          // rendu ; l'ancien seam reste honoré à l'identique quand le nouveau
+          // n'est pas déclaré.
+          final headerSeam = _seams?.headerBuilder;
+          if (headerSeam != null) {
+            final custom = _safe(
+              () => headerSeam(
+                context,
+                ZSubListHeaderView(
+                  field: widget.field,
+                  itemCount: _aggregatedCount,
+                  addControl: canCreate
+                      ? _buildAddControl(context)
+                      : const SizedBox.shrink(),
+                  onAdd: canCreate ? () => _openAddDialog() : null,
+                ),
+              ),
+            );
+            if (custom != null) caption = custom;
+          } else if (captionSeam != null) {
             final custom = _safe(
               () => captionSeam(
                 context,
@@ -2652,6 +2816,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                   context,
                   theme: theme,
                   actionCount: actionCount,
+                  reorderable: canReorder,
                   canView: canView,
                   canUpdate: canUpdate,
                   canDelete: canDelete,
@@ -2707,6 +2872,17 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// réordonnancement drag) relèvent d'un rendu séparé, hors de ce mode
   /// minimal.
   Widget _buildTags(BuildContext context) {
+    // Une déclaration EXPLICITE d'ordre ne peut pas être honorée ici : une
+    // puce n'a ni rangée ni poignée. L'option n'est jamais silencieusement
+    // inerte — signalée en debug/test, jamais un plantage en production
+    // (invariant AD-10).
+    assert(
+      _declaredReorderable != true,
+      'ZSubListConfig.reorderable: true déclaré sur une sous-liste en mode '
+      '`tags` (champ « ${widget.field.name} ») : ce mode ne sait pas rendre '
+      'de contrôle d\'ordre. Retirez la déclaration, ou passez en mode '
+      '`compact`/`inline`.',
+    );
     final resolvedLabel = label(
       context,
       widget.field.label ?? widget.field.name,
@@ -2740,8 +2916,23 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         ],
       ),
     );
+    // Précédence des seams d'en-tête : `headerBuilder` (informé) PRIME sur
+    // `captionBuilder` (historique) — jamais les deux pour un même rendu.
+    final headerSeam = _seams?.headerBuilder;
     final captionSeam = _seams?.captionBuilder;
-    if (captionSeam != null) {
+    if (headerSeam != null) {
+      final custom = _safe(() => headerSeam(
+            context,
+            ZSubListHeaderView(
+              field: widget.field,
+              itemCount: _aggregatedCount,
+              addControl:
+                  readOnly ? const SizedBox.shrink() : _buildAddControl(context),
+              onAdd: readOnly ? null : () => _openAddDialog(),
+            ),
+          ));
+      if (custom != null) caption = custom;
+    } else if (captionSeam != null) {
       final custom = _safe(() => captionSeam(
             context,
             readOnly ? const SizedBox.shrink() : _buildAddControl(context),
@@ -2835,6 +3026,17 @@ class _CompactRow extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onRestore,
+    this.reorderable = false,
+    this.canMoveUp = false,
+    this.canMoveDown = false,
+    this.upLabel = '',
+    this.downLabel = '',
+    this.onMoveUp,
+    this.onMoveDown,
+    this.actionIconSize,
+    this.viewColor,
+    this.editColor,
+    this.deleteColor,
     this.extraActions = const <Widget>[],
     this.menu,
   });
@@ -2842,6 +3044,23 @@ class _CompactRow extends StatelessWidget {
   final Color? borderColor;
   final Radius radius;
   final Widget summary;
+
+  /// Flèches d'ordre (réordonnancement compact déclaré) — relayées telles
+  /// quelles à `_RowActions`.
+  final bool reorderable;
+  final bool canMoveUp;
+  final bool canMoveDown;
+  final String upLabel;
+  final String downLabel;
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
+
+  /// Habillage des actions de ligne (jetons `subListAction*`/`subList*Color`
+  /// de `ZcrudTheme`) — `null` ⇒ rendu natif inchangé.
+  final double? actionIconSize;
+  final Color? viewColor;
+  final Color? editColor;
+  final Color? deleteColor;
 
   /// Actions **supplémentaires** de l'hôte (seam `itemActionsBuilder`), déjà
   /// contraintes à ≥ 48 dp. Rendues **après** les actions natives — jamais à
@@ -2909,6 +3128,17 @@ class _CompactRow extends StatelessWidget {
               Expanded(child: summaryContent),
               _RowActions(
                 deleted: deleted,
+                reorderable: reorderable,
+                canMoveUp: canMoveUp,
+                canMoveDown: canMoveDown,
+                upLabel: upLabel,
+                downLabel: downLabel,
+                onMoveUp: onMoveUp,
+                onMoveDown: onMoveDown,
+                actionIconSize: actionIconSize,
+                viewColor: viewColor,
+                editColor: editColor,
+                deleteColor: deleteColor,
                 canView: canView,
                 canUpdate: canUpdate,
                 canDelete: canDelete,
@@ -2958,6 +3188,17 @@ class _RowActions extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onRestore,
+    this.reorderable = false,
+    this.canMoveUp = false,
+    this.canMoveDown = false,
+    this.upLabel = '',
+    this.downLabel = '',
+    this.onMoveUp,
+    this.onMoveDown,
+    this.actionIconSize,
+    this.viewColor,
+    this.editColor,
+    this.deleteColor,
     this.extraActions = const <Widget>[],
     this.menu,
   });
@@ -2974,8 +3215,42 @@ class _RowActions extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onRestore;
+
+  /// Flèches d'ordre — rendues AVANT les actions natives, comme en `inline`
+  /// (mêmes glyphes, même geste), et jamais sur une ligne soft-deleted (elle
+  /// est exclue de l'agrégation : son ordre n'est pas une donnée).
+  final bool reorderable;
+  final bool canMoveUp;
+  final bool canMoveDown;
+  final String upLabel;
+  final String downLabel;
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
+
+  /// Habillage déclaré des actions (jetons de `ZcrudTheme`) — `null` ⇒ le
+  /// rendu natif, inchangé.
+  final double? actionIconSize;
+  final Color? viewColor;
+  final Color? editColor;
+  final Color? deleteColor;
+
   final List<Widget> extraActions;
   final Widget? menu;
+
+  /// `IconButton` d'action — `iconSize: null` et `color: null` rendent
+  /// STRICTEMENT le bouton d'avant (aucune valeur n'est matérialisée).
+  Widget _action({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback? onPressed,
+    Color? color,
+  }) =>
+      IconButton(
+        icon: Icon(icon, color: color),
+        iconSize: actionIconSize,
+        tooltip: tooltip,
+        onPressed: onPressed,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -2984,29 +3259,44 @@ class _RowActions extends StatelessWidget {
       children: <Widget>[
         // Item soft-deleted : seule l'action **restaurer** est offerte.
         if (deleted)
-          IconButton(
-            icon: const Icon(Icons.restore_from_trash),
+          _action(
+            icon: Icons.restore_from_trash,
             tooltip: restoreLabel,
             onPressed: onRestore,
           )
         else ...<Widget>[
+          if (reorderable)
+            _action(
+              icon: Icons.arrow_upward,
+              tooltip: upLabel,
+              onPressed: canMoveUp ? onMoveUp : null,
+            ),
+          if (reorderable)
+            _action(
+              icon: Icons.arrow_downward,
+              tooltip: downLabel,
+              onPressed: canMoveDown ? onMoveDown : null,
+            ),
           if (canView)
-            IconButton(
-              icon: const Icon(Icons.visibility),
+            _action(
+              icon: Icons.visibility,
               tooltip: viewLabel,
               onPressed: onView,
+              color: viewColor,
             ),
           if (canUpdate)
-            IconButton(
-              icon: const Icon(Icons.edit),
+            _action(
+              icon: Icons.edit,
               tooltip: editLabel,
               onPressed: onEdit,
+              color: editColor,
             ),
           if (canDelete)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
+            _action(
+              icon: Icons.delete_outline,
               tooltip: deleteLabel,
               onPressed: onDelete,
+              color: deleteColor,
             ),
         ],
         ...extraActions,

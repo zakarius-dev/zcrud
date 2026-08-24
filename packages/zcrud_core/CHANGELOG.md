@@ -3,6 +3,15 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.13.0 — 2026-08-24
+
+### Ajouté
+- **Sous-listes** : `reorderable: true` explicite rend les contrôles d'ordre **aussi en `compact`** (ordre réellement persisté) ; en `tags`, l'option devient bruyante (assertion de debug) — plus jamais silencieusement inerte ; `ZSubListViewData.onReorder` exposé aux seams. Préférences d'affichage des actions de ligne (`showViewAction`/`showEditAction`/`showDeleteAction`) — **montré = permis (ACL) et préféré**, une préférence ne rouvre jamais un droit refusé ; couleurs et taille par jetons `ZcrudTheme`. Contrôle d'ajout décorable par cinq jetons (fond, dégradé, rayon, taille, couleur d'icône) — aucun jeton ⇒ rendu inchangé. `ZSubListSeams.headerBuilder` (`ZSubListHeaderView` : champ, compte, `addControl`, `onAdd`) — `captionBuilder` reste honoré.
+- **Sections** : `ZEditionSection.icon` et `ZEditionSection.style` (`ZEditionSectionStyle` : fond, filet supérieur, rayon, typographie, chevrons remplaçables, **filet vertical côté début** — directionnel, RTL testé). Sans style : arbre inchangé.
+
+### Changé
+- `ZSubListConfig.reorderable` passe de `bool` à `bool?` (`null` = comportement historique) — un lecteur externe du champ écrit `?? true`.
+
 ## 3.9.0 — 2026-08-23
 
 ### Corrigé

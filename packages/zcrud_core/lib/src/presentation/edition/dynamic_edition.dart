@@ -176,6 +176,74 @@ typedef ZEditionFieldBuilder = Widget Function(
   ZFieldSpec field,
 );
 
+/// Style **déclaré** d'une [ZEditionSection] — un objet de style nommé, pour
+/// l'en-tête (fond, filet supérieur, rayon, typographie, chevron) et pour le
+/// corps (filet vertical côté début le long des champs).
+///
+/// Chaque propriété est **nullable** et `null` par défaut : une propriété non
+/// déclarée conserve le rendu natif, à l'identique. Aucune couleur, aucun
+/// glyphe n'est imposé par le socle — tout vient de cette déclaration ou du
+/// thème ambiant.
+///
+/// Déclarer un style (même vide) rend la section en **bloc** (voie groupée du
+/// formulaire) : les décorations et le filet n'existent que là. Les sections
+/// sans style ni icône conservent leur voie de rendu d'origine.
+@immutable
+class ZEditionSectionStyle {
+  /// Construit un style de section `const` — toutes propriétés optionnelles.
+  const ZEditionSectionStyle({
+    this.background,
+    this.topAccent,
+    this.radius,
+    this.titleStyle,
+    this.headerPadding,
+    this.iconColor,
+    this.collapsedIcon,
+    this.expandedIcon,
+    this.startRailColor,
+    this.startRailWidth,
+  });
+
+  /// Fond de l'en-tête. `null` ⇒ aucun fond (rendu natif, posé à plat).
+  final Color? background;
+
+  /// **Filet supérieur** (couleur + épaisseur) posé au-dessus de l'en-tête.
+  /// `null` ⇒ aucun filet.
+  final BorderSide? topAccent;
+
+  /// Rayon des coins de l'en-tête décoré. `null` ⇒ coins droits. Un
+  /// `BorderRadiusDirectional` y est admis et suit le sens de lecture.
+  final BorderRadiusGeometry? radius;
+
+  /// Typographie du titre. `null` ⇒ `TextTheme.titleSmall` (rendu natif).
+  final TextStyle? titleStyle;
+
+  /// Marges **directionnelles** de l'en-tête. `null` ⇒ les marges natives.
+  final EdgeInsetsDirectional? headerPadding;
+
+  /// Couleur de l'icône de préfixe ([ZEditionSection.icon]). `null` ⇒ la
+  /// couleur d'icône ambiante.
+  final Color? iconColor;
+
+  /// Glyphe du chevron d'une section repliable **repliée**. `null` ⇒ le
+  /// chevron conventionnel (`Icons.expand_more`). Un `IconData` est un glyphe,
+  /// jamais un libellé : il ne se traduit pas.
+  final IconData? collapsedIcon;
+
+  /// Glyphe du chevron d'une section repliable **dépliée**. `null` ⇒
+  /// `Icons.expand_less`.
+  final IconData? expandedIcon;
+
+  /// Couleur du **filet vertical côté début** courant sur toute la hauteur des
+  /// champs de la section (`BorderDirectional(start:)` — il bascule de côté en
+  /// RTL, invariant AD-13). `null` ⇒ aucun filet.
+  final Color? startRailColor;
+
+  /// Épaisseur du filet côté début. `null` ⇒ `2` quand [startRailColor] est
+  /// déclarée ; sans effet sinon.
+  final double? startRailWidth;
+}
+
 /// Section **visuelle** d'un formulaire : un titre et l'ensemble des noms de
 /// champs qu'elle regroupe. Peut être **repliable** ([collapsible]).
 @immutable
@@ -185,11 +253,16 @@ class ZEditionSection {
   /// [collapsible] (défaut `false`) rend l'en-tête actionnable (accordéon) ;
   /// [initiallyExpanded] (défaut `true`) fixe l'état de repli initial. Une
   /// section non repliable ignore [initiallyExpanded].
+  ///
+  /// [icon] et [style] habillent l'en-tête et le corps — `null` (défaut) ⇒
+  /// rendu natif strictement inchangé.
   const ZEditionSection({
     required this.title,
     required this.fields,
     this.collapsible = false,
     this.initiallyExpanded = true,
+    this.icon,
+    this.style,
   });
 
   /// Titre affiché de la section (clé l10n ou littéral — résolu côté hôte).
@@ -204,6 +277,17 @@ class ZEditionSection {
 
   /// État de repli initial d'une section repliable (`true` = dépliée).
   final bool initiallyExpanded;
+
+  /// **Icône de préfixe** de l'en-tête (glyphe rendu avant le titre). `null`
+  /// (défaut) ⇒ aucune icône, en-tête natif inchangé. Sa couleur se déclare
+  /// via [ZEditionSectionStyle.iconColor].
+  final IconData? icon;
+
+  /// **Style déclaré** de la section (voir [ZEditionSectionStyle]). `null`
+  /// (défaut) ⇒ rendu natif inchangé. Déclaré — ou dès qu'une [icon] est
+  /// déclarée — la section est rendue en bloc (voie groupée), où décorations
+  /// et filet côté début sont applicables.
+  final ZEditionSectionStyle? style;
 }
 
 /// Assemble un formulaire d'édition réactif **par tranche** depuis un
@@ -796,9 +880,14 @@ class _DynamicEditionState extends State<DynamicEdition> {
       ZcrudTheme.of(context).fieldGap ??
       zFieldGapReference;
 
+  // Une section STYLÉE (ou à icône) est rendue en bloc : ses décorations —
+  // fond, filet supérieur, filet vertical côté début — n'ont de sens que sur
+  // un bloc solidaire, pas sur des lignes interfoliées dans la voie plate.
+  // Sans style ni icône déclarés, la voie de rendu est celle d'avant.
   bool get _grouped =>
       widget.layout.isNotEmpty ||
-      widget.sections.any((s) => s.collapsible);
+      widget.sections
+          .any((s) => s.collapsible || s.style != null || s.icon != null);
 
   /// Actions de formulaire **autorisées**, dans l'ordre déclaré. Évalué
   /// UNIQUEMENT dans la voie structurelle (jamais par frappe). Défensif
@@ -1002,11 +1091,15 @@ class _DynamicEditionState extends State<DynamicEdition> {
               key: ValueKey<String>('section:${section.title}'),
               title: section.title,
               expanded: expanded,
+              icon: section.icon,
+              style: section.style,
               onToggle: () => _toggleSection(section.title),
             )
           : _SectionHeader(
               key: ValueKey<String>('section:${section.title}'),
               title: section.title,
+              icon: section.icon,
+              style: section.style,
             );
 
       addBlock(
@@ -1018,7 +1111,7 @@ class _DynamicEditionState extends State<DynamicEdition> {
             header,
             // Repli = masquage VISUEL sans destruction de slice (les membres ne
             // sont simplement pas montés ; le controller conserve leurs tranches).
-            if (expanded) _membersLayout(members),
+            if (expanded) _sectionMembers(section, members),
           ],
         ),
       );
@@ -1081,6 +1174,28 @@ class _DynamicEditionState extends State<DynamicEdition> {
       children: <Widget>[
         for (final spec in members) _fieldChild(context, spec),
       ],
+    );
+  }
+
+  /// Corps d'une section : ses membres, longés du **filet vertical côté
+  /// début** quand la section le déclare ([ZEditionSectionStyle.startRailColor]
+  /// — `BorderDirectional(start:)`, il bascule de côté en RTL, invariant
+  /// AD-13). Aucun filet déclaré ⇒ le `_membersLayout` nu, à l'identique :
+  /// aucun widget n'est ajouté à l'arbre d'un hôte passif.
+  Widget _sectionMembers(ZEditionSection section, List<ZFieldSpec> members) {
+    final body = _membersLayout(members);
+    final rail = section.style?.startRailColor;
+    if (rail == null) return body;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: BorderDirectional(
+          start: BorderSide(
+            color: rail,
+            width: section.style?.startRailWidth ?? 2,
+          ),
+        ),
+      ),
+      child: body,
     );
   }
 
@@ -1186,22 +1301,96 @@ class _EditionRow {
   }
 }
 
+/// Chrome d'en-tête de section **déclaré** ([ZEditionSectionStyle]/icône) :
+/// icône de préfixe, titre stylé, chevron éventuel [trailing], fond, filet
+/// supérieur, rayon. N'est monté QUE quand une déclaration existe — les
+/// en-têtes natifs ne passent jamais ici (garantie hôte passif). Aucune
+/// couleur codée en dur (tout vient de la déclaration ou du thème — invariant
+/// FR-26) ; insets et rayon **directionnels** (invariant AD-13).
+Widget _sectionHeaderChrome(
+  BuildContext context, {
+  required String title,
+  required IconData? icon,
+  required ZEditionSectionStyle? style,
+  Widget? trailing,
+  bool tight = false,
+}) {
+  final padding = style?.headerPadding ??
+      (tight
+          ? const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8)
+          : const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 8));
+  Widget out = Padding(
+    padding: padding,
+    child: Row(
+      children: <Widget>[
+        if (icon != null)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(end: 8),
+            child: Icon(icon, color: style?.iconColor),
+          ),
+        Expanded(
+          child: Text(
+            title,
+            style: style?.titleStyle ?? Theme.of(context).textTheme.titleSmall,
+            textAlign: TextAlign.start,
+          ),
+        ),
+        ?trailing,
+      ],
+    ),
+  );
+  final accent = style?.topAccent;
+  if (accent != null) {
+    out = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SizedBox(height: accent.width, child: ColoredBox(color: accent.color)),
+        out,
+      ],
+    );
+  }
+  final background = style?.background;
+  final radius = style?.radius;
+  if (background != null || radius != null) {
+    out = DecoratedBox(
+      decoration: BoxDecoration(color: background, borderRadius: radius),
+      child: out,
+    );
+    // Le filet supérieur est un enfant rectangulaire : sans clip, il
+    // déborderait des coins arrondis.
+    if (radius != null && accent != null) {
+      out = ClipRRect(borderRadius: radius, child: out);
+    }
+  }
+  return out;
+}
+
 /// En-tête de section **visuel** (non repliable). Style dérivé du thème (aucune
 /// couleur codée en dur — invariant FR-26) ; insets **directionnels** (invariant
-/// AD-13).
+/// AD-13). Une icône ou un style déclarés ([ZEditionSection.icon]/
+/// [ZEditionSection.style]) passent par le chrome déclaré ; sans déclaration,
+/// l'arbre rendu est strictement celui d'avant.
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, super.key});
+  const _SectionHeader({required this.title, this.icon, this.style, super.key});
 
   final String title;
+  final IconData? icon;
+  final ZEditionSectionStyle? style;
 
   @override
-  Widget build(BuildContext context) => Padding(
+  Widget build(BuildContext context) {
+    if (icon == null && style == null) {
+      return Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 8),
         child: Text(
           title,
           style: Theme.of(context).textTheme.titleSmall,
         ),
       );
+    }
+    return _sectionHeaderChrome(context, title: title, icon: icon, style: style);
+  }
 }
 
 /// En-tête de section **repliable** (accordéon accessible — invariant AD-13).
@@ -1222,15 +1411,54 @@ class _CollapsibleSectionHeader extends StatelessWidget {
     required this.title,
     required this.expanded,
     required this.onToggle,
+    this.icon,
+    this.style,
     super.key,
   });
 
   final String title;
   final bool expanded;
   final VoidCallback onToggle;
+  final IconData? icon;
+  final ZEditionSectionStyle? style;
 
   @override
   Widget build(BuildContext context) {
+    // Chevron : glyphes remplaçables par déclaration
+    // ([ZEditionSectionStyle.collapsedIcon]/[ZEditionSectionStyle.expandedIcon]) ;
+    // sans déclaration, les glyphes conventionnels — le widget rendu est
+    // identique à celui d'avant.
+    final chevron = Icon(
+      expanded
+          ? (style?.expandedIcon ?? Icons.expand_less)
+          : (style?.collapsedIcon ?? Icons.expand_more),
+    );
+    final Widget inner;
+    if (icon == null && style == null) {
+      inner = Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            ),
+            chevron,
+          ],
+        ),
+      );
+    } else {
+      inner = _sectionHeaderChrome(
+        context,
+        title: title,
+        icon: icon,
+        style: style,
+        trailing: chevron,
+        tight: true,
+      );
+    }
     return Semantics(
       button: true,
       expanded: expanded,
@@ -1239,20 +1467,7 @@ class _CollapsibleSectionHeader extends StatelessWidget {
         onTap: onToggle,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 48),
-          child: Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
-                Icon(expanded ? Icons.expand_less : Icons.expand_more),
-              ],
-            ),
-          ),
+          child: inner,
         ),
       ),
     );

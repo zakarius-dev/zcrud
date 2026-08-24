@@ -207,6 +207,7 @@ class ZSubListViewData {
     required this.items,
     required this.children,
     required this.itemBuilder,
+    this.onReorder,
   });
 
   /// Spécification du champ conteneur (`subItems`).
@@ -228,6 +229,22 @@ class ZSubListViewData {
   /// `SizedBox.shrink()`, invariant AD-10 — un conteneur hôte ne fait jamais
   /// échouer le rendu en demandant un indice qui n'existe plus).
   final Widget Function(BuildContext context, int index) itemBuilder;
+
+  /// **Rappel de réordonnancement** : déplace l'item d'indice `from` à
+  /// l'indice `to` (indices dans l'ordre rendu, celui de [items]/[children]),
+  /// et republie l'agrégation vers la tranche parente — l'ordre EST une
+  /// donnée, il est persisté tel quel.
+  ///
+  /// `null` quand l'ordre n'est pas éditable : champ en lecture seule, ou
+  /// `ZSubListConfig.reorderable` déclaré `false`. Un conteneur hôte rend son
+  /// propre contrôle d'ordre (poignée, flèches…) et appelle ce rappel ; le
+  /// socle n'ajoute AUCUN contrôle du seul fait qu'un conteneur est déclaré.
+  ///
+  /// Défensif (invariant AD-10) : un indice hors bornes ou un déplacement
+  /// sur place est un no-op — jamais une exception. Seule la liste concernée
+  /// se reconstruit (invariant AD-2) : le formulaire parent n'observe que la
+  /// tranche agrégée.
+  final void Function(int from, int to)? onReorder;
 }
 
 /// Rendu **libre** d'un item (remplace le contenu résumé de sa ligne).
@@ -254,9 +271,61 @@ typedef ZSubListViewBuilder = Widget Function(
 /// d'ajout natif** (bouton `+` ou menu de gabarits) déjà filtré par l'ACL :
 /// quand la création n'est pas autorisée, c'est un `SizedBox.shrink()` qui est
 /// passé — l'ACL n'est **jamais** contournée par ce seam.
+///
+/// Un en-tête qui a besoin de savoir **quel champ** il coiffe, **combien**
+/// d'items la liste porte, ou de **reconstruire** le contrôle d'ajout déclare
+/// [ZSubListHeaderBuilder] ([ZSubListSeams.headerBuilder]) — ce typedef-ci
+/// reste honoré à l'identique pour les seams déjà écrits.
 typedef ZSubListCaptionBuilder = Widget Function(
   BuildContext context,
   Widget addControl,
+);
+
+/// Vue **immuable** de l'en-tête d'une sous-liste, passée à
+/// [ZSubListSeams.headerBuilder].
+///
+/// Objet **additif** (comme [ZSubListItemView]) : l'enrichir ne casse pas les
+/// seams des hôtes.
+@immutable
+class ZSubListHeaderView {
+  /// Construit la vue `const` d'un en-tête.
+  const ZSubListHeaderView({
+    required this.field,
+    required this.itemCount,
+    required this.addControl,
+    this.onAdd,
+  });
+
+  /// Spécification du champ **conteneur** (`subItems`) coiffé par l'en-tête —
+  /// un seam UNIQUE peut donc servir plusieurs sous-listes (libellé, config).
+  final ZFieldSpec field;
+
+  /// Nombre d'items **agrégés vers le parent** (les items soft-deleted sont
+  /// exclus — c'est le compte que l'utilisateur lit comme « N éléments »).
+  final int itemCount;
+
+  /// Contrôle d'ajout **natif**, déjà filtré par l'ACL : `SizedBox.shrink()`
+  /// quand la création n'est pas autorisée — l'ACL n'est jamais contournée.
+  final Widget addControl;
+
+  /// **Rappel d'ajout** : ouvre le formulaire de création natif (dialogue,
+  /// feuille ou page selon la config), exactement comme le bouton `+`.
+  ///
+  /// `null` quand la création n'est pas autorisée (ACL, lecture seule) : un
+  /// hôte qui reconstruit son propre contrôle d'ajout ne peut pas offrir un
+  /// geste refusé. C'est ce rappel qui permet d'HABILLER l'ajout (et non
+  /// seulement de le positionner) sans renoncer à la machinerie native.
+  final Future<void> Function()? onAdd;
+}
+
+/// Habillage **libre** de l'en-tête, informé du champ et du compte d'items
+/// (voir [ZSubListHeaderView]).
+///
+/// Prime sur [ZSubListCaptionBuilder] quand les deux sont déclarés — précédence
+/// documentée sur [ZSubListSeams.headerBuilder].
+typedef ZSubListHeaderBuilder = Widget Function(
+  BuildContext context,
+  ZSubListHeaderView header,
 );
 
 /// Transformation d'un item **avant affichage seulement**.
@@ -737,6 +806,7 @@ typedef ZSubItemCrudHook = Future<ZSubItemCrudOutcome> Function(
 /// | [itemActionsBuilder] | ✅ après retrait/réordonnancement | ✅ après les actions natives | — | ✅ après « effacer » |
 /// | [listViewBuilder] | — | ✅ remplace le conteneur de lignes (**et sort de la table**) | — | — |
 /// | [captionBuilder] | — | ✅ remplace l'en-tête | ✅ remplace l'en-tête | — |
+/// | [headerBuilder] | — | ✅ remplace l'en-tête (prime sur `captionBuilder`) | ✅ idem | — |
 /// | [itemTransformer] | — | ✅ résumé + seams de rendu | ✅ libellé de puce | — |
 /// | [itemFieldsResolver] | — | — | — | ✅ sous-champs rendus |
 /// | [subSchemaResolver] | ✅ sous-schéma rendu | ✅ sous-schéma du formulaire d'item | ✅ sous-schéma du formulaire d'item | — |
@@ -817,6 +887,7 @@ class ZSubListSeams {
     this.itemActionsBuilder,
     this.listViewBuilder,
     this.captionBuilder,
+    this.headerBuilder,
     this.itemTransformer,
     this.itemFieldsResolver,
     this.subSchemaResolver,
@@ -845,6 +916,16 @@ class ZSubListSeams {
 
   /// Habillage libre de l'en-tête (voir [ZSubListCaptionBuilder]).
   final ZSubListCaptionBuilder? captionBuilder;
+
+  /// Habillage libre de l'en-tête, **informé** : reçoit le champ coiffé, le
+  /// compte d'items et le rappel d'ajout (voir [ZSubListHeaderView]) — un seam
+  /// UNIQUE suffit donc à plusieurs sous-listes.
+  ///
+  /// **Précédence** : déclaré, il PRIME sur [captionBuilder] (les deux ne
+  /// sont jamais appelés pour le même rendu) ; absent (`null`),
+  /// [captionBuilder] reste honoré à l'identique. Un seam qui lève ⇒ en-tête
+  /// natif (invariant AD-10).
+  final ZSubListHeaderBuilder? headerBuilder;
 
   /// Transformation d'affichage d'un item (voir [ZSubItemTransformer]).
   final ZSubItemTransformer? itemTransformer;

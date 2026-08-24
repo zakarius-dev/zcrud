@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_select` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.13.0 — 2026-08-24
+
+### Corrigé
+- `ZSmartSelectPresenter` honore le contrat d'orphelin du rendu natif : une valeur persistée absente du catalogue est **signalée** (option synthétique désactivée, clé l10n `choiceUnresolved` surchargeable) — jamais rendue comme un champ vide qui soumettrait quand même. Tuile, modal, multi-sélection et chemin asynchrone (`optionsLoader`).
+
 ## 2.1.0 — 2026-08-17
 
 ### Ajouté

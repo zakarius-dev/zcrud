@@ -41,9 +41,16 @@
 /// rebuild global temporisé après chaque changement serait exactement le
 /// défaut que l'objectif produit n°1 du dépôt corrige.
 ///
-/// **Invariant AD-10 (défensif)** : options vides / `selected` hors options /
-/// option `disabled` / spec absente → rendu **dégradé défini** (sélecteur vide
-/// accessible / placeholder / option non cochable), jamais une exception.
+/// **Invariant AD-10 (défensif)** : options vides / option `disabled` / spec
+/// absente → rendu **dégradé défini** (sélecteur vide accessible / placeholder /
+/// option non cochable), jamais une exception. Une valeur **hors catalogue**
+/// (présente dans la tranche mais absente des options) est **SIGNALÉE, jamais
+/// rendue comme un champ vide** : la tuile affiche le libellé d'indisponibilité
+/// l10n (clé `choiceUnresolved`, surchargeable via `ZcrudScope.labels`) et la
+/// modal liste une option synthétique d'affichage, désactivée (visible mais non
+/// re-sélectionnable). La donnée n'est jamais touchée — la valeur reste dans la
+/// tranche et sera soumise ; seule sa représentation est définie. Même contrat
+/// que le rendu natif des familles à choix.
 ///
 /// **Invariant AD-13** : déclencheur avec une **seule** annonce accessible
 /// (`Semantics(button:, label:, value:, enabled:)` + `excludeSemantics` sur
@@ -93,6 +100,27 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     final ZSelectTileMetrics metrics =
         zSelectTileMetricsOf(context, spec: spec);
 
+    // Valeurs portées par la tranche, normalisées (mono ⇒ singleton ; `null`
+    // n'est jamais orphelin — c'est la place vide légitime du champ).
+    final List<Object?> selectedValues = presentation.multiple
+        ? _asList(presentation.selected)
+        : <Object?>[presentation.selected];
+
+    // Valeur HORS CATALOGUE ⇒ option synthétique d'AFFICHAGE appendue (libellé
+    // l10n `choiceUnresolved`, `disabled: true`) : la tuile cesse de mentir
+    // (elle affichait le placeholder alors que la valeur allait être SOUMISE)
+    // et la modal la liste, visible mais non re-sélectionnable — le contrat
+    // exact du rendu natif (`z_orphan_choice.dart` côté cœur). La donnée n'est
+    // jamais touchée : l'option ne vit que le temps d'un `build`.
+    //
+    // PENDANT un chargement (`isLoading`), la liste d'options est encore vide :
+    // « pas encore chargé » n'est pas « plus proposé » — aucune annotation,
+    // l'indice `loading` reste seul à parler (même règle que le rendu natif de
+    // `relation`).
+    final List<ZFieldChoice> effectiveOptions = presentation.isLoading
+        ? presentation.options
+        : _withOrphanChoices(presentation.options, selectedValues);
+
     // AD-10 : projection défensive — options vides restent une `List` non-null
     // (assert `choiceItems != null`), aucune exception.
     //
@@ -100,7 +128,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     // pour `runtimeType` le littéral `SmartSelect` — indispensable pour la garde
     // de rendu `find.byType(SmartSelect)` (comparaison d'égalité de type).
     final List<S2Choice<dynamic>> choiceItems =
-        _toS2Choices(context, presentation.options);
+        _toS2Choices(context, effectiveOptions);
 
     final bool enabled = !presentation.readOnly;
     final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -308,7 +336,8 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         title: title,
         placeholder: placeholder,
         // AD-10 : normalise scalaire/`null`/`List` → `List<Object?>` ; une
-        // valeur hors options est simplement non représentée (placeholder).
+        // valeur hors options est représentée par son option synthétique
+        // (cf. `effectiveOptions`) — jamais passée sous silence.
         selectedValue: _asList(presentation.selected),
         choiceItems: choiceItems,
         // `null` ⇒ le fork reste SYNCHRONE sur `choiceItems`,
@@ -902,6 +931,17 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         // reproduirait exactement le trou du fork.
         return const <S2Choice<dynamic>>[];
       }
+      // Même contrat qu'en synchrone : une valeur portée par la tranche mais
+      // ABSENTE du lot chargé reste VISIBLE, sous son libellé d'indisponibilité
+      // l10n, désactivée. Hors recherche active seulement : une requête qui ne
+      // la matche pas n'a pas à la lister (le filtre client du rendu natif la
+      // masquerait pareillement).
+      final bool searching = info.query != null && info.query!.isNotEmpty;
+      final List<Object?> carried = searching
+          ? const <Object?>[]
+          : (presentation.multiple
+              ? _asList(presentation.selected)
+              : <Object?>[presentation.selected]);
       return <S2Choice<dynamic>>[
         for (final c in loaded)
           S2Choice<dynamic>(
@@ -910,6 +950,13 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
             subtitle: c.subtitle == null ? null : resolve(c.subtitle!),
             disabled: c.disabled,
           ),
+        for (final v in carried)
+          if (v != null && !loaded.any((c) => c.value == v))
+            S2Choice<dynamic>(
+              value: v,
+              title: resolve(_orphanChoiceLabelKey),
+              disabled: true,
+            ),
       ];
     };
   }
@@ -1061,6 +1108,55 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
       (a == null || a.kind != ZAdornmentKind.text)
           ? null
           : label(context, a.value, fallback: a.value);
+
+  // Clé l10n du libellé d'une valeur hors catalogue — la MÊME que celle du
+  // rendu natif (`zOrphanChoiceLabelKey`, `src`-privée côté cœur, donc portée
+  // ici en jumelle ; garde de non-divergence par lecture de la source du cœur
+  // dans `z_smart_select_orphan_test.dart`). Résolue par le canal habituel du
+  // présentateur (`label(context, …)` : scope > locale > table `en` > clé),
+  // donc surchargeable via `ZcrudScope.labels` — aucun texte inventé (FR-26).
+  static const String _orphanChoiceLabelKey = 'choiceUnresolved';
+
+  /// `true` si [value] est **hors catalogue** : non `null` et absente des
+  /// [choices]. `null` n'est jamais orphelin (place vide légitime du champ).
+  static bool _isOrphanValue(List<ZFieldChoice> choices, Object? value) {
+    if (value == null) return false;
+    for (final c in choices) {
+      if (c.value == value) return false;
+    }
+    return true;
+  }
+
+  /// [choices] **augmentées** d'une option synthétique d'AFFICHAGE par valeur
+  /// de [values] hors catalogue, appendue en fin de liste (l'ordre métier des
+  /// options réelles est préservé).
+  ///
+  /// L'option conserve la valeur à l'identique (c'est elle qui sera soumise),
+  /// porte [_orphanChoiceLabelKey] comme libellé (résolu en aval par le même
+  /// `label(context, …)` que toute autre option — jamais la clé brute rendue)
+  /// et `disabled: true` (visible et accessible, non re-sélectionnable).
+  ///
+  /// Retourne [choices] **inchangée** (même instance) sans aucun orphelin :
+  /// un champ dont la valeur est au catalogue rend exactement comme avant.
+  static List<ZFieldChoice> _withOrphanChoices(
+    List<ZFieldChoice> choices,
+    List<Object?> values,
+  ) {
+    final List<Object?> orphans = <Object?>[
+      for (final v in values)
+        if (_isOrphanValue(choices, v)) v,
+    ];
+    if (orphans.isEmpty) return choices;
+    return <ZFieldChoice>[
+      ...choices,
+      for (final v in orphans)
+        ZFieldChoice(
+          value: v,
+          label: _orphanChoiceLabelKey,
+          disabled: true,
+        ),
+    ];
+  }
 
   /// Normalise la sélection multi (défensif AD-10) : scalaire/`null` → `List`.
   static List<Object?> _asList(Object? selected) {

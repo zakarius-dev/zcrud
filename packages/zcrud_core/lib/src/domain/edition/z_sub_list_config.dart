@@ -142,7 +142,7 @@ enum ZSubItemFormPresentation {
 /// dynamique** (`dynamicItem`).
 ///
 /// [itemFields] est le **sous-schéma `const`** d'un item (chaque item est édité
-/// par un sous-formulaire imbriqué). [reorderable] active le réordonnancement
+/// par un sous-formulaire imbriqué). [reorderable] gouverne le réordonnancement
 /// (monter/descendre) de la sous-liste ; sans effet pour `dynamicItem`
 /// (cardinalité ≤ 1).
 ///
@@ -150,14 +150,16 @@ enum ZSubItemFormPresentation {
 /// [summaryFields] liste **ordonnée** de `name` de sous-champs projetés en
 /// colonnes/valeurs de résumé en mode compact (pur-données ; un titre/rendu
 /// personnalisé passe par un **seam de présentation**, jamais par une closure
-/// dans le domaine). Le réordonnancement reste une notion **inline**
-/// ([reorderable] est sans effet en mode compact).
+/// dans le domaine).
 class ZSubListConfig extends ZFieldConfig {
   /// Construit une config de sous-liste `const`.
   const ZSubListConfig({
     this.itemFields = const <ZFieldSpec>[],
-    this.reorderable = true,
+    this.reorderable,
     this.displayMode = ZSubListDisplayMode.compact,
+    this.showViewAction = true,
+    this.showEditAction = true,
+    this.showDeleteAction = true,
     this.summaryFields = const <String>[],
     this.summaryColumns = const <ZSubListSummaryColumn>[],
     this.softDelete = false,
@@ -172,8 +174,24 @@ class ZSubListConfig extends ZFieldConfig {
   /// Sous-schéma `const` d'un item (projeté 1:1 en sous-formulaire imbriqué).
   final List<ZFieldSpec> itemFields;
 
-  /// Autorise le réordonnancement (monter/descendre) des items (`subItems`).
-  final bool reorderable;
+  /// Gouverne le **réordonnancement** (monter/descendre) des items
+  /// (`subItems`) — déclaration **tri-état** :
+  ///
+  /// - `null` (**défaut**) — comportement historique : les flèches d'ordre ne
+  ///   sont rendues qu'en mode `inline` ; les modes `compact` et `tags` n'en
+  ///   rendent aucune. Un hôte qui ne déclare rien ne voit rien bouger.
+  /// - `true` (**explicite**) — l'ordre est éditable partout où un contrôle
+  ///   d'ordre a un sens : flèches monter/descendre en `inline` **et** en
+  ///   `compact` (l'ordre des items EST une donnée — il est agrégé tel quel
+  ///   vers la tranche parente). Le mode `tags` ne sait pas l'honorer (une
+  ///   puce n'a ni rangée ni poignée) : la déclaration y est **signalée par
+  ///   une assertion de debug**, jamais ignorée en silence.
+  /// - `false` — aucun réordonnancement, dans aucun mode.
+  ///
+  /// Le conteneur libre d'un hôte ([ZSubListSeams.listViewBuilder] via
+  /// `ZSubListViewData.onReorder`) reçoit le rappel d'ordre tant que ce champ
+  /// ne vaut pas `false`.
+  final bool? reorderable;
 
   /// Mode de rendu : [ZSubListDisplayMode.compact] (**défaut** — table de
   /// résumé + formulaire par item), [ZSubListDisplayMode.inline]
@@ -202,6 +220,28 @@ class ZSubListConfig extends ZFieldConfig {
   /// **Ce qui ne bouge pas** : tout hôte qui **déclarait** [displayMode] — quel
   /// que soit le mode — est strictement inchangé de ce fait.
   final ZSubListDisplayMode displayMode;
+
+  /// **Préférence d'affichage** de l'action « consulter » d'une ligne (mode
+  /// `compact`). `true` (**défaut**) ⇒ rendu inchangé.
+  ///
+  /// C'est une préférence de PRÉSENTATION, indépendante de l'ACL : l'ACL dit
+  /// ce qui est **permis**, cette préférence dit ce qui est **montré**. Une
+  /// action n'est rendue que si elle est permise **ET** préférée — la
+  /// préférence ne peut donc jamais faire apparaître un geste que l'ACL
+  /// refuse, seulement retirer un geste qu'elle autorise.
+  final bool showViewAction;
+
+  /// **Préférence d'affichage** de l'action « modifier » d'une ligne (mode
+  /// `compact`). `true` (**défaut**) ⇒ rendu inchangé. Même conjonction que
+  /// [showViewAction] : montré = permis (ACL) ET préféré.
+  final bool showEditAction;
+
+  /// **Préférence d'affichage** de l'action « supprimer » d'une ligne (mode
+  /// `compact`). `true` (**défaut**) ⇒ rendu inchangé. Même conjonction que
+  /// [showViewAction] : montré = permis (ACL) ET préféré. L'action
+  /// « restaurer » d'une ligne soft-deleted n'est **pas** gouvernée par cette
+  /// préférence (sans elle, la ligne serait un cul-de-sac).
+  final bool showDeleteAction;
 
   /// Liste **ordonnée** des `name` de sous-champs affichés comme colonnes/
   /// valeurs de résumé en mode compact. Vide (défaut) → repli titre dérivé
@@ -387,6 +427,9 @@ class ZSubListConfig extends ZFieldConfig {
           runtimeType == other.runtimeType &&
           reorderable == other.reorderable &&
           displayMode == other.displayMode &&
+          showViewAction == other.showViewAction &&
+          showEditAction == other.showEditAction &&
+          showDeleteAction == other.showDeleteAction &&
           softDelete == other.softDelete &&
           createNewTextKey == other.createNewTextKey &&
           aclCollectionId == other.aclCollectionId &&
@@ -403,6 +446,9 @@ class ZSubListConfig extends ZFieldConfig {
         runtimeType,
         reorderable,
         displayMode,
+        showViewAction,
+        showEditAction,
+        showDeleteAction,
         softDelete,
         createNewTextKey,
         aclCollectionId,

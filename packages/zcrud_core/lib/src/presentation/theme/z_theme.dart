@@ -383,6 +383,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.readRowLabelWidth,
     this.readRowMinWidth,
     this.subListColumnMinWidth,
+    this.subListActionIconSize,
+    this.subListViewActionColor,
+    this.subListEditActionColor,
+    this.subListDeleteActionColor,
+    this.subListAddControlColor,
+    this.subListAddControlGradient,
+    this.subListAddControlRadius,
+    this.subListAddControlSize,
+    this.subListAddControlIconColor,
     this.accentBarHeight,
     this.gradientBegin,
     this.gradientEnd,
@@ -887,6 +896,51 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// repli des sous-listes **sans** toucher à la présentation des champs
   /// consultés en ligne.
   final double? subListColumnMinWidth;
+
+  /// Taille (dp) des icônes des **actions de ligne** d'une sous-liste compacte
+  /// (consulter / modifier / supprimer / restaurer / flèches d'ordre). `null`
+  /// (défaut) ⇒ la taille native d'`IconButton` — rendu strictement inchangé.
+  /// La cible tactile des boutons reste ≥ 48 dp quelle que soit la taille de
+  /// glyphe déclarée.
+  final double? subListActionIconSize;
+
+  /// Couleur de l'icône « **consulter** » d'une ligne de sous-liste compacte.
+  /// `null` (défaut) ⇒ couleur d'icône ambiante — rendu inchangé. La couleur
+  /// n'agit que sur l'AFFICHAGE : l'action reste gouvernée par l'ACL et par la
+  /// préférence `ZSubListConfig.showViewAction`.
+  final Color? subListViewActionColor;
+
+  /// Couleur de l'icône « **modifier** » d'une ligne de sous-liste compacte.
+  /// `null` (défaut) ⇒ couleur d'icône ambiante — rendu inchangé.
+  final Color? subListEditActionColor;
+
+  /// Couleur de l'icône « **supprimer** » d'une ligne de sous-liste compacte.
+  /// `null` (défaut) ⇒ couleur d'icône ambiante — rendu inchangé.
+  final Color? subListDeleteActionColor;
+
+  /// **Fond uni** du contrôle d'ajout d'une sous-liste (bouton `+` ou menu de
+  /// gabarits). `null` (défaut) ⇒ aucun conteneur n'est ajouté à l'arbre : le
+  /// bouton nu, inchangé. Ignoré quand [subListAddControlGradient] est
+  /// déclaré (le dégradé prime sur le fond uni).
+  final Color? subListAddControlColor;
+
+  /// **Dégradé** du contrôle d'ajout d'une sous-liste. `null` (défaut) ⇒
+  /// aucun. Prime sur [subListAddControlColor].
+  final Gradient? subListAddControlGradient;
+
+  /// **Rayon** du conteneur du contrôle d'ajout. `null` (défaut) ⇒ coins
+  /// droits — et aucun conteneur si aucun autre jeton `subListAddControl*`
+  /// n'est déclaré.
+  final Radius? subListAddControlRadius;
+
+  /// **Côté** (dp) du conteneur carré du contrôle d'ajout. `null` (défaut) ⇒
+  /// la taille native du bouton. Le bouton interne conserve sa sémantique,
+  /// son tooltip et sa cible tactile ≥ 48 dp.
+  final double? subListAddControlSize;
+
+  /// Couleur de l'**icône** du contrôle d'ajout (`Icons.add`). `null`
+  /// (défaut) ⇒ couleur d'icône ambiante — rendu inchangé.
+  final Color? subListAddControlIconColor;
 
   /// Hauteur future de la barre d'accent. `null` conserve le rendu par défaut.
   final double? accentBarHeight;
@@ -2307,6 +2361,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? readRowLabelWidth,
     double? readRowMinWidth,
     double? subListColumnMinWidth,
+    double? subListActionIconSize,
+    Color? subListViewActionColor,
+    Color? subListEditActionColor,
+    Color? subListDeleteActionColor,
+    Color? subListAddControlColor,
+    Gradient? subListAddControlGradient,
+    Radius? subListAddControlRadius,
+    double? subListAddControlSize,
+    Color? subListAddControlIconColor,
     double? accentBarHeight,
     AlignmentGeometry? gradientBegin,
     AlignmentGeometry? gradientEnd,
@@ -2504,6 +2567,24 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     readRowMinWidth: readRowMinWidth ?? this.readRowMinWidth,
     subListColumnMinWidth:
         subListColumnMinWidth ?? this.subListColumnMinWidth,
+    subListActionIconSize:
+        subListActionIconSize ?? this.subListActionIconSize,
+    subListViewActionColor:
+        subListViewActionColor ?? this.subListViewActionColor,
+    subListEditActionColor:
+        subListEditActionColor ?? this.subListEditActionColor,
+    subListDeleteActionColor:
+        subListDeleteActionColor ?? this.subListDeleteActionColor,
+    subListAddControlColor:
+        subListAddControlColor ?? this.subListAddControlColor,
+    subListAddControlGradient:
+        subListAddControlGradient ?? this.subListAddControlGradient,
+    subListAddControlRadius:
+        subListAddControlRadius ?? this.subListAddControlRadius,
+    subListAddControlSize:
+        subListAddControlSize ?? this.subListAddControlSize,
+    subListAddControlIconColor:
+        subListAddControlIconColor ?? this.subListAddControlIconColor,
     accentBarHeight: accentBarHeight ?? this.accentBarHeight,
     gradientBegin: gradientBegin ?? this.gradientBegin,
     gradientEnd: gradientEnd ?? this.gradientEnd,
@@ -2869,6 +2950,52 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       subListColumnMinWidth: _lerpNullableDouble(
         subListColumnMinWidth,
         other.subListColumnMinWidth,
+        t,
+      ),
+      subListActionIconSize: _lerpNullableDouble(
+        subListActionIconSize,
+        other.subListActionIconSize,
+        t,
+      ),
+      subListViewActionColor: _lerpNullableColor(
+        subListViewActionColor,
+        other.subListViewActionColor,
+        t,
+      ),
+      subListEditActionColor: _lerpNullableColor(
+        subListEditActionColor,
+        other.subListEditActionColor,
+        t,
+      ),
+      subListDeleteActionColor: _lerpNullableColor(
+        subListDeleteActionColor,
+        other.subListDeleteActionColor,
+        t,
+      ),
+      subListAddControlColor: _lerpNullableColor(
+        subListAddControlColor,
+        other.subListAddControlColor,
+        t,
+      ),
+      // Dégradé : bascule discrète à mi-transition — `Gradient.lerp` avec un
+      // côté `null` matérialiserait un dégradé fantôme sur un thème qui n'en
+      // déclare pas (même raison que les glyphes de chevron).
+      subListAddControlGradient: t < 0.5
+          ? subListAddControlGradient
+          : other.subListAddControlGradient,
+      subListAddControlRadius: _lerpNullableRadius(
+        subListAddControlRadius,
+        other.subListAddControlRadius,
+        t,
+      ),
+      subListAddControlSize: _lerpNullableDouble(
+        subListAddControlSize,
+        other.subListAddControlSize,
+        t,
+      ),
+      subListAddControlIconColor: _lerpNullableColor(
+        subListAddControlIconColor,
+        other.subListAddControlIconColor,
         t,
       ),
       accentBarHeight: _lerpNullableDouble(
