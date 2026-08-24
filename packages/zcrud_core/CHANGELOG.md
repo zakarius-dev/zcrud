@@ -3,6 +3,18 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.16.0 — 2026-08-24
+
+### Ajouté
+- **Accent supérieur de champ** : une fine barre au sommet du champ, colorée par un accent déclaré par champ (repli : la teinte du type) et **dimensionnée par `accentBarHeight`** — le jeton cesse d'être « futur ». Sans teinte ni déclaration : rendu inchangé au pixel.
+- **La teinte et la pastille suivent le slot `leading`**, sous les mêmes jetons et la même gouvernance que `prefixIcon`.
+- **Point d'entrée public pour les présentateurs riches** : `zResolveTintedAdornment(...)` (+ `zResolveFieldTint`/`zResolveFieldAccent`) — teinte normalisée et icône en pastille prêtes à poser sur une tuile, sans dupliquer la normalisation ni la résolution de clé.
+
+### Garde
+- **Inertie des jetons de thème** : tout jeton public de `ZcrudTheme` a un consommateur hors du fichier de thème, ou une exemption nominative vérifiée mécaniquement — un jeton « futur » ne peut plus naître muet.
+
+### Attention
+- `accentBarHeight` est un jeton **partagé** (cartes d'étude et de flashcard le consommaient déjà) : un hôte qui le posait pour ses cartes **et** dispose d'un résolveur de teinte de type verra désormais ses champs porter la barre — déclarer `accentBarHeight` nul côté champs n'est pas possible par jeton unique ; l'accent de champ reste inerte tant qu'aucune teinte ne se résout.
 ## 3.15.0 — 2026-08-24
 
 ### Ajouté

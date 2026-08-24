@@ -129,7 +129,16 @@ void main() {
         );
         // Littéral : la table du cœur associe la clé neutre `person` à
         // `Icons.person_outline`. Ancré sur le SDK, pas sur notre constante.
-        expect((tile.leading! as Icon).icon, Icons.person_outline);
+        // Le slot est mesuré à TRAVERS son enveloppe de placement (la tuile
+        // laisse la tête à sa taille intrinsèque) : la propriété défendue est
+        // « l'icône résolue est DANS le slot », pas la forme de l'enveloppe.
+        expect(
+          find.descendant(
+            of: _trigger,
+            matching: find.byIcon(Icons.person_outline),
+          ),
+          findsOneWidget,
+        );
       },
     );
 

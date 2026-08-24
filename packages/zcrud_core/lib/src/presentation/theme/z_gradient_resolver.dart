@@ -20,6 +20,20 @@ const String zFieldTypeTintKeyPrefix = 'zcrud.fieldType.';
 String zFieldTypeTintKey(EditionFieldType type) =>
     '$zFieldTypeTintKeyPrefix${type.name}';
 
+/// Préfixe des clés de couleur d'accent **par champ** (cf. [zFieldAccentKey]).
+const String zFieldAccentKeyPrefix = 'zcrud.fieldAccent.';
+
+/// Clé de dégradé sous laquelle la **barre d'accent supérieure** d'un champ
+/// interroge le résolveur du scope pour une couleur déclarée **champ par
+/// champ** : `'zcrud.fieldAccent.<field.name>'`.
+///
+/// Contrat côté hôte : un résolveur qui veut accentuer un champ **nommé**
+/// répond à cette clé-là ; pour les autres champs il rend `null`, et l'accent
+/// retombe alors sur la teinte **par type** ([zFieldTypeTintKey]). Aucun
+/// résolveur injecté ⇒ aucune couleur ⇒ aucune barre, rendu strictement
+/// inchangé.
+String zFieldAccentKey(String fieldName) => '$zFieldAccentKeyPrefix$fieldName';
+
 /// Dégradé et premier plan associé : l'hôte fournit les deux car un [Gradient]
 /// seul ne permet pas de déduire un contraste fiable.
 @immutable

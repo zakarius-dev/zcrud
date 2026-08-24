@@ -45,6 +45,7 @@ import '../../domain/edition/z_field_size.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../../domain/edition/z_sub_list_config.dart';
 import '../l10n/z_localizations.dart';
+import '../theme/z_theme.dart';
 import '../z_field_listenable_builder.dart';
 import '../z_form_controller.dart';
 import '../zcrud_scope.dart';
@@ -521,17 +522,47 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       // par [_hoistedValueOf], qui abonne aussi la tranche ornée — faute de
       // quoi un ornement `.widget` de champ `large` afficherait une valeur
       // figée.
-      return ZLargeFieldCard(
-        label: resolvedLabel,
-        labelWidget: ZFieldLabel(field: widget.field, large: true),
-        leading: resolveAdornment(context, widget.field.leading,
-            field: widget.field, valueOf: _hoistedValueOf),
-        suffix: resolveAdornment(context, widget.field.suffix,
-            field: widget.field, valueOf: _hoistedValueOf),
-        child: reactive,
+      return _withFieldAccent(
+        context,
+        ZLargeFieldCard(
+          label: resolvedLabel,
+          labelWidget: ZFieldLabel(field: widget.field, large: true),
+          leading: resolveAdornment(context, widget.field.leading,
+              field: widget.field, valueOf: _hoistedValueOf),
+          suffix: resolveAdornment(context, widget.field.suffix,
+              field: widget.field, valueOf: _hoistedValueOf),
+          child: reactive,
+        ),
       );
     }
-    return reactive;
+    return _withFieldAccent(context, reactive);
+  }
+
+  /// Coiffe le champ de sa **barre d'accent supérieure** — strictement
+  /// opt-in, dans les DEUX directions : sans `ZcrudTheme.accentBarHeight`,
+  /// ou sans couleur d'accent résolue pour le champ (`zResolveFieldAccent` :
+  /// clé par champ, à défaut teinte par type — normalisée pour le contraste),
+  /// [child] est rendu tel quel, aucun wrapper ajouté à l'arbre.
+  ///
+  /// Même grammaire de rendu que le filet supérieur de section
+  /// (`ZEditionSectionStyle.topAccent`) : une bande pleine largeur
+  /// (`stretch`, symétrique — identique dans les deux sens de lecture,
+  /// invariant AD-13) posée AU-DESSUS du champ. Le wrapper est STATIQUE
+  /// (monté hors de la voie de frappe, invariant AD-2) et purement décoratif :
+  /// aucune cible tactile ajoutée ni réduite.
+  Widget _withFieldAccent(BuildContext context, Widget child) {
+    final double? height = ZcrudTheme.of(context).accentBarHeight;
+    if (height == null || height <= 0) return child;
+    final Color? accent = zResolveFieldAccent(context, widget.field);
+    if (accent == null) return child;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SizedBox(height: height, child: ColoredBox(color: accent)),
+        child,
+      ],
+    );
   }
 
   /// Rend le **champ consulté** : formate la [value] de la tranche (défensif,

@@ -175,6 +175,125 @@ Widget? resolveAdornment(
 /// n'écrit jamais la tranche.
 void _noop(Object? _) {}
 
+/// Résout la couleur servie par le résolveur du scope pour [key], NORMALISÉE
+/// pour le contraste contre la surface du champ. `null` si la chaîne ne sert
+/// rien (aucun scope, aucun résolveur, clé non servie).
+Color? _tintForKey(BuildContext context, String key) {
+  final tintSpec = zResolveGradient(context, key);
+  if (tintSpec == null) return null;
+  final surface = ZcrudTheme.of(context).fieldFillColor ??
+      Theme.of(context).colorScheme.surfaceContainerHighest;
+  final colors = tintSpec.gradient.colors;
+  final base = colors.isNotEmpty ? colors.first : tintSpec.onGradient;
+  return zReadableTintOn(base, surface: surface);
+}
+
+/// **Teinte par type de champ** de [field], prête à peindre — ou `null`.
+///
+/// C'est la teinte que la décoration native applique à la bordure de focus, au
+/// libellé flottant et aux icônes d'ornement. Strictement **opt-in** : elle
+/// n'existe que si le résolveur de dégradé du scope
+/// ([ZcrudScope.gradientResolver]) répond à la clé
+/// [zFieldTypeTintKey]`(field.type)`. Aucun résolveur / clé non servie ⇒
+/// `null` — l'appelant ne peint alors rien de plus.
+///
+/// Une couleur servie n'est **jamais rendue telle quelle** : elle est
+/// NORMALISÉE pour le contraste (plancher non-texte WCAG §1.4.11, 3.0:1)
+/// contre la surface du champ (`ZcrudTheme.fieldFillColor`, repli
+/// `ColorScheme.surfaceContainerHighest`), thème clair comme sombre.
+///
+/// Fonction pure cheap (invariant AD-2) : appelable dans un `build`.
+Color? zResolveFieldTint(BuildContext context, ZFieldSpec field) =>
+    _tintForKey(context, zFieldTypeTintKey(field.type));
+
+/// Couleur de la **barre d'accent supérieure** de [field] — ou `null`.
+///
+/// Deux sources, dans cet ordre de priorité :
+/// 1. une couleur déclarée **champ par champ** par le résolveur du scope sous
+///    la clé [zFieldAccentKey]`(field.name)` ;
+/// 2. à défaut, la **teinte par type** ([zResolveFieldTint]).
+///
+/// Même normalisation de contraste que [zResolveFieldTint]. `null` (aucune
+/// source) ⇒ aucune barre : le rendu du champ est strictement inchangé.
+Color? zResolveFieldAccent(BuildContext context, ZFieldSpec field) =>
+    _tintForKey(context, zFieldAccentKey(field.name)) ??
+    zResolveFieldTint(context, field);
+
+/// Ornement résolu pour un **présentateur riche** : la teinte normalisée du
+/// champ et le widget d'ornement prêt à poser sur une tuile.
+///
+/// Voir [zResolveTintedAdornment] pour le contrat complet.
+@immutable
+class ZTintedAdornment {
+  /// Construit le résultat immuable d'une résolution d'ornement teinté.
+  const ZTintedAdornment({this.tint, this.child});
+
+  /// Teinte du champ, **déjà normalisée** pour le contraste contre la surface
+  /// du champ ([zResolveFieldTint]) — `null` si aucun résolveur ne la sert.
+  /// Utilisable telle quelle par le présentateur pour ses propres canaux
+  /// d'accent (bordure, libellé), sans re-normaliser.
+  final Color? tint;
+
+  /// Ornement prêt à poser : glyphe teinté, enveloppé de sa pastille quand
+  /// les jetons la déclarent — `null` si l'ornement est absent ou si sa clé
+  /// ne se résout pas (invariant AD-10, jamais de throw).
+  final Widget? child;
+}
+
+/// Résout, pour un **présentateur riche** (tuile de sélection, carte…),
+/// l'ornement [adornment] de [field] avec la même chaîne de teinte et de
+/// pastille que la décoration native — sans que l'appelant duplique ni la
+/// résolution de clé, ni la normalisation de contraste, ni la gouvernance des
+/// jetons.
+///
+/// **Entrées** : le [context] (le scope y fournit résolveur d'icônes,
+/// résolveur de dégradé et thème), l'[adornment] à résoudre (typiquement
+/// `field.leading`), la [field] décorée, et l'éventuel lecteur nommé [valueOf]
+/// (transmis aux ornements `.widget`, cf. [resolveAdornment]).
+///
+/// **Ce qui est rendu** :
+/// * [ZTintedAdornment.tint] — la teinte par type du champ, normalisée
+///   (plancher non-texte WCAG §1.4.11 contre la surface du champ), ou `null`
+///   sans résolveur : rien n'est inventé.
+/// * [ZTintedAdornment.child] — l'ornement résolu. Un ornement **icône
+///   décoratif** porte la teinte sur son glyphe et, si les jetons
+///   `adornmentIconBackgroundAlpha`/`adornmentIconBackgroundRadius` sont
+///   posés **et** qu'une teinte existe, sa pastille de fond (teinte atténuée
+///   par l'alpha, insets directionnels) ; `adornmentIconSize` dimensionne le
+///   glyphe. Un ornement **interactif** (`onTap`) reste un `IconButton` nu
+///   (cible ≥ 48 dp) — jamais pastillé. Les ornements `.text`/`.widget` sont
+///   rendus comme par [resolveAdornment], sans teinte imposée.
+///
+/// **Ce qui reste à l'appelant** : poser le widget (placement, espacement,
+/// sémantique de la tuile), décider de ses propres surfaces — et ne PAS
+/// re-teinter [ZTintedAdornment.child], qui porte déjà sa couleur.
+ZTintedAdornment zResolveTintedAdornment(
+  BuildContext context,
+  ZFieldAdornment? adornment, {
+  required ZFieldSpec field,
+  ZValueOf? valueOf,
+}) {
+  final Color? tint = zResolveFieldTint(context, field);
+  if (adornment == null) return ZTintedAdornment(tint: tint);
+  Widget? child;
+  if (adornment.kind == ZAdornmentKind.icon && adornment.onTap == null) {
+    // Icône DÉCORATIVE : le glyphe est construit ici pour porter la teinte
+    // directement (`Icon.color`) — hors d'une `InputDecoration`, aucun
+    // `iconColor` ne la porterait. Jamais par `IconTheme.merge` : le verrou
+    // structurel du socle réserve ce duo d'enveloppes à `ZForegroundOverride`.
+    final data = zResolveAdornmentIcon(context, adornment.value);
+    if (data != null) {
+      final tokens = ZcrudTheme.of(context);
+      final icon =
+          Icon(data, size: tokens.adornmentIconSize, color: tint);
+      child = _maybeIconPill(icon, adornment, tint, tokens);
+    }
+  } else {
+    child = resolveAdornment(context, adornment, field: field, valueOf: valueOf);
+  }
+  return ZTintedAdornment(tint: tint, child: child);
+}
+
 // Retrait interne de la pastille d'ornement icône, de chaque côté du glyphe.
 // Constante de DIMENSION (pas une couleur — FR-26 ne porte que sur les
 // couleurs) : le côté rendu de la pastille vaut `adornmentIconSize + 2 × 7`
@@ -255,32 +374,26 @@ InputDecoration zFieldDecoration(
   Widget? suffixIconOverride,
 }) {
   final tokens = ZcrudTheme.of(context);
-  // Teinte PAR TYPE DE CHAMP — strictement opt-in : elle n'existe que si le
-  // résolveur de dégradé du scope répond à la clé `zFieldTypeTintKey(type)`.
-  // Aucun résolveur / clé non servie ⇒ `tint == null` et la décoration est
-  // celle d'avant, au pixel près. Une couleur servie est NORMALISÉE pour le
-  // contraste contre la surface du champ (`zReadableTintOn`, plancher
-  // non-texte WCAG §1.4.11), thème clair comme sombre — jamais une couleur
-  // illisible appliquée telle quelle.
-  Color? tint;
-  if (!bare) {
-    final tintSpec = zResolveGradient(context, zFieldTypeTintKey(field.type));
-    if (tintSpec != null) {
-      final surface = tokens.fieldFillColor ??
-          Theme.of(context).colorScheme.surfaceContainerHighest;
-      final colors = tintSpec.gradient.colors;
-      final base = colors.isNotEmpty ? colors.first : tintSpec.onGradient;
-      tint = zReadableTintOn(base, surface: surface);
-    }
-  }
+  // Teinte PAR TYPE DE CHAMP — strictement opt-in (voir [zResolveFieldTint]).
+  // En `bare` (Card large), le canal n'existe pas : décoration inchangée.
+  final Color? tint = bare ? null : zResolveFieldTint(context, field);
   String? l10n(String? key) =>
       key == null ? null : label(context, key, fallback: key);
 
-  // `leading` → tête hors bordure (`icon`). Omis en `bare` (porté par la Card).
-  final leadingIcon = bare
-      ? null
-      : resolveAdornment(context, field.leading,
-          field: field, valueOf: valueOf);
+  // `leading` → tête hors bordure (`icon`). Omis en `bare` (porté par la
+  // Card). Un ornement ICÔNE y reçoit la même pastille que `prefixIcon`/
+  // `suffixIcon` (mêmes jetons, même teinte, même gouvernance — la teinte du
+  // glyphe passe par `InputDecoration.iconColor`).
+  Widget? leadingIcon;
+  final lead = bare ? null : field.leading;
+  if (lead != null) {
+    final w = resolveAdornment(context, lead, field: field, valueOf: valueOf);
+    if (w != null) {
+      leadingIcon = lead.kind == ZAdornmentKind.icon
+          ? _maybeIconPill(w, lead, tint, tokens)
+          : w;
+    }
+  }
 
   Widget? prefix;
   Widget? prefixIcon;

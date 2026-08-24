@@ -133,20 +133,42 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     final bool enabled = !presentation.readOnly;
     final ColorScheme scheme = Theme.of(context).colorScheme;
 
-    // `field.leading`, parité de référence (`ListTile.leading`).
+    // `field.leading`, parité de référence (`ListTile.leading`) — résolu par
+    // le point d'entrée présentateur du cœur, qui porte TOUTE la chaîne de
+    // teinte : résolution de clé, normalisation de contraste, pastille sous
+    // les jetons `adornmentIconBackground*`, dimension du glyphe. Rien de tout
+    // cela n'est dupliqué ici (ni `zReadableTintOn`, ni table d'icônes
+    // locale) ; `child` est prêt à poser, déjà teinté — jamais re-teinté par
+    // la tuile. Résolu ICI, pendant `build` (le résolveur consulte des
+    // `InheritedWidget`).
     //
-    // Cette capacité avait été rapportée « inatteignable, le DTO ne la porte
-    // pas ». C'était FAUX : le DTO porte `field`, donc `field.leading`, et
-    // `resolveAdornment` est exporté par le barrel de `zcrud_core`. Aucun
-    // élargissement du seam n'était nécessaire — seulement de le lire.
-    // Résolu ICI, pendant `build` (le résolveur consulte des `InheritedWidget`).
+    // Opt-in strict, dans les deux directions : sans résolveur de teinte et
+    // sans jetons, `child` est l'icône nue d'avant — tuile inchangée au pixel.
     // `null` ⇒ slot ABSENT de l'arbre (AD-4), rendu antérieur strictement
     // conservé pour tout champ sans ornement de tête.
-    final Widget? leading = resolveAdornment(
+    //
+    // Ordre de composition MESURÉ (gouvernance de la tuile préservée) : le
+    // `leading` est un slot INDÉPENDANT du `ListTile` — la pastille n'écrase
+    // ni le sous-titre (valeur, puces, mention d'indisponibilité d'une valeur
+    // hors catalogue), ni le placeholder de chargement, ni la disparition du
+    // tile en lecture seule vide (le `SizedBox.shrink()` du tile
+    // court-circuite AVANT que le slot soit peint).
+    final Widget? tintedLeading = zResolveTintedAdornment(
       context,
       presentation.field.leading,
       field: presentation.field,
-    );
+    ).child;
+    // Placement — la part du CONTRAT qui revient à la tuile. MESURÉ : la
+    // pastille du cœur épouse son glyphe au centre d'un slot CONTRAINT
+    // (`InputDecoration` borne ses slots d'icône) ; `ListTile.leading`, lui,
+    // offre toute la largeur de la tuile — le `Center` s'y étend et fait
+    // lever `performLayout` (« Leading widget consumes the entire tile
+    // width »). Le slot est donc rendu NON CONTRAINT : sous contraintes non
+    // bornées, la pastille se réduit à sa taille intrinsèque (glyphe +
+    // insets), et l'icône nue de l'hôte passif garde exactement la sienne —
+    // aucun pixel ne bouge sans déclaration.
+    final Widget? leading =
+        tintedLeading == null ? null : UnconstrainedBox(child: tintedLeading);
 
     // règle d'inertie EXACTE de référence :
     // `choiceBuilder == null && (readOnly || isLoading) ? null : showModal`.
@@ -1306,9 +1328,11 @@ class _ZSmartSelectTile extends StatelessWidget {
   /// sinon la règle de référence « oui sauf en lecture seule »).
   final bool showChevron;
 
-  /// ornement de **tête** déjà résolu en widget par
-  /// `resolveAdornment` (parité `field.leading` de référence). `null` ⇒ slot ABSENT de
-  /// l'arbre (AD-4), rendu antérieur strictement conservé.
+  /// Ornement de **tête** déjà résolu en widget par le point d'entrée
+  /// présentateur du cœur (`zResolveTintedAdornment`) : glyphe teinté et
+  /// pastillé quand la teinte du champ et les jetons d'ornement sont déclarés,
+  /// icône nue sinon. Déjà teinté — jamais re-coloré par la tuile. `null` ⇒
+  /// slot ABSENT de l'arbre (AD-4), rendu antérieur strictement conservé.
   final Widget? leading;
 
   /// Ouvre le modal S2.

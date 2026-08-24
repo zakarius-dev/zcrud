@@ -3,6 +3,10 @@
 Toutes les modifications notables de `zcrud_select` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.16.0 — 2026-08-24
+
+### Ajouté
+- La tête de tuile de `ZSmartSelectPresenter` porte la teinte normalisée et la pastille du cœur dès qu'un résolveur et des jetons existent — sans duplication de la normalisation ni de la résolution d'icône ; sans déclaration, tuile inchangée au pixel. L'orphelin, le chargement et la lecture seule gardent leurs signaux.
 ## 3.13.0 — 2026-08-24
 
 ### Corrigé

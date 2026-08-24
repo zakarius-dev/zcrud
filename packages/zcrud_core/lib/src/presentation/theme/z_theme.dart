@@ -968,7 +968,17 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// pastille : il s'applique même sans elles.
   final double? adornmentIconSize;
 
-  /// Hauteur future de la barre d'accent. `null` conserve le rendu par défaut.
+  /// Hauteur (dp) des **barres d'accent** : la barre supérieure d'un champ de
+  /// formulaire et les barres d'accent des chromes de carte des satellites.
+  ///
+  /// Côté formulaire, la barre d'un champ n'est peinte que si ce jeton est
+  /// posé **et** qu'une couleur d'accent se résout pour le champ
+  /// (`zResolveFieldAccent` : clé par champ `zFieldAccentKey(name)`,
+  /// à défaut teinte par type `zFieldTypeTintKey(type)` — couleur normalisée
+  /// pour le contraste). `null` (défaut) ⇒ aucune barre nulle part, rendu
+  /// strictement inchangé ; une teinte résolue sans ce jeton ne peint rien
+  /// non plus. La barre est purement décorative : aucune cible tactile,
+  /// pleine largeur dans les deux sens de lecture.
   final double? accentBarHeight;
 
   /// Début directionnel du dégradé. `null` conserve le rendu par défaut.
