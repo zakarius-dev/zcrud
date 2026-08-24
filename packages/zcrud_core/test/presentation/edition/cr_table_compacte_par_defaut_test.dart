@@ -240,7 +240,7 @@ void main() {
         );
         // Réordonnancement inline (poignée de glissement — plus aucune
         // flèche) + retrait.
-        expect(find.byIcon(Icons.drag_handle), findsNWidgets(2));
+        expect(find.byIcon(Icons.drag_indicator_rounded), findsNWidgets(2));
         expect(find.byIcon(Icons.arrow_upward), findsNothing);
         expect(find.byIcon(Icons.arrow_downward), findsNothing);
         // 🔴 Aucune des trois marques du compact.

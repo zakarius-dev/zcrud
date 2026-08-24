@@ -101,7 +101,7 @@ void main() {
         onChanged: (_) {},
       )));
       await tester.pump();
-      expect(find.byIcon(Icons.drag_handle), findsNothing);
+      expect(find.byIcon(Icons.drag_indicator_rounded), findsNothing);
       expect(find.byIcon(Icons.arrow_upward), findsNothing);
       expect(find.byIcon(Icons.arrow_downward), findsNothing);
       expect(tester.takeException(), isNull);
@@ -125,7 +125,7 @@ void main() {
         onChanged: (_) {},
       )));
       await tester.pump();
-      expect(find.byIcon(Icons.drag_handle), findsNWidgets(3));
+      expect(find.byIcon(Icons.drag_indicator_rounded), findsNWidgets(3));
       expect(find.byIcon(Icons.arrow_upward), findsNothing);
       expect(find.byIcon(Icons.arrow_downward), findsNothing);
     });
@@ -144,7 +144,7 @@ void main() {
         onChanged: (list) => captured = list,
       )));
       await tester.pump();
-      expect(find.byIcon(Icons.drag_handle), findsNWidgets(3));
+      expect(find.byIcon(Icons.drag_indicator_rounded), findsNWidgets(3));
       expect(find.byIcon(Icons.arrow_upward), findsNothing);
       expect(find.byIcon(Icons.arrow_downward), findsNothing);
 
@@ -189,7 +189,7 @@ void main() {
         onChanged: (_) {},
       )));
       await tester.pump();
-      expect(find.byIcon(Icons.drag_handle), findsNothing);
+      expect(find.byIcon(Icons.drag_indicator_rounded), findsNothing);
       expect(find.byIcon(Icons.arrow_upward), findsNothing);
       expect(find.byIcon(Icons.arrow_downward), findsNothing);
       expect(_nodesWithAction(tester, _moveUp), isEmpty);
@@ -217,7 +217,7 @@ void main() {
       onChanged: (_) {},
     )));
     await tester.pump();
-    expect(find.byIcon(Icons.drag_handle), findsNothing);
+    expect(find.byIcon(Icons.drag_indicator_rounded), findsNothing);
     expect(find.byIcon(Icons.arrow_upward), findsNothing);
     expect(find.byIcon(Icons.arrow_downward), findsNothing);
   });
@@ -350,7 +350,7 @@ void main() {
         ),
       )));
       await tester.pump();
-      expect(find.byIcon(Icons.drag_handle), findsNothing);
+      expect(find.byIcon(Icons.drag_indicator_rounded), findsNothing);
     });
   });
 }

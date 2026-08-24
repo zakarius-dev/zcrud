@@ -210,7 +210,7 @@ void main() {
           reason: 'écart inter-lignes de 36 dp : 14 + 4 + 4 + 14');
       // La poignée reste une cible ≥ 48 dp (AD-13) : c'est ce plancher, et non
       // un padding, qui domine l'écart inter-lignes de ce rendu.
-      expect(tester.getSize(find.byIcon(Icons.drag_handle).first).height, 24);
+      expect(tester.getSize(find.byIcon(Icons.drag_indicator_rounded).first).height, 24);
     });
 
     testWidgets('inline', (tester) async {

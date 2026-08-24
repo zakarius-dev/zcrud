@@ -60,7 +60,7 @@ List<String> _values(List<Map<String, dynamic>> list) =>
 /// dépassement) — le geste réel du repli interne (`SliverReorderableList` +
 /// `ReorderableDragStartListener` : glissement immédiat depuis la poignée).
 Future<void> _dragHandle(WidgetTester tester, int from, int to) async {
-  final handles = find.byIcon(Icons.drag_handle);
+  final handles = find.byIcon(Icons.drag_indicator_rounded);
   final start = tester.getCenter(handles.at(from));
   final end = tester.getCenter(handles.at(to)) + const Offset(0, 24);
   final gesture = await tester.startGesture(start);
@@ -116,7 +116,7 @@ void main() {
     expect(find.byIcon(Icons.arrow_upward), findsNothing);
     expect(find.byIcon(Icons.arrow_downward), findsNothing);
     // Les deux modes offrent la poignée à la place : 3 lignes chacun.
-    expect(find.byIcon(Icons.drag_handle), findsNWidgets(6));
+    expect(find.byIcon(Icons.drag_indicator_rounded), findsNWidgets(6));
   });
 
   testWidgets(
@@ -175,7 +175,7 @@ void main() {
     )));
     await tester.pump();
     expect(find.byType(Table), findsNothing);
-    expect(find.byIcon(Icons.drag_handle), findsNWidgets(3));
+    expect(find.byIcon(Icons.drag_indicator_rounded), findsNWidgets(3));
     expect(
       find.byWidgetPredicate(
         (w) => w is Semantics && w.properties.header == true,
@@ -196,7 +196,7 @@ void main() {
     final box = tester.getSize(
       find
           .ancestor(
-            of: find.byIcon(Icons.drag_handle).first,
+            of: find.byIcon(Icons.drag_indicator_rounded).first,
             matching: find.byType(SizedBox),
           )
           .first,
@@ -251,7 +251,7 @@ void main() {
     )));
     await tester.pump();
     expect(renderer.lastRequest, isNull);
-    expect(find.byIcon(Icons.drag_handle), findsNothing);
+    expect(find.byIcon(Icons.drag_indicator_rounded), findsNothing);
   });
 
   testWidgets(
@@ -269,6 +269,6 @@ void main() {
     )));
     await tester.pump();
     expect(renderer.lastRequest, isNull);
-    expect(find.byIcon(Icons.drag_handle), findsNothing);
+    expect(find.byIcon(Icons.drag_indicator_rounded), findsNothing);
   });
 }

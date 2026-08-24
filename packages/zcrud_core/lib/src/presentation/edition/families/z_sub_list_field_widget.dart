@@ -4022,7 +4022,7 @@ class _ZSubListDragHandle extends StatelessWidget {
       child: const SizedBox(
         width: 48,
         height: 48,
-        child: Center(child: Icon(Icons.drag_handle)),
+        child: Center(child: Icon(Icons.drag_indicator_rounded)),
       ),
     );
     final scope = _ZSubListDragScope.maybeOf(context);

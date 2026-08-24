@@ -339,7 +339,7 @@ void main() {
       // 2 items × retirer = 2 IconButton, pas un de plus…
       expect(find.byType(IconButton), findsNWidgets(2));
       // …et l'ordre s'édite par une poignée par item (pas un `IconButton`).
-      expect(find.byIcon(Icons.drag_handle), findsNWidgets(2));
+      expect(find.byIcon(Icons.drag_indicator_rounded), findsNWidgets(2));
       expect(find.byIcon(Icons.arrow_upward), findsNothing);
       expect(find.byIcon(Icons.arrow_downward), findsNothing);
       expect(find.byType(TextFormField), findsNWidgets(4));
@@ -877,7 +877,7 @@ void main() {
       expect(find.byType(IconButton), findsNWidgets(4));
       // Ce que le seam N'A PAS déplacé : la poignée d'ordre reste native, et
       // les actions de l'hôte s'ajoutent APRÈS elle.
-      expect(find.byIcon(Icons.drag_handle), findsNWidgets(2));
+      expect(find.byIcon(Icons.drag_indicator_rounded), findsNWidgets(2));
       expect(tester.takeException(), isNull);
     });
 
