@@ -211,6 +211,56 @@ Voir l'écran de démo : `example/lib/demos/reference_form.dart` (champ `orderLi
 `example/lib/demos/stepper_sub_list_demo_screen.dart` (sous-liste compacte + ACL de ligne
 dans une étape).
 
+## Réordonner les lignes d'une sous-liste {#sous-listes-ordre}
+
+Dans certaines sous-listes, **l'ordre est la donnée** (un modèle principal puis ses replis,
+des étapes numérotées) : il faut pouvoir le changer sans supprimer puis recréer.
+
+`ZSubListConfig.reorderable` est **tri-état** — c'est le troisième état qui compte :
+
+| Déclaration | L'ordre s'édite |
+|---|---|
+| non déclaré (défaut) | en mode `inline` seulement ; `compact` ne rend aucun contrôle d'ordre |
+| `reorderable: true` | en `inline` **et** en `compact` |
+| `reorderable: false` | nulle part, même avec un renderer injecté au scope |
+
+```dart
+const ZFieldSpec(
+  name: 'modeles',
+  type: EditionFieldType.subItems,
+  label: 'Modèles, par ordre de priorité',
+  config: ZSubListConfig(
+    reorderable: true,
+    itemFields: <ZFieldSpec>[
+      ZFieldSpec(name: 'nom', type: EditionFieldType.text, label: 'Modèle'),
+    ],
+  ),
+);
+```
+
+Le contrôle est un **glisser-déposer à poignée** — une cible de 48 dp en tête de ligne —
+doublé d'**actions sémantiques de déplacement** par ligne, qui sont la voie non gestuelle
+du lecteur d'écran ([AD-13](../concepts/invariants.md#ad-13)). En `compact`, les lignes
+réordonnables sont rendues **hors** de la table de résumé, dont les en-têtes de colonnes
+sont conservés — une table fige ses rangées. Le mode `tags` ne sait pas honorer la
+déclaration : elle y est signalée par une assertion de debug, jamais ignorée en silence.
+
+La liste réordonnable est rendue par le port `ZReorderRenderer`. Sans rien déclarer, un
+repli interne au cœur assure le geste ; injecter une implémentation le remplace pour tout
+le sous-arbre :
+
+```dart
+ZcrudScope(
+  reorderRenderer: const ZPackageReorderRenderer(), // paquet zcrud_reorder
+  child: monFormulaire,
+);
+```
+
+Voir les fiches [zcrud_reorder](../paquets/zcrud_reorder.md#sous-liste) et
+[zcrud_responsive](../paquets/zcrud_responsive.md#reorder-renderer) pour l'arbitrage entre
+les implémentations — le geste de glissement diffère (contact de la poignée pour le repli
+interne, appui long pour les deux satellites), les actions sémantiques non.
+
 ## Rendre du Markdown riche avec l'habillage « carte » {#markdown-chrome}
 
 Un champ de contenu doit ressembler à une carte (en-tête icône, bordure, pilule d'action)
@@ -240,6 +290,51 @@ ZMarkdownField(
 
 Voir l'écran de démo : `example/lib/demos/markdown_demo_screen.dart` (sélecteur de
 `ZCodec` Delta/Markdown + zone de valeur persistée).
+
+## Offrir plusieurs formats de copie sur un contenu riche {#copie-multi-format}
+
+Le même contenu doit partir tantôt en Markdown (vers un dépôt), tantôt en texte brut (vers
+une messagerie). Un seul geste de copie ne peut pas deviner lequel.
+
+Le paquet ne connaît que le **Delta neutre** : chaque format est une paire
+**clé + transformation** déclarée par l'application, et le menu rend exactement cette
+liste, dans cet ordre.
+
+```dart
+import 'dart:convert';
+
+import 'package:zcrud_markdown/zcrud_markdown.dart';
+
+String enMarkdown(List<Map<String, dynamic>> delta) =>
+    '${const ZMarkdownCodec().encode(delta) ?? ''}';
+
+String enDeltaJson(List<Map<String, dynamic>> delta) =>
+    jsonEncode(const ZDeltaCodec().encode(delta));
+
+ZMarkdownField(
+  controller: controller,
+  field: bodyField,
+  copyOnLongPress: true,
+  copyFormats: <ZMarkdownCopyFormat>[
+    ZMarkdownCopyFormat(key: 'copyAsMarkdown', transform: enMarkdown),
+    ZMarkdownCopyFormat(key: 'copyAsDelta', transform: enDeltaJson),
+  ],
+  copiedFeedbackText: 'Copié',
+);
+```
+
+Trois points à ne pas manquer :
+
+- **la clé libelle aussi l'entrée de menu** : elle est résolue par le système de libellés
+  injecté (`ZcrudScope.labels`), avec repli sur la clé elle-même. Aucun libellé n'est codé
+  dans le paquet — ni pour le menu, ni pour le retour de copie ;
+- **le geste est opt-in** : sans `copyOnLongPress`, ni copie ni menu. Activé sans
+  `copyFormats`, l'appui long copie directement la valeur encodée par le codec du champ ;
+- **l'appui long de copie désactive la sélection interactive** du lecteur — les deux gestes
+  se disputent la même arène, et c'est la copie qui gagne.
+
+Les mêmes paramètres se posent une fois pour tout un sous-arbre sur
+`registerZMarkdownFields`, plutôt que champ par champ.
 
 ## Aperçu inerte + édition plein écran pour un champ géo {#champ-geo-apercu}
 
@@ -404,6 +499,38 @@ Tout le reste se déclare de la même façon sur le même widget : corbeille (`t
 Voir la [fiche `zcrud_screen`](../paquets/zcrud_screen.md) pour la carte complète des
 déclarations, et le README du paquet pour l'API exhaustive.
 
+## Compléter les valeurs juste avant l'enregistrement {#before-submit}
+
+L'entité à enregistrer porte une donnée qu'aucun champ ne saisit : un identifiant de
+pièces jointes publiées à part, un tampon métier, un état calculé. Fournir un formulaire
+applicatif complet pour cela seul reviendrait à perdre tout ce que l'écran dérive.
+
+`beforeSubmit` s'intercale **entre la validation du formulaire et la reconstruction de
+l'entité**, et couvre d'un seul site la création, l'édition **et** la duplication :
+
+```dart
+ZCrudScreen<Dossier>(
+  title: 'Dossiers',
+  source: ZCrudSource<Dossier>.repository(repository),
+  registry: registry,
+  beforeSubmit: (Map<String, Object?> values, Dossier? original) async {
+    return <String, Object?>{
+      ...values,
+      // `original` est nul en création, la copie éphémère en duplication.
+      'revision': (original?.revision ?? 0) + 1,
+      'piecesJointes': await depotDeFichiers.publierLesEnAttente(),
+    };
+  },
+);
+```
+
+- la map rendue **remplace** les valeurs telles quelles sur le chemin d'enregistrement ;
+- une exception levée dans le crochet **échoue proprement** — message affiché dans le
+  formulaire, aucune écriture — et ne remonte jamais à l'appelant ;
+- sans crochet déclaré, le chemin est strictement inchangé ;
+- sous un `editionBuilder`, le crochet est sans effet : un formulaire applicatif maîtrise
+  déjà ses valeurs avant d'appeler `save`.
+
 ## Exporter une liste en PDF ou Excel {#export-liste}
 
 Le jeu de lignes affiché doit pouvoir se retrouver en pièce jointe.
@@ -467,9 +594,22 @@ ZcrudScope(
 );
 ```
 
-Les widgets qui consomment un dégradé (carte de dossier, carte de flashcard…) n'assemblent
-leur accent que si le token de hauteur **et** le dégradé résolu sont tous deux non nuls —
-un préréglage partiel reste inobservable par construction.
+Les widgets qui consomment un dégradé n'assemblent leur accent que si le token de hauteur
+**et** le dégradé résolu sont tous deux non nuls — un préréglage partiel reste
+inobservable par construction.
+
+**`accentBarHeight` ne dimensionne pas que des cartes.** Le même token dimensionne aussi
+la **barre d'accent supérieure d'un champ de formulaire**, dès qu'une couleur d'accent se
+résout pour ce champ. Le résolveur ci-dessus ne répond qu'à `'folder-primary'` : aucun
+champ ne porte donc de barre. Mais servir une clé de champ — `zcrud.fieldAccent.<nom du
+champ>` pour un champ nommé, à défaut `zcrud.fieldType.<type>` pour tous les champs d'un
+type — suffit à la faire apparaître sur les champs concernés, par l'**effet conjoint** de
+deux déclarations qui existaient déjà séparément. Si vous posiez
+`accentBarHeight` pour vos seules cartes, sachez-le avant d'ajouter la première clé de
+champ ; l'inverse est vrai aussi — sans le token, aucune barre de champ.
+
+La chaîne complète (teinte par type, normalisation de contraste, pastille d'ornement) est
+décrite sur la fiche [zcrud_core](../paquets/zcrud_core.md).
 
 Voir l'écran de démo : `example/lib/demos/iffd_visual_preset.dart` (dix dégradés clair/sombre
 et le résolveur complet utilisé par toute l'application de démonstration).

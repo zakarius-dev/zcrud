@@ -31,13 +31,13 @@ couche présentation.
 | `choices` | `List<ZFieldChoice>` — options statiques pour `select`/`radio`/`checkbox`. |
 | `condition` | `ZCondition?` — visibilité conditionnelle **déclarative**, jamais une closure. |
 | `searchable` | Participation du champ à la recherche/filtre de la liste. |
-| `defaultValue` | Valeur appliquée par `fromMap` si la clé est absente. |
-| `readOnly` / `showIfNull` | Champ non éditable / visible même vide en mode lecture global. |
+| `defaultValue` | Valeur appliquée par `fromMap` si la clé est absente — **et amorcée par le moteur d'édition** sur toute tranche que les valeurs initiales n'ont pas fournie. |
+| `readOnly` / `showIfNull` | Champ non éditable / visible même vide en mode lecture global. La lecture seule peut aussi être **dérivée** ; le statique prime toujours. |
 | `multiple` | Multi-valeur (`List<…>` ou `@ZcrudField(multiple: true)`). |
 | `isId` | `true` si le champ porte `@ZcrudId`. |
-| `leading` / `prefix` / `suffix` | Ornements (`ZFieldAdornment`) — texte, icône ou widget nommé. |
+| `leading` / `prefix` / `suffix` | Ornements (`ZFieldAdornment`) — texte, icône ou widget nommé ; décoratifs par défaut, **interactifs** dès qu'un `onTap` est posé. |
 | `hintText` / `helperText` | Texte indicatif / texte d'aide sous le champ. |
-| `derivedFrom` | Seule surcharge **runtime** (porte des closures) — posée par l'hôte via `copyWith`, jamais émise par le générateur. |
+| `derivedFrom` | Seule surcharge **runtime** (porte des closures) — posée par l'hôte via `copyWith`, jamais émise par le générateur. Cinq cibles : valeur, options, visibilité, bornes, lecture seule. |
 
 `isRequired` (accesseur calculé) est vrai dès que `validators` contient un
 `ZValidatorKind.required` — c'est lui qui alimente l'astérisque « requis » du libellé,
@@ -139,8 +139,9 @@ configurations triviales, pur-cœur, vivent directement dans `zcrud_core` :
 
 | Config | Champ ciblé | Porte |
 |---|---|---|
-| `ZTextConfig` | `text`/`multiline` | Lignes min/max, indice de clavier neutre, capitalisation, transformation de saisie injectable. |
-| `ZNumberConfig` | `number`/`integer`/`float` | Bornes (littérales ou clé d'un autre champ), formatage monnaie/pourcentage. |
+| `ZTextConfig` | `text`/`multiline`/`password` | Lignes min/max, indice de clavier neutre **honoré** (table fermée, repli sur le rendu), capitalisation — `lowercase` compris —, transformation de saisie injectable. |
+| `ZNumberConfig` | `number`/`integer`/`float` | Bornes littérales ou **clé d'un autre champ**, revalidées quand ce champ change ; formatage monnaie/pourcentage. |
+| `ZDateConfig` | `dateTime`/`time`/`dateRange` | Bornes ISO-8601 ou clé d'un autre champ, mode de sélection, amplitude min/max d'une plage. |
 | `ZColorConfig` | `color` | Canal alpha, palette, couleurs récentes, variante `.multiple`. |
 | `ZSliderConfig` | `slider` | Bornes `min`/`max` (défaut `0..100`), `divisions`. |
 | `ZBooleanConfig` | `boolean` | Variante d'affichage (interrupteur/encart). |
@@ -158,6 +159,43 @@ import 'package:zcrud_core/edition.dart';
 
 const config = ZTextConfig(maxLines: 4, capitalization: ZTextCapitalization.sentences);
 ```
+
+Une même règle n'a pas à être répétée champ par champ : `ZcrudScope(defaultTextConfig: …)`
+pose une `ZTextConfig` **par défaut** pour tout champ texte qui ne déclare aucune config.
+La précédence joue **en bloc** — une config déclarée par le champ l'emporte entièrement,
+jamais membre à membre.
+
+## Ce que la déclaration décide au-delà du type {#au-dela-du-type}
+
+Une `ZFieldSpec` ne choisit pas seulement un widget. Quatre familles de comportements en
+découlent sans qu'une ligne de plus soit écrite côté hôte ; le contrat détaillé de chacune
+vit sur la [fiche de `zcrud_core`](../paquets/zcrud_core.md).
+
+**Les dérivations.** `derivedFrom` (`ZDerivation`) observe une liste de champs **sources**
+et pilote cinq cibles du champ porteur : `value`, `options`, `visible`, `bounds` et
+`readOnly`. L'abonnement est ciblé sur les tranches sources, jamais global. Deux règles de
+composition à connaître : la visibilité dérivée se compose **en ET** avec
+`ZFieldSpec.condition`, et la lecture seule dérivée ne rend jamais éditable un champ
+déclaré `readOnly: true`. Un cycle de dérivation reste **exprimable** — il se détecte par
+la fonction pure `zDerivationCycles(fields)`, appelable avant même que le formulaire soit
+monté.
+
+**Les valeurs par défaut.** `defaultValue` n'est plus seulement lu par le code généré : le
+moteur d'édition amorce toute tranche que les valeurs initiales n'ont **pas** fournie. Le
+discriminant est la **présence de la clé**, jamais la valeur — une clé fournie à `null`
+explicite est autoritaire. Un défaut amorcé n'est pas une modification : le champ reste
+vierge.
+
+**Les ornements.** `leading`, `prefix` et `suffix` portent un `ZFieldAdornment` — texte,
+icône ou widget nommé. Un `onTap` optionnel le rend **interactif** : la présentation
+l'enveloppe alors dans une cible accessible d'au moins 48 dp, avec une sémantique de
+bouton. C'est le seul membre de `ZFieldAdornment` à porter une closure, et il est exclu de
+l'égalité de valeur — deux ornements ne diffèrent jamais par l'identité d'une fonction.
+
+**La teinte.** Le `type` d'un champ est aussi une **clé de couleur** : quand l'hôte injecte
+un résolveur de dégradé, la bordure de focus, le libellé flottant, les glyphes d'ornement
+et leur pastille prennent la teinte de ce type, normalisée pour le contraste. Rien n'est
+peint sans résolveur : la déclaration seule ne colore pas.
 
 ## Sous-schémas : champs imbriqués {#sous-schemas}
 
@@ -187,10 +225,19 @@ const coauthorField = ZFieldSpec(
 );
 ```
 
+`reorderable` est **tri-état** et gouverne le geste d'ordre : `null` (le défaut) ne
+l'ouvre qu'en mode `inline`, `true` l'ouvre aussi en `compact`, `false` le ferme partout.
+Le geste lui-même est un **glisser-déposer à poignée**, doublé d'actions sémantiques de
+déplacement par ligne pour la voie non gestuelle — voir la
+[fiche de `zcrud_core`](../paquets/zcrud_core.md#sous-liste) pour le port qui le rend, les
+préférences d'affichage des actions de ligne et les jetons d'espacement de la sous-liste.
+
 Côté widget, `ZSubListConfig.displayMode` décide de la présentation, et son défaut est
 `ZSubListDisplayMode.compact` : une **table de résumé** (une ligne par item, une colonne
 par valeur de `summaryFields`) doublée d'un **formulaire d'édition par item**, chaque
-geste filtré par l'`ZAcl`. Deux autres modes se déclarent en une ligne :
+geste filtré par l'`ZAcl`. La table cède la place à une liste de lignes à poignée — ses
+en-têtes de colonnes conservés — dès que l'ordre est éditable, une `Table` figeant ses
+lignes. Deux autres modes se déclarent en une ligne :
 `ZSubListDisplayMode.inline` déballe tous les sous-champs de chaque item en
 sous-formulaires imbriqués, `ZSubListDisplayMode.tags` rend une rangée de puces.
 `ZSubItemFormPresentation` choisit l'enveloppe du formulaire d'item — `dialog`
@@ -214,6 +261,8 @@ automatiquement ce sous-schéma par inférence — le générateur projette le
 ## Voir aussi
 
 - [Invariants d'architecture](invariants.md) — la définition canonique d'AD-1 à AD-16.
+- [zcrud_core](../paquets/zcrud_core.md) — le contrat de chaque canal ouvert par la
+  déclaration : teinte, accent, sections, sous-listes, ports de formatage.
 - [Réactivité granulaire](reactivite-granulaire.md) — comment `ZFormController`
   consomme un `ZFieldSpec` pour n'exposer qu'une tranche réactive par champ.
 - [Architecture hexagonale](architecture-hexagonale.md) — où `ZFieldSpec` se situe

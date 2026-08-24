@@ -111,6 +111,46 @@ aucune route n'est fermée ni rouverte, l'état du formulaire de l'application
 survit, seul le titre change. Un formulaire applicatif lit
 `ZCrudEditionScope.readOnlyOf(context)` pour se rendre lui-même en lecture.
 
+## Retoucher les valeurs avant l'enregistrement {#before-submit}
+
+Le formulaire dérivé valide la saisie, puis la **reconstruit en entité** par le
+registre. `beforeSubmit` est le seul point où l'application s'intercale entre
+ces deux moments — pour y verser un état qu'aucun champ ne porte (droits,
+pièces jointes, horodatage métier) sans redéclarer un formulaire complet.
+
+```dart
+ZCrudScreen<Dossier>(
+  title: 'Dossiers',
+  source: ZCrudSource<Dossier>.repository(repo),
+  registry: registry,
+  beforeSubmit: (Map<String, Object?> values, Dossier? original) async {
+    return <String, Object?>{
+      ...values,
+      'piecesJointes': await monDepotDeFichiers.publierLesEnAttente(),
+    };
+  },
+);
+```
+
+- **La signature est `(values, original) → map`**, et la map rendue peut être
+  attendue (`FutureOr`). `values` est la map complète destinée à la
+  reconstruction : les valeurs initiales encodées, recouvertes par la saisie
+  normalisée du formulaire.
+- **`original` est l'entité sur laquelle la surface s'est ouverte** — `null` en
+  création, l'entité éditée en édition, la **copie éphémère** (sans identité) en
+  duplication.
+- **Un seul site pour les trois chemins** : création, édition et duplication
+  passent tous par lui. Il n'y a pas de quatrième chemin à couvrir.
+- **La map rendue remplace `values` telle quelle** sur le chemin
+  d'enregistrement : ce qu'on y recopie est persisté avec l'entité.
+- **Une exception échoue proprement** : l'enregistrement emprunte le canal
+  d'échec de la surface — message affiché dans le formulaire, **aucune
+  écriture** — et ne remonte jamais à l'appelant.
+- **Sans crochet, le chemin est strictement inchangé** : c'est la même instance
+  de map qui poursuit sa route.
+- **Sans effet sous `editionBuilder`** : un formulaire applicatif maîtrise déjà
+  ses valeurs avant d'appeler `save`.
+
 ## Corbeille à trois gestes
 
 `trash` (`ZTrashMode`) décide si la corbeille **existe** ; `trashPolicy`
@@ -402,6 +442,7 @@ lui-même l'état courant projeté.
 | `ZCrudScreenScope` / `ZCrudScreenActions` | Accès, depuis une tuile, au cycle d'édition et de consultation **de l'écran**. |
 | `ZCrudEditionScope` | Transport de la lecture seule et du retour vers l'édition jusqu'au formulaire applicatif. |
 | `ZCrudEditionBuilder<T>` | Formulaire applicatif, voie d'échappement de l'édition dérivée. |
+| `ZCrudBeforeSubmit<T>` | Transformation de la map validée, entre validation et reconstruction en entité — création, édition et duplication. |
 | `ZCrudItemBuilder<T>` | Tuile de liste (reçoit l'entité `T`), voie d'échappement du rendu par défaut. |
 
 ## Cas limites

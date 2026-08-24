@@ -78,6 +78,38 @@ MIT — voir la racine du dépôt.
   historique des correctifs (« depuis la v0.63… »), débats d'implémentation. Ce qui est
   **conservé** : les invariants, les cas limites, les avertissements de contrat.
 
+## Jetons de thème : la règle à documenter {#jetons-de-theme}
+
+Les jetons visuels des paquets (`ZcrudTheme` et les styles déclarés qui l'accompagnent)
+obéissent à une règle unique, et toute documentation qui les décrit doit la porter
+explicitement.
+
+**Aucun jeton posé, aucun conteneur ni espace ajouté à l'arbre.** Un jeton non déclaré ne
+rend pas « une valeur neutre » : il ne rend rien du tout. Un jeton de dimension seul ne
+peint pas davantage — une pastille sans opacité déclarée n'existe pas, un filet sans
+couleur n'est pas tracé, une barre d'accent sans couleur résolue n'est pas posée. C'est ce
+qui garantit qu'un consommateur qui ne déclare rien obtient exactement le rendu qu'il
+avait.
+
+**Priorité : paramètre, puis jeton, puis référence.** Un paramètre passé au widget
+l'emporte sur le jeton de thème, qui l'emporte sur la valeur de référence de sa famille.
+Une dartdoc de jeton nomme donc toujours **ce que `null` produit** — le rendu de repli, et
+non « la valeur par défaut ».
+
+Trois conséquences rédactionnelles :
+
+1. **Un jeton se documente par son défaut inerte**, jamais par le seul résultat qu'il
+   produit une fois posé. « `null` (défaut) ⇒ coins droits » est un contrat ; « rayon des
+   coins » n'en est pas un.
+2. **Un jeton partagé se signale comme tel.** Certains jetons sont lus par plusieurs
+   familles de widgets, parfois dans des paquets différents : leur dartdoc énumère les
+   consommateurs, parce que le poser pour l'un le pose pour tous.
+3. **Un plancher d'accessibilité ne devient jamais un jeton.** Une cible tactile de 48 dp,
+   un contraste minimal : offrir de les régler reviendrait à offrir de les casser
+   (invariant [AD-13](concepts/invariants.md#ad-13)). La documentation nomme
+   l'échappatoire fonctionnelle quand il en existe une — jamais un réglage qui n'existe
+   pas.
+
 ## Anti-pièges (dérivés de la sécurisation des gardes)
 
 1. **Secrets : bannis MÊME en commentaire.** Les motifs de vrais secrets (`AIza…`, `AKIA…`,

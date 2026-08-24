@@ -25,8 +25,8 @@ mort + un nœud sémantique vide) — le contournement actuel est « un groupe q
 **110** — l'espacement vertical **interne** de la sous-liste n'est réglable par aucun jeton. Le
 propriétaire l'a mesuré avant d'accuser le mauvais réglage : `ZcrudTheme.fieldGap` porté de 12 dp à
 0 ne retire que ~12 px sur les ~105 px qui séparent deux groupes consécutifs ; le reste est produit
-à l'intérieur du widget de sous-liste, sans canal. Vérifié : `ZcrudTheme` porte 205 jetons, dont
-neuf pour la sous-liste (largeur de colonne, taille d'icône, trois couleurs d'action, cinq du
+à l'intérieur du widget de sous-liste, sans canal. Vérifié **avant le lot** : `ZcrudTheme` portait
+alors 205 jetons (211 après les six ajoutés ici), dont neuf pour la sous-liste (largeur de colonne, taille d'icône, trois couleurs d'action, cinq du
 contrôle d'ajout) — **aucun** d'espacement vertical, et le widget écrit ses paddings en `const`.
 
 ## 2. Ce que le socle livre
