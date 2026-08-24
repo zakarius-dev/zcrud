@@ -332,8 +332,16 @@ void main() {
       await tester.pumpWidget(_nominal(_inlineField, controller: controller));
       await tester.pump();
 
-      // 2 items × (monter + descendre + retirer) = 6 IconButton, pas un de plus.
-      expect(find.byType(IconButton), findsNWidgets(6));
+      // Garde relevée au contrat courant : les flèches monter/descendre ont
+      // été SUPPRIMÉES des deux modes (décision du propriétaire), remplacées
+      // par le glisser-déposer à poignée + les actions sémantiques de
+      // déplacement. Le contrôle natif restant est donc « retirer ».
+      // 2 items × retirer = 2 IconButton, pas un de plus…
+      expect(find.byType(IconButton), findsNWidgets(2));
+      // …et l'ordre s'édite par une poignée par item (pas un `IconButton`).
+      expect(find.byIcon(Icons.drag_handle), findsNWidgets(2));
+      expect(find.byIcon(Icons.arrow_upward), findsNothing);
+      expect(find.byIcon(Icons.arrow_downward), findsNothing);
       expect(find.byType(TextFormField), findsNWidgets(4));
       expect(tester.takeException(), isNull);
     });
@@ -861,9 +869,15 @@ void main() {
       expect(find.text('IGNORÉ ENCORE'), findsNothing);
       // Les sous-champs éditables restent intacts…
       expect(find.byType(TextFormField), findsNWidgets(4));
-      // …et 6 contrôles natifs + 2 actions ajoutées.
+      // …et les contrôles natifs + les 2 actions ajoutées. Compte relevé au
+      // contrat courant : les flèches d'ordre ont été supprimées (décision du
+      // propriétaire — remplacées par poignée + actions sémantiques), le
+      // natif se réduit donc à « retirer » par item.
       expect(find.byIcon(Icons.star), findsNWidgets(2));
-      expect(find.byType(IconButton), findsNWidgets(8));
+      expect(find.byType(IconButton), findsNWidgets(4));
+      // Ce que le seam N'A PAS déplacé : la poignée d'ordre reste native, et
+      // les actions de l'hôte s'ajoutent APRÈS elle.
+      expect(find.byIcon(Icons.drag_handle), findsNWidgets(2));
       expect(tester.takeException(), isNull);
     });
 

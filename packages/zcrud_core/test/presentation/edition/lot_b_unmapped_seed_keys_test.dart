@@ -23,6 +23,7 @@
 // 3. **appariement par IDENTITÉ** (réordonnancement/retrait au milieu : chaque
 //    item garde SON résidu, jamais celui d'un voisin).
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
@@ -134,9 +135,30 @@ void main() {
       )));
       await tester.pump();
 
-      // Descend le PREMIER item : ordre attendu B, A, C.
-      await tester.tap(find.byIcon(Icons.arrow_downward).first);
+      // Descend le PREMIER item par l'action sémantique du contrôle d'ordre
+      // (les flèches n'existent plus) : ordre attendu B, A, C.
+      final semantics = tester.ensureSemantics();
+      await tester.pump();
+      const action = CustomSemanticsAction(label: 'Move item down');
+      final id = CustomSemanticsAction.getIdentifier(action);
+      final nodes = <SemanticsNode>[];
+      void visit(SemanticsNode node) {
+        final ids = node.getSemanticsData().customSemanticsActionIds;
+        if (ids != null && ids.contains(id)) nodes.add(node);
+        node.visitChildren((child) {
+          visit(child);
+          return true;
+        });
+      }
+
+      // ignore: deprecated_member_use
+      final owner = tester.binding.pipelineOwner.semanticsOwner!;
+      visit(owner.rootSemanticsNode!);
+      expect(nodes, isNotEmpty,
+          reason: 'aucune action sémantique « descendre » sur la 1re ligne');
+      owner.performAction(nodes.first.id, SemanticsAction.customAction, id);
       await tester.pumpAndSettle();
+      semantics.dispose();
 
       expect(captured, isNotNull);
       expect(captured!.map((m) => m['f1']).toList(), <String>[

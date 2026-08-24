@@ -100,6 +100,7 @@ const _enLabels = <String, String>{
   'removeItem': 'Remove item',
   'moveItemUp': 'Move item up',
   'moveItemDown': 'Move item down',
+  'reorderItem': 'Reorder item',
   'clearItem': 'Clear item',
   // Sous-liste compacte + dialog d'édition par item.
   'viewItem': 'View item',
@@ -269,6 +270,7 @@ const _frLabels = <String, String>{
   'removeItem': 'Retirer l\'élément',
   'moveItemUp': 'Monter l\'élément',
   'moveItemDown': 'Descendre l\'élément',
+  'reorderItem': 'Réordonner l\'élément',
   'clearItem': 'Effacer l\'élément',
   // Sous-liste compacte + dialog d'édition par item.
   'viewItem': 'Consulter l\'élément',

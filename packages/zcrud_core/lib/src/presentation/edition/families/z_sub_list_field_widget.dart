@@ -31,10 +31,23 @@
 /// composant distinct, non dupliqué ici. Le sous-schéma `const`
 /// ([ZSubListConfig.itemFields]) est la brique commune réutilisable.
 ///
-/// a11y/RTL (invariant AD-13) : boutons add/remove/monter/descendre =
-/// `IconButton` (cibles ≥ 48 dp) + `Semantics`/tooltips ; insets
-/// **directionnels** ; aucune couleur codée en dur (bordure dérivée du
+/// a11y/RTL (invariant AD-13) : boutons add/remove = `IconButton` (cibles
+/// ≥ 48 dp) + `Semantics`/tooltips ; le déplacement d'un item offre TOUJOURS
+/// une voie non gestuelle (actions sémantiques « déplacer avant/après » —
+/// contrat du port `ZReorderRenderer`) en plus du glisser-déposer à poignée ;
+/// insets **directionnels** ; aucune couleur codée en dur (bordure dérivée du
 /// `ZcrudTheme` — invariant FR-26).
+///
+/// ## Réordonnancement : glisser-déposer, jamais des flèches
+///
+/// Quand l'ordre est éditable, chaque ligne porte une **poignée de
+/// glissement** (≥ 48 dp, libellée) et la collection est rendue par le port
+/// `ZReorderRenderer` : celui injecté via `ZcrudScope.reorderRenderer`, sinon
+/// un repli interne zéro-injection. L'équivalent accessible est garanti par
+/// le contrat du port : des **actions sémantiques** de déplacement par ligne.
+/// En mode `compact`, des lignes réordonnables sont rendues **hors** de la
+/// table de résumé (une `Table` fige ses lignes) : liste de lignes à poignée,
+/// en-têtes de colonnes conservés.
 ///
 /// **Mode compact — le DÉFAUT** (`ZSubListConfig.displayMode`) : le widget rend
 /// une **table de résumé** (une ligne par item, une colonne par valeur de
@@ -134,7 +147,8 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart' show SemanticsService;
+import 'package:flutter/semantics.dart'
+    show CustomSemanticsAction, SemanticsService;
 
 import '../../../domain/edition/edition_field_type.dart';
 import '../../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
@@ -144,6 +158,8 @@ import '../../../domain/edition/z_sub_list_config.dart';
 import '../../../domain/ports/z_acl.dart';
 import '../../../domain/ports/z_number_display_formatter.dart';
 import '../../l10n/z_localizations.dart';
+import '../../reorder/z_reorder_render_request.dart';
+import '../../reorder/z_reorder_renderer.dart';
 import '../../theme/z_theme.dart';
 import '../../z_form_controller.dart';
 import '../../zcrud_scope.dart';
@@ -570,14 +586,37 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     return config is ZSubListConfig ? config.reorderable : null;
   }
 
-  /// Réordonnancement du mode `inline` : comportement historique — actif par
-  /// défaut (`null` ⇒ flèches rendues, comme depuis toujours).
+  /// Réordonnancement du mode `inline` : actif par défaut (`null` ⇒ le
+  /// glisser-déposer à poignée est offert, comme l'ordre l'a toujours été
+  /// dans ce mode).
   bool get _inlineReorderable => _declaredReorderable ?? true;
 
   /// Réordonnancement du mode `compact` : actif UNIQUEMENT sur déclaration
   /// EXPLICITE (`reorderable: true`). Le défaut `null` laisse le rendu compact
   /// strictement inchangé — un hôte passif ne voit aucun contrôle apparaître.
   bool get _compactReorderable => _declaredReorderable == true;
+
+  /// Résout le renderer de réordonnancement : celui injecté au scope
+  /// (`ZcrudScope.reorderRenderer`), sinon le repli **interne** zéro-config.
+  ///
+  /// Le repli ne peut pas être celui d'un satellite (`zcrud_core` ne dépend
+  /// d'aucun autre paquet zcrud — invariant AD-1) : c'est une liste
+  /// réordonnable minimale bâtie sur le seul SDK, qui honore le contrat du
+  /// port (index linéaires, voie sémantique non gestuelle, appelant source de
+  /// vérité). Il n'est consulté QUE quand l'ordre est éditable : ce chemin ne
+  /// lève jamais de `ZScopeError`, la capacité reste fonctionnelle sans
+  /// aucune injection.
+  ZReorderRenderer _resolveReorderRenderer(BuildContext context) =>
+      ZcrudScope.maybeOf(context)?.reorderRenderer ??
+      const _ZSubListFallbackReorderRenderer();
+
+  /// Poignée de glissement d'une ligne, posée en TÊTE de ligne — cf.
+  /// [_ZSubListDragHandle] (affordance ≥ 48 dp, libellé sémantique, geste
+  /// ancré sur la poignée).
+  Widget _dragHandle(BuildContext context, int index) => _ZSubListDragHandle(
+        index: index,
+        semanticLabel: label(context, 'reorderItem'),
+      );
 
   /// Mode de rendu — `compact` (défaut) si config absente/non conforme.
   ///
@@ -807,17 +846,9 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     _syncToParent();
   }
 
-  void _move(int index, int delta) {
-    final target = index + delta;
-    if (target < 0 || target >= _items.length) return;
-    setState(() {
-      final item = _items.removeAt(index);
-      _items.insert(target, item);
-    });
-    _syncToParent();
-  }
-
-  /// Déplace l'item d'indice [from] à l'indice [to] — le rappel d'ordre servi
+  /// Déplace l'item d'indice [from] à l'indice [to] — le **canal structurel
+  /// unique** de l'ordre : le glisser-déposer et les actions sémantiques du
+  /// port `ZReorderRenderer`, comme le rappel d'ordre servi
   /// aux seams (`ZSubListViewData.onReorder`). Défensif (invariant AD-10) :
   /// indices hors bornes ou déplacement sur place ⇒ no-op, jamais une
   /// exception. Le `setState` ne reconstruit que ce conteneur (canal
@@ -883,7 +914,11 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     }
   }
 
-  /// Rendu **inline** — STRICTEMENT préservé.
+  /// Rendu **inline** — sous-formulaires imbriqués empilés.
+  ///
+  /// L'ordre s'édite par **glisser-déposer à poignée** (jamais par des
+  /// flèches) : la pile des cartes est rendue par le port `ZReorderRenderer`
+  /// dès que l'ordre est éditable, avec le repli interne sans injection.
   Widget _buildInline(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     final resolvedLabel = label(
@@ -892,9 +927,39 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       fallback: widget.field.label ?? widget.field.name,
     );
     final removeLabel = label(context, 'removeItem');
-    final upLabel = label(context, 'moveItemUp');
-    final downLabel = label(context, 'moveItemDown');
     final readOnly = widget.field.readOnly;
+    final reorderable = _inlineReorderable && !readOnly;
+
+    // Carte d'un item — la MÊME dans les deux chemins (ordre figé / ordre
+    // éditable) : seule la poignée s'ajoute quand l'ordre s'édite.
+    Widget card(BuildContext cardContext, int i) => KeyedSubtree(
+          key: ValueKey<String>(_items[i].id),
+          child: _SubItemCard(
+            borderColor: theme.fieldBorderColor,
+            radius: theme.radiusM,
+            removable: !readOnly,
+            removeLabel: removeLabel,
+            handle: reorderable ? _dragHandle(cardContext, i) : null,
+            // Jeton absent ⇒ `_rowVerticalPadding` rend le littéral d'avant.
+            verticalPadding: _rowVerticalPadding(theme),
+            onRemove: () => _removeAt(i),
+            // Seul seam servi en `inline` : des actions **en plus** des
+            // contrôles de la carte. Les autres seams remplaceraient ou
+            // désynchroniseraient des sous-champs vivants (état, focus —
+            // invariant AD-2) ; ceux-là s'ajoutent sans y toucher. Le
+            // transformateur d'affichage ne vaut pas ici : ce mode affiche
+            // la donnée éditée, pas son habillage.
+            extraActions:
+                _extraActions(context, _items[i], i, readOnly: readOnly),
+            fields: <Widget>[
+              for (final f in _itemFields)
+                KeyedSubtree(
+                  key: ValueKey<String>('${_items[i].id}/${f.name}'),
+                  child: _buildItemField(_items[i], f),
+                ),
+            ],
+          ),
+        );
 
     // a11y : le conteneur ne porte PAS `label:` — le `Text` visible
     // ci-dessous fournit déjà le nom accessible de la section. Un `label:`
@@ -907,48 +972,45 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
+            padding: EdgeInsetsDirectional.fromSTEB(
+              16,
+              _captionTopPadding(theme),
+              16,
+              0,
+            ),
             child: Text(
               resolvedLabel,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
-          for (var i = 0; i < _items.length; i++)
-            KeyedSubtree(
-              key: ValueKey<String>(_items[i].id),
-              child: _SubItemCard(
-                borderColor: theme.fieldBorderColor,
-                radius: theme.radiusM,
-                index: i,
-                count: _items.length,
-                reorderable: _inlineReorderable && !readOnly,
-                removable: !readOnly,
-                removeLabel: removeLabel,
-                upLabel: upLabel,
-                downLabel: downLabel,
-                onRemove: () => _removeAt(i),
-                onMoveUp: () => _move(i, -1),
-                onMoveDown: () => _move(i, 1),
-                // Seul seam servi en `inline` : des actions **en plus** des
-                // contrôles de la carte. Les autres seams remplaceraient ou
-                // désynchroniseraient des sous-champs vivants (état, focus —
-                // invariant AD-2) ; ceux-là s'ajoutent sans y toucher. Le
-                // transformateur d'affichage ne vaut pas ici : ce mode affiche
-                // la donnée éditée, pas son habillage.
-                extraActions:
-                    _extraActions(context, _items[i], i, readOnly: readOnly),
-                fields: <Widget>[
-                  for (final f in _itemFields)
-                    KeyedSubtree(
-                      key: ValueKey<String>('${_items[i].id}/${f.name}'),
-                      child: _buildItemField(_items[i], f),
-                    ),
-                ],
+          if (!reorderable)
+            for (var i = 0; i < _items.length; i++) card(context, i)
+          else
+            // `_moveTo` reste le canal structurel unique (invariant AD-2 :
+            // seule la liste se reconstruit) ; l'ordre est agrégé et persisté
+            // à l'identique de ce que faisait `_move`.
+            _resolveReorderRenderer(context).build(
+              context,
+              ZReorderRenderRequest(
+                itemIds: <String>[for (final item in _items) item.id],
+                itemBuilder: card,
+                onReorder: _moveTo,
+                // Une pile de sous-formulaires est une COLONNE : la
+                // projection en grille du port est bornée à 1 colonne.
+                minItemWidth: 280,
+                maxColumns: 1,
+                moveBeforeSemanticLabel: label(context, 'moveItemUp'),
+                moveAfterSemanticLabel: label(context, 'moveItemDown'),
               ),
             ),
           if (!readOnly)
             Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 8),
+              padding: EdgeInsetsDirectional.fromSTEB(
+                16,
+                4,
+                16,
+                _blockEndPadding(theme),
+              ),
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: TextButton.icon(
@@ -1462,6 +1524,51 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   double _minColumnWidth(ZcrudTheme tokens) =>
       tokens.subListColumnMinWidth ?? tokens.readRowLabelWidth ?? 160;
 
+  // ── Espacement vertical INTERNE du bloc (jetons `ZcrudTheme`) ──────────────
+  //
+  // Un bloc de sous-liste dépense de la hauteur en cinq postes, tous jusqu'ici
+  // écrits en dur. Relevé sur deux sous-listes consécutives (`getRect`, deux
+  // items chacune, surface 1200×2400) :
+  //
+  //   compact tabulaire   : 8 (cellule basse) + 4 (marge de table) + 12
+  //                         (`fieldGap`, externe) + 8 (libellé suivant) = 32
+  //   compact lignes libres: 14 (jeu sous le texte dans la cible de 48 dp de
+  //                         la poignée) + 4 (ligne) + 12 + 8 = 38
+  //   inline              : 4 (carte) + 4 + 48 (bouton d'ajout) + 8 (fin de
+  //                         bloc) + 12 + 8 = 84
+  //
+  // Le poste « poignée » (14 dp) N'EST PAS tokenisé : c'est la cible tactile
+  // de 48 dp d'AD-13, un plancher, pas une décoration. Les autres le sont.
+  //
+  // Chaque résolveur rend le littéral d'avant quand le jeton est absent :
+  // l'inertie est portée par le `??`, pas par une promesse.
+
+  /// Réserve au-dessus du libellé du bloc (les trois modes).
+  double _captionTopPadding(ZcrudTheme tokens) =>
+      tokens.subListCaptionTopPadding ?? 8;
+
+  /// Réserve au-dessus de la ligne d'en-têtes de colonnes (compact non
+  /// tabulaire).
+  double _headerTopPadding(ZcrudTheme tokens) =>
+      tokens.subListHeaderTopPadding ?? 8;
+
+  /// Padding vertical de part et d'autre d'une ligne (`compact` non tabulaire)
+  /// ou d'une carte d'item (`inline`).
+  double _rowVerticalPadding(ZcrudTheme tokens) =>
+      tokens.subListRowVerticalPadding ?? 4;
+
+  /// Padding vertical à l'intérieur d'une cellule du résumé tabulaire.
+  double _cellVerticalPadding(ZcrudTheme tokens) =>
+      tokens.subListCellVerticalPadding ?? 8;
+
+  /// Marge verticale au-dessus/au-dessous de la table de résumé.
+  double _tableVerticalMargin(ZcrudTheme tokens) =>
+      tokens.subListTableVerticalMargin ?? 4;
+
+  /// Réserve de fin de bloc, sous le contrôle d'ajout (`inline`, `tags`).
+  double _blockEndPadding(ZcrudTheme tokens) =>
+      tokens.subListBlockEndPadding ?? 8;
+
   /// Le résumé doit-il s'**empiler** sur une surface de [width] logique ?
   ///
   /// Le seuil n'est pas un nombre : il se calcule à chaque mise en page, à
@@ -1501,14 +1608,28 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// réserve de fin reproduit leur emprise pour que les colonnes tombent
   /// réellement en face. Une ligne **soft-deleted** n'expose qu'une action
   /// (restaurer) + un badge : ses colonnes sont donc décalées de la différence.
-  Widget _summaryHeaderRow(BuildContext context, int actionCount) {
+  Widget _summaryHeaderRow(
+    BuildContext context,
+    int actionCount, {
+    required ZcrudTheme theme,
+    double leadingExtent = 0,
+  }) {
     final summaryColumns = _summaryColumns;
     return Padding(
       // Reproduit la géométrie de `_CompactRow` : marge externe 16, marge
       // interne de début 12, réserve de fin = actions + marge interne 4.
-      padding: const EdgeInsetsDirectional.fromSTEB(28, 8, 16, 0),
+      // [leadingExtent] réserve en TÊTE la largeur de la poignée de
+      // glissement quand l'ordre est éditable — sans elle, les en-têtes
+      // tomberaient décalés d'une poignée par rapport aux cellules.
+      padding: EdgeInsetsDirectional.fromSTEB(
+        28,
+        _headerTopPadding(theme),
+        16,
+        0,
+      ),
       child: Row(
         children: <Widget>[
+          if (leadingExtent > 0) SizedBox(width: leadingExtent),
           for (final column in summaryColumns)
             Expanded(
               child: Padding(
@@ -1590,7 +1711,6 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     BuildContext context, {
     required ZcrudTheme theme,
     required int actionCount,
-    required bool reorderable,
     required bool canView,
     required bool canUpdate,
     required bool canDelete,
@@ -1607,8 +1727,14 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     final hasActions = actionCount > 0 || anyDeleted;
     final actionsIndex = columns.length;
 
+    final double cellV = _cellVerticalPadding(theme);
     Widget cell(Widget child, {required bool last}) => Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(12, 8, last ? 12 : 16, 8),
+          padding: EdgeInsetsDirectional.fromSTEB(
+            12,
+            cellV,
+            last ? 12 : 16,
+            cellV,
+          ),
           child: child,
         );
 
@@ -1679,13 +1805,6 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                     ),
                   _RowActions(
                     deleted: item.deleted,
-                    reorderable: reorderable,
-                    canMoveUp: i > 0,
-                    canMoveDown: i < _items.length - 1,
-                    upLabel: label(context, 'moveItemUp'),
-                    downLabel: label(context, 'moveItemDown'),
-                    onMoveUp: () => _move(i, -1),
-                    onMoveDown: () => _move(i, 1),
                     actionIconSize: theme.subListActionIconSize,
                     viewColor: theme.subListViewActionColor,
                     editColor: theme.subListEditActionColor,
@@ -1717,8 +1836,9 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       );
     }
 
+    final double tableV = _tableVerticalMargin(theme);
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 4),
+      padding: EdgeInsetsDirectional.fromSTEB(16, tableV, 16, tableV),
       child: Table(
         // La première colonne absorbe le jeu (surplus ET déficit) ; les autres
         // sont dimensionnées par leur contenu.
@@ -2554,14 +2674,16 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     final canDelete = !readOnly &&
         acl.can(ZCrudAction.delete, collectionId: cid) &&
         _showDeleteAction;
-    // Réordonnancement compact : les MÊMES flèches monter/descendre qu'en
-    // `inline`, jamais une poignée de glissement. Choix mesuré sur ce que ce
-    // mode rend : ses lignes vivent dans une `Table` (rendu nominal) ou un
-    // `ListView` non réordonnable (au-delà du budget) — un glisser-déposer
-    // exigerait un `ReorderableListView`, incompatible avec la table et avec
-    // le repli mesuré. Les flèches réutilisent `_move` tel quel : même geste,
-    // même canal structurel (invariant AD-2 — seule la liste se reconstruit),
-    // même identité de ligne préservée.
+    // Réordonnancement compact : GLISSER-DÉPOSER à poignée, résolu par le
+    // port `ZReorderRenderer` — plus aucune flèche monter/descendre. Une
+    // `Table` fige ses lignes (aucun drag par ligne n'y est possible) : quand
+    // l'ordre est éditable, les lignes vivent donc HORS de la table — la
+    // liste de lignes empilées, dont chaque ligne porte sa poignée — mesuré
+    // sur le cas de référence qui résout exactement cette contrainte par des
+    // lignes libres + poignées propres plutôt qu'une table. Le canal
+    // structurel reste `_move`/`_moveTo` (invariant AD-2 — seule la liste se
+    // reconstruit), l'identité de ligne est préservée, l'ordre est agrégé et
+    // persisté à l'identique.
     final canReorder = _compactReorderable && !readOnly;
 
     // Actions supplémentaires : précalculées **UNIQUEMENT** si le seam est
@@ -2632,8 +2754,10 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       }
     }
 
-    final actionCount = (canReorder ? 2 : 0) +
-        (canView ? 1 : 0) +
+    // La poignée de glissement n'entre PAS dans ce compte : elle vit en TÊTE
+    // de ligne (jamais dans la zone d'actions de fin), et la réserve d'en-tête
+    // qui lui correspond est portée séparément (`leadingExtent`).
+    final actionCount = (canView ? 1 : 0) +
         (canUpdate ? 1 : 0) +
         (canDelete ? 1 : 0) +
         extraCount +
@@ -2666,8 +2790,12 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
           //   widget OPAQUE qu'il ne peut pas découper en cellules ;
           // - le budget de lignes est tenu (une table ne se virtualise pas —
           //   voir `ZSubListFieldWidget.summaryTableRowBudget`).
+          // - l'ordre n'est pas éditable : une `Table` fige ses lignes, le
+          //   rendu réordonnable est la liste de lignes à poignée (cf. le
+          //   commentaire de `canReorder`).
           final tabular = _showSummaryHeaders &&
               !stacked &&
+              !canReorder &&
               listSeam == null &&
               _seams?.itemBuilder == null &&
               _summaryColumns.isNotEmpty &&
@@ -2677,7 +2805,14 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
           // Une ligne, à l'indice demandé. Indice hors bornes ⇒
           // `SizedBox.shrink()` : un conteneur hôte qui redemande un item
           // disparu ne fait pas échouer le rendu (invariant AD-10).
-          Widget buildRow(BuildContext rowContext, int i) {
+          // [withHandle] n'est vrai que sur la voie du renderer : les lignes
+          // servies à un conteneur hôte (`listViewBuilder`) n'emportent PAS de
+          // poignée — le conteneur rend son propre contrôle d'ordre
+          // (`ZSubListViewData.onReorder`), une poignée du socle y serait une
+          // affordance inerte. Une ligne soft-deleted n'en porte pas non plus
+          // (exclue de l'agrégation : son ordre n'est pas une donnée).
+          Widget buildRow(BuildContext rowContext, int i,
+              {bool withHandle = false}) {
             if (i < 0 || i >= _items.length) return const SizedBox.shrink();
             final item = _items[i];
             final display = _displayDataOf(item);
@@ -2686,17 +2821,16 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
               child: _CompactRow(
                 borderColor: theme.fieldBorderColor,
                 radius: theme.radiusM,
-                reorderable: canReorder,
-                canMoveUp: i > 0,
-                canMoveDown: i < _items.length - 1,
-                upLabel: label(rowContext, 'moveItemUp'),
-                downLabel: label(rowContext, 'moveItemDown'),
-                onMoveUp: () => _move(i, -1),
-                onMoveDown: () => _move(i, 1),
+                leading: withHandle && !item.deleted
+                    ? _dragHandle(rowContext, i)
+                    : null,
                 actionIconSize: theme.subListActionIconSize,
                 viewColor: theme.subListViewActionColor,
                 editColor: theme.subListEditActionColor,
                 deleteColor: theme.subListDeleteActionColor,
+                // Jeton absent ⇒ `_rowVerticalPadding` rend le littéral
+                // d'avant.
+                verticalPadding: _rowVerticalPadding(theme),
                 summary: _rowSummary(
                   rowContext,
                   item,
@@ -2735,6 +2869,29 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
           // n'est pas appelé pour rien (le moteur legacy faisait le même
           // choix).
           Widget buildListBody() {
+            // Ordre éditable sans conteneur hôte : la liste de lignes est
+            // rendue par le port `ZReorderRenderer` (scope, sinon repli
+            // interne) — poignée visible par ligne, glisser-déposer, actions
+            // sémantiques de déplacement (contrat du port, invariant AD-13).
+            if (listSeam == null && canReorder) {
+              return _resolveReorderRenderer(context).build(
+                context,
+                ZReorderRenderRequest(
+                  itemIds: <String>[for (final item in _items) item.id],
+                  itemBuilder: (rowContext, i) =>
+                      buildRow(rowContext, i, withHandle: true),
+                  onReorder: _moveTo,
+                  // Des lignes de résumé sont une COLONNE : la projection en
+                  // grille du port est bornée à 1 colonne, sur la largeur
+                  // réellement offerte.
+                  minItemWidth:
+                      constraints.maxWidth.isFinite ? constraints.maxWidth : 280,
+                  maxColumns: 1,
+                  moveBeforeSemanticLabel: label(context, 'moveItemUp'),
+                  moveAfterSemanticLabel: label(context, 'moveItemDown'),
+                ),
+              );
+            }
             final Widget nativeList = ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -2779,7 +2936,12 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
           // création est refusée : ce seam n'ouvre aucun geste), soit la ligne
           // native, inchangée.
           Widget caption = Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
+            padding: EdgeInsetsDirectional.fromSTEB(
+              16,
+              _captionTopPadding(theme),
+              16,
+              0,
+            ),
             child: Row(
               children: <Widget>[
                 Expanded(
@@ -2832,7 +2994,6 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                   context,
                   theme: theme,
                   actionCount: actionCount,
-                  reorderable: canReorder,
                   canView: canView,
                   canUpdate: canUpdate,
                   canDelete: canDelete,
@@ -2854,7 +3015,12 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                     !stacked &&
                     _summaryColumns.isNotEmpty &&
                     _items.isNotEmpty)
-                  _summaryHeaderRow(context, actionCount),
+                  _summaryHeaderRow(
+                    context,
+                    actionCount,
+                    theme: theme,
+                    leadingExtent: canReorder ? _actionExtent : 0,
+                  ),
                 if (_items.isEmpty)
                   Padding(
                     padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
@@ -2904,6 +3070,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       widget.field.label ?? widget.field.name,
       fallback: widget.field.label ?? widget.field.name,
     );
+    final theme = ZcrudTheme.of(context);
     final readOnly = widget.field.readOnly;
     final removeLabel = label(context, 'removeItem');
     // Items visibles : les items soft-deleted sont EXCLUS (cohérent avec
@@ -2918,7 +3085,12 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     // natif, ou un `SizedBox.shrink()` en lecture seule), sinon la ligne
     // native — inchangée.
     Widget caption = Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
+      padding: EdgeInsetsDirectional.fromSTEB(
+        16,
+        _captionTopPadding(theme),
+        16,
+        0,
+      ),
       child: Row(
         children: <Widget>[
           Expanded(
@@ -2965,7 +3137,12 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         children: <Widget>[
           caption,
           Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 8),
+            padding: EdgeInsetsDirectional.fromSTEB(
+              16,
+              4,
+              16,
+              _blockEndPadding(theme),
+            ),
             child: Wrap(
               spacing: 8,
               runSpacing: 4,
@@ -3042,34 +3219,28 @@ class _CompactRow extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onRestore,
-    this.reorderable = false,
-    this.canMoveUp = false,
-    this.canMoveDown = false,
-    this.upLabel = '',
-    this.downLabel = '',
-    this.onMoveUp,
-    this.onMoveDown,
+    this.leading,
     this.actionIconSize,
     this.viewColor,
     this.editColor,
     this.deleteColor,
+    this.verticalPadding = 4,
     this.extraActions = const <Widget>[],
     this.menu,
   });
+
+  /// Padding vertical (dp) de part et d'autre de la ligne — résolu par
+  /// l'appelant depuis `ZcrudTheme.subListRowVerticalPadding`. Le défaut `4`
+  /// est le littéral d'avant le jeton.
+  final double verticalPadding;
 
   final Color? borderColor;
   final Radius radius;
   final Widget summary;
 
-  /// Flèches d'ordre (réordonnancement compact déclaré) — relayées telles
-  /// quelles à `_RowActions`.
-  final bool reorderable;
-  final bool canMoveUp;
-  final bool canMoveDown;
-  final String upLabel;
-  final String downLabel;
-  final VoidCallback? onMoveUp;
-  final VoidCallback? onMoveDown;
+  /// Contrôle de **tête de ligne** (poignée de glissement quand l'ordre est
+  /// éditable) — `null` ⇒ la ligne d'avant, à l'identique.
+  final Widget? leading;
 
   /// Habillage des actions de ligne (jetons `subListAction*`/`subList*Color`
   /// de `ZcrudTheme`) — `null` ⇒ rendu natif inchangé.
@@ -3131,7 +3302,12 @@ class _CompactRow extends StatelessWidget {
           )
         : summary;
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 4),
+      padding: EdgeInsetsDirectional.fromSTEB(
+        16,
+        verticalPadding,
+        16,
+        verticalPadding,
+      ),
       child: DecoratedBox(
         decoration: BoxDecoration(
           border: borderColor == null ? null : Border.all(color: borderColor!),
@@ -3141,16 +3317,10 @@ class _CompactRow extends StatelessWidget {
           padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 4, 0),
           child: Row(
             children: <Widget>[
+              ?leading,
               Expanded(child: summaryContent),
               _RowActions(
                 deleted: deleted,
-                reorderable: reorderable,
-                canMoveUp: canMoveUp,
-                canMoveDown: canMoveDown,
-                upLabel: upLabel,
-                downLabel: downLabel,
-                onMoveUp: onMoveUp,
-                onMoveDown: onMoveDown,
                 actionIconSize: actionIconSize,
                 viewColor: viewColor,
                 editColor: editColor,
@@ -3204,13 +3374,6 @@ class _RowActions extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onRestore,
-    this.reorderable = false,
-    this.canMoveUp = false,
-    this.canMoveDown = false,
-    this.upLabel = '',
-    this.downLabel = '',
-    this.onMoveUp,
-    this.onMoveDown,
     this.actionIconSize,
     this.viewColor,
     this.editColor,
@@ -3231,17 +3394,6 @@ class _RowActions extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onRestore;
-
-  /// Flèches d'ordre — rendues AVANT les actions natives, comme en `inline`
-  /// (mêmes glyphes, même geste), et jamais sur une ligne soft-deleted (elle
-  /// est exclue de l'agrégation : son ordre n'est pas une donnée).
-  final bool reorderable;
-  final bool canMoveUp;
-  final bool canMoveDown;
-  final String upLabel;
-  final String downLabel;
-  final VoidCallback? onMoveUp;
-  final VoidCallback? onMoveDown;
 
   /// Habillage déclaré des actions (jetons de `ZcrudTheme`) — `null` ⇒ le
   /// rendu natif, inchangé.
@@ -3281,18 +3433,10 @@ class _RowActions extends StatelessWidget {
             onPressed: onRestore,
           )
         else ...<Widget>[
-          if (reorderable)
-            _action(
-              icon: Icons.arrow_upward,
-              tooltip: upLabel,
-              onPressed: canMoveUp ? onMoveUp : null,
-            ),
-          if (reorderable)
-            _action(
-              icon: Icons.arrow_downward,
-              tooltip: downLabel,
-              onPressed: canMoveDown ? onMoveDown : null,
-            ),
+          // L'ordre ne s'édite JAMAIS ici : le déplacement est un
+          // glisser-déposer à poignée de TÊTE de ligne (port
+          // `ZReorderRenderer`), doublé d'actions sémantiques — pas une
+          // action de fin de ligne.
           if (canView)
             _action(
               icon: Icons.visibility,
@@ -3590,48 +3734,51 @@ class _ZSubItemFormState extends State<_ZSubItemForm> {
   }
 }
 
-/// Carte d'un item imbriqué : sous-formulaire + contrôles (retrait/réordo)
-/// accessibles (`IconButton` ≥ 48 dp), bordure dérivée du thème (FR-26).
+/// Carte d'un item imbriqué : sous-formulaire + contrôles (retrait, poignée
+/// de glissement) accessibles (cibles ≥ 48 dp), bordure dérivée du thème
+/// (FR-26).
 class _SubItemCard extends StatelessWidget {
   const _SubItemCard({
     required this.borderColor,
     required this.radius,
-    required this.index,
-    required this.count,
-    required this.reorderable,
     required this.removable,
     required this.removeLabel,
-    required this.upLabel,
-    required this.downLabel,
     required this.onRemove,
-    required this.onMoveUp,
-    required this.onMoveDown,
     required this.fields,
+    this.handle,
+    this.verticalPadding = 4,
     this.extraActions = const <Widget>[],
   });
 
+  /// Padding vertical (dp) de part et d'autre de la carte — résolu par
+  /// l'appelant depuis `ZcrudTheme.subListRowVerticalPadding`. Le défaut `4`
+  /// est le littéral d'avant le jeton.
+  final double verticalPadding;
+
   /// Actions **supplémentaires** de l'hôte (seam `itemActionsBuilder`), déjà
-  /// contraintes à ≥ 48 dp, rendues **après** retrait/réordonnancement.
+  /// contraintes à ≥ 48 dp, rendues **après** poignée et retrait.
   final List<Widget> extraActions;
 
   final Color? borderColor;
   final Radius radius;
-  final int index;
-  final int count;
-  final bool reorderable;
   final bool removable;
   final String removeLabel;
-  final String upLabel;
-  final String downLabel;
   final VoidCallback onRemove;
-  final VoidCallback onMoveUp;
-  final VoidCallback onMoveDown;
   final List<Widget> fields;
+
+  /// Poignée de glissement (ordre éditable) — `null` ⇒ aucune affordance
+  /// d'ordre sur la carte.
+  final Widget? handle;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 4),
+      padding: EdgeInsetsDirectional.fromSTEB(
+        16,
+        verticalPadding,
+        16,
+        verticalPadding,
+      ),
       child: DecoratedBox(
         decoration: BoxDecoration(
           border: borderColor == null ? null : Border.all(color: borderColor!),
@@ -3642,19 +3789,10 @@ class _SubItemCard extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
+                // Poignée en TÊTE de ligne (côté début — directionnel) :
+                // l'affordance d'ordre ouvre la ligne, les actions la ferment.
+                ?handle,
                 Expanded(child: Column(children: fields)),
-                if (reorderable)
-                  IconButton(
-                    icon: const Icon(Icons.arrow_upward),
-                    tooltip: upLabel,
-                    onPressed: index > 0 ? onMoveUp : null,
-                  ),
-                if (reorderable)
-                  IconButton(
-                    icon: const Icon(Icons.arrow_downward),
-                    tooltip: downLabel,
-                    onPressed: index < count - 1 ? onMoveDown : null,
-                  ),
                 if (removable)
                   IconButton(
                     icon: const Icon(Icons.delete_outline),
@@ -3667,6 +3805,254 @@ class _SubItemCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Repli **interne** du port `ZReorderRenderer` pour la sous-liste.
+///
+/// `zcrud_core` ne peut dépendre d'aucun satellite (invariant AD-1) : le
+/// défaut zéro-dépendance des satellites n'est pas atteignable ici, ce repli
+/// est donc bâti sur le seul SDK (`Draggable`/`DragTarget`). Il honore le
+/// contrat du port :
+///
+/// 1. **index linéaires** : déposer sur la ligne *k* appelle
+///    `onReorder(from, k)` — la convention `removeAt`/`insert` du port ;
+/// 2. **voie non gestuelle** : chaque ligne expose les actions sémantiques
+///    « déplacer avant/après » (libellés injectés par la requête, repli l10n
+///    sinon) — la première ligne n'a pas « avant », la dernière pas
+///    « après » ;
+/// 3. **l'appelant est la source de vérité** : aucun ordre optimiste local —
+///    la colonne rend `itemIds` tel quel, le déplacement passe par
+///    `onReorder` ;
+/// 4. **AD-10** : un `onReorder` qui lève est signalé
+///    (`FlutterError.reportError`), jamais fatal au rendu — l'affichage,
+///    resté sur l'ordre de l'appelant, est déjà cohérent.
+///
+/// La colonne est **non paresseuse et réconciliée par clé** : un
+/// réordonnancement DÉPLACE les `Element`s (état et focus des items
+/// préservés — invariant AD-2), il ne les remonte jamais. C'est le motif de
+/// ce choix face au chassis réordonnable du SDK, dont l'identité d'item
+/// inclut l'index (item déplacé = état remonté à neuf) et qui ajoute ses
+/// propres actions sémantiques (doublées avec celles du contrat du port).
+///
+/// La projection en grille de la requête n'est pas honorée : ce repli rend
+/// une **colonne unique** (les appels internes bornent déjà `maxColumns` à
+/// 1). Le geste est le glissement immédiat depuis la poignée de ligne
+/// (`_ZSubListDragHandle`), le dépôt se fait sur la ligne cible ; pas
+/// d'autoscroll — c'est le plancher fonctionnel, un renderer injecté
+/// l'enrichit.
+class _ZSubListFallbackReorderRenderer extends ZReorderRenderer {
+  const _ZSubListFallbackReorderRenderer();
+
+  @override
+  Widget build(BuildContext context, ZReorderRenderRequest request) =>
+      _ZSubListFallbackReorderList(request: request);
+}
+
+/// Colonne réordonnable du repli interne (cf. [_ZSubListFallbackReorderRenderer]).
+class _ZSubListFallbackReorderList extends StatefulWidget {
+  const _ZSubListFallbackReorderList({required this.request});
+
+  final ZReorderRenderRequest request;
+
+  @override
+  State<_ZSubListFallbackReorderList> createState() =>
+      _ZSubListFallbackReorderListState();
+}
+
+class _ZSubListFallbackReorderListState
+    extends State<_ZSubListFallbackReorderList> {
+  /// Index de la ligne en cours de glissement (`null` hors glissement) —
+  /// pilote la seule retouche visuelle (opacité de la ligne d'origine).
+  int? _dragIndex;
+
+  void _onDragStarted(int index) => setState(() => _dragIndex = index);
+
+  void _onDragEnded() {
+    if (!mounted) return;
+    setState(() => _dragIndex = null);
+  }
+
+  void _reorder(int from, int to) {
+    try {
+      widget.request.onReorder(from, to);
+    } catch (error, stack) {
+      // AD-10 : l'échec de la persistance d'ordre ne casse jamais le rendu.
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: error,
+        stack: stack,
+        library: 'zcrud_core',
+        context: ErrorDescription('pendant le réordonnancement d\'une sous-liste'),
+      ));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final request = widget.request;
+    final lastIndex = request.itemIds.length - 1;
+    final moveBefore =
+        request.moveBeforeSemanticLabel ?? label(context, 'moveItemUp');
+    final moveAfter =
+        request.moveAfterSemanticLabel ?? label(context, 'moveItemDown');
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double? width =
+            constraints.maxWidth.isFinite ? constraints.maxWidth : null;
+        return Padding(
+          padding: request.padding ?? EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              for (var i = 0; i < request.itemIds.length; i++)
+                KeyedSubtree(
+                  // Réconciliation PAR CLÉ de la colonne : l'identité de
+                  // ligne est l'identité d'item, jamais l'index.
+                  key: ValueKey<String>(request.itemIds[i]),
+                  child: _row(i, lastIndex, width, moveBefore, moveAfter),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _row(
+    int index,
+    int lastIndex,
+    double? width,
+    String moveBefore,
+    String moveAfter,
+  ) {
+    final request = widget.request;
+    return DragTarget<int>(
+      onWillAcceptWithDetails: (details) => details.data != index,
+      onAcceptWithDetails: (details) => _reorder(details.data, index),
+      builder: (targetContext, candidates, rejected) {
+        Widget row = Semantics(
+          container: true,
+          customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
+            if (index > 0)
+              CustomSemanticsAction(label: moveBefore): () =>
+                  _reorder(index, index - 1),
+            if (index < lastIndex)
+              CustomSemanticsAction(label: moveAfter): () =>
+                  _reorder(index, index + 1),
+          },
+          child: _ZSubListDragScope(
+            index: index,
+            width: width,
+            onDragStarted: _onDragStarted,
+            onDragEnded: _onDragEnded,
+            rowBuilder: () => request.itemBuilder(targetContext, index),
+            child: request.itemBuilder(targetContext, index),
+          ),
+        );
+        // Affordances purement GÉOMÉTRIQUES (aucune couleur — FR-26) : la
+        // ligne d'origine s'estompe pendant son glissement, la cible de
+        // dépôt candidate se contracte légèrement.
+        if (_dragIndex == index) {
+          row = Opacity(opacity: 0.3, child: row);
+        } else if (candidates.isNotEmpty) {
+          row = Transform.scale(scale: 0.98, child: row);
+        }
+        return row;
+      },
+    );
+  }
+}
+
+/// Canal ligne → poignée du repli interne : porte l'index de la ligne, la
+/// largeur offerte (pour l'aperçu glissé) et les crochets de début/fin de
+/// glissement. Absent sous un renderer injecté — la poignée bascule alors
+/// sur le chassis du renderer (cf. [_ZSubListDragHandle]).
+class _ZSubListDragScope extends InheritedWidget {
+  const _ZSubListDragScope({
+    required this.index,
+    required this.width,
+    required this.onDragStarted,
+    required this.onDragEnded,
+    required this.rowBuilder,
+    required super.child,
+  });
+
+  final int index;
+  final double? width;
+  final void Function(int index) onDragStarted;
+  final VoidCallback onDragEnded;
+
+  /// Construit l'aperçu glissé (la ligne elle-même, re-rendue dans
+  /// l'overlay).
+  final Widget Function() rowBuilder;
+
+  static _ZSubListDragScope? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_ZSubListDragScope>();
+
+  @override
+  bool updateShouldNotify(_ZSubListDragScope oldWidget) =>
+      index != oldWidget.index || width != oldWidget.width;
+}
+
+/// Poignée de glissement d'une ligne : affordance visible (glyphe), cible
+/// tactile ≥ 48 dp et libellé sémantique (invariant AD-13).
+///
+/// Le geste s'ancre sur la POIGNÉE, en tête de ligne, jamais sur la ligne
+/// entière (les sous-champs y vivent). Sous le repli interne, la poignée est
+/// un [Draggable] immédiat dont l'aperçu est la ligne re-rendue ; sous un
+/// renderer injecté bâti sur le chassis réordonnable du SDK, elle reste
+/// active via [ReorderableDragStartListener] ; sous tout autre renderer,
+/// elle est une affordance inerte et le geste appartient au renderer
+/// (appui long ou autre — contrat du port).
+class _ZSubListDragHandle extends StatelessWidget {
+  const _ZSubListDragHandle({
+    required this.index,
+    required this.semanticLabel,
+  });
+
+  final int index;
+  final String semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget handle = Semantics(
+      label: semanticLabel,
+      child: const SizedBox(
+        width: 48,
+        height: 48,
+        child: Center(child: Icon(Icons.drag_handle)),
+      ),
+    );
+    final scope = _ZSubListDragScope.maybeOf(context);
+    if (scope == null) {
+      // Renderer injecté : si son chassis est le réordonnable du SDK, cette
+      // poignée démarre son glissement ; sinon elle est inerte sans erreur
+      // (résolution paresseuse au `pointerDown`).
+      return ReorderableDragStartListener(index: index, child: handle);
+    }
+    return Draggable<int>(
+      data: scope.index,
+      maxSimultaneousDrags: 1,
+      dragAnchorStrategy: pointerDragAnchorStrategy,
+      onDragStarted: () => scope.onDragStarted(scope.index),
+      onDragEnd: (_) => scope.onDragEnded(),
+      // L'aperçu vit dans l'OVERLAY, au-dessus du `Material` de l'écran :
+      // sans feuille propre, un sous-champ Material (TextField…) de la ligne
+      // glissée lèverait au rendu. Transparence structurelle — aucune
+      // couleur posée.
+      feedback: Material(
+        type: MaterialType.transparency,
+        child: Opacity(
+          opacity: 0.9,
+          child: SizedBox(
+            width: scope.width,
+            child: Builder(builder: (_) => scope.rowBuilder()),
+          ),
+        ),
+      ),
+      child: handle,
     );
   }
 }

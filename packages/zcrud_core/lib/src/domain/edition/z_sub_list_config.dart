@@ -174,19 +174,25 @@ class ZSubListConfig extends ZFieldConfig {
   /// Sous-schéma `const` d'un item (projeté 1:1 en sous-formulaire imbriqué).
   final List<ZFieldSpec> itemFields;
 
-  /// Gouverne le **réordonnancement** (monter/descendre) des items
-  /// (`subItems`) — déclaration **tri-état** :
+  /// Gouverne le **réordonnancement** des items (`subItems`) — déclaration
+  /// **tri-état**. Le contrôle d'ordre est un **glisser-déposer à poignée**
+  /// (rendu par le `ZReorderRenderer` injecté au scope, sinon un repli
+  /// interne), doublé d'**actions sémantiques** de déplacement par ligne
+  /// (voie non gestuelle, accessible au lecteur d'écran) :
   ///
-  /// - `null` (**défaut**) — comportement historique : les flèches d'ordre ne
-  ///   sont rendues qu'en mode `inline` ; les modes `compact` et `tags` n'en
-  ///   rendent aucune. Un hôte qui ne déclare rien ne voit rien bouger.
+  /// - `null` (**défaut**) — l'ordre n'est éditable qu'en mode `inline` ;
+  ///   les modes `compact` et `tags` ne rendent aucun contrôle d'ordre. Un
+  ///   hôte qui ne déclare rien ne voit rien bouger.
   /// - `true` (**explicite**) — l'ordre est éditable partout où un contrôle
-  ///   d'ordre a un sens : flèches monter/descendre en `inline` **et** en
-  ///   `compact` (l'ordre des items EST une donnée — il est agrégé tel quel
-  ///   vers la tranche parente). Le mode `tags` ne sait pas l'honorer (une
-  ///   puce n'a ni rangée ni poignée) : la déclaration y est **signalée par
-  ///   une assertion de debug**, jamais ignorée en silence.
-  /// - `false` — aucun réordonnancement, dans aucun mode.
+  ///   d'ordre a un sens : poignée + actions sémantiques en `inline` **et**
+  ///   en `compact` (l'ordre des items EST une donnée — il est agrégé tel
+  ///   quel vers la tranche parente). En `compact`, des lignes réordonnables
+  ///   sont rendues **hors** de la table de résumé (liste de lignes à
+  ///   poignée, en-têtes de colonnes conservés). Le mode `tags` ne sait pas
+  ///   l'honorer (une puce n'a ni rangée ni poignée) : la déclaration y est
+  ///   **signalée par une assertion de debug**, jamais ignorée en silence.
+  /// - `false` — aucun réordonnancement, dans aucun mode — ni poignée, ni
+  ///   action sémantique, même avec un renderer injecté au scope.
   ///
   /// Le conteneur libre d'un hôte ([ZSubListSeams.listViewBuilder] via
   /// `ZSubListViewData.onReorder`) reçoit le rappel d'ordre tant que ce champ

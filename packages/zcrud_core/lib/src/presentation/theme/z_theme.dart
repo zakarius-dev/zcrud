@@ -392,6 +392,12 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.subListAddControlRadius,
     this.subListAddControlSize,
     this.subListAddControlIconColor,
+    this.subListCaptionTopPadding,
+    this.subListHeaderTopPadding,
+    this.subListRowVerticalPadding,
+    this.subListCellVerticalPadding,
+    this.subListTableVerticalMargin,
+    this.subListBlockEndPadding,
     this.adornmentIconBackgroundAlpha,
     this.adornmentIconBackgroundRadius,
     this.adornmentIconSize,
@@ -944,6 +950,60 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Couleur de l'**icône** du contrôle d'ajout (`Icons.add`). `null`
   /// (défaut) ⇒ couleur d'icône ambiante — rendu inchangé.
   final Color? subListAddControlIconColor;
+
+  /// Réserve verticale (dp) **au-dessus du libellé** d'une sous-liste — le
+  /// haut du bloc, dans les trois modes d'affichage (`compact`, `inline`,
+  /// `tags`). `null` (défaut) ⇒ `8` — rendu strictement inchangé.
+  ///
+  /// C'est l'un des deux postes qui séparent visuellement deux sous-listes
+  /// consécutives : la fin du bloc précédent ([subListBlockEndPadding],
+  /// [subListTableVerticalMargin] ou [subListRowVerticalPadding] selon le
+  /// mode), l'écart inter-champs (`fieldGap`), puis cette réserve-ci.
+  final double? subListCaptionTopPadding;
+
+  /// Réserve verticale (dp) au-dessus de la **ligne d'en-têtes de colonnes**
+  /// d'un résumé compact **non tabulaire** (celle qui reproduit la géométrie
+  /// des cellules). `null` (défaut) ⇒ `8` — rendu strictement inchangé.
+  ///
+  /// Sans effet en mode tabulaire : l'en-tête y est une ligne de la `Table`,
+  /// dont l'espacement relève de [subListCellVerticalPadding].
+  final double? subListHeaderTopPadding;
+
+  /// Padding vertical (dp) appliqué **de part et d'autre de chaque ligne**
+  /// d'une sous-liste : la ligne de résumé du mode `compact` non tabulaire et
+  /// la carte d'item du mode `inline`. `null` (défaut) ⇒ `4` — rendu
+  /// strictement inchangé.
+  ///
+  /// Deux lignes consécutives sont donc séparées de `2 ×` cette valeur. La
+  /// hauteur de la ligne elle-même n'en dépend pas : une ligne réordonnable
+  /// porte une poignée dont la cible tactile reste ≥ 48 dp (invariant AD-13),
+  /// plancher qu'aucun jeton ne descend.
+  final double? subListRowVerticalPadding;
+
+  /// Padding vertical (dp) **à l'intérieur d'une cellule** du résumé
+  /// **tabulaire** (en-têtes et valeurs). `null` (défaut) ⇒ `8` — rendu
+  /// strictement inchangé.
+  ///
+  /// C'est le poste dominant de la hauteur d'une ligne de table : la hauteur
+  /// d'une ligne vaut le texte + `2 ×` cette valeur.
+  final double? subListCellVerticalPadding;
+
+  /// Marge verticale (dp) au-dessus et au-dessous de la **table de résumé**
+  /// (mode `compact` tabulaire). `null` (défaut) ⇒ `4` — rendu strictement
+  /// inchangé.
+  ///
+  /// La marge basse est la **réserve de fin de bloc** de ce mode : ce que ce
+  /// jeton retire est retiré entre la dernière ligne et le bloc suivant.
+  final double? subListTableVerticalMargin;
+
+  /// Réserve verticale (dp) **en fin de bloc**, sous le contrôle d'ajout des
+  /// modes `inline` et `tags`. `null` (défaut) ⇒ `8` — rendu strictement
+  /// inchangé.
+  ///
+  /// Sans objet quand aucun contrôle d'ajout n'est rendu (lecture seule) : le
+  /// bloc se termine alors sur sa dernière ligne, dont la réserve relève de
+  /// [subListRowVerticalPadding].
+  final double? subListBlockEndPadding;
 
   /// **Opacité** (`0..1`) du fond de la « pastille » peinte sous un ornement
   /// **icône** `prefix`/`suffix` décoratif d'un champ. La pastille est remplie
@@ -2428,6 +2488,12 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Radius? subListAddControlRadius,
     double? subListAddControlSize,
     Color? subListAddControlIconColor,
+    double? subListCaptionTopPadding,
+    double? subListHeaderTopPadding,
+    double? subListRowVerticalPadding,
+    double? subListCellVerticalPadding,
+    double? subListTableVerticalMargin,
+    double? subListBlockEndPadding,
     double? adornmentIconBackgroundAlpha,
     Radius? adornmentIconBackgroundRadius,
     double? adornmentIconSize,
@@ -2646,6 +2712,18 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         subListAddControlSize ?? this.subListAddControlSize,
     subListAddControlIconColor:
         subListAddControlIconColor ?? this.subListAddControlIconColor,
+    subListCaptionTopPadding:
+        subListCaptionTopPadding ?? this.subListCaptionTopPadding,
+    subListHeaderTopPadding:
+        subListHeaderTopPadding ?? this.subListHeaderTopPadding,
+    subListRowVerticalPadding:
+        subListRowVerticalPadding ?? this.subListRowVerticalPadding,
+    subListCellVerticalPadding:
+        subListCellVerticalPadding ?? this.subListCellVerticalPadding,
+    subListTableVerticalMargin:
+        subListTableVerticalMargin ?? this.subListTableVerticalMargin,
+    subListBlockEndPadding:
+        subListBlockEndPadding ?? this.subListBlockEndPadding,
     adornmentIconBackgroundAlpha:
         adornmentIconBackgroundAlpha ?? this.adornmentIconBackgroundAlpha,
     adornmentIconBackgroundRadius:
@@ -3062,6 +3140,36 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       subListAddControlIconColor: _lerpNullableColor(
         subListAddControlIconColor,
         other.subListAddControlIconColor,
+        t,
+      ),
+      subListCaptionTopPadding: _lerpNullableDouble(
+        subListCaptionTopPadding,
+        other.subListCaptionTopPadding,
+        t,
+      ),
+      subListHeaderTopPadding: _lerpNullableDouble(
+        subListHeaderTopPadding,
+        other.subListHeaderTopPadding,
+        t,
+      ),
+      subListRowVerticalPadding: _lerpNullableDouble(
+        subListRowVerticalPadding,
+        other.subListRowVerticalPadding,
+        t,
+      ),
+      subListCellVerticalPadding: _lerpNullableDouble(
+        subListCellVerticalPadding,
+        other.subListCellVerticalPadding,
+        t,
+      ),
+      subListTableVerticalMargin: _lerpNullableDouble(
+        subListTableVerticalMargin,
+        other.subListTableVerticalMargin,
+        t,
+      ),
+      subListBlockEndPadding: _lerpNullableDouble(
+        subListBlockEndPadding,
+        other.subListBlockEndPadding,
         t,
       ),
       adornmentIconBackgroundAlpha: _lerpNullableDouble(

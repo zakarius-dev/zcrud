@@ -3,6 +3,25 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.17.0 — 2026-08-24
+
+### Ajouté
+- **Glisser-déposer dans la sous-liste** : elle consulte désormais le port `ZReorderRenderer` — celui injecté par `ZcrudScope.reorderRenderer`, sinon un repli interne zéro-configuration. Chaque ligne porte une **poignée** (cible ≥ 48 dp) et des **actions sémantiques de déplacement**, dans les deux modes.
+- **La voie groupée respecte l'ordre déclaré de `fields`** : une section est émise à la position de son **premier membre visible**, les champs sans section formant des blocs intercalés. Un champ indépendant peut donc suivre une section décorée sans être enveloppé dans un groupe factice.
+- **Six jetons d'espacement vertical de sous-liste** : `subListCaptionTopPadding`, `subListHeaderTopPadding`, `subListRowVerticalPadding`, `subListCellVerticalPadding`, `subListTableVerticalMargin`, `subListBlockEndPadding` — tous nullables, aucun défaut actif, rendu inchangé au pixel tant qu'aucun n'est posé. La recette complète retire jusqu'à 52 dp par sous-liste en résumé tabulaire.
+
+### Modifié
+- 🔴 **Les flèches monter/descendre sont supprimées** des deux modes, au profit de la poignée : c'est un **remplacement**, pas un ajout (décision produit prise après examen du rendu). L'équivalent non gestuel est désormais **sémantique**, par ligne.
+- Le résumé **tabulaire** ne s'applique plus quand l'ordre est réordonnable : une `Table` fige ses lignes et interdit le glissement. Les en-têtes de colonnes sont conservés par une réserve de tête.
+- **Une section sans titre ni icône ne rend plus d'en-tête** : ni chrome, ni rembourrage, ni nœud sémantique. Une section repliable sans titre n'a plus de déclencheur et reste dépliée.
+
+### Garde
+- Réordonnancement : bornes de déplacement par **absence d'action**, lignes servies à un seam **sans** poignée, réconciliation **par clé** (l'identité d'item du châssis SDK inclut l'index et reconstruirait l'élément déplacé à neuf — perte de focus, contraire à AD-2).
+- Espacement : **inertie** (quatre rendus figés au rectangle près), **effet** (chaque jeton déplace la géométrie de la quantité attendue) et **couverture** (les deux modes, les deux états) — trois familles distinctes, chacune prouvée mordante par injection.
+
+### Attention
+- Le **jeu de 14 dp** sous le texte d'une ligne réordonnable appartient à la cible tactile de 48 dp de la poignée : c'est un plancher d'accessibilité, **délibérément non réglable**. L'échappatoire pour un hôte qui veut ce gain est `reorderable: false`, qui bascule sur le résumé tabulaire — plus compact *et* plus réglable.
+
 ## 3.16.0 — 2026-08-24
 
 ### Ajouté

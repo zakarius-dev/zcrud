@@ -328,6 +328,19 @@ class DynamicEdition extends StatefulWidget {
 
   /// Sections visuelles (en-têtes ; repliables si `collapsible`). Vide = liste
   /// plate.
+  ///
+  /// **L'ordre de rendu est celui de [fields]**, sections comprises : en voie
+  /// groupée, chaque section forme un bloc émis à la position de son premier
+  /// membre visible, et un champ hors section déclaré entre deux sections est
+  /// rendu entre elles (les champs libres contigus forment des blocs
+  /// intercalés). Les membres d'une section suivent, eux, l'ordre déclaré
+  /// dans [ZEditionSection.fields].
+  ///
+  /// **Un en-tête n'est rendu que s'il a quelque chose à montrer** : un titre
+  /// non vide (après trim) ou une icône. Une section à titre vide et sans
+  /// icône ne monte aucun en-tête — ni chrome, ni padding, ni nœud
+  /// sémantique — seulement ses champs ; `collapsible` y est sans effet (pas
+  /// de déclencheur : la section reste dépliée).
   final List<ZEditionSection> sections;
 
   /// Marge du `ListView` (héritée par l'hôte ; défaut : aucune).
@@ -1008,7 +1021,11 @@ class _DynamicEditionState extends State<DynamicEdition> {
       if (spec == null) continue;
       if (!_renderInReadMode(spec)) continue;
       final section = _sectionByField[name];
-      if (section != null && section != currentSection) {
+      // Même règle que la voie groupée : un titre vide (après trim) n'a rien
+      // à montrer — aucun en-tête, ni padding, ni nœud sémantique.
+      if (section != null &&
+          section != currentSection &&
+          section.trim().isNotEmpty) {
         rows.add(_EditionRow.header(section));
       }
       currentSection = section;
@@ -1079,48 +1096,77 @@ class _DynamicEditionState extends State<DynamicEdition> {
       blocks.add(KeyedSubtree(key: key, child: child));
     }
 
-    // (1) Champs sans section, dans l'ordre visible (bloc de tête sans en-tête).
-    final loose = <ZFieldSpec>[
-      for (final name in visible)
-        if (_specByName[name] != null &&
-            !_sectionByField.containsKey(name) &&
-            _renderInReadMode(_specByName[name]!))
-          _effective(_specByName[name]!),
-    ];
-    if (loose.isNotEmpty) {
-      addBlock(const ValueKey<String>('block:__loose__'), _membersLayout(loose));
+    // Membres VISIBLES d'une section (filtre visibilité + mode lecture),
+    // dans l'ordre de la déclaration de la section.
+    List<ZFieldSpec> visibleMembers(ZEditionSection section) => <ZFieldSpec>[
+          for (final name in section.fields)
+            if (visibleSet.contains(name) &&
+                _specByName[name] != null &&
+                _renderInReadMode(_specByName[name]!))
+              _effective(_specByName[name]!),
+        ];
+
+    // Les blocs suivent l'**ORDRE DÉCLARÉ** de `fields` (via `visible`) : un
+    // champ libre déclaré entre deux sections est rendu ENTRE elles — les
+    // champs libres contigus forment des blocs intercalés, chaque section
+    // reste un bloc unique, émis à la position de son premier membre visible
+    // (ses membres dans l'ordre de SA déclaration). Regrouper tous les
+    // champs libres en tête ignorait la déclaration : « une section décorée,
+    // puis un champ indépendant » n'était pas exprimable.
+    //
+    // Identité des blocs libres : le bloc qui précède toute section garde sa
+    // clé historique (`__loose__`) ; un bloc intercalé est keyé sur la
+    // dernière SECTION ÉMISE avant lui — identité stable quand un champ
+    // conditionnel du bloc apparaît/disparaît (le premier nom du bloc ne
+    // l'est pas), et unique parce qu'une section sautée (aucun membre
+    // visible) ne scinde PAS le bloc courant.
+    final sectionByTitle = <String, ZEditionSection>{};
+    for (final s in widget.sections) {
+      sectionByTitle.putIfAbsent(s.title, () => s);
+    }
+    final emitted = <String>{};
+    String? lastEmittedSection;
+    var loose = <ZFieldSpec>[];
+
+    void flushLoose() {
+      if (loose.isEmpty) return;
+      final key = lastEmittedSection == null
+          ? 'block:__loose__'
+          : 'block:__loose__:after:$lastEmittedSection';
+      addBlock(ValueKey<String>(key), _membersLayout(loose));
+      loose = <ZFieldSpec>[];
     }
 
-    // (2) Sections dans leur ordre déclaré ; membres filtrés par visibilité +
-    //     mode lecture. Une section repliée cache ses membres (slices intacts).
-    for (final section in widget.sections) {
-      final members = <ZFieldSpec>[
-        for (final name in section.fields)
-          if (visibleSet.contains(name) &&
-              _specByName[name] != null &&
-              _renderInReadMode(_specByName[name]!))
-            _effective(_specByName[name]!),
-      ];
-      if (members.isEmpty) continue;
-
+    void emitSection(ZEditionSection section, List<ZFieldSpec> members) {
+      // Un en-tête n'existe que s'il a quelque chose à montrer : un titre
+      // non vide (après trim) ou une icône. Même patron que partout ailleurs
+      // (« aucun jeton ⇒ aucun conteneur ») : une section à titre vide ne
+      // rend NI chrome, NI padding, NI nœud sémantique — ses membres
+      // seulement. Sans en-tête, une section `collapsible` n'a aucun
+      // déclencheur de repli : elle reste dépliée.
+      final hasHeader =
+          section.title.trim().isNotEmpty || section.icon != null;
+      final canCollapse = section.collapsible && hasHeader;
       final expanded =
-          !(section.collapsible && _collapsed.value.contains(section.title));
+          !(canCollapse && _collapsed.value.contains(section.title));
 
-      final header = section.collapsible
-          ? _CollapsibleSectionHeader(
-              key: ValueKey<String>('section:${section.title}'),
-              title: section.title,
-              expanded: expanded,
-              icon: section.icon,
-              style: section.style,
-              onToggle: () => _toggleSection(section.title),
-            )
-          : _SectionHeader(
-              key: ValueKey<String>('section:${section.title}'),
-              title: section.title,
-              icon: section.icon,
-              style: section.style,
-            );
+      final Widget? header = !hasHeader
+          ? null
+          : canCollapse
+              ? _CollapsibleSectionHeader(
+                  key: ValueKey<String>('section:${section.title}'),
+                  title: section.title,
+                  expanded: expanded,
+                  icon: section.icon,
+                  style: section.style,
+                  onToggle: () => _toggleSection(section.title),
+                )
+              : _SectionHeader(
+                  key: ValueKey<String>('section:${section.title}'),
+                  title: section.title,
+                  icon: section.icon,
+                  style: section.style,
+                );
 
       addBlock(
         ValueKey<String>('block:section:${section.title}'),
@@ -1128,13 +1174,44 @@ class _DynamicEditionState extends State<DynamicEdition> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            header,
+            ?header,
             // Repli = masquage VISUEL sans destruction de slice (les membres ne
             // sont simplement pas montés ; le controller conserve leurs tranches).
             if (expanded) _sectionMembers(section, members),
           ],
         ),
       );
+      lastEmittedSection = section.title;
+    }
+
+    for (final name in visible) {
+      final spec = _specByName[name];
+      if (spec == null || !_renderInReadMode(spec)) continue;
+      final sectionTitle = _sectionByField[name];
+      if (sectionTitle == null) {
+        loose.add(_effective(spec));
+        continue;
+      }
+      if (!emitted.add(sectionTitle)) continue;
+      final section = sectionByTitle[sectionTitle];
+      if (section == null) continue;
+      final members = visibleMembers(section);
+      if (members.isEmpty) continue;
+      flushLoose();
+      emitSection(section, members);
+    }
+    flushLoose();
+
+    // Filet de couverture : une section dont chaque membre visible est déjà
+    // revendiqué par une AUTRE section (carte champ→section au premier
+    // arrivé) n'est jamais rencontrée par la marche ci-dessus ; elle garde
+    // un bloc, après les blocs pilotés par la déclaration, dans l'ordre des
+    // sections — la couverture d'avant, à l'identique.
+    for (final section in widget.sections) {
+      if (!emitted.add(section.title)) continue;
+      final members = visibleMembers(section);
+      if (members.isEmpty) continue;
+      emitSection(section, members);
     }
 
     return ListView.builder(
@@ -1348,13 +1425,19 @@ Widget _sectionHeaderChrome(
             padding: const EdgeInsetsDirectional.only(end: 8),
             child: Icon(icon, color: style?.iconColor),
           ),
-        Expanded(
-          child: Text(
-            title,
-            style: style?.titleStyle ?? Theme.of(context).textTheme.titleSmall,
-            textAlign: TextAlign.start,
-          ),
-        ),
+        // Un titre vide ne monte AUCUN `Text` : pas de ligne sémantique vide
+        // au lecteur d'écran (l'en-tête n'existe alors que par son icône).
+        if (title.trim().isNotEmpty)
+          Expanded(
+            child: Text(
+              title,
+              style:
+                  style?.titleStyle ?? Theme.of(context).textTheme.titleSmall,
+              textAlign: TextAlign.start,
+            ),
+          )
+        else
+          const Spacer(),
         ?trailing,
       ],
     ),

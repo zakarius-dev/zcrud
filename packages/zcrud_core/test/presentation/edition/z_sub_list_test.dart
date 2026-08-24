@@ -10,6 +10,7 @@
 //  - dynamicItem : add/edit/clear reflétés en tranche sans rebuild global ;
 //  - `Form` → findsNothing (aucun FormBuilder global, AD-2).
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
@@ -39,6 +40,31 @@ Widget _host(Widget child, {TextDirection dir = TextDirection.ltr}) =>
         child: Scaffold(body: SingleChildScrollView(child: child)),
       ),
     );
+
+/// Descend l'item [row] par l'**action sémantique** « Move item down » —
+/// la voie non gestuelle du contrat `ZReorderRenderer` (le glisser-déposer
+/// est couvert par les gardes dédiées au réordonnancement).
+Future<void> _semanticMoveDown(WidgetTester tester, {int row = 0}) async {
+  const action = CustomSemanticsAction(label: 'Move item down');
+  final id = CustomSemanticsAction.getIdentifier(action);
+  final nodes = <SemanticsNode>[];
+  void visit(SemanticsNode node) {
+    final ids = node.getSemanticsData().customSemanticsActionIds;
+    if (ids != null && ids.contains(id)) nodes.add(node);
+    node.visitChildren((child) {
+      visit(child);
+      return true;
+    });
+  }
+
+  // ignore: deprecated_member_use
+  final owner = tester.binding.pipelineOwner.semanticsOwner!;
+  visit(owner.rootSemanticsNode!);
+  expect(nodes.length, greaterThan(row),
+      reason: 'aucune action sémantique « descendre » sur la ligne $row');
+  owner.performAction(nodes[row].id, SemanticsAction.customAction, id);
+  await tester.pump();
+}
 
 void main() {
   // ── AC8 : add/remove/reorder → List<Map> en tranche parente ────────────────
@@ -93,9 +119,12 @@ void main() {
       )));
       await tester.pump();
 
-      // Descendre le 1er item → ordre [B, A].
-      await tester.tap(find.byIcon(Icons.arrow_downward).first);
+      // Descendre le 1er item (action sémantique du contrôle d'ordre —
+      // les flèches n'existent plus) → ordre [B, A].
+      final semantics = tester.ensureSemantics();
       await tester.pump();
+      await _semanticMoveDown(tester);
+      semantics.dispose();
       expect(captured, <Map<String, dynamic>>[
         <String, dynamic>{'f1': 'B', 'f2': 'b'},
         <String, dynamic>{'f1': 'A', 'f2': 'a'},
@@ -121,9 +150,12 @@ void main() {
       await tester.pump();
       expect(tester.widget<EditableText>(firstF1).focusNode.hasFocus, isTrue);
 
-      // Descendre l'item → sa place change mais son Element est réutilisé.
-      await tester.tap(find.byIcon(Icons.arrow_downward).first);
+      // Descendre l'item (action sémantique du contrôle d'ordre) → sa place
+      // change mais son Element est réutilisé.
+      final semantics = tester.ensureSemantics();
       await tester.pump();
+      await _semanticMoveDown(tester);
+      semantics.dispose();
 
       // L'item 'A' est désormais 2e ; son champ garde le focus + son texte.
       final movedF1 = find.byType(EditableText).at(2); // f1 du 2e item
