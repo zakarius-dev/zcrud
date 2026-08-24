@@ -622,3 +622,14 @@ balayage des 41 paquets avant un tag : une coupure réseau rend les paquets **pu
 mesurables. Conduite tenue : ne jamais les déclarer verts ; les qualifier par **identité à l'octet**
 avec le dernier tag balayé vert (`git diff --quiet <tag> -- lib test pubspec.yaml`) ou par une mesure
 faite **avant** la coupure, le dire dans le handoff, et remesurer dès le retour du réseau.
+
+## ⚠️ `/tmp` se remplit de restes `flutter_tools` et fait PENDRE les harnais (mesuré le 2026-08-24)
+
+Un balayage s'est figé 37 min sur un paquet ; le fichier seul était vert. Cause : `/tmp` (tmpfs) à
+**80 %** — 6 Go de dossiers `flutter_tools.*` accumulés sur un week-end de runs — faisant échouer la
+copie d'un `.dill` (`FileSystemException`) puis pendre le harnais sans verdict. Symptômes : un run
+qui ne progresse plus, un `[E]` au **chargement** avec `Cannot copy file to '/tmp/flutter_tools…'`.
+Remède : `df -h /tmp`, puis `find /tmp -maxdepth 1 -name 'flutter_tools.*' -mmin +60 -exec rm -rf {} +`
+(jamais le scratchpad), tuer l'enfant coincé pour laisser la boucle continuer, et **requalifier à
+part** les paquets dont la ligne rouge est l'artefact du déblocage. Vérifier `/tmp` avant tout long
+balayage.
