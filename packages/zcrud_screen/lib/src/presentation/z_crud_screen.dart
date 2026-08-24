@@ -117,6 +117,27 @@ typedef ZCrudEditionBuilder<T> =
 typedef ZCrudItemBuilder<T> =
     Widget Function(BuildContext context, T item, List<ZListColumn> columns);
 
+/// Transformation de la map de valeurs **validée**, appliquée avant sa
+/// reconstruction en entité (`decode` du registre).
+///
+/// [values] est la map complète destinée à la reconstruction : les valeurs
+/// initiales encodées, recouvertes par la saisie normalisée du formulaire.
+/// [original] est l'entité sur laquelle la surface s'est ouverte — `null` en
+/// création, l'entité éditée en édition, la copie éphémère (sans identité) en
+/// duplication.
+///
+/// La map rendue **remplace** [values] telle quelle sur le chemin
+/// d'enregistrement : y recopier un état annexe (permissions, fichiers…)
+/// suffit à le faire persister avec l'entité. Une exception levée fait
+/// échouer l'enregistrement par le canal d'échec de la surface (message
+/// affiché dans le formulaire, aucune écriture) — elle ne remonte jamais à
+/// l'appelant.
+typedef ZCrudBeforeSubmit<T> =
+    FutureOr<Map<String, Object?>> Function(
+      Map<String, Object?> values,
+      T? original,
+    );
+
 /// Écran CRUD assemblé : liste + recherche + création + édition + sauvegarde
 /// + corbeille, à partir d'une déclaration.
 ///
@@ -194,6 +215,7 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
     this.readOnly = false,
     this.searchEnabled = true,
     this.onSave,
+    this.beforeSubmit,
     this.editionBuilder,
     this.defaultItemBuilder,
     this.history,
@@ -637,6 +659,16 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// Persistance de la sauvegarde, prioritaire sur `source.onSave` puis
   /// `repository.save`.
   final ZCrudSave<T>? onSave;
+
+  /// Transformation de la map validée, appliquée **après** la validation du
+  /// formulaire dérivé et **avant** sa reconstruction en entité.
+  ///
+  /// Couvre **tous** les chemins d'enregistrement du formulaire dérivé —
+  /// création, duplication, édition (cf. [ZCrudBeforeSubmit]). Absente, la
+  /// map suit le chemin strictement inchangé. Sans effet sous
+  /// [editionBuilder] : le formulaire de l'application maîtrise déjà ses
+  /// valeurs avant d'appeler `save`.
+  final ZCrudBeforeSubmit<T>? beforeSubmit;
 
   /// Formulaire d'édition complet fourni par l'app — voie d'échappement de
   /// l'édition dérivée (`DynamicEdition` sur [formFields]).
@@ -1669,12 +1701,22 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
               final merged = <String, Object?>{...baseValues, ...values};
               final T entity;
               try {
+                // Crochet de transformation, entre validation et
+                // reconstruction : `original` est l'entité d'ouverture de la
+                // surface (null en création, la copie éphémère en
+                // duplication). Une levée du crochet emprunte le même canal
+                // d'échec que le décodage — affichée, jamais propagée. Sans
+                // crochet, la map suit le chemin inchangé (même instance).
+                final hook = widget.beforeSubmit;
+                final transformed = hook == null
+                    ? merged
+                    : await hook(merged, initial);
                 entity =
                     registry.decode(
                           kind,
                           pointedNames.isEmpty
-                              ? Map<String, dynamic>.of(merged)
-                              : zRegroupPaths(merged),
+                              ? Map<String, dynamic>.of(transformed)
+                              : zRegroupPaths(transformed),
                         )
                         as T;
               } catch (error) {

@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.14.0 — 2026-08-24
+
+### Ajouté
+- `ZCrudScreen.beforeSubmit` (`ZCrudBeforeSubmit<T>` : `(values, original) → map`) — appelé après validation, avant décodage, sur la création, l'édition et la duplication ; `original` est nul en création. Absent : chemin strictement inchangé (même instance de map). Une levée échoue proprement par le canal d'échec de la surface, sans écriture.
+
 ## 3.8.0 — 2026-08-23
 
 ### Documentation

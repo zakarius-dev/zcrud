@@ -128,6 +128,35 @@ class ZFormController extends ChangeNotifier {
   /// Lit la valeur courante de la tranche [name] (`null` si jamais écrite).
   Object? valueOf(String name) => _slices[name]?.value;
 
+  /// Amorce la tranche [name] avec [value] **uniquement si elle est ABSENTE**.
+  ///
+  /// C'est la voie par laquelle le moteur d'édition applique les
+  /// `ZFieldSpec.defaultValue` déclarés : toute tranche que `initialValues` n'a
+  /// **pas** fournie est amorcée avec le défaut de sa spec.
+  ///
+  /// ## Absent ≠ nul explicite
+  ///
+  /// Le discriminant est la **présence de la clé** dans `initialValues` (ou
+  /// dans un [reseed]), jamais la valeur : une clé fournie avec `null`
+  /// **explicite** est autoritaire et n'est PAS remplacée par le défaut — c'est
+  /// la même distinction omis/`null` que le `copyWith` généré. Sont également
+  /// préservées : une tranche déjà **saisie** ([isTouched]) et une tranche déjà
+  /// **écrite** à une valeur non nulle (écriture programmatique de l'hôte).
+  ///
+  /// L'amorçage écrit la tranche **et** la baseline (le champ reste
+  /// *pristine* : un défaut appliqué n'est pas une modification). Seuls les
+  /// listeners de la tranche amorcée sont notifiés — jamais le canal global.
+  /// Idempotent : une fois la baseline posée, les appels suivants sont no-op.
+  void seedDefaultValue(String name, Object? value) {
+    if (_baseline.containsKey(name)) return;
+    if (_touched.contains(name)) return;
+    final existing = _slices[name];
+    if (existing != null && existing.value != null) return;
+    _slice(name).value = value;
+    _baseline[name] = value;
+    _updateDirty(name, value);
+  }
+
   /// Lit la valeur **baseline** (item d'origine persisté) de [name] — `null` si
   /// absente. Lecture seule **pure** de [_baseline] : aucune
   /// mutation, aucun canal réactif, aucun `notifyListeners()` (rebuild ciblé

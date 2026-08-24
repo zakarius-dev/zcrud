@@ -58,6 +58,7 @@ export 'src/domain/edition/z_field_config.dart';
 export 'src/domain/edition/z_field_rename.dart';
 export 'src/domain/edition/z_field_size.dart';
 export 'src/domain/edition/z_field_spec.dart';
+export 'src/domain/edition/z_field_tint_presets.dart';
 export 'src/domain/edition/z_path_values.dart';
 export 'src/domain/edition/z_read_field_layout.dart';
 export 'src/domain/edition/z_sub_list_config.dart';
@@ -107,6 +108,7 @@ export 'src/domain/ports/z_date_display_formatter.dart';
 export 'src/domain/ports/z_entity_history_source.dart';
 // Ports bas-niveau offline-first : `ZLocalStore`/`ZRemoteStore` neutres.
 export 'src/domain/ports/z_local_store.dart';
+export 'src/domain/ports/z_number_display_formatter.dart';
 // Capacité optionnelle de suppression DÉFINITIVE : mixin `ZPurgeable<T>`
 // (hors du port `ZRepository`, qu'un dépôt applique s'il sait la servir).
 export 'src/domain/ports/z_purgeable.dart';

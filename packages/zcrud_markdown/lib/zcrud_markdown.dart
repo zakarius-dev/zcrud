@@ -24,6 +24,8 @@ export 'src/domain/z_markdown_api.dart';
 // Description PURE DART (`RegExp`, `Match`, closures) — aucun type de lib de
 // conversion n'y transite, c'est ce qui autorise l'export par le barrel.
 export 'src/domain/z_markdown_bridge.dart';
+export 'src/domain/z_markdown_copy_format.dart'
+    show ZMarkdownCopyFormat, ZMarkdownCopyTransform;
 export 'src/presentation/z_html_registration.dart' show registerZHtmlFields;
 // (CR parité 2026-08-11) : habillage carte OPT-IN du champ rich-text
 // (config PURE Flutter — aucun type Quill) + référence auditée de DIMENSIONS

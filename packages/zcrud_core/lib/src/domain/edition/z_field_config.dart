@@ -45,6 +45,14 @@ enum ZTextCapitalization {
 
   /// Toutes les lettres en majuscule.
   characters,
+
+  /// Toutes les lettres en minuscule.
+  ///
+  /// Comme les autres modes, la garantie est portée par le **formateur
+  /// déterministe** (collage, saisie programmatique et clavier physique
+  /// compris) ; `TextCapitalization` de Flutter n'ayant pas d'équivalent,
+  /// l'indice de clavier logiciel reste `none`.
+  lowercase,
 }
 
 /// Config triviale pur-cœur des champs **texte** (`text`/`multiline`).
@@ -64,8 +72,32 @@ class ZTextConfig extends ZFieldConfig {
   /// Nombre maximal de lignes affichées.
   final int? maxLines;
 
-  /// Indice de clavier neutre (opaque : le mapping vers `TextInputType` vit
-  /// dans le moteur d'édition).
+  /// Indice de clavier **neutre** (`String`, jamais un `TextInputType` — le
+  /// mapping vit dans le moteur d'édition).
+  ///
+  /// ## Table de correspondance (FERMÉE)
+  ///
+  /// | valeur | clavier |
+  /// |---|---|
+  /// | `'text'` | alphabétique standard |
+  /// | `'multiline'` | multi-ligne (touche retour) |
+  /// | `'email'` | e-mail (`@`, `.`) |
+  /// | `'url'` | URL (`/`, `.`) |
+  /// | `'phone'` | téléphone |
+  /// | `'number'` | numérique signé |
+  /// | `'decimal'` | numérique signé + séparateur décimal |
+  /// | `'name'` | nom de personne |
+  /// | `'address'` | adresse postale |
+  /// | `'datetime'` | date/heure |
+  /// | `'none'` | aucun clavier logiciel |
+  ///
+  /// ## Contrat de repli et de précédence
+  ///
+  /// * `null` ou **chaîne hors table** ⇒ le clavier est dérivé du rendu
+  ///   (multi-ligne ⇒ multi-ligne, sinon texte) — jamais une exception.
+  /// * **Un champ rendu multi-ligne garde le clavier multi-ligne**, même si
+  ///   une autre valeur est déclarée ici : la touche retour est nécessaire à
+  ///   la saisie, la déclaration ne s'applique qu'aux champs mono-ligne.
   final String? keyboardType;
 
   /// Capitalisation appliquée à la saisie. Défaut [ZTextCapitalization.none]
@@ -143,10 +175,17 @@ class ZNumberConfig extends ZFieldConfig {
     this.currencySymbol,
   });
 
-  /// Clé d'un autre champ fixant la borne minimale.
+  /// Clé d'un autre champ fixant la **borne minimale** dynamique.
+  ///
+  /// Même mécanique cross-champ que `ZDateConfig.firstDateKey` : la borne est
+  /// lue dans la tranche du champ référencé **à la validation**, et le champ
+  /// borné est re-validé quand le champ référencé change (abonnement ciblé,
+  /// jamais un rebuild du formulaire). Une référence absente ou non numérique
+  /// est **non bloquante** — jamais une exception.
   final String? minValueKey;
 
-  /// Clé d'un autre champ fixant la borne maximale.
+  /// Clé d'un autre champ fixant la **borne maximale** dynamique (même
+  /// contrat que [minValueKey]).
   final String? maxValueKey;
 
   /// Formatage monétaire.
@@ -355,6 +394,9 @@ class ZBooleanConfig extends ZFieldConfig {
   /// Active le **texte d'état** à côté du switch avec les libellés localisés par
   /// défaut (clés `yes`/`no`). `false` (défaut) ⇒ aucun texte, sauf si
   /// [trueLabel]/[falseLabel] est fourni (cf. [showsStateLabel]).
+  // Domaine pur : jamais lue directement par la présentation — son unique
+  // consommateur est le prédicat [showsStateLabel], qui la combine aux
+  // libellés fournis (cf. garde d'inertie des configs).
   final bool showStateLabel;
 
   /// Libellé d'état affiché quand la valeur est `true`. `null` (défaut) ⇒ repli
@@ -501,15 +543,20 @@ class FileFieldConfig extends ZFieldConfig {
   });
 
   /// Extensions acceptées (`['pdf', 'png']`) — vide = aucune contrainte.
+  // Domaine pur : contrat du seam `ZFilePicker` — la config est transmise
+  // intégralement au picker hôte, qui applique cette contrainte (le cœur
+  // n'acquiert aucun fichier lui-même). Idem pour les trois membres suivants.
   final List<String> acceptedExtensions;
 
   /// Types MIME acceptés (`['image/png']`) — vide = aucune contrainte.
+  // Domaine pur : contrat du seam `ZFilePicker` (cf. [acceptedExtensions]).
   final List<String> acceptedMimeTypes;
 
   /// Nombre maximal de fichiers en mode multiple (`null` = illimité).
   final int? maxFiles;
 
   /// Taille maximale par fichier en octets (`null` = aucune borne).
+  // Domaine pur : contrat du seam `ZFilePicker` (cf. [acceptedExtensions]).
   final int? maxSizeBytes;
 
   /// Sources d'acquisition autorisées (défaut : toutes).
@@ -522,6 +569,8 @@ class FileFieldConfig extends ZFieldConfig {
   /// (`ZFilePicker`) consomme [effectiveExtensions] (union de
   /// [acceptedExtensions] et de toutes les valeurs de cette map). Vide (défaut) ⇒
   /// **rétro-compat stricte** : [effectiveExtensions] == [acceptedExtensions].
+  // Domaine pur : consommée par [effectiveExtensions], dont le résultat est
+  // transmis au seam `ZFilePicker` (cf. [acceptedExtensions]).
   final Map<String, List<String>> allowedDocumentTypes;
 
   /// Quand `true`, un champ `image` dont la valeur acquise **n'est pas** une
@@ -857,6 +906,9 @@ class ZDateConfig extends ZFieldConfig {
   /// **ignorée** (elle interdirait toute plage), jamais une exception.
   ///
   /// Sans effet sur les types `dateTime`/`time`, qui portent une date unique.
+  // Domaine pur : jamais lue brute par la présentation — consommée au travers
+  // de [effectiveMaxDays]/[checkSpanDays], qui portent la règle d'ignorance
+  // des valeurs invalides (cf. garde d'inertie des configs).
   final int? maxDays;
 
   /// **Amplitude minimale** d'une plage (`dateRange`), même comptage que
@@ -871,6 +923,8 @@ class ZDateConfig extends ZFieldConfig {
   /// deux) est résolue en faveur de la contrainte protectrice : [maxDays]
   /// s'applique, `minDays` est **ignoré**. Le champ reste utilisable ; il ne se
   /// bloque jamais sur une déclaration incohérente.
+  // Domaine pur : consommée au travers de [effectiveMinDays]/[checkSpanDays]
+  // (cf. [maxDays] et la garde d'inertie des configs).
   final int? minDays;
 
   /// [maxDays] **retenue**, ou `null` si aucune amplitude maximale ne

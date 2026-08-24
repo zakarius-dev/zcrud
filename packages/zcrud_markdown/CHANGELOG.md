@@ -3,6 +3,12 @@
 Toutes les modifications notables de `zcrud_markdown` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.14.0 — 2026-08-24
+
+### Ajouté
+- **Copie multi-format** : au geste de copie du lecteur, un menu propose les formats déclarés par l'hôte (clé, libellé par clé l10n, transformation du contenu) ; sans déclaration, la copie directe actuelle est inchangée.
+- **État vide relayé** : `placeholder`, `emptyIcon`, `emptySubtitle` et `emptyBuilder` du lecteur sont atteignables depuis le champ de formulaire ; sans déclaration, rendu inchangé.
+
 ## 3.12.0 — 2026-08-24
 
 ### Corrigé

@@ -142,6 +142,7 @@ import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../../domain/edition/z_sub_list_config.dart';
 import '../../../domain/ports/z_acl.dart';
+import '../../../domain/ports/z_number_display_formatter.dart';
 import '../../l10n/z_localizations.dart';
 import '../../theme/z_theme.dart';
 import '../../z_form_controller.dart';
@@ -1034,6 +1035,21 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     // comme une liste VIDE : la cellule est vide aussi (invariant AD-10).
     if (spec != null && spec.type == EditionFieldType.subItems) {
       return raw is List ? '${raw.length}' : '';
+    }
+    // Famille NOMBRE : le nombre nu est projeté par le port neutre
+    // `ZNumberDisplayFormatter` du scope. Port absent ⇒ `'$value'`, soit
+    // EXACTEMENT le `_stringOf` antérieur (hôte passif immobile) ; le
+    // formatage n'est visible que pour l'hôte qui injecte — même règle que le
+    // port de dates ci-dessous.
+    if (spec != null &&
+        (spec.type == EditionFieldType.number ||
+            spec.type == EditionFieldType.integer ||
+            spec.type == EditionFieldType.float)) {
+      return zNumberDisplayTextOf(
+        ZcrudScope.maybeOf(context)?.numberDisplayFormatter,
+        raw,
+        localeTag: Localizations.maybeLocaleOf(context)?.toLanguageTag(),
+      );
     }
     if (spec == null || !_projectedTypes.contains(spec.type)) {
       return _stringOf(raw);

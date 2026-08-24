@@ -160,6 +160,7 @@ class ZDerivationEngine {
     final nextChain = <String>{...?chain, target};
 
     _applyVisible(target, d, sources);
+    _applyReadOnly(target, d, sources, nextChain);
     _applyBounds(target, d, sources, nextChain);
     _applyOptions(target, d, sources, gen, nextChain);
     if (includeValue) _applyValue(target, d, sources, gen, nextChain);
@@ -184,6 +185,29 @@ class ZDerivationEngine {
     if (_visible[target] == next) return;
     _visible[target] = next;
     _visibilityRevision.value = _visibilityRevision.value + 1;
+  }
+
+  /// Cible `readOnly` (SYNCHRONE) → tranche compagne
+  /// `ZDerivationChannels.readOnlyKey(cible)`, consommée par le dispatcher de
+  /// champ (`ZFieldWidget`) qui rend alors le champ non éditable — même
+  /// propagation que `ZFieldSpec.readOnly`, abonnement CIBLÉ (invariant AD-2 :
+  /// seul le champ borné se reconstruit).
+  void _applyReadOnly(
+    String target,
+    ZDerivation d,
+    Map<String, Object?> sources,
+    Set<String> chain,
+  ) {
+    final fn = d.readOnly;
+    if (fn == null) return;
+    final bool next;
+    try {
+      next = fn(sources);
+    } catch (e) {
+      _reportFailure(target, 'readOnly', e);
+      return; // AD-10 : repli = état PRÉCÉDENT conservé.
+    }
+    _write(ZDerivationChannels.readOnlyKey(target), next, chain);
   }
 
   /// Cible `bounds` (SYNCHRONE) → tranches compagnes consommées par les

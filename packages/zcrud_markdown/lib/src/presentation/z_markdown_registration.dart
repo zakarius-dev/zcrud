@@ -15,6 +15,7 @@ import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
 import '../domain/z_codec.dart';
+import '../domain/z_markdown_copy_format.dart';
 import 'z_markdown_chrome.dart';
 import 'z_markdown_field.dart';
 import 'z_rich_text_style_set.dart';
@@ -59,6 +60,13 @@ void registerZMarkdownFields(
   ZRichTextFormulaSpec? formulaSpec,
   ZRichTextToolbarConfig? toolbarConfig,
   bool showLabel = true,
+  IconData? emptyIcon,
+  String? emptySubtitle,
+  WidgetBuilder? emptyBuilder,
+  bool copyOnLongPress = false,
+  List<ZMarkdownCopyFormat> copyFormats = const <ZMarkdownCopyFormat>[],
+  String? copiedFeedbackText,
+  String? copySemanticsLabel,
 }) {
   Widget build(ZFieldWidgetContext ctx, ZMarkdownFieldMode mode) =>
       ZMarkdownField.fromContext(
@@ -76,6 +84,13 @@ void registerZMarkdownFields(
         formulaSpec: formulaSpec,
         toolbarConfig: toolbarConfig,
         showLabel: showLabel,
+        emptyIcon: emptyIcon,
+        emptySubtitle: emptySubtitle,
+        emptyBuilder: emptyBuilder,
+        copyOnLongPress: copyOnLongPress,
+        copyFormats: copyFormats,
+        copiedFeedbackText: copiedFeedbackText,
+        copySemanticsLabel: copySemanticsLabel,
       );
 
   registry.register(

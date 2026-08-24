@@ -2227,6 +2227,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Widget? suffix,
     Widget? leadingIcon,
     String? suffixText,
+    Color? tintColor,
   }) {
     final scheme = Theme.of(context).colorScheme;
     if (bare) {
@@ -2257,7 +2258,12 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     }
     final radius = BorderRadius.all(inputRadius);
     final restBorderColor = fieldBorderColor ?? scheme.outline;
-    final focusBorderColor = fieldFocusedBorderColor ?? scheme.primary;
+    // Teinte par type de champ (`tintColor`, déjà normalisée pour le
+    // contraste par l'appelant) : elle ne touche que les canaux d'ACCENT —
+    // bordure de focus et couleur des icônes d'ornement. `null` (aucun
+    // résolveur injecté) ⇒ chaîne de jetons strictement inchangée.
+    final focusBorderColor =
+        tintColor ?? fieldFocusedBorderColor ?? scheme.primary;
     OutlineInputBorder borderOf(Color color, double width) =>
         OutlineInputBorder(
           borderRadius: radius,
@@ -2290,6 +2296,12 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       suffixText: suffixText,
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
+      // « Pastille d'icône » : les ornements icône prennent la teinte du type
+      // de champ quand elle est déclarée ; sans teinte, `null` laisse le
+      // `IconTheme` ambiant décider — rendu antérieur inchangé.
+      iconColor: tintColor,
+      prefixIconColor: tintColor,
+      suffixIconColor: tintColor,
       // Bordure de REPOS pilotée par le jeton
       // (`fallback` la pose à `outline` ⇒ hôte passif inchangé au pixel).
       // `focusedBorder`/`errorBorder` gardent leurs rôles d'ÉTAT : le jeton de

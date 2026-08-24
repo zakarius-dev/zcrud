@@ -36,6 +36,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../domain/edition/edition_field_type.dart';
 import '../../domain/edition/z_date_range.dart';
 import '../../domain/edition/z_derivation.dart';
 import '../../domain/edition/z_field_choice.dart';
@@ -153,6 +154,13 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
   /// n'est alloué dans ce cas (pas de clavier — invariant AD-2). Résolu UNE
   /// FOIS, au montage.
   late final bool _readModeCard;
+
+  /// Masquage courant d'un champ `password` (œil afficher/masquer). Toujours
+  /// masqué au montage ; l'état ne survit PAS au démontage du champ (un
+  /// formulaire ré-ouvert repart masqué).
+  bool _obscured = true;
+
+  void _toggleObscure() => setState(() => _obscured = !_obscured);
 
   /// `TextEditingController` interne — alloué UNIQUEMENT pour les familles
   /// clavier (texte/nombre). Créé 1×, jamais recréé (invariant AD-2) ; sa
@@ -337,6 +345,26 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       _refListenables.add(
         widget.controller
             .fieldListenable(ZDerivationChannels.optionsKey(widget.field.name)),
+      );
+    }
+    // Bornes DYNAMIQUES de la famille nombre (`ZNumberConfig.minValueKey`/
+    // `maxValueKey`) : même canal ciblé que les `refKey` des validateurs
+    // inter-champs — un changement du champ référencé re-évalue CE champ
+    // borné, et lui seul (invariant AD-2), comme les bornes de date
+    // cross-champ résolues par `_resolveDateBound`.
+    if (_family == EditionFamily.number) {
+      for (final k in ZCrossFieldValidator.zNumberBoundKeysOf(widget.field)) {
+        _refListenables.add(widget.controller.fieldListenable(k));
+      }
+    }
+    // Lecture seule DÉRIVÉE (cible `readOnly`) : abonnement CIBLÉ à la tranche
+    // compagne publiée par le moteur — seul ce champ se reconstruit quand son
+    // mode bascule.
+    if (widget.field.derivedFrom?.readOnly != null) {
+      _refListenables.add(
+        widget.controller.fieldListenable(
+          ZDerivationChannels.readOnlyKey(widget.field.name),
+        ),
       );
     }
     _revealAndRefs = Listenable.merge(<Listenable>[
@@ -660,7 +688,20 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
   }
 
   Widget _buildControl(BuildContext context, Object? value, bool revealed) {
-    final field = widget.field;
+    var field = widget.field;
+    // Lecture seule DÉRIVÉE (cible `readOnly` de `ZDerivation`) : la tranche
+    // compagne publiée par le moteur bascule la spec EFFECTIVE — la
+    // propagation est donc exactement celle du `readOnly` statique (toutes
+    // familles, champs servis par le registre compris, via `field.readOnly`).
+    // Le dérivé ne rend jamais éditable un champ déclaré `readOnly: true` :
+    // le statique prime.
+    if (field.derivedFrom?.readOnly != null &&
+        !field.readOnly &&
+        widget.controller
+                .valueOf(ZDerivationChannels.readOnlyKey(field.name)) ==
+            true) {
+      field = field.copyWith(readOnly: true);
+    }
     // En `large`, les familles décor-portantes rendent leur `InputDecoration`
     // en mode « bare » (le décor est porté par la Card).
     final bare = field.fieldSize == ZFieldSize.large;
@@ -678,6 +719,14 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           autovalidateMode: autovalidate,
           bare: bare,
           valueOf: _tracedValueOf,
+          // Bascule afficher/masquer NATIVE de la famille mot de passe :
+          // l'état vit dans ce State (re-masqué à chaque montage), la bascule
+          // n'est offerte qu'à un champ éditable.
+          obscured: _obscured,
+          onToggleObscure:
+              field.type == EditionFieldType.password && !field.readOnly
+                  ? _toggleObscure
+                  : null,
           onChanged: (v) => widget.controller.setValue(field.name, v),
         );
       case EditionFamily.number:

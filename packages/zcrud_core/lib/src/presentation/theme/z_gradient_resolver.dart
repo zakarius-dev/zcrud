@@ -3,7 +3,22 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../domain/edition/edition_field_type.dart';
 import '../zcrud_scope.dart';
+
+/// Préfixe des clés de dégradé **par type de champ** (cf. [zFieldTypeTintKey]).
+const String zFieldTypeTintKeyPrefix = 'zcrud.fieldType.';
+
+/// Clé de dégradé sous laquelle la décoration d'un champ interroge le
+/// résolveur du scope pour la **teinte par type de champ** :
+/// `'zcrud.fieldType.<type.name>'` (`zcrud.fieldType.text`,
+/// `zcrud.fieldType.number`, …).
+///
+/// C'est le contrat côté hôte : un résolveur qui veut teinter les champs par
+/// type répond à ces clés-là (et rend `null` pour les autres). Aucun résolveur
+/// injecté ⇒ aucune teinte ⇒ décoration strictement inchangée.
+String zFieldTypeTintKey(EditionFieldType type) =>
+    '$zFieldTypeTintKeyPrefix${type.name}';
 
 /// Dégradé et premier plan associé : l'hôte fournit les deux car un [Gradient]
 /// seul ne permet pas de déduire un contraste fiable.

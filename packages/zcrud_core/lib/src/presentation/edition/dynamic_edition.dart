@@ -575,6 +575,7 @@ class _DynamicEditionState extends State<DynamicEdition> {
     super.initState();
     _collapsed = ValueNotifier<Set<String>>(_initialCollapsed());
     _rebuildIndexes();
+    _seedDefaultValues();
     _bindGuards();
     _bindReseed();
     _bindDerivations();
@@ -600,6 +601,7 @@ class _DynamicEditionState extends State<DynamicEdition> {
     final fieldsChanged = !identical(oldWidget.fields, widget.fields);
     if (controllerChanged || fieldsChanged) {
       _rebuildIndexes();
+      _seedDefaultValues();
       _bindGuards();
       _bindReseed();
       _bindDerivations();
@@ -716,6 +718,24 @@ class _DynamicEditionState extends State<DynamicEdition> {
       store.saveCollapsed(widget.formId, collapsed);
     } catch (_) {
       // Une impl de store fautive ne casse jamais le formulaire.
+    }
+  }
+
+  /// Amorce les `ZFieldSpec.defaultValue` déclarés : toute tranche **absente**
+  /// des `initialValues` du contrôleur reçoit le défaut de sa spec — c'est le
+  /// site UNIQUE d'application des défauts par le moteur d'édition, l'hôte n'a
+  /// rien à recopier dans `ZFormController(initialValues:)`.
+  ///
+  /// La distinction absent / `null` explicite est portée par
+  /// `ZFormController.seedDefaultValue` (une clé fournie, même nulle, est
+  /// autoritaire ; une saisie ou une écriture d'hôte aussi). Voie
+  /// **structurelle** uniquement (montage, changement de controller ou de
+  /// schéma) — jamais par frappe ; le générateur reste inchangé.
+  void _seedDefaultValues() {
+    for (final f in widget.fields) {
+      if (f.defaultValue != null) {
+        widget.controller.seedDefaultValue(f.name, f.defaultValue);
+      }
     }
   }
 

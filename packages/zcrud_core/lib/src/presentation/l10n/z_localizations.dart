@@ -53,6 +53,9 @@ const _enLabels = <String, String>{
   'list.error': 'Failed to load the list',
   'yes': 'Yes',
   'no': 'No',
+  // Bascule afficher/masquer de la famille mot de passe (œil).
+  'showPassword': 'Show password',
+  'hidePassword': 'Hide password',
   'select': 'Select',
   'selectDate': 'Select a date',
   'selectTime': 'Select a time',
@@ -221,6 +224,9 @@ const _frLabels = <String, String>{
   'list.error': 'Échec du chargement de la liste',
   'yes': 'Oui',
   'no': 'Non',
+  // Bascule afficher/masquer de la famille mot de passe (œil).
+  'showPassword': 'Afficher le mot de passe',
+  'hidePassword': 'Masquer le mot de passe',
   'select': 'Sélectionner',
   'selectDate': 'Sélectionner une date',
   'selectTime': 'Sélectionner une heure',

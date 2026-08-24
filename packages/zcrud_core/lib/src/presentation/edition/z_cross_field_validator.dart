@@ -34,6 +34,7 @@ import 'package:form_builder_validators/form_builder_validators.dart';
 
 import '../../domain/edition/z_condition.dart';
 import '../../domain/edition/z_condition_evaluator.dart';
+import '../../domain/edition/z_field_config.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../../domain/edition/z_validator_spec.dart';
 import '../z_form_controller.dart';
@@ -79,9 +80,45 @@ abstract final class ZCrossFieldValidator {
   ) {
     final local = ZValidatorCompiler.compile(field.validators);
     final cross = compile(field.validators, c);
-    if (local == null) return cross;
-    if (cross == null) return local;
-    return (value) => local(value) ?? cross(value);
+    final bounds = _compileNumberBounds(field, c);
+    final all = <FormFieldValidator<String>>[?local, ?cross, ?bounds];
+    if (all.isEmpty) return null;
+    if (all.length == 1) return all.single;
+    return (value) {
+      for (final v in all) {
+        final e = v(value);
+        if (e != null) return e;
+      }
+      return null;
+    };
+  }
+
+  /// Bornes **dynamiques** de la famille nombre
+  /// (`ZNumberConfig.minValueKey`/`maxValueKey`) : même mécanique que les
+  /// validateurs `minKey`/`maxKey` — la borne est lue dans la tranche du champ
+  /// référencé à l'invocation, comparaison typée et **non bloquante** sur
+  /// référence indéterminée. La ré-évaluation en direct passe par
+  /// [zNumberBoundKeysOf] + l'abonnement CIBLÉ du dispatcher (invariant AD-2).
+  static FormFieldValidator<String>? _compileNumberBounds(
+    ZFieldSpec field,
+    ZFormController c,
+  ) {
+    final cfg = field.config;
+    if (cfg is! ZNumberConfig) return null;
+    final minKey = cfg.minValueKey;
+    final maxKey = cfg.maxValueKey;
+    if (minKey == null && maxKey == null) return null;
+    return (value) {
+      if (minKey != null) {
+        final cmp = _compare(value, c.valueOf(minKey));
+        if (cmp != null && cmp < 0) return 'Valeur trop petite';
+      }
+      if (maxKey != null) {
+        final cmp = _compare(value, c.valueOf(maxKey));
+        if (cmp != null && cmp > 0) return 'Valeur trop grande';
+      }
+      return null;
+    };
   }
 
   /// Ensemble des **champs observés** par les specs inter-champs de [specs] —
@@ -101,6 +138,18 @@ abstract final class ZCrossFieldValidator {
             if (s.kind == ZValidatorKind.requiredIf) s.condition,
         ]),
       };
+
+  /// Champs référencés par les **bornes dynamiques** d'une config nombre
+  /// (`minValueKey`/`maxValueKey`) — alimente l'abonnement CIBLÉ du champ
+  /// borné, comme [refKeysOf] pour les validateurs inter-champs.
+  static Set<String> zNumberBoundKeysOf(ZFieldSpec field) {
+    final cfg = field.config;
+    if (cfg is! ZNumberConfig) return const <String>{};
+    return <String>{
+      if (cfg.minValueKey != null) cfg.minValueKey!,
+      if (cfg.maxValueKey != null) cfg.maxValueKey!,
+    };
+  }
 
   static bool _isCrossField(ZValidatorSpec s) =>
       s.refKey != null &&

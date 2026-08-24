@@ -25,7 +25,9 @@ import '../../../domain/edition/edition_field_type.dart';
 import '../../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
+import '../../l10n/z_localizations.dart';
 import '../../theme/z_theme.dart';
+import '../../zcrud_scope.dart';
 import '../z_field_adornment_view.dart';
 
 /// Champ d'édition **texte** (mono-ligne / multi-ligne / masqué).
@@ -41,6 +43,8 @@ class ZTextFieldWidget extends StatelessWidget {
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
     this.bare = false,
     this.valueOf,
+    this.obscured = true,
+    this.onToggleObscure,
     super.key,
   });
 
@@ -76,6 +80,50 @@ class ZTextFieldWidget extends StatelessWidget {
   /// rendu sans valeur (comportement d'une composition hors formulaire).
   final ZValueOf? valueOf;
 
+  /// Masquage courant d'un champ `password` (défaut `true` — **toujours masqué
+  /// tant que l'hôte ne bascule pas**). Sans effet sur `text`/`multiline`.
+  final bool obscured;
+
+  /// Bascule **afficher/masquer** de la famille mot de passe : quand elle est
+  /// fournie sur un champ `password`, un œil (cible ≥ 48 dp, sémantique à
+  /// état) occupe le slot `suffixIcon` et l'appelle au tap. `null` (défaut) ⇒
+  /// aucun œil, rendu antérieur inchangé. L'état ([obscured]) appartient à
+  /// l'appelant : le dispatcher de champ le tient le temps de la vie du champ
+  /// (il ne survit pas à son démontage).
+  final VoidCallback? onToggleObscure;
+
+  /// Œil afficher/masquer (`null` hors `password` ou sans [onToggleObscure]).
+  Widget? _obscureToggle(BuildContext context) {
+    if (field.type != EditionFieldType.password || onToggleObscure == null) {
+      return null;
+    }
+    final data = zResolveAdornmentIcon(
+      context,
+      obscured ? 'visibility' : 'visibility_off',
+    );
+    if (data == null) return null;
+    final tooltip = label(
+      context,
+      obscured ? 'showPassword' : 'hidePassword',
+      fallback: obscured ? 'Show password' : 'Hide password',
+    );
+    // Sémantique À ÉTAT (AD-13) : le bouton annonce s'il est enclenché
+    // (`toggled`), en plus de son libellé d'action — fusionnée sur le NŒUD du
+    // bouton (`MergeSemantics`), pas sur un ancêtre que les lecteurs
+    // ignoreraient. Cible ≥ 48 dp garantie par les contraintes par défaut
+    // d'`IconButton`.
+    return MergeSemantics(
+      child: Semantics(
+        toggled: !obscured,
+        child: IconButton(
+          onPressed: onToggleObscure,
+          tooltip: tooltip,
+          icon: Icon(data),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMultiline = field.type == EditionFieldType.multiline;
@@ -83,7 +131,15 @@ class ZTextFieldWidget extends StatelessWidget {
 
     // `minLines`/`maxLines` effectifs lus depuis `ZTextConfig` avec repli
     // type-dépendant préservant le comportement historique.
-    final config = field.config is ZTextConfig ? field.config! as ZTextConfig : null;
+    // Précédence de config : champ > scope > rien. Le défaut du scope
+    // (`ZcrudScope.defaultTextConfig`) ne s'applique QUE si le champ ne
+    // déclare AUCUNE config — une config déclarée gagne toujours, en bloc
+    // (jamais de fusion membre à membre).
+    final config = field.config is ZTextConfig
+        ? field.config! as ZTextConfig
+        : (field.config == null
+            ? ZcrudScope.maybeOf(context)?.defaultTextConfig
+            : null);
     // **Règle de mapping `text` → multiligne** : un champ `text` dont la
     // config déclare `minLines > 1` se comporte comme un champ multiligne.
     // Sans cette règle, le repli `maxLines = 1` (défaut mono-ligne)
@@ -111,10 +167,14 @@ class ZTextFieldWidget extends StatelessWidget {
     if (maxLines != null && effectiveMinLines > maxLines) {
       effectiveMinLines = maxLines;
     }
-    // Clavier multi-ligne dès que la hauteur effective dépasse une ligne.
+    // Clavier : un rendu multi-ligne garde le clavier multi-ligne (la touche
+    // retour est nécessaire à la saisie) ; sinon la déclaration
+    // `ZTextConfig.keyboardType` est honorée via la table FERMÉE
+    // [_declaredKeyboard] — chaîne inconnue ou `null` ⇒ repli sur le clavier
+    // texte historique, jamais une exception (AD-10).
     final keyboardType = effectiveMaxLines != 1
         ? TextInputType.multiline
-        : TextInputType.text;
+        : (_declaredKeyboard(config?.keyboardType) ?? TextInputType.text);
 
     // Capitalisation déclarative. Un mot de passe n'est JAMAIS capitalisé
     // (altèrerait le secret) ; sinon la config pilote (a) l'indice clavier
@@ -133,7 +193,7 @@ class ZTextFieldWidget extends StatelessWidget {
     return TextFormField(
       controller: controller,
       focusNode: focusNode,
-      obscureText: isPassword,
+      obscureText: isPassword && obscured,
       minLines: effectiveMinLines,
       maxLines: effectiveMaxLines,
       keyboardType: keyboardType,
@@ -150,12 +210,32 @@ class ZTextFieldWidget extends StatelessWidget {
       validator: validator,
       // Label enrichi + hint/helper + ornements leading/prefix/suffix
       // (répartis par `zFieldDecoration` selon `ZAdornmentKind`).
-      decoration:
-          zFieldDecoration(context, field, bare: bare, valueOf: valueOf),
+      decoration: zFieldDecoration(context, field,
+          bare: bare, valueOf: valueOf, suffixIconOverride: _obscureToggle(context)),
       onChanged: onChanged,
     );
   }
 }
+
+/// Table de correspondance **FERMÉE** `ZTextConfig.keyboardType` →
+/// `TextInputType` (les chaînes documentées de la config, et elles seules).
+/// Chaîne inconnue ou `null` ⇒ `null` (l'appelant replie sur le clavier
+/// historique — jamais une exception, invariant AD-10).
+TextInputType? _declaredKeyboard(String? key) => switch (key) {
+      'text' => TextInputType.text,
+      'multiline' => TextInputType.multiline,
+      'email' => TextInputType.emailAddress,
+      'url' => TextInputType.url,
+      'phone' => TextInputType.phone,
+      'number' => const TextInputType.numberWithOptions(signed: true),
+      'decimal' =>
+        const TextInputType.numberWithOptions(signed: true, decimal: true),
+      'name' => TextInputType.name,
+      'address' => TextInputType.streetAddress,
+      'datetime' => TextInputType.datetime,
+      'none' => TextInputType.none,
+      _ => null,
+    };
 
 /// Indice de capitalisation clavier logiciel dérivé de la config.
 /// **Non fiable seul** — cf. [_ZCapitalizationFormatter] pour la garantie réelle.
@@ -164,6 +244,8 @@ TextCapitalization _keyboardHint(ZTextCapitalization c) => switch (c) {
       ZTextCapitalization.sentences => TextCapitalization.sentences,
       ZTextCapitalization.words => TextCapitalization.words,
       ZTextCapitalization.characters => TextCapitalization.characters,
+      // Pas d'équivalent Flutter : la garantie est portée par le formateur.
+      ZTextCapitalization.lowercase => TextCapitalization.none,
     };
 
 /// Formateur de capitalisation DÉTERMINISTE — garantit la casse à
@@ -214,6 +296,7 @@ class _ZTextTransformFormatter extends TextInputFormatter {
   String _apply(String s) => switch (mode) {
         ZTextCapitalization.none => s,
         ZTextCapitalization.characters => s.toUpperCase(),
+        ZTextCapitalization.lowercase => s.toLowerCase(),
         ZTextCapitalization.words => _capWords(s),
         ZTextCapitalization.sentences => _capSentences(s),
       };

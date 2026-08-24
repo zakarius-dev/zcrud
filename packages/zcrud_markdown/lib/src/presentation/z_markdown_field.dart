@@ -54,6 +54,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import '../data/delta_neutral_ops.dart';
 import '../data/z_delta_codec.dart';
 import '../domain/z_codec.dart';
+import '../domain/z_markdown_copy_format.dart';
 import 'z_markdown_chrome.dart';
 import 'z_markdown_codec_scope.dart';
 import 'z_markdown_reader.dart';
@@ -126,6 +127,13 @@ class ZMarkdownField extends StatefulWidget {
     this.chrome,
     this.textScaleFactor,
     this.formulaSpec,
+    this.emptyIcon,
+    this.emptySubtitle,
+    this.emptyBuilder,
+    this.copyOnLongPress = false,
+    this.copyFormats = const <ZMarkdownCopyFormat>[],
+    this.copiedFeedbackText,
+    this.copySemanticsLabel,
     this.onInit,
     this.onBuild,
     super.key,
@@ -154,6 +162,13 @@ class ZMarkdownField extends StatefulWidget {
     this.chrome,
     this.textScaleFactor,
     this.formulaSpec,
+    this.emptyIcon,
+    this.emptySubtitle,
+    this.emptyBuilder,
+    this.copyOnLongPress = false,
+    this.copyFormats = const <ZMarkdownCopyFormat>[],
+    this.copiedFeedbackText,
+    this.copySemanticsLabel,
     this.onInit,
     this.onBuild,
     super.key,
@@ -200,6 +215,10 @@ class ZMarkdownField extends StatefulWidget {
   /// (`label(context, key, fallback: key)`), JAMAIS d'un libellé codé en dur
   /// dans le paquet. `null` (défaut) ⇒ repli sur `ZFieldSpec.hintText` ; si le
   /// champ n'en a pas non plus, aucun placeholder (comportement historique).
+  ///
+  /// Fourni EXPLICITEMENT, il est aussi relayé aux rendus lecteur du champ
+  /// ([ZMarkdownReader.placeholder] — texte de l'état vide) ; sans
+  /// déclaration, le lecteur garde son texte par défaut (rendu inchangé).
   final String? placeholder;
 
   /// `ZCodec` de (dé)sérialisation du **format persisté** (AD-7).
@@ -246,6 +265,38 @@ class ZMarkdownField extends StatefulWidget {
   /// Rendu des formules par champ : style + facteurs d'échelle
   /// bloc/inline ([ZRichTextFormulaSpec]). `null` ⇒ rendu historique.
   final ZRichTextFormulaSpec? formulaSpec;
+
+  /// (opt-in) icône de l'état VIDE des rendus lecteur du champ (lecture
+  /// seule et aperçu `block`) — relayée à [ZMarkdownReader.emptyIcon].
+  /// `null` (défaut) ⇒ état vide historique inchangé.
+  final IconData? emptyIcon;
+
+  /// (opt-in) seconde ligne de l'état vide des rendus lecteur — libellé
+  /// INJECTÉ par l'hôte, relayé à [ZMarkdownReader.emptySubtitle].
+  final String? emptySubtitle;
+
+  /// (opt-in) constructeur d'état vide ENTIÈREMENT custom des rendus
+  /// lecteur — prioritaire sur [emptyIcon]/[emptySubtitle], relayé à
+  /// [ZMarkdownReader.emptyBuilder].
+  final WidgetBuilder? emptyBuilder;
+
+  /// (opt-in) un appui long sur les rendus LECTEUR du champ copie le
+  /// contenu ([ZMarkdownReader.copyOnLongPress] — désactive la sélection
+  /// interactive du lecteur). Défaut `false` ⇒ gestes historiques inchangés.
+  final bool copyOnLongPress;
+
+  /// Formats de copie DÉCLARÉS PAR L'HÔTE, relayés à
+  /// [ZMarkdownReader.copyFormats] (menu au geste de copie ; vide ⇒ copie
+  /// directe historique). Sans effet si [copyOnLongPress] est `false`.
+  final List<ZMarkdownCopyFormat> copyFormats;
+
+  /// Libellé du retour après copie (SnackBar), INJECTÉ par l'hôte —
+  /// relayé à [ZMarkdownReader.copiedFeedbackText]. `null` ⇒ copie silencieuse.
+  final String? copiedFeedbackText;
+
+  /// Libellé `Semantics` du geste de copie, relayé à
+  /// [ZMarkdownReader.copySemanticsLabel].
+  final String? copySemanticsLabel;
 
   /// Hook d'instrumentation : appelé UNE FOIS en [State.initState].
   @visibleForTesting
@@ -770,6 +821,17 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         styleSet: widget.styleSet,
         textScaleFactor: widget.textScaleFactor,
         formulaSpec: widget.formulaSpec,
+        // état vide déclaré (placeholder EXPLICITE seulement : sans
+        // déclaration, le lecteur garde son défaut — rendu inchangé).
+        placeholder: widget.placeholder ?? ZMarkdownReader.defaultPlaceholder,
+        emptyIcon: widget.emptyIcon,
+        emptySubtitle: widget.emptySubtitle,
+        emptyBuilder: widget.emptyBuilder,
+        // geste de copie (opt-in) + formats de l'hôte.
+        copyOnLongPress: widget.copyOnLongPress,
+        copyFormats: widget.copyFormats,
+        copiedFeedbackText: widget.copiedFeedbackText,
+        copySemanticsLabel: widget.copySemanticsLabel,
       );
 
   Widget _buildEditor(

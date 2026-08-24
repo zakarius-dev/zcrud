@@ -101,6 +101,9 @@ abstract final class ZDerivationChannels {
   /// Tranche portant la borne **maximale** dérivée du champ [field].
   static String maxKey(String field) => '$prefix.max.$field';
 
+  /// Tranche portant la **lecture seule dérivée** (`bool`) du champ [field].
+  static String readOnlyKey(String field) => '$prefix.readOnly.$field';
+
   /// `true` si [name] est une tranche compagne possédée par le moteur (jamais
   /// une saisie utilisateur, jamais soumise).
   static bool isDerivedChannel(String name) => name.startsWith('$prefix.');
@@ -164,9 +167,13 @@ typedef ZDerivationBoundsFn = ZFieldBounds? Function(
   Map<String, Object?> sources,
 );
 
+/// Prédicat de **lecture seule** dérivée — SYNCHRONE, comme [ZDerivationVisibleFn]
+/// (un mode ne s'attend pas).
+typedef ZDerivationReadOnlyFn = bool Function(Map<String, Object?> sources);
+
 /// Déclaration « ce champ **dérive** de ces champs-là ».
 ///
-/// **Quatre cibles séparées et optionnelles** — surtout pas un callback
+/// **Cinq cibles séparées et optionnelles** — surtout pas un callback
 /// fourre-tout : chacune a son canal de sortie propre et sa robustesse propre.
 ///
 /// | Cible | Écrit dans | Consommé par |
@@ -175,6 +182,7 @@ typedef ZDerivationBoundsFn = ZFieldBounds? Function(
 /// | [options] | `ZDerivationChannels.optionsKey(cible)` | `ZSelectConfig.choicesFromKey` |
 /// | [visible] | `controller.visibleFields` (via `DynamicEdition`) | le build structurel |
 /// | [bounds] | `ZDerivationChannels.min/maxKey(cible)` | `ZValidatorSpec.minKey/maxKey` |
+/// | [readOnly] | `ZDerivationChannels.readOnlyKey(cible)` | le dispatcher de champ (`ZFieldWidget`) |
 ///
 /// **[overwrite] ne gouverne que [value]** : c'est la SEULE cible qui entre en
 /// concurrence avec une saisie utilisateur. [options]/[visible]/[bounds]
@@ -192,7 +200,7 @@ typedef ZDerivationBoundsFn = ZFieldBounds? Function(
 /// Un champ sans [visible] n'est jamais masqué par le moteur.
 class ZDerivation {
   /// Déclare une dérivation. [sources] liste les champs observés ; [overwrite]
-  /// est **requis** (aucun défaut) ; les quatre cibles sont optionnelles.
+  /// est **requis** (aucun défaut) ; les cinq cibles sont optionnelles.
   const ZDerivation({
     required this.sources,
     required this.overwrite,
@@ -200,6 +208,7 @@ class ZDerivation {
     this.options,
     this.visible,
     this.bounds,
+    this.readOnly,
   });
 
   /// Champs **sources** observés (abonnement CIBLÉ à leur tranche).
@@ -221,10 +230,24 @@ class ZDerivation {
   /// Dérive les **bornes** du champ cible (synchrone).
   final ZDerivationBoundsFn? bounds;
 
+  /// Dérive la **lecture seule** du champ cible (synchrone).
+  ///
+  /// `true` ⇒ le champ est rendu non éditable, avec la même propagation que
+  /// `ZFieldSpec.readOnly` (toutes familles, champs servis par le registre
+  /// compris) ; `false` ou fonction qui lève ⇒ le `readOnly` **statique** de la
+  /// spec reprend seul la main (le dérivé ne rend jamais éditable un champ
+  /// déclaré `readOnly: true`). Comme [visible], la fonction est synchrone et
+  /// son canal est possédé par le moteur — [overwrite] ne la gouverne pas.
+  final ZDerivationReadOnlyFn? readOnly;
+
   /// `true` si au moins une cible est déclarée (une dérivation sans cible est
   /// inerte — défensif, jamais une erreur).
   bool get hasTarget =>
-      value != null || options != null || visible != null || bounds != null;
+      value != null ||
+      options != null ||
+      visible != null ||
+      bounds != null ||
+      readOnly != null;
 }
 
 /// Détecte les **cycles** du graphe de dérivation de [fields].

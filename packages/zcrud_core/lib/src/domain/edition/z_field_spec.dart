@@ -111,8 +111,19 @@ class ZFieldSpec {
   /// Participation à la recherche/filtre de la liste.
   final bool searchable;
 
-  /// Valeur par défaut appliquée par `fromMap`/le moteur d'édition si la clé
-  /// est absente.
+  /// Valeur par défaut du champ.
+  ///
+  /// Appliquée par deux voies, sur la même règle « **absent seulement** » :
+  /// - `fromMap` généré, quand la clé manque dans la map persistée ;
+  /// - le **moteur d'édition** (`DynamicEdition`), à l'ouverture : toute
+  ///   tranche **absente** des `initialValues` du contrôleur est amorcée avec
+  ///   ce défaut (`ZFormController.seedDefaultValue`) — l'hôte n'a rien à
+  ///   recopier.
+  ///
+  /// **Absent ≠ nul explicite** : une clé fournie dans `initialValues`, même
+  /// avec `null`, est autoritaire et n'est jamais remplacée par ce défaut
+  /// (même distinction omis/`null` que le `copyWith` généré). Un défaut amorcé
+  /// laisse le champ *pristine* (pas de `isDirty`).
   final Object? defaultValue;
 
   /// Champ non éditable (mode lecture).

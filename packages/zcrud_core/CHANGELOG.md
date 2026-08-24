@@ -3,6 +3,13 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.14.0 — 2026-08-24
+
+### Ajouté
+- **Formulaires** : `ZTextConfig.keyboardType` honoré (table fermée, chaîne inconnue ⇒ repli par `maxLines`) ; port `ZNumberDisplayFormatter` (lecture et résumé de sous-liste — sans port, rendu inchangé) ; `ZTextCapitalization.lowercase` (déterministe, collage compris) et `ZcrudScope(defaultTextConfig:)` (précédence champ > scope) ; teinte par type de champ atteignant bordure de focus et pastille d'icône — **étalon pixel-identique sans déclaration**, présets = données, couleurs normalisées pour le contraste ; `minValueKey`/`maxValueKey` honorés (revalidation ciblée au changement du champ référencé) ; cinquième cible **`readOnly`** de `ZDerivation` (lecture seule conditionnelle, toutes familles, le statique prime) ; œil natif sur le mot de passe (48 dp, `Semantics`, masqué par défaut) et `ZFieldAdornment.onTap` ; `ZFieldSpec.defaultValue` amorcé pour toute tranche absente d'`initialValues` (clé présente = autoritaire, même nulle).
+
+### Garde
+- **Garde d'inertie** : toute propriété publique d'une `Z*Config` est lue par la présentation, ou figure dans une courte liste « domaine pur » justifiée au point de déclaration — l'ajout d'une option morte rougit.
 ## 3.13.0 — 2026-08-24
 
 ### Ajouté

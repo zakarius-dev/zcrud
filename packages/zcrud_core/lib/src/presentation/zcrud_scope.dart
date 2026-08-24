@@ -9,11 +9,13 @@ library;
 
 import 'package:flutter/widgets.dart';
 
+import '../domain/edition/z_field_config.dart';
 import '../domain/ports/cloud_storage_repository.dart';
 import '../domain/ports/z_acl.dart';
 import '../domain/ports/z_app_file_resolver.dart';
 import '../domain/ports/z_choices_source.dart';
 import '../domain/ports/z_date_display_formatter.dart';
+import '../domain/ports/z_number_display_formatter.dart';
 import '../domain/ports/z_relation_crud.dart';
 import '../domain/ports/z_relation_source.dart';
 import 'dnd/z_drop_region_renderer.dart';
@@ -99,6 +101,8 @@ class ZcrudScope extends InheritedWidget {
     this.gradientResolver,
     this.richTextRenderer,
     this.dateDisplayFormatter,
+    this.numberDisplayFormatter,
+    this.defaultTextConfig,
     super.key,
   });
 
@@ -291,6 +295,30 @@ class ZcrudScope extends InheritedWidget {
   /// hors de `build` (AD-2 : aucun objet coûteux recréé par build).
   final ZDateDisplayFormatter? dateDisplayFormatter;
 
+  /// Seam de **formatage d'affichage des nombres** — jumeau de
+  /// [dateDisplayFormatter] (même nullabilité, même règle de repli).
+  ///
+  /// `null` (défaut) ⇒ toute voie de lecture rend la **chaîne brute**
+  /// (`'$value'`) — comportement d'aujourd'hui **strictement inchangé** pour un
+  /// hôte passif. Le formatage (groupement, séparateur décimal, précision) est
+  /// visible UNIQUEMENT pour qui injecte : le cœur n'invente aucun format par
+  /// défaut. Consommé par la fiche de lecture de la famille nombre ET par le
+  /// résumé de sous-liste. Fournir une instance `const` ou mémoïsée hors de
+  /// `build`.
+  final ZNumberDisplayFormatter? numberDisplayFormatter;
+
+  /// **Config texte par défaut du scope** : appliquée à tout champ
+  /// `text`/`multiline`/`password` qui ne déclare **aucune** config.
+  ///
+  /// Précédence : la config **déclarée par le champ** gagne toujours
+  /// (`ZFieldSpec.config` non-`null` ⇒ ce défaut est ignoré en bloc — jamais de
+  /// fusion membre à membre) ; ce défaut ensuite ; à défaut, le rendu
+  /// historique. `null` (défaut) ⇒ comportement strictement inchangé.
+  ///
+  /// C'est le canal qui évite de re-déclarer une même règle (capitalisation,
+  /// clavier…) champ par champ sur tout un formulaire.
+  final ZTextConfig? defaultTextConfig;
+
   /// Dérive un nouveau scope à partir de celui-ci en ne remplaçant que les
   /// seams nommés.
   ///
@@ -342,6 +370,8 @@ class ZcrudScope extends InheritedWidget {
     Object? gradientResolver = _zScopeUndefined,
     Object? richTextRenderer = _zScopeUndefined,
     Object? dateDisplayFormatter = _zScopeUndefined,
+    Object? numberDisplayFormatter = _zScopeUndefined,
+    Object? defaultTextConfig = _zScopeUndefined,
   }) =>
       ZcrudScope(
         key: key,
@@ -413,6 +443,13 @@ class ZcrudScope extends InheritedWidget {
         dateDisplayFormatter: identical(dateDisplayFormatter, _zScopeUndefined)
             ? this.dateDisplayFormatter
             : dateDisplayFormatter as ZDateDisplayFormatter?,
+        numberDisplayFormatter:
+            identical(numberDisplayFormatter, _zScopeUndefined)
+                ? this.numberDisplayFormatter
+                : numberDisplayFormatter as ZNumberDisplayFormatter?,
+        defaultTextConfig: identical(defaultTextConfig, _zScopeUndefined)
+            ? this.defaultTextConfig
+            : defaultTextConfig as ZTextConfig?,
         child: child,
       );
 
@@ -465,6 +502,8 @@ class ZcrudScope extends InheritedWidget {
     Object? gradientResolver = _zScopeUndefined,
     Object? richTextRenderer = _zScopeUndefined,
     Object? dateDisplayFormatter = _zScopeUndefined,
+    Object? numberDisplayFormatter = _zScopeUndefined,
+    Object? defaultTextConfig = _zScopeUndefined,
   }) {
     final ZcrudScope base = maybeOf(context) ?? ZcrudScope(child: child);
     return base.copyWith(
@@ -492,6 +531,8 @@ class ZcrudScope extends InheritedWidget {
       gradientResolver: gradientResolver,
       richTextRenderer: richTextRenderer,
       dateDisplayFormatter: dateDisplayFormatter,
+      numberDisplayFormatter: numberDisplayFormatter,
+      defaultTextConfig: defaultTextConfig,
       child: child,
     );
   }
@@ -546,5 +587,10 @@ class ZcrudScope extends InheritedWidget {
       // rien ne lève, le rendu reste simplement périmé (couvert par
       // `z_scope_notify_parity_test.dart`).
       !identical(richTextRenderer, oldWidget.richTextRenderer) ||
-      !identical(dateDisplayFormatter, oldWidget.dateDisplayFormatter);
+      !identical(dateDisplayFormatter, oldWidget.dateDisplayFormatter) ||
+      !identical(numberDisplayFormatter, oldWidget.numberDisplayFormatter) ||
+      // `defaultTextConfig` est un pur-données à égalité de valeur : la
+      // comparaison d'identité suffit (une instance `const` partagée est
+      // identique à elle-même ; en changer d'instance doit notifier).
+      !identical(defaultTextConfig, oldWidget.defaultTextConfig);
 }

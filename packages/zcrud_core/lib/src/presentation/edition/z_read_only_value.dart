@@ -21,6 +21,7 @@ import '../../domain/edition/z_field_choice.dart';
 import '../../domain/edition/z_field_config.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../../domain/ports/z_date_display_formatter.dart';
+import '../../domain/ports/z_number_display_formatter.dart';
 import '../l10n/z_localizations.dart';
 import '../zcrud_scope.dart';
 import 'edition_field_family.dart';
@@ -148,22 +149,29 @@ ReadOnlyValue zReadOnlyValueOf(
   }
 }
 
-/// Rend un nombre en lecture avec suffixe/préfixe NEUTRE selon
-/// `ZNumberConfig` (défensif invariant AD-10 : config absente ⇒ `'$value'`).
+/// Rend un nombre en lecture : le **nombre nu** est projeté par le port neutre
+/// `ZNumberDisplayFormatter` (port absent / valeur non numérique / port en
+/// erreur ⇒ chaîne BRUTE, soit exactement le rendu d'avant — invariant AD-10),
+/// puis le suffixe NEUTRE déclaré par `ZNumberConfig` est apposé.
 /// Pourcentage → `« 42 % »` ; devise → `« 42 $ »` (symbole
 /// config/`currencySuffix`, jamais codé en dur — invariants FR-26/AD-1).
 String _numberText(BuildContext context, ZFieldSpec field, Object? value) {
+  final base = zNumberDisplayTextOf(
+    ZcrudScope.maybeOf(context)?.numberDisplayFormatter,
+    value,
+    localeTag: _localeTag(context),
+  );
   final cfg = field.config;
-  if (cfg is! ZNumberConfig) return '$value';
+  if (cfg is! ZNumberConfig) return base;
   if (cfg.isPercentage) {
-    return '$value ${label(context, 'percentSuffix', fallback: '%')}';
+    return '$base ${label(context, 'percentSuffix', fallback: '%')}';
   }
   if (cfg.isCurrency) {
     final symbol =
         cfg.currencySymbol ?? label(context, 'currencySuffix', fallback: r'$');
-    return '$value $symbol';
+    return '$base $symbol';
   }
-  return '$value';
+  return base;
 }
 
 /// Texte d'affichage d'une valeur de date.

@@ -30,6 +30,8 @@ import '../../domain/edition/z_condition_evaluator.dart' show ZValueOf;
 import '../../domain/edition/z_field_adornment.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../l10n/z_localizations.dart';
+import '../theme/z_gradient_resolver.dart';
+import '../theme/z_readable_tint.dart';
 import '../theme/z_theme.dart';
 import '../zcrud_scope.dart';
 import 'z_field_label.dart';
@@ -102,10 +104,11 @@ Widget? resolveAdornment(
   ZValueOf? valueOf,
 }) {
   if (adornment == null) return null;
+  final Widget? resolved;
   switch (adornment.kind) {
     case ZAdornmentKind.text:
       final text = label(context, adornment.value, fallback: adornment.value);
-      return Text(
+      resolved = Text(
         text,
         textAlign: TextAlign.start,
         style: Theme.of(context).textTheme.bodyMedium,
@@ -113,24 +116,51 @@ Widget? resolveAdornment(
     case ZAdornmentKind.icon:
       final data = zResolveAdornmentIcon(context, adornment.value);
       // Clé inconnue ⇒ slot omis (jamais de throw — invariant AD-10).
-      return data == null ? null : Icon(data);
+      resolved = data == null ? null : Icon(data);
     case ZAdornmentKind.widget:
       // Cas état-dépendant : l'ornement reçoit la valeur COURANTE du champ
       // qu'il orne et le lecteur nommé des autres champs. `onChanged` reste
       // inerte — un ornement est un affichage (display-only).
       final builder =
           ZcrudScope.maybeOf(context)?.widgetRegistry?.tryBuilderFor(adornment.value);
-      if (builder == null) return null;
-      return builder(
-        context,
-        ZFieldWidgetContext(
-          field: field,
-          value: valueOf?.call(field.name),
-          onChanged: _noop,
-          valueOf: valueOf,
-        ),
-      );
+      resolved = builder == null
+          ? null
+          : builder(
+              context,
+              ZFieldWidgetContext(
+                field: field,
+                value: valueOf?.call(field.name),
+                onChanged: _noop,
+                valueOf: valueOf,
+              ),
+            );
   }
+  if (resolved == null) return null;
+  final onTap = adornment.onTap;
+  // Sans `onTap`, l'ornement reste purement DÉCORATIF : arbre strictement
+  // identique à l'antérieur (additif — aucun wrapper, aucune sémantique
+  // ajoutée).
+  if (onTap == null) return resolved;
+  // Ornement INTERACTIF : cible tactile accessible ≥ 48 dp + sémantique de
+  // bouton (AD-13). Une icône passe par `IconButton` (contraintes 48 dp
+  // natives, splash standard) ; texte/widget par une cible `InkWell` bornée.
+  if (adornment.kind == ZAdornmentKind.icon) {
+    return IconButton(onPressed: onTap, icon: resolved);
+  }
+  return Semantics(
+    button: true,
+    container: true,
+    child: InkWell(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: kMinInteractiveDimension,
+          minHeight: kMinInteractiveDimension,
+        ),
+        child: Center(child: resolved),
+      ),
+    ),
+  );
 }
 
 /// `onChanged` inerte pour un ornement `.widget` (display-only) : un ornement
@@ -161,8 +191,27 @@ InputDecoration zFieldDecoration(
   String? errorText,
   String? suffixText,
   ZValueOf? valueOf,
+  Widget? suffixIconOverride,
 }) {
   final tokens = ZcrudTheme.of(context);
+  // Teinte PAR TYPE DE CHAMP — strictement opt-in : elle n'existe que si le
+  // résolveur de dégradé du scope répond à la clé `zFieldTypeTintKey(type)`.
+  // Aucun résolveur / clé non servie ⇒ `tint == null` et la décoration est
+  // celle d'avant, au pixel près. Une couleur servie est NORMALISÉE pour le
+  // contraste contre la surface du champ (`zReadableTintOn`, plancher
+  // non-texte WCAG §1.4.11), thème clair comme sombre — jamais une couleur
+  // illisible appliquée telle quelle.
+  Color? tint;
+  if (!bare) {
+    final tintSpec = zResolveGradient(context, zFieldTypeTintKey(field.type));
+    if (tintSpec != null) {
+      final surface = tokens.fieldFillColor ??
+          Theme.of(context).colorScheme.surfaceContainerHighest;
+      final colors = tintSpec.gradient.colors;
+      final base = colors.isNotEmpty ? colors.first : tintSpec.onGradient;
+      tint = zReadableTintOn(base, surface: surface);
+    }
+  }
   String? l10n(String? key) =>
       key == null ? null : label(context, key, fallback: key);
 
@@ -200,6 +249,10 @@ InputDecoration zFieldDecoration(
       }
     }
   }
+  // Slot `suffixIcon` fourni par la FAMILLE (œil du mot de passe) : il prime
+  // sur un ornement `.icon` déclaré — le geste de la famille ne doit jamais
+  // être évincé par un décor.
+  if (suffixIconOverride != null) suffixIcon = suffixIconOverride;
 
   return tokens.inputDecoration(
     context,
@@ -220,5 +273,6 @@ InputDecoration zFieldDecoration(
     // champ portant les deux). `suffixIcon` + `suffixText` restent
     // compatibles.
     suffixText: suffix != null ? null : suffixText,
+    tintColor: tint,
   );
 }

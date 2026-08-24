@@ -31,6 +31,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import '../data/delta_neutral_ops.dart';
 import '../data/z_delta_codec.dart';
 import '../domain/z_codec.dart';
+import '../domain/z_markdown_copy_format.dart';
 import 'z_rich_text_core.dart';
 import 'z_rich_text_style_set.dart';
 
@@ -64,7 +65,7 @@ class ZMarkdownReader extends StatefulWidget {
     required this.value,
     this.codec,
     this.label,
-    this.placeholder = 'Aucun contenu',
+    this.placeholder = defaultPlaceholder,
     this.chrome = ZMarkdownReaderChrome.bordered,
     this.semanticsEnabled = true,
     this.baseStyle,
@@ -72,6 +73,7 @@ class ZMarkdownReader extends StatefulWidget {
     this.textScaleFactor,
     this.formulaSpec,
     this.copyOnLongPress = false,
+    this.copyFormats = const <ZMarkdownCopyFormat>[],
     this.copiedFeedbackText,
     this.copySemanticsLabel,
     this.emptyBuilder,
@@ -79,6 +81,9 @@ class ZMarkdownReader extends StatefulWidget {
     this.emptySubtitle,
     super.key,
   });
+
+  /// Texte du placeholder par défaut de l'état vide.
+  static const String defaultPlaceholder = 'Aucun contenu';
 
   /// Valeur NEUTRE courante à rendre (Delta JSON `List<Map<String, dynamic>>`)
   /// ou valeur au format persisté du [codec]. `null`/vide ⇒ placeholder.
@@ -139,6 +144,18 @@ class ZMarkdownReader extends StatefulWidget {
   /// exactement l'articulation legacy (lecteur non sélectionnable, appui long
   /// = tout copier). Défaut `false` ⇒ rendu ET gestes historiques inchangés.
   final bool copyOnLongPress;
+
+  /// Formats de copie DÉCLARÉS PAR L'HÔTE (ne s'applique que si
+  /// [copyOnLongPress] est actif).
+  ///
+  /// Vide (défaut) ⇒ le geste copie DIRECTEMENT la valeur encodée par le
+  /// codec du lecteur (comportement historique inchangé). Non vide ⇒ l'appui
+  /// long ouvre un menu listant EXACTEMENT ces formats, dans cet ordre
+  /// (libellé résolu l10n par [ZMarkdownCopyFormat.key]) ; la transformation
+  /// du format choisi reçoit le Delta neutre du document courant et sa chaîne
+  /// est copiée. Le retour ([copiedFeedbackText]) est le même dans les deux
+  /// voies.
+  final List<ZMarkdownCopyFormat> copyFormats;
 
   /// libellé du retour (SnackBar via `ScaffoldMessenger.maybeOf`)
   /// après copie — INJECTÉ par l'hôte (l10n chez lui, aucun libellé en dur
@@ -239,6 +256,76 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
     final Object? encoded =
         _codec.encode(DeltaNeutralOps.encodeNeutral(_quill.document));
     final String payload = encoded is String ? encoded : jsonEncode(encoded);
+    await Clipboard.setData(ClipboardData(text: payload));
+    if (!mounted) return;
+    final String? feedback = widget.copiedFeedbackText;
+    if (feedback == null) return;
+    ScaffoldMessenger.maybeOf(context)
+        ?.showSnackBar(SnackBar(content: Text(feedback)));
+  }
+
+  /// dispatch du geste de copie : SANS format déclaré, copie directe
+  /// (comportement de référence inchangé) ; AVEC, menu des formats de l'hôte
+  /// ancré au point d'appui ([globalPosition], repli = centre du lecteur).
+  Future<void> _onCopyGesture([Offset? globalPosition]) async {
+    if (widget.copyFormats.isEmpty) return _copyAll();
+    // Sans Overlay monté (hôte minimal), aucun menu n'est possible : repli
+    // sur la copie directe plutôt qu'un throw (jamais de crash).
+    if (Overlay.maybeOf(context) == null) return _copyAll();
+    final ZMarkdownCopyFormat? chosen = await _showCopyMenu(globalPosition);
+    if (chosen == null || !mounted) return;
+    await _copyWithFormat(chosen);
+  }
+
+  /// menu des formats déclarés — EXACTEMENT la liste de l'hôte, dans son
+  /// ordre ; libellés résolus l10n par clé (`label(context, key,
+  /// fallback: key)`), aucun libellé du paquet. Items ≥ 48 dp
+  /// (hauteur [kMinInteractiveDimension] des [PopupMenuItem]) + `Semantics`
+  /// bouton.
+  Future<ZMarkdownCopyFormat?> _showCopyMenu(Offset? globalPosition) {
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject()! as RenderBox;
+    final RenderBox self = context.findRenderObject()! as RenderBox;
+    final Offset anchor = globalPosition ??
+        self.localToGlobal(self.size.center(Offset.zero), ancestor: overlay);
+    // Ancrage au POINT physique de l'appui (position pointeur, indépendante de
+    // la direction de lecture) ; le menu se replace seul près des bords.
+    final RelativeRect position = RelativeRect.fromRect(
+      Rect.fromCenter(center: anchor, width: 0, height: 0),
+      Offset.zero & overlay.size,
+    );
+    return showMenu<ZMarkdownCopyFormat>(
+      context: context,
+      position: position,
+      items: <PopupMenuEntry<ZMarkdownCopyFormat>>[
+        for (final ZMarkdownCopyFormat format in widget.copyFormats)
+          PopupMenuItem<ZMarkdownCopyFormat>(
+            key: Key('z-markdown-copy-format-${format.key}'),
+            value: format,
+            // hauteur par défaut d'un PopupMenuItem = kMinInteractiveDimension
+            // (48 dp) — cible tactile suffisante sans contrainte ajoutée.
+            child: Semantics(
+              button: true,
+              child: Text(label(context, format.key, fallback: format.key)),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// copie la chaîne produite par la transformation de [format] à partir du
+  /// Delta NEUTRE du document courant, puis même retour que [_copyAll].
+  /// Défensif : une transformation d'hôte qui lève n'écrit rien et ne casse
+  /// jamais le lecteur.
+  Future<void> _copyWithFormat(ZMarkdownCopyFormat format) async {
+    final List<Map<String, dynamic>> delta =
+        DeltaNeutralOps.encodeNeutral(_quill.document);
+    final String payload;
+    try {
+      payload = format.transform(delta);
+    } on Object catch (_) {
+      return;
+    }
     await Clipboard.setData(ClipboardData(text: payload));
     if (!mounted) return;
     final String? feedback = widget.copiedFeedbackText;
@@ -367,12 +454,15 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
     if (widget.copyOnLongPress && !_isEmpty) {
       gestured = Semantics(
         // Action exposée au lecteur d'écran (AD-13) ; hint INJECTÉ optionnel.
-        onLongPress: _copyAll,
+        // Voie sémantique sans position pointeur ⇒ le menu (si formats)
+        // s'ancre au centre du lecteur.
+        onLongPress: _onCopyGesture,
         hint: widget.copySemanticsLabel,
         child: GestureDetector(
           key: const Key('z-markdown-reader-copy-gesture'),
           behavior: HitTestBehavior.opaque,
-          onLongPress: _copyAll,
+          onLongPressStart: (LongPressStartDetails details) =>
+              _onCopyGesture(details.globalPosition),
           child: content,
         ),
       );
