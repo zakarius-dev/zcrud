@@ -6,7 +6,7 @@ sidebar_position: 1
 
 # zcrud
 
-**zcrud** est un écosystème de 40 paquets Flutter qui transforme un **schéma déclaratif de
+**zcrud** est un écosystème de 41 paquets Flutter qui transforme un **schéma déclaratif de
 champs** (`ZFieldSpec`) en applications CRUD complètes : formulaires d'édition, tableaux de
 liste, export PDF/Excel, synchronisation offline-first — avec des champs riches (Markdown,
 géo, téléphone, sous-listes, flashcards, mindmaps, chat).
@@ -59,7 +59,8 @@ vit sous `lib/src/` et n'est pas un contrat.
 ## Documentation
 
 - [Concepts](concepts/invariants.md) — les modèles mentaux : schéma, couches, réactivité,
-  offline, [artefacts de message](concepts/artefacts-de-message.md), invariants.
+  offline, [artefacts de message](concepts/artefacts-de-message.md),
+  [routage par tâche](concepts/routage-par-tache.md), invariants.
 - [Guides](guides/index.md) — migration depuis un moteur legacy, recettes (cookbook).
 - [Catalogue des paquets](paquets/index.md) — une fiche par paquet : rôle, quand l'utiliser,
   liens.

@@ -196,6 +196,12 @@ sous-formulaires imbriqués, `ZSubListDisplayMode.tags` rend une rangée de puce
 `ZSubItemFormPresentation` choisit l'enveloppe du formulaire d'item — `dialog`
 (défaut), `sheet` ou `page`.
 
+Le sous-schéma peut lui-même contenir un champ `subItems` : les sous-listes
+s'**imbriquent sans limite de profondeur déclarée**. Le formulaire d'un item
+transporte le `ZcrudScope` ambiant (libellés, thème, ACL) jusqu'aux niveaux
+imbriqués, et une table de résumé qui nomme une sous-liste dans ses
+`summaryFields` affiche son **compte** d'items, pas la liste brute.
+
 Quel que soit le mode, chaque item est édité par un `ZFormController` **propre à
 l'item**, qui réutilise le même dispatcher de champ que le formulaire racine. La
 granularité de rebuild reste imbriquée : taper dans le champ d'un

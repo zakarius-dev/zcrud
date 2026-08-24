@@ -36,6 +36,22 @@ image/vidéo, filet horizontal), un habillage de champ (chrome carte, plein
   `zcrud_html`, une voie exclusive de celle-ci — les deux paquets ne
   s'utilisent jamais ensemble sur le même champ.
 
+## Deux règles du rendu de lecture {#rendu-lecture}
+
+- **Une cellule de tableau est nue.** Une cellule riche (gras, lien,
+  formule) est rendue par un lecteur imbriqué **sans cadre ni padding
+  propres** : le tableau dessine déjà sa grille, et une cellule riche reste
+  visuellement identique à une cellule en texte pur — jamais deux bordures
+  concentriques dans le même tableau.
+- **Une formule LaTeX bloc trop large défile.** Le rendu de lecture d'un
+  bloc LaTeX défile horizontalement au lieu de tronquer la fin de la
+  formule ; l'alignement, les marges et `blockScaleFactor` restent ce
+  qu'ils étaient — réduire l'échelle n'est pas nécessaire pour faire tenir
+  une formule.
+
+Tout le reste du rendu est inchangé : ces deux comportements sont ceux du
+lecteur, aucun paramètre d'hôte n'est requis.
+
 ## Types clés
 
 | Type | Rôle |

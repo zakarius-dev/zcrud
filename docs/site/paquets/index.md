@@ -1,12 +1,12 @@
 ---
 title: Catalogue des paquets
-description: Les 40 paquets zcrud, groupés par capacité — rôle en une ligne et fiche dédiée.
+description: Les 41 paquets zcrud, groupés par capacité — rôle en une ligne et fiche dédiée.
 sidebar_position: 1
 ---
 
 # Catalogue des paquets
 
-zcrud compte **40 paquets**, groupés ci-dessous par capacité — le même découpage que la
+zcrud compte **41 paquets**, groupés ci-dessous par capacité — le même découpage que la
 carte des paquets du dépôt. Chaque paquet expose son API par un barrel unique
 (`lib/<pkg>.dart`) ; l'implémentation sous `lib/src/` n'est pas un contrat. Le graphe de
 dépendances entre paquets est acyclique et vérifié par gate
@@ -14,7 +14,7 @@ dépendances entre paquets est acyclique et vérifié par gate
 satellite, chaque satellite dépend du cœur.
 
 Les liens ci-dessous pointent vers la fiche dédiée de chaque paquet (gabarit défini par la
-[charte documentaire](../charte.md)) — les 40 paquets en ont une.
+[charte documentaire](../charte.md)) — les 41 paquets en ont une.
 
 ## Cœur {#coeur}
 
@@ -67,7 +67,8 @@ Les liens ci-dessous pointent vers la fiche dédiée de chaque paquet (gabarit d
 | [`zcrud_chat`](./zcrud_chat.md) | Contrôleur de conversation Flutter-natif (tranches `ValueListenable`, flux reprenables). |
 | [`zcrud_chat_kernel`](./zcrud_chat_kernel.md) | Noyau neutre de conversation IA (messages, blocs de contenu, sources, quotas). |
 | [`zcrud_chat_markdown`](./zcrud_chat_markdown.md) | Rendu Markdown/LaTeX du chat, derrière le seam `ZChatRenderer`. |
-| [`zcrud_chat_material`](./zcrud_chat_material.md) | Builders Material calqués sur la référence lex_douane pour le composeur et les réglages de chat. |
+| [`zcrud_chat_material`](./zcrud_chat_material.md) | Habillage Material du composer, de la feuille de réglages (riche par défaut) et de la feuille d'outils du chat. |
+| [`zcrud_chat_firestore`](./zcrud_chat_firestore.md) | Dépôt Firestore des routeurs IA (`ZChatRouter`) : fabrique sur le repository générique, codec legacy, sémantique de suppression au choix. |
 | [`zcrud_chat_study`](./zcrud_chat_study.md) | Pont chat → SRS : cartes générées depuis les conversations, pool d'étude dédupliqué. |
 | [`zcrud_chat_syncfusion`](./zcrud_chat_syncfusion.md) | Coquille Syncfusion AI AssistView et normalisation de flux texte, derrière `ZChatRenderer`. |
 

@@ -1,6 +1,6 @@
 ---
 title: "Concept : architecture hexagonale"
-description: Couches domain/data/presentation, ports neutres, adaptateurs et carte des 40 paquets.
+description: Couches domain/data/presentation, ports neutres, adaptateurs et carte des 41 paquets.
 sidebar_position: 4
 ---
 
@@ -96,7 +96,8 @@ temps :
 `zcrud_chat_kernel` (Dart pur, dépendant uniquement de `zcrud_core`) porte le modèle
 de conversation ; `zcrud_chat` (Flutter) l'assemble avec les rendus riches
 (`zcrud_chat_markdown`, `zcrud_chat_material`, `zcrud_chat_study`,
-`zcrud_chat_syncfusion`).
+`zcrud_chat_syncfusion`) ; `zcrud_chat_firestore` persiste le catalogue de
+routeurs du kernel sans que celui-ci n'en sache rien.
 
 Ce découpage a un effet concret : un consommateur qui n'a besoin que du modèle
 (migration de données, traitement serveur, test unitaire hors Flutter) importe le
@@ -121,7 +122,7 @@ Le traitement se fait par `fold`/`is`/`message`, jamais par un `switch` exhausti
 `ZFailure` — l'exhaustivité compilateur est explicitement sacrifiée pour permettre
 l'extension inter-paquet.
 
-## La carte des 40 paquets {#la-carte-des-paquets}
+## La carte des 41 paquets {#la-carte-des-paquets}
 
 | Capacité | Paquets |
 |---|---|
@@ -130,7 +131,7 @@ l'extension inter-paquet.
 | **Liste & données** | `zcrud_list` (Syncfusion) · `zcrud_firestore` (offline-first) · `zcrud_select` |
 | **Rich-text** | `zcrud_markdown` (Quill, LaTeX, tables) · `zcrud_html` |
 | **Étude** | `zcrud_study` · `zcrud_study_kernel` · `zcrud_session` · `zcrud_flashcard` · `zcrud_exam` · `zcrud_mindmap` · `zcrud_note` · `zcrud_document` |
-| **Chat** | `zcrud_chat` · `zcrud_chat_kernel` · `zcrud_chat_markdown` · `zcrud_chat_material` · `zcrud_chat_study` · `zcrud_chat_syncfusion` |
+| **Chat** | `zcrud_chat` · `zcrud_chat_kernel` · `zcrud_chat_markdown` · `zcrud_chat_material` · `zcrud_chat_study` · `zcrud_chat_syncfusion` · `zcrud_chat_firestore` |
 | **Champs spécialisés** | `zcrud_geo` · `zcrud_geo_location` · `zcrud_intl` (téléphone/pays/devise) · `zcrud_media` · `zcrud_field_extras` |
 | **Export** | `zcrud_export` · `zcrud_export_pdf` · `zcrud_export_ui` |
 | **UI & navigation** | `zcrud_ui_kit` · `zcrud_responsive` · `zcrud_menu` · `zcrud_navigation` · `zcrud_screen` (écran CRUD assemblé) · `zcrud_dnd` · `zcrud_reorder` |
