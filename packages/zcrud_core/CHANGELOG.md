@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.15.0 — 2026-08-24
+
+### Ajouté
+- **La teinte par type de champ atteint le libellé flottant** : quand une teinte est résolue, la couleur du `floatingLabelStyle` la porte (normalisée pour le contraste) ; sans résolveur, rendu inchangé au pixel.
+- **Pastille de fond de l'icône d'ornement** : jetons de fond (alpha clair/sombre, rayon, taille) peints sous l'icône dans la vue d'ornement, sous la normalisation de contraste et la gouvernance des modes existantes ; aucun jeton ⇒ aucun conteneur ajouté.
 ## 3.14.0 — 2026-08-24
 
 ### Ajouté

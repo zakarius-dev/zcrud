@@ -392,6 +392,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.subListAddControlRadius,
     this.subListAddControlSize,
     this.subListAddControlIconColor,
+    this.adornmentIconBackgroundAlpha,
+    this.adornmentIconBackgroundRadius,
+    this.adornmentIconSize,
     this.accentBarHeight,
     this.gradientBegin,
     this.gradientEnd,
@@ -941,6 +944,29 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Couleur de l'**icône** du contrôle d'ajout (`Icons.add`). `null`
   /// (défaut) ⇒ couleur d'icône ambiante — rendu inchangé.
   final Color? subListAddControlIconColor;
+
+  /// **Opacité** (`0..1`) du fond de la « pastille » peinte sous un ornement
+  /// **icône** `prefix`/`suffix` décoratif d'un champ. La pastille est remplie
+  /// de la **teinte par type de champ** résolue pour ce champ (déjà normalisée
+  /// pour le contraste), atténuée par cette opacité.
+  ///
+  /// `null` (défaut) ⇒ aucune pastille : aucun conteneur n'est ajouté à
+  /// l'arbre, rendu strictement inchangé. Sans teinte résolue pour le champ,
+  /// aucune pastille non plus — le fond n'a **pas d'autre source de couleur**
+  /// (jamais une couleur inventée). Un ornement icône **interactif** garde son
+  /// affordance native (cible ≥ 48 dp) et n'est pas enveloppé.
+  final double? adornmentIconBackgroundAlpha;
+
+  /// **Rayon** des coins de la pastille d'ornement icône. `null` (défaut) ⇒
+  /// coins droits. Sans [adornmentIconBackgroundAlpha], aucun conteneur n'est
+  /// ajouté : le rayon seul ne peint rien.
+  final Radius? adornmentIconBackgroundRadius;
+
+  /// **Taille** (dp) du glyphe des ornements icône (`leading`/`prefix`/
+  /// `suffix`). `null` (défaut) ⇒ taille du `IconTheme` ambiant — rendu
+  /// inchangé. Canal de **dimension**, indépendant de la teinte et de la
+  /// pastille : il s'applique même sans elles.
+  final double? adornmentIconSize;
 
   /// Hauteur future de la barre d'accent. `null` conserve le rendu par défaut.
   final double? accentBarHeight;
@@ -2282,8 +2308,18 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       errorText: errorText,
       errorMaxLines: helperMaxLines,
       labelStyle: labelTextStyle,
+      // La teinte par type de champ atteint aussi le LIBELLÉ FLOTTANT : même
+      // grammaire opt-in que la bordure de focus et les icônes — `tintColor`
+      // est déjà normalisée par l'appelant contre la surface du champ (la même
+      // surface que celle sur laquelle le libellé flottant se lit), et
+      // `copyWith(color: null)` est un no-op ⇒ sans résolveur, style
+      // strictement identique à l'antérieur, au pixel près. Application
+      // DIRECTE plutôt qu'un jeton booléen : un jeton à défaut `true` serait
+      // le premier du fichier qu'il faudrait DÉPOSER pour retenir la teinte —
+      // l'inverse de la grammaire opt-in du canal (aucun résolveur ⇒ rien).
       floatingLabelStyle: (labelTextStyle ?? const TextStyle()).copyWith(
         fontWeight: floatingLabelWeight,
+        color: tintColor,
       ),
       filled: inputFilled,
       // Jeton DÉDIÉ, absent du repli ⇒ hôte passif
@@ -2382,6 +2418,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Radius? subListAddControlRadius,
     double? subListAddControlSize,
     Color? subListAddControlIconColor,
+    double? adornmentIconBackgroundAlpha,
+    Radius? adornmentIconBackgroundRadius,
+    double? adornmentIconSize,
     double? accentBarHeight,
     AlignmentGeometry? gradientBegin,
     AlignmentGeometry? gradientEnd,
@@ -2597,6 +2636,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         subListAddControlSize ?? this.subListAddControlSize,
     subListAddControlIconColor:
         subListAddControlIconColor ?? this.subListAddControlIconColor,
+    adornmentIconBackgroundAlpha:
+        adornmentIconBackgroundAlpha ?? this.adornmentIconBackgroundAlpha,
+    adornmentIconBackgroundRadius:
+        adornmentIconBackgroundRadius ?? this.adornmentIconBackgroundRadius,
+    adornmentIconSize: adornmentIconSize ?? this.adornmentIconSize,
     accentBarHeight: accentBarHeight ?? this.accentBarHeight,
     gradientBegin: gradientBegin ?? this.gradientBegin,
     gradientEnd: gradientEnd ?? this.gradientEnd,
@@ -3008,6 +3052,21 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       subListAddControlIconColor: _lerpNullableColor(
         subListAddControlIconColor,
         other.subListAddControlIconColor,
+        t,
+      ),
+      adornmentIconBackgroundAlpha: _lerpNullableDouble(
+        adornmentIconBackgroundAlpha,
+        other.adornmentIconBackgroundAlpha,
+        t,
+      ),
+      adornmentIconBackgroundRadius: _lerpNullableRadius(
+        adornmentIconBackgroundRadius,
+        other.adornmentIconBackgroundRadius,
+        t,
+      ),
+      adornmentIconSize: _lerpNullableDouble(
+        adornmentIconSize,
+        other.adornmentIconSize,
         t,
       ),
       accentBarHeight: _lerpNullableDouble(

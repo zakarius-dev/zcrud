@@ -116,7 +116,15 @@ Widget? resolveAdornment(
     case ZAdornmentKind.icon:
       final data = zResolveAdornmentIcon(context, adornment.value);
       // Clé inconnue ⇒ slot omis (jamais de throw — invariant AD-10).
-      resolved = data == null ? null : Icon(data);
+      // Taille pilotée par le jeton `adornmentIconSize` — canal de DIMENSION
+      // pur : `null` ⇒ `Icon(data, size: null)`, strictement le widget
+      // d'avant (le `IconTheme` ambiant décide). Appliquée ICI (à la
+      // construction du glyphe) et jamais par `IconTheme.merge` : le verrou
+      // structurel du socle réserve ce duo d'enveloppes à
+      // `ZForegroundOverride`.
+      resolved = data == null
+          ? null
+          : Icon(data, size: ZcrudTheme.of(context).adornmentIconSize);
     case ZAdornmentKind.widget:
       // Cas état-dépendant : l'ornement reçoit la valeur COURANTE du champ
       // qu'il orne et le lecteur nommé des autres champs. `onChanged` reste
@@ -166,6 +174,59 @@ Widget? resolveAdornment(
 /// `onChanged` inerte pour un ornement `.widget` (display-only) : un ornement
 /// n'écrit jamais la tranche.
 void _noop(Object? _) {}
+
+// Retrait interne de la pastille d'ornement icône, de chaque côté du glyphe.
+// Constante de DIMENSION (pas une couleur — FR-26 ne porte que sur les
+// couleurs) : le côté rendu de la pastille vaut `adornmentIconSize + 2 × 7`
+// (18 dp de glyphe ⇒ pastille de 32 dp, la géométrie de référence des
+// captures). L'hôte pilote donc le côté final via `adornmentIconSize`.
+const double _kAdornmentIconPillInset = 7.0;
+
+/// Enveloppe un ornement **icône décoratif** dans sa « pastille » de fond —
+/// un aplat de la teinte par type de champ atténué par
+/// `ZcrudTheme.adornmentIconBackgroundAlpha`, arrondi par
+/// `adornmentIconBackgroundRadius`.
+///
+/// Strictement opt-in, dans les DEUX directions :
+/// - `alpha == null` (aucun jeton posé) ⇒ [icon] rendu tel quel, aucun
+///   conteneur ajouté à l'arbre ;
+/// - `tint == null` (aucune teinte résolue pour le champ) ⇒ idem : le fond n'a
+///   pas d'autre source de couleur, une pastille « neutre » serait une couleur
+///   inventée (invariant FR-26) — les jetons seuls ne peignent RIEN.
+///
+/// Un ornement **interactif** (`onTap` déclaré) n'est pas enveloppé : il est
+/// déjà rendu en `IconButton` (cible ≥ 48 dp, splash natif — invariant AD-13)
+/// et la pastille, purement décorative, ne doit ni doubler cette affordance ni
+/// en réduire la cible.
+Widget _maybeIconPill(
+  Widget icon,
+  ZFieldAdornment adornment,
+  Color? tint,
+  ZcrudTheme tokens,
+) {
+  final double? alpha = tokens.adornmentIconBackgroundAlpha;
+  if (alpha == null || tint == null || adornment.onTap != null) return icon;
+  final Radius? radius = tokens.adornmentIconBackgroundRadius;
+  // `Center` : la pastille ÉPOUSE le glyphe au centre du slot `prefixIcon`/
+  // `suffixIcon` (contraint à ≥ 48 dp par `InputDecoration`) au lieu de
+  // s'étirer — la cible et la géométrie du slot sont inchangées (AD-13).
+  // La teinte est DÉJÀ normalisée pour le contraste par l'appelant ; l'alpha
+  // ne fait qu'atténuer le fond, le glyphe par-dessus garde la teinte pleine
+  // (c'est lui qui porte la lisibilité, via `prefixIconColor`/
+  // `suffixIconColor`).
+  return Center(
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: alpha),
+        borderRadius: radius == null ? null : BorderRadius.all(radius),
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.all(_kAdornmentIconPillInset),
+        child: icon,
+      ),
+    ),
+  );
+}
 
 /// Construit la décoration **enrichie** d'une famille décor-portante :
 /// label enrichi ([ZFieldLabel]), `hintText`/`helperText` résolus
@@ -228,7 +289,7 @@ InputDecoration zFieldDecoration(
     final w = resolveAdornment(context, p, field: field, valueOf: valueOf);
     if (w != null) {
       if (p.kind == ZAdornmentKind.icon) {
-        prefixIcon = w;
+        prefixIcon = _maybeIconPill(w, p, tint, tokens);
       } else {
         prefix = w;
       }
@@ -243,7 +304,7 @@ InputDecoration zFieldDecoration(
     final w = resolveAdornment(context, s, field: field, valueOf: valueOf);
     if (w != null) {
       if (s.kind == ZAdornmentKind.icon) {
-        suffixIcon = w;
+        suffixIcon = _maybeIconPill(w, s, tint, tokens);
       } else {
         suffix = w;
       }
