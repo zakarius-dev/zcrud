@@ -55,20 +55,42 @@
     
       <section class="multi-line-signature">
         
-        <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>
+        <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?
         <span class="name ">reorderable</span>
         <div class="features"><span class="feature">final</span></div>
 
       </section>
       
 <section class="desc markdown">
-  <p>Autorise le réordonnancement (monter/descendre) des items (<code>subItems</code>).</p>
+  <p>Gouverne le <strong>réordonnancement</strong> des items (<code>subItems</code>) — déclaration
+<strong>tri-état</strong>. Le contrôle d'ordre est un <strong>glisser-déposer à poignée</strong>
+(rendu par le <code>ZReorderRenderer</code> injecté au scope, sinon un repli
+interne), doublé d'<strong>actions sémantiques</strong> de déplacement par ligne
+(voie non gestuelle, accessible au lecteur d'écran) :</p>
+<ul>
+<li><code>null</code> (<strong>défaut</strong>) — l'ordre n'est éditable qu'en mode <code>inline</code> ;
+les modes <code>compact</code> et <code>tags</code> ne rendent aucun contrôle d'ordre. Un
+hôte qui ne déclare rien ne voit rien bouger.</li>
+<li><code>true</code> (<strong>explicite</strong>) — l'ordre est éditable partout où un contrôle
+d'ordre a un sens : poignée + actions sémantiques en <code>inline</code> <strong>et</strong>
+en <code>compact</code> (l'ordre des items EST une donnée — il est agrégé tel
+quel vers la tranche parente). En <code>compact</code>, des lignes réordonnables
+sont rendues <strong>hors</strong> de la table de résumé (liste de lignes à
+poignée, en-têtes de colonnes conservés). Le mode <code>tags</code> ne sait pas
+l'honorer (une puce n'a ni rangée ni poignée) : la déclaration y est
+<strong>signalée par une assertion de debug</strong>, jamais ignorée en silence.</li>
+<li><code>false</code> — aucun réordonnancement, dans aucun mode — ni poignée, ni
+action sémantique, même avec un renderer injecté au scope.</li>
+</ul>
+<p>Le conteneur libre d'un hôte (<a href="../../zcrud_core/ZSubListSeams/listViewBuilder.html">ZSubListSeams.listViewBuilder</a> via
+<code>ZSubListViewData.onReorder</code>) reçoit le rappel d'ordre tant que ce champ
+ne vaut pas <code>false</code>.</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final bool reorderable;</code></pre>
+  <pre class="language-dart"><code class="language-dart">final bool? reorderable;</code></pre>
 </section>
 
 
@@ -97,7 +119,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

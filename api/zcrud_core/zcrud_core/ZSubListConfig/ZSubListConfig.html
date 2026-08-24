@@ -55,8 +55,11 @@
     <section class="multi-line-signature">
       const
       <span class="name ">ZSubListConfig</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-itemFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZFieldSpec-class.html">ZFieldSpec</a></span>&gt;</span></span> <span class="parameter-name">itemFields</span> = <span class="default-value">const &lt;ZFieldSpec&gt;[]</span>, </span></li>
-<li><span class="parameter" id="param-reorderable"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">reorderable</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="param-reorderable"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">reorderable</span>, </span></li>
 <li><span class="parameter" id="param-displayMode"><span class="type-annotation"><a href="../../zcrud_core/ZSubListDisplayMode.html">ZSubListDisplayMode</a></span> <span class="parameter-name">displayMode</span> = <span class="default-value">ZSubListDisplayMode.compact</span>, </span></li>
+<li><span class="parameter" id="param-showViewAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showViewAction</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="param-showEditAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showEditAction</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="param-showDeleteAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showDeleteAction</span> = <span class="default-value">true</span>, </span></li>
 <li><span class="parameter" id="param-summaryFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">summaryFields</span> = <span class="default-value">const &lt;String&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-summaryColumns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZSubListSummaryColumn-class.html">ZSubListSummaryColumn</a></span>&gt;</span></span> <span class="parameter-name">summaryColumns</span> = <span class="default-value">const &lt;ZSubListSummaryColumn&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-softDelete"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">softDelete</span> = <span class="default-value">false</span>, </span></li>
@@ -79,8 +82,11 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">const ZSubListConfig({
   this.itemFields = const &lt;ZFieldSpec&gt;[],
-  this.reorderable = true,
+  this.reorderable,
   this.displayMode = ZSubListDisplayMode.compact,
+  this.showViewAction = true,
+  this.showEditAction = true,
+  this.showDeleteAction = true,
   this.summaryFields = const &lt;String&gt;[],
   this.summaryColumns = const &lt;ZSubListSummaryColumn&gt;[],
   this.softDelete = false,
@@ -118,7 +124,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

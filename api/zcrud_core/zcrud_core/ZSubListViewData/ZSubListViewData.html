@@ -60,6 +60,9 @@
 <li><span class="parameter" id="param-itemBuilder"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">itemBuilder</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span></li>
 <li><span class="parameter" id="param-index"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">index</span></span></li>
 </ol>), </span></li>
+<li><span class="parameter" id="param-onReorder"><span class="type-annotation">void</span> <span class="parameter-name">onReorder</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-from"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">from</span>, </span></li>
+<li><span class="parameter" id="param-to"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">to</span></span></li>
+</ol>)?, </span></li>
 </ol>})
     </section>
     
@@ -76,6 +79,7 @@
   required this.items,
   required this.children,
   required this.itemBuilder,
+  this.onReorder,
 });</code></pre>
 </section>
 
@@ -104,7 +108,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

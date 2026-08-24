@@ -112,6 +112,13 @@
 <td>—</td>
 </tr>
 <tr>
+<td><a href="../zcrud_core/ZSubListSeams/headerBuilder.html">headerBuilder</a></td>
+<td>—</td>
+<td>✅ remplace l'en-tête (prime sur <code>captionBuilder</code>)</td>
+<td>✅ idem</td>
+<td>—</td>
+</tr>
+<tr>
 <td><a href="../zcrud_core/ZSubListSeams/itemTransformer.html">itemTransformer</a></td>
 <td>—</td>
 <td>✅ résumé + seams de rendu</td>
@@ -245,7 +252,7 @@ reprend la main, aucune exception ne remonte, le formulaire reste utilisable.</p
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZSubListSeams.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZSubListSeams/ZSubListSeams.html">ZSubListSeams</a></span><span class="signature">({<span class="parameter" id="param-acl"><span class="type-annotation"><a href="../zcrud_core/ZAcl-class.html">ZAcl</a>?</span> <span class="parameter-name">acl</span>, </span><span class="parameter" id="param-itemTitleBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubItemTitleBuilder.html">ZSubItemTitleBuilder</a>?</span> <span class="parameter-name">itemTitleBuilder</span>, </span><span class="parameter" id="param-itemBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubItemWidgetBuilder.html">ZSubItemWidgetBuilder</a>?</span> <span class="parameter-name">itemBuilder</span>, </span><span class="parameter" id="param-itemActionsBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubItemActionsBuilder.html">ZSubItemActionsBuilder</a>?</span> <span class="parameter-name">itemActionsBuilder</span>, </span><span class="parameter" id="param-listViewBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubListViewBuilder.html">ZSubListViewBuilder</a>?</span> <span class="parameter-name">listViewBuilder</span>, </span><span class="parameter" id="param-captionBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubListCaptionBuilder.html">ZSubListCaptionBuilder</a>?</span> <span class="parameter-name">captionBuilder</span>, </span><span class="parameter" id="param-itemTransformer"><span class="type-annotation"><a href="../zcrud_core/ZSubItemTransformer.html">ZSubItemTransformer</a>?</span> <span class="parameter-name">itemTransformer</span>, </span><span class="parameter" id="param-itemFieldsResolver"><span class="type-annotation"><a href="../zcrud_core/ZSubItemFieldsResolver.html">ZSubItemFieldsResolver</a>?</span> <span class="parameter-name">itemFieldsResolver</span>, </span><span class="parameter" id="param-subSchemaResolver"><span class="type-annotation"><a href="../zcrud_core/ZSubListSchemaResolver.html">ZSubListSchemaResolver</a>?</span> <span class="parameter-name">subSchemaResolver</span>, </span><span class="parameter" id="param-creationTemplatesResolver"><span class="type-annotation"><a href="../zcrud_core/ZSubListTemplatesResolver.html">ZSubListTemplatesResolver</a>?</span> <span class="parameter-name">creationTemplatesResolver</span>, </span><span class="parameter" id="param-itemMenuOptions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSubItemMenuOption-class.html">ZSubItemMenuOption</a></span>&gt;</span></span> <span class="parameter-name">itemMenuOptions</span> = <span class="default-value">const &lt;ZSubItemMenuOption&gt;[]</span>, </span><span class="parameter" id="param-onCrud"><span class="type-annotation"><a href="../zcrud_core/ZSubItemCrudHook.html">ZSubItemCrudHook</a>?</span> <span class="parameter-name">onCrud</span></span>})</span>
+          <span class="name"><a href="../zcrud_core/ZSubListSeams/ZSubListSeams.html">ZSubListSeams</a></span><span class="signature">({<span class="parameter" id="param-acl"><span class="type-annotation"><a href="../zcrud_core/ZAcl-class.html">ZAcl</a>?</span> <span class="parameter-name">acl</span>, </span><span class="parameter" id="param-itemTitleBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubItemTitleBuilder.html">ZSubItemTitleBuilder</a>?</span> <span class="parameter-name">itemTitleBuilder</span>, </span><span class="parameter" id="param-itemBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubItemWidgetBuilder.html">ZSubItemWidgetBuilder</a>?</span> <span class="parameter-name">itemBuilder</span>, </span><span class="parameter" id="param-itemActionsBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubItemActionsBuilder.html">ZSubItemActionsBuilder</a>?</span> <span class="parameter-name">itemActionsBuilder</span>, </span><span class="parameter" id="param-listViewBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubListViewBuilder.html">ZSubListViewBuilder</a>?</span> <span class="parameter-name">listViewBuilder</span>, </span><span class="parameter" id="param-captionBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubListCaptionBuilder.html">ZSubListCaptionBuilder</a>?</span> <span class="parameter-name">captionBuilder</span>, </span><span class="parameter" id="param-headerBuilder"><span class="type-annotation"><a href="../zcrud_core/ZSubListHeaderBuilder.html">ZSubListHeaderBuilder</a>?</span> <span class="parameter-name">headerBuilder</span>, </span><span class="parameter" id="param-itemTransformer"><span class="type-annotation"><a href="../zcrud_core/ZSubItemTransformer.html">ZSubItemTransformer</a>?</span> <span class="parameter-name">itemTransformer</span>, </span><span class="parameter" id="param-itemFieldsResolver"><span class="type-annotation"><a href="../zcrud_core/ZSubItemFieldsResolver.html">ZSubItemFieldsResolver</a>?</span> <span class="parameter-name">itemFieldsResolver</span>, </span><span class="parameter" id="param-subSchemaResolver"><span class="type-annotation"><a href="../zcrud_core/ZSubListSchemaResolver.html">ZSubListSchemaResolver</a>?</span> <span class="parameter-name">subSchemaResolver</span>, </span><span class="parameter" id="param-creationTemplatesResolver"><span class="type-annotation"><a href="../zcrud_core/ZSubListTemplatesResolver.html">ZSubListTemplatesResolver</a>?</span> <span class="parameter-name">creationTemplatesResolver</span>, </span><span class="parameter" id="param-itemMenuOptions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZSubItemMenuOption-class.html">ZSubItemMenuOption</a></span>&gt;</span></span> <span class="parameter-name">itemMenuOptions</span> = <span class="default-value">const &lt;ZSubItemMenuOption&gt;[]</span>, </span><span class="parameter" id="param-onCrud"><span class="type-annotation"><a href="../zcrud_core/ZSubItemCrudHook.html">ZSubItemCrudHook</a>?</span> <span class="parameter-name">onCrud</span></span>})</span>
         </dt>
         <dd>
           Construit un bundle <code>const</code> de seams — tous optionnels.
@@ -305,6 +312,20 @@ reprend la main, aucune exception ne remonte, le formulaire reste utilisable.</p
 <dd class="inherited">
   The hash code for this object.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="headerBuilder" class="property">
+  <span class="name"><a href="../zcrud_core/ZSubListSeams/headerBuilder.html">headerBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZSubListHeaderBuilder.html">ZSubListHeaderBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Habillage libre de l'en-tête, <strong>informé</strong> : reçoit le champ coiffé, le
+compte d'items et le rappel d'ajout (voir <a href="../zcrud_core/ZSubListHeaderView-class.html">ZSubListHeaderView</a>) — un seam
+UNIQUE suffit donc à plusieurs sous-listes.
+  <div class="features"><span class="feature">final</span></div>
 
 </dd>
 
@@ -514,7 +535,7 @@ uniquement (voir <a href="../zcrud_core/ZSubListSchemaResolver.html">ZSubListSch
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

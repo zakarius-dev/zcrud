@@ -79,9 +79,17 @@ par le widget de champ ET par la soumission agrégée (source unique).</p>
 ) {
   final local = ZValidatorCompiler.compile(field.validators);
   final cross = compile(field.validators, c);
-  if (local == null) return cross;
-  if (cross == null) return local;
-  return (value) =&gt; local(value) ?? cross(value);
+  final bounds = _compileNumberBounds(field, c);
+  final all = &lt;FormFieldValidator&lt;String&gt;&gt;[?local, ?cross, ?bounds];
+  if (all.isEmpty) return null;
+  if (all.length == 1) return all.single;
+  return (value) {
+    for (final v in all) {
+      final e = v(value);
+      if (e != null) return e;
+    }
+    return null;
+  };
 }</code></pre>
 </section>
 
@@ -110,7 +118,7 @@ par le widget de champ ET par la soumission agrégée (source unique).</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

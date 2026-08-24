@@ -61,6 +61,7 @@
 <li><span class="parameter" id="zFieldDecoration-param-errorText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">errorText</span>, </span></li>
 <li><span class="parameter" id="zFieldDecoration-param-suffixText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">suffixText</span>, </span></li>
 <li><span class="parameter" id="zFieldDecoration-param-valueOf"><span class="type-annotation"><a href="../zcrud_core/ZValueOf.html">ZValueOf</a>?</span> <span class="parameter-name">valueOf</span>, </span></li>
+<li><span class="parameter" id="zFieldDecoration-param-suffixIconOverride"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">suffixIconOverride</span>, </span></li>
 </ol>})
 
         
@@ -95,16 +96,29 @@ aucune couleur en dur (invariant FR-26).</p>
   String? errorText,
   String? suffixText,
   ZValueOf? valueOf,
+  Widget? suffixIconOverride,
 }) {
   final tokens = ZcrudTheme.of(context);
+  &#47;&#47; Teinte PAR TYPE DE CHAMP — strictement opt-in (voir [zResolveFieldTint]).
+  &#47;&#47; En `bare` (Card large), le canal n&#39;existe pas : décoration inchangée.
+  final Color? tint = bare ? null : zResolveFieldTint(context, field);
   String? l10n(String? key) =&gt;
       key == null ? null : label(context, key, fallback: key);
 
-  &#47;&#47; `leading` → tête hors bordure (`icon`). Omis en `bare` (porté par la Card).
-  final leadingIcon = bare
-      ? null
-      : resolveAdornment(context, field.leading,
-          field: field, valueOf: valueOf);
+  &#47;&#47; `leading` → tête hors bordure (`icon`). Omis en `bare` (porté par la
+  &#47;&#47; Card). Un ornement ICÔNE y reçoit la même pastille que `prefixIcon`&#47;
+  &#47;&#47; `suffixIcon` (mêmes jetons, même teinte, même gouvernance — la teinte du
+  &#47;&#47; glyphe passe par `InputDecoration.iconColor`).
+  Widget? leadingIcon;
+  final lead = bare ? null : field.leading;
+  if (lead != null) {
+    final w = resolveAdornment(context, lead, field: field, valueOf: valueOf);
+    if (w != null) {
+      leadingIcon = lead.kind == ZAdornmentKind.icon
+          ? _maybeIconPill(w, lead, tint, tokens)
+          : w;
+    }
+  }
 
   Widget? prefix;
   Widget? prefixIcon;
@@ -113,7 +127,7 @@ aucune couleur en dur (invariant FR-26).</p>
     final w = resolveAdornment(context, p, field: field, valueOf: valueOf);
     if (w != null) {
       if (p.kind == ZAdornmentKind.icon) {
-        prefixIcon = w;
+        prefixIcon = _maybeIconPill(w, p, tint, tokens);
       } else {
         prefix = w;
       }
@@ -128,12 +142,16 @@ aucune couleur en dur (invariant FR-26).</p>
     final w = resolveAdornment(context, s, field: field, valueOf: valueOf);
     if (w != null) {
       if (s.kind == ZAdornmentKind.icon) {
-        suffixIcon = w;
+        suffixIcon = _maybeIconPill(w, s, tint, tokens);
       } else {
         suffix = w;
       }
     }
   }
+  &#47;&#47; Slot `suffixIcon` fourni par la FAMILLE (œil du mot de passe) : il prime
+  &#47;&#47; sur un ornement `.icon` déclaré — le geste de la famille ne doit jamais
+  &#47;&#47; être évincé par un décor.
+  if (suffixIconOverride != null) suffixIcon = suffixIconOverride;
 
   return tokens.inputDecoration(
     context,
@@ -154,6 +172,7 @@ aucune couleur en dur (invariant FR-26).</p>
     &#47;&#47; champ portant les deux). `suffixIcon` + `suffixText` restent
     &#47;&#47; compatibles.
     suffixText: suffix != null ? null : suffixText,
+    tintColor: tint,
   );
 }</code></pre>
 </section>
@@ -182,7 +201,7 @@ aucune couleur en dur (invariant FR-26).</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

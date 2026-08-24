@@ -58,6 +58,8 @@
 <li><span class="parameter" id="param-fields"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">fields</span>, </span></li>
 <li><span class="parameter" id="param-collapsible"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">collapsible</span> = <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="param-initiallyExpanded"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">initiallyExpanded</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span></li>
+<li><span class="parameter" id="param-style"><span class="type-annotation"><a href="../../zcrud_core/ZEditionSectionStyle-class.html">ZEditionSectionStyle</a>?</span> <span class="parameter-name">style</span>, </span></li>
 </ol>})
     </section>
     
@@ -66,6 +68,8 @@
 <p><code>collapsible</code> (défaut <code>false</code>) rend l'en-tête actionnable (accordéon) ;
 <code>initiallyExpanded</code> (défaut <code>true</code>) fixe l'état de repli initial. Une
 section non repliable ignore <code>initiallyExpanded</code>.</p>
+<p><code>icon</code> et <code>style</code> habillent l'en-tête et le corps — <code>null</code> (défaut) ⇒
+rendu natif strictement inchangé.</p>
 </section>
 
 
@@ -77,6 +81,8 @@ section non repliable ignore <code>initiallyExpanded</code>.</p>
   required this.fields,
   this.collapsible = false,
   this.initiallyExpanded = true,
+  this.icon,
+  this.style,
 });</code></pre>
 </section>
 
@@ -105,7 +111,7 @@ section non repliable ignore <code>initiallyExpanded</code>.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

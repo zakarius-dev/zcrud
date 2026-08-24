@@ -85,6 +85,7 @@
 <li><span class="parameter" id="param-readOnly"><span>@<a href="https://api.flutter.dev/flutter/dart-core/Deprecated/Deprecated.html">Deprecated</a>(&#39;Utiliser `mode` : `readOnly: true` devient `mode: ZScreenMode.locked`, &#39; &#39;et la fiche de détail (lecture seule AVEC retour vers l\&#39;édition) &#39; &#39;devient `mode: ZScreenMode.details`. Sera retiré en 1.0.&#39;)</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readOnly</span> = <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="param-searchEnabled"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">searchEnabled</span> = <span class="default-value">true</span>, </span></li>
 <li><span class="parameter" id="param-onSave"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudSave.html">ZCrudSave</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">onSave</span>, </span></li>
+<li><span class="parameter" id="param-beforeSubmit"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudBeforeSubmit.html">ZCrudBeforeSubmit</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">beforeSubmit</span>, </span></li>
 <li><span class="parameter" id="param-editionBuilder"><span class="type-annotation"><a href="../../zcrud_screen/ZCrudEditionBuilder.html">ZCrudEditionBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">editionBuilder</span>, </span></li>
 <li><span class="parameter" id="param-defaultItemBuilder"><span class="type-annotation">T</span> <span class="parameter-name">defaultItemBuilder</span>()?, </span></li>
 <li><span class="parameter" id="param-history"><span class="type-annotation">ZEntityHistorySource<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">history</span>, </span></li>
@@ -155,6 +156,7 @@
   this.readOnly = false,
   this.searchEnabled = true,
   this.onSave,
+  this.beforeSubmit,
   this.editionBuilder,
   this.defaultItemBuilder,
   this.history,
@@ -206,7 +208,7 @@
 <footer>
   <span class="no-break">
     zcrud_screen
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

@@ -89,6 +89,27 @@ Widget present(BuildContext context, ZSelectPresentation presentation) {
   final ZSelectTileMetrics metrics =
       zSelectTileMetricsOf(context, spec: spec);
 
+  &#47;&#47; Valeurs portées par la tranche, normalisées (mono ⇒ singleton ; `null`
+  &#47;&#47; n&#39;est jamais orphelin — c&#39;est la place vide légitime du champ).
+  final List&lt;Object?&gt; selectedValues = presentation.multiple
+      ? _asList(presentation.selected)
+      : &lt;Object?&gt;[presentation.selected];
+
+  &#47;&#47; Valeur HORS CATALOGUE ⇒ option synthétique d&#39;AFFICHAGE appendue (libellé
+  &#47;&#47; l10n `choiceUnresolved`, `disabled: true`) : la tuile cesse de mentir
+  &#47;&#47; (elle affichait le placeholder alors que la valeur allait être SOUMISE)
+  &#47;&#47; et la modal la liste, visible mais non re-sélectionnable — le contrat
+  &#47;&#47; exact du rendu natif (`z_orphan_choice.dart` côté cœur). La donnée n&#39;est
+  &#47;&#47; jamais touchée : l&#39;option ne vit que le temps d&#39;un `build`.
+  &#47;&#47;
+  &#47;&#47; PENDANT un chargement (`isLoading`), la liste d&#39;options est encore vide :
+  &#47;&#47; « pas encore chargé » n&#39;est pas « plus proposé » — aucune annotation,
+  &#47;&#47; l&#39;indice `loading` reste seul à parler (même règle que le rendu natif de
+  &#47;&#47; `relation`).
+  final List&lt;ZFieldChoice&gt; effectiveOptions = presentation.isLoading
+      ? presentation.options
+      : _withOrphanChoices(presentation.options, selectedValues);
+
   &#47;&#47; AD-10 : projection défensive — options vides restent une `List` non-null
   &#47;&#47; (assert `choiceItems != null`), aucune exception.
   &#47;&#47;
@@ -96,25 +117,47 @@ Widget present(BuildContext context, ZSelectPresentation presentation) {
   &#47;&#47; pour `runtimeType` le littéral `SmartSelect` — indispensable pour la garde
   &#47;&#47; de rendu `find.byType(SmartSelect)` (comparaison d&#39;égalité de type).
   final List&lt;S2Choice&lt;dynamic&gt;&gt; choiceItems =
-      _toS2Choices(context, presentation.options);
+      _toS2Choices(context, effectiveOptions);
 
   final bool enabled = !presentation.readOnly;
   final ColorScheme scheme = Theme.of(context).colorScheme;
 
-  &#47;&#47; `field.leading`, parité de référence (`ListTile.leading`).
+  &#47;&#47; `field.leading`, parité de référence (`ListTile.leading`) — résolu par
+  &#47;&#47; le point d&#39;entrée présentateur du cœur, qui porte TOUTE la chaîne de
+  &#47;&#47; teinte : résolution de clé, normalisation de contraste, pastille sous
+  &#47;&#47; les jetons `adornmentIconBackground*`, dimension du glyphe. Rien de tout
+  &#47;&#47; cela n&#39;est dupliqué ici (ni `zReadableTintOn`, ni table d&#39;icônes
+  &#47;&#47; locale) ; `child` est prêt à poser, déjà teinté — jamais re-teinté par
+  &#47;&#47; la tuile. Résolu ICI, pendant `build` (le résolveur consulte des
+  &#47;&#47; `InheritedWidget`).
   &#47;&#47;
-  &#47;&#47; Cette capacité avait été rapportée « inatteignable, le DTO ne la porte
-  &#47;&#47; pas ». C&#39;était FAUX : le DTO porte `field`, donc `field.leading`, et
-  &#47;&#47; `resolveAdornment` est exporté par le barrel de `zcrud_core`. Aucun
-  &#47;&#47; élargissement du seam n&#39;était nécessaire — seulement de le lire.
-  &#47;&#47; Résolu ICI, pendant `build` (le résolveur consulte des `InheritedWidget`).
+  &#47;&#47; Opt-in strict, dans les deux directions : sans résolveur de teinte et
+  &#47;&#47; sans jetons, `child` est l&#39;icône nue d&#39;avant — tuile inchangée au pixel.
   &#47;&#47; `null` ⇒ slot ABSENT de l&#39;arbre (AD-4), rendu antérieur strictement
   &#47;&#47; conservé pour tout champ sans ornement de tête.
-  final Widget? leading = resolveAdornment(
+  &#47;&#47;
+  &#47;&#47; Ordre de composition MESURÉ (gouvernance de la tuile préservée) : le
+  &#47;&#47; `leading` est un slot INDÉPENDANT du `ListTile` — la pastille n&#39;écrase
+  &#47;&#47; ni le sous-titre (valeur, puces, mention d&#39;indisponibilité d&#39;une valeur
+  &#47;&#47; hors catalogue), ni le placeholder de chargement, ni la disparition du
+  &#47;&#47; tile en lecture seule vide (le `SizedBox.shrink()` du tile
+  &#47;&#47; court-circuite AVANT que le slot soit peint).
+  final Widget? tintedLeading = zResolveTintedAdornment(
     context,
     presentation.field.leading,
     field: presentation.field,
-  );
+  ).child;
+  &#47;&#47; Placement — la part du CONTRAT qui revient à la tuile. MESURÉ : la
+  &#47;&#47; pastille du cœur épouse son glyphe au centre d&#39;un slot CONTRAINT
+  &#47;&#47; (`InputDecoration` borne ses slots d&#39;icône) ; `ListTile.leading`, lui,
+  &#47;&#47; offre toute la largeur de la tuile — le `Center` s&#39;y étend et fait
+  &#47;&#47; lever `performLayout` (« Leading widget consumes the entire tile
+  &#47;&#47; width »). Le slot est donc rendu NON CONTRAINT : sous contraintes non
+  &#47;&#47; bornées, la pastille se réduit à sa taille intrinsèque (glyphe +
+  &#47;&#47; insets), et l&#39;icône nue de l&#39;hôte passif garde exactement la sienne —
+  &#47;&#47; aucun pixel ne bouge sans déclaration.
+  final Widget? leading =
+      tintedLeading == null ? null : UnconstrainedBox(child: tintedLeading);
 
   &#47;&#47; règle d&#39;inertie EXACTE de référence :
   &#47;&#47; `choiceBuilder == null &amp;&amp; (readOnly || isLoading) ? null : showModal`.
@@ -304,7 +347,8 @@ Widget present(BuildContext context, ZSelectPresentation presentation) {
       title: title,
       placeholder: placeholder,
       &#47;&#47; AD-10 : normalise scalaire&#47;`null`&#47;`List` → `List&lt;Object?&gt;` ; une
-      &#47;&#47; valeur hors options est simplement non représentée (placeholder).
+      &#47;&#47; valeur hors options est représentée par son option synthétique
+      &#47;&#47; (cf. `effectiveOptions`) — jamais passée sous silence.
       selectedValue: _asList(presentation.selected),
       choiceItems: choiceItems,
       &#47;&#47; `null` ⇒ le fork reste SYNCHRONE sur `choiceItems`,
@@ -527,7 +571,7 @@ Widget present(BuildContext context, ZSelectPresentation presentation) {
 <footer>
   <span class="no-break">
     zcrud_select
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

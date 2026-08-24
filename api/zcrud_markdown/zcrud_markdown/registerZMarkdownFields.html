@@ -66,6 +66,13 @@
 <li><span class="parameter" id="registerZMarkdownFields-param-formulaSpec"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextFormulaSpec-class.html">ZRichTextFormulaSpec</a>?</span> <span class="parameter-name">formulaSpec</span>, </span></li>
 <li><span class="parameter" id="registerZMarkdownFields-param-toolbarConfig"><span class="type-annotation"><a href="../zcrud_markdown/ZRichTextToolbarConfig-class.html">ZRichTextToolbarConfig</a>?</span> <span class="parameter-name">toolbarConfig</span>, </span></li>
 <li><span class="parameter" id="registerZMarkdownFields-param-showLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showLabel</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-emptyIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">emptyIcon</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-emptySubtitle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">emptySubtitle</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-emptyBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a>?</span> <span class="parameter-name">emptyBuilder</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-copyOnLongPress"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">copyOnLongPress</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-copyFormats"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_markdown/ZMarkdownCopyFormat-class.html">ZMarkdownCopyFormat</a></span>&gt;</span></span> <span class="parameter-name">copyFormats</span> = <span class="default-value">const &lt;ZMarkdownCopyFormat&gt;[]</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-copiedFeedbackText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">copiedFeedbackText</span>, </span></li>
+<li><span class="parameter" id="registerZMarkdownFields-param-copySemanticsLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">copySemanticsLabel</span>, </span></li>
 </ol>})
 
         
@@ -132,6 +139,13 @@ Tous OPTIONNELS : omis ⇒ comportement INCHANGÉ.</p>
   ZRichTextFormulaSpec? formulaSpec,
   ZRichTextToolbarConfig? toolbarConfig,
   bool showLabel = true,
+  IconData? emptyIcon,
+  String? emptySubtitle,
+  WidgetBuilder? emptyBuilder,
+  bool copyOnLongPress = false,
+  List&lt;ZMarkdownCopyFormat&gt; copyFormats = const &lt;ZMarkdownCopyFormat&gt;[],
+  String? copiedFeedbackText,
+  String? copySemanticsLabel,
 }) {
   Widget build(ZFieldWidgetContext ctx, ZMarkdownFieldMode mode) =&gt;
       ZMarkdownField.fromContext(
@@ -149,6 +163,13 @@ Tous OPTIONNELS : omis ⇒ comportement INCHANGÉ.</p>
         formulaSpec: formulaSpec,
         toolbarConfig: toolbarConfig,
         showLabel: showLabel,
+        emptyIcon: emptyIcon,
+        emptySubtitle: emptySubtitle,
+        emptyBuilder: emptyBuilder,
+        copyOnLongPress: copyOnLongPress,
+        copyFormats: copyFormats,
+        copiedFeedbackText: copiedFeedbackText,
+        copySemanticsLabel: copySemanticsLabel,
       );
 
   registry.register(
@@ -190,7 +211,7 @@ Tous OPTIONNELS : omis ⇒ comportement INCHANGÉ.</p>
 <footer>
   <span class="no-break">
     zcrud_markdown
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

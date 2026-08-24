@@ -469,6 +469,23 @@ concrètes sans forker le cœur.
 <code>@ZcrudField</code>/<code>@ZcrudId</code> par le générateur <code>zcrud_generator</code>.
 </dd>
 
+          <dt id="ZFieldTintPreset">
+  <span class="name "><a href="../zcrud_core/ZFieldTintPreset-class.html">ZFieldTintPreset</a></span> 
+
+</dt>
+<dd>
+  Couple de couleurs ARGB d'un préset de teinte (début/fin de dégradé — un
+accent uni utilise <a href="../zcrud_core/ZFieldTintPreset/start.html">start</a> seul).
+</dd>
+
+          <dt id="ZFieldTintPresets">
+  <span class="name "><a href="../zcrud_core/ZFieldTintPresets-class.html">ZFieldTintPresets</a></span> 
+
+</dt>
+<dd>
+  Présets <strong>copiables</strong> de teinte par type de champ. Jamais lus par le socle.
+</dd>
+
           <dt id="ZFilter">
   <span class="name "><a href="../zcrud_core/ZFilter-class.html">ZFilter</a></span> 
 
@@ -564,6 +581,14 @@ la réécrire ou de la repasser par le builder zcrud.
 <dd>
   Config triviale pur-cœur des champs <strong>numériques</strong>
 (<code>number</code>/<code>integer</code>/<code>float</code>).
+</dd>
+
+          <dt id="ZNumberDisplayFormatter">
+  <span class="name "><a href="../zcrud_core/ZNumberDisplayFormatter-class.html">ZNumberDisplayFormatter</a></span> 
+
+</dt>
+<dd>
+  Port <strong>abstrait</strong> (neutre) de formatage d'affichage d'un nombre.
 </dd>
 
           <dt id="ZOpaqueExtension">
@@ -1713,6 +1738,20 @@ COPIE</strong> quand le slot stocké est déjà propre.
 
 </dd>
 
+          <dt id="zNumberDisplayTextOf" class="callable">
+  <span class="name"><a href="../zcrud_core/zNumberDisplayTextOf.html">zNumberDisplayTextOf</a></span><span class="signature">(<wbr><span class="parameter" id="zNumberDisplayTextOf-param-formatter"><span class="type-annotation"><a href="../zcrud_core/ZNumberDisplayFormatter-class.html">ZNumberDisplayFormatter</a>?</span> <span class="parameter-name">formatter</span>, </span><span class="parameter" id="zNumberDisplayTextOf-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span>, {</span><span class="parameter" id="zNumberDisplayTextOf-param-localeTag"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">localeTag</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Applique le port <code>formatter</code> à <code>value</code> et <strong>replie sur la chaîne brute</strong>
+dans tous les chemins dégradés (cf. dartdoc de bibliothèque, AD-10).
+  
+
+</dd>
+
           <dt id="zRegroupPaths" class="callable">
   <span class="name"><a href="../zcrud_core/zRegroupPaths.html">zRegroupPaths</a></span><span class="signature">(<wbr><span class="parameter" id="zRegroupPaths-param-flat"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">flat</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
@@ -1958,6 +1997,21 @@ zéro-copie (rend <code>map</code> si c'est déjà une <a href="https://api.flut
   </dt>
   <dd>
     Fonction de dérivation des <strong>options</strong> d'un <code>select</code>/<code>radio</code>/<code>checkbox</code>.
+    
+
+  </dd>
+
+          
+  <dt id="ZDerivationReadOnlyFn" class="callable">
+    <span class="name"><a href="../zcrud_core/ZDerivationReadOnlyFn.html">ZDerivationReadOnlyFn</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a> Function<span class="signature">(<span class="parameter" id="param-sources"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">sources</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Prédicat de <strong>lecture seule</strong> dérivée — SYNCHRONE, comme <a href="../zcrud_core/ZDerivationVisibleFn.html">ZDerivationVisibleFn</a>
+(un mode ne s'attend pas).
     
 
   </dd>
@@ -2211,7 +2265,7 @@ registre (collision).
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

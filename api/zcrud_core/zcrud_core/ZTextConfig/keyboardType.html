@@ -62,8 +62,71 @@
       </section>
       
 <section class="desc markdown">
-  <p>Indice de clavier neutre (opaque : le mapping vers <code>TextInputType</code> vit
-dans le moteur d'édition).</p>
+  <p>Indice de clavier <strong>neutre</strong> (<code>String</code>, jamais un <code>TextInputType</code> — le
+mapping vit dans le moteur d'édition).</p>
+<h2 id="table-de-correspondance-ferme">Table de correspondance (FERMÉE)</h2>
+<table>
+<thead>
+<tr>
+<th>valeur</th>
+<th>clavier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>'text'</code></td>
+<td>alphabétique standard</td>
+</tr>
+<tr>
+<td><code>'multiline'</code></td>
+<td>multi-ligne (touche retour)</td>
+</tr>
+<tr>
+<td><code>'email'</code></td>
+<td>e-mail (<code>@</code>, <code>.</code>)</td>
+</tr>
+<tr>
+<td><code>'url'</code></td>
+<td>URL (<code>/</code>, <code>.</code>)</td>
+</tr>
+<tr>
+<td><code>'phone'</code></td>
+<td>téléphone</td>
+</tr>
+<tr>
+<td><code>'number'</code></td>
+<td>numérique signé</td>
+</tr>
+<tr>
+<td><code>'decimal'</code></td>
+<td>numérique signé + séparateur décimal</td>
+</tr>
+<tr>
+<td><code>'name'</code></td>
+<td>nom de personne</td>
+</tr>
+<tr>
+<td><code>'address'</code></td>
+<td>adresse postale</td>
+</tr>
+<tr>
+<td><code>'datetime'</code></td>
+<td>date/heure</td>
+</tr>
+<tr>
+<td><code>'none'</code></td>
+<td>aucun clavier logiciel</td>
+</tr>
+</tbody>
+</table>
+<h2 id="contrat-de-repli-et-de-prcdence">Contrat de repli et de précédence</h2>
+<ul>
+<li><code>null</code> ou <strong>chaîne hors table</strong> ⇒ le clavier est dérivé du rendu
+(multi-ligne ⇒ multi-ligne, sinon texte) — jamais une exception.</li>
+<li><strong>Un champ rendu multi-ligne garde le clavier multi-ligne</strong>, même si
+une autre valeur est déclarée ici : la touche retour est nécessaire à
+la saisie, la déclaration ne s'applique qu'aux champs mono-ligne.</li>
+</ul>
 </section>
 
       
@@ -98,7 +161,7 @@ dans le moteur d'édition).</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

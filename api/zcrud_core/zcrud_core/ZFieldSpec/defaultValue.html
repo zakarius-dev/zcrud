@@ -62,8 +62,19 @@
       </section>
       
 <section class="desc markdown">
-  <p>Valeur par défaut appliquée par <code>fromMap</code>/le moteur d'édition si la clé
-est absente.</p>
+  <p>Valeur par défaut du champ.</p>
+<p>Appliquée par deux voies, sur la même règle « <strong>absent seulement</strong> » :</p>
+<ul>
+<li><code>fromMap</code> généré, quand la clé manque dans la map persistée ;</li>
+<li>le <strong>moteur d'édition</strong> (<code>DynamicEdition</code>), à l'ouverture : toute
+tranche <strong>absente</strong> des <code>initialValues</code> du contrôleur est amorcée avec
+ce défaut (<code>ZFormController.seedDefaultValue</code>) — l'hôte n'a rien à
+recopier.</li>
+</ul>
+<p><strong>Absent ≠ nul explicite</strong> : une clé fournie dans <code>initialValues</code>, même
+avec <code>null</code>, est autoritaire et n'est jamais remplacée par ce défaut
+(même distinction omis/<code>null</code> que le <code>copyWith</code> généré). Un défaut amorcé
+laisse le champ <em>pristine</em> (pas de <code>isDirty</code>).</p>
 </section>
 
       
@@ -98,7 +109,7 @@ est absente.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

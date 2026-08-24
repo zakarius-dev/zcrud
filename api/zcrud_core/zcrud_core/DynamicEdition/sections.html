@@ -64,6 +64,17 @@
 <section class="desc markdown">
   <p>Sections visuelles (en-têtes ; repliables si <code>collapsible</code>). Vide = liste
 plate.</p>
+<p><strong>L'ordre de rendu est celui de <a href="../../zcrud_core/DynamicEdition/fields.html">fields</a></strong>, sections comprises : en voie
+groupée, chaque section forme un bloc émis à la position de son premier
+membre visible, et un champ hors section déclaré entre deux sections est
+rendu entre elles (les champs libres contigus forment des blocs
+intercalés). Les membres d'une section suivent, eux, l'ordre déclaré
+dans <a href="../../zcrud_core/ZEditionSection/fields.html">ZEditionSection.fields</a>.</p>
+<p><strong>Un en-tête n'est rendu que s'il a quelque chose à montrer</strong> : un titre
+non vide (après trim) ou une icône. Une section à titre vide et sans
+icône ne monte aucun en-tête — ni chrome, ni padding, ni nœud
+sémantique — seulement ses champs ; <code>collapsible</code> y est sans effet (pas
+de déclencheur : la section reste dépliée).</p>
 </section>
 
       
@@ -98,7 +109,7 @@ plate.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

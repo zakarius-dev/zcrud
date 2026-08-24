@@ -68,6 +68,7 @@
 <li><span class="parameter" id="inputDecoration-param-suffix"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">suffix</span>, </span></li>
 <li><span class="parameter" id="inputDecoration-param-leadingIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">leadingIcon</span>, </span></li>
 <li><span class="parameter" id="inputDecoration-param-suffixText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">suffixText</span>, </span></li>
+<li><span class="parameter" id="inputDecoration-param-tintColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">tintColor</span>, </span></li>
 </ol>})
 
       
@@ -127,6 +128,7 @@ résolu depuis <code>ZFieldSpec.leading</code>.</li>
   Widget? suffix,
   Widget? leadingIcon,
   String? suffixText,
+  Color? tintColor,
 }) {
   final scheme = Theme.of(context).colorScheme;
   if (bare) {
@@ -157,7 +159,12 @@ résolu depuis <code>ZFieldSpec.leading</code>.</li>
   }
   final radius = BorderRadius.all(inputRadius);
   final restBorderColor = fieldBorderColor ?? scheme.outline;
-  final focusBorderColor = fieldFocusedBorderColor ?? scheme.primary;
+  &#47;&#47; Teinte par type de champ (`tintColor`, déjà normalisée pour le
+  &#47;&#47; contraste par l&#39;appelant) : elle ne touche que les canaux d&#39;ACCENT —
+  &#47;&#47; bordure de focus et couleur des icônes d&#39;ornement. `null` (aucun
+  &#47;&#47; résolveur injecté) ⇒ chaîne de jetons strictement inchangée.
+  final focusBorderColor =
+      tintColor ?? fieldFocusedBorderColor ?? scheme.primary;
   OutlineInputBorder borderOf(Color color, double width) =&gt;
       OutlineInputBorder(
         borderRadius: radius,
@@ -176,8 +183,18 @@ résolu depuis <code>ZFieldSpec.leading</code>.</li>
     errorText: errorText,
     errorMaxLines: helperMaxLines,
     labelStyle: labelTextStyle,
+    &#47;&#47; La teinte par type de champ atteint aussi le LIBELLÉ FLOTTANT : même
+    &#47;&#47; grammaire opt-in que la bordure de focus et les icônes — `tintColor`
+    &#47;&#47; est déjà normalisée par l&#39;appelant contre la surface du champ (la même
+    &#47;&#47; surface que celle sur laquelle le libellé flottant se lit), et
+    &#47;&#47; `copyWith(color: null)` est un no-op ⇒ sans résolveur, style
+    &#47;&#47; strictement identique à l&#39;antérieur, au pixel près. Application
+    &#47;&#47; DIRECTE plutôt qu&#39;un jeton booléen : un jeton à défaut `true` serait
+    &#47;&#47; le premier du fichier qu&#39;il faudrait DÉPOSER pour retenir la teinte —
+    &#47;&#47; l&#39;inverse de la grammaire opt-in du canal (aucun résolveur ⇒ rien).
     floatingLabelStyle: (labelTextStyle ?? const TextStyle()).copyWith(
       fontWeight: floatingLabelWeight,
+      color: tintColor,
     ),
     filled: inputFilled,
     &#47;&#47; Jeton DÉDIÉ, absent du repli ⇒ hôte passif
@@ -190,6 +207,12 @@ résolu depuis <code>ZFieldSpec.leading</code>.</li>
     suffixText: suffixText,
     prefixIcon: prefixIcon,
     suffixIcon: suffixIcon,
+    &#47;&#47; « Pastille d&#39;icône » : les ornements icône prennent la teinte du type
+    &#47;&#47; de champ quand elle est déclarée ; sans teinte, `null` laisse le
+    &#47;&#47; `IconTheme` ambiant décider — rendu antérieur inchangé.
+    iconColor: tintColor,
+    prefixIconColor: tintColor,
+    suffixIconColor: tintColor,
     &#47;&#47; Bordure de REPOS pilotée par le jeton
     &#47;&#47; (`fallback` la pose à `outline` ⇒ hôte passif inchangé au pixel).
     &#47;&#47; `focusedBorder`&#47;`errorBorder` gardent leurs rôles d&#39;ÉTAT : le jeton de
@@ -229,7 +252,7 @@ résolu depuis <code>ZFieldSpec.leading</code>.</li>
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

@@ -81,6 +81,8 @@
 <li><span class="parameter" id="derive-param-gradientResolver"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">gradientResolver</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
 <li><span class="parameter" id="derive-param-richTextRenderer"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">richTextRenderer</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
 <li><span class="parameter" id="derive-param-dateDisplayFormatter"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">dateDisplayFormatter</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
+<li><span class="parameter" id="derive-param-numberDisplayFormatter"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">numberDisplayFormatter</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
+<li><span class="parameter" id="derive-param-defaultTextConfig"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">defaultTextConfig</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
 </ol>})
 
       
@@ -138,6 +140,8 @@ typiquement une ACL propre à la ressource affichée :</p>
   Object? gradientResolver = _zScopeUndefined,
   Object? richTextRenderer = _zScopeUndefined,
   Object? dateDisplayFormatter = _zScopeUndefined,
+  Object? numberDisplayFormatter = _zScopeUndefined,
+  Object? defaultTextConfig = _zScopeUndefined,
 }) {
   final ZcrudScope base = maybeOf(context) ?? ZcrudScope(child: child);
   return base.copyWith(
@@ -165,6 +169,8 @@ typiquement une ACL propre à la ressource affichée :</p>
     gradientResolver: gradientResolver,
     richTextRenderer: richTextRenderer,
     dateDisplayFormatter: dateDisplayFormatter,
+    numberDisplayFormatter: numberDisplayFormatter,
+    defaultTextConfig: defaultTextConfig,
     child: child,
   );
 }</code></pre>
@@ -195,7 +201,7 @@ typiquement une ACL propre à la ressource affichée :</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

@@ -114,7 +114,15 @@ Widget build(BuildContext context) {
 
   &#47;&#47; `minLines`&#47;`maxLines` effectifs lus depuis `ZTextConfig` avec repli
   &#47;&#47; type-dépendant préservant le comportement historique.
-  final config = field.config is ZTextConfig ? field.config! as ZTextConfig : null;
+  &#47;&#47; Précédence de config : champ &gt; scope &gt; rien. Le défaut du scope
+  &#47;&#47; (`ZcrudScope.defaultTextConfig`) ne s&#39;applique QUE si le champ ne
+  &#47;&#47; déclare AUCUNE config — une config déclarée gagne toujours, en bloc
+  &#47;&#47; (jamais de fusion membre à membre).
+  final config = field.config is ZTextConfig
+      ? field.config! as ZTextConfig
+      : (field.config == null
+          ? ZcrudScope.maybeOf(context)?.defaultTextConfig
+          : null);
   &#47;&#47; **Règle de mapping `text` → multiligne** : un champ `text` dont la
   &#47;&#47; config déclare `minLines &gt; 1` se comporte comme un champ multiligne.
   &#47;&#47; Sans cette règle, le repli `maxLines = 1` (défaut mono-ligne)
@@ -142,10 +150,14 @@ Widget build(BuildContext context) {
   if (maxLines != null &amp;&amp; effectiveMinLines &gt; maxLines) {
     effectiveMinLines = maxLines;
   }
-  &#47;&#47; Clavier multi-ligne dès que la hauteur effective dépasse une ligne.
+  &#47;&#47; Clavier : un rendu multi-ligne garde le clavier multi-ligne (la touche
+  &#47;&#47; retour est nécessaire à la saisie) ; sinon la déclaration
+  &#47;&#47; `ZTextConfig.keyboardType` est honorée via la table FERMÉE
+  &#47;&#47; [_declaredKeyboard] — chaîne inconnue ou `null` ⇒ repli sur le clavier
+  &#47;&#47; texte historique, jamais une exception (AD-10).
   final keyboardType = effectiveMaxLines != 1
       ? TextInputType.multiline
-      : TextInputType.text;
+      : (_declaredKeyboard(config?.keyboardType) ?? TextInputType.text);
 
   &#47;&#47; Capitalisation déclarative. Un mot de passe n&#39;est JAMAIS capitalisé
   &#47;&#47; (altèrerait le secret) ; sinon la config pilote (a) l&#39;indice clavier
@@ -164,7 +176,7 @@ Widget build(BuildContext context) {
   return TextFormField(
     controller: controller,
     focusNode: focusNode,
-    obscureText: isPassword,
+    obscureText: isPassword &amp;&amp; obscured,
     minLines: effectiveMinLines,
     maxLines: effectiveMaxLines,
     keyboardType: keyboardType,
@@ -181,8 +193,8 @@ Widget build(BuildContext context) {
     validator: validator,
     &#47;&#47; Label enrichi + hint&#47;helper + ornements leading&#47;prefix&#47;suffix
     &#47;&#47; (répartis par `zFieldDecoration` selon `ZAdornmentKind`).
-    decoration:
-        zFieldDecoration(context, field, bare: bare, valueOf: valueOf),
+    decoration: zFieldDecoration(context, field,
+        bare: bare, valueOf: valueOf, suffixIconOverride: _obscureToggle(context)),
     onChanged: onChanged,
   );
 }</code></pre>
@@ -213,7 +225,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

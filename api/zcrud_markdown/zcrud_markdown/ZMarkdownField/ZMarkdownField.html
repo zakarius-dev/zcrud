@@ -68,6 +68,13 @@
 <li><span class="parameter" id="param-chrome"><span class="type-annotation"><a href="../../zcrud_markdown/ZMarkdownFieldChrome-class.html">ZMarkdownFieldChrome</a>?</span> <span class="parameter-name">chrome</span>, </span></li>
 <li><span class="parameter" id="param-textScaleFactor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">textScaleFactor</span>, </span></li>
 <li><span class="parameter" id="param-formulaSpec"><span class="type-annotation"><a href="../../zcrud_markdown/ZRichTextFormulaSpec-class.html">ZRichTextFormulaSpec</a>?</span> <span class="parameter-name">formulaSpec</span>, </span></li>
+<li><span class="parameter" id="param-emptyIcon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">emptyIcon</span>, </span></li>
+<li><span class="parameter" id="param-emptySubtitle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">emptySubtitle</span>, </span></li>
+<li><span class="parameter" id="param-emptyBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a>?</span> <span class="parameter-name">emptyBuilder</span>, </span></li>
+<li><span class="parameter" id="param-copyOnLongPress"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">copyOnLongPress</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-copyFormats"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_markdown/ZMarkdownCopyFormat-class.html">ZMarkdownCopyFormat</a></span>&gt;</span></span> <span class="parameter-name">copyFormats</span> = <span class="default-value">const &lt;ZMarkdownCopyFormat&gt;[]</span>, </span></li>
+<li><span class="parameter" id="param-copiedFeedbackText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">copiedFeedbackText</span>, </span></li>
+<li><span class="parameter" id="param-copySemanticsLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">copySemanticsLabel</span>, </span></li>
 <li><span class="parameter" id="param-onInit"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onInit</span>, </span></li>
 <li><span class="parameter" id="param-onBuild"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onBuild</span>, </span></li>
 <li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
@@ -101,6 +108,13 @@ est honoré (rendu lecteur). L'assembleur DOIT poser <code>key: ValueKey(field.n
   this.chrome,
   this.textScaleFactor,
   this.formulaSpec,
+  this.emptyIcon,
+  this.emptySubtitle,
+  this.emptyBuilder,
+  this.copyOnLongPress = false,
+  this.copyFormats = const &lt;ZMarkdownCopyFormat&gt;[],
+  this.copiedFeedbackText,
+  this.copySemanticsLabel,
   this.onInit,
   this.onBuild,
   super.key,
@@ -133,7 +147,7 @@ est honoré (rendu lecteur). L'assembleur DOIT poser <code>key: ValueKey(field.n
 <footer>
   <span class="no-break">
     zcrud_markdown
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

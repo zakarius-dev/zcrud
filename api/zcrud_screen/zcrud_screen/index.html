@@ -399,6 +399,21 @@ entités actuellement sélectionnées.
   </dd>
 
           
+  <dt id="ZCrudBeforeSubmit" class="callable">
+    <span class="name"><a href="../zcrud_screen/ZCrudBeforeSubmit.html">ZCrudBeforeSubmit</a></span>&lt;<wbr><span class="type-parameter">T</span>&gt;<span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/FutureOr-class.html">FutureOr</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-values"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">values</span>, </span><span class="parameter" id="param-original"><span class="type-annotation">T?</span> <span class="parameter-name">original</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Transformation de la map de valeurs <strong>validée</strong>, appliquée avant sa
+reconstruction en entité (<code>decode</code> du registre).
+    
+
+  </dd>
+
+          
   <dt id="ZCrudEditionBuilder" class="callable">
     <span class="name"><a href="../zcrud_screen/ZCrudEditionBuilder.html">ZCrudEditionBuilder</a></span>&lt;<wbr><span class="type-parameter">T</span>&gt;<span class="signature">
       <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-initial"><span class="type-annotation">T?</span> <span class="parameter-name">initial</span>, </span><span class="parameter" id="param-save"><span class="type-annotation"><a href="../zcrud_screen/ZCrudSave.html">ZCrudSave</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">save</span></span>)</span></span>
@@ -542,7 +557,7 @@ l'application.
 <footer>
   <span class="no-break">
     zcrud_screen
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

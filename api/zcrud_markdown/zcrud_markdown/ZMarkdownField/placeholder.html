@@ -68,6 +68,9 @@ TEXTE vient toujours de l'hôte ou du système l10n injecté
 (<code>label(context, key, fallback: key)</code>), JAMAIS d'un libellé codé en dur
 dans le paquet. <code>null</code> (défaut) ⇒ repli sur <code>ZFieldSpec.hintText</code> ; si le
 champ n'en a pas non plus, aucun placeholder (comportement historique).</p>
+<p>Fourni EXPLICITEMENT, il est aussi relayé aux rendus lecteur du champ
+(<a href="../../zcrud_markdown/ZMarkdownReader/placeholder.html">ZMarkdownReader.placeholder</a> — texte de l'état vide) ; sans
+déclaration, le lecteur garde son texte par défaut (rendu inchangé).</p>
 </section>
 
       
@@ -102,7 +105,7 @@ champ n'en a pas non plus, aucun placeholder (comportement historique).</p>
 <footer>
   <span class="no-break">
     zcrud_markdown
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

@@ -75,7 +75,11 @@ inerte — défensif, jamais une erreur).</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">bool get hasTarget =&gt;
-    value != null || options != null || visible != null || bounds != null;</code></pre>
+    value != null ||
+    options != null ||
+    visible != null ||
+    bounds != null ||
+    readOnly != null;</code></pre>
 </section>
 
   </section>
@@ -105,7 +109,7 @@ inerte — défensif, jamais une erreur).</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

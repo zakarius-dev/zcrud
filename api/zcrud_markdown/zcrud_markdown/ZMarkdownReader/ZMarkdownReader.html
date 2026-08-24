@@ -57,7 +57,7 @@
       <span class="name ">ZMarkdownReader</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-value"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span>, </span></li>
 <li><span class="parameter" id="param-codec"><span class="type-annotation"><a href="../../zcrud_markdown/ZCodec-class.html">ZCodec</a>?</span> <span class="parameter-name">codec</span>, </span></li>
 <li><span class="parameter" id="param-label"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">label</span>, </span></li>
-<li><span class="parameter" id="param-placeholder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">placeholder</span> = <span class="default-value">&#39;Aucun contenu&#39;</span>, </span></li>
+<li><span class="parameter" id="param-placeholder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">placeholder</span> = <span class="default-value">defaultPlaceholder</span>, </span></li>
 <li><span class="parameter" id="param-chrome"><span class="type-annotation"><a href="../../zcrud_markdown/ZMarkdownReaderChrome.html">ZMarkdownReaderChrome</a></span> <span class="parameter-name">chrome</span> = <span class="default-value">ZMarkdownReaderChrome.bordered</span>, </span></li>
 <li><span class="parameter" id="param-semanticsEnabled"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">semanticsEnabled</span> = <span class="default-value">true</span>, </span></li>
 <li><span class="parameter" id="param-baseStyle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a>?</span> <span class="parameter-name">baseStyle</span>, </span></li>
@@ -65,6 +65,7 @@
 <li><span class="parameter" id="param-textScaleFactor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">textScaleFactor</span>, </span></li>
 <li><span class="parameter" id="param-formulaSpec"><span class="type-annotation"><a href="../../zcrud_markdown/ZRichTextFormulaSpec-class.html">ZRichTextFormulaSpec</a>?</span> <span class="parameter-name">formulaSpec</span>, </span></li>
 <li><span class="parameter" id="param-copyOnLongPress"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">copyOnLongPress</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-copyFormats"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_markdown/ZMarkdownCopyFormat-class.html">ZMarkdownCopyFormat</a></span>&gt;</span></span> <span class="parameter-name">copyFormats</span> = <span class="default-value">const &lt;ZMarkdownCopyFormat&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-copiedFeedbackText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">copiedFeedbackText</span>, </span></li>
 <li><span class="parameter" id="param-copySemanticsLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">copySemanticsLabel</span>, </span></li>
 <li><span class="parameter" id="param-emptyBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a>?</span> <span class="parameter-name">emptyBuilder</span>, </span></li>
@@ -90,7 +91,7 @@ est vide (défaut « Aucun contenu »).</p>
   required this.value,
   this.codec,
   this.label,
-  this.placeholder = &#39;Aucun contenu&#39;,
+  this.placeholder = defaultPlaceholder,
   this.chrome = ZMarkdownReaderChrome.bordered,
   this.semanticsEnabled = true,
   this.baseStyle,
@@ -98,6 +99,7 @@ est vide (défaut « Aucun contenu »).</p>
   this.textScaleFactor,
   this.formulaSpec,
   this.copyOnLongPress = false,
+  this.copyFormats = const &lt;ZMarkdownCopyFormat&gt;[],
   this.copiedFeedbackText,
   this.copySemanticsLabel,
   this.emptyBuilder,
@@ -132,7 +134,7 @@ est vide (défaut « Aucun contenu »).</p>
 <footer>
   <span class="no-break">
     zcrud_markdown
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

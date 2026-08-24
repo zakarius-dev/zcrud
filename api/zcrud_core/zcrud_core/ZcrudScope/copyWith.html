@@ -80,6 +80,8 @@
 <li><span class="parameter" id="copyWith-param-gradientResolver"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">gradientResolver</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-richTextRenderer"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">richTextRenderer</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-dateDisplayFormatter"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">dateDisplayFormatter</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-numberDisplayFormatter"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">numberDisplayFormatter</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-defaultTextConfig"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">defaultTextConfig</span> = <span class="default-value">_zScopeUndefined</span>, </span></li>
 </ol>})
 
       
@@ -139,6 +141,8 @@ autres seams. Voir aussi <a href="../../zcrud_core/ZcrudScope/derive.html">deriv
   Object? gradientResolver = _zScopeUndefined,
   Object? richTextRenderer = _zScopeUndefined,
   Object? dateDisplayFormatter = _zScopeUndefined,
+  Object? numberDisplayFormatter = _zScopeUndefined,
+  Object? defaultTextConfig = _zScopeUndefined,
 }) =&gt;
     ZcrudScope(
       key: key,
@@ -210,6 +214,13 @@ autres seams. Voir aussi <a href="../../zcrud_core/ZcrudScope/derive.html">deriv
       dateDisplayFormatter: identical(dateDisplayFormatter, _zScopeUndefined)
           ? this.dateDisplayFormatter
           : dateDisplayFormatter as ZDateDisplayFormatter?,
+      numberDisplayFormatter:
+          identical(numberDisplayFormatter, _zScopeUndefined)
+              ? this.numberDisplayFormatter
+              : numberDisplayFormatter as ZNumberDisplayFormatter?,
+      defaultTextConfig: identical(defaultTextConfig, _zScopeUndefined)
+          ? this.defaultTextConfig
+          : defaultTextConfig as ZTextConfig?,
       child: child,
     );</code></pre>
 </section>
@@ -239,7 +250,7 @@ autres seams. Voir aussi <a href="../../zcrud_core/ZcrudScope/derive.html">deriv
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

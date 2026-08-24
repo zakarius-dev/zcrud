@@ -62,7 +62,16 @@
       </section>
       
 <section class="desc markdown">
-  <p>Hauteur future de la barre d'accent. <code>null</code> conserve le rendu par défaut.</p>
+  <p>Hauteur (dp) des <strong>barres d'accent</strong> : la barre supérieure d'un champ de
+formulaire et les barres d'accent des chromes de carte des satellites.</p>
+<p>Côté formulaire, la barre d'un champ n'est peinte que si ce jeton est
+posé <strong>et</strong> qu'une couleur d'accent se résout pour le champ
+(<code>zResolveFieldAccent</code> : clé par champ <code>zFieldAccentKey(name)</code>,
+à défaut teinte par type <code>zFieldTypeTintKey(type)</code> — couleur normalisée
+pour le contraste). <code>null</code> (défaut) ⇒ aucune barre nulle part, rendu
+strictement inchangé ; une teinte résolue sans ce jeton ne peint rien
+non plus. La barre est purement décorative : aucune cible tactile,
+pleine largeur dans les deux sens de lecture.</p>
 </section>
 
       
@@ -97,7 +106,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

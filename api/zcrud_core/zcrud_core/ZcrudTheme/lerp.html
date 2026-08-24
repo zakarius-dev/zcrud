@@ -225,6 +225,97 @@ ZcrudTheme lerp(ThemeExtension&lt;ZcrudTheme&gt;? other, double t) {
       other.subListColumnMinWidth,
       t,
     ),
+    subListActionIconSize: _lerpNullableDouble(
+      subListActionIconSize,
+      other.subListActionIconSize,
+      t,
+    ),
+    subListViewActionColor: _lerpNullableColor(
+      subListViewActionColor,
+      other.subListViewActionColor,
+      t,
+    ),
+    subListEditActionColor: _lerpNullableColor(
+      subListEditActionColor,
+      other.subListEditActionColor,
+      t,
+    ),
+    subListDeleteActionColor: _lerpNullableColor(
+      subListDeleteActionColor,
+      other.subListDeleteActionColor,
+      t,
+    ),
+    subListAddControlColor: _lerpNullableColor(
+      subListAddControlColor,
+      other.subListAddControlColor,
+      t,
+    ),
+    &#47;&#47; Dégradé : bascule discrète à mi-transition — `Gradient.lerp` avec un
+    &#47;&#47; côté `null` matérialiserait un dégradé fantôme sur un thème qui n&#39;en
+    &#47;&#47; déclare pas (même raison que les glyphes de chevron).
+    subListAddControlGradient: t &lt; 0.5
+        ? subListAddControlGradient
+        : other.subListAddControlGradient,
+    subListAddControlRadius: _lerpNullableRadius(
+      subListAddControlRadius,
+      other.subListAddControlRadius,
+      t,
+    ),
+    subListAddControlSize: _lerpNullableDouble(
+      subListAddControlSize,
+      other.subListAddControlSize,
+      t,
+    ),
+    subListAddControlIconColor: _lerpNullableColor(
+      subListAddControlIconColor,
+      other.subListAddControlIconColor,
+      t,
+    ),
+    subListCaptionTopPadding: _lerpNullableDouble(
+      subListCaptionTopPadding,
+      other.subListCaptionTopPadding,
+      t,
+    ),
+    subListHeaderTopPadding: _lerpNullableDouble(
+      subListHeaderTopPadding,
+      other.subListHeaderTopPadding,
+      t,
+    ),
+    subListRowVerticalPadding: _lerpNullableDouble(
+      subListRowVerticalPadding,
+      other.subListRowVerticalPadding,
+      t,
+    ),
+    subListCellVerticalPadding: _lerpNullableDouble(
+      subListCellVerticalPadding,
+      other.subListCellVerticalPadding,
+      t,
+    ),
+    subListTableVerticalMargin: _lerpNullableDouble(
+      subListTableVerticalMargin,
+      other.subListTableVerticalMargin,
+      t,
+    ),
+    subListBlockEndPadding: _lerpNullableDouble(
+      subListBlockEndPadding,
+      other.subListBlockEndPadding,
+      t,
+    ),
+    adornmentIconBackgroundAlpha: _lerpNullableDouble(
+      adornmentIconBackgroundAlpha,
+      other.adornmentIconBackgroundAlpha,
+      t,
+    ),
+    adornmentIconBackgroundRadius: _lerpNullableRadius(
+      adornmentIconBackgroundRadius,
+      other.adornmentIconBackgroundRadius,
+      t,
+    ),
+    adornmentIconSize: _lerpNullableDouble(
+      adornmentIconSize,
+      other.adornmentIconSize,
+      t,
+    ),
     accentBarHeight: _lerpNullableDouble(
       accentBarHeight,
       other.accentBarHeight,
@@ -1088,7 +1179,7 @@ ZcrudTheme lerp(ThemeExtension&lt;ZcrudTheme&gt;? other, double t) {
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

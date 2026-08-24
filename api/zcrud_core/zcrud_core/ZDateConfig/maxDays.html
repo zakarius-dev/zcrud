@@ -91,7 +91,10 @@ d'amplitude, comportement strictement inchangé. Une valeur <code>&lt; 1</code> 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final int? maxDays;</code></pre>
+  <pre class="language-dart"><code class="language-dart">&#47;&#47; Domaine pur : jamais lue brute par la présentation — consommée au travers
+&#47;&#47; de [effectiveMaxDays]&#47;[checkSpanDays], qui portent la règle d&#39;ignorance
+&#47;&#47; des valeurs invalides (cf. garde d&#39;inertie des configs).
+final int? maxDays;</code></pre>
 </section>
 
 
@@ -120,7 +123,7 @@ d'amplitude, comportement strictement inchangé. Une valeur <code>&lt; 1</code> 
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>

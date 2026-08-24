@@ -92,10 +92,11 @@ l'icône du <code>IconTheme</code> ambiant. Les insets éventuels sont direction
   ZValueOf? valueOf,
 }) {
   if (adornment == null) return null;
+  final Widget? resolved;
   switch (adornment.kind) {
     case ZAdornmentKind.text:
       final text = label(context, adornment.value, fallback: adornment.value);
-      return Text(
+      resolved = Text(
         text,
         textAlign: TextAlign.start,
         style: Theme.of(context).textTheme.bodyMedium,
@@ -103,24 +104,59 @@ l'icône du <code>IconTheme</code> ambiant. Les insets éventuels sont direction
     case ZAdornmentKind.icon:
       final data = zResolveAdornmentIcon(context, adornment.value);
       &#47;&#47; Clé inconnue ⇒ slot omis (jamais de throw — invariant AD-10).
-      return data == null ? null : Icon(data);
+      &#47;&#47; Taille pilotée par le jeton `adornmentIconSize` — canal de DIMENSION
+      &#47;&#47; pur : `null` ⇒ `Icon(data, size: null)`, strictement le widget
+      &#47;&#47; d&#39;avant (le `IconTheme` ambiant décide). Appliquée ICI (à la
+      &#47;&#47; construction du glyphe) et jamais par `IconTheme.merge` : le verrou
+      &#47;&#47; structurel du socle réserve ce duo d&#39;enveloppes à
+      &#47;&#47; `ZForegroundOverride`.
+      resolved = data == null
+          ? null
+          : Icon(data, size: ZcrudTheme.of(context).adornmentIconSize);
     case ZAdornmentKind.widget:
       &#47;&#47; Cas état-dépendant : l&#39;ornement reçoit la valeur COURANTE du champ
       &#47;&#47; qu&#39;il orne et le lecteur nommé des autres champs. `onChanged` reste
       &#47;&#47; inerte — un ornement est un affichage (display-only).
       final builder =
           ZcrudScope.maybeOf(context)?.widgetRegistry?.tryBuilderFor(adornment.value);
-      if (builder == null) return null;
-      return builder(
-        context,
-        ZFieldWidgetContext(
-          field: field,
-          value: valueOf?.call(field.name),
-          onChanged: _noop,
-          valueOf: valueOf,
-        ),
-      );
+      resolved = builder == null
+          ? null
+          : builder(
+              context,
+              ZFieldWidgetContext(
+                field: field,
+                value: valueOf?.call(field.name),
+                onChanged: _noop,
+                valueOf: valueOf,
+              ),
+            );
   }
+  if (resolved == null) return null;
+  final onTap = adornment.onTap;
+  &#47;&#47; Sans `onTap`, l&#39;ornement reste purement DÉCORATIF : arbre strictement
+  &#47;&#47; identique à l&#39;antérieur (additif — aucun wrapper, aucune sémantique
+  &#47;&#47; ajoutée).
+  if (onTap == null) return resolved;
+  &#47;&#47; Ornement INTERACTIF : cible tactile accessible ≥ 48 dp + sémantique de
+  &#47;&#47; bouton (AD-13). Une icône passe par `IconButton` (contraintes 48 dp
+  &#47;&#47; natives, splash standard) ; texte&#47;widget par une cible `InkWell` bornée.
+  if (adornment.kind == ZAdornmentKind.icon) {
+    return IconButton(onPressed: onTap, icon: resolved);
+  }
+  return Semantics(
+    button: true,
+    container: true,
+    child: InkWell(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: kMinInteractiveDimension,
+          minHeight: kMinInteractiveDimension,
+        ),
+        child: Center(child: resolved),
+      ),
+    ),
+  );
 }</code></pre>
 </section>
 
@@ -148,7 +184,7 @@ l'icône du <code>IconTheme</code> ambiant. Les insets éventuels sont direction
 <footer>
   <span class="no-break">
     zcrud_core
-      3.12.0
+      3.17.0
   </span>
   
 </footer>
