@@ -54,21 +54,27 @@
 
     <section class="multi-line-signature">
       const
-      <span class="name ">ZListCustomLayout</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-customView"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">customView</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span></li>
+      <span class="name ">ZListCustomLayout</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-customView"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">customView</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span></li>
 <li><span class="parameter" id="param-request"><span class="type-annotation"><a href="../../zcrud_core/ZListRenderRequest-class.html">ZListRenderRequest</a></span> <span class="parameter-name">request</span></span></li>
-</ol>), </span></li>
+</ol>)?, </span></li>
+<li><span class="parameter" id="param-entityView"><span class="type-annotation"><a href="../../zcrud_core/ZEntityListViewBuilder.html">ZEntityListViewBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span>?</span> <span class="parameter-name">entityView</span>, </span></li>
 </ol>})
     </section>
     
 <section class="desc markdown">
-  <p>Construit la vue personnalisée avec son <code>customView</code>.</p>
+  <p>Construit la vue personnalisée avec <code>customView</code> et/ou <code>entityView</code> —
+au moins l'un des deux.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">const ZListCustomLayout({required this.customView});</code></pre>
+  <pre class="language-dart"><code class="language-dart">const ZListCustomLayout({this.customView, this.entityView})
+    : assert(
+        customView != null || entityView != null,
+        &#39;ZListCustomLayout exige customView ou entityView.&#39;,
+      );</code></pre>
 </section>
 
 
@@ -96,7 +102,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zChatRouterShapeIssue function from the zcrud_chat_firestore library, for the Dart programming language.">
+  <title>zChatRouterShapeIssue function - zcrud_chat_firestore library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat_firestore</a></li>
+    <li><a href="../zcrud_chat_firestore/">zcrud_chat_firestore.dart</a></li>
+    <li class="self-crumb">zChatRouterShapeIssue function</li>
+  </ol>
+  <div class="self-name">zChatRouterShapeIssue</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_chat_firestore&#47;zcrud_chat_firestore-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zChatRouterShapeIssue</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+<span class="name ">zChatRouterShapeIssue</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="zChatRouterShapeIssue-param-canonical"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">canonical</span></span></li>
+</ol>)
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Décrit pourquoi une map canonique <strong>ne peut pas</strong> être un routeur, ou
+<code>null</code> si elle est lisible.</p>
+<p>C'est le prédicat que la fabrique applique avant <code>ZChatRouter.fromMap</code> :
+le codec du noyau ne lève jamais et remplacerait silencieusement un champ
+illisible par son défaut — un document étranger à la collection
+deviendrait un routeur vide, actif. Le prédicat est exposé pour qu'un
+hôte puisse l'appliquer à ses propres fixtures ou outils de migration.</p>
+<p>Règles, dans l'ordre :</p>
+<ul>
+<li>aucune clé du schéma du routeur hors <code>id</code>, ni <code>model</code> (forme imbriquée
+tolérée en lecture), ni <code>params</code>, ni <code>extension</code> ⇒ « pas un routeur » ;</li>
+<li><code>routes</code> présent et ni liste ni map ; <code>fallbacks</code> présent et non liste ;
+<code>params</code> ou <code>extension</code> présent et non map ; <code>is_active</code> présent et non
+booléen ; <code>compute_effort</code> présent et ni nombre ni texte ; <code>model</code>
+présent et ni texte ni map ; <code>name</code>, <code>description</code>, <code>tier</code>,
+<code>model_provider_id</code>, <code>model_id</code> présents et non textuels.</li>
+</ul>
+<p>Une valeur <code>null</code> compte comme absente.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">String? zChatRouterShapeIssue(Map&lt;String, dynamic&gt; canonical) {
+  bool present(String key) =&gt; canonical[key] != null;
+
+  final bool anySchemaKey = _kSchemaKeys.any(present) ||
+      present(&#39;model&#39;) ||
+      present(&#39;params&#39;) ||
+      present(&#39;extension&#39;);
+  if (!anySchemaKey) return &#39;aucune clé du schéma du routeur&#39;;
+
+  final Object? routes = canonical[&#39;routes&#39;];
+  if (routes != null &amp;&amp; routes is! List &amp;&amp; routes is! Map) {
+    return &#39;`routes` ni liste ni map (${routes.runtimeType})&#39;;
+  }
+  final Object? fallbacks = canonical[&#39;fallbacks&#39;];
+  if (fallbacks != null &amp;&amp; fallbacks is! List) {
+    return &#39;`fallbacks` non liste (${fallbacks.runtimeType})&#39;;
+  }
+  for (final String key in const &lt;String&gt;[&#39;params&#39;, &#39;extension&#39;]) {
+    final Object? v = canonical[key];
+    if (v != null &amp;&amp; v is! Map) return &#39;`$key` non map (${v.runtimeType})&#39;;
+  }
+  final Object? isActive = canonical[&#39;is_active&#39;];
+  if (isActive != null &amp;&amp; zJsonBoolOrNull(isActive) == null) {
+    return &#39;`is_active` non booléen (${isActive.runtimeType})&#39;;
+  }
+  final Object? effort = canonical[&#39;compute_effort&#39;];
+  if (effort != null &amp;&amp; effort is! num &amp;&amp; effort is! String) {
+    return &#39;`compute_effort` ni nombre ni texte (${effort.runtimeType})&#39;;
+  }
+  final Object? model = canonical[&#39;model&#39;];
+  if (model != null &amp;&amp; model is! String &amp;&amp; model is! Map) {
+    return &#39;`model` ni texte ni map (${model.runtimeType})&#39;;
+  }
+  for (final String key in _kTextKeys) {
+    final Object? v = canonical[key];
+    if (v != null &amp;&amp; v is! String) return &#39;`$key` non textuel (${v.runtimeType})&#39;;
+  }
+  return null;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat_firestore</a></li>
+    <li><a href="../zcrud_chat_firestore/">zcrud_chat_firestore</a></li>
+    <li class="self-crumb">zChatRouterShapeIssue function</li>
+</ol>
+
+    <h5>zcrud_chat_firestore library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_firestore
+      3.12.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

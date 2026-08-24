@@ -91,7 +91,7 @@ l'échappatoire d'un cran vers les briques, sans rien perdre.</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZChatArtifactBar.new" class="callable">
-          <span class="name"><a href="../zcrud_chat/ZChatArtifactBar/ZChatArtifactBar.html">ZChatArtifactBar</a></span><span class="signature">({<span class="parameter" id="param-message"><span>required</span> <span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span>, </span><span class="parameter" id="param-artifacts"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatArtifactSpec-class.html">ZChatArtifactSpec</a></span>&gt;</span></span> <span class="parameter-name">artifacts</span>, </span><span class="parameter" id="param-skin"><span class="type-annotation"><a href="../zcrud_chat/ZChatNotebookSkin-class.html">ZChatNotebookSkin</a>?</span> <span class="parameter-name">skin</span>, </span><span class="parameter" id="param-confirm"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactConfirm.html">ZChatArtifactConfirm</a>?</span> <span class="parameter-name">confirm</span>, </span><span class="parameter" id="param-spacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">spacing</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+          <span class="name"><a href="../zcrud_chat/ZChatArtifactBar/ZChatArtifactBar.html">ZChatArtifactBar</a></span><span class="signature">({<span class="parameter" id="param-message"><span>required</span> <span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span>, </span><span class="parameter" id="param-artifacts"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatArtifactSpec-class.html">ZChatArtifactSpec</a></span>&gt;</span></span> <span class="parameter-name">artifacts</span>, </span><span class="parameter" id="param-skin"><span class="type-annotation"><a href="../zcrud_chat/ZChatNotebookSkin-class.html">ZChatNotebookSkin</a>?</span> <span class="parameter-name">skin</span>, </span><span class="parameter" id="param-confirm"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactConfirm.html">ZChatArtifactConfirm</a>?</span> <span class="parameter-name">confirm</span>, </span><span class="parameter" id="param-spacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">spacing</span>, </span><span class="parameter" id="param-menuBuilder"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactMenuBuilder.html">ZChatArtifactMenuBuilder</a>?</span> <span class="parameter-name">menuBuilder</span>, </span><span class="parameter" id="param-menuCrossAxisCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">menuCrossAxisCount</span> = <span class="default-value">kZChatArtifactMenuCrossAxisCount</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
         </dt>
         <dd>
           Construit la rangée.
@@ -151,6 +151,32 @@ confirmation <strong>en place</strong> du socle.
 <dd class="inherited">
   Controls how one widget replaces another widget in the tree.
   <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="menuBuilder" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatArtifactBar/menuBuilder.html">menuBuilder</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat/ZChatArtifactMenuBuilder.html">ZChatArtifactMenuBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Présentation <strong>injectée</strong> du contenu des menus de verbes. <code>null</code> signifie
+la grille du socle, dont <a href="../zcrud_chat/ZChatArtifactBar/menuCrossAxisCount.html">menuCrossAxisCount</a> règle le nombre de
+colonnes.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="menuCrossAxisCount" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatArtifactBar/menuCrossAxisCount.html">menuCrossAxisCount</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre de colonnes de la grille rendue quand <a href="../zcrud_chat/ZChatArtifactBar/menuBuilder.html">menuBuilder</a> est <code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
 
 </dd>
 
@@ -373,7 +399,7 @@ tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode
     <h2>Static Methods</h2>
     <dl class="callables">
         <dt id="slot" class="callable">
-  <span class="name"><a href="../zcrud_chat/ZChatArtifactBar/slot.html">slot</a></span><span class="signature">(<wbr>{<span class="parameter" id="slot-param-artifacts"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatArtifactSpec-class.html">ZChatArtifactSpec</a></span>&gt;</span></span> <span class="parameter-name">artifacts</span>, </span><span class="parameter" id="slot-param-host"><span class="type-annotation"><a href="../zcrud_chat/ZChatMessageSlotBuilder.html">ZChatMessageSlotBuilder</a>?</span> <span class="parameter-name">host</span>, </span><span class="parameter" id="slot-param-skin"><span class="type-annotation"><a href="../zcrud_chat/ZChatNotebookSkin-class.html">ZChatNotebookSkin</a>?</span> <span class="parameter-name">skin</span>, </span><span class="parameter" id="slot-param-confirm"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactConfirm.html">ZChatArtifactConfirm</a>?</span> <span class="parameter-name">confirm</span>, </span><span class="parameter" id="slot-param-spacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">spacing</span></span>})
+  <span class="name"><a href="../zcrud_chat/ZChatArtifactBar/slot.html">slot</a></span><span class="signature">(<wbr>{<span class="parameter" id="slot-param-artifacts"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatArtifactSpec-class.html">ZChatArtifactSpec</a></span>&gt;</span></span> <span class="parameter-name">artifacts</span>, </span><span class="parameter" id="slot-param-host"><span class="type-annotation"><a href="../zcrud_chat/ZChatMessageSlotBuilder.html">ZChatMessageSlotBuilder</a>?</span> <span class="parameter-name">host</span>, </span><span class="parameter" id="slot-param-skin"><span class="type-annotation"><a href="../zcrud_chat/ZChatNotebookSkin-class.html">ZChatNotebookSkin</a>?</span> <span class="parameter-name">skin</span>, </span><span class="parameter" id="slot-param-confirm"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactConfirm.html">ZChatArtifactConfirm</a>?</span> <span class="parameter-name">confirm</span>, </span><span class="parameter" id="slot-param-spacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">spacing</span>, </span><span class="parameter" id="slot-param-menuBuilder"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactMenuBuilder.html">ZChatArtifactMenuBuilder</a>?</span> <span class="parameter-name">menuBuilder</span>, </span><span class="parameter" id="slot-param-menuCrossAxisCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">menuCrossAxisCount</span> = <span class="default-value">kZChatArtifactMenuCrossAxisCount</span></span>})
     <span class="returntype parameter">&#8594; <a href="../zcrud_chat/ZChatMessageSlotBuilder.html">ZChatMessageSlotBuilder</a></span>
   </span>
   
@@ -414,7 +440,7 @@ quand rien n'est déclaré — le créneau est alors absent de l'arbre
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

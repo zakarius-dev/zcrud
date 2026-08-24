@@ -127,9 +127,13 @@ Widget build(BuildContext context) {
         hasGlyph: face != null,
         stateful: active,
       );
+      final Color? tint = active
+          ? _activeAccent(context, activeAccent)
+          : null;
       return _ZChatComposerBandTarget(
         semanticsLabel: resolved,
         toggled: active,
+        foreground: tint,
         &#47;&#47; L&#39;écoute est ANNONCÉE : ce que dit l&#39;utilisateur part dans un
         &#47;&#47; moteur — il doit le savoir sans regarder l&#39;écran.
         liveRegion: active,
@@ -141,7 +145,7 @@ Widget build(BuildContext context) {
           if (labelVisible)
             Text(
               resolved,
-              style: active ? styles.chosen : styles.plain,
+              style: active ? _tinted(styles.chosen, tint) : styles.plain,
               textAlign: TextAlign.start,
             ),
         ],
@@ -176,7 +180,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

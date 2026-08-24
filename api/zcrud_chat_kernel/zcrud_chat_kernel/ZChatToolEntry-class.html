@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZChatToolEntry class from the zcrud_chat_kernel library, for the Dart programming language.">
+  <title>ZChatToolEntry class - zcrud_chat_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../zcrud_chat_kernel/">zcrud_chat_kernel.dart</a></li>
+    <li class="self-crumb">ZChatToolEntry class</li>
+  </ol>
+  <div class="self-name">ZChatToolEntry</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat_kernel&#47;zcrud_chat_kernel-library-sidebar.html"
+    data-below-sidebar="zcrud_chat_kernel&#47;ZChatToolEntry-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZChatToolEntry</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Une entrée d'outil déclarée : une identité, une nature, un état, et les
+règles qui décident de sa présence.</p>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZChatToolEntry.new" class="callable">
+          <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/ZChatToolEntry.html">ZChatToolEntry</a></span><span class="signature">({<span class="parameter" id="param-key"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">key</span>, </span><span class="parameter" id="param-state"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatToolState-class.html">ZChatToolState</a></span> <span class="parameter-name">state</span>, </span><span class="parameter" id="param-label"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">label</span>, </span><span class="parameter" id="param-iconKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">iconKey</span>, </span><span class="parameter" id="param-sectionKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">sectionKey</span>, </span><span class="parameter" id="param-prominence"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatToolProminence.html">ZChatToolProminence</a></span> <span class="parameter-name">prominence</span> = <span class="default-value">ZChatToolProminence.auto</span>, </span><span class="parameter" id="param-revealedBy"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">revealedBy</span>, </span><span class="parameter" id="param-disabledWhen"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat_kernel/ZChatToolRule-class.html">ZChatToolRule</a></span>&gt;</span></span> <span class="parameter-name">disabledWhen</span> = <span class="default-value">const &lt;ZChatToolRule&gt;[]</span>, </span><span class="parameter" id="param-deactivates"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">deactivates</span> = <span class="default-value">const &lt;String&gt;[]</span>, </span><span class="parameter" id="param-stateLabels"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">stateLabels</span> = <span class="default-value">const &lt;String, String&gt;{}</span>, </span><span class="parameter" id="param-itemLabels"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">itemLabels</span> = <span class="default-value">const &lt;String, String&gt;{}</span>, </span><span class="parameter" id="param-searchTerms"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">searchTerms</span> = <span class="default-value">const &lt;String&gt;[]</span>, </span><span class="parameter" id="param-countsTowardActive"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">countsTowardActive</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-order"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">order</span> = <span class="default-value">0</span>, </span><span class="parameter" id="param-extension"><span class="type-annotation">ZExtension?</span> <span class="parameter-name">extension</span>, </span><span class="parameter" id="param-extra"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">extra</span> = <span class="default-value">const &lt;String, dynamic&gt;{}</span></span>})</span>
+        </dt>
+        <dd>
+          Construit une entrée.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="countsTowardActive" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/countsTowardActive.html">countsTowardActive</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>false</code> pour un outil qui ne doit <strong>pas</strong> peupler le comptage agrégé.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="deactivates" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/deactivates.html">deactivates</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Clés que l'<strong>activation</strong> de cette entrée rend inactives (exclusion
+mutuelle). L'effet est appliqué par le catalogue, à un seul endroit.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="defaultState" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/defaultState.html">defaultState</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat_kernel/ZChatToolState-class.html">ZChatToolState</a></span>
+  
+
+</dt>
+<dd>
+  État par défaut appliqué par la remise à zéro.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="disabledWhen" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/disabledWhen.html">disabledWhen</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat_kernel/ZChatToolRule-class.html">ZChatToolRule</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Règles de désactivation, évaluées <strong>dans l'ordre</strong> : la première
+satisfaite fournit la raison.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="extension" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/extension.html">extension</a></span>
+  <span class="signature">&#8594; ZExtension?</span>
+  
+
+</dt>
+<dd>
+  Slot d'extension typé versionné (invariant AD-4).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="extra" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/extra.html">extra</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Données d'hôte libres (invariant AD-4), immuables.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="iconKey" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/iconKey.html">iconKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé d'icône <strong>opaque</strong>, résolue par l'hôte au rendu — pendant visuel
+du jeton de raison : le socle transporte la clé, ne dessine rien.
+<code>null</code> ⇒ aucune icône déclarée.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="isActive" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/isActive.html">isActive</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si l'état courant compte comme « activé ».
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="itemLabels" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/itemLabels.html">itemLabels</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Association <code>clé d'item → texte d'hôte</code> pour les <strong>items</strong> d'un
+catalogue ou les <strong>options</strong> d'un choix — le canal déclaré des libellés
+d'items, distinct de <a href="../zcrud_chat_kernel/ZChatToolEntry/stateLabels.html">stateLabels</a> (qui nomme des <strong>états</strong>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="key" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/key.html">key</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Identité <strong>stable et opaque</strong>. C'est la cible des règles, de la
+révélation, de l'exclusion et des builders de rendu.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="label" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/label.html">label</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Libellé <strong>déjà localisé par l'hôte</strong>. <code>null</code> signifie absent — le socle
+n'en fabrique aucun (FR-26).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="order" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/order.html">order</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Rang au sein de sa section (croissant) ; à égalité, l'ordre de
+déclaration décide.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="prominence" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/prominence.html">prominence</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat_kernel/ZChatToolProminence.html">ZChatToolProminence</a></span>
+  
+
+</dt>
+<dd>
+  Surface(s) où l'outil est proéminent.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="revealedBy" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/revealedBy.html">revealedBy</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé de la <strong>bascule parente</strong> : l'entrée n'est révélée que si cette
+entrée-là est présente et active. <code>null</code> ⇒ toujours révélée.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="searchTerms" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/searchTerms.html">searchTerms</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Termes supplémentaires interrogés par la recherche, en plus de <a href="../zcrud_chat_kernel/ZChatToolEntry/label.html">label</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="sectionKey" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/sectionKey.html">sectionKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Section d'appartenance. <code>null</code> ⇒ section non assignée.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="state" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/state.html">state</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat_kernel/ZChatToolState-class.html">ZChatToolState</a></span>
+  
+
+</dt>
+<dd>
+  Nature et état courant.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="stateLabels" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/stateLabels.html">stateLabels</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Association <code>jeton d'état → texte d'hôte</code>, source du sous-titre qui décrit
+<strong>l'état</strong> et non la fonction. Un jeton absent ⇒ pas de sous-titre.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="cleared" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/cleared.html">cleared</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat_kernel/ZChatToolEntry-class.html">ZChatToolEntry</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Même entrée, ramenée à son état inactif.
+  
+
+</dd>
+
+        <dt id="describeItem" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/describeItem.html">describeItem</a></span><span class="signature">(<wbr><span class="parameter" id="describeItem-param-itemKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">itemKey</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le libellé d'hôte de l'item <code>itemKey</code> — <a href="../zcrud_chat_kernel/ZChatToolEntry/itemLabels.html">itemLabels</a> d'abord, puis
+<a href="../zcrud_chat_kernel/ZChatToolEntry/stateLabels.html">stateLabels</a> (convention de repli) — ou <code>null</code> si l'hôte ne l'a pas
+nommé. Un item non nommé n'est jamais remplacé par un texte du socle.
+  
+
+</dd>
+
+        <dt id="describeState" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/describeState.html">describeState</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le sous-titre d'état, ou <code>null</code> si l'hôte n'a pas nommé ce jeton.
+  
+
+</dd>
+
+        <dt id="matches" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/matches.html">matches</a></span><span class="signature">(<wbr><span class="parameter" id="matches-param-query"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">query</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si <code>query</code> (rognée, insensible à la casse) apparaît dans <a href="../zcrud_chat_kernel/ZChatToolEntry/label.html">label</a>
+ou dans un <a href="../zcrud_chat_kernel/ZChatToolEntry/searchTerms.html">searchTerms</a>. Une requête vide accepte <strong>tout</strong>.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="reset" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/reset.html">reset</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat_kernel/ZChatToolEntry-class.html">ZChatToolEntry</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Même entrée, ramenée à <a href="../zcrud_chat_kernel/ZChatToolEntry/defaultState.html">defaultState</a>.
+  
+
+</dd>
+
+        <dt id="toJson" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/toJson.html">toJson</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Sérialise en clés <code>snake_case</code> ; les champs par défaut sont <strong>omis</strong>.
+  
+
+</dd>
+
+        <dt id="toString" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A string representation of this object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="withState" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/withState.html">withState</a></span><span class="signature">(<wbr><span class="parameter" id="withState-param-next"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatToolState-class.html">ZChatToolState</a></span> <span class="parameter-name">next</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat_kernel/ZChatToolEntry-class.html">ZChatToolEntry</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Même entrée, état remplacé.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="fromJson" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatToolEntry/fromJson.html">fromJson</a></span><span class="signature">(<wbr><span class="parameter" id="fromJson-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span>, {</span><span class="parameter" id="fromJson-param-extensionParser"><span class="type-annotation">ZExtension?</span> <span class="parameter-name">extensionParser</span>(<span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)?</span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat_kernel/ZChatToolEntry-class.html">ZChatToolEntry</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Décode <strong>défensivement</strong> (invariant AD-10) — ne lève jamais. Une entrée
+sans clé ou sans état lisible est écartée (<code>null</code>) : elle n'aurait pas
+d'identité stable à laquelle rattacher une règle.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../zcrud_chat_kernel/">zcrud_chat_kernel</a></li>
+    <li class="self-crumb">ZChatToolEntry class</li>
+</ol>
+
+    <h5>zcrud_chat_kernel library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_kernel
+      3.12.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

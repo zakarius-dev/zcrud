@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZChatRouteSpec class from the zcrud_chat_kernel library, for the Dart programming language.">
+  <title>ZChatRouteSpec class - zcrud_chat_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../zcrud_chat_kernel/">zcrud_chat_kernel.dart</a></li>
+    <li class="self-crumb">ZChatRouteSpec class</li>
+  </ol>
+  <div class="self-name">ZChatRouteSpec</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat_kernel&#47;zcrud_chat_kernel-library-sidebar.html"
+    data-below-sidebar="zcrud_chat_kernel&#47;ZChatRouteSpec-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZChatRouteSpec</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Déclaration d'une <strong>route</strong> pour une clé de tâche.</p>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZChatRouteSpec.new" class="callable">
+          <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/ZChatRouteSpec.html">ZChatRouteSpec</a></span><span class="signature">({<span class="parameter" id="param-taskKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">taskKey</span>, </span><span class="parameter" id="param-routeName"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">routeName</span>, </span><span class="parameter" id="param-model"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatModelRef-class.html">ZChatModelRef</a>?</span> <span class="parameter-name">model</span>, </span><span class="parameter" id="param-fallbacks"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat_kernel/ZChatModelRef-class.html">ZChatModelRef</a></span>&gt;</span></span> <span class="parameter-name">fallbacks</span> = <span class="default-value">const &lt;ZChatModelRef&gt;[]</span>, </span><span class="parameter" id="param-computeEffort"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatComputeEffort-class.html">ZChatComputeEffort</a>?</span> <span class="parameter-name">computeEffort</span>, </span><span class="parameter" id="param-params"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">params</span> = <span class="default-value">const &lt;String, dynamic&gt;{}</span>, </span><span class="parameter" id="param-requiredAccessTokens"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">requiredAccessTokens</span> = <span class="default-value">const &lt;String&gt;[]</span>, </span><span class="parameter" id="param-handlerId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">handlerId</span></span>})</span>
+        </dt>
+        <dd>
+          Construit une route. <code>requiredAccessTokens</code> est dédupliqué et trié ;
+<code>params</code> est conservé verbatim, hors clés de synchronisation réservées.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="computeEffort" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/computeEffort.html">computeEffort</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat_kernel/ZChatComputeEffort-class.html">ZChatComputeEffort</a>?</span>
+  
+
+</dt>
+<dd>
+  Budget de calcul de la route, ou <code>null</code> (repli sur celui du routeur).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="fallbacks" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/fallbacks.html">fallbacks</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat_kernel/ZChatModelRef-class.html">ZChatModelRef</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Replis ordonnés du <a href="../zcrud_chat_kernel/ZChatRouteSpec/model.html">model</a> — solidaires de lui à la résolution.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="handlerId" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/handlerId.html">handlerId</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Identité <strong>opaque</strong> du gestionnaire qui exécute la route, ou <code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="model" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/model.html">model</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat_kernel/ZChatModelRef-class.html">ZChatModelRef</a>?</span>
+  
+
+</dt>
+<dd>
+  Modèle de la route, ou <code>null</code> (repli sur celui du routeur).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="params" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/params.html">params</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Paramètres <strong>verbatim</strong> de la route, non modifiables. Ils rejoignent
+<code>ZChatGenerationRequest.extra</code> à la résolution, sous les clés de l'hôte.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="requiredAccessTokens" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/requiredAccessTokens.html">requiredAccessTokens</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Jetons d'accès <strong>opaques</strong> exigés pour emprunter la route (dédupliqués,
+triés). C'est la donnée qu'un <code>ZChatRouteGate</code> confronte au plan.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="routeName" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/routeName.html">routeName</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Nom de route <strong>opaque</strong> côté transport, ou <code>null</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="taskKey" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/taskKey.html">taskKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de tâche (<code>ZChatGenerationStyle.kind</code>), jamais vide.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toJson" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/toJson.html">toJson</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Forme persistée (clés snake_case) : les valeurs vides sont omises, le
+modèle est écrit à plat (<code>model_provider_id</code>, <code>model_id</code>), les replis en
+<strong>liste de maps</strong> <code>{provider_id?, model_id}</code> (<a href="../zcrud_chat_kernel/ZChatModelRef/toJson.html">ZChatModelRef.toJson</a>) —
+la forme que produit le sous-formulaire <code>fallbacks</code>.
+  
+
+</dd>
+
+        <dt id="toString" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A string representation of this object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The equality operator.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="fromJson" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/fromJson.html">fromJson</a></span><span class="signature">(<wbr><span class="parameter" id="fromJson-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat_kernel/ZChatRouteSpec-class.html">ZChatRouteSpec</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Lecture <strong>défensive</strong> (AD-10) : <code>null</code> si <code>raw</code> n'est pas une map ou si
+<code>task_key</code> est absent/vide — jamais d'exception. Un repli illisible est
+sauté, un budget de calcul illisible vaut <code>null</code>.
+  
+
+</dd>
+
+        <dt id="normalizeAccessTokens" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteSpec/normalizeAccessTokens.html">normalizeAccessTokens</a></span><span class="signature">(<wbr><span class="parameter" id="normalizeAccessTokens-param-tokens"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">tokens</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Dédoublonne, rogne et trie des jetons d'accès (les vides sont écartés).
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../zcrud_chat_kernel/">zcrud_chat_kernel</a></li>
+    <li class="self-crumb">ZChatRouteSpec class</li>
+</ol>
+
+    <h5>zcrud_chat_kernel library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_kernel
+      3.12.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

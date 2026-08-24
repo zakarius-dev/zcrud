@@ -135,9 +135,15 @@ Widget build(BuildContext context) {
             hasGlyph: face != null,
             stateful: active,
           );
+          &#47;&#47; La teinte n&#39;est résolue QUE sur l&#39;état actif : au repos, la
+          &#47;&#47; pièce reste à la couleur ambiante.
+          final Color? tint = active
+              ? _activeAccent(context, activeAccent)
+              : null;
           return _ZChatComposerBandTarget(
             semanticsLabel: resolved,
             toggled: active,
+            foreground: tint,
             onTap: () =&gt; controller.setRevealThinkingSteps(!active),
             children: &lt;Widget&gt;[
               if (face != null) ExcludeSemantics(child: face),
@@ -147,8 +153,12 @@ Widget build(BuildContext context) {
                 Text(
                   resolved,
                   &#47;&#47; Le canal VISIBLE de l&#39;état : emphase quand actif —
-                  &#47;&#47; jamais la seule couleur, jamais la seule sémantique.
-                  style: active ? styles.chosen : styles.plain,
+                  &#47;&#47; jamais la seule couleur, jamais la seule sémantique. La
+                  &#47;&#47; teinte s&#39;y AJOUTE ; le style porte sa propre couleur, il
+                  &#47;&#47; n&#39;hériterait pas de l&#39;enveloppe de premier plan.
+                  style: active
+                      ? _tinted(styles.chosen, tint)
+                      : styles.plain,
                   textAlign: TextAlign.start,
                 ),
               if (badge != null) ...&lt;Widget&gt;[
@@ -189,7 +199,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

@@ -55,20 +55,21 @@
     
       <section class="multi-line-signature">
         
-        <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-request"><span class="type-annotation"><a href="../../zcrud_core/ZListRenderRequest-class.html">ZListRenderRequest</a></span> <span class="parameter-name">request</span></span>)</span>
+        <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-request"><span class="type-annotation"><a href="../../zcrud_core/ZListRenderRequest-class.html">ZListRenderRequest</a></span> <span class="parameter-name">request</span></span>)</span>?
         <span class="name ">customView</span>
         <div class="features"><span class="feature">final</span></div>
 
       </section>
       
 <section class="desc markdown">
-  <p>Construit le widget de liste à partir de la requête neutre complète.</p>
+  <p>Construit le widget de liste à partir de la requête neutre complète.
+<code>null</code> ⇒ la vue est décrite par <a href="../../zcrud_core/ZListCustomLayout/entityView.html">entityView</a>.</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final Widget Function(BuildContext context, ZListRenderRequest request)
+  <pre class="language-dart"><code class="language-dart">final Widget Function(BuildContext context, ZListRenderRequest request)?
     customView;</code></pre>
 </section>
 
@@ -98,7 +99,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

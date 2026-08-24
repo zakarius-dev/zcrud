@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZChatConversationController.new constructor from Class ZChatConversationController from the zcrud_chat library, for the Dart programming language.">
+  <title>ZChatConversationController.new constructor - ZChatConversationController - zcrud_chat library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_chat</a></li>
+    <li><a href="../../zcrud_chat/">zcrud_chat.dart</a></li>
+    <li><a href="../../zcrud_chat/ZChatConversationController-class.html">ZChatConversationController</a></li>
+    <li class="self-crumb">ZChatConversationController.new constructor</li>
+  </ol>
+  <div class="self-name">ZChatConversationController.new</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_chat&#47;ZChatConversationController-class-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-constructor">ZChatConversationController</span> constructor 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+      <span class="name ">ZChatConversationController</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-streamPort"><span>required</span> <span class="type-annotation">ZChatStreamPort</span> <span class="parameter-name">streamPort</span>, </span></li>
+<li><span class="parameter" id="param-conversationId"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">conversationId</span>, </span></li>
+<li><span class="parameter" id="param-transcript"><span class="type-annotation">ZChatTranscriptPort?</span> <span class="parameter-name">transcript</span>, </span></li>
+<li><span class="parameter" id="param-initialMessages"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatMessage</span>&gt;</span></span> <span class="parameter-name">initialMessages</span> = <span class="default-value">const &lt;ZChatMessage&gt;[]</span>, </span></li>
+<li><span class="parameter" id="param-actionExecutor"><span class="type-annotation">ZChatActionExecutor</span> <span class="parameter-name">actionExecutor</span> = <span class="default-value">const ZChatUnsupportedActionExecutor()</span>, </span></li>
+<li><span class="parameter" id="param-confirm"><span class="type-annotation"><a href="../../zcrud_chat/ZChatConfirm.html">ZChatConfirm</a></span> <span class="parameter-name">confirm</span> = <span class="default-value">zChatConfirmWithoutDialog</span>, </span></li>
+<li><span class="parameter" id="param-newRequestId"><span class="type-annotation"><a href="../../zcrud_chat/ZChatRequestIdFactory.html">ZChatRequestIdFactory</a>?</span> <span class="parameter-name">newRequestId</span>, </span></li>
+<li><span class="parameter" id="param-buildRequest"><span class="type-annotation"><a href="../../zcrud_chat/ZChatRequestBuilder.html">ZChatRequestBuilder</a>?</span> <span class="parameter-name">buildRequest</span>, </span></li>
+<li><span class="parameter" id="param-lifecycle"><span class="type-annotation">ZChatConversationLifecyclePort?</span> <span class="parameter-name">lifecycle</span>, </span></li>
+<li><span class="parameter" id="param-routeResolver"><span class="type-annotation"><a href="../../zcrud_chat/ZChatRouteResolver.html">ZChatRouteResolver</a>?</span> <span class="parameter-name">routeResolver</span>, </span></li>
+<li><span class="parameter" id="param-liveLabels"><span class="type-annotation"><a href="../../zcrud_chat/ZChatLiveLabels-class.html">ZChatLiveLabels</a></span> <span class="parameter-name">liveLabels</span> = <span class="default-value">ZChatLiveLabels.none</span>, </span></li>
+<li><span class="parameter" id="param-maxResumeAttempts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">maxResumeAttempts</span> = <span class="default-value">2</span>, </span></li>
+</ol>})
+    </section>
+    
+<section class="desc markdown">
+  <p>Construit un contrôleur de conversation pour <code>conversationId</code>.</p>
+<p>Port <strong>requis</strong> : <code>streamPort</code> (génération des réponses).</p>
+<p>Ports et réglages <strong>optionnels, à défaut inerte</strong> :</p>
+<ul>
+<li><code>transcript</code> — lecture et écriture du fil ; absent, <code>initialMessages</code>
+est la source et rien n'est persisté ;</li>
+<li><code>initialMessages</code> — le fil initial, lu seulement sans <code>transcript</code> ;</li>
+<li><code>actionExecutor</code> — défaut <code>ZChatUnsupportedActionExecutor</code> ;</li>
+<li><code>confirm</code> — défaut <code>zChatConfirmWithoutDialog</code> : un verbe destructeur
+est <strong>refusé</strong> tant qu'un dialogue n'est pas branché ;</li>
+<li><code>newRequestId</code> — défaut <code>ZChatSequentialRequestIds</code> ;</li>
+<li><code>buildRequest</code> — défaut <code>ZChatDraftRequestBuilder</code> sur le style
+<code>converse</code>, copiant tout le brouillon ;</li>
+<li><code>lifecycle</code>, <code>routeResolver</code>, <code>liveLabels</code>, <code>maxResumeAttempts</code> —
+relayés au contrôleur de conversation.</li>
+</ul>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZChatConversationController({
+  required ZChatStreamPort streamPort,
+  required String conversationId,
+  ZChatTranscriptPort? transcript,
+  List&lt;ZChatMessage&gt; initialMessages = const &lt;ZChatMessage&gt;[],
+  ZChatActionExecutor actionExecutor = const ZChatUnsupportedActionExecutor(),
+  ZChatConfirm confirm = zChatConfirmWithoutDialog,
+  ZChatRequestIdFactory? newRequestId,
+  ZChatRequestBuilder? buildRequest,
+  ZChatConversationLifecyclePort? lifecycle,
+  ZChatRouteResolver? routeResolver,
+  ZChatLiveLabels liveLabels = ZChatLiveLabels.none,
+  int maxResumeAttempts = 2,
+}) : _conversationId = conversationId {
+  chat = ZChatController(
+    streamPort: streamPort,
+    actionExecutor: actionExecutor,
+    confirm: confirm,
+    newRequestId:
+        newRequestId ?? ZChatSequentialRequestIds(conversationId).call,
+    buildRequest: buildRequest ??
+        ZChatDraftRequestBuilder(
+          style: ZChatGenerationStyle.converse,
+          conversationId: conversationId,
+        ).call,
+    lifecycle: lifecycle,
+    routeResolver: routeResolver,
+    liveLabels: liveLabels,
+    maxResumeAttempts: maxResumeAttempts,
+    conversationId: conversationId,
+    &#47;&#47; Avec un dépôt, le fil vient de lui : l&#39;amorce remplace tout fil
+    &#47;&#47; initial, qui n&#39;est donc pas lu.
+    initialMessages:
+        transcript == null ? initialMessages : const &lt;ZChatMessage&gt;[],
+  );
+  &#47;&#47; Sans dépôt, aucune pièce de transcript : le contrôleur composé est
+  &#47;&#47; strictement celui des briques.
+  if (transcript != null) {
+    _binding = ZChatTranscriptBinding(
+      transcript: transcript,
+      chat: chat,
+      conversationId: conversationId,
+    );
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_chat</a></li>
+    <li><a href="../../zcrud_chat/">zcrud_chat</a></li>
+    <li><a href="../../zcrud_chat/ZChatConversationController-class.html">ZChatConversationController</a></li>
+    <li class="self-crumb">ZChatConversationController.new constructor</li>
+</ol>
+
+    <h5>ZChatConversationController class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat
+      3.12.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

@@ -64,6 +64,12 @@
 <section class="desc markdown">
   <p>Annule <strong>cette</strong> requête, et elle seule. Idempotent (invariant AD-10 :
 un second appel ne lève pas).</p>
+<p>L'annulation est <strong>au mieux</strong> du côté du serveur : le port est notifié
+par <a href="../../zcrud_chat_kernel/ZChatRequestToken/whenCancelled.html">whenCancelled</a> et doit fermer son transport, mais rien ne garantit
+que la génération distante s'arrête ni qu'elle cesse d'être facturée —
+cela dépend du backend. Ce qui est garanti vit côté client : le partiel
+reçu est conservé et marqué interrompu, et aucun événement ultérieur
+n'est appliqué.</p>
 </section>
 
 
@@ -101,7 +107,7 @@ un second appel ne lève pas).</p>
 <footer>
   <span class="no-break">
     zcrud_chat_kernel
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

@@ -4168,6 +4168,36 @@ dispatcher par type <a href="../zcrud_core/ZFieldWidget-class.html">ZFieldWidget
   </dd>
 
           
+  <dt id="ZEntityListViewBuilder" class="callable">
+    <span class="name"><a href="../zcrud_core/ZEntityListViewBuilder.html">ZEntityListViewBuilder</a></span>&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;<span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-request"><span class="type-annotation"><a href="../zcrud_core/ZListRenderRequest-class.html">ZListRenderRequest</a></span> <span class="parameter-name">request</span>, </span><span class="parameter" id="param-entityFor"><span class="type-annotation"><a href="../zcrud_core/ZEntityResolver.html">ZEntityResolver</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">entityFor</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Construit une vue de liste <strong>entière</strong> à partir de la requête neutre et du
+résolveur d'entités de la liste.
+    
+
+  </dd>
+
+          
+  <dt id="ZEntityResolver" class="callable">
+    <span class="name"><a href="../zcrud_core/ZEntityResolver.html">ZEntityResolver</a></span>&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;<span class="signature">
+      <span class="returntype parameter">= T? Function<span class="signature">(<span class="parameter" id="param-row"><span class="type-annotation"><a href="../zcrud_core/ZListRow-class.html">ZListRow</a></span> <span class="parameter-name">row</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Résout l'entité <code>T</code> d'une ligne neutre ; <code>null</code> si la ligne n'en a pas
+(ou si aucun résolveur n'a été déclaré sur <code>DynamicList.entityFor</code>).
+    
+
+  </dd>
+
+          
   <dt id="ZEntityTileBuilder" class="callable">
     <span class="name"><a href="../zcrud_core/ZEntityTileBuilder.html">ZEntityTileBuilder</a></span>&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;<span class="signature">
       <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span>, </span><span class="parameter" id="param-columns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZListColumn-class.html">ZListColumn</a></span>&gt;</span></span> <span class="parameter-name">columns</span></span>)</span></span>
@@ -4795,7 +4825,7 @@ n'est présent dans l'arbre.
 <footer>
   <span class="no-break">
     zcrud_core
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

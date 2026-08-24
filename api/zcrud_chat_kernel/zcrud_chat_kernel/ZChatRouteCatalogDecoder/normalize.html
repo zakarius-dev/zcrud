@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the normalize method from the ZChatRouteCatalogDecoder class, for the Dart programming language.">
+  <title>normalize method - ZChatRouteCatalogDecoder class - zcrud_chat_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/">zcrud_chat_kernel.dart</a></li>
+    <li><a href="../../zcrud_chat_kernel/ZChatRouteCatalogDecoder-class.html">ZChatRouteCatalogDecoder</a></li>
+    <li class="self-crumb">normalize method</li>
+  </ol>
+  <div class="self-name">normalize</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat_kernel&#47;ZChatRouteCatalogDecoder-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">normalize</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+<span class="name ">normalize</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="normalize-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">raw</span></span></li>
+</ol>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Traduit une map reçue vers la forme canonique de <code>ZChatRouter.fromMap</code>,
+selon <a href="../../zcrud_chat_kernel/ZChatRouteCatalogDecoder/shape.html">shape</a>. Pure : <code>raw</code> n'est jamais mutée.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Map&lt;String, dynamic&gt; normalize(Map&lt;String, dynamic&gt; raw) {
+  final Map&lt;String, dynamic&gt; out = &lt;String, dynamic&gt;{};
+  final Map&lt;String, Map&lt;String, dynamic&gt;&gt; derived =
+      &lt;String, Map&lt;String, dynamic&gt;&gt;{};
+  final List&lt;Object?&gt; listedRoutes = &lt;Object?&gt;[];
+  String? provider;
+  if (shape.providerKey != null) {
+    provider = _blank(zJsonStringOrNull(raw[shape.providerKey!]));
+  }
+
+  for (final MapEntry&lt;String, dynamic&gt; e in raw.entries) {
+    final String key = e.key;
+    final Object? value = e.value;
+
+    if (key == shape.providerKey) continue;
+    if (shape.routeMapKeys.contains(key)) {
+      final Map&lt;String, dynamic&gt;? byTask = zJsonMap(value);
+      if (byTask == null) continue;
+      for (final MapEntry&lt;String, dynamic&gt; t in byTask.entries) {
+        final Map&lt;String, dynamic&gt;? body = zJsonMap(t.value);
+        if (body == null) continue;
+        _mergeRoute(
+          derived,
+          _taskKeyOf(shape, t.key),
+          _normalizeRouteEntry(body, provider),
+        );
+      }
+      continue;
+    }
+    if (key == &#39;routes&#39;) {
+      if (value is List) {
+        for (final Object? item in value) {
+          final Map&lt;String, dynamic&gt;? body = zJsonMap(item);
+          listedRoutes.add(
+            body == null ? item : _normalizeRouteEntry(body, provider),
+          );
+        }
+      } else if (zJsonMap(value) case final Map&lt;String, dynamic&gt; asObject) {
+        for (final MapEntry&lt;String, dynamic&gt; t in asObject.entries) {
+          if (zJsonMap(t.value) case final Map&lt;String, dynamic&gt; body) {
+            listedRoutes.add(&lt;String, dynamic&gt;{
+              ..._normalizeRouteEntry(body, provider),
+              &#39;task_key&#39;: t.key,
+            });
+          }
+        }
+      }
+      continue;
+    }
+    if (shape.hasSuffixPairs) {
+      if (key == shape.rootModelKey) {
+        out[&#39;model&#39;] = value;
+        continue;
+      }
+      if (key == shape.rootFallbackKey) {
+        out[&#39;fallbacks&#39;] = _fallbackList(value, provider);
+        continue;
+      }
+      if (key == shape.tierKey) {
+        out[&#39;tier&#39;] = zJsonStringOrNull(value);
+        continue;
+      }
+      final String fs = shape.fallbackSuffix!;
+      final String ms = shape.modelSuffix!;
+      if (key.endsWith(fs) &amp;&amp; key.length &gt; fs.length) {
+        final String task = _taskKeyOf(
+          shape,
+          key.substring(0, key.length - fs.length),
+        );
+        _mergeRoute(derived, task, &lt;String, dynamic&gt;{
+          &#39;fallbacks&#39;: _fallbackList(value, provider),
+        });
+        continue;
+      }
+      if (key.endsWith(ms) &amp;&amp; key.length &gt; ms.length) {
+        final String task = _taskKeyOf(
+          shape,
+          key.substring(0, key.length - ms.length),
+        );
+        if (ZChatModelRef.fromJson(value) != null) {
+          _mergeRoute(derived, task, &lt;String, dynamic&gt;{&#39;model&#39;: value});
+        }
+        continue;
+      }
+    }
+    final String canonical = shape.rootAliases[key] ?? key;
+    if (canonical == &#39;fallbacks&#39;) {
+      out[canonical] = _fallbackList(value, provider);
+    } else if (canonical == &#39;params&#39;) {
+      out[canonical] = &lt;String, dynamic&gt;{
+        ...?zJsonMap(out[canonical]),
+        ...?zJsonMap(value),
+      };
+    } else {
+      out[canonical] = value;
+    }
+  }
+
+  _flattenModel(out, provider);
+  if (listedRoutes.isNotEmpty || derived.isNotEmpty) {
+    out[&#39;routes&#39;] = &lt;Object?&gt;[
+      ...listedRoutes,
+      for (final MapEntry&lt;String, Map&lt;String, dynamic&gt;&gt; d in derived.entries)
+        _derivedRoute(d.key, d.value, provider),
+    ];
+  }
+  return out;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/ZChatRouteCatalogDecoder-class.html">ZChatRouteCatalogDecoder</a></li>
+    <li class="self-crumb">normalize method</li>
+</ol>
+
+    <h5>ZChatRouteCatalogDecoder class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_kernel
+      3.12.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

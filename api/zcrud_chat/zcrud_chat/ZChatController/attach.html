@@ -88,6 +88,8 @@ tranches par requête sont libérées, la saisie est remise à zéro.</p>
   }
   _progress.clear();
   _retained.clear();
+  _interrupted.clear();
+  _requestByMessageId.clear();
   _conversationId = conversationId;
   _messages.value = List&lt;ZChatMessage&gt;.unmodifiable(messages);
   _activeRequests.value = const &lt;String&gt;[];
@@ -128,7 +130,7 @@ tranches par requête sont libérées, la saisie est remise à zéro.</p>
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

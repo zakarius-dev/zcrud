@@ -92,7 +92,7 @@ le tap sur le badge atteint le bouton, il ne peut pas être volé par un
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZChatComposerToolsTrigger.new" class="callable">
-          <span class="name"><a href="../zcrud_chat/ZChatComposerToolsTrigger/ZChatComposerToolsTrigger.html">ZChatComposerToolsTrigger</a></span><span class="signature">({<span class="parameter" id="param-onOpen"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a></span> <span class="parameter-name">onOpen</span>, </span><span class="parameter" id="param-badge"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">badge</span>, </span><span class="parameter" id="param-glyph"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">glyph</span>, </span><span class="parameter" id="param-showLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showLabel</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
+          <span class="name"><a href="../zcrud_chat/ZChatComposerToolsTrigger/ZChatComposerToolsTrigger.html">ZChatComposerToolsTrigger</a></span><span class="signature">({<span class="parameter" id="param-onOpen"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a></span> <span class="parameter-name">onOpen</span>, </span><span class="parameter" id="param-badge"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">badge</span>, </span><span class="parameter" id="param-badgeCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">badgeCount</span>, </span><span class="parameter" id="param-glyph"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">glyph</span>, </span><span class="parameter" id="param-showLabel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showLabel</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span></span>})</span>
         </dt>
         <dd>
           Construit le déclencheur.
@@ -113,8 +113,20 @@ le tap sur le badge atteint le bouton, il ne peut pas être volé par un
 
 </dt>
 <dd>
-  Badge compteur (réglages actifs). Rendu DANS la cible — décoratif pour
-le lecteur d'écran (le compte vit dans la feuille).
+  Badge compteur d'HÔTE. Rendu DANS la cible — décoratif pour le lecteur
+d'écran (le compte vit dans la feuille). Il prime sur <a href="../zcrud_chat/ZChatComposerToolsTrigger/badgeCount.html">badgeCount</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="badgeCount" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatComposerToolsTrigger/badgeCount.html">badgeCount</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Le nombre de réglages actifs, en tranche.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -385,7 +397,7 @@ tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

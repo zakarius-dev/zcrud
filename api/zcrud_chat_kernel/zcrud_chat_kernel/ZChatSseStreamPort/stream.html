@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the stream method from the ZChatSseStreamPort class, for the Dart programming language.">
+  <title>stream method - ZChatSseStreamPort class - zcrud_chat_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/">zcrud_chat_kernel.dart</a></li>
+    <li><a href="../../zcrud_chat_kernel/ZChatSseStreamPort-class.html">ZChatSseStreamPort</a></li>
+    <li class="self-crumb">stream method</li>
+  </ol>
+  <div class="self-name">stream</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat_kernel&#47;ZChatSseStreamPort-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">stream</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_chat_kernel/ZChatStreamEvent-class.html">ZChatStreamEvent</a></span>&gt;</span></span>&gt;</span></span>
+<span class="name ">stream</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="stream-param-request"><span class="type-annotation"><a href="../../zcrud_chat_kernel/ZChatGenerationRequest-class.html">ZChatGenerationRequest</a></span> <span class="parameter-name">request</span>, {</span></li>
+<li><span class="parameter" id="stream-param-token"><span>required</span> <span class="type-annotation"><a href="../../zcrud_chat_kernel/ZChatRequestToken-class.html">ZChatRequestToken</a></span> <span class="parameter-name">token</span>, </span></li>
+</ol>})
+
+      <div class="features"><span class="feature">override</span></div>
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Diffuse la réponse à <code>request</code>, annulable par <code>token</code> — <strong>ce</strong> jeton, et
+lui seul. Deux appels concurrents portent deux jetons distincts : annuler
+l'un <strong>n'affecte pas</strong> l'autre (garde comportementale du lot).</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+Stream&lt;ZResult&lt;ZChatStreamEvent&gt;&gt; stream(
+  ZChatGenerationRequest request, {
+  required ZChatRequestToken token,
+}) {
+  late final StreamController&lt;ZResult&lt;ZChatStreamEvent&gt;&gt; out;
+  StreamSubscription&lt;ZChatSseLine&gt;? lines;
+  int received = 0;
+  bool graceful = false;
+  bool closed = false;
+
+  void emit(ZResult&lt;ZChatStreamEvent&gt; r) {
+    if (!closed &amp;&amp; !out.isClosed) out.add(r);
+  }
+
+  void finish({ZFailure? failure}) {
+    if (closed) return;
+    closed = true;
+    final StreamSubscription&lt;ZChatSseLine&gt;? s = lines;
+    lines = null;
+    unawaited(s?.cancel());
+    if (failure != null &amp;&amp; !out.isClosed) {
+      out.add(Left&lt;ZFailure, ZChatStreamEvent&gt;(failure));
+    }
+    if (!out.isClosed) unawaited(out.close());
+  }
+
+  ZChatStreamInterruptedFailure interrupted(String message) =&gt;
+      ZChatStreamInterruptedFailure(
+        message,
+        requestId: token.requestId,
+        eventsReceived: received,
+        cancelledByUser: token.isCancelled,
+      );
+
+  void onLine(ZChatSseLine line) {
+    if (closed) return;
+    if (line.isDone) graceful = true;
+    ZResult&lt;ZChatStreamEvent&gt;? decoded;
+    try {
+      decoded = decode(line);
+    } catch (_) {
+      &#47;&#47; Un décodeur qui lève perd SA ligne, jamais le flux (AD-10).
+      decoded = null;
+    }
+    if (decoded == null) return;
+    decoded.fold(
+      (ZFailure _) {},
+      (ZChatStreamEvent e) {
+        received++;
+        if (e is ZChatDoneEvent) graceful = true;
+      },
+    );
+    emit(decoded);
+  }
+
+  Future&lt;void&gt; start() async {
+    if (token.isCancelled) {
+      finish(failure: interrupted(&#39;cancelled before open&#39;));
+      return;
+    }
+    final Stream&lt;List&lt;int&gt;&gt; bytes;
+    try {
+      bytes = await open(request, token);
+    } catch (error) {
+      if (closed) return;
+      onClose?.call(token);
+      finish(failure: interrupted(&#39;open threw: $error&#39;));
+      return;
+    }
+    if (closed) {
+      &#47;&#47; L&#39;abonné est parti pendant l&#39;ouverture : la source n&#39;est jamais
+      &#47;&#47; écoutée, mais l&#39;hôte doit pouvoir couper ce qu&#39;il a ouvert.
+      onClose?.call(token);
+      return;
+    }
+    lines = zChatSseLines(
+      bytes,
+      token: token,
+      onClose: () =&gt; onClose?.call(token),
+    ).listen(
+      onLine,
+      onError: (Object error, StackTrace _) {
+        finish(failure: interrupted(&#39;stream error: $error&#39;));
+      },
+      onDone: () {
+        if (closed) return;
+        if (token.isCancelled) {
+          finish(failure: interrupted(&#39;cancelled&#39;));
+        } else if (graceful) {
+          finish();
+        } else {
+          finish(failure: interrupted(&#39;stream ended before done&#39;));
+        }
+      },
+      cancelOnError: true,
+    );
+  }
+
+  out = StreamController&lt;ZResult&lt;ZChatStreamEvent&gt;&gt;(
+    onListen: () =&gt; unawaited(start()),
+    onPause: () =&gt; lines?.pause(),
+    onResume: () =&gt; lines?.resume(),
+    onCancel: () =&gt; finish(),
+  );
+  return out.stream;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/">zcrud_chat_kernel</a></li>
+    <li><a href="../../zcrud_chat_kernel/ZChatSseStreamPort-class.html">ZChatSseStreamPort</a></li>
+    <li class="self-crumb">stream method</li>
+</ol>
+
+    <h5>ZChatSseStreamPort class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_kernel
+      3.12.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

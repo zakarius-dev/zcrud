@@ -70,6 +70,11 @@ cliquable sous un clip).</p>
 montent par ce conteneur, et leurs rappels transitent par
 <code>ZChatController.runAction(ZChatCustomAction(...))</code> — l'unique point
 d'entrée des verbes. Aucun nouveau chemin d'exécution.</p>
+<p>Sous une coquille déclarée (<a href="../../zcrud_chat/ZChatMessageTile/shell.html">shell</a>), cette barre est rendue <strong>hors du
+filet</strong>, sous la carte : le cadre délimite la réponse, jamais la réponse
+<strong>et</strong> ses commandes. Les commandes qui portent sur la carte elle-même
+(modifier, régénérer, supprimer) ont leur propre place, dans la coiffe —
+cf. <code>ZChatTileShell.topicTrailing</code>.</p>
 <p><code>null</code> (défaut) donne un comportement strictement inchangé.</p>
 </section>
 
@@ -105,7 +110,7 @@ d'entrée des verbes. Aucun nouveau chemin d'exécution.</p>
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

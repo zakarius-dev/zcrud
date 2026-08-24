@@ -59,6 +59,9 @@
 <li><span class="parameter" id="param-confirm"><span>required</span> <span class="type-annotation"><a href="../../zcrud_chat/ZChatConfirm.html">ZChatConfirm</a></span> <span class="parameter-name">confirm</span>, </span></li>
 <li><span class="parameter" id="param-newRequestId"><span>required</span> <span class="type-annotation"><a href="../../zcrud_chat/ZChatRequestIdFactory.html">ZChatRequestIdFactory</a></span> <span class="parameter-name">newRequestId</span>, </span></li>
 <li><span class="parameter" id="param-buildRequest"><span>required</span> <span class="type-annotation"><a href="../../zcrud_chat/ZChatRequestBuilder.html">ZChatRequestBuilder</a></span> <span class="parameter-name">buildRequest</span>, </span></li>
+<li><span class="parameter" id="param-lifecycle"><span class="type-annotation">ZChatConversationLifecyclePort?</span> <span class="parameter-name">lifecycle</span>, </span></li>
+<li><span class="parameter" id="param-routeResolver"><span class="type-annotation"><a href="../../zcrud_chat/ZChatRouteResolver.html">ZChatRouteResolver</a>?</span> <span class="parameter-name">routeResolver</span>, </span></li>
+<li><span class="parameter" id="param-liveLabels"><span class="type-annotation"><a href="../../zcrud_chat/ZChatLiveLabels-class.html">ZChatLiveLabels</a></span> <span class="parameter-name">liveLabels</span> = <span class="default-value">ZChatLiveLabels.none</span>, </span></li>
 <li><span class="parameter" id="param-maxResumeAttempts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">maxResumeAttempts</span> = <span class="default-value">2</span>, </span></li>
 <li><span class="parameter" id="param-conversationId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">conversationId</span> = <span class="default-value">&#39;&#39;</span>, </span></li>
 <li><span class="parameter" id="param-initialMessages"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatMessage</span>&gt;</span></span> <span class="parameter-name">initialMessages</span> = <span class="default-value">const &lt;ZChatMessage&gt;[]</span>, </span></li>
@@ -72,6 +75,17 @@ le seam de confirmation ; <code>newRequestId</code> fabrique les identités ;
 <code>buildRequest</code> traduit une saisie en requête de génération.</p>
 <p><code>maxResumeAttempts</code> borne la <strong>reprise</strong> d'un flux subi (jamais d'une
 annulation volontaire). <code>0</code> la désactive.</p>
+<p><code>lifecycle</code> est <strong>optionnel</strong> : présent, l'édition rejouée
+(<code>ZChatEditAction</code>) et la régénération (<code>ZChatRegenerateAction</code>) sont
+exécutées <strong>nativement</strong> — élagage par <code>trimAfter</code>, troncature locale,
+puis nouveau tour consommé par le même cycle de flux que <a href="../../zcrud_chat/ZChatController/send.html">send</a> ; absent,
+ces deux verbes restent délégués à <code>actionExecutor</code>.</p>
+<p><code>liveLabels</code> porte les libellés des annonces de région live ; omis,
+les jalons sans contenu sont silencieux (cf. <a href="../../zcrud_chat/ZChatLiveLabels-class.html">ZChatLiveLabels</a>).</p>
+<p><code>routeResolver</code> est <strong>optionnel</strong> : présent, chaque requête — envoi,
+édition rejouée, régénération — lui est soumise après les réglages et
+avant toute trace dans le fil ; absent, la requête envoyée est celle du
+builder, inchangée (cf. <a href="../../zcrud_chat/ZChatRouteResolver.html">ZChatRouteResolver</a>).</p>
 </section>
 
 
@@ -84,6 +98,9 @@ annulation volontaire). <code>0</code> la désactive.</p>
   required ZChatConfirm confirm,
   required ZChatRequestIdFactory newRequestId,
   required ZChatRequestBuilder buildRequest,
+  ZChatConversationLifecyclePort? lifecycle,
+  ZChatRouteResolver? routeResolver,
+  ZChatLiveLabels liveLabels = ZChatLiveLabels.none,
   this.maxResumeAttempts = 2,
   String conversationId = &#39;&#39;,
   List&lt;ZChatMessage&gt; initialMessages = const &lt;ZChatMessage&gt;[],
@@ -101,6 +118,12 @@ annulation volontaire). <code>0</code> la désactive.</p>
      _newRequestId = newRequestId,
      &#47;&#47; ignore: prefer_initializing_formals
      _buildRequest = buildRequest,
+     &#47;&#47; ignore: prefer_initializing_formals
+     _lifecycle = lifecycle,
+     &#47;&#47; ignore: prefer_initializing_formals
+     _routeResolver = routeResolver,
+     &#47;&#47; ignore: prefer_initializing_formals
+     _labels = liveLabels,
      &#47;&#47; ignore: prefer_initializing_formals
      _conversationId = conversationId,
      _messages = ValueNotifier&lt;List&lt;ZChatMessage&gt;&gt;(
@@ -135,7 +158,7 @@ annulation volontaire). <code>0</code> la désactive.</p>
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

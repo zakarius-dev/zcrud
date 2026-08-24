@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zChatSseLines function from the zcrud_chat_kernel library, for the Dart programming language.">
+  <title>zChatSseLines function - zcrud_chat_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../zcrud_chat_kernel/">zcrud_chat_kernel.dart</a></li>
+    <li class="self-crumb">zChatSseLines function</li>
+  </ol>
+  <div class="self-name">zChatSseLines</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_chat_kernel&#47;zcrud_chat_kernel-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zChatSseLines</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat_kernel/ZChatSseLine-class.html">ZChatSseLine</a></span>&gt;</span></span>
+<span class="name ">zChatSseLines</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="zChatSseLines-param-bytes"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">bytes</span>, {</span></li>
+<li><span class="parameter" id="zChatSseLines-param-token"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatRequestToken-class.html">ZChatRequestToken</a>?</span> <span class="parameter-name">token</span>, </span></li>
+<li><span class="parameter" id="zChatSseLines-param-onClose"><span class="type-annotation">void</span> <span class="parameter-name">onClose</span>()?, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Transforme un flux d'octets SSE en flux de <a href="../zcrud_chat_kernel/ZChatSseLine-class.html">ZChatSseLine</a>.</p>
+<ul>
+<li>décodage UTF-8 <strong>tolérant</strong> (octets invalides remplacés, jamais une
+erreur) ; lignes terminées par <code>\n</code>, <code>\r\n</code> ou <code>\r</code> ;</li>
+<li>les lignes vides sont <strong>conservées</strong> ; <code>data: </code> est retiré <strong>une</strong> fois ;</li>
+<li><code>id:</code> alimente <a href="../zcrud_chat_kernel/ZChatSseLine/sequenceId.html">ZChatSseLine.sequenceId</a> de la ligne et des suivantes ;
+un <code>id:</code> vide remet la position à <code>null</code> ;</li>
+<li><code>data: [DONE]</code> est émis, puis le flux se ferme et la source est
+<strong>libérée</strong> ;</li>
+<li><strong>annulation</strong> : dès que <code>token</code> est annulé, l'abonnement à <code>bytes</code> est
+annulé — <strong>sans attendre</strong> une ligne suivante — et le flux rendu se
+ferme sans erreur. Annuler l'abonnement au flux rendu libère la source de
+la même façon ;</li>
+<li><code>onClose</code> est appelé <strong>exactement une fois</strong>, à la libération de la
+source, quelle qu'en soit la cause (fin, <code>[DONE]</code>, annulation, erreur) :
+c'est là qu'un hôte coupe ce que l'annulation de l'abonnement ne coupe
+pas d'elle-même (un jeton d'annulation de sa bibliothèque HTTP, par
+exemple).</li>
+</ul>
+<p>Le flux rendu est à <strong>abonnement unique</strong> ; la source n'est ouverte
+(écoutée) qu'à l'abonnement, et la pause est propagée.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Stream&lt;ZChatSseLine&gt; zChatSseLines(
+  Stream&lt;List&lt;int&gt;&gt; bytes, {
+  ZChatRequestToken? token,
+  void Function()? onClose,
+}) {
+  late final StreamController&lt;ZChatSseLine&gt; controller;
+  StreamSubscription&lt;String&gt;? subscription;
+  String? sequenceId;
+  String? eventName;
+  bool released = false;
+
+  void release() {
+    if (released) return;
+    released = true;
+    final StreamSubscription&lt;String&gt;? s = subscription;
+    subscription = null;
+    &#47;&#47; L&#39;annulation de l&#39;abonnement est ce qui coupe réellement la source
+    &#47;&#47; (un flux de réponse HTTP ferme son socket à `cancel`). `onClose` suit,
+    &#47;&#47; pour ce que l&#39;hôte doit couper lui-même.
+    unawaited(s?.cancel());
+    onClose?.call();
+  }
+
+  void finish() {
+    release();
+    if (!controller.isClosed) unawaited(controller.close());
+  }
+
+  void onLine(String raw) {
+    if (released) return;
+    ZChatSseLine line = zChatClassifySseLine(raw);
+    switch (line.field) {
+      case ZChatSseField.id:
+        &#47;&#47; Un identifiant contenant un NUL est ignoré par le protocole ; un
+        &#47;&#47; identifiant vide remet la position à « aucune ».
+        if (!line.value.contains(&#39;\u0000&#39;)) {
+          sequenceId = line.value.isEmpty ? null : line.value;
+        }
+      case ZChatSseField.event:
+        eventName = line.value.isEmpty ? null : line.value;
+      case ZChatSseField.blank:
+        eventName = null;
+      case ZChatSseField.data:
+      case ZChatSseField.retry:
+      case ZChatSseField.comment:
+      case ZChatSseField.other:
+        break;
+    }
+    line = ZChatSseLine(
+      field: line.field,
+      value: line.value,
+      raw: line.raw,
+      sequenceId: sequenceId,
+      eventName: line.field == ZChatSseField.blank ? null : eventName,
+    );
+    controller.add(line);
+    if (line.isDone) finish();
+  }
+
+  controller = StreamController&lt;ZChatSseLine&gt;(
+    onListen: () {
+      if (token?.isCancelled ?? false) {
+        finish();
+        return;
+      }
+      subscription = bytes
+          .transform(const Utf8Decoder(allowMalformed: true))
+          .transform(const LineSplitter())
+          .listen(
+            onLine,
+            onError: (Object error, StackTrace stackTrace) {
+              if (released) return;
+              controller.addError(error, stackTrace);
+              finish();
+            },
+            onDone: finish,
+            cancelOnError: true,
+          );
+      if (token != null) {
+        unawaited(token.whenCancelled.then((_) =&gt; finish()));
+      }
+    },
+    onPause: () =&gt; subscription?.pause(),
+    onResume: () =&gt; subscription?.resume(),
+    onCancel: release,
+  );
+  return controller.stream;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../zcrud_chat_kernel/">zcrud_chat_kernel</a></li>
+    <li class="self-crumb">zChatSseLines function</li>
+</ol>
+
+    <h5>zcrud_chat_kernel library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_kernel
+      3.12.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

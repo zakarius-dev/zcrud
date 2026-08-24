@@ -150,6 +150,15 @@ teinte facultative, et son rappel.
 destructeur.
 </dd>
 
+          <dt id="ZChatArtifactResolvers">
+  <span class="name "><a href="../zcrud_chat/ZChatArtifactResolvers-class.html">ZChatArtifactResolvers</a></span> 
+
+</dt>
+<dd>
+  Les trois résolveurs de l'hôte. Chacun est optionnel : absent, le jeton
+correspondant n'est jamais résolu.
+</dd>
+
           <dt id="ZChatArtifactSpec">
   <span class="name "><a href="../zcrud_chat/ZChatArtifactSpec-class.html">ZChatArtifactSpec</a></span> 
 
@@ -157,6 +166,14 @@ destructeur.
 <dd>
   La déclaration d'un artefact : une clé opaque, un glyphe, un libellé,
 trois lectures d'état, et des verbes.
+</dd>
+
+          <dt id="ZChatArtifactVerbAction">
+  <span class="name "><a href="../zcrud_chat/ZChatArtifactVerbAction-class.html">ZChatArtifactVerbAction</a></span> 
+
+</dt>
+<dd>
+  Un verbe d'artefact, tel qu'il circule dans un <code>ZChatCustomAction</code>.
 </dd>
 
           <dt id="ZChatAttachmentController">
@@ -301,6 +318,14 @@ niveau suivant (jeton s'il existe, puis référence).
   Les valeurs <strong>résolues</strong> du chrome — aucune n'est nulle.
 </dd>
 
+          <dt id="ZChatComposerCountBadge">
+  <span class="name "><a href="../zcrud_chat/ZChatComposerCountBadge-class.html">ZChatComposerCountBadge</a></span> 
+
+</dt>
+<dd>
+  Le badge compteur par défaut du socle — un nombre, sans couleur inventée.
+</dd>
+
           <dt id="ZChatComposerDictationTrigger">
   <span class="name "><a href="../zcrud_chat/ZChatComposerDictationTrigger-class.html">ZChatComposerDictationTrigger</a></span> 
 
@@ -403,6 +428,22 @@ est en vol, câblé sur le verbe <strong>EXISTANT</strong>
 raccourci <code>stop()</code> qui ouvrirait un second site d'appel.
 </dd>
 
+          <dt id="ZChatComposerSubmitIntent">
+  <span class="name "><a href="../zcrud_chat/ZChatComposerSubmitIntent-class.html">ZChatComposerSubmitIntent</a></span> 
+
+</dt>
+<dd>
+  L'intention de soumission du composer.
+</dd>
+
+          <dt id="ZChatComposerSubmitPolicy">
+  <span class="name "><a href="../zcrud_chat/ZChatComposerSubmitPolicy-class.html">ZChatComposerSubmitPolicy</a></span> 
+
+</dt>
+<dd>
+  La politique de raccourci clavier d'un composer.
+</dd>
+
           <dt id="ZChatComposerSurface">
   <span class="name "><a href="../zcrud_chat/ZChatComposerSurface-class.html">ZChatComposerSurface</a></span> 
 
@@ -468,6 +509,15 @@ tranches réactives <strong>granulaires</strong>, un jeton <strong>par requête<
   Un badge de statut piloté par prédicat.
 </dd>
 
+          <dt id="ZChatConversationController">
+  <span class="name "><a href="../zcrud_chat/ZChatConversationController-class.html">ZChatConversationController</a></span> 
+
+</dt>
+<dd>
+  Le contrôleur de conversation simple : une conversation composée, un fil
+persisté quand un dépôt est fourni.
+</dd>
+
           <dt id="ZChatConversationGroup">
   <span class="name "><a href="../zcrud_chat/ZChatConversationGroup-class.html">ZChatConversationGroup</a></span> 
 
@@ -483,6 +533,15 @@ tranches réactives <strong>granulaires</strong>, un jeton <strong>par requête<
 <dd>
   Liste neutre de conversations — <code>ListView.builder</code>, trois états, groupes
 repliables, sélection multiple, pagination par curseur.
+</dd>
+
+          <dt id="ZChatConversationScreen">
+  <span class="name "><a href="../zcrud_chat/ZChatConversationScreen-class.html">ZChatConversationScreen</a></span> 
+
+</dt>
+<dd>
+  L'écran assemblé d'une conversation : une déclaration (port, exécuteur,
+confirmation, session de routage) et un écran fonctionnel.
 </dd>
 
           <dt id="ZChatConversationSelection">
@@ -623,6 +682,14 @@ paramètres recopiés sur la liste.
 <a href="../zcrud_chat/ZChatHighlightRange/end.html">ZChatHighlightRange.end</a> dans le texte source.
 </dd>
 
+          <dt id="ZChatLiveLabels">
+  <span class="name "><a href="../zcrud_chat/ZChatLiveLabels-class.html">ZChatLiveLabels</a></span> 
+
+</dt>
+<dd>
+  Libellés <strong>optionnels</strong> des jalons d'un tour — tous nullables.
+</dd>
+
           <dt id="ZChatMessageTile">
   <span class="name "><a href="../zcrud_chat/ZChatMessageTile-class.html">ZChatMessageTile</a></span> 
 
@@ -659,12 +726,41 @@ appartient à l'hôte ; le socle rend l'affordance (cible ≥ 48 dp,
 variantes de transformation).
 </dd>
 
+          <dt id="ZChatNotebookController">
+  <span class="name "><a href="../zcrud_chat/ZChatNotebookController-class.html">ZChatNotebookController</a></span> 
+
+</dt>
+<dd>
+  Le contrôleur de fil de travail : une conversation composée, des artefacts
+à tranches granulaires, un fil persisté.
+</dd>
+
+          <dt id="ZChatNotebookLiveRegion">
+  <span class="name "><a href="../zcrud_chat/ZChatNotebookLiveRegion-class.html">ZChatNotebookLiveRegion</a></span> 
+
+</dt>
+<dd>
+  Région live des jalons d'<strong>artefact</strong> (génération lancée, aboutie,
+échouée ; suppression), à monter <strong>en plus</strong> de celle des tours de
+conversation que la vue porte déjà. Le libellé suit <a href="../zcrud_chat/ZChatNotebookLiveRegion/announcement.html">announcement</a> ;
+sans annonce en cours, le nœud porte le libellé neutre de la région.
+</dd>
+
           <dt id="ZChatNotebookReference">
   <span class="name "><a href="../zcrud_chat/ZChatNotebookReference-class.html">ZChatNotebookReference</a></span> 
 
 </dt>
 <dd>
   Les valeurs de référence du rendu notebook — le point d'audit unique.
+</dd>
+
+          <dt id="ZChatNotebookScreen">
+  <span class="name "><a href="../zcrud_chat/ZChatNotebookScreen-class.html">ZChatNotebookScreen</a></span> 
+
+</dt>
+<dd>
+  L'écran assemblé d'un fil de travail : une déclaration (ports, registre,
+résolveurs, confirmation) et un écran fonctionnel.
 </dd>
 
           <dt id="ZChatNotebookSkin">
@@ -729,6 +825,31 @@ les octets.
 </dt>
 <dd>
   Porte le <a href="../zcrud_chat/ZChatRenderer-class.html">ZChatRenderer</a> injecté par l'hôte jusqu'au rendu des blocs.
+</dd>
+
+          <dt id="ZChatRoutedArtifactGenerationPort">
+  <span class="name "><a href="../zcrud_chat/ZChatRoutedArtifactGenerationPort-class.html">ZChatRoutedArtifactGenerationPort</a></span> 
+
+</dt>
+<dd>
+  Répartit chaque génération d'artefact vers le port de sa route.
+</dd>
+
+          <dt id="ZChatRoutedStreamPort">
+  <span class="name "><a href="../zcrud_chat/ZChatRoutedStreamPort-class.html">ZChatRoutedStreamPort</a></span> 
+
+</dt>
+<dd>
+  Répartit chaque requête vers le port de streaming de sa route.
+</dd>
+
+          <dt id="ZChatRouteSession">
+  <span class="name "><a href="../zcrud_chat/ZChatRouteSession-class.html">ZChatRouteSession</a></span> 
+
+</dt>
+<dd>
+  L'état réactif du routage d'une application : routeur choisi, replis par
+tâche, résolution pure.
 </dd>
 
           <dt id="ZChatScaleControl">
@@ -940,6 +1061,57 @@ remplissage.
   Contrôle « interrupteur » (<a href="../zcrud_chat/kZChatSettingsKindToggle-constant.html">kZChatSettingsKindToggle</a>).
 </dd>
 
+          <dt id="ZChatToolController">
+  <span class="name "><a href="../zcrud_chat/ZChatToolController-class.html">ZChatToolController</a></span> 
+
+</dt>
+<dd>
+  Porte le catalogue d'outils et publie ses dérivations en tranches
+granulaires.
+</dd>
+
+          <dt id="ZChatToolCustomControl">
+  <span class="name "><a href="../zcrud_chat/ZChatToolCustomControl-class.html">ZChatToolCustomControl</a></span> 
+
+</dt>
+<dd>
+  Kind d'un contrôle porté par une <strong>nature d'hôte</strong> — la valeur exacte du
+<code>kind</code> déclaré, de sorte qu'un hôte le cible par <code>kindBuilders</code>.
+</dd>
+
+          <dt id="ZChatToolSectionSlice">
+  <span class="name "><a href="../zcrud_chat/ZChatToolSectionSlice-class.html">ZChatToolSectionSlice</a></span> 
+
+</dt>
+<dd>
+  Une section de la feuille, réduite à ce qui décide de la <strong>structure</strong> :
+sa clé, son libellé d'hôte et les clés de ses entrées visibles.
+</dd>
+
+          <dt id="ZChatToolSheetReference">
+  <span class="name "><a href="../zcrud_chat/ZChatToolSheetReference-class.html">ZChatToolSheetReference</a></span> 
+
+</dt>
+<dd>
+  Géométries de référence de la feuille d'outils et de ses tuiles.
+</dd>
+
+          <dt id="ZChatToolSheetStructure">
+  <span class="name "><a href="../zcrud_chat/ZChatToolSheetStructure-class.html">ZChatToolSheetStructure</a></span> 
+
+</dt>
+<dd>
+  La <strong>structure</strong> d'une surface : ses sections ordonnées et leurs clés.
+</dd>
+
+          <dt id="ZChatTranscriptBinding">
+  <span class="name "><a href="../zcrud_chat/ZChatTranscriptBinding-class.html">ZChatTranscriptBinding</a></span> 
+
+</dt>
+<dd>
+  Le pont entre le fil d'un dépôt et le fil d'un contrôleur de conversation.
+</dd>
+
           <dt id="ZDefaultChatComposer">
   <span class="name "><a href="../zcrud_chat/ZDefaultChatComposer-class.html">ZDefaultChatComposer</a></span> 
 
@@ -989,6 +1161,14 @@ aucune frontière de sérialisation, l'invariant AD-4 ne s'y applique pas.
 séparée du texte relu (qui, lui, change à chaque frappe).
 </dd>
 
+          <dt id="ZChatComposerSubmitKey">
+  <span class="name "><a href="../zcrud_chat/ZChatComposerSubmitKey.html">ZChatComposerSubmitKey</a></span> 
+
+</dt>
+<dd>
+  Ce que la touche Entrée fait dans le champ du composer.
+</dd>
+
           <dt id="ZChatConversationListStatus">
   <span class="name "><a href="../zcrud_chat/ZChatConversationListStatus.html">ZChatConversationListStatus</a></span> 
 
@@ -1022,6 +1202,79 @@ séparée du texte relu (qui, lui, change à chaque frappe).
     <section class="summary offset-anchor" id="constants">
       <h2>Constants</h2>
       <dl class="properties">
+          <dt id="kZChatArtifactMenuCrossAxisCount" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatArtifactMenuCrossAxisCount-constant.html">kZChatArtifactMenuCrossAxisCount</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre de colonnes de la <strong>grille</strong> rendue par défaut dans un menu
+d'artefact.
+  
+
+</dd>
+
+          <dt id="kZChatArtifactPayloadArtifactKey" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatArtifactPayloadArtifactKey-constant.html">kZChatArtifactPayloadArtifactKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de charge : clé de l'artefact.
+  
+
+</dd>
+
+          <dt id="kZChatArtifactPayloadConfirmToken" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatArtifactPayloadConfirmToken-constant.html">kZChatArtifactPayloadConfirmToken</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de charge : jeton de confirmation du verbe, s'il en porte un.
+  
+
+</dd>
+
+          <dt id="kZChatArtifactPayloadMessageId" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatArtifactPayloadMessageId-constant.html">kZChatArtifactPayloadMessageId</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de charge : identité du message porteur.
+  
+
+</dd>
+
+          <dt id="kZChatArtifactPayloadVerbKey" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatArtifactPayloadVerbKey-constant.html">kZChatArtifactPayloadVerbKey</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de charge : clé du verbe.
+  
+
+</dd>
+
+          <dt id="kZChatArtifactVerbPrefix" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatArtifactVerbPrefix-constant.html">kZChatArtifactVerbPrefix</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Préfixe des verbes d'artefact dans le vocabulaire des actions.
+  
+
+</dd>
+
           <dt id="kZChatBandSheetAssertMessage" class="constant">
     <span class="name "><a href="../zcrud_chat/kZChatBandSheetAssertMessage-constant.html">kZChatBandSheetAssertMessage</a></span>
   <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
@@ -2459,6 +2712,43 @@ injectable.
 
 </dd>
 
+          <dt id="kZChatNotebookCollapsedHeightFactor" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatNotebookCollapsedHeightFactor-constant.html">kZChatNotebookCollapsedHeightFactor</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Fraction de la hauteur d'écran qui borne la hauteur repliée d'une
+réponse.
+  
+
+</dd>
+
+          <dt id="kZChatNotebookCollapsedMaxHeight" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatNotebookCollapsedMaxHeight-constant.html">kZChatNotebookCollapsedMaxHeight</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  
+
+</dt>
+<dd>
+  Borne haute absolue de la hauteur repliée d'une réponse, en dp.
+  
+
+</dd>
+
+          <dt id="kZChatRouteEntryIdPrefix" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatRouteEntryIdPrefix-constant.html">kZChatRouteEntryIdPrefix</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Préfixe des identifiants d'entrée projetés (<code>&lt;préfixe&gt;&lt;clé de tâche&gt;</code>).
+  
+
+</dd>
+
           <dt id="kZChatSeamActionsSlot" class="constant">
     <span class="name "><a href="../zcrud_chat/kZChatSeamActionsSlot-constant.html">kZChatSeamActionsSlot</a></span>
   <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
@@ -2467,6 +2757,18 @@ injectable.
 </dt>
 <dd>
   Nom du seam d'<strong>actions par message</strong> — idem.
+  
+
+</dd>
+
+          <dt id="kZChatSeamArtifactMenu" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatSeamArtifactMenu-constant.html">kZChatSeamArtifactMenu</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nom du seam de <strong>présentation du menu d'artefact</strong> — idem.
   
 
 </dd>
@@ -2539,6 +2841,18 @@ injectable.
 </dt>
 <dd>
   Nom du seam du <strong>sujet de tour</strong> (la coiffe d'une tuile) — idem.
+  
+
+</dd>
+
+          <dt id="kZChatSeamTopicTrailing" class="constant">
+    <span class="name "><a href="../zcrud_chat/kZChatSeamTopicTrailing-constant.html">kZChatSeamTopicTrailing</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nom du seam du <strong>créneau de fin de coiffe</strong> d'une tuile — idem.
   
 
 </dd>
@@ -2791,6 +3105,74 @@ biais, budget, raisonnement) — les entrées d'hôte sans
     <section class="summary offset-anchor" id="functions">
       <h2>Functions</h2>
       <dl class="callables">
+          <dt id="zChatApplyArtifactRoute" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatApplyArtifactRoute.html">zChatApplyArtifactRoute</a></span><span class="signature">(<wbr>{<span class="parameter" id="zChatApplyArtifactRoute-param-router"><span>required</span> <span class="type-annotation">ZChatRouter?</span> <span class="parameter-name">router</span>, </span><span class="parameter" id="zChatApplyArtifactRoute-param-gate"><span>required</span> <span class="type-annotation">ZChatRouteGate</span> <span class="parameter-name">gate</span>, </span><span class="parameter" id="zChatApplyArtifactRoute-param-request"><span>required</span> <span class="type-annotation">ZChatArtifactGenerationRequest</span> <span class="parameter-name">request</span>, </span><span class="parameter" id="zChatApplyArtifactRoute-param-override"><span class="type-annotation">ZChatModelRef?</span> <span class="parameter-name">override</span></span>})
+    <span class="returntype parameter">&#8594; ZResult<span class="signature">&lt;<wbr><span class="type-parameter">ZChatArtifactGenerationRequest</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Projette une route sur une requête d'artefact — <strong>fonction pure</strong>.
+  
+
+</dd>
+
+          <dt id="zChatApplyRoute" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatApplyRoute.html">zChatApplyRoute</a></span><span class="signature">(<wbr>{<span class="parameter" id="zChatApplyRoute-param-router"><span>required</span> <span class="type-annotation">ZChatRouter?</span> <span class="parameter-name">router</span>, </span><span class="parameter" id="zChatApplyRoute-param-gate"><span>required</span> <span class="type-annotation">ZChatRouteGate</span> <span class="parameter-name">gate</span>, </span><span class="parameter" id="zChatApplyRoute-param-request"><span>required</span> <span class="type-annotation">ZChatGenerationRequest</span> <span class="parameter-name">request</span>, </span><span class="parameter" id="zChatApplyRoute-param-override"><span class="type-annotation">ZChatModelRef?</span> <span class="parameter-name">override</span></span>})
+    <span class="returntype parameter">&#8594; ZResult<span class="signature">&lt;<wbr><span class="type-parameter">ZChatGenerationRequest</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Projette une route sur une requête de conversation — <strong>fonction pure</strong>.
+  
+
+</dd>
+
+          <dt id="zChatArtifactSpecOf" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatArtifactSpecOf.html">zChatArtifactSpecOf</a></span><span class="signature">(<wbr><span class="parameter" id="zChatArtifactSpecOf-param-declaration"><span class="type-annotation">ZChatArtifactDeclaration</span> <span class="parameter-name">declaration</span>, {</span><span class="parameter" id="zChatArtifactSpecOf-param-controller"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatNotebookController-class.html">ZChatNotebookController</a></span> <span class="parameter-name">controller</span>, </span><span class="parameter" id="zChatArtifactSpecOf-param-resolvers"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactResolvers-class.html">ZChatArtifactResolvers</a></span> <span class="parameter-name">resolvers</span> = <span class="default-value">ZChatArtifactResolvers.none</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat/ZChatArtifactSpec-class.html">ZChatArtifactSpec</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Dérive la forme de rendu de <code>declaration</code>, l'état étant lu dans
+<code>controller</code> et les jetons résolus par <code>resolvers</code>.
+  
+
+</dd>
+
+          <dt id="zChatArtifactSpecsOf" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatArtifactSpecsOf.html">zChatArtifactSpecsOf</a></span><span class="signature">(<wbr><span class="parameter" id="zChatArtifactSpecsOf-param-controller"><span class="type-annotation"><a href="../zcrud_chat/ZChatNotebookController-class.html">ZChatNotebookController</a></span> <span class="parameter-name">controller</span>, {</span><span class="parameter" id="zChatArtifactSpecsOf-param-resolvers"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactResolvers-class.html">ZChatArtifactResolvers</a></span> <span class="parameter-name">resolvers</span> = <span class="default-value">ZChatArtifactResolvers.none</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatArtifactSpec-class.html">ZChatArtifactSpec</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Dérive la forme de rendu de <strong>tous</strong> les artefacts de
+<code>controller.registry</code>, dans l'ordre de présentation du registre.
+  
+
+</dd>
+
+          <dt id="zChatArtifactTaskKeyOf" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatArtifactTaskKeyOf.html">zChatArtifactTaskKeyOf</a></span><span class="signature">(<wbr><span class="parameter" id="zChatArtifactTaskKeyOf-param-request"><span class="type-annotation">ZChatArtifactGenerationRequest</span> <span class="parameter-name">request</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Clé de tâche d'une requête d'artefact : le <code>kind</code> de son style, sinon la
+clé de l'artefact.
+  
+
+</dd>
+
           <dt id="zChatArtifactWhenAbsent" class="callable">
   <span class="name"><a href="../zcrud_chat/zChatArtifactWhenAbsent.html">zChatArtifactWhenAbsent</a></span><span class="signature">(<wbr><span class="parameter" id="zChatArtifactWhenAbsent-param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span>, </span><span class="parameter" id="zChatArtifactWhenAbsent-param-present"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">present</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
@@ -2830,6 +3212,35 @@ biais, budget, raisonnement) — les entrées d'hôte sans
   Résout le chrome du composer contre le contexte — paramètre &gt; jeton &gt;
 référence, champ par champ. Ne lève jamais (invariant AD-10) : sans
 <code>ZcrudScope</code> ni paramètre, tout retombe sur la référence.
+  
+
+</dd>
+
+          <dt id="zChatComposerSubmitShortcuts" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatComposerSubmitShortcuts.html">zChatComposerSubmitShortcuts</a></span><span class="signature">(<wbr><span class="parameter" id="zChatComposerSubmitShortcuts-param-key"><span class="type-annotation"><a href="../zcrud_chat/ZChatComposerSubmitKey.html">ZChatComposerSubmitKey</a></span> <span class="parameter-name">key</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/ShortcutActivator-class.html">ShortcutActivator</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/widgets/Intent-class.html">Intent</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  La table de raccourcis d'une politique <strong>déjà résolue</strong>.
+  
+
+</dd>
+
+          <dt id="zChatConfirmArtifactWithoutDialog" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatConfirmArtifactWithoutDialog.html">zChatConfirmArtifactWithoutDialog</a></span><span class="signature">(<wbr><span class="parameter" id="zChatConfirmArtifactWithoutDialog-param-verb"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactVerbAction-class.html">ZChatArtifactVerbAction</a></span> <span class="parameter-name">verb</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Confirmation d'artefact <strong>sans dialogue</strong> : refuse tout verbe qui exige
+une question. Même règle que <code>zChatConfirmWithoutDialog</code> — un verbe
+destructeur reste refusé tant qu'un vrai dialogue n'est pas branché,
+jamais exécuté sans question.
   
 
 </dd>
@@ -2940,6 +3351,50 @@ chevauchement, dans l'ordre.
 
 </dd>
 
+          <dt id="zChatNotebookArtifactsSlot" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatNotebookArtifactsSlot.html">zChatNotebookArtifactsSlot</a></span><span class="signature">(<wbr>{<span class="parameter" id="zChatNotebookArtifactsSlot-param-controller"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatNotebookController-class.html">ZChatNotebookController</a></span> <span class="parameter-name">controller</span>, </span><span class="parameter" id="zChatNotebookArtifactsSlot-param-resolvers"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactResolvers-class.html">ZChatArtifactResolvers</a></span> <span class="parameter-name">resolvers</span> = <span class="default-value">ZChatArtifactResolvers.none</span>, </span><span class="parameter" id="zChatNotebookArtifactsSlot-param-host"><span class="type-annotation"><a href="../zcrud_chat/ZChatMessageSlotBuilder.html">ZChatMessageSlotBuilder</a>?</span> <span class="parameter-name">host</span>, </span><span class="parameter" id="zChatNotebookArtifactsSlot-param-skin"><span class="type-annotation"><a href="../zcrud_chat/ZChatNotebookSkin-class.html">ZChatNotebookSkin</a>?</span> <span class="parameter-name">skin</span>, </span><span class="parameter" id="zChatNotebookArtifactsSlot-param-confirm"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactConfirm.html">ZChatArtifactConfirm</a>?</span> <span class="parameter-name">confirm</span>, </span><span class="parameter" id="zChatNotebookArtifactsSlot-param-spacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">spacing</span>, </span><span class="parameter" id="zChatNotebookArtifactsSlot-param-menuBuilder"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactMenuBuilder.html">ZChatArtifactMenuBuilder</a>?</span> <span class="parameter-name">menuBuilder</span>, </span><span class="parameter" id="zChatNotebookArtifactsSlot-param-menuCrossAxisCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">menuCrossAxisCount</span> = <span class="default-value">kZChatArtifactMenuCrossAxisCount</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat/ZChatMessageSlotBuilder.html">ZChatMessageSlotBuilder</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le créneau d'actions par message, branché sur <code>controller</code> : la barre
+d'artefacts de chaque message est rendue sous un écouteur de <strong>ses</strong>
+tranches (une par artefact déclaré, plus le mode lecture seule).
+  
+
+</dd>
+
+          <dt id="zChatNotebookCollapsedMaxHeightOf" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatNotebookCollapsedMaxHeightOf.html">zChatNotebookCollapsedMaxHeightOf</a></span><span class="signature">(<wbr><span class="parameter" id="zChatNotebookCollapsedMaxHeightOf-param-screenHeight"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span> <span class="parameter-name">screenHeight</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  La hauteur repliée dérivée d'une hauteur d'écran : le minimum entre
+<a href="../zcrud_chat/kZChatNotebookCollapsedMaxHeight-constant.html">kZChatNotebookCollapsedMaxHeight</a> et <a href="../zcrud_chat/kZChatNotebookCollapsedHeightFactor-constant.html">kZChatNotebookCollapsedHeightFactor</a>
+fois <code>screenHeight</code>. Une explication de plusieurs milliers de caractères
+reste ainsi parcourable sur tout écran.
+  
+
+</dd>
+
+          <dt id="zChatNotebookFailureIsReportable" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatNotebookFailureIsReportable.html">zChatNotebookFailureIsReportable</a></span><span class="signature">(<wbr><span class="parameter" id="zChatNotebookFailureIsReportable-param-failure"><span class="type-annotation">ZFailure</span> <span class="parameter-name">failure</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si <code>failure</code> mérite d'être <strong>montré</strong> à l'utilisateur.
+  
+
+</dd>
+
           <dt id="zChatPrecedingRequestTopic" class="callable">
   <span class="name"><a href="../zcrud_chat/zChatPrecedingRequestTopic.html">zChatPrecedingRequestTopic</a></span><span class="signature">(<wbr><span class="parameter" id="zChatPrecedingRequestTopic-param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span>, </span><span class="parameter" id="zChatPrecedingRequestTopic-param-request"><span class="type-annotation">ZChatMessage?</span> <span class="parameter-name">request</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
@@ -2981,6 +3436,45 @@ minutes et secondes sur deux chiffres.
 
 </dd>
 
+          <dt id="zChatRouteDispatchIds" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatRouteDispatchIds.html">zChatRouteDispatchIds</a></span><span class="signature">(<wbr>{<span class="parameter" id="zChatRouteDispatchIds-param-route"><span>required</span> <span class="type-annotation">ZChatRouteSpec?</span> <span class="parameter-name">route</span>, </span><span class="parameter" id="zChatRouteDispatchIds-param-providerId"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">providerId</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Les identités candidates d'une répartition, dans l'ordre d'essai.
+  
+
+</dd>
+
+          <dt id="zChatRouteModelSlot" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatRouteModelSlot.html">zChatRouteModelSlot</a></span><span class="signature">(<wbr>{<span class="parameter" id="zChatRouteModelSlot-param-session"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatRouteSession-class.html">ZChatRouteSession</a></span> <span class="parameter-name">session</span>, </span><span class="parameter" id="zChatRouteModelSlot-param-options"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatModelOption-class.html">ZChatModelOption</a></span>&gt;</span></span> <span class="parameter-name">options</span>, </span><span class="parameter" id="zChatRouteModelSlot-param-selectionMark"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">selectionMark</span>, </span><span class="parameter" id="zChatRouteModelSlot-param-triggerBuilder"><span class="type-annotation"><a href="../zcrud_chat/ZChatModelTriggerBuilder.html">ZChatModelTriggerBuilder</a>?</span> <span class="parameter-name">triggerBuilder</span>, </span><span class="parameter" id="zChatRouteModelSlot-param-menuBuilder"><span class="type-annotation"><a href="../zcrud_chat/ZChatModelMenuBuilder.html">ZChatModelMenuBuilder</a>?</span> <span class="parameter-name">menuBuilder</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat/ZChatComposerSlotBuilder.html">ZChatComposerSlotBuilder</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le créneau du sélecteur de <strong>routeur</strong> pour <code>ZDefaultChatComposer.modelBuilder</code>.
+  
+
+</dd>
+
+          <dt id="zChatRouteSettingsEntries" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatRouteSettingsEntries.html">zChatRouteSettingsEntries</a></span><span class="signature">(<wbr><span class="parameter" id="zChatRouteSettingsEntries-param-session"><span class="type-annotation"><a href="../zcrud_chat/ZChatRouteSession-class.html">ZChatRouteSession</a></span> <span class="parameter-name">session</span>, {</span><span class="parameter" id="zChatRouteSettingsEntries-param-modelLabelOf"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatModelLabelResolver.html">ZChatModelLabelResolver</a></span> <span class="parameter-name">modelLabelOf</span>, </span><span class="parameter" id="zChatRouteSettingsEntries-param-taskLabelKeyOf"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatTaskLabelKeyResolver.html">ZChatTaskLabelKeyResolver</a></span> <span class="parameter-name">taskLabelKeyOf</span>, </span><span class="parameter" id="zChatRouteSettingsEntries-param-sectionId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">sectionId</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatSettingsEntry-class.html">ZChatSettingsEntry</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Projette les routes à choix du routeur chargé en entrées de feuille.
+  
+
+</dd>
+
           <dt id="zChatSelectedEmphasisStyles" class="callable">
   <span class="name"><a href="../zcrud_chat/zChatSelectedEmphasisStyles.html">zChatSelectedEmphasisStyles</a></span><span class="signature">(<wbr><span class="parameter" id="zChatSelectedEmphasisStyles-param-base"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a></span> <span class="parameter-name">base</span>, {</span><span class="parameter" id="zChatSelectedEmphasisStyles-param-weight"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/FontWeight-class.html">FontWeight</a></span> <span class="parameter-name">weight</span>, </span><span class="parameter" id="zChatSelectedEmphasisStyles-param-decoration"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/TextDecoration-class.html">TextDecoration</a></span> <span class="parameter-name">decoration</span></span>})
     <span class="returntype parameter">&#8594; (<span class="field">{<span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a></span> <span class="field-name">chosen</span>, </span><span class="field"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/TextStyle-class.html">TextStyle</a></span> <span class="field-name">plain</span>}</span>)</span>
@@ -3010,6 +3504,32 @@ un import <code>foundation</code> de plus chez le consommateur.
 
 </dd>
 
+          <dt id="zChatSettingsSheetOf" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatSettingsSheetOf.html">zChatSettingsSheetOf</a></span><span class="signature">(<wbr><span class="parameter" id="zChatSettingsSheetOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zChatSettingsSheetOf-param-controller"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatSettingsController-class.html">ZChatSettingsController</a></span> <span class="parameter-name">controller</span>, </span><span class="parameter" id="zChatSettingsSheetOf-param-tools"><span class="type-annotation"><a href="../zcrud_chat/ZChatToolController-class.html">ZChatToolController</a>?</span> <span class="parameter-name">tools</span>, </span><span class="parameter" id="zChatSettingsSheetOf-param-toolReasonOf"><span class="type-annotation"><a href="../zcrud_chat/ZChatToolTokenResolver.html">ZChatToolTokenResolver</a>?</span> <span class="parameter-name">toolReasonOf</span>, </span><span class="parameter" id="zChatSettingsSheetOf-param-onToolCommand"><span class="type-annotation">void</span> <span class="parameter-name">onToolCommand</span>(<span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">key</span></span>)?, </span><span class="parameter" id="zChatSettingsSheetOf-param-session"><span class="type-annotation"><a href="../zcrud_chat/ZChatRouteSession-class.html">ZChatRouteSession</a>?</span> <span class="parameter-name">session</span>, </span><span class="parameter" id="zChatSettingsSheetOf-param-modelLabelOf"><span class="type-annotation"><a href="../zcrud_chat/ZChatModelLabelResolver.html">ZChatModelLabelResolver</a>?</span> <span class="parameter-name">modelLabelOf</span>, </span><span class="parameter" id="zChatSettingsSheetOf-param-taskLabelKeyOf"><span class="type-annotation"><a href="../zcrud_chat/ZChatTaskLabelKeyResolver.html">ZChatTaskLabelKeyResolver</a>?</span> <span class="parameter-name">taskLabelKeyOf</span>, </span><span class="parameter" id="zChatSettingsSheetOf-param-routeSectionId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">routeSectionId</span>, </span><span class="parameter" id="zChatSettingsSheetOf-param-corpusCatalog"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatCorpusOption-class.html">ZChatCorpusOption</a></span>&gt;</span></span> <span class="parameter-name">corpusCatalog</span> = <span class="default-value">const &lt;ZChatCorpusOption&gt;[]</span>, </span><span class="parameter" id="zChatSettingsSheetOf-param-presetCatalog"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatSettingsPreset-class.html">ZChatSettingsPreset</a></span>&gt;</span></span> <span class="parameter-name">presetCatalog</span> = <span class="default-value">const &lt;ZChatSettingsPreset&gt;[]</span>, </span><span class="parameter" id="zChatSettingsSheetOf-param-capabilityCatalog"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatSettingsHostOption-class.html">ZChatSettingsHostOption</a></span>&gt;</span></span> <span class="parameter-name">capabilityCatalog</span> = <span class="default-value">const &lt;ZChatSettingsHostOption&gt;[]</span>, </span><span class="parameter" id="zChatSettingsSheetOf-param-onClose"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onClose</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  La feuille de réglages projetée des outils <strong>et</strong> de la session de routage.
+  
+
+</dd>
+
+          <dt id="zChatTaskKeyOf" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatTaskKeyOf.html">zChatTaskKeyOf</a></span><span class="signature">(<wbr><span class="parameter" id="zChatTaskKeyOf-param-request"><span class="type-annotation">ZChatGenerationRequest</span> <span class="parameter-name">request</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Clé de tâche d'une requête de conversation : le <code>kind</code> de son style.
+  
+
+</dd>
+
           <dt id="zChatTileShellStyleOf" class="callable">
   <span class="name"><a href="../zcrud_chat/zChatTileShellStyleOf.html">zChatTileShellStyleOf</a></span><span class="signature">(<wbr><span class="parameter" id="zChatTileShellStyleOf-param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, {</span><span class="parameter" id="zChatTileShellStyleOf-param-shell"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatTileShell-class.html">ZChatTileShell</a></span> <span class="parameter-name">shell</span></span>})
     <span class="returntype parameter">&#8594; <a href="../zcrud_chat/ZChatTileShellStyle-class.html">ZChatTileShellStyle</a></span>
@@ -3020,6 +3540,33 @@ un import <code>foundation</code> de plus chez le consommateur.
 <dd>
   Résout une coquille contre le thème ambiant : paramètre, puis jeton, puis
 référence.
+  
+
+</dd>
+
+          <dt id="zChatToolSettingsEntries" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatToolSettingsEntries.html">zChatToolSettingsEntries</a></span><span class="signature">(<wbr><span class="parameter" id="zChatToolSettingsEntries-param-controller"><span class="type-annotation"><a href="../zcrud_chat/ZChatToolController-class.html">ZChatToolController</a></span> <span class="parameter-name">controller</span>, {</span><span class="parameter" id="zChatToolSettingsEntries-param-query"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">query</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="zChatToolSettingsEntries-param-reasonOf"><span class="type-annotation"><a href="../zcrud_chat/ZChatToolTokenResolver.html">ZChatToolTokenResolver</a>?</span> <span class="parameter-name">reasonOf</span>, </span><span class="parameter" id="zChatToolSettingsEntries-param-onCommand"><span class="type-annotation">void</span> <span class="parameter-name">onCommand</span>(<span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">key</span></span>)?</span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatSettingsEntry-class.html">ZChatSettingsEntry</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Projette les outils <strong>visibles sur la feuille</strong> en entrées déclaratives.
+  
+
+</dd>
+
+          <dt id="zChatToolSettingsSections" class="callable">
+  <span class="name"><a href="../zcrud_chat/zChatToolSettingsSections.html">zChatToolSettingsSections</a></span><span class="signature">(<wbr><span class="parameter" id="zChatToolSettingsSections-param-controller"><span class="type-annotation"><a href="../zcrud_chat/ZChatToolController-class.html">ZChatToolController</a></span> <span class="parameter-name">controller</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatSettingsSection-class.html">ZChatSettingsSection</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Les sections de la feuille de réglages correspondant aux sections du
+catalogue. Une section sans libellé d'hôte reste <strong>sans en-tête</strong>.
   
 
 </dd>
@@ -3067,6 +3614,21 @@ référence.
   <dd>
     Construit l'icône d'une action — couture d'hôte (le socle n'embarque aucun
 catalogue d'icônes : <code>material</code> lui est interdit).
+    
+
+  </dd>
+
+          
+  <dt id="ZChatArtifactAccentResolver" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactAccentResolver.html">ZChatArtifactAccentResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>? Function<span class="signature">(<span class="parameter" id="param-accentToken"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">accentToken</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Résout un jeton d'accent en couleur. <code>null</code> signifie la couleur ambiante
+(chaîne <code>ZChatNotebookSkin</code> puis thème).
     
 
   </dd>
@@ -3131,6 +3693,64 @@ pastille non plus : une pastille « 0 » est du bruit).
   </dd>
 
           
+  <dt id="ZChatArtifactIconResolver" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactIconResolver.html">ZChatArtifactIconResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>? Function<span class="signature">(<span class="parameter" id="param-iconKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">iconKey</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Résout une clé d'icône opaque en glyphe. <code>null</code> signifie aucun glyphe.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatArtifactLabel" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactLabel.html">ZChatArtifactLabel</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-artifactKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">artifactKey</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Compose un libellé à partir de la clé <strong>opaque</strong> d'un artefact — l'hôte
+y résout son propre nom d'artefact.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatArtifactLabelResolver" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactLabelResolver.html">ZChatArtifactLabelResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>? Function<span class="signature">(<span class="parameter" id="param-labelToken"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelToken</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Résout un jeton de libellé en texte <strong>déjà localisé</strong>. <code>null</code> signifie
+aucun texte.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatArtifactMenuBuilder" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactMenuBuilder.html">ZChatArtifactMenuBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-actions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatArtifactAction-class.html">ZChatArtifactAction</a></span>&gt;</span></span> <span class="parameter-name">actions</span>, </span><span class="parameter" id="param-select"><span class="type-annotation">void</span> <span class="parameter-name">select</span>(<span class="parameter" id="param-action"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactAction-class.html">ZChatArtifactAction</a></span> <span class="parameter-name">action</span></span>)</span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Présentation <strong>INJECTÉE</strong> du contenu d'un menu d'artefact.
+    
+
+  </dd>
+
+          
   <dt id="ZChatArtifactPresence" class="callable">
     <span class="name"><a href="../zcrud_chat/ZChatArtifactPresence.html">ZChatArtifactPresence</a></span><span class="signature">
       <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a> Function<span class="signature">(<span class="parameter" id="param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span></span>)</span></span>
@@ -3140,6 +3760,57 @@ pastille non plus : une pastille « 0 » est du bruit).
   </dt>
   <dd>
     Lecture de <strong>présence</strong> d'un artefact sur un message brut.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatArtifactRequestDecorator" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactRequestDecorator.html">ZChatArtifactRequestDecorator</a></span><span class="signature">
+      <span class="returntype parameter">= ZChatArtifactGenerationRequest Function<span class="signature">(<span class="parameter" id="param-request"><span class="type-annotation">ZChatArtifactGenerationRequest</span> <span class="parameter-name">request</span>, </span><span class="parameter" id="param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Ajuste la requête de génération d'un artefact avant son envoi au port.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatArtifactRouteResolver" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactRouteResolver.html">ZChatArtifactRouteResolver</a></span><span class="signature">
+      <span class="returntype parameter">= ZResult<span class="signature">&lt;<wbr><span class="type-parameter">ZChatArtifactGenerationRequest</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-request"><span class="type-annotation">ZChatArtifactGenerationRequest</span> <span class="parameter-name">request</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    <strong>Route</strong> la requête de génération d'un artefact avant son envoi — seam
+d'hôte, pur. Pendant de <code>ZChatRouteResolver</code> pour les artefacts : sur
+<code>Left</code>, la génération n'est <strong>pas</strong> lancée (port jamais appelé, couple
+jamais occupé, aucune annonce) et l'échec est publié sur la tranche du
+couple. Un résolveur qui lève vaut un refus.
+<code>ZChatRouteSession.resolveArtifact</code> en est l'implémentation de référence.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatArtifactVerbConfirm" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatArtifactVerbConfirm.html">ZChatArtifactVerbConfirm</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="zChatConfirmArtifactWithoutDialog-param-verb"><span class="type-annotation"><a href="../zcrud_chat/ZChatArtifactVerbAction-class.html">ZChatArtifactVerbAction</a></span> <span class="parameter-name">verb</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Demande de confirmation d'un verbe d'artefact <strong>destructeur</strong> — seam
+d'hôte, sans <code>BuildContext</code> ni libellé : le dialogue appartient à
+l'application, qui lit <a href="../zcrud_chat/ZChatArtifactVerbAction/confirmToken.html">ZChatArtifactVerbAction.confirmToken</a> pour
+choisir son message. N'est appelé que si le registre exige une
+confirmation ; un seam qui lève vaut un refus.
     
 
   </dd>
@@ -3203,6 +3874,50 @@ même lecture deux fois.
   </dd>
 
           
+  <dt id="ZChatContentLabel" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatContentLabel.html">ZChatContentLabel</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-artifactKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">artifactKey</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Compose un libellé à partir du contenu accessible d'un message.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatConversationComposerBuilder" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatConversationComposerBuilder.html">ZChatConversationComposerBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-controller"><span class="type-annotation"><a href="../zcrud_chat/ZChatController-class.html">ZChatController</a></span> <span class="parameter-name">controller</span>, </span><span class="parameter" id="param-settings"><span class="type-annotation"><a href="../zcrud_chat/ZChatSettingsController-class.html">ZChatSettingsController</a></span> <span class="parameter-name">settings</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Remplace la zone de saisie par défaut. Rendre <code>null</code> signifie aucune zone
+de saisie (invariant AD-4).
+    
+
+  </dd>
+
+          
+  <dt id="ZChatConversationFailureBuilder" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatConversationFailureBuilder.html">ZChatConversationFailureBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-failure"><span class="type-annotation">ZFailure</span> <span class="parameter-name">failure</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Rend un échec de tour. Rendre <code>null</code> signifie rien d'affiché pour cet
+échec.
+    
+
+  </dd>
+
+          
   <dt id="ZChatConversationItemWrapper" class="callable">
     <span class="name"><a href="../zcrud_chat/ZChatConversationItemWrapper.html">ZChatConversationItemWrapper</a></span><span class="signature">
       <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-conversation"><span class="type-annotation">ZChatConversation</span> <span class="parameter-name">conversation</span>, </span><span class="parameter" id="param-child"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">child</span></span>)</span></span>
@@ -3245,6 +3960,21 @@ même lecture deux fois.
   </dd>
 
           
+  <dt id="ZChatConversationSlotBuilder" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatConversationSlotBuilder.html">ZChatConversationSlotBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-controller"><span class="type-annotation"><a href="../zcrud_chat/ZChatController-class.html">ZChatController</a></span> <span class="parameter-name">controller</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Un créneau de l'écran qui reçoit le contrôleur de conversation. Rendre
+<code>null</code> signifie absent de l'arbre (invariant AD-4).
+    
+
+  </dd>
+
+          
   <dt id="ZChatConversationSubtitleBuilder" class="callable">
     <span class="name"><a href="../zcrud_chat/ZChatConversationSubtitleBuilder.html">ZChatConversationSubtitleBuilder</a></span><span class="signature">
       <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-conversation"><span class="type-annotation">ZChatConversation</span> <span class="parameter-name">conversation</span></span>)</span></span>
@@ -3269,6 +3999,21 @@ même lecture deux fois.
   </dt>
   <dd>
     Choisit la date affichée par la tuile — couture d'hôte.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatConversationToolsSheetBuilder" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatConversationToolsSheetBuilder.html">ZChatConversationToolsSheetBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-settings"><span class="type-annotation"><a href="../zcrud_chat/ZChatSettingsController-class.html">ZChatSettingsController</a></span> <span class="parameter-name">settings</span>, </span><span class="parameter" id="param-tools"><span class="type-annotation"><a href="../zcrud_chat/ZChatToolController-class.html">ZChatToolController</a>?</span> <span class="parameter-name">tools</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Remplace la feuille de réglages et d'outils par défaut. <code>tools</code> est <code>null</code>
+quand aucun catalogue d'outils n'a été déclaré.
     
 
   </dd>
@@ -3332,6 +4077,20 @@ modèle des builders de seam existants.
   </dd>
 
           
+  <dt id="ZChatModelLabelResolver" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatModelLabelResolver.html">ZChatModelLabelResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>? Function<span class="signature">(<span class="parameter" id="param-ref"><span class="type-annotation">ZChatModelRef</span> <span class="parameter-name">ref</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Libellé déjà localisé d'un modèle, ou <code>null</code> (candidat non proposé).
+    
+
+  </dd>
+
+          
   <dt id="ZChatModelMenuBuilder" class="callable">
     <span class="name"><a href="../zcrud_chat/ZChatModelMenuBuilder.html">ZChatModelMenuBuilder</a></span><span class="signature">
       <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-options"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatModelOption-class.html">ZChatModelOption</a></span>&gt;</span></span> <span class="parameter-name">options</span>, </span><span class="parameter" id="param-activeId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">activeId</span>, </span><span class="parameter" id="param-select"><span class="type-annotation">void</span> <span class="parameter-name">select</span>(<span class="parameter" id="param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span></span>), </span><span class="parameter" id="param-close"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a></span> <span class="parameter-name">close</span></span>)</span></span>
@@ -3357,6 +4116,97 @@ modèle des builders de seam existants.
     Construit — ou retire — le déclencheur du sélecteur. Rendre <code>null</code>
 signifie affordance absente (invariant AD-4). <code>toggle</code> ouvre/ferme le
 menu ; <code>open</code> est l'état courant.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatNotebookArtifactFailureBuilder" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatNotebookArtifactFailureBuilder.html">ZChatNotebookArtifactFailureBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-message"><span class="type-annotation">ZChatMessage</span> <span class="parameter-name">message</span>, </span><span class="parameter" id="param-artifactKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">artifactKey</span>, </span><span class="parameter" id="param-failure"><span class="type-annotation">ZFailure</span> <span class="parameter-name">failure</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Rend l'échec d'un <strong>artefact</strong> d'un message. Rendre <code>null</code> signifie rien
+d'affiché pour cet échec.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatNotebookComposerBuilder" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatNotebookComposerBuilder.html">ZChatNotebookComposerBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-controller"><span class="type-annotation"><a href="../zcrud_chat/ZChatNotebookController-class.html">ZChatNotebookController</a></span> <span class="parameter-name">controller</span>, </span><span class="parameter" id="param-settings"><span class="type-annotation"><a href="../zcrud_chat/ZChatSettingsController-class.html">ZChatSettingsController</a></span> <span class="parameter-name">settings</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Remplace la zone de saisie par défaut. Rendre <code>null</code> signifie aucune zone
+de saisie (invariant AD-4).
+    
+
+  </dd>
+
+          
+  <dt id="ZChatNotebookFailureBuilder" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatNotebookFailureBuilder.html">ZChatNotebookFailureBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-failure"><span class="type-annotation">ZFailure</span> <span class="parameter-name">failure</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Rend un échec <strong>global</strong> (écriture du fil, tour de conversation). Rendre
+<code>null</code> signifie rien d'affiché pour cet échec.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatNotebookSheetPresenter" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatNotebookSheetPresenter.html">ZChatNotebookSheetPresenter</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-sheet"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/WidgetBuilder.html">WidgetBuilder</a></span> <span class="parameter-name">sheet</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Présente la feuille de réglages et d'outils — modale, page, panneau :
+l'hôte décide. <code>sheet</code> construit la feuille dans le contexte de
+présentation que l'hôte lui donne.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatNotebookSlotBuilder" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatNotebookSlotBuilder.html">ZChatNotebookSlotBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>? Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-controller"><span class="type-annotation"><a href="../zcrud_chat/ZChatNotebookController-class.html">ZChatNotebookController</a></span> <span class="parameter-name">controller</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Un créneau de l'écran qui reçoit le contrôleur de fil de travail. Rendre
+<code>null</code> signifie absent de l'arbre (invariant AD-4).
+    
+
+  </dd>
+
+          
+  <dt id="ZChatNotebookToolsSheetBuilder" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatNotebookToolsSheetBuilder.html">ZChatNotebookToolsSheetBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-settings"><span class="type-annotation"><a href="../zcrud_chat/ZChatSettingsController-class.html">ZChatSettingsController</a></span> <span class="parameter-name">settings</span>, </span><span class="parameter" id="param-tools"><span class="type-annotation"><a href="../zcrud_chat/ZChatToolController-class.html">ZChatToolController</a>?</span> <span class="parameter-name">tools</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Remplace la feuille de réglages et d'outils par défaut. <code>tools</code> est <code>null</code>
+quand aucun catalogue d'outils n'a été déclaré.
     
 
   </dd>
@@ -3400,6 +4250,34 @@ menu ; <code>open</code> est l'état courant.
   <dd>
     Fabrique d'identité de requête — fournie par l'hôte (typiquement un
 UUID v4).
+    
+
+  </dd>
+
+          
+  <dt id="ZChatRouteLookup" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatRouteLookup.html">ZChatRouteLookup</a></span><span class="signature">
+      <span class="returntype parameter">= ZChatRouteSpec? Function<span class="signature">(<span class="parameter" id="param-taskKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">taskKey</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Lit la route déclarée pour une clé de tâche, ou <code>null</code>.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatRouteResolver" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatRouteResolver.html">ZChatRouteResolver</a></span><span class="signature">
+      <span class="returntype parameter">= ZResult<span class="signature">&lt;<wbr><span class="type-parameter">ZChatGenerationRequest</span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-request"><span class="type-annotation">ZChatGenerationRequest</span> <span class="parameter-name">request</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    <strong>Route</strong> la requête d'un tour avant son envoi — seam d'hôte, pur.
     
 
   </dd>
@@ -3449,6 +4327,20 @@ UUID v4).
   </dd>
 
           
+  <dt id="ZChatTaskLabelKeyResolver" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatTaskLabelKeyResolver.html">ZChatTaskLabelKeyResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>? Function<span class="signature">(<span class="parameter" id="param-taskKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">taskKey</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Clé de libellé d'une tâche, ou <code>null</code> (tâche non projetée).
+    
+
+  </dd>
+
+          
   <dt id="ZChatTimestampFormatter" class="callable">
     <span class="name"><a href="../zcrud_chat/ZChatTimestampFormatter.html">ZChatTimestampFormatter</a></span><span class="signature">
       <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span> <span class="parameter-name">value</span></span>)</span></span>
@@ -3458,6 +4350,37 @@ UUID v4).
   </dt>
   <dd>
     Formate l'horodatage d'un message — couture d'hôte.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatToolTokenResolver" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatToolTokenResolver.html">ZChatToolTokenResolver</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>? Function<span class="signature">(<span class="parameter" id="param-token"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">token</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Résout un jeton opaque (raison de grisage, indisponibilité) en texte déjà
+localisé. Rendre <code>null</code> ⇒ aucun texte affiché pour ce jeton.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatTranscriptSnapshotListener" class="callable">
+    <span class="name"><a href="../zcrud_chat/ZChatTranscriptSnapshotListener.html">ZChatTranscriptSnapshotListener</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-snapshot"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatMessage</span>&gt;</span></span> <span class="parameter-name">snapshot</span>, </span><span class="parameter" id="param-changedMessageIds"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">changedMessageIds</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Reçoit un instantané <strong>postérieur à l'amorce</strong> : le fil tel que le dépôt
+le voit, et les identités des messages qui diffèrent de l'instantané
+précédent. N'est jamais appelé pour le premier instantané.
     
 
   </dd>
@@ -3506,7 +4429,7 @@ UUID v4).
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

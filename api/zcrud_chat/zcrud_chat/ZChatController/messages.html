@@ -69,6 +69,10 @@
 <section class="desc markdown">
   <p>Messages <strong>établis</strong> de la conversation (jamais le texte en cours de
 rédaction — il vit dans <a href="../../zcrud_chat/ZChatController/streamText.html">streamText</a>).</p>
+<p>Identités : le message utilisateur optimiste d'un tour porte son
+<code>requestId</code> ; la réponse porte l'identité annoncée par l'événement
+terminal, ou, à défaut (tour interrompu), <code>&lt;requestId&gt;/reply</code>. Deux
+messages du fil ne partagent jamais une identité.</p>
 <p>Cette tranche est une <strong>liste</strong>, pas un widget : rien ici n'empêche la
 virtualisation. Le rendu doit rester un <code>ListView.builder</code>.</p>
 </section>
@@ -106,7 +110,7 @@ virtualisation. Le rendu doit rester un <code>ListView.builder</code>.</p>
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="zcrud_chat_firestore API docs, for the Dart programming language.">
+  <title>zcrud_chat_firestore - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_chat_firestore package</a></li>
+  </ol>
+  <div class="self-name">zcrud_chat_firestore</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="zcrud_chat_firestore">zcrud_chat_firestore</h1>
+<p>Adaptateurs Firestore du catalogue de routeurs IA du chat — satellite opt-in,
+puits du graphe (invariant AD-1).</p>
+<h2 id="aperu-apercu">Aperçu {#apercu}</h2>
+<p>Ce paquet ne redéclare aucun symbole existant. L'entité <code>ZChatRouter</code>, son
+codec et son schéma d'édition vivent dans <code>zcrud_chat_kernel</code> ; le repository
+Firestore générique (<code>FirebaseZRepositoryImpl</code>), le décodage défensif, le
+soft-delete et les sémantiques de suppression vivent dans <code>zcrud_firestore</code>.
+Le générique sert l'entité <strong>sans adaptateur spécifique</strong>.</p>
+<p><code>zcrud_chat_firestore</code> fournit uniquement le <strong>point d'accroche</strong> :</p>
+<ul>
+<li><code>buildChatRouterFirestoreRepository</code> — la fabrique qui branche le dépôt sur
+une collection, sous le <code>kind</code> du routeur ;</li>
+<li>l'accroche d'un <strong>codec legacy</strong> (<code>toCanonical</code> / <code>toLegacy</code>) pour une
+collection qui préexiste au dépôt — la casse, les renommages et les
+regroupements propres à l'hôte restent chez l'hôte ;</li>
+<li>la <strong>sémantique de suppression</strong> choisie par l'hôte ;</li>
+<li>un tri défensif des documents (<code>zChatRouterShapeIssue</code>).</li>
+</ul>
+<p><code>zcrud_firestore</code> ne dépend jamais de <code>zcrud_chat*</code> : un consommateur
+Firestore sans chat n'en porte pas le poids. Symétriquement, le noyau du chat
+ne connaît pas Firestore.</p>
+<p><strong>Utilisez ce paquet</strong> si vos routeurs IA sont persistés dans Firestore.</p>
+<p><strong>N'utilisez pas ce paquet</strong> si votre catalogue de routeurs est servi par un
+endpoint applicatif : implémentez <code>ZChatRouteCatalogPort</code> sur ce transport,
+sans tirer Firestore.</p>
+<h2 id="installation-installation">Installation {#installation}</h2>
+<p>Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir <a href="../../docs/private-git-consumption.md">Consommation privée des packages zcrud</a>
+pour l'épinglage par tag et la déclaration <code>dependency_overrides</code> requise par
+les arêtes inter-<code>zcrud_*</code>.</p>
+<h2 id="dmarrage-rapide-demarrage-rapide">Démarrage rapide {#demarrage-rapide}</h2>
+<p>Collection <strong>née avec le dépôt</strong> (chaque document porte <code>is_deleted</code>) :</p>
+<pre class="language-dart"><code class="language-dart">import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:zcrud_chat_firestore/zcrud_chat_firestore.dart';
+import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
+import 'package:zcrud_core/zcrud_core.dart';
+
+final ZRepository&lt;ZChatRouter&gt; routers = buildChatRouterFirestoreRepository(
+  firestore: FirebaseFirestore.instance,
+  collectionPath: appConfig.routersCollection,
+);
+</code></pre>
+<p>Collection <strong>préexistante</strong> (documents écrits avant le dépôt, en camelCase,
+sans <code>is_deleted</code> ni <code>updated_at</code>) — l'hôte apporte son codec, en 6 lignes :</p>
+<pre class="language-dart"><code class="language-dart">final ZRepository&lt;ZChatRouter&gt; routers = buildChatRouterFirestoreRepository(
+  firestore: FirebaseFirestore.instance,
+  collectionPath: appConfig.routersCollection,
+  deletionSemantics: ZDeletionSemantics.absentMeansAlive, // sinon : 0 lu
+  toCanonical: myRouterCodec.toCanonical, // camelCase → routes[] canoniques
+  toLegacy: myRouterCodec.toLegacy,       // inverse, à l'écriture
+);
+</code></pre>
+<p>Le catalogue du chat se branche ensuite sur ce dépôt comme sur n'importe quel
+<code>ZRepository&lt;ZChatRouter&gt;</code> (implémentation de <code>ZChatRouteCatalogPort</code> côté
+hôte, ou <code>ZChatInMemoryRouteCatalog</code> alimenté par <code>getAll</code>).</p>
+<h2 id="concepts-cls-concepts-cles">Concepts clés {#concepts-cles}</h2>
+<ul>
+<li><strong>Le générique suffit</strong> — <code>FirebaseZRepositoryImpl&lt;ZChatRouter&gt;</code> est
+construit avec <code>kind: kZChatRouterKind</code>, <code>fromMap: ZChatRouter.fromMap</code>,
+<code>toMap: ZChatRouter.toMap</code>. Il n'existe aucune ligne Firestore propre au
+routeur ; une entité future suivra le même chemin.</li>
+<li><strong>Forme sur le fil</strong> — celle de <code>ZChatRouter.toMap()</code> : <code>routes</code> en
+<strong>liste</strong> <code>{task_key, model_provider_id?, model_id?, fallbacks?, …}</code>,
+<code>is_active</code> toujours émis, <code>params</code>/<code>extension</code> si non vides. Les
+métadonnées <code>is_deleted</code> / <code>updated_at</code> sont posées par le dépôt
+(<a href="../../docs/site/concepts/invariants.md#ad-9">AD-9</a>), jamais par le codec.</li>
+<li><strong>Codec legacy en amont</strong> — <code>toCanonical</code> reçoit la map brute du document
+(identifiant sous <code>id</code>, horodatages déjà en ISO-8601) et rend la forme
+canonique ; <code>toLegacy</code> reçoit <code>toMap()</code> et rend la forme écrite. Un codec
+qui lève n'est jamais fatal : le document est écarté à la lecture,
+l'écriture retombe sur la forme canonique.</li>
+<li><strong>Sémantique de suppression</strong> — sur une collection sans <code>is_deleted</code>,
+<code>ZDeletionSemantics.strict</code> (défaut du générique) ne lit <strong>rien</strong> : le
+filtre serveur exige la présence du drapeau. Déclarer
+<code>ZDeletionSemantics.absentMeansAlive</code> ; chaque <code>save</code> pose ensuite
+<code>is_deleted:false</code> + <code>updated_at</code>, et la collection converge vers la forme
+stricte.</li>
+<li><strong>Tri défensif (<a href="../../docs/site/concepts/invariants.md#ad-10">AD-10</a>)</strong> —
+le codec du noyau ne lève jamais ; sans garde, un document étranger à la
+collection deviendrait un routeur vide, actif. <code>zChatRouterShapeIssue</code>
+écarte (et journalise via <code>logger</code>) un document sans aucune clé du schéma
+ou dont une clé porte un type illisible ; les autres documents ne sont
+jamais affectés.</li>
+</ul>
+<h2 id="api-principale-api-principale">API principale {#api-principale}</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>buildChatRouterFirestoreRepository</code></td>
+<td>Fabrique un <code>ZRepository&lt;ZChatRouter&gt;</code> sur une collection Firestore ; accroche du codec legacy, sémantique de suppression, parseur d'extension, journal.</td>
+</tr>
+<tr>
+<td><code>ZChatRouterMapCodec</code></td>
+<td>Type des deux transformations de map d'un codec legacy (<code>toCanonical</code>, <code>toLegacy</code>).</td>
+</tr>
+<tr>
+<td><code>zChatRouterShapeIssue</code></td>
+<td>Prédicat défensif : décrit pourquoi une map canonique ne peut pas être un routeur, ou <code>null</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cas-limites-et-invariants-cas-limites">Cas limites et invariants {#cas-limites}</h2>
+<ul>
+<li><strong>Aucun nom de collection par défaut</strong> — <code>collectionPath</code> est requis ; le
+nom appartient à l'hôte.</li>
+<li><strong><code>getById</code> d'un document supprimé, corrompu ou absent</strong> rend
+<code>Left(ZNotFoundFailure)</code> ; <code>restore</code> rend le document visible à nouveau.</li>
+<li><strong><code>legacyDeletedKey</code></strong> n'est honorée qu'en <code>absentMeansAlive</code> (le mode
+strict lit exclusivement <code>is_deleted</code>, par clauses serveur).</li>
+<li><strong>Aucun code généré</strong> dans ce paquet ; <strong>aucune arête</strong>
+<code>zcrud_firestore → zcrud_chat*</code> — les deux sont vérifiés par une garde de
+source.</li>
+</ul>
+<h2 id="voir-aussi-voir-aussi">Voir aussi {#voir-aussi}</h2>
+<ul>
+<li><a href="../../docs/site/concepts/invariants.md">Invariants d'architecture</a> — définitions canoniques AD-1 à AD-16.</li>
+<li><code>zcrud_chat_kernel</code> — <code>ZChatRouter</code>, <code>ZChatRouteSpec</code>, <code>ZChatRouteCatalogPort</code>.</li>
+<li><code>zcrud_firestore</code> — <code>FirebaseZRepositoryImpl</code>, <code>ZDeletionSemantics</code>, <code>ZStudyLegacyCodec</code> (patron de codec legacy).</li>
+</ul>
+<h2 id="licence-licence">Licence {#licence}</h2>
+<p>MIT — voir la racine du dépôt.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="zcrud_chat_firestore">
+  <span class="name"><a href="zcrud_chat_firestore/">zcrud_chat_firestore</a></span> 
+
+</dt>
+<dd>Adaptateurs Firestore du catalogue de routeurs IA du chat.
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/zakarius-dev/zcrud">zcrud_chat_firestore package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">zcrud_chat_firestore</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="zcrud_chat_firestore/">zcrud_chat_firestore</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_firestore
+      3.12.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

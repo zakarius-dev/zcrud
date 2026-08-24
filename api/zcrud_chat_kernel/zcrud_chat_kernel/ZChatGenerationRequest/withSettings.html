@@ -82,25 +82,13 @@ rejoignent la requête effectivement envoyée au port.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">ZChatGenerationRequest withSettings(ZChatGenerationSettings? settings) {
   if (settings == null) return this;
-  return ZChatGenerationRequest(
-    style: style,
-    subject: subject,
-    notes: notes,
-    conversationId: conversationId,
-    sourceMessageId: sourceMessageId,
-    context: context,
-    attachmentIds: attachmentIds,
+  return copyWith(
     responseLength: settings.responseLength,
     lengthBias: settings.lengthBias,
     computeEffort: settings.computeEffort,
     revealThinkingSteps: settings.revealThinkingSteps,
     webSearch: settings.webSearch,
     capabilities: settings.capabilities,
-    corpusScope: corpusScope,
-    languageTag: languageTag,
-    instructions: instructions,
-    modelId: modelId,
-    extra: extra,
   );
 }</code></pre>
 </section>
@@ -130,7 +118,7 @@ rejoignent la requête effectivement envoyée au port.</p>
 <footer>
   <span class="no-break">
     zcrud_chat_kernel
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

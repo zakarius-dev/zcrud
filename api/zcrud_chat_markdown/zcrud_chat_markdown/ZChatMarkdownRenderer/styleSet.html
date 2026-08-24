@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the styleSet property from the ZChatMarkdownRenderer class, for the Dart programming language.">
+  <title>styleSet property - ZChatMarkdownRenderer class - zcrud_chat_markdown library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_chat_markdown</a></li>
+    <li><a href="../../zcrud_chat_markdown/">zcrud_chat_markdown.dart</a></li>
+    <li><a href="../../zcrud_chat_markdown/ZChatMarkdownRenderer-class.html">ZChatMarkdownRenderer</a></li>
+    <li class="self-crumb">styleSet property</li>
+  </ol>
+  <div class="self-name">styleSet</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat_markdown&#47;ZChatMarkdownRenderer-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">styleSet</span> property 
+</h1></div>
+
+    
+      <section class="multi-line-signature">
+        
+        ZRichTextStyleSet?
+        <span class="name ">styleSet</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
+<section class="desc markdown">
+  <p>Jeu de styles <strong>par axe Markdown</strong>, fourni par l'hôte, ou <code>null</code>.</p>
+<p>C'est le seul canal permettant de viser séparément un titre, le gras,
+l'italique, la citation ou le code : ni <a href="../../zcrud_chat_markdown/ZChatMarkdownRenderer/textStyle.html">textStyle</a> (global) ni le thème
+de l'application (qui vise tout l'écran) ne distinguent ces axes.</p>
+<p>Chaque slot est <strong>fusionné par-dessus</strong> le style courant : un slot ne
+portant qu'une couleur laisse la taille et la graisse héritées en place,
+et un slot non fourni ne change rien — un jeu partiel est donc légitime.</p>
+<p><code>null</code> ⇒ rendu strictement inchangé. Ce paquet ne pose aucune couleur de
+lui-même (FR-26) : les couleurs sémantiques d'un hôte lui appartiennent,
+et c'est par ici qu'elles entrent.</p>
+</section>
+
+      
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">final ZRichTextStyleSet? styleSet;</code></pre>
+</section>
+
+
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_chat_markdown</a></li>
+    <li><a href="../../zcrud_chat_markdown/">zcrud_chat_markdown</a></li>
+    <li><a href="../../zcrud_chat_markdown/ZChatMarkdownRenderer-class.html">ZChatMarkdownRenderer</a></li>
+    <li class="self-crumb">styleSet property</li>
+</ol>
+
+  <h5>ZChatMarkdownRenderer class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_markdown
+      3.12.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

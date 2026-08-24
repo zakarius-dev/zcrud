@@ -55,6 +55,13 @@
     
 <section class="desc markdown">
   <p>La coquille déclarée d'une tuile de message.</p>
+<h2 id="ce-que-le-filet-borne">Ce que le filet borne</h2>
+<p>Le <strong>contenu</strong>, et lui seul : l'identité de l'interlocuteur, la coiffe, les
+blocs du message et le bouton de dépli. La barre d'actions par message
+(<code>ZChatMessageTile.actionsBuilder</code>) est rendue <strong>sous</strong> la carte, hors du
+filet — un cadre qui engloberait les commandes cesserait de délimiter la
+réponse. Les commandes qui portent sur la carte elle-même ont leur place
+dans la coiffe, par <a href="../zcrud_chat/ZChatTileShell/topicTrailing.html">topicTrailing</a>.</p>
 <p>Déclarer une coquille — même vide — demande : une carte cernée d'un filet,
 une coiffe quand <a href="../zcrud_chat/ZChatTileShell/topicOf.html">topicOf</a> rend un sujet, un horodatage quand le message
 en porte un, et le bouton de dépli en pilule centrée. Ne rien déclarer
@@ -89,7 +96,7 @@ laisse la tuile strictement inchangée.</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZChatTileShell.new" class="callable">
-          <span class="name"><a href="../zcrud_chat/ZChatTileShell/ZChatTileShell.html">ZChatTileShell</a></span><span class="signature">({<span class="parameter" id="param-borderColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">borderColor</span>, </span><span class="parameter" id="param-borderWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">borderWidth</span>, </span><span class="parameter" id="param-radius"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span> <span class="parameter-name">radius</span>, </span><span class="parameter" id="param-backgroundColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">backgroundColor</span>, </span><span class="parameter" id="param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span> <span class="parameter-name">padding</span>, </span><span class="parameter" id="param-margin"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span> <span class="parameter-name">margin</span>, </span><span class="parameter" id="param-topicOf"><span class="type-annotation"><a href="../zcrud_chat/ZChatTurnTopicResolver.html">ZChatTurnTopicResolver</a>?</span> <span class="parameter-name">topicOf</span>, </span><span class="parameter" id="param-topicMaxLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">topicMaxLines</span>, </span><span class="parameter" id="param-showTimestamp"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showTimestamp</span>, </span><span class="parameter" id="param-timestampFormatter"><span class="type-annotation"><a href="../zcrud_chat/ZChatTimestampFormatter.html">ZChatTimestampFormatter</a>?</span> <span class="parameter-name">timestampFormatter</span>, </span><span class="parameter" id="param-toggle"><span class="type-annotation"><a href="../zcrud_chat/ZChatTileToggleStyle-class.html">ZChatTileToggleStyle</a></span> <span class="parameter-name">toggle</span> = <span class="default-value">const ZChatTileToggleStyle()</span></span>})</span>
+          <span class="name"><a href="../zcrud_chat/ZChatTileShell/ZChatTileShell.html">ZChatTileShell</a></span><span class="signature">({<span class="parameter" id="param-borderColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">borderColor</span>, </span><span class="parameter" id="param-borderWidth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">borderWidth</span>, </span><span class="parameter" id="param-radius"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Radius-class.html">Radius</a>?</span> <span class="parameter-name">radius</span>, </span><span class="parameter" id="param-backgroundColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">backgroundColor</span>, </span><span class="parameter" id="param-padding"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span> <span class="parameter-name">padding</span>, </span><span class="parameter" id="param-margin"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/painting/EdgeInsetsDirectional-class.html">EdgeInsetsDirectional</a>?</span> <span class="parameter-name">margin</span>, </span><span class="parameter" id="param-topicOf"><span class="type-annotation"><a href="../zcrud_chat/ZChatTurnTopicResolver.html">ZChatTurnTopicResolver</a>?</span> <span class="parameter-name">topicOf</span>, </span><span class="parameter" id="param-topicMaxLines"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">topicMaxLines</span>, </span><span class="parameter" id="param-topicTrailing"><span class="type-annotation"><a href="../zcrud_chat/ZChatMessageSlotBuilder.html">ZChatMessageSlotBuilder</a>?</span> <span class="parameter-name">topicTrailing</span>, </span><span class="parameter" id="param-showTimestamp"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">showTimestamp</span>, </span><span class="parameter" id="param-timestampFormatter"><span class="type-annotation"><a href="../zcrud_chat/ZChatTimestampFormatter.html">ZChatTimestampFormatter</a>?</span> <span class="parameter-name">timestampFormatter</span>, </span><span class="parameter" id="param-toggle"><span class="type-annotation"><a href="../zcrud_chat/ZChatTileToggleStyle-class.html">ZChatTileToggleStyle</a></span> <span class="parameter-name">toggle</span> = <span class="default-value">const ZChatTileToggleStyle()</span></span>})</span>
         </dt>
         <dd>
           Construit une coquille. Aucun champ n'est requis : <code>const ZChatTileShell()</code> signifie « le rendu de référence, tel quel ».
@@ -264,6 +271,18 @@ référence. Directionnelle (invariant AD-13).
 
 </dd>
 
+        <dt id="topicTrailing" class="property">
+  <span class="name"><a href="../zcrud_chat/ZChatTileShell/topicTrailing.html">topicTrailing</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat/ZChatMessageSlotBuilder.html">ZChatMessageSlotBuilder</a>?</span>
+  
+
+</dt>
+<dd>
+  Créneau rendu <strong>en fin de coiffe</strong>, à la suite du sujet du tour.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
     </dl>
   </section>
 
@@ -349,7 +368,7 @@ référence. Directionnelle (invariant AD-13).
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

@@ -57,6 +57,16 @@
 <section class="desc markdown">
   <p>Vue <strong>personnalisée</strong> : rend un widget <strong>arbitraire</strong> fourni par l'app à
 partir du <code>ZListRenderRequest</code> complet. N'exige AUCUN renderer.</p>
+<p>Deux façons de décrire la vue, au choix :</p>
+<ul>
+<li><a href="../zcrud_core/ZListCustomLayout/customView.html">customView</a> — la requête neutre seule (lignes + colonnes dérivées) ;</li>
+<li><a href="../zcrud_core/ZListCustomLayout/entityView.html">entityView</a> — la requête <strong>et</strong> le résolveur <code>ZListRow → entité</code>
+(forme typée via <a href="../zcrud_core/ZListCustomLayout/forEntity.html">ZListCustomLayout.forEntity</a>). Prioritaire sur
+<a href="../zcrud_core/ZListCustomLayout/customView.html">customView</a> quand les deux sont présents.</li>
+</ul>
+<p>Une vue personnalisée n'a pas de tuile : <a href="../zcrud_core/ZListLayout/withEntityTiles.html">withEntityTiles</a> la rend
+inchangée. Le rendu d'un écran assemblé (<code>ZCrudScreen.itemBuilder</code>) ne
+descend donc pas dans cette variante — c'est la vue qui décide de tout.</p>
 </section>
 
 
@@ -88,10 +98,11 @@ partir du <code>ZListRenderRequest</code> complet. N'exige AUCUN renderer.</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZListCustomLayout.new" class="callable">
-          <span class="name"><a href="../zcrud_core/ZListCustomLayout/ZListCustomLayout.html">ZListCustomLayout</a></span><span class="signature">({<span class="parameter" id="param-customView"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">customView</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-request"><span class="type-annotation"><a href="../zcrud_core/ZListRenderRequest-class.html">ZListRenderRequest</a></span> <span class="parameter-name">request</span></span>)</span>})</span>
+          <span class="name"><a href="../zcrud_core/ZListCustomLayout/ZListCustomLayout.html">ZListCustomLayout</a></span><span class="signature">({<span class="parameter" id="param-customView"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a></span> <span class="parameter-name">customView</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-request"><span class="type-annotation"><a href="../zcrud_core/ZListRenderRequest-class.html">ZListRenderRequest</a></span> <span class="parameter-name">request</span></span>)?, </span><span class="parameter" id="param-entityView"><span class="type-annotation"><a href="../zcrud_core/ZEntityListViewBuilder.html">ZEntityListViewBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span>?</span> <span class="parameter-name">entityView</span></span>})</span>
         </dt>
         <dd>
-          Construit la vue personnalisée avec son <code>customView</code>.
+          Construit la vue personnalisée avec <code>customView</code> et/ou <code>entityView</code> —
+au moins l'un des deux.
             <div class="constructor-modifier features">const</div>
         </dd>
     </dl>
@@ -104,12 +115,27 @@ partir du <code>ZListRenderRequest</code> complet. N'exige AUCUN renderer.</p>
     <dl class="properties">
         <dt id="customView" class="property">
   <span class="name"><a href="../zcrud_core/ZListCustomLayout/customView.html">customView</a></span>
-  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-request"><span class="type-annotation"><a href="../zcrud_core/ZListRenderRequest-class.html">ZListRenderRequest</a></span> <span class="parameter-name">request</span></span>)</span></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a> Function<span class="signature">(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-request"><span class="type-annotation"><a href="../zcrud_core/ZListRenderRequest-class.html">ZListRenderRequest</a></span> <span class="parameter-name">request</span></span>)</span>?</span>
   
 
 </dt>
 <dd>
   Construit le widget de liste à partir de la requête neutre complète.
+<code>null</code> ⇒ la vue est décrite par <a href="../zcrud_core/ZListCustomLayout/entityView.html">entityView</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="entityView" class="property">
+  <span class="name"><a href="../zcrud_core/ZListCustomLayout/entityView.html">entityView</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_core/ZEntityListViewBuilder.html">ZEntityListViewBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Construit le widget de liste à partir de la requête neutre <strong>et</strong> du
+résolveur d'entités — prioritaire sur <a href="../zcrud_core/ZListCustomLayout/customView.html">customView</a>. <code>null</code> ⇒ la vue est
+décrite par <a href="../zcrud_core/ZListCustomLayout/customView.html">customView</a>.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -212,6 +238,25 @@ reçoit alors l'entité <code>T</code> résolue au lieu de la seule <code>ZListR
   </section>
     
     
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="forEntity" class="callable">
+  <span class="name"><a href="../zcrud_core/ZListCustomLayout/forEntity.html">forEntity</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../zcrud_core/ZEntity-class.html">ZEntity</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="forEntity-param-view"><span class="type-annotation"><a href="../zcrud_core/ZEntityListViewBuilder.html">ZEntityListViewBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">view</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_core/ZListCustomLayout-class.html">ZListCustomLayout</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Construit la vue personnalisée <strong>typée</strong> : <code>view</code> reçoit le résolveur
+<code>ZListRow → T?</code> de la liste.
+  
+
+</dd>
+
+    </dl>
+  </section>
     
 
   </div> <!-- /.main-content -->
@@ -237,7 +282,7 @@ reçoit alors l'entité <code>T</code> résolue au lieu de la seule <code>ZListR
 <footer>
   <span class="no-break">
     zcrud_core
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

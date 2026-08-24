@@ -98,6 +98,14 @@ transverses et préexistent au chat.</p>
   Encadré d'alerte.
 </dd>
 
+          <dt id="ZAllowAllChatRouteGate">
+  <span class="name "><a href="../zcrud_chat_kernel/ZAllowAllChatRouteGate-class.html">ZAllowAllChatRouteGate</a></span> 
+
+</dt>
+<dd>
+  Gate qui <strong>autorise</strong> tout.
+</dd>
+
           <dt id="ZChatAction">
   <span class="name "><a href="../zcrud_chat_kernel/ZChatAction-class.html">ZChatAction</a></span> 
 
@@ -156,6 +164,123 @@ est <strong>refusée</strong>, l'executor n'a <strong>pas</strong> été touché
 confirmation <strong>DÉRIVÉE</strong>.
 </dd>
 
+          <dt id="ZChatArtifactContent">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactContent-class.html">ZChatArtifactContent</a></span> 
+
+</dt>
+<dd>
+  Contenu <strong>opaque</strong> produit par un port de génération d'artefact.
+</dd>
+
+          <dt id="ZChatArtifactDeclaration">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration-class.html">ZChatArtifactDeclaration</a></span> 
+
+</dt>
+<dd>
+  La déclaration d'un artefact par l'hôte.
+</dd>
+
+          <dt id="ZChatArtifactEmptyInputFailure">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactEmptyInputFailure-class.html">ZChatArtifactEmptyInputFailure</a></span> 
+
+</dt>
+<dd>
+  Échec : la génération a été <strong>refusée</strong> parce que la matière (ou le sujet
+exigé) est vide. Aucun appel n'a eu lieu, aucune occupation n'a été posée.
+</dd>
+
+          <dt id="ZChatArtifactEmptyResultFailure">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactEmptyResultFailure-class.html">ZChatArtifactEmptyResultFailure</a></span> 
+
+</dt>
+<dd>
+  Échec : le port a répondu, mais avec un contenu <strong>vide</strong> — rien n'a été
+écrit, l'artefact précédent (s'il existait) est intact.
+</dd>
+
+          <dt id="ZChatArtifactExistence">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactExistence-class.html">ZChatArtifactExistence</a></span> 
+
+</dt>
+<dd>
+  Ce que le stockage <strong>sait</strong> d'un artefact : présent ? combien ?
+</dd>
+
+          <dt id="ZChatArtifactGenerationFailure">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactGenerationFailure-class.html">ZChatArtifactGenerationFailure</a></span> 
+
+</dt>
+<dd>
+  Échec : le port ou l'écriture a <strong>levé</strong> une exception. Elle est capturée
+et convertie — jamais propagée (invariant AD-10) — et l'occupation a été
+retirée.
+</dd>
+
+          <dt id="ZChatArtifactGenerationPort">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactGenerationPort-class.html">ZChatArtifactGenerationPort</a></span> 
+
+</dt>
+<dd>
+  Port de génération d'un artefact à contenu opaque — implémenté par l'hôte.
+</dd>
+
+          <dt id="ZChatArtifactGenerationRequest">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactGenerationRequest-class.html">ZChatArtifactGenerationRequest</a></span> 
+
+</dt>
+<dd>
+  Requête <strong>immuable</strong> de génération d'un artefact.
+</dd>
+
+          <dt id="ZChatArtifactGenerationRunner">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactGenerationRunner-class.html">ZChatArtifactGenerationRunner</a></span> 
+
+</dt>
+<dd>
+  La séquence de génération câblée aux ports de ce fichier : un port de
+génération à contenu opaque, un stockage.
+</dd>
+
+          <dt id="ZChatArtifactRegistry">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactRegistry-class.html">ZChatArtifactRegistry</a></span> 
+
+</dt>
+<dd>
+  Le <strong>registre</strong> des artefacts déclarés par l'hôte.
+</dd>
+
+          <dt id="ZChatArtifactStatePort">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactStatePort-class.html">ZChatArtifactStatePort</a></span> 
+
+</dt>
+<dd>
+  Port de lecture de l'<strong>existence</strong> d'un artefact — implémenté par l'hôte.
+</dd>
+
+          <dt id="ZChatArtifactStatus">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactStatus-class.html">ZChatArtifactStatus</a></span> 
+
+</dt>
+<dd>
+  L'état <strong>dérivé</strong> d'un artefact, tel que le rendu le consomme.
+</dd>
+
+          <dt id="ZChatArtifactStorePort">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactStorePort-class.html">ZChatArtifactStorePort</a></span> 
+
+</dt>
+<dd>
+  Port de stockage d'un artefact, implémenté par l'hôte.
+</dd>
+
+          <dt id="ZChatArtifactVerb">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactVerb-class.html">ZChatArtifactVerb</a></span> 
+
+</dt>
+<dd>
+  Un verbe offert sur un artefact, déclaré par l'hôte.
+</dd>
+
           <dt id="ZChatAttachment">
   <span class="name "><a href="../zcrud_chat_kernel/ZChatAttachment-class.html">ZChatAttachment</a></span> 
 
@@ -187,6 +312,38 @@ confirmation <strong>DÉRIVÉE</strong>.
 </dt>
 <dd>
   Échec <strong>typé</strong> d'un cycle de capture (invariant AD-5).
+</dd>
+
+          <dt id="ZChatCascadeRouteCatalog">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatCascadeRouteCatalog-class.html">ZChatCascadeRouteCatalog</a></span> 
+
+</dt>
+<dd>
+  Catalogue assemblé depuis des sources ordonnées.
+</dd>
+
+          <dt id="ZChatCatalogState">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatCatalogState-class.html">ZChatCatalogState</a></span> 
+
+</dt>
+<dd>
+  <strong>Catalogue filtrable</strong> — sélection vide ⇒ <strong>tout le catalogue</strong>.
+</dd>
+
+          <dt id="ZChatChoiceState">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatChoiceState-class.html">ZChatChoiceState</a></span> 
+
+</dt>
+<dd>
+  <strong>Choix parmi des options</strong> — non ordonné, <code>null</code> signifie « rien de choisi ».
+</dd>
+
+          <dt id="ZChatCommandState">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatCommandState-class.html">ZChatCommandState</a></span> 
+
+</dt>
+<dd>
+  <strong>Action ponctuelle</strong> — elle se déclenche, elle ne se règle pas.
 </dd>
 
           <dt id="ZChatComputeEffort">
@@ -379,6 +536,22 @@ traversant intact ou reconstruit par le codec <code>ZTypeRegistry</code> qu'il a
 enregistré.
 </dd>
 
+          <dt id="ZChatCustomToolState">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatCustomToolState-class.html">ZChatCustomToolState</a></span> 
+
+</dt>
+<dd>
+  <strong>Nature d'hôte</strong> — l'échappatoire du vocabulaire scellé (invariant AD-4).
+</dd>
+
+          <dt id="ZChatCycleState">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatCycleState-class.html">ZChatCycleState</a></span> 
+
+</dt>
+<dd>
+  <strong>Cycle 0..N</strong> — un tap avance d'un cran, et le dernier cran <strong>revient à 0</strong>.
+</dd>
+
           <dt id="ZChatDeleteAction">
   <span class="name "><a href="../zcrud_chat_kernel/ZChatDeleteAction-class.html">ZChatDeleteAction</a></span> 
 
@@ -418,6 +591,15 @@ enregistré.
 </dt>
 <dd>
   Saisie en cours de l'utilisateur (« composer ») transportée par une action.
+</dd>
+
+          <dt id="ZChatDraftRequestBuilder">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatDraftRequestBuilder-class.html">ZChatDraftRequestBuilder</a></span> 
+
+</dt>
+<dd>
+  Traduit un <a href="../zcrud_chat_kernel/ZChatDraft-class.html">ZChatDraft</a> en <a href="../zcrud_chat_kernel/ZChatGenerationRequest-class.html">ZChatGenerationRequest</a> en copiant
+<strong>intégralement</strong> le brouillon — texte <strong>et</strong> pièces jointes.
 </dd>
 
           <dt id="ZChatEditAction">
@@ -471,6 +653,74 @@ valeur.
   Style de génération, <strong>immuable</strong> et <strong>ouvert</strong>.
 </dd>
 
+          <dt id="ZChatInertRouteCatalog">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatInertRouteCatalog-class.html">ZChatInertRouteCatalog</a></span> 
+
+</dt>
+<dd>
+  Catalogue <strong>inerte</strong> : aucun routeur, refus typé
+(<code>ZUnsupportedOperationFailure</code>, opération <code>resolveRouter</code>).
+</dd>
+
+          <dt id="ZChatInertRouteHandlers">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatInertRouteHandlers-class.html">ZChatInertRouteHandlers</a></span> 
+
+</dt>
+<dd>
+  Annuaire <strong>inerte</strong> : aucun gestionnaire.
+</dd>
+
+          <dt id="ZChatInMemoryArtifactStore">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatInMemoryArtifactStore-class.html">ZChatInMemoryArtifactStore</a></span> 
+
+</dt>
+<dd>
+  Implémentation en mémoire de <a href="../zcrud_chat_kernel/ZChatArtifactStorePort-class.html">ZChatArtifactStorePort</a> — référence du
+contrat, utilisable en test et comme stockage volatil.
+</dd>
+
+          <dt id="ZChatInMemoryRouteCatalog">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatInMemoryRouteCatalog-class.html">ZChatInMemoryRouteCatalog</a></span> 
+
+</dt>
+<dd>
+  Catalogue <strong>mémoire</strong>, immuable : une valeur, jamais un état.
+</dd>
+
+          <dt id="ZChatInMemoryRouterRepository">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatInMemoryRouterRepository-class.html">ZChatInMemoryRouterRepository</a></span> 
+
+</dt>
+<dd>
+  Dépôt de routeurs en mémoire, à sémantique documentaire.
+</dd>
+
+          <dt id="ZChatInMemoryTranscript">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatInMemoryTranscript-class.html">ZChatInMemoryTranscript</a></span> 
+
+</dt>
+<dd>
+  Implémentation en mémoire de <a href="../zcrud_chat_kernel/ZChatTranscriptPort-class.html">ZChatTranscriptPort</a> — référence du contrat
+et fil volatil pour les tests.
+</dd>
+
+          <dt id="ZChatInvalidatingRouterRepository">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatInvalidatingRouterRepository-class.html">ZChatInvalidatingRouterRepository</a></span> 
+
+</dt>
+<dd>
+  Décorateur d'invalidation d'un dépôt de routeurs.
+</dd>
+
+          <dt id="ZChatMapRouteHandlers">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatMapRouteHandlers-class.html">ZChatMapRouteHandlers</a></span> 
+
+</dt>
+<dd>
+  Annuaire <strong>mémoire</strong>, immuable : <a href="../zcrud_chat_kernel/ZChatMapRouteHandlers/withStreamPort.html">withStreamPort</a> et <a href="../zcrud_chat_kernel/ZChatMapRouteHandlers/withGenerationPort.html">withGenerationPort</a>
+rendent un <strong>nouvel</strong> annuaire.
+</dd>
+
           <dt id="ZChatMessage">
   <span class="name "><a href="../zcrud_chat_kernel/ZChatMessage-class.html">ZChatMessage</a></span> 
 
@@ -485,6 +735,14 @@ valeur.
 </dt>
 <dd>
   Un extrait de message qui a <strong>répondu</strong> à la recherche.
+</dd>
+
+          <dt id="ZChatModelRef">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatModelRef-class.html">ZChatModelRef</a></span> 
+
+</dt>
+<dd>
+  Référence <strong>opaque</strong> à un modèle, avec son fournisseur optionnel.
 </dd>
 
           <dt id="ZChatModerationFailure">
@@ -554,6 +812,22 @@ fournisseur — ce n'est ni une panne, ni un quota.
   Régénérer la réponse d'un message.
 </dd>
 
+          <dt id="ZChatRemoteRouteCatalogSource">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRemoteRouteCatalogSource-class.html">ZChatRemoteRouteCatalogSource</a></span> 
+
+</dt>
+<dd>
+  Source lisant un backend par l'ouvreur de l'hôte.
+</dd>
+
+          <dt id="ZChatRepositoryRouteCatalogSource">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRepositoryRouteCatalogSource-class.html">ZChatRepositoryRouteCatalogSource</a></span> 
+
+</dt>
+<dd>
+  Source lisant un dépôt de routeurs.
+</dd>
+
           <dt id="ZChatRequestToken">
   <span class="name "><a href="../zcrud_chat_kernel/ZChatRequestToken-class.html">ZChatRequestToken</a></span> 
 
@@ -594,6 +868,122 @@ l'appelant, transmise à l'appel, jamais stockée par le port.
 <dd>
   Une surface <strong>éditable par l'utilisateur</strong>, et le SEUL puits d'un
 <a href="../zcrud_chat_kernel/ZUnreviewedText-class.html">ZUnreviewedText</a>.
+</dd>
+
+          <dt id="ZChatRouteCatalogDecoder">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRouteCatalogDecoder-class.html">ZChatRouteCatalogDecoder</a></span> 
+
+</dt>
+<dd>
+  Décodeur d'un catalogue reçu, paramétré par une <a href="../zcrud_chat_kernel/ZChatRouteCatalogShape-class.html">ZChatRouteCatalogShape</a>.
+</dd>
+
+          <dt id="ZChatRouteCatalogDecodeReport">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRouteCatalogDecodeReport-class.html">ZChatRouteCatalogDecodeReport</a></span> 
+
+</dt>
+<dd>
+  Résultat d'un décodage : les routeurs lus et les éléments refusés.
+</dd>
+
+          <dt id="ZChatRouteCatalogPort">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRouteCatalogPort-class.html">ZChatRouteCatalogPort</a></span> 
+
+</dt>
+<dd>
+  Port de lecture des routeurs.
+</dd>
+
+          <dt id="ZChatRouteCatalogQuery">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRouteCatalogQuery-class.html">ZChatRouteCatalogQuery</a></span> 
+
+</dt>
+<dd>
+  Ce que la source demande à l'ouvreur : un routeur (<a href="../zcrud_chat_kernel/ZChatRouteCatalogQuery/id.html">id</a>) ou tous
+(<code>id == null</code>).
+</dd>
+
+          <dt id="ZChatRouteCatalogRejection">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRouteCatalogRejection-class.html">ZChatRouteCatalogRejection</a></span> 
+
+</dt>
+<dd>
+  Un élément du catalogue <strong>refusé</strong> par le décodeur, avec sa position et
+la raison.
+</dd>
+
+          <dt id="ZChatRouteCatalogShape">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRouteCatalogShape-class.html">ZChatRouteCatalogShape</a></span> 
+
+</dt>
+<dd>
+  Forme d'un catalogue reçu : <strong>une donnée</strong> qui dit comment traduire les
+clés d'un backend vers le schéma canonique du routeur.
+</dd>
+
+          <dt id="ZChatRouteCatalogSource">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRouteCatalogSource-class.html">ZChatRouteCatalogSource</a></span> 
+
+</dt>
+<dd>
+  Une source de routeurs, enchaînable en cascade.
+</dd>
+
+          <dt id="ZChatRouteGate">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRouteGate-class.html">ZChatRouteGate</a></span> 
+
+</dt>
+<dd>
+  Décide si une tâche peut emprunter une route.
+</dd>
+
+          <dt id="ZChatRouteHandlers">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRouteHandlers-class.html">ZChatRouteHandlers</a></span> 
+
+</dt>
+<dd>
+  Annuaire des ports exécutant les routes.
+</dd>
+
+          <dt id="ZChatRouter">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRouter-class.html">ZChatRouter</a></span> 
+
+</dt>
+<dd>
+  Un routeur IA — entité canonique <strong>extensible</strong>.
+</dd>
+
+          <dt id="ZChatRouteResolution">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRouteResolution-class.html">ZChatRouteResolution</a></span> 
+
+</dt>
+<dd>
+  Ce qu'un routeur déclare pour une clé de tâche, replis appliqués.
+</dd>
+
+          <dt id="ZChatRouteSpec">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatRouteSpec-class.html">ZChatRouteSpec</a></span> 
+
+</dt>
+<dd>
+  Déclaration d'une <strong>route</strong> pour une clé de tâche.
+</dd>
+
+          <dt id="ZChatScaleState">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatScaleState-class.html">ZChatScaleState</a></span> 
+
+</dt>
+<dd>
+  <strong>Échelle continue à repères</strong> — <code>value == null</code> signifie « non réglée ».
+</dd>
+
+          <dt id="ZChatSequentialRequestIds">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatSequentialRequestIds-class.html">ZChatSequentialRequestIds</a></span> 
+
+</dt>
+<dd>
+  Fabrique <strong>déterministe</strong> d'identités de requête :
+<code>&lt;conversationId&gt;:&lt;n&gt;</code>, <code>n</code> croissant à partir de <code>start</code>.
 </dd>
 
           <dt id="ZChatSettingsAwareActionExecutor">
@@ -677,6 +1067,32 @@ transport ici ; aucune dépendance tierce).
   Ce qu'on demande à lire.
 </dd>
 
+          <dt id="ZChatSseLine">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatSseLine-class.html">ZChatSseLine</a></span> 
+
+</dt>
+<dd>
+  Une ligne du flux SSE, déjà décodée et classée.
+</dd>
+
+          <dt id="ZChatSseStreamPort">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatSseStreamPort-class.html">ZChatSseStreamPort</a></span> 
+
+</dt>
+<dd>
+  <code>ZChatStreamPort</code> sur un transport <strong>Server-Sent Events</strong>, paramétré par
+l'ouvreur et le décodeur de l'hôte.
+</dd>
+
+          <dt id="ZChatStaticRouteCatalogSource">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatStaticRouteCatalogSource-class.html">ZChatStaticRouteCatalogSource</a></span> 
+
+</dt>
+<dd>
+  Source <strong>statique</strong> : une liste figée de routeurs, typiquement le repli
+embarqué d'un hôte ou le jeu d'un test.
+</dd>
+
           <dt id="ZChatStreamEvent">
   <span class="name "><a href="../zcrud_chat_kernel/ZChatStreamEvent-class.html">ZChatStreamEvent</a></span> 
 
@@ -742,12 +1158,122 @@ le corps du message — cf. le motif documenté en tête de fichier).
   Une étape de raisonnement (« quel agent a fait quoi »), immuable.
 </dd>
 
+          <dt id="ZChatToggleState">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatToggleState-class.html">ZChatToggleState</a></span> 
+
+</dt>
+<dd>
+  <strong>Bascule booléenne</strong> — la nature la plus simple.
+</dd>
+
           <dt id="ZChatTokenEvent">
   <span class="name "><a href="../zcrud_chat_kernel/ZChatTokenEvent-class.html">ZChatTokenEvent</a></span> 
 
 </dt>
 <dd>
   Fragment de texte incrémental de la réponse.
+</dd>
+
+          <dt id="ZChatToolCatalog">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatToolCatalog-class.html">ZChatToolCatalog</a></span> 
+
+</dt>
+<dd>
+  Le catalogue déclaré : des sections, des entrées, et <strong>rien d'autre</strong>.
+</dd>
+
+          <dt id="ZChatToolCondition">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatToolCondition-class.html">ZChatToolCondition</a></span> 
+
+</dt>
+<dd>
+  Une <strong>condition déclarative</strong> sur l'état du catalogue : une conjonction
+« ces clés-là actives, ces clés-là inactives ».
+</dd>
+
+          <dt id="ZChatToolEntry">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatToolEntry-class.html">ZChatToolEntry</a></span> 
+
+</dt>
+<dd>
+  Une entrée d'outil déclarée : une identité, une nature, un état, et les
+règles qui décident de sa présence.
+</dd>
+
+          <dt id="ZChatToolResolution">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatToolResolution-class.html">ZChatToolResolution</a></span> 
+
+</dt>
+<dd>
+  L'état dérivé du catalogue pour une surface et une recherche données.
+</dd>
+
+          <dt id="ZChatToolResolvedEntry">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatToolResolvedEntry-class.html">ZChatToolResolvedEntry</a></span> 
+
+</dt>
+<dd>
+  Une entrée telle que la surface doit la rendre : l'entrée, et sa
+disponibilité <strong>motivée</strong>.
+</dd>
+
+          <dt id="ZChatToolResolvedSection">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatToolResolvedSection-class.html">ZChatToolResolvedSection</a></span> 
+
+</dt>
+<dd>
+  Une section telle que la surface doit la rendre, avec ses entrées déjà
+ordonnées. Une section <strong>sans entrée visible n'est pas rendue</strong> : elle
+n'apparaît pas dans <a href="../zcrud_chat_kernel/ZChatToolResolution/sections.html">ZChatToolResolution.sections</a>.
+</dd>
+
+          <dt id="ZChatToolRule">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatToolRule-class.html">ZChatToolRule</a></span> 
+
+</dt>
+<dd>
+  Une <strong>règle de désactivation</strong> : une condition, et le jeton de la raison à
+montrer quand elle mord.
+</dd>
+
+          <dt id="ZChatToolSection">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatToolSection-class.html">ZChatToolSection</a></span> 
+
+</dt>
+<dd>
+  Une section titrée du catalogue.
+</dd>
+
+          <dt id="ZChatToolState">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatToolState-class.html">ZChatToolState</a></span> 
+
+</dt>
+<dd>
+  L'état courant d'un outil, et ce qu'il sait faire de lui-même.
+</dd>
+
+          <dt id="ZChatTranscriptPort">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatTranscriptPort-class.html">ZChatTranscriptPort</a></span> 
+
+</dt>
+<dd>
+  Port du fil d'une conversation — implémenté par l'hôte.
+</dd>
+
+          <dt id="ZChatTtlRouteCatalog">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatTtlRouteCatalog-class.html">ZChatTtlRouteCatalog</a></span> 
+
+</dt>
+<dd>
+  Source <strong>avec cache</strong> : mémorise les réponses de <a href="../zcrud_chat_kernel/ZChatTtlRouteCatalog/inner.html">inner</a> pendant <a href="../zcrud_chat_kernel/ZChatTtlRouteCatalog/ttl.html">ttl</a>.
+</dd>
+
+          <dt id="ZChatUnsupportedActionExecutor">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatUnsupportedActionExecutor-class.html">ZChatUnsupportedActionExecutor</a></span> 
+
+</dt>
+<dd>
+  Exécuteur qui refuse tout, membre par membre, sous-classable.
 </dd>
 
           <dt id="ZComparisonColumn">
@@ -783,6 +1309,15 @@ l'héritage d'une classe sérialisée).
 <dd>
   Variant <strong>OUVERT</strong> : tout <code>type</code> que le cœur ne connaît pas, <strong>payload
 préservé verbatim</strong>.
+</dd>
+
+          <dt id="ZDenyAllChatRouteGate">
+  <span class="name "><a href="../zcrud_chat_kernel/ZDenyAllChatRouteGate-class.html">ZDenyAllChatRouteGate</a></span> 
+
+</dt>
+<dd>
+  Gate qui <strong>refuse</strong> tout — le défaut quand un catalogue est déclaré sans
+gate explicite.
 </dd>
 
           <dt id="ZKeyDefinitionBlock">
@@ -864,6 +1399,22 @@ direct inexprimable.
     <section class="summary offset-anchor" id="enums">
       <h2>Enums</h2>
       <dl>
+          <dt id="ZChatArtifactPhase">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactPhase.html">ZChatArtifactPhase</a></span> 
+
+</dt>
+<dd>
+  Phase d'un artefact.
+</dd>
+
+          <dt id="ZChatArtifactVerbAvailability">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatArtifactVerbAvailability.html">ZChatArtifactVerbAvailability</a></span> 
+
+</dt>
+<dd>
+  Dans quel <strong>état</strong> de l'artefact un verbe est offert.
+</dd>
+
           <dt id="ZChatCaptureRejection">
   <span class="name "><a href="../zcrud_chat_kernel/ZChatCaptureRejection.html">ZChatCaptureRejection</a></span> 
 
@@ -973,6 +1524,14 @@ long »), orthogonal à <a href="../zcrud_chat_kernel/ZChatResponseLength.html">
   Statut d'usage d'une source dans la réponse.
 </dd>
 
+          <dt id="ZChatSseField">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatSseField.html">ZChatSseField</a></span> 
+
+</dt>
+<dd>
+  Le champ SSE porté par une ligne.
+</dd>
+
           <dt id="ZChatSuggestionActionType">
   <span class="name "><a href="../zcrud_chat_kernel/ZChatSuggestionActionType.html">ZChatSuggestionActionType</a></span> 
 
@@ -989,6 +1548,30 @@ long »), orthogonal à <a href="../zcrud_chat_kernel/ZChatResponseLength.html">
   Nature d'une suggestion de relance.
 </dd>
 
+          <dt id="ZChatToolHiddenReason">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatToolHiddenReason.html">ZChatToolHiddenReason</a></span> 
+
+</dt>
+<dd>
+  Pourquoi une entrée déclarée n'est pas rendue par la surface interrogée.
+</dd>
+
+          <dt id="ZChatToolProminence">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatToolProminence.html">ZChatToolProminence</a></span> 
+
+</dt>
+<dd>
+  Où un outil est <strong>proéminent</strong>.
+</dd>
+
+          <dt id="ZChatToolSurface">
+  <span class="name "><a href="../zcrud_chat_kernel/ZChatToolSurface.html">ZChatToolSurface</a></span> 
+
+</dt>
+<dd>
+  La surface qui interroge le catalogue.
+</dd>
+
       </dl>
     </section>
 
@@ -998,6 +1581,143 @@ long »), orthogonal à <a href="../zcrud_chat_kernel/ZChatResponseLength.html">
     <section class="summary offset-anchor" id="constants">
       <h2>Constants</h2>
       <dl class="properties">
+          <dt id="$ZChatModelRefFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/$ZChatModelRefFieldSpecs-constant.html">$ZChatModelRefFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Sous-schéma d'édition d'une référence de modèle — items des sous-listes
+<code>fallbacks</code> d'une route et d'un routeur. Aucun libellé : les textes
+viennent de l'hôte, par clé.
+  
+
+</dd>
+
+          <dt id="$ZChatRouterFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/$ZChatRouterFieldSpecs-constant.html">$ZChatRouterFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Schéma d'édition <strong>complet</strong> du routeur — consommé par le moteur
+d'édition et le moteur de liste via <a href="../zcrud_chat_kernel/registerZChatRouter.html">registerZChatRouter</a>. Aucun libellé.
+  
+
+</dd>
+
+          <dt id="$ZChatRouteSpecFieldSpecs" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/$ZChatRouteSpecFieldSpecs-constant.html">$ZChatRouteSpecFieldSpecs</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZFieldSpec</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Sous-schéma d'édition d'une route — items de la sous-liste <code>routes</code> d'un
+routeur. Aucun libellé : les textes viennent de l'hôte.
+  
+
+</dd>
+
+          <dt id="kZChatArtifactPrimaryRepresentation" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatArtifactPrimaryRepresentation-constant.html">kZChatArtifactPrimaryRepresentation</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nom de la représentation <strong>principale</strong> d'un artefact.
+  
+
+</dd>
+
+          <dt id="kZChatArtifactVerbCreate" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatArtifactVerbCreate-constant.html">kZChatArtifactVerbCreate</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Verbe « créer » — offert quand l'artefact est <strong>absent</strong>.
+  
+
+</dd>
+
+          <dt id="kZChatArtifactVerbDelete" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatArtifactVerbDelete-constant.html">kZChatArtifactVerbDelete</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Verbe « supprimer » — offert quand présent et éditable ; <strong>destructeur</strong>.
+  
+
+</dd>
+
+          <dt id="kZChatArtifactVerbEdit" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatArtifactVerbEdit-constant.html">kZChatArtifactVerbEdit</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Verbe « modifier » — offert quand l'artefact est présent <strong>et</strong> éditable.
+  
+
+</dd>
+
+          <dt id="kZChatArtifactVerbOpen" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatArtifactVerbOpen-constant.html">kZChatArtifactVerbOpen</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Verbe « ouvrir / afficher » — offert quand l'artefact est <strong>présent</strong>, y
+compris en lecture seule.
+  
+
+</dd>
+
+          <dt id="kZChatArtifactVerbPrint" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatArtifactVerbPrint-constant.html">kZChatArtifactVerbPrint</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Verbe « imprimer / exporter » — offert quand présent, lecture seule comprise.
+  
+
+</dd>
+
+          <dt id="kZChatArtifactVerbRegenerate" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatArtifactVerbRegenerate-constant.html">kZChatArtifactVerbRegenerate</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Verbe « régénérer » — offert quand l'artefact est présent <strong>et</strong> éditable.
+  
+
+</dd>
+
+          <dt id="kZChatArtifactVerbShare" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatArtifactVerbShare-constant.html">kZChatArtifactVerbShare</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Verbe « partager » — offert quand présent, lecture seule comprise.
+  
+
+</dd>
+
           <dt id="kZChatCapabilityWebSearch" class="constant">
     <span class="name "><a href="../zcrud_chat_kernel/kZChatCapabilityWebSearch-constant.html">kZChatCapabilityWebSearch</a></span>
   <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
@@ -1123,6 +1843,18 @@ consommée par le décodage ET par le retrait qui l'empêche de polluer
 
 </dd>
 
+          <dt id="kZChatRouterKind" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatRouterKind-constant.html">kZChatRouterKind</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  <code>kind</code> sous lequel <a href="../zcrud_chat_kernel/registerZChatRouter.html">registerZChatRouter</a> enregistre le routeur par défaut.
+  
+
+</dd>
+
           <dt id="kZChatSearchDefaultLimit" class="constant">
     <span class="name "><a href="../zcrud_chat_kernel/kZChatSearchDefaultLimit-constant.html">kZChatSearchDefaultLimit</a></span>
   <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
@@ -1172,6 +1904,19 @@ dupliquée dans les deux sens de lecture.
 
 </dd>
 
+          <dt id="kZChatSseDoneSentinel" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatSseDoneSentinel-constant.html">kZChatSseDoneSentinel</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Sentinelle de fin de flux, conventionnelle chez les fournisseurs de
+streaming : une ligne <code>data: [DONE]</code> termine le flux <strong>proprement</strong>.
+  
+
+</dd>
+
           <dt id="kZChatStreamEventReadAliases" class="constant">
     <span class="name "><a href="../zcrud_chat_kernel/kZChatStreamEventReadAliases-constant.html">kZChatStreamEventReadAliases</a></span>
   <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
@@ -1192,6 +1937,188 @@ dupliquée dans les deux sens de lecture.
 </dt>
 <dd>
   Clé persistée du discriminant d'événement.
+  
+
+</dd>
+
+          <dt id="kZChatToolKindCatalog" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolKindCatalog-constant.html">kZChatToolKindCatalog</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nature « catalogue filtrable » — sélection vide ⇒ <strong>tout</strong>.
+  
+
+</dd>
+
+          <dt id="kZChatToolKindChoice" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolKindChoice-constant.html">kZChatToolKindChoice</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nature « choix parmi des options » (non ordonné).
+  
+
+</dd>
+
+          <dt id="kZChatToolKindCommand" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolKindCommand-constant.html">kZChatToolKindCommand</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nature « action ponctuelle » — sans état, donc jamais active.
+  
+
+</dd>
+
+          <dt id="kZChatToolKindCycle" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolKindCycle-constant.html">kZChatToolKindCycle</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nature « cycle 0..N » — un seul point de contact règle N+1 crans.
+  
+
+</dd>
+
+          <dt id="kZChatToolKindScale" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolKindScale-constant.html">kZChatToolKindScale</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nature « échelle continue à repères » (ordonnée).
+  
+
+</dd>
+
+          <dt id="kZChatToolKindToggle" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolKindToggle-constant.html">kZChatToolKindToggle</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Nature « bascule booléenne ».
+  
+
+</dd>
+
+          <dt id="kZChatToolSearchSectionThreshold" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolSearchSectionThreshold-constant.html">kZChatToolSearchSectionThreshold</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Nombre de sections à partir duquel une recherche vaut la peine d'être
+offerte (<a href="../zcrud_chat_kernel/ZChatToolCatalog/searchRecommended.html">ZChatToolCatalog.searchRecommended</a>).
+  
+
+</dd>
+
+          <dt id="kZChatToolSectionUnassigned" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolSectionUnassigned-constant.html">kZChatToolSectionUnassigned</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Clé de la section qui recueille les entrées sans section déclarée (ou dont
+la section est inconnue). Elle est rendue <strong>en dernier</strong> et sans libellé.
+  
+
+</dd>
+
+          <dt id="kZChatToolTokenAll" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolTokenAll-constant.html">kZChatToolTokenAll</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Jeton d'état d'un catalogue <strong>non filtré</strong> (sélection vide ⇒ tout).
+  
+
+</dd>
+
+          <dt id="kZChatToolTokenIdle" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolTokenIdle-constant.html">kZChatToolTokenIdle</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Jeton d'état d'une action ponctuelle (elle n'a pas d'autre état).
+  
+
+</dd>
+
+          <dt id="kZChatToolTokenNone" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolTokenNone-constant.html">kZChatToolTokenNone</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Jeton d'état « rien de choisi » (choix, échelle sans valeur).
+  
+
+</dd>
+
+          <dt id="kZChatToolTokenOff" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolTokenOff-constant.html">kZChatToolTokenOff</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Jeton d'état d'une bascule inactive.
+  
+
+</dd>
+
+          <dt id="kZChatToolTokenOn" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolTokenOn-constant.html">kZChatToolTokenOn</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Jeton d'état d'une bascule active.
+  
+
+</dd>
+
+          <dt id="kZChatToolTokenSelected" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolTokenSelected-constant.html">kZChatToolTokenSelected</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Jeton d'état d'un catalogue filtré.
+  
+
+</dd>
+
+          <dt id="kZChatToolTokenValue" class="constant">
+    <span class="name "><a href="../zcrud_chat_kernel/kZChatToolTokenValue-constant.html">kZChatToolTokenValue</a></span>
+  <span class="signature">&#8594; const <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Jeton d'état d'une échelle valuée <strong>sans repère</strong> déclaré.
   
 
 </dd>
@@ -1275,6 +2202,20 @@ dupliquée dans les deux sens de lecture.
     <section class="summary offset-anchor" id="functions">
       <h2>Functions</h2>
       <dl class="callables">
+          <dt id="registerZChatRouter" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/registerZChatRouter.html">registerZChatRouter</a></span><span class="signature">(<wbr><span class="parameter" id="registerZChatRouter-param-registry"><span class="type-annotation">ZcrudRegistry</span> <span class="parameter-name">registry</span>, {</span><span class="parameter" id="registerZChatRouter-param-kind"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">kind</span> = <span class="default-value">kZChatRouterKind</span>, </span><span class="parameter" id="registerZChatRouter-param-extensionParser"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatExtensionParser.html">ZChatExtensionParser</a>?</span> <span class="parameter-name">extensionParser</span></span>})
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Enregistre le codec <strong>et</strong> le schéma du routeur sur <code>registry</code>, sous
+<code>kind</code> (défaut <a href="../zcrud_chat_kernel/kZChatRouterKind-constant.html">kZChatRouterKind</a>).
+  
+
+</dd>
+
           <dt id="zChatAccessibleTextOf" class="callable">
   <span class="name"><a href="../zcrud_chat_kernel/zChatAccessibleTextOf.html">zChatAccessibleTextOf</a></span><span class="signature">(<wbr><span class="parameter" id="zChatAccessibleTextOf-param-blocks"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat_kernel/ZContentBlock-class.html">ZContentBlock</a></span>&gt;</span></span> <span class="parameter-name">blocks</span>, {</span><span class="parameter" id="zChatAccessibleTextOf-param-resolver"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZAccessibleTextResolver.html">ZAccessibleTextResolver</a>?</span> <span class="parameter-name">resolver</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
@@ -1284,6 +2225,33 @@ dupliquée dans les deux sens de lecture.
 </dt>
 <dd>
   Résumé accessible d'une <strong>suite</strong> de blocs (un message entier).
+  
+
+</dd>
+
+          <dt id="zChatClassifySseLine" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/zChatClassifySseLine.html">zChatClassifySseLine</a></span><span class="signature">(<wbr><span class="parameter" id="zChatClassifySseLine-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">raw</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat_kernel/ZChatSseLine-class.html">ZChatSseLine</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Classe une ligne brute selon le protocole SSE.
+  
+
+</dd>
+
+          <dt id="zChatConfirmWithoutDialog" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/zChatConfirmWithoutDialog.html">zChatConfirmWithoutDialog</a></span><span class="signature">(<wbr><span class="parameter" id="zChatConfirmWithoutDialog-param-plan"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatActionPlan-class.html">ZChatActionPlan</a></span> <span class="parameter-name">plan</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Confirmation <strong>sans dialogue</strong> : accepte un plan qui n'exige aucune
+confirmation, <strong>refuse</strong> tout plan qui en exige une.
   
 
 </dd>
@@ -1329,6 +2297,61 @@ provenance</strong>.
 
 </dd>
 
+          <dt id="zChatRunArtifactGeneration" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/zChatRunArtifactGeneration.html">zChatRunArtifactGeneration</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span><span class="signature">(<wbr>{<span class="parameter" id="zChatRunArtifactGeneration-param-messageId"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">messageId</span>, </span><span class="parameter" id="zChatRunArtifactGeneration-param-artifactKey"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">artifactKey</span>, </span><span class="parameter" id="zChatRunArtifactGeneration-param-notes"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">notes</span>, </span><span class="parameter" id="zChatRunArtifactGeneration-param-subject"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">subject</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="zChatRunArtifactGeneration-param-subjectRequired"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">subjectRequired</span> = <span class="default-value">false</span>, </span><span class="parameter" id="zChatRunArtifactGeneration-param-mark"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatArtifactOccupancyMarker.html">ZChatArtifactOccupancyMarker</a></span> <span class="parameter-name">mark</span>, </span><span class="parameter" id="zChatRunArtifactGeneration-param-generate"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">generate</span>(), </span><span class="parameter" id="zChatRunArtifactGeneration-param-isEmpty"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isEmpty</span>(<span class="parameter" id="param-result"><span class="type-annotation">T</span> <span class="parameter-name">result</span></span>), </span><span class="parameter" id="zChatRunArtifactGeneration-param-write"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/dartz/0.10.1/dartz/Unit-class.html">Unit</a></span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">write</span>(<span class="parameter" id="param-result"><span class="type-annotation">T</span> <span class="parameter-name">result</span></span>)</span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">ZResult<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <strong>La séquence de génération</strong>, générique sur le type produit.
+  
+
+</dd>
+
+          <dt id="zChatSseJsonLineDecoder" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/zChatSseJsonLineDecoder.html">zChatSseJsonLineDecoder</a></span><span class="signature">(<wbr>{<span class="parameter" id="zChatSseJsonLineDecoder-param-typeRegistry"><span class="type-annotation">ZTypeRegistry?</span> <span class="parameter-name">typeRegistry</span>, </span><span class="parameter" id="zChatSseJsonLineDecoder-param-sourceRegistry"><span class="type-annotation">ZSourceRegistry?</span> <span class="parameter-name">sourceRegistry</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat_kernel/ZChatSseLineDecoder.html">ZChatSseLineDecoder</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Décodeur pour un backend qui émet <strong>un objet JSON par ligne de données</strong>,
+avec le discriminant <code>type</code> de <code>ZChatStreamEvent.fromJson</code>.
+  
+
+</dd>
+
+          <dt id="zChatSseLines" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/zChatSseLines.html">zChatSseLines</a></span><span class="signature">(<wbr><span class="parameter" id="zChatSseLines-param-bytes"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">bytes</span>, {</span><span class="parameter" id="zChatSseLines-param-token"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatRequestToken-class.html">ZChatRequestToken</a>?</span> <span class="parameter-name">token</span>, </span><span class="parameter" id="zChatSseLines-param-onClose"><span class="type-annotation">void</span> <span class="parameter-name">onClose</span>()?</span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat_kernel/ZChatSseLine-class.html">ZChatSseLine</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Transforme un flux d'octets SSE en flux de <a href="../zcrud_chat_kernel/ZChatSseLine-class.html">ZChatSseLine</a>.
+  
+
+</dd>
+
+          <dt id="zChatTranscriptOrEmpty" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/zChatTranscriptOrEmpty.html">zChatTranscriptOrEmpty</a></span><span class="signature">(<wbr><span class="parameter" id="zChatTranscriptOrEmpty-param-source"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat_kernel/ZChatMessage-class.html">ZChatMessage</a></span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">source</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat_kernel/ZChatMessage-class.html">ZChatMessage</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Rend <code>source</code> <strong>sans erreur</strong> : une erreur survenue avant tout instantané
+devient une liste vide ; après, le flux se ferme sur le dernier instantané
+reçu. Une lecture qui échoue n'est jamais un écran mort.
+  
+
+</dd>
+
       </dl>
     </section>
 
@@ -1350,6 +2373,21 @@ provenance</strong>.
   </dd>
 
           
+  <dt id="ZChatArtifactOccupancyMarker" class="callable">
+    <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactOccupancyMarker.html">ZChatArtifactOccupancyMarker</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-messageId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">messageId</span>, </span><span class="parameter" id="param-artifactKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">artifactKey</span>, {</span><span class="parameter" id="param-busy"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">busy</span></span>})</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Marqueur d'occupation : <code>busy: true</code> au début d'une génération,
+<code>busy: false</code> à sa fin, <strong>quelle qu'en soit l'issue</strong>.
+    
+
+  </dd>
+
+          
   <dt id="ZChatCaptureNormalizer" class="callable">
     <span class="name"><a href="../zcrud_chat_kernel/ZChatCaptureNormalizer.html">ZChatCaptureNormalizer</a></span><span class="signature">
       <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">raw</span></span>)</span></span>
@@ -1364,6 +2402,21 @@ provenance</strong>.
   </dd>
 
           
+  <dt id="ZChatCatalogLog" class="callable">
+    <span class="name"><a href="../zcrud_chat_kernel/ZChatCatalogLog.html">ZChatCatalogLog</a></span><span class="signature">
+      <span class="returntype parameter">= void Function<span class="signature">(<span class="parameter" id="param-message"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span>, {</span><span class="parameter" id="param-cause"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">cause</span></span>})</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Journal <strong>optionnel</strong> des sources et du cache : reçoit un <code>message</code>
+technique et, le cas échéant, la <code>cause</code> (échec typé ou exception).
+    
+
+  </dd>
+
+          
   <dt id="ZChatExtensionParser" class="callable">
     <span class="name"><a href="../zcrud_chat_kernel/ZChatExtensionParser.html">ZChatExtensionParser</a></span><span class="signature">
       <span class="returntype parameter">= ZExtension? Function<span class="signature">(<span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span></span>
@@ -1373,6 +2426,92 @@ provenance</strong>.
   </dt>
   <dd>
     Parseur <strong>injecté par l'hôte</strong> du slot <code>extension</code> d'une entité de chat.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatRouteCatalogOpener" class="callable">
+    <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteCatalogOpener.html">ZChatRouteCatalogOpener</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-query"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatRouteCatalogQuery-class.html">ZChatRouteCatalogQuery</a></span> <span class="parameter-name">query</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Ouvre la lecture d'un catalogue, telle que l'hôte sait le faire, et rend
+le <strong>corps texte</strong> de la réponse (JSON). Une chaîne vide signifie « rien
+ici » ; une exception signifie une <strong>panne</strong>.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatRouteFallbackBuilder" class="callable">
+    <span class="name"><a href="../zcrud_chat_kernel/ZChatRouteFallbackBuilder.html">ZChatRouteFallbackBuilder</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="../zcrud_chat_kernel/ZChatRouter-class.html">ZChatRouter</a> Function<span class="signature">(<span class="parameter" id="param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Fabrique le routeur de <strong>repli</strong> d'un hôte pour une identité épuisée.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatRouterIdGenerator" class="callable">
+    <span class="name"><a href="../zcrud_chat_kernel/ZChatRouterIdGenerator.html">ZChatRouterIdGenerator</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a> Function<span class="signature">()</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Fabrique d'identité pour un routeur éphémère.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatSseLineDecoder" class="callable">
+    <span class="name"><a href="../zcrud_chat_kernel/ZChatSseLineDecoder.html">ZChatSseLineDecoder</a></span><span class="signature">
+      <span class="returntype parameter">= ZResult<span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat_kernel/ZChatStreamEvent-class.html">ZChatStreamEvent</a></span>&gt;</span>? Function<span class="signature">(<span class="parameter" id="param-line"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatSseLine-class.html">ZChatSseLine</a></span> <span class="parameter-name">line</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Décode <strong>une</strong> ligne SSE en événement de flux.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatSseOpener" class="callable">
+    <span class="name"><a href="../zcrud_chat_kernel/ZChatSseOpener.html">ZChatSseOpener</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span>&gt;</span></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-request"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatGenerationRequest-class.html">ZChatGenerationRequest</a></span> <span class="parameter-name">request</span>, </span><span class="parameter" id="param-token"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatRequestToken-class.html">ZChatRequestToken</a></span> <span class="parameter-name">token</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Ouvre le flux d'<strong>octets</strong> d'une génération, tel que l'hôte sait le faire.
+    
+
+  </dd>
+
+          
+  <dt id="ZChatToolActivityLookup" class="callable">
+    <span class="name"><a href="../zcrud_chat_kernel/ZChatToolActivityLookup.html">ZChatToolActivityLookup</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>? Function<span class="signature">(<span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">key</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Lecture de l'activité d'une entrée par sa clé.
     
 
   </dd>
@@ -1407,7 +2546,7 @@ provenance</strong>.
 <footer>
   <span class="no-break">
     zcrud_chat_kernel
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

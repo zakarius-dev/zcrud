@@ -125,6 +125,18 @@ mordrait pas.</p>
   &#47;&#47; seul. Aucune autre requête en vol n&#39;est touchée.
   if (action is ZChatCancelAction) _tokens[action.requestId]?.cancel();
 
+  &#47;&#47; Avec le port de cycle de vie, l&#39;édition rejouée et la régénération
+  &#47;&#47; sont NATIVES : élagage, troncature locale, nouveau tour par le cycle
+  &#47;&#47; unique. La planification et la confirmation ci-dessus ont déjà eu
+  &#47;&#47; lieu — le protocole est le même que pour tout autre verbe.
+  final ZChatConversationLifecyclePort? lifecycle = _lifecycle;
+  if (lifecycle != null &amp;&amp; action is ZChatEditAction) {
+    return _editNatively(lifecycle, action);
+  }
+  if (lifecycle != null &amp;&amp; action is ZChatRegenerateAction) {
+    return _regenerateNatively(lifecycle, action);
+  }
+
   final ZResult&lt;ZChatActionOutcome&gt; outcome = await _dispatcher.execute(
     ticket,
   );
@@ -161,7 +173,7 @@ mordrait pas.</p>
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

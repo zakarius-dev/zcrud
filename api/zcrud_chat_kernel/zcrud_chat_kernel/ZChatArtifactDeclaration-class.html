@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ZChatArtifactDeclaration class from the zcrud_chat_kernel library, for the Dart programming language.">
+  <title>ZChatArtifactDeclaration class - zcrud_chat_kernel library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../zcrud_chat_kernel/">zcrud_chat_kernel.dart</a></li>
+    <li class="self-crumb">ZChatArtifactDeclaration class</li>
+  </ol>
+  <div class="self-name">ZChatArtifactDeclaration</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_chat_kernel&#47;zcrud_chat_kernel-library-sidebar.html"
+    data-below-sidebar="zcrud_chat_kernel&#47;ZChatArtifactDeclaration-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ZChatArtifactDeclaration</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>La déclaration d'un artefact par l'hôte.</p>
+<p>Tout ce que le rendu et le contrôleur ont besoin de savoir d'un artefact
+est ici, <strong>une fois</strong> : son identité, ses jetons de présentation, ses
+verbes (liste <strong>ordonnée</strong> — l'ordre est celui du menu), et s'il porte un
+compte. Ce qui en est <strong>dérivé</strong> n'est jamais redemandé :
+<a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/verbsFor.html">verbsFor</a>, <a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/requiresConfirmation.html">requiresConfirmation</a>, <a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/isDestructive.html">isDestructive</a>.</p>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ZChatArtifactDeclaration.new" class="callable">
+          <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/ZChatArtifactDeclaration.html">ZChatArtifactDeclaration</a></span><span class="signature">({<span class="parameter" id="param-key"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">key</span>, </span><span class="parameter" id="param-iconKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">iconKey</span>, </span><span class="parameter" id="param-labelToken"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">labelToken</span>, </span><span class="parameter" id="param-accentToken"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">accentToken</span>, </span><span class="parameter" id="param-verbs"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat_kernel/ZChatArtifactVerb-class.html">ZChatArtifactVerb</a></span>&gt;</span></span> <span class="parameter-name">verbs</span> = <span class="default-value">const &lt;ZChatArtifactVerb&gt;[]</span>, </span><span class="parameter" id="param-hasCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">hasCount</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-subjectRequired"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">subjectRequired</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-style"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatGenerationStyle-class.html">ZChatGenerationStyle</a>?</span> <span class="parameter-name">style</span>, </span><span class="parameter" id="param-order"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">order</span> = <span class="default-value">0</span>, </span><span class="parameter" id="param-extension"><span class="type-annotation">ZExtension?</span> <span class="parameter-name">extension</span>, </span><span class="parameter" id="param-extra"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">extra</span> = <span class="default-value">const &lt;String, dynamic&gt;{}</span></span>})</span>
+        </dt>
+        <dd>
+          Construit une déclaration. Les verbes en doublon de clé sont réduits au
+<strong>premier</strong> déclaré.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="accentToken" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/accentToken.html">accentToken</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Jeton d'accent, résolu par l'hôte. <code>null</code> ⇒ accent par défaut.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="extension" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/extension.html">extension</a></span>
+  <span class="signature">&#8594; ZExtension?</span>
+  
+
+</dt>
+<dd>
+  Slot d'extension typé versionné (invariant AD-4).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="extra" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/extra.html">extra</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Données d'hôte libres (invariant AD-4), immuables.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="hasCount" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/hasCount.html">hasCount</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si l'artefact porte un <strong>compte</strong> (nœuds, cartes…) affiché en
+pastille quand il est strictement positif.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="iconKey" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/iconKey.html">iconKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Clé d'icône opaque, résolue par l'hôte. <code>null</code> ⇒ aucune.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="isDestructive" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/isDestructive.html">isDestructive</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si <strong>au moins un</strong> verbe est destructeur.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="key" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/key.html">key</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Identité <strong>stable et opaque</strong> de l'artefact : la clé sous laquelle
+l'état est lu (<a href="../zcrud_chat_kernel/ZChatArtifactStatePort-class.html">ZChatArtifactStatePort</a>) et le contenu stocké.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="labelToken" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/labelToken.html">labelToken</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Jeton de libellé, résolu par l'hôte. <code>null</code> ⇒ l'hôte décide.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="order" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/order.html">order</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Rang de présentation (croissant) ; à égalité, l'ordre de déclaration.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="style" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/style.html">style</a></span>
+  <span class="signature">&#8594; <a href="../zcrud_chat_kernel/ZChatGenerationStyle-class.html">ZChatGenerationStyle</a>?</span>
+  
+
+</dt>
+<dd>
+  Style de génération à demander pour cet artefact, ou <code>null</code> (l'hôte ou
+le port décide). Donnée <strong>ouverte</strong> (invariant AD-4). Persisté à plat,
+sous les clés du style lui-même (<code>style</code>, <code>style_params</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="subjectRequired" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/subjectRequired.html">subjectRequired</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si la génération de cet artefact exige un <strong>sujet</strong> non vide, au
+même titre qu'une matière non vide (<code>ZChatArtifactGenerationRequest. subjectRequired</code>). Déclaré ici pour que le cas courant n'exige aucun
+ajusteur de requête.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="verbs" class="property">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/verbs.html">verbs</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat_kernel/ZChatArtifactVerb-class.html">ZChatArtifactVerb</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Verbes offerts, dans l'ordre de présentation. Une liste vide est une
+déclaration <strong>légitime</strong> : l'artefact est alors un pur indicateur d'état.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="requiresConfirmation" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/requiresConfirmation.html">requiresConfirmation</a></span><span class="signature">(<wbr><span class="parameter" id="requiresConfirmation-param-verbKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">verbKey</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si le verbe <code>verbKey</code> exige une confirmation avant exécution.
+  
+
+</dd>
+
+        <dt id="toJson" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/toJson.html">toJson</a></span><span class="signature">(<wbr>{<span class="parameter" id="toJson-param-typeRegistry"><span class="type-annotation">ZTypeRegistry?</span> <span class="parameter-name">typeRegistry</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Sérialise en clés <code>snake_case</code> ; les champs par défaut sont omis.
+  
+
+</dd>
+
+        <dt id="toString" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A string representation of this object.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="verb" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/verb.html">verb</a></span><span class="signature">(<wbr><span class="parameter" id="verb-param-verbKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">verbKey</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat_kernel/ZChatArtifactVerb-class.html">ZChatArtifactVerb</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le verbe de clé <code>verbKey</code>, ou <code>null</code>.
+  
+
+</dd>
+
+        <dt id="verbsFor" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/verbsFor.html">verbsFor</a></span><span class="signature">(<wbr><span class="parameter" id="verbsFor-param-status"><span class="type-annotation"><a href="../zcrud_chat_kernel/ZChatArtifactStatus-class.html">ZChatArtifactStatus</a></span> <span class="parameter-name">status</span>, {</span><span class="parameter" id="verbsFor-param-readOnly"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">readOnly</span> = <span class="default-value">false</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat_kernel/ZChatArtifactVerb-class.html">ZChatArtifactVerb</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Les verbes offerts pour <code>status</code> — dans l'ordre déclaré —, en lecture
+seule ou non. Un artefact <strong>en cours</strong> n'en offre aucun.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="fromJson" class="callable">
+  <span class="name"><a href="../zcrud_chat_kernel/ZChatArtifactDeclaration/fromJson.html">fromJson</a></span><span class="signature">(<wbr><span class="parameter" id="fromJson-param-raw"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">raw</span>, {</span><span class="parameter" id="fromJson-param-extensionParser"><span class="type-annotation">ZExtension?</span> <span class="parameter-name">extensionParser</span>(<span class="parameter" id="param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)?, </span><span class="parameter" id="fromJson-param-typeRegistry"><span class="type-annotation">ZTypeRegistry?</span> <span class="parameter-name">typeRegistry</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../zcrud_chat_kernel/ZChatArtifactDeclaration-class.html">ZChatArtifactDeclaration</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Décode <strong>défensivement</strong> — ne lève jamais ; sans clé ⇒ <code>null</code>.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat_kernel</a></li>
+    <li><a href="../zcrud_chat_kernel/">zcrud_chat_kernel</a></li>
+    <li class="self-crumb">ZChatArtifactDeclaration class</li>
+</ol>
+
+    <h5>zcrud_chat_kernel library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat_kernel
+      3.12.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

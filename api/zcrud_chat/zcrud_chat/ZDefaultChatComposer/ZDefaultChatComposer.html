@@ -60,12 +60,15 @@
 <li><span class="parameter" id="param-chrome"><span class="type-annotation"><a href="../../zcrud_chat/ZChatComposerChrome-class.html">ZChatComposerChrome</a>?</span> <span class="parameter-name">chrome</span>, </span></li>
 <li><span class="parameter" id="param-backgroundColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">backgroundColor</span>, </span></li>
 <li><span class="parameter" id="param-borderColor"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">borderColor</span>, </span></li>
+<li><span class="parameter" id="param-activeAccent"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Color-class.html">Color</a>?</span> <span class="parameter-name">activeAccent</span>, </span></li>
 <li><span class="parameter" id="param-clipBehavior"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/Clip.html">Clip</a></span> <span class="parameter-name">clipBehavior</span> = <span class="default-value">Clip.none</span>, </span></li>
 <li><span class="parameter" id="param-focusNode"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/FocusNode-class.html">FocusNode</a>?</span> <span class="parameter-name">focusNode</span>, </span></li>
 <li><span class="parameter" id="param-hints"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">hints</span> = <span class="default-value">const &lt;String&gt;[]</span>, </span></li>
+<li><span class="parameter" id="param-submitPolicy"><span class="type-annotation"><a href="../../zcrud_chat/ZChatComposerSubmitPolicy-class.html">ZChatComposerSubmitPolicy</a></span> <span class="parameter-name">submitPolicy</span> = <span class="default-value">ZChatComposerSubmitPolicy.standard</span>, </span></li>
 <li><span class="parameter" id="param-pickers"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_chat/ZChatComposerPickerAction-class.html">ZChatComposerPickerAction</a></span>&gt;</span></span> <span class="parameter-name">pickers</span> = <span class="default-value">const &lt;ZChatComposerPickerAction&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-onOpenTools"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-ui/VoidCallback.html">VoidCallback</a>?</span> <span class="parameter-name">onOpenTools</span>, </span></li>
 <li><span class="parameter" id="param-toolsBadge"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/Widget-class.html">Widget</a>?</span> <span class="parameter-name">toolsBadge</span>, </span></li>
+<li><span class="parameter" id="param-showToolsBadge"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">showToolsBadge</span> = <span class="default-value">true</span>, </span></li>
 <li><span class="parameter" id="param-modelOptions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_chat/ZChatModelOption-class.html">ZChatModelOption</a></span>&gt;</span></span> <span class="parameter-name">modelOptions</span> = <span class="default-value">const &lt;ZChatModelOption&gt;[]</span>, </span></li>
 <li><span class="parameter" id="param-modelActiveId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">modelActiveId</span>, </span></li>
 <li><span class="parameter" id="param-onSelectModel"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/ValueChanged.html">ValueChanged</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">onSelectModel</span>, </span></li>
@@ -122,12 +125,15 @@ contrôleur de réglages sur le <code>send()</code> du composer.</p>
   this.chrome,
   this.backgroundColor,
   this.borderColor,
+  this.activeAccent,
   this.clipBehavior = Clip.none,
   this.focusNode,
   this.hints = const &lt;String&gt;[],
+  this.submitPolicy = ZChatComposerSubmitPolicy.standard,
   this.pickers = const &lt;ZChatComposerPickerAction&gt;[],
   this.onOpenTools,
   this.toolsBadge,
+  this.showToolsBadge = true,
   this.modelOptions = const &lt;ZChatModelOption&gt;[],
   this.modelActiveId,
   this.onSelectModel,
@@ -191,7 +197,7 @@ contrôleur de réglages sur le <code>send()</code> du composer.</p>
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

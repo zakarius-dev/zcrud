@@ -109,29 +109,18 @@ and</li>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 Widget build(BuildContext context) {
-  final String resolved = zChatLabel(context, kZChatLabelTools);
-  final Widget? face = glyph;
-  final bool labelVisible = _labelVisible(
-    showLabel: showLabel,
-    hasGlyph: face != null,
-    stateful: false,
-  );
-  final Widget? counter = badge;
-  return _ZChatComposerBandTarget(
-    semanticsLabel: resolved,
-    onTap: onOpen,
-    children: &lt;Widget&gt;[
-      if (face != null) ExcludeSemantics(child: face),
-      if (face != null &amp;&amp; labelVisible)
-        const SizedBox(width: kZChatSettingsReferenceMarkGap),
-      if (labelVisible) Text(resolved, textAlign: TextAlign.start),
-      if (counter != null) ...&lt;Widget&gt;[
-        SizedBox(width: ZChatComposerReference.badgeStartGap),
-        &#47;&#47; DANS la cible, donc DANS le hit-test du bouton — et hors de
-        &#47;&#47; l&#39;arbre sémantique (le nombre est un rappel visuel).
-        ExcludeSemantics(child: counter),
-      ],
-    ],
+  final ValueListenable&lt;int&gt;? count = badgeCount;
+  if (badge != null || count == null) {
+    return _body(context, badge, hasBadge: badge != null);
+  }
+  return ValueListenableBuilder&lt;int&gt;(
+    &#47;&#47; LA tranche du compte, et elle seule.
+    valueListenable: count,
+    builder: (BuildContext context, int value, Widget? _) =&gt; _body(
+      context,
+      value &lt;= 0 ? null : ZChatComposerCountBadge(count: value),
+      hasBadge: value &gt; 0,
+    ),
   );
 }</code></pre>
 </section>
@@ -161,7 +150,7 @@ Widget build(BuildContext context) {
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

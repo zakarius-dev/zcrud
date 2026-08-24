@@ -124,41 +124,7 @@ demande d'élargissement).</p>
     return const Left&lt;ZFailure, ZChatRequestToken&gt;(failure);
   }
 
-  final String requestId = _newRequestId();
-  final ZChatRequestToken token = ZChatRequestToken(requestId);
-  _tokens[requestId] = token;
-
-  final ZChatGenerationRequest built;
-  try {
-    built = _buildRequest(draft);
-  } catch (e) {
-    return _abort(requestId, &#39;chat request builder threw ${e.runtimeType}&#39;);
-  }
-  &#47;&#47; UN SEUL site d&#39;application des réglages, hors d&#39;atteinte de l&#39;hôte.
-  &#47;&#47; `withSettings(null)` rend `identical(built)` : sans argument, la
-  &#47;&#47; requête envoyée est l&#39;objet même du builder — aucun défaut n&#39;a bougé.
-  final ZChatGenerationRequest request = corpusScope == null
-      ? built.withSettings(settings)
-      : built.withSettings(settings).withCorpusScope(corpusScope);
-  _states[requestId] = _ZRequestState(request);
-
-  _setComposer(const ZChatDraft());
-  _messages.value = List&lt;ZChatMessage&gt;.unmodifiable(&lt;ZChatMessage&gt;[
-    ..._messages.value,
-    ZChatMessage(
-      id: requestId,
-      conversationId: _conversationId,
-      role: ZChatRole.user,
-      contentBlocks: &lt;ZContentBlock&gt;[ZTextBlock(text: draft.text)],
-    ),
-  ]);
-  _activeRequests.value = List&lt;String&gt;.unmodifiable(&lt;String&gt;[
-    ..._activeRequests.value,
-    requestId,
-  ]);
-  _publish(requestId, (ZChatStreamProgress p) =&gt; p.copyWith(phase: ZChatPhase.streaming));
-
-  return _consume(requestId: requestId, first: token, draft: draft);
+  return _launch(draft: draft, settings: settings, corpusScope: corpusScope);
 }</code></pre>
 </section>
 
@@ -187,7 +153,7 @@ demande d'élargissement).</p>
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

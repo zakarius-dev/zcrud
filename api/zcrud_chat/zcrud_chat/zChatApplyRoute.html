@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the zChatApplyRoute function from the zcrud_chat library, for the Dart programming language.">
+  <title>zChatApplyRoute function - zcrud_chat library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat.dart</a></li>
+    <li class="self-crumb">zChatApplyRoute function</li>
+  </ol>
+  <div class="self-name">zChatApplyRoute</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="zcrud_chat&#47;zcrud_chat-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">zChatApplyRoute</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype">ZResult<span class="signature">&lt;<wbr><span class="type-parameter">ZChatGenerationRequest</span>&gt;</span></span>
+<span class="name ">zChatApplyRoute</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="zChatApplyRoute-param-router"><span>required</span> <span class="type-annotation">ZChatRouter?</span> <span class="parameter-name">router</span>, </span></li>
+<li><span class="parameter" id="zChatApplyRoute-param-gate"><span>required</span> <span class="type-annotation">ZChatRouteGate</span> <span class="parameter-name">gate</span>, </span></li>
+<li><span class="parameter" id="zChatApplyRoute-param-request"><span>required</span> <span class="type-annotation">ZChatGenerationRequest</span> <span class="parameter-name">request</span>, </span></li>
+<li><span class="parameter" id="zChatApplyRoute-param-override"><span class="type-annotation">ZChatModelRef?</span> <span class="parameter-name">override</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Projette une route sur une requête de conversation — <strong>fonction pure</strong>.</p>
+<p>Rend la requête routée, ou un refus typé (voir les règles de résolution
+de <a href="../zcrud_chat/ZChatRouteSession-class.html">ZChatRouteSession</a>). <code>override</code> est le repli choisi pour la tâche ;
+il prime le modèle de la route, jamais un modèle déjà nommé par <code>request</code>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">ZResult&lt;ZChatGenerationRequest&gt; zChatApplyRoute({
+  required ZChatRouter? router,
+  required ZChatRouteGate gate,
+  required ZChatGenerationRequest request,
+  ZChatModelRef? override,
+}) {
+  final String taskKey = zChatTaskKeyOf(request);
+  final ZResult&lt;ZChatRouteResolution&gt; resolved = _resolution(
+    router: router,
+    gate: gate,
+    taskKey: taskKey,
+  );
+  return resolved.map((ZChatRouteResolution res) {
+    final ZChatGenerationRequest base = request.modelId != null
+        ? request
+        : _withModel(request, override);
+    &#47;&#47; Le budget déjà porté par la requête est un choix de l&#39;appelant
+    &#47;&#47; (réglage de la feuille ou builder de l&#39;hôte) : il prime la route.
+    &#47;&#47; `toRequest` n&#39;applique la route qu&#39;en repli quand `settings` le dit ;
+    &#47;&#47; on lui repasse donc les réglages de la requête elle-même.
+    return res.toRequest(base, settings: _settingsOf(base));
+  });
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">zcrud_chat</a></li>
+    <li><a href="../zcrud_chat/">zcrud_chat</a></li>
+    <li class="self-crumb">zChatApplyRoute function</li>
+</ol>
+
+    <h5>zcrud_chat library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_chat
+      3.12.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

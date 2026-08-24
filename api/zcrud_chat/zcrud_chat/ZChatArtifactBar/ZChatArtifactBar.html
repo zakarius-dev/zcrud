@@ -59,6 +59,8 @@
 <li><span class="parameter" id="param-skin"><span class="type-annotation"><a href="../../zcrud_chat/ZChatNotebookSkin-class.html">ZChatNotebookSkin</a>?</span> <span class="parameter-name">skin</span>, </span></li>
 <li><span class="parameter" id="param-confirm"><span class="type-annotation"><a href="../../zcrud_chat/ZChatArtifactConfirm.html">ZChatArtifactConfirm</a>?</span> <span class="parameter-name">confirm</span>, </span></li>
 <li><span class="parameter" id="param-spacing"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/double-class.html">double</a>?</span> <span class="parameter-name">spacing</span>, </span></li>
+<li><span class="parameter" id="param-menuBuilder"><span class="type-annotation"><a href="../../zcrud_chat/ZChatArtifactMenuBuilder.html">ZChatArtifactMenuBuilder</a>?</span> <span class="parameter-name">menuBuilder</span>, </span></li>
+<li><span class="parameter" id="param-menuCrossAxisCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">menuCrossAxisCount</span> = <span class="default-value">kZChatArtifactMenuCrossAxisCount</span>, </span></li>
 <li><span class="parameter" id="param-key"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/foundation/Key-class.html">Key</a>?</span> <span class="parameter-name">key</span>, </span></li>
 </ol>})
     </section>
@@ -77,8 +79,15 @@
   this.skin,
   this.confirm,
   this.spacing,
+  this.menuBuilder,
+  this.menuCrossAxisCount = kZChatArtifactMenuCrossAxisCount,
   super.key,
-});</code></pre>
+})
+  &#47;&#47; Un nombre de colonnes nul ou négatif est une erreur d&#39;appelant : elle
+  &#47;&#47; rougit en debug, et le rendu la BORNE en release (AD-10) plutôt que de
+  &#47;&#47; lever au milieu d&#39;une conversation. Aucun message : une chaîne écrite en
+  &#47;&#47; dur dans un fichier de rendu est interdite, message d&#39;assertion compris.
+  : assert(menuCrossAxisCount &gt; 0);</code></pre>
 </section>
 
 
@@ -106,7 +115,7 @@
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

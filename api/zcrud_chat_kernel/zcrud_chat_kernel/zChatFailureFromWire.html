@@ -123,6 +123,12 @@ libellé d'interface — la traduction appartient à l'hôte (invariant AD-13).<
         message,
         operation: zJsonString(map[&#39;operation&#39;]),
       );
+    case ZChatFailureCodes.upgradeRequired:
+      &#47;&#47; Le code CANONIQUE est réémis : c&#39;est lui qu&#39;un hôte compare.
+      return ZChatProviderFailure(
+        message,
+        code: ZChatFailureCodes.upgradeRequired,
+      );
     default:
       &#47;&#47; Un code non catalogué n&#39;est pas jeté : il traverse intact.
       return rawCode.isEmpty
@@ -156,7 +162,7 @@ libellé d'interface — la traduction appartient à l'hôte (invariant AD-13).<
 <footer>
   <span class="no-break">
     zcrud_chat_kernel
-      3.3.1
+      3.12.0
   </span>
   
 </footer>

@@ -87,7 +87,7 @@ tranches réactives <strong>granulaires</strong>, un jeton <strong>par requête<
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="ZChatController.new" class="callable">
-          <span class="name"><a href="../zcrud_chat/ZChatController/ZChatController.html">ZChatController</a></span><span class="signature">({<span class="parameter" id="param-streamPort"><span>required</span> <span class="type-annotation">ZChatStreamPort</span> <span class="parameter-name">streamPort</span>, </span><span class="parameter" id="param-actionExecutor"><span>required</span> <span class="type-annotation">ZChatActionExecutor</span> <span class="parameter-name">actionExecutor</span>, </span><span class="parameter" id="param-confirm"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatConfirm.html">ZChatConfirm</a></span> <span class="parameter-name">confirm</span>, </span><span class="parameter" id="param-newRequestId"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatRequestIdFactory.html">ZChatRequestIdFactory</a></span> <span class="parameter-name">newRequestId</span>, </span><span class="parameter" id="param-buildRequest"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatRequestBuilder.html">ZChatRequestBuilder</a></span> <span class="parameter-name">buildRequest</span>, </span><span class="parameter" id="param-maxResumeAttempts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">maxResumeAttempts</span> = <span class="default-value">2</span>, </span><span class="parameter" id="param-conversationId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">conversationId</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="param-initialMessages"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatMessage</span>&gt;</span></span> <span class="parameter-name">initialMessages</span> = <span class="default-value">const &lt;ZChatMessage&gt;[]</span></span>})</span>
+          <span class="name"><a href="../zcrud_chat/ZChatController/ZChatController.html">ZChatController</a></span><span class="signature">({<span class="parameter" id="param-streamPort"><span>required</span> <span class="type-annotation">ZChatStreamPort</span> <span class="parameter-name">streamPort</span>, </span><span class="parameter" id="param-actionExecutor"><span>required</span> <span class="type-annotation">ZChatActionExecutor</span> <span class="parameter-name">actionExecutor</span>, </span><span class="parameter" id="param-confirm"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatConfirm.html">ZChatConfirm</a></span> <span class="parameter-name">confirm</span>, </span><span class="parameter" id="param-newRequestId"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatRequestIdFactory.html">ZChatRequestIdFactory</a></span> <span class="parameter-name">newRequestId</span>, </span><span class="parameter" id="param-buildRequest"><span>required</span> <span class="type-annotation"><a href="../zcrud_chat/ZChatRequestBuilder.html">ZChatRequestBuilder</a></span> <span class="parameter-name">buildRequest</span>, </span><span class="parameter" id="param-lifecycle"><span class="type-annotation">ZChatConversationLifecyclePort?</span> <span class="parameter-name">lifecycle</span>, </span><span class="parameter" id="param-routeResolver"><span class="type-annotation"><a href="../zcrud_chat/ZChatRouteResolver.html">ZChatRouteResolver</a>?</span> <span class="parameter-name">routeResolver</span>, </span><span class="parameter" id="param-liveLabels"><span class="type-annotation"><a href="../zcrud_chat/ZChatLiveLabels-class.html">ZChatLiveLabels</a></span> <span class="parameter-name">liveLabels</span> = <span class="default-value">ZChatLiveLabels.none</span>, </span><span class="parameter" id="param-maxResumeAttempts"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">maxResumeAttempts</span> = <span class="default-value">2</span>, </span><span class="parameter" id="param-conversationId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">conversationId</span> = <span class="default-value">&#39;&#39;</span>, </span><span class="parameter" id="param-initialMessages"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">ZChatMessage</span>&gt;</span></span> <span class="parameter-name">initialMessages</span> = <span class="default-value">const &lt;ZChatMessage&gt;[]</span></span>})</span>
         </dt>
         <dd>
           Construit un contrôleur.
@@ -331,6 +331,21 @@ rédaction — il vit dans <a href="../zcrud_chat/ZChatController/streamText.htm
 
 </dd>
 
+        <dt id="contentOf" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/contentOf.html">contentOf</a></span><span class="signature">(<wbr><span class="parameter" id="contentOf-param-messageId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">messageId</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Texte <strong>brut</strong> du message <code>messageId</code> — ses blocs de texte concaténés
+par un saut de ligne, sans les blocs structurés — ou <code>null</code> s'il est
+absent. O(n).
+  
+
+</dd>
+
         <dt id="dispose" class="callable">
   <span class="name"><a href="../zcrud_chat/ZChatController/dispose.html">dispose</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; void</span>
@@ -341,6 +356,34 @@ rédaction — il vit dans <a href="../zcrud_chat/ZChatController/streamText.htm
 <dd>
   Discards any resources used by the object.
   <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="isInterrupted" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/isInterrupted.html">isInterrupted</a></span><span class="signature">(<wbr><span class="parameter" id="isInterrupted-param-messageId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">messageId</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  <code>true</code> si le message d'assistant <code>messageId</code> est un contenu <strong>partiel</strong>
+conservé après un arrêt volontaire ou une panne du flux.
+  
+
+</dd>
+
+        <dt id="messageById" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/messageById.html">messageById</a></span><span class="signature">(<wbr><span class="parameter" id="messageById-param-messageId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">messageId</span></span>)
+    <span class="returntype parameter">&#8594; ZChatMessage?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le message d'identité <code>messageId</code>, ou <code>null</code> s'il n'est pas dans
+<a href="../zcrud_chat/ZChatController/messages.html">messages</a>. Balayage linéaire — O(n) sur la longueur du fil.
+  
 
 </dd>
 
@@ -370,6 +413,20 @@ rédaction — il vit dans <a href="../zcrud_chat/ZChatController/streamText.htm
 
 </dd>
 
+        <dt id="previewEditImpact" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/previewEditImpact.html">previewEditImpact</a></span><span class="signature">(<wbr><span class="parameter" id="previewEditImpact-param-messageId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">messageId</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Nombre de messages <strong>postérieurs</strong> à <code>messageId</code> — ceux qu'une édition
+rejouée retire. <code>0</code> si l'identité est absente. Calcul pur, O(n).
+  
+
+</dd>
+
         <dt id="progress" class="callable">
   <span class="name"><a href="../zcrud_chat/ZChatController/progress.html">progress</a></span><span class="signature">(<wbr><span class="parameter" id="progress-param-requestId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">requestId</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/foundation/ValueListenable-class.html">ValueListenable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../zcrud_chat/ZChatStreamProgress-class.html">ZChatStreamProgress</a></span>&gt;</span></span>
@@ -394,6 +451,19 @@ rédaction — il vit dans <a href="../zcrud_chat/ZChatController/streamText.htm
   Remove a previously registered closure from the list of closures that are
 notified when the object changes.
   <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="replyToOf" class="callable">
+  <span class="name"><a href="../zcrud_chat/ZChatController/replyToOf.html">replyToOf</a></span><span class="signature">(<wbr><span class="parameter" id="replyToOf-param-messageId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">messageId</span></span>)
+    <span class="returntype parameter">&#8594; ZChatMessage?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le message <strong>apparié</strong> à <code>messageId</code> dans l'échange, ou <code>null</code>.
+  
 
 </dd>
 
@@ -539,7 +609,7 @@ fréquence</strong> (un signal par <code>ZChatTokenEvent</code>).
 <footer>
   <span class="no-break">
     zcrud_chat
-      3.3.1
+      3.12.0
   </span>
   
 </footer>
