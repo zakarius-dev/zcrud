@@ -57,9 +57,71 @@ const String kDefaultMoveAfterLabel = 'Déplacer après';
 ///    sur `request.itemIds` dès que l'hôte en repousse un nouveau ;
 /// 4. **invariant AD-10** — un `onReorder` qui lève restaure l'ordre affiché et
 ///    n'est pas propagé (jamais de crash de rendu au milieu d'un geste).
+///
+/// **Ce qu'il ne tient PAS — la capacité facultative de poignée.** Le port
+/// permet d'ancrer le geste sur une poignée (`buildDragHandle`) ; ce renderer
+/// laisse le **défaut identité** en place, son châssis n'exposant aucun
+/// déclencheur par sous-arbre. Conséquence, à connaître avant d'injecter ce
+/// renderer : **une poignée reste une affordance visible, et le glissement
+/// s'amorce par le geste de la cellule (appui long), poignée comprise.** Elle
+/// n'est ni morte ni masquée — simplement pas un point d'ancrage privilégié.
+/// La voie non gestuelle, elle, reste offerte dans tous les cas.
+///
+/// Un appelant qui a besoin d'une poignée **vivante** (glissement immédiat
+/// depuis la poignée, ligne non glissable) doit choisir, là où cette exigence
+/// porte, un renderer qui honore la capacité — à défaut de renderer injecté,
+/// le repli interne du champ prend la main et ancre, lui, le geste sur la
+/// poignée.
+///
+/// **`ZReorderRenderRequest.dragPreviewWrapper` n'est pas consulté** — et n'a
+/// pas à l'être : le châssis construit son propre aperçu de glissement et
+/// l'enveloppe déjà dans une feuille `Material`. Un contenu de cellule qui
+/// exige cet ancêtre (`TextField`…) est donc rendu sans lever dans l'aperçu,
+/// que l'appelant remplisse le canal ou non. Un appelant qui remplit ce canal
+/// pour un autre besoin doit savoir qu'il restera sans effet ici.
 class ZPackageReorderRenderer extends ZReorderRenderer {
   /// Construit le renderer. `const` : il peut être injecté tel quel.
   const ZPackageReorderRenderer({this.dragStartDelay, this.dragEnabled = true});
+
+  // `buildDragHandle` n'est PAS redéfini — décision mesurée, pas un oubli. Le
+  // châssis amorce son glissement depuis un écouteur de pointeur posé autour de
+  // la CELLULE ENTIÈRE, à l'intérieur du widget d'item qu'il fabrique lui-même
+  // autour de notre `itemBuilder` : notre sous-arbre en est toujours un
+  // descendant. Le recognizer est en outre choisi globalement par la grille, et
+  // un `PointerDownEvent` étant distribué du plus profond vers la racine, un
+  // déclencheur posé autour de la poignée est servi AVANT celui de la cellule —
+  // qui réinstalle ensuite le sien et jette le nôtre. Mesuré sans effet, appel
+  // synchrone comme différé. Le seul symbole capable d'amorcer un drag vit dans
+  // un fichier `src/` non exporté : l'atteindre demande un import
+  // d'implémentation (refusé par le lint `implementation_imports`) ou un appel
+  // `dynamic` qui blanchit ce lint — une dépendance à une API privée que plus
+  // aucun outil ne vérifierait.
+  //
+  // La seule configuration où l'ancrage FONCTIONNE demande de désactiver le
+  // déclencheur d'item du châssis : elle CONFISQUE le geste propre à l'item,
+  // que le contrat du port exige de laisser tel quel. Refusée pour cela.
+  // Refusé aussi, et pour la raison inverse : mettre le délai d'amorce à zéro.
+  // Le délai étant global à la grille, cela rendrait la cellule entière
+  // glissable au premier contact — le conflit de gestes qu'on cherche à éviter,
+  // aggravé par les sous-champs éditables des lignes.
+  //
+  // Pour en sortir, il faudrait que le châssis expose un déclencheur par
+  // sous-arbre, ou rende le délai d'amorce réglable par item — ou changer de
+  // châssis. `test/drag_handle_contract_test.dart` affirme la perte et rougira
+  // ce jour-là.
+  //
+  // `request.dragPreviewWrapper` n'est PAS relayé non plus, pour une raison
+  // différente : ici il n'y a rien à réparer. Le proxy de glissement du
+  // châssis enveloppe déjà son contenu dans `Material(elevation: 3.0)`, donc
+  // un sous-champ Material y trouve sa feuille et ne lève pas. Le seul point
+  // d'extension qui permettrait d'injecter un habillage,
+  // `dragWidgetBuilderV2`, REMPLACE ce proxy par défaut au lieu de
+  // l'envelopper : mesuré, le passer en identité stricte suffit à faire
+  // disparaître cette feuille, et changerait le rendu de tous les hôtes.
+  // Reproduire nous-mêmes le défaut du châssis serait figer une constante
+  // interne du tiers, qui divergerait en silence à la première montée de
+  // version. `test/z_package_drag_preview_surface_test.dart` affirme la
+  // propriété dont ce choix dépend et rougira si le châssis la retire.
 
   /// Délai d'appui avant le démarrage du glissement. `null` ⇒ défaut du paquet
   /// (`kLongPressTimeout`). Type `Duration` : **aucun** type tiers ici.

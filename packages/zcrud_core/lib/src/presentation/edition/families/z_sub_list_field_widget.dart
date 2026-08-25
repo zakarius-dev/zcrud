@@ -617,6 +617,10 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   Widget _dragHandle(BuildContext context, int index) => _ZSubListDragHandle(
         index: index,
         semanticLabel: label(context, 'reorderItem'),
+        // Le renderer effectivement en place est le seul à savoir si — et
+        // comment — un geste peut s'ancrer sur la poignée. Résolu ici, par la
+        // voie unique, plutôt que devinée dans la poignée.
+        renderer: _resolveReorderRenderer(context),
       );
 
   /// Mode de rendu — `compact` (défaut) si config absente/non conforme.
@@ -1012,6 +1016,10 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                 maxColumns: 1,
                 moveBeforeSemanticLabel: label(context, 'moveItemUp'),
                 moveAfterSemanticLabel: label(context, 'moveItemDown'),
+                // Une carte de sous-formulaire porte des champs Material :
+                // sans cette surface, l'aperçu flottant du renderer injecté
+                // lèverait dans l'overlay. Même définition que le repli.
+                dragPreviewWrapper: _zSubListDragPreviewSurface,
               ),
             ),
           if (!readOnly)
@@ -2964,6 +2972,8 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                   maxColumns: 1,
                   moveBeforeSemanticLabel: label(context, 'moveItemUp'),
                   moveAfterSemanticLabel: label(context, 'moveItemDown'),
+                  // Idem : une ligne de résumé porte des sous-champs Material.
+                  dragPreviewWrapper: _zSubListDragPreviewSurface,
                 ),
               );
             }
@@ -4097,18 +4107,39 @@ class _ZSubListDragScope extends InheritedWidget {
 /// Le geste s'ancre sur la POIGNÉE, en tête de ligne, jamais sur la ligne
 /// entière (les sous-champs y vivent). Sous le repli interne, la poignée est
 /// un [Draggable] immédiat dont l'aperçu est la ligne re-rendue ; sous un
-/// renderer injecté bâti sur le chassis réordonnable du SDK, elle reste
-/// active via [ReorderableDragStartListener] ; sous tout autre renderer,
-/// elle est une affordance inerte et le geste appartient au renderer
-/// (appui long ou autre — contrat du port).
+/// renderer injecté, c'est LUI qui décide, via
+/// `ZReorderRenderer.buildDragHandle` — s'il ne sait pas ancrer le geste sur
+/// une poignée, elle reste une affordance visible et le glissement s'amorce
+/// par le geste de la ligne.
+/// Surface flottante des aperçus de glissement de la sous-liste.
+///
+/// Un aperçu de glisser-déposer vit dans l'`Overlay`, au-dessus du `Material`
+/// de l'écran : sans feuille propre, un sous-champ Material (`TextField`…) de
+/// la ligne glissée lève `No Material widget found` au rendu — assertion de
+/// debug, donc écran rouge en debug et rien du tout en release.
+///
+/// Transparence **structurelle** : la feuille n'est là que pour exister comme
+/// ancêtre, elle ne peint rien et ne pose aucune couleur (FR-26).
+///
+/// DÉFINITION UNIQUE, consommée aux deux extrémités : le repli interne
+/// l'applique lui-même à l'aperçu de sa poignée, et les requêtes du port la
+/// transportent jusqu'au renderer injecté via
+/// `ZReorderRenderRequest.dragPreviewWrapper`.
+Widget _zSubListDragPreviewSurface(Widget preview) =>
+    Material(type: MaterialType.transparency, child: preview);
+
 class _ZSubListDragHandle extends StatelessWidget {
   const _ZSubListDragHandle({
     required this.index,
     required this.semanticLabel,
+    required this.renderer,
   });
 
   final int index;
   final String semanticLabel;
+
+  /// Renderer en place — consulté pour l'ancrage du geste sur la poignée.
+  final ZReorderRenderer renderer;
 
   @override
   Widget build(BuildContext context) {
@@ -4134,10 +4165,17 @@ class _ZSubListDragHandle extends StatelessWidget {
     );
     final scope = _ZSubListDragScope.maybeOf(context);
     if (scope == null) {
-      // Renderer injecté : si son chassis est le réordonnable du SDK, cette
-      // poignée démarre son glissement ; sinon elle est inerte sans erreur
-      // (résolution paresseuse au `pointerDown`).
-      return ReorderableDragStartListener(index: index, child: handle);
+      // Renderer injecté : c'est LUI qui sait — ou non — ancrer un geste sur
+      // la poignée, et lui seul ; `context` est dans son sous-arbre (la
+      // poignée naît de son `itemBuilder`), donc sa machinerie privée y est
+      // atteignable. Défaut du port = identité : la poignée reste rendue, le
+      // glissement appartient au geste de la ligne.
+      //
+      // Le cœur posait ici un `ReorderableDragStartListener` du SDK : hors
+      // d'un `SliverReorderableList` son `onPointerDown` est un no-op
+      // silencieux (`list?.startItemDragReorder`), donc une poignée morte
+      // sous tout autre chassis. Présumer un chassis n'est pas au socle.
+      return renderer.buildDragHandle(context, index, handle);
     }
     return Draggable<int>(
       data: scope.index,
@@ -4145,13 +4183,12 @@ class _ZSubListDragHandle extends StatelessWidget {
       dragAnchorStrategy: pointerDragAnchorStrategy,
       onDragStarted: () => scope.onDragStarted(scope.index),
       onDragEnd: (_) => scope.onDragEnded(),
-      // L'aperçu vit dans l'OVERLAY, au-dessus du `Material` de l'écran :
-      // sans feuille propre, un sous-champ Material (TextField…) de la ligne
-      // glissée lèverait au rendu. Transparence structurelle — aucune
-      // couleur posée.
-      feedback: Material(
-        type: MaterialType.transparency,
-        child: Opacity(
+      // Aperçu habillé par la surface commune (cf.
+      // [_zSubListDragPreviewSurface]) : celle-là même que les requêtes du
+      // port transportent jusqu'à un renderer injecté. Un seul point de
+      // vérité, donc pas de divergence possible entre repli et renderer.
+      feedback: _zSubListDragPreviewSurface(
+        Opacity(
           opacity: 0.9,
           child: SizedBox(
             width: scope.width,

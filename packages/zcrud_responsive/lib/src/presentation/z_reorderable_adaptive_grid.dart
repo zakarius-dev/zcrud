@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/widgets.dart';
+import 'package:zcrud_core/zcrud_core.dart' show ZReorderDragPreviewWrapper;
 
 import 'z_adaptive_grid.dart';
+import 'z_reorder_handle_scope.dart';
 
 /// Fraction d'opacité de la cellule laissée en place pendant qu'on la glisse.
 const double _kDraggingOpacity = 0.3;
@@ -48,8 +50,13 @@ const double _kCandidateScale = 0.94;
 ///
 /// ## Geste + alternative accessible (AD-13)
 ///
-/// * **Appui long** sur la cellule ENTIÈRE (pas de poignée: les cartes d'items
-///   sont déjà denses);
+/// * **Appui long** sur la cellule ENTIÈRE (les cartes d'items sont denses et
+///   n'imposent aucune poignée);
+/// * **Glissement immédiat** sur une poignée, lorsque le contenu d'une cellule
+///   en rend une et la soumet à `ZReorderRenderer.buildDragHandle`: les deux
+///   déclencheurs alimentent la MÊME machinerie (même aperçu flottant, même
+///   ordre optimiste, même repli AD-10) et coexistent — ancrer le geste sur
+///   une poignée ne retire jamais celui de la cellule;
 /// * **Alternative obligatoire au lecteur d'écran**: un appui long n'est pas
 ///   atteignable en navigation assistée, donc chaque cellule expose deux
 ///   **actions sémantiques** ([CustomSemanticsAction]) « déplacer avant » /
@@ -104,6 +111,7 @@ class ZReorderableAdaptiveGrid extends StatefulWidget {
     this.padding,
     this.autoScrollEdgeExtent = 64.0,
     this.autoScrollStep = 24.0,
+    this.dragPreviewWrapper,
     super.key,
   });
 
@@ -159,6 +167,21 @@ class ZReorderableAdaptiveGrid extends StatefulWidget {
 
   /// Pas de défilement (dp) appliqué par frame pendant l'autoscroll.
   final double autoScrollStep;
+
+  /// Enveloppe de l'aperçu flottant — `null` ⇒ **identité** (l'aperçu est rendu
+  /// tel quel, exactement comme sans ce paramètre).
+  ///
+  /// L'aperçu est monté dans l'`Overlay`, hors du sous-arbre de l'écran : un
+  /// contenu de cellule qui dépend d'un ancêtre hérité (une feuille Material,
+  /// par exemple) ne l'y trouve plus. Cette grille ne peut pas le poser
+  /// elle-même — elle est bâtie sur `package:flutter/widgets.dart` seul et le
+  /// reste — c'est donc à l'appelant, qui sait ce que ses cellules contiennent,
+  /// de le fournir ici.
+  ///
+  /// S'applique **au seul aperçu**, jamais à la cellule rendue en place, et aux
+  /// **deux** déclencheurs (appui long sur la cellule, glissement parti d'une
+  /// poignée) — les deux consomment le même aperçu.
+  final ZReorderDragPreviewWrapper? dragPreviewWrapper;
 
   @override
   State<ZReorderableAdaptiveGrid> createState() =>
@@ -314,61 +337,129 @@ class _ZReorderableAdaptiveGridState extends State<ZReorderableAdaptiveGrid> {
       // suivrait la case et non l'item).
       key: ValueKey<String>(id),
       position: position,
+      sourceIndex: sourceIndex < 0 ? position : sourceIndex,
       lastPosition: ids.length - 1,
       moveBeforeSemanticLabel: widget.moveBeforeSemanticLabel,
       moveAfterSemanticLabel: widget.moveAfterSemanticLabel,
       onMove: _move,
       onDragUpdate: _handleDragUpdate,
       onDragStopped: _stopAutoScroll,
-      child: widget.itemBuilder(context, sourceIndex < 0 ? position : sourceIndex),
+      // Le BUILDER, jamais l'enfant déjà bâti : la cellule doit l'invoquer
+      // SOUS son propre canal de poignée, sans quoi le `context` que reçoit
+      // `itemBuilder` serait celui — commun à toutes les cellules — du
+      // `ValueListenableBuilder`, et le canal y serait invisible.
+      itemBuilder: widget.itemBuilder,
+      dragPreviewWrapper: widget.dragPreviewWrapper,
     );
   }
 }
 
-/// Une cellule réordonnable: appui long pour glisser, cible de dépôt, et deux
-/// actions sémantiques (alternative a11y obligatoire à l'appui long, AD-13).
+/// Une cellule réordonnable: appui long pour glisser, cible de dépôt, deux
+/// actions sémantiques (alternative a11y obligatoire à l'appui long, AD-13),
+/// et un canal vers les poignées que l'appelant rend dans son contenu.
 class _ZReorderableCell extends StatelessWidget {
   const _ZReorderableCell({
     required this.position,
+    required this.sourceIndex,
     required this.lastPosition,
     required this.moveBeforeSemanticLabel,
     required this.moveAfterSemanticLabel,
     required this.onMove,
     required this.onDragUpdate,
     required this.onDragStopped,
-    required this.child,
+    required this.itemBuilder,
+    required this.dragPreviewWrapper,
     super.key,
   });
 
   final int position;
+
+  /// Index passé à [itemBuilder] — l'index SOURCE de l'item, pas [position].
+  final int sourceIndex;
   final int lastPosition;
   final String moveBeforeSemanticLabel;
   final String moveAfterSemanticLabel;
   final void Function(int from, int to) onMove;
   final void Function(DragUpdateDetails details) onDragUpdate;
   final VoidCallback onDragStopped;
-  final Widget child;
+  final Widget Function(BuildContext context, int index) itemBuilder;
+
+  /// Enveloppe de l'aperçu flottant (`null` ⇒ identité). Cf.
+  /// [ZReorderableAdaptiveGrid.dragPreviewWrapper].
+  final ZReorderDragPreviewWrapper? dragPreviewWrapper;
 
   @override
   Widget build(BuildContext context) {
-    // Actions sémantiques : le lecteur d'écran ne peut pas faire d'appui
-    // long, donc le déplacement DOIT être atteignable autrement (invariant
-    // AD-13). Libellés injectés, jamais de littéral ici.
-    final semanticChild = Semantics(
-      container: true,
-      customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
-        if (position > 0)
-          CustomSemanticsAction(label: moveBeforeSemanticLabel): () =>
-              onMove(position, position - 1),
-        if (position < lastPosition)
-          CustomSemanticsAction(label: moveAfterSemanticLabel): () =>
-              onMove(position, position + 1),
-      },
-      child: child,
-    );
-
     return LayoutBuilder(
       builder: (context, constraints) {
+        final double? width =
+            constraints.maxWidth.isFinite ? constraints.maxWidth : null;
+        final double? height =
+            constraints.maxHeight.isFinite ? constraints.maxHeight : null;
+
+        // Contenu de l'APERÇU flottant : il vit dans l'overlay et ne se glisse
+        // pas lui-même, donc il est bâti HORS du canal — une poignée qui s'y
+        // trouve y retrouve le défaut identité du port, jamais un second
+        // déclencheur imbriqué.
+        Widget buildPreviewContent() =>
+            Builder(builder: (context) => itemBuilder(context, sourceIndex));
+
+        // Aperçu à la TAILLE RÉELLE de la cellule (mesurée localement): un
+        // aperçu non contraint prendrait une taille intrinsèque et sauterait
+        // visuellement. UN SEUL point de vérité: les deux déclencheurs (geste
+        // de la cellule, glissement parti d'une poignée) le consomment, donc
+        // l'aperçu est identique par construction.
+        Widget buildFeedback() {
+          final Widget preview = SizedBox(
+            width: width,
+            height: height,
+            child: Opacity(
+              opacity: _kFeedbackOpacity,
+              child: buildPreviewContent(),
+            ),
+          );
+          // Habillage FACULTATIF, posé AUTOUR de l'aperçu déjà dimensionné :
+          // l'enveloppe couvre donc toute la boîte, et la taille mesurée reste
+          // celle du `SizedBox` — l'enveloppe n'a rien à contraindre.
+          // `null` ⇒ identité stricte: `preview` est rendu tel quel, aucun
+          // nœud interposé, ni dans l'arbre ni dans la géométrie. C'est ce
+          // qui rend le canal inerte pour un appelant qui ne le remplit pas.
+          final ZReorderDragPreviewWrapper? wrap = dragPreviewWrapper;
+          return wrap == null ? preview : wrap(preview);
+        }
+
+        // Contenu EN PLACE. Le canal est posé AU-DESSUS du `Builder` qui
+        // invoque `itemBuilder`: le `context` que celui-ci reçoit est donc
+        // déjà dans le sous-arbre de CETTE cellule, ce qui rend le canal
+        // atteignable aussi bien depuis ce `context` que depuis celui d'un
+        // widget descendant. Ni l'un ni l'autre n'ajoute de rendu: un
+        // `InheritedWidget` et un `Builder` ne portent aucun RenderObject.
+        final Widget content = ZReorderHandleScope(
+          position: position,
+          width: width,
+          height: height,
+          onDragUpdate: onDragUpdate,
+          onDragStopped: onDragStopped,
+          buildFeedback: buildFeedback,
+          child: Builder(builder: (context) => itemBuilder(context, sourceIndex)),
+        );
+
+        // Actions sémantiques : le lecteur d'écran ne peut pas faire d'appui
+        // long, donc le déplacement DOIT être atteignable autrement (invariant
+        // AD-13). Libellés injectés, jamais de littéral ici.
+        final semanticChild = Semantics(
+          container: true,
+          customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
+            if (position > 0)
+              CustomSemanticsAction(label: moveBeforeSemanticLabel): () =>
+                  onMove(position, position - 1),
+            if (position < lastPosition)
+              CustomSemanticsAction(label: moveAfterSemanticLabel): () =>
+                  onMove(position, position + 1),
+          },
+          child: content,
+        );
+
         return DragTarget<int>(
           // Une cellule n'est jamais sa propre cible.
           onWillAcceptWithDetails: (details) => details.data != position,
@@ -383,15 +474,7 @@ class _ZReorderableCell extends StatelessWidget {
               onDragEnd: (_) => onDragStopped(),
               onDraggableCanceled: (_, _) => onDragStopped(),
               onDragCompleted: onDragStopped,
-              // Aperçu à la TAILLE RÉELLE de la cellule (mesurée localement):
-              // un aperçu non contraint prendrait une taille intrinsèque et
-              // sauterait visuellement.
-              feedback: SizedBox(
-                width: constraints.maxWidth.isFinite ? constraints.maxWidth : null,
-                height:
-                    constraints.maxHeight.isFinite ? constraints.maxHeight : null,
-                child: Opacity(opacity: _kFeedbackOpacity, child: child),
-              ),
+              feedback: buildFeedback(),
               childWhenDragging:
                   Opacity(opacity: _kDraggingOpacity, child: semanticChild),
               child: isCandidate

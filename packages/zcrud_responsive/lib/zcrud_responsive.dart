@@ -12,10 +12,15 @@
 /// * [computeCrossAxisCount] + [ZAdaptiveGrid] : nombre de colonnes borné
 ///   (**clamp ≥ 1**) et grille d'items par largeur-min ;
 /// * [ZReorderableAdaptiveGrid] : la MÊME grille, **réordonnable** par appui
-///   long (+ actions sémantiques a11y), autoscroll de bord, ordre LINÉAIRE
+///   long OU par glissement **immédiat** depuis une poignée que l'item soumet
+///   (+ actions sémantiques a11y), autoscroll de bord, ordre LINÉAIRE
 ///   inter-lignes — bâtie **sur** [ZAdaptiveGrid] (donc sur
 ///   [computeCrossAxisCount]) et **sur le seul SDK** (aucun paquet tiers,
-///   invariant AD-1).
+///   invariant AD-1) ;
+/// * [ZDefaultReorderRenderer] : le repli zéro-dépendance du port
+///   `ZReorderRenderer`, qui **honore sa capacité de poignée** — une poignée
+///   rendue en tête d'item y devient un vrai déclencheur de glissement, et non
+///   une affordance décorative.
 ///
 /// **Dépendance** : ce package **dépend de `zcrud_core`** et **réutilise**
 /// ses primitives responsives — l'enum `ZBreakpoint` (axe de

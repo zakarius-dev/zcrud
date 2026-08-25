@@ -3,6 +3,16 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.19.0 — 2026-08-24
+
+### Ajouté
+- **Contrat de poignée sur le port de réordonnancement** : `ZReorderRenderer.buildDragHandle(context, index, handle)`, à **implémentation par défaut identité**. Un renderer qui sait ancrer un geste sur une poignée l'y ancre ; celui qui ne le sait pas rend la poignée telle quelle. Trois garanties exigées de qui l'honore : ancrer et rien d'autre, rendre la poignée **inchangée**, ne pas confisquer le geste propre à l'item.
+- **Canal d'habillage de l'aperçu flotté** : `ZReorderRenderRequest.dragPreviewWrapper` (nullable). L'aperçu d'un glissement vit dans l'`Overlay`, hors de l'arbre de l'écran : l'appelant — seul à connaître la surface dont ses sous-widgets ont besoin — peut l'habiller sans que le renderer ait à en dépendre. Non rempli ⇒ identité, rendu inchangé.
+
+### Corrigé
+- **La poignée de sous-liste n'est plus muette sous un renderer injecté.** Le socle posait un `ReorderableDragStartListener` du SDK, dont le `onPointerDown` est un **no-op silencieux** hors d'un `SliverReorderableList` : sous tout autre châssis, la poignée était morte sans le moindre signal. Elle interroge désormais le renderer en place, qui seul connaît son châssis.
+- La **surface de l'aperçu** de la sous-liste est définie **une seule fois** et servie aux deux bouts — au repli interne comme au canal du port.
+
 ## 3.18.0 — 2026-08-24
 
 ### Ajouté
