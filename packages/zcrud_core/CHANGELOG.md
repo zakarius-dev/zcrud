@@ -3,6 +3,15 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.20.0 — 2026-08-25
+
+### Ajouté
+- **Résumé d'un `select` multiple : jetons de coupure et de forme** — `selectSummaryMaxChips` (palier de valeurs affichées) et les jetons de forme de l'étiquette (rembourrage, rayon, typographie). Une valeur **non positive** signifie « aucune coupure » : toutes les valeurs restent affichées, et rien ne lève.
+- **Clé de localisation du débordement** (`selectSummaryOverflow`), servie dans les deux tables. Aucun moteur de substitution n'a été introduit : la clé porte un **fragment suffixe**, composé comme les clés à quantité déjà en place.
+
+### Modifié
+- 🔴 **Le résumé d'un déclencheur multiple est désormais coupé par défaut** au-delà de trois valeurs, le reste devenant une ligne « +N … ». Une tuile portant quinze valeurs s'étirait sur un demi-écran et **poussait hors de vue les champs suivants** ; le compte lui-même s'y perdait. Échappatoire en une ligne : un palier non positif rétablit l'affichage intégral.
+
 ## 3.19.0 — 2026-08-24
 
 ### Ajouté

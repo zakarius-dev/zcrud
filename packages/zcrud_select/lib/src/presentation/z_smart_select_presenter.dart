@@ -219,6 +219,14 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         ? label(context, 'loading')
         : (hintText ?? label(context, 'select'));
 
+    // Fragment SUFFIXE de la ligne de débordement du résumé multi, résolu ICI :
+    // dans `_ZSmartSelectTile`, le champ `label` masque la fonction
+    // `label(context, …)` du cœur, et l'appel y serait impossible sans préfixer
+    // tout l'import. Même règle que `placeholder` : la tuile reçoit du TEXTE
+    // déjà localisé, jamais une clé.
+    final String summaryOverflowLabel =
+        label(context, 'selectSummaryOverflow');
+
     // `field.helperText` : ligne d'aide PERSISTANTE que le
     // natif rend SOUS le champ (`InputDecoration.helperText`), en plus du
     // contenu et jamais à sa place. Son équivalent en tuile est donc une ligne
@@ -453,6 +461,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
           // `'Select one or more'` du fork quand la liste est vide, et rend un
           // `[a, b]` littéral sinon).
           chipLabels: state.selected.title ?? const <String>[],
+          summaryOverflowLabel: summaryOverflowLabel,
           hasValue: state.selected.isNotEmpty,
           enabled: enabled,
           tappable: tappable,
@@ -538,6 +547,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         placeholder: placeholder,
         // État vide → placeholder LOCALISÉ (jamais `'Select one'` du fork).
         valueText: state.selected.isResolved ? state.selected.title : null,
+        summaryOverflowLabel: summaryOverflowLabel,
         hasValue: state.selected.isResolved,
         enabled: enabled,
         tappable: tappable,
@@ -1288,6 +1298,7 @@ class _ZSmartSelectTile extends StatelessWidget {
     required this.metrics,
     required this.requiredIndicator,
     required this.isLoading,
+    required this.summaryOverflowLabel,
     this.leading,
     this.valueText,
     this.chipLabels,
@@ -1308,7 +1319,14 @@ class _ZSmartSelectTile extends StatelessWidget {
   final String? valueText;
 
   /// Titres sélectionnés en **multi** (`null` ⇒ le tile est mono).
+  ///
+  /// Porte **TOUTES** les valeurs, y compris celles que le résumé visuel coupe :
+  /// c'est la source de l'annonce accessible (cf. [_semanticValue]).
   final List<String>? chipLabels;
+
+  /// Fragment suffixe **déjà localisé** de la ligne de débordement du résumé
+  /// multi (« autres » / « more »), composé après le compte.
+  final String summaryOverflowLabel;
 
   /// `true` si la tranche porte une valeur.
   final bool hasValue;
@@ -1469,7 +1487,7 @@ class _ZSmartSelectTile extends StatelessWidget {
   /// rendu en boîte vide).
   Widget _subtitle(BuildContext context, ThemeData theme) {
     Widget content =
-        chipLabels == null ? _monoSubtitle(theme) : _multiSubtitle(context);
+        chipLabels == null ? _monoSubtitle(theme) : _multiSubtitle();
 
     if (prefix != null || suffix != null) {
       // AD-13 : insets DIRECTIONNELS — en RTL le préfixe reste du côté d'où
@@ -1525,6 +1543,23 @@ class _ZSmartSelectTile extends StatelessWidget {
   ///   n'annonce rien du tout.
   /// * Une valeur ⇒ le texte mono (ou les puces jointes), **encadré** des
   ///   ornements `.text` — sans quoi un « € » serait visible et jamais lu.
+  ///
+  /// 🔴 En multi, l'annonce porte **TOUTES** les valeurs, y compris celles que
+  /// le résumé visuel a coupées.
+  //
+  // DÉCISION (invariant AD-13). La coupure du résumé est une accommodation de
+  // MISE EN PAGE : elle existe parce qu'un `Wrap` de quinze étiquettes pousse
+  // les champs suivants hors de vue. Ce motif n'existe pas pour une annonce
+  // audio, qui ne consomme aucune hauteur. Tronquer ici transformerait donc un
+  // compromis de place en PERTE D'INFORMATION, sur le seul canal qui n'a pas
+  // le problème — et la tuile, elle, possède la donnée : `chipLabels` porte les
+  // quinze titres. Le canal accessible ne doit jamais être plus pauvre que ce
+  // que le composant sait.
+  //
+  // La ligne « +N … » n'est PAS un substitut : elle vit sous
+  // `excludeSemantics: true` et n'est jamais annoncée. Un lecteur d'écran qui
+  // n'entendrait que trois valeurs n'aurait donc AUCUN signal qu'il en manque
+  // douze.
   String? _semanticValue() {
     if (!hasValue) return isLoading ? placeholder : null;
     final String? base =
@@ -1549,9 +1584,14 @@ class _ZSmartSelectTile extends StatelessWidget {
     );
   }
 
-  /// Sous-titre **multi** — parité de référence : `Wrap(spacing: 6, runSpacing: 4)` de
-  /// `Chip`s (texte 12), sinon le placeholder. Teintes par rôles.
-  Widget _multiSubtitle(BuildContext context) {
+  /// Sous-titre **multi** — structure de référence : un `Wrap` d'étiquettes
+  /// compactes **coupé** à [ZSelectTileMetrics.summaryMaxChips], suivi d'une
+  /// ligne « +N … » quand il reste des valeurs ; sinon le placeholder.
+  /// Teintes par rôles.
+  ///
+  /// La coupure est **visuelle**. Elle ne touche pas [_semanticValue] : le
+  /// lecteur d'écran continue d'entendre toutes les valeurs.
+  Widget _multiSubtitle() {
     final labels = chipLabels ?? const <String>[];
     if (labels.isEmpty) {
       return Text(
@@ -1560,20 +1600,79 @@ class _ZSmartSelectTile extends StatelessWidget {
         style: TextStyle(color: metrics.placeholderColor),
       );
     }
-    return Wrap(
+
+    // `null` ⇒ aucune coupure (échappatoire documentée d'un palier non
+    // positif). Déjà normalisé par `zSelectTileMetricsOf` : rien à re-valider
+    // ici, et surtout aucune exception possible sur une valeur absurde.
+    final int? maxChips = metrics.summaryMaxChips;
+    final bool truncated = maxChips != null && labels.length > maxChips;
+    final List<String> shown =
+        truncated ? labels.sublist(0, maxChips) : labels;
+
+    final Widget wrap = Wrap(
       spacing: metrics.chipSpacing,
       runSpacing: metrics.chipRunSpacing,
+      children: <Widget>[for (final t in shown) _summaryChip(t)],
+    );
+
+    // AD-4 : sans débordement, AUCUNE `Column` n'est intercalée — le
+    // sous-titre reste le `Wrap` nu.
+    if (!truncated) return wrap;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        for (final t in labels)
-          Chip(
-            label: Text(
-              t,
-              style: TextStyle(fontSize: metrics.chipFontSize),
-            ),
-            backgroundColor: metrics.chipBackgroundColor,
-            labelStyle: TextStyle(color: metrics.chipForegroundColor),
+        wrap,
+        Padding(
+          // AD-13 : inset DIRECTIONNEL (`top` est neutre en RTL, mais le type
+          // l'est aussi — aucune variante `left`/`right` n'entre ici).
+          padding: const EdgeInsetsDirectional.only(
+            top: ZSelectTileReference.summaryOverflowGap,
           ),
+          child: Text(
+            // FR-26 / AD-13 : le mot vient de la table l10n (résolu par
+            // `present()`), jamais d'un littéral. Composition par FRAGMENT
+            // SUFFIXE (patron `daysInclusive`/`batchSucceeded`) : la table du
+            // socle n'a aucun moteur de substitution, et on n'en introduit pas
+            // un pour une clé.
+            '+${labels.length - maxChips} $summaryOverflowLabel',
+            textAlign: TextAlign.start,
+            style: TextStyle(
+              fontSize: ZSelectTileReference.summaryOverflowFontSize,
+              color: metrics.placeholderColor,
+            ),
+          ),
+        ),
       ],
     );
   }
+
+  /// Une étiquette du résumé multi : conteneur teinté par **rôle**, au rayon et
+  /// au rembourrage résolus par la chaîne `paramètre > jeton > référence`.
+  //
+  // POURQUOI PAS un `Chip` Material — mesuré : un `Chip` rend 48 dp de haut
+  // (son `materialTapTargetSize` par défaut), là où l'étiquette de référence
+  // en fait ~23. Sur treize valeurs le déclencheur mesurait 268 dp et poussait
+  // les champs suivants hors de vue — le défaut même que la coupure corrige.
+  // Un `Chip` ne peut pas descendre sous son plancher de cible tactile, et il
+  // n'a pas à le faire : une étiquette de résumé n'est pas actionnable (tout
+  // le sous-titre vit sous `excludeSemantics: true`, sans `onTap`), donc le
+  // plancher AD-13 ne la concerne pas.
+  Widget _summaryChip(String text) => Container(
+        padding: metrics.chipPadding,
+        decoration: BoxDecoration(
+          color: metrics.chipBackgroundColor,
+          borderRadius: BorderRadius.circular(metrics.chipRadius),
+        ),
+        child: Text(
+          text,
+          textAlign: TextAlign.start,
+          style: TextStyle(
+            fontSize: metrics.chipFontSize,
+            fontWeight: ZSelectTileReference.chipFontWeight,
+            color: metrics.chipForegroundColor,
+          ),
+        ),
+      );
 }

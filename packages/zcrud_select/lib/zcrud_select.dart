@@ -35,7 +35,7 @@ export 'src/presentation/z_select_tile_reference.dart'
         ZSelectTileSpec;
 
 /// **Maillon « jeton » de la chaîne** : `paramètre ([ZSelectTileSpec]) >
-/// jeton (`ZcrudTheme.select*`, huit jetons posés dans `zcrud_core`) >
+/// jeton (`ZcrudTheme.select*`, douze jetons posés dans `zcrud_core`) >
 /// référence ([ZSelectTileReference])`. [zSelectTileMetricsOf] est le seul
 /// endroit du paquet où les trois maillons se rencontrent ; il est exporté
 /// pour qu'un hôte puisse **vérifier** ce que sa configuration produit

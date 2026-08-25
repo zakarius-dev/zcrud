@@ -62,11 +62,11 @@
 /// ## Chaîne de résolution
 ///
 /// **paramètre ([ZSelectTileSpec]) > jeton `ZcrudTheme.select*` > référence
-/// ([ZSelectTileReference])**. Huit jetons `ZcrudTheme.select*` sont posés
+/// ([ZSelectTileReference])**. Douze jetons `ZcrudTheme.select*` sont posés
 /// dans `zcrud_core` et la chaîne est résolue en un seul endroit,
 /// `zSelectTileMetricsOf` (`z_select_tile_metrics.dart`).
 ///
-/// Seules huit métriques ont un jeton dédié : les autres candidats ont été
+/// Seules douze métriques ont un jeton dédié : les autres candidats ont été
 /// **écartés** sur le critère du dépôt — *un jeton se justifie s'il porte une
 /// décision à l'échelle de l'application* — parce qu'ils dupliqueraient un
 /// canal que le SDK possède déjà (`ThemeData.chipTheme`, `TextTheme`,
@@ -141,7 +141,7 @@ enum ZSelectModalShape {
 /// Les **valeurs de référence** du déclencheur de sélection — point d'audit
 /// unique.
 ///
-/// **AUCUNE COULEUR ici** : uniquement des dimensions.
+/// **AUCUNE COULEUR ici** : uniquement des dimensions et des graisses.
 abstract final class ZSelectTileReference {
   /// Rayon du `Card` du déclencheur (dp).
   static const double cardRadius = 12;
@@ -156,10 +156,43 @@ abstract final class ZSelectTileReference {
   static const double chipSpacing = 6;
 
   /// Écart vertical entre deux rangées de puces.
-  static const double chipRunSpacing = 4;
+  //
+  // MESURÉ sur la structure de référence : `Wrap(spacing: 6, runSpacing: 6)`.
+  // La valeur `4` retenue précédemment provenait d'un autre site.
+  static const double chipRunSpacing = 6;
 
   /// Taille du texte d'une puce (pt).
   static const double chipFontSize = 12;
+
+  /// Graisse du texte d'une puce.
+  static const FontWeight chipFontWeight = FontWeight.w500;
+
+  /// Rayon des coins d'une puce du résumé (dp).
+  static const double summaryChipRadius = 6;
+
+  /// Rembourrage intérieur **horizontal** d'une puce du résumé (dp).
+  static const double summaryChipPaddingHorizontal = 8;
+
+  /// Rembourrage intérieur **vertical** d'une puce du résumé (dp).
+  static const double summaryChipPaddingVertical = 3;
+
+  /// Nombre de valeurs affichées avant la ligne de débordement.
+  ///
+  /// Au-delà, le résumé affiche « +N … » (clé l10n `selectSummaryOverflow`)
+  /// plutôt que d'étirer le déclencheur : une matrice d'autorisations peut
+  /// porter quinze valeurs, et une tuile qui s'étire sur un demi-écran pousse
+  /// les champs suivants hors de vue. Le compte lui-même se perd : « treize
+  /// puces » ne se lit pas, « +10 autres » se lit.
+  ///
+  /// La coupure est **VISUELLE seulement** — l'annonce accessible du
+  /// déclencheur porte toujours la totalité des valeurs (invariant AD-13).
+  static const int summaryMaxChips = 3;
+
+  /// Taille du texte de la ligne de débordement (pt).
+  static const double summaryOverflowFontSize = 11;
+
+  /// Écart (dp) entre la dernière rangée de puces et la ligne de débordement.
+  static const double summaryOverflowGap = 4;
 
   /// Taille du texte de la valeur en **mono** (pt).
   ///
@@ -249,6 +282,9 @@ class ZSelectTileSpec {
     this.chipFontSize,
     this.chipSpacing,
     this.chipRunSpacing,
+    this.chipRadius,
+    this.chipPadding,
+    this.summaryMaxChips,
     this.placeholderColor,
     this.valueColor,
     this.contentPadding,
@@ -294,6 +330,28 @@ class ZSelectTileSpec {
   /// Écart vertical entre rangées de puces. `null` ⇒
   /// [ZSelectTileReference.chipRunSpacing].
   final double? chipRunSpacing;
+
+  /// Rayon des coins d'une puce du résumé (dp). `null` ⇒ jeton
+  /// `ZcrudTheme.selectSummaryChipRadius`, puis
+  /// [ZSelectTileReference.summaryChipRadius].
+  final double? chipRadius;
+
+  /// Rembourrage intérieur d'une puce du résumé. **Directionnel** attendu
+  /// (`EdgeInsetsDirectional`) — AD-13. `null` ⇒ jeton
+  /// `ZcrudTheme.selectSummaryChipPadding`, puis la référence (8 / 3).
+  final EdgeInsetsGeometry? chipPadding;
+
+  /// Nombre **maximum** de valeurs affichées dans le résumé d'un déclencheur
+  /// multiple ; le reste devient une ligne « +N … ».
+  ///
+  /// `null` ⇒ jeton `ZcrudTheme.selectSummaryMaxChips`, puis
+  /// [ZSelectTileReference.summaryMaxChips]. Une valeur **non positive**
+  /// signifie « aucune coupure » : toutes les valeurs sont affichées, et rien
+  /// ne lève (invariant AD-10).
+  ///
+  /// La coupure ne touche **que** le rendu : l'annonce accessible du
+  /// déclencheur porte toujours la totalité des valeurs (invariant AD-13).
+  final int? summaryMaxChips;
 
   /// Teinte du placeholder (état vide). `null` ⇒ **rôle**
   /// `ColorScheme.onSurfaceVariant`.
@@ -359,6 +417,9 @@ class ZSelectTileSpec {
     double? chipFontSize,
     double? chipSpacing,
     double? chipRunSpacing,
+    double? chipRadius,
+    EdgeInsetsGeometry? chipPadding,
+    int? summaryMaxChips,
     Color? placeholderColor,
     Color? valueColor,
     EdgeInsetsGeometry? contentPadding,
@@ -382,6 +443,9 @@ class ZSelectTileSpec {
         chipFontSize: chipFontSize ?? this.chipFontSize,
         chipSpacing: chipSpacing ?? this.chipSpacing,
         chipRunSpacing: chipRunSpacing ?? this.chipRunSpacing,
+        chipRadius: chipRadius ?? this.chipRadius,
+        chipPadding: chipPadding ?? this.chipPadding,
+        summaryMaxChips: summaryMaxChips ?? this.summaryMaxChips,
         placeholderColor: placeholderColor ?? this.placeholderColor,
         valueColor: valueColor ?? this.valueColor,
         contentPadding: contentPadding ?? this.contentPadding,

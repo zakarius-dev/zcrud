@@ -27,7 +27,16 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/z_sources.dart' as sources;
 
 /// Paquets balayés : tout `lib/` où le patron `label(context, '…')` s'applique.
-const List<String> _scannedPackages = <String>['zcrud_core', 'zcrud_screen'];
+//
+// `zcrud_select` ajouté avec la clé de débordement du résumé multi : le
+// présentateur riche compose un libellé l10n depuis SON paquet, et la garde
+// était jusque-là aveugle à ce `lib/` — une clé absente d'une table n'y aurait
+// rougi nulle part.
+const List<String> _scannedPackages = <String>[
+  'zcrud_core',
+  'zcrud_screen',
+  'zcrud_select',
+];
 
 /// Fichiers `.dart` de `lib/` d'un paquet du dépôt (hors code généré).
 List<File> _libFilesOf(String package) {

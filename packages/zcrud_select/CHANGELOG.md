@@ -3,6 +3,20 @@
 Toutes les modifications notables de `zcrud_select` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.20.0 — 2026-08-25
+
+### Ajouté
+- **Coupure du résumé d'un déclencheur multiple** : au-delà du palier, une ligne « +N … » remplace les valeurs restantes. Géométrie et forme réglables par jetons et par paramètre ; couleurs par rôles du thème.
+
+### Modifié
+- Le résumé n'est plus rendu par une puce Material mais par une **étiquette compacte** : une étiquette de résumé n'est pas actionnable, elle n'a donc pas à porter le plancher tactile de 48 dp qu'imposait la puce — treize valeurs occupaient 268 dp de hauteur.
+
+### Corrigé
+- `chipRunSpacing` de la référence valait **4** là où la valeur de référence est **6** ; les deux gardes qui assertaient l'ancienne valeur ont été relevées.
+
+### Garde
+- **L'annonce accessible du déclencheur porte toujours la TOTALITÉ des valeurs**, coupure ou non : la coupure est une accommodation de hauteur, dont une annonce audio ne consomme aucune. Figé par garde, et prouvé mordant par injection.
+
 ## 3.16.0 — 2026-08-24
 
 ### Ajouté

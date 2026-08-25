@@ -539,6 +539,10 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.selectMonoChoiceStyle,
     this.selectMultiChoiceStyle,
     this.selectModalShape,
+    this.selectSummaryMaxChips,
+    this.selectSummaryChipRadius,
+    this.selectSummaryChipPadding,
+    this.selectSummaryChipFontSize,
     this.stepperRailColor,
     this.stepperRailThickness,
     this.stepperBadgeForegroundColor,
@@ -2118,6 +2122,24 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   // Les sept écartés restent **intégralement atteignables** par
   // `ZSelectTileSpec` : rien n'est perdu, seule la surface publique perpétuelle
   // l'est.
+  //
+  // ⚠️ RÉVISION MESURÉE sur le RÉSUMÉ du multi (famille `selectSummary*`,
+  // quatre jetons de plus). Le rejet ci-dessus tenait par une prémisse : que
+  // `ThemeData.chipTheme` soit le canal app-scale équivalent. Il ne l'est pas.
+  //
+  // 1. `chipTheme` gouverne TOUTES les puces de l'application — puces de
+  //    filtre, d'entrée, d'action. Un hôte qui veut resserrer le résumé d'un
+  //    déclencheur de sélection ne demande pas à resserrer ses puces de filtre ;
+  //    l'unique canal les confondrait.
+  // 2. Le résumé n'est plus rendu par un `Chip`. MESURÉ : un `Chip` fait 48 dp
+  //    de haut (son plancher de cible tactile) et treize valeurs portaient le
+  //    déclencheur à 268 dp, poussant les champs suivants hors de vue. Une
+  //    étiquette de résumé n'est pas actionnable : elle n'a pas à porter ce
+  //    plancher. `chipTheme` ne l'atteint donc plus du tout.
+  //
+  // Le CRITÈRE, lui, ne bouge pas : ces quatre jetons portent bien une décision
+  // d'application (« mes résumés de sélection coupent à N valeurs et ont cette
+  // forme »), et aucun canal du SDK ne la porte à leur place.
 
   /// Teinte de la bordure du déclencheur de sélection, pour toute l'app.
   /// `null` ⇒ le consommateur applique **son rôle** (`ColorScheme.outlineVariant`,
@@ -2203,6 +2225,54 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   ///
   /// Même motivation `String` + `lerp` discret que [selectMonoChoiceStyle].
   final String? selectModalShape;
+
+  // ── Résumé du déclencheur de sélection MULTI (`selectSummary*`) ────────────
+  // Quatre jetons NULLABLES et **absents de [ZcrudTheme.fallback]** : sans
+  // réglage, c'est la RÉFÉRENCE du présentateur qui décide, jamais une valeur
+  // neutre posée ici.
+  //
+  // Critère de jeton du dépôt (« porte une décision à l'échelle de
+  // l'application ») : ces quatre-là le portent. `ChipThemeData`/`TextTheme` ne
+  // sont PAS le canal équivalent — ils gouvernent *toutes* les puces de l'app,
+  // y compris celles qui n'ont rien à voir avec une sélection ; un hôte qui
+  // veut resserrer le résumé d'un déclencheur ne veut pas resserrer ses puces
+  // de filtre par la même occasion.
+
+  /// Nombre **maximum** de valeurs affichées dans le résumé d'un déclencheur de
+  /// sélection multiple ; le reste est remplacé par une ligne de débordement
+  /// (« +N … », clé l10n `selectSummaryOverflow`).
+  ///
+  /// `null` (défaut) ⇒ le présentateur applique **sa référence**. Une valeur
+  /// **non positive** signifie « aucune coupure » : toutes les valeurs sont
+  /// affichées. C'est l'échappatoire explicite, et elle ne lève jamais (AD-10).
+  ///
+  /// La coupure est **visuelle seulement** : un présentateur conforme continue
+  /// d'annoncer **toutes** les valeurs au lecteur d'écran (AD-13).
+  ///
+  /// `lerp` **DISCRET** à `t = 0.5` : il n'existe pas de demi-puce, et
+  /// interpoler ferait apparaître puis disparaître des valeurs pendant une
+  /// transition de thème.
+  final int? selectSummaryMaxChips;
+
+  /// Rayon (dp) des coins d'une puce du résumé. `null` ⇒ référence du
+  /// présentateur.
+  ///
+  /// `lerp` par [_lerpNullableFloor] : un rayon `0` est « coins carrés », pas
+  /// une absence de réglage (identique à [selectTileRadius]).
+  final double? selectSummaryChipRadius;
+
+  /// Rembourrage intérieur d'une puce du résumé. `null` ⇒ référence du
+  /// présentateur.
+  ///
+  /// Attendu **directionnel** (`EdgeInsetsDirectional`) — invariant AD-13.
+  final EdgeInsetsGeometry? selectSummaryChipPadding;
+
+  /// Taille (pt) du texte d'une puce du résumé. `null` ⇒ référence du
+  /// présentateur.
+  ///
+  /// `lerp` par [_lerpNullableFloor] : une taille `0` est un texte **invisible**,
+  /// pas une absence de réglage.
+  final double? selectSummaryChipFontSize;
 
   // ── Famille `stepper*` (rail numéroté « tout affiché ») ────────────────────
   // Ces cinq jetons sont NULLABLES et **absents de [ZcrudTheme.fallback]** :
@@ -2691,6 +2761,10 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     String? selectMonoChoiceStyle,
     String? selectMultiChoiceStyle,
     String? selectModalShape,
+    int? selectSummaryMaxChips,
+    double? selectSummaryChipRadius,
+    EdgeInsetsGeometry? selectSummaryChipPadding,
+    double? selectSummaryChipFontSize,
     Color? stepperRailColor,
     double? stepperRailThickness,
     Color? stepperBadgeForegroundColor,
@@ -3006,6 +3080,13 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     selectMultiChoiceStyle:
         selectMultiChoiceStyle ?? this.selectMultiChoiceStyle,
     selectModalShape: selectModalShape ?? this.selectModalShape,
+    selectSummaryMaxChips: selectSummaryMaxChips ?? this.selectSummaryMaxChips,
+    selectSummaryChipRadius:
+        selectSummaryChipRadius ?? this.selectSummaryChipRadius,
+    selectSummaryChipPadding:
+        selectSummaryChipPadding ?? this.selectSummaryChipPadding,
+    selectSummaryChipFontSize:
+        selectSummaryChipFontSize ?? this.selectSummaryChipFontSize,
     stepperRailColor: stepperRailColor ?? this.stepperRailColor,
     stepperRailThickness: stepperRailThickness ?? this.stepperRailThickness,
     stepperBadgeForegroundColor:
@@ -4033,6 +4114,31 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       selectMultiChoiceStyle:
           t < 0.5 ? selectMultiChoiceStyle : other.selectMultiChoiceStyle,
       selectModalShape: t < 0.5 ? selectModalShape : other.selectModalShape,
+      // COMPTE DISCRET : `t < 0.5` — un `lerp` continu ferait apparaître puis
+      // disparaître des valeurs du résumé pendant la transition (patron
+      // `contentHubGridCrossAxisCount`).
+      selectSummaryMaxChips:
+          t < 0.5 ? selectSummaryMaxChips : other.selectSummaryMaxChips,
+      // DIMENSIONS : `_lerpNullableFloor` — `0` serait « coins carrés » et
+      // « texte invisible », deux rendus que personne n'a choisis.
+      selectSummaryChipRadius: _lerpNullableFloor(
+        selectSummaryChipRadius,
+        other.selectSummaryChipRadius,
+        t,
+      ),
+      // Marge CONTINUE qui s'interpole ; `null` des DEUX côtés RESTE `null`,
+      // sans quoi la référence du présentateur serait GELÉE à la première
+      // transition de thème.
+      selectSummaryChipPadding: _lerpNullableInsets(
+        selectSummaryChipPadding,
+        other.selectSummaryChipPadding,
+        t,
+      ),
+      selectSummaryChipFontSize: _lerpNullableFloor(
+        selectSummaryChipFontSize,
+        other.selectSummaryChipFontSize,
+        t,
+      ),
       // COULEURS NULLABLES absentes du repli : `_lerpNullableColor`, jamais
       // `Color.lerp` (qui matérialise la teinte dès `t > 0` et écraserait le
       // rôle/contraste de repli du consommateur pendant la transition).

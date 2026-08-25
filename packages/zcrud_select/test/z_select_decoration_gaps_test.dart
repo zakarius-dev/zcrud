@@ -129,6 +129,14 @@ final Finder _trigger = find.descendant(
 
 ListTile _tile(WidgetTester tester) => tester.widget<ListTile>(_trigger);
 
+/// Étiquettes du résumé multi : les conteneurs peints DANS le `Wrap` du
+/// sous-titre. La référence rend une étiquette compacte, pas un `Chip`
+/// Material (dont le plancher de cible tactile imposerait 48 dp par valeur).
+final Finder _summaryChips = find.descendant(
+  of: find.descendant(of: _trigger, matching: find.byType(Wrap)),
+  matching: find.byType(Container),
+);
+
 /// Tous les `Text` du sous-titre du tile, dans l'ordre de l'arbre.
 List<String> _subtitleTexts(WidgetTester tester) => tester
     .widgetList<Text>(
@@ -312,10 +320,7 @@ void main() {
         )));
         await tester.pumpAndSettle();
         expect(_subtitleTexts(tester), <String>['Alpha', 'Bravo', 'Aide du champ']);
-        expect(
-          find.descendant(of: _trigger, matching: find.byType(Chip)),
-          findsNWidgets(2),
-        );
+        expect(_summaryChips, findsNWidgets(2));
       },
     );
 

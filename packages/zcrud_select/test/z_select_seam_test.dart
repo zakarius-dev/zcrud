@@ -573,8 +573,15 @@ void main() {
       expect(m.modalShape, ZSelectModalShape.popupDialog);
       // Les propriétés SANS jeton retombent sur la référence (littéraux DODLP).
       expect(m.chipSpacing, 6);
-      expect(m.chipRunSpacing, 4);
+      expect(m.chipRunSpacing, 6);
       expect(m.chipFontSize, 12);
+      // Forme et coupure du résumé multi : mêmes littéraux de référence.
+      expect(m.chipRadius, 6);
+      expect(
+        m.chipPadding,
+        const EdgeInsetsDirectional.symmetric(horizontal: 8, vertical: 3),
+      );
+      expect(m.summaryMaxChips, 3);
       expect(m.elevation, 0);
       expect(m.choicePageLimit, 20);
       // Anti-vacuité : la valeur du jeton DIFFÈRE de la référence (600).

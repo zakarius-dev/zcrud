@@ -698,15 +698,16 @@ void main() {
           find.descendant(of: _trigger, matching: find.byType(Wrap));
       expect(wrapFinder, findsOneWidget,
           reason: '🔴 DODLP affiche les sélections en PUCES, pas en texte joint');
-      // 🔴 littéraux DODLP (`Wrap(spacing: 6, runSpacing: 4)`), pas la
+      // 🔴 littéraux de référence (`Wrap(spacing: 6, runSpacing: 6)`), pas la
       // constante qui les produit (injections I5/I6 : inertes autrement).
       final wrap = tester.widget<Wrap>(wrapFinder);
       expect(wrap.spacing, 6.0);
-      expect(wrap.runSpacing, 4.0);
+      expect(wrap.runSpacing, 6.0);
       expect(ZSelectTileReference.chipSpacing, 6);
-      expect(ZSelectTileReference.chipRunSpacing, 4);
+      expect(ZSelectTileReference.chipRunSpacing, 6);
 
-      final chips = find.descendant(of: _trigger, matching: find.byType(Chip));
+      final chips =
+          find.descendant(of: wrapFinder, matching: find.byType(Container));
       expect(chips, findsNWidgets(2));
       expect(find.descendant(of: _trigger, matching: find.text('Alpha')),
           findsOneWidget);
@@ -732,7 +733,7 @@ void main() {
             value: const <Object?>[], onChanged: (_) {}),
       ));
       await tester.pumpAndSettle();
-      expect(find.descendant(of: _trigger, matching: find.byType(Chip)),
+      expect(find.descendant(of: _trigger, matching: find.byType(Wrap)),
           findsNothing);
       expect(find.descendant(of: _trigger, matching: find.text('Select')),
           findsOneWidget);
@@ -797,10 +798,11 @@ void main() {
               value: const <Object?>['a'], onChanged: (_) {}),
         ));
         await tester.pumpAndSettle();
-        return tester
-            .widget<Chip>(
-                find.descendant(of: _trigger, matching: find.byType(Chip)))
-            .backgroundColor;
+        final Container chip = tester.widget<Container>(find.descendant(
+          of: find.descendant(of: _trigger, matching: find.byType(Wrap)),
+          matching: find.byType(Container),
+        ));
+        return (chip.decoration! as BoxDecoration).color;
       }
 
       expect(await chipBg(blue), blue.colorScheme.surfaceContainerHighest);

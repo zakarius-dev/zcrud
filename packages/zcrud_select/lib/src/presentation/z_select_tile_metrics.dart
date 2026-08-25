@@ -1,7 +1,7 @@
 /// **Résolution** des métriques du déclencheur de sélection — maillon central de
 /// la chaîne `paramètre > jeton > référence`.
 ///
-/// Les jetons `ZcrudTheme.select*` (huit, posés dans `zcrud_core`) complètent
+/// Les jetons `ZcrudTheme.select*` (douze, posés dans `zcrud_core`) complètent
 /// cette chaîne, et ce fichier est le seul endroit du paquet où ses trois
 /// maillons se rencontrent.
 ///
@@ -92,6 +92,9 @@ class ZSelectTileMetrics {
     required this.chipFontSize,
     required this.chipSpacing,
     required this.chipRunSpacing,
+    required this.chipRadius,
+    required this.chipPadding,
+    required this.summaryMaxChips,
     required this.placeholderColor,
     required this.valueColor,
     required this.contentPadding,
@@ -147,6 +150,20 @@ class ZSelectTileMetrics {
   /// Écart vertical entre rangées de puces — **sans jeton** (idem).
   final double chipRunSpacing;
 
+  /// Rayon des coins d'une puce du résumé (dp).
+  final double chipRadius;
+
+  /// Rembourrage intérieur **directionnel** d'une puce du résumé (AD-13).
+  final EdgeInsetsGeometry chipPadding;
+
+  /// Nombre maximum de valeurs affichées dans le résumé multi ; `null` ⇒
+  /// **aucune coupure**, toutes les valeurs sont rendues.
+  ///
+  /// Déjà normalisé : une valeur non positive posée par l'hôte est rendue ici
+  /// comme `null` (invariant AD-10). La coupure est **visuelle seulement** —
+  /// l'annonce accessible du déclencheur ne perd jamais de valeur (AD-13).
+  final int? summaryMaxChips;
+
   /// Teinte de l'état vide — **sans jeton** (canal : `ThemeData.hintColor`).
   final Color placeholderColor;
 
@@ -163,10 +180,10 @@ class ZSelectTileMetrics {
 /// Résout les métriques du déclencheur — **paramètre ([ZSelectTileSpec]) > jeton
 /// (`ZcrudTheme.select*`) > référence ([ZSelectTileReference])**.
 ///
-/// **Hôte passif immobile** : sans `spec` ET sans jeton, chaque valeur rendue
-/// est **exactement** celle de la référence. Les huit jetons sont absents de
-/// `ZcrudTheme.fallback()` — un hôte qui n'a rien déclaré ne peut donc pas
-/// bouger.
+/// **Aucun jeton n'agit tant qu'il n'est pas déclaré** : sans `spec` ET sans
+/// jeton, chaque valeur rendue est **exactement** celle de la référence. Les
+/// douze jetons sont absents de `ZcrudTheme.fallback()` — un hôte qui n'a rien
+/// déclaré obtient l'apparence de référence, jamais une valeur neutre.
 ZSelectTileMetrics zSelectTileMetricsOf(
   BuildContext context, {
   ZSelectTileSpec? spec,
@@ -185,6 +202,17 @@ ZSelectTileMetrics zSelectTileMetricsOf(
   final double minHeight = requested < ZSelectTileReference.minTileHeight
       ? ZSelectTileReference.minTileHeight
       : requested;
+
+  // invariant AD-10 : un palier NON POSITIF (0, négatif) ne lève pas et ne
+  // devine pas un nombre — il vaut « aucune coupure », l'échappatoire
+  // documentée pour un hôte qui veut ses quinze valeurs à l'écran.
+  final int? requestedMaxChips = spec?.summaryMaxChips ??
+      token.selectSummaryMaxChips ??
+      ZSelectTileReference.summaryMaxChips;
+  final int? summaryMaxChips =
+      (requestedMaxChips != null && requestedMaxChips > 0)
+          ? requestedMaxChips
+          : null;
 
   return ZSelectTileMetrics(
     // Dernier maillon = RÔLE, jamais un littéral.
@@ -217,10 +245,23 @@ ZSelectTileMetrics zSelectTileMetricsOf(
     chipBackgroundColor:
         spec?.chipBackgroundColor ?? scheme.surfaceContainerHighest,
     chipForegroundColor: spec?.chipForegroundColor ?? scheme.onSurface,
-    chipFontSize: spec?.chipFontSize ?? ZSelectTileReference.chipFontSize,
+    chipFontSize: spec?.chipFontSize ??
+        token.selectSummaryChipFontSize ??
+        ZSelectTileReference.chipFontSize,
     chipSpacing: spec?.chipSpacing ?? ZSelectTileReference.chipSpacing,
     chipRunSpacing:
         spec?.chipRunSpacing ?? ZSelectTileReference.chipRunSpacing,
+    chipRadius: spec?.chipRadius ??
+        token.selectSummaryChipRadius ??
+        ZSelectTileReference.summaryChipRadius,
+    // invariant AD-13 : insets DIRECTIONNELS (jamais `left`/`right`).
+    chipPadding: spec?.chipPadding ??
+        token.selectSummaryChipPadding ??
+        const EdgeInsetsDirectional.symmetric(
+          horizontal: ZSelectTileReference.summaryChipPaddingHorizontal,
+          vertical: ZSelectTileReference.summaryChipPaddingVertical,
+        ),
+    summaryMaxChips: summaryMaxChips,
     placeholderColor: spec?.placeholderColor ?? scheme.onSurfaceVariant,
     valueColor: spec?.valueColor ?? scheme.onSurface,
     // invariant AD-13 : insets DIRECTIONNELS (jamais `left`/`right`).

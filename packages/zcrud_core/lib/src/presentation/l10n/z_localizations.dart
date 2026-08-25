@@ -61,6 +61,10 @@ const _enLabels = <String, String>{
   'selectTime': 'Select a time',
   'selectDateTime': 'Select a date and time',
   'selectDateRange': 'Select a date range',
+  // FRAGMENT SUFFIXE d'un compte, patron `daysInclusive`/`batchSucceeded` : la
+  // table n'a AUCUN moteur de substitution, et on n'en introduit pas un pour
+  // une clé. Le résumé d'un déclencheur multi compose « +10 » + ce fragment.
+  'selectSummaryOverflow': 'more',
   // Refus d'AMPLITUDE d'une plage de dates : les deux entames de phrase sont
   // suivies du nombre autorisé, puis de `daysInclusive` — « The period must not
   // exceed 7 days (both bounds included) ». L'unité porte le comptage : le
@@ -233,6 +237,8 @@ const _frLabels = <String, String>{
   'selectTime': 'Sélectionner une heure',
   'selectDateTime': 'Sélectionner une date et une heure',
   'selectDateRange': 'Sélectionner une période',
+  // Cf. commentaire de la table `en` — « +10 autres ».
+  'selectSummaryOverflow': 'autres',
   // Cf. commentaire de la table `en` — « La période ne doit pas dépasser 7
   // jours (bornes incluses) ».
   'dateRangeTooLong': 'La période ne doit pas dépasser',
