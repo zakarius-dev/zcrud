@@ -199,13 +199,14 @@ class ZMarkdownField extends StatefulWidget {
   /// Affiche la **toolbar** Quill presets (voie `controller` ; défaut `true`).
   final bool showToolbar;
 
-  /// Configuration GRANULAIRE par bouton de la toolbar (M20).
+  /// Configuration GRANULAIRE de la barre d'outils (boutons + habillage).
   ///
-  /// RÉTRO-COMPAT : `null` (défaut) ⇒ comportement INCHANGÉ — préset
-  /// [ZRichTextToolbarConfig.full] pour la voie `controller`/plein-écran,
-  /// [ZRichTextToolbarConfig.minimal] pour le mode `inline`. Fournie ⇒ pilote
-  /// chaque bouton (natif + custom LaTeX/table/image/vidéo). `showToolbar`
-  /// (voie `controller`) reste prioritaire pour AFFICHER/MASQUER toute la barre.
+  /// `null` (défaut) ⇒ préset du MODE : [ZRichTextToolbarConfig.inline] pour le
+  /// mode `inline`, [ZRichTextToolbarConfig.full] pour la voie
+  /// `controller`/plein-écran. Fournie ⇒ elle pilote chaque bouton (natif +
+  /// custom formule/tableau/image/vidéo) ET l'habillage, et REMPLACE le préset
+  /// du mode. `showToolbar` (voie `controller`) reste prioritaire pour
+  /// AFFICHER/MASQUER toute la barre.
   final ZRichTextToolbarConfig? toolbarConfig;
 
   /// Placeholder (texte indicatif) affiché dans l'éditeur VIDE.
@@ -248,11 +249,14 @@ class ZMarkdownField extends StatefulWidget {
   /// l'éditeur, au lecteur ET au dialog plein-écran.
   final ZRichTextStyleSet? styleSet;
 
-  /// Habillage « carte » OPT-IN : en-tête icône+libellé, bordure/ombre
-  /// teintées, pilule d'action (« Rédiger / Modifier / Valider »). `null`
-  /// (défaut) ⇒ rendu historique STRICTEMENT inchangé. Voir
-  /// [ZMarkdownFieldChrome] (chaîne de couleurs, articulation
-  /// `deferWrites`).
+  /// Habillage « carte » : en-tête icône + libellé, bordure/ombre teintées,
+  /// pilule d'action.
+  ///
+  /// `null` (défaut) ⇒ chrome par DÉFAUT du mode — carte pour le champ compact
+  /// servi par le registre (mode `inline`), aucune carte pour la voie
+  /// `controller` ni pour le mode `block`. Fourni ⇒ remplace ce défaut trait
+  /// par trait. Voir [ZMarkdownFieldChrome] (chaîne de couleurs, écriture
+  /// différée).
   final ZMarkdownFieldChrome? chrome;
 
   /// Facteur d'échelle du TEXTE de l'éditeur/lecteur (parité
@@ -385,6 +389,10 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   /// Ce que le champ rend, calculé UNE FOIS en [initState].
   late final _RenderMode _renderMode;
 
+  /// Chrome EFFECTIF — paramètre de l'hôte, sinon défaut du champ compact.
+  /// Calculé UNE FOIS en [initState], après [_renderMode].
+  late final ZMarkdownFieldChrome? _chrome;
+
   /// Styles Quill dérivés du thème — mémoïsés (recalculés seulement si
   /// les dépendances de thème changent, jamais dans le chemin chaud de frappe).
   DefaultStyles? _themedStyles;
@@ -443,19 +451,23 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       _renderMode == _RenderMode.fullEditor ||
       _renderMode == _RenderMode.inlineEditor;
 
-  /// Config de toolbar EFFECTIVE pilotant chaque bouton (M20).
+  /// Config de toolbar EFFECTIVE pilotant chaque bouton.
   ///
-  /// RÉTRO-COMPAT (NON-NÉGOCIABLE) : si aucune [ZRichTextToolbarConfig] n'est
-  /// fournie, on retombe EXACTEMENT sur le comportement
-  /// [ZRichTextToolbarConfig.full] pour la voie `controller`/plein-écran
-  /// (`fullEditor`), [ZRichTextToolbarConfig.minimal] pour le mode `inline`
-  /// (`inlineEditor`). Fournie ⇒ elle pilote intégralement les boutons.
+  /// Chaîne **paramètre > défaut de la surface** : sans configuration, le
+  /// champ compact d'un formulaire applique [ZRichTextToolbarConfig.inline]
+  /// (barre compacte habillée), tout autre éditeur compact
+  /// [ZRichTextToolbarConfig.minimal], et la voie `controller`/plein-écran
+  /// [ZRichTextToolbarConfig.full]. Fournie ⇒ elle pilote intégralement les
+  /// boutons ET l'habillage, et REMPLACE ce défaut.
   ZRichTextToolbarConfig get _effectiveToolbarConfig {
     final provided = widget.toolbarConfig;
     if (provided != null) return provided;
-    return _renderMode == _RenderMode.inlineEditor
-        ? ZRichTextToolbarConfig.minimal
-        : ZRichTextToolbarConfig.full;
+    if (_renderMode != _RenderMode.inlineEditor) {
+      return ZRichTextToolbarConfig.full;
+    }
+    return _isCompactFormField
+        ? ZRichTextToolbarConfig.inline
+        : ZRichTextToolbarConfig.minimal;
   }
 
   /// Résout le [ZCodec] effectif. Lecture de l'inherited scope SANS créer de
@@ -469,11 +481,53 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     return fromScope ?? const ZDeltaCodec();
   }
 
+  /// Ce champ est-il le champ rich-text COMPACT d'un formulaire ?
+  ///
+  /// C'est la seule surface qui porte des défauts de présentation : carte et
+  /// barre compacte habillée. Le prédicat tient au TYPE du champ, jamais au
+  /// seul mode — le même widget compact sert aussi des surfaces qui ne sont
+  /// pas des formulaires (éditeur de contenu d'un nœud dans un panneau, autres
+  /// charges utiles riches), où une carte à en-tête et pilule serait
+  /// intrusive. Ces surfaces gardent leur rendu et déclarent explicitement le
+  /// chrome ou la config de barre qu'elles veulent.
+  bool get _isCompactFormField =>
+      widget.ctx != null &&
+      widget.mode == ZMarkdownFieldMode.inline &&
+      _field.type == EditionFieldType.inlineMarkdown;
+
+  /// Chrome EFFECTIF du champ — chaîne **paramètre > défaut du type**.
+  ///
+  /// Le défaut habille le champ de type [EditionFieldType.inlineMarkdown]
+  /// servi par le registre (voie `ctx`, mode `inline`), qu'il soit éditable ou
+  /// en lecture seule : c'est la présentation attendue d'un éditeur riche
+  /// compact inséré dans un FORMULAIRE.
+  ///
+  /// La portée est volontairement tenue au TYPE, jamais au seul mode : le même
+  /// widget compact sert aussi des surfaces qui ne sont pas des formulaires
+  /// (éditeur de contenu d'un nœud dans un panneau, autres charges utiles
+  /// riches). Une carte à en-tête et pilule y serait intrusive. Ces
+  /// surfaces-là gardent leur rendu et déclarent un [ZMarkdownFieldChrome] si
+  /// elles en veulent un.
+  ///
+  /// La voie `controller` et le mode `block` gardent également leur rendu.
+  ZMarkdownFieldChrome? _resolveChrome() {
+    final ZMarkdownFieldChrome? fromParam = widget.chrome;
+    if (fromParam != null) return fromParam;
+    if (!_isCompactFormField) return null;
+    return _renderMode == _RenderMode.inlineEditor ||
+            _renderMode == _RenderMode.reader
+        ? const ZMarkdownFieldChrome()
+        : null;
+  }
+
   @override
   void initState() {
     super.initState();
     _codec = _resolveCodec();
     _renderMode = _resolveRenderMode();
+    // AVANT [_initEditingController] : celui-ci lit [_deferWrites], donc
+    // [_chrome].
+    _chrome = _resolveChrome();
     if (_needsEditingController) {
       _initEditingController();
     }
@@ -493,7 +547,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   /// l'écriture est-elle DIFFÉRÉE (articulation legacy opt-in) ?
   /// Seulement quand un chrome le demande ET qu'une voie d'édition existe.
   bool get _deferWrites =>
-      (widget.chrome?.deferWrites ?? false) && _needsEditingController;
+      (_chrome?.deferWrites ?? false) && _needsEditingController;
 
   /// Crée la voie d'édition (QuillController + focus + scroll + abonnement +
   /// toolbar). Appelé UNIQUEMENT pour `fullEditor`/`inlineEditor`.
@@ -663,7 +717,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
 
   @override
   Widget build(BuildContext context) {
-    final bool chromed = widget.chrome != null;
+    final bool chromed = _chrome != null;
     switch (_renderMode) {
       case _RenderMode.reader:
         // Lecture seule : lecteur exclusif (aucune voie d'édition).
@@ -702,6 +756,8 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
               _buildEditor(context, withFullscreenToggle: false),
               value: value,
               action: _ChromeAction.commit,
+              // `_buildEditor` rembourre lui-même sous chrome (barre à fleur).
+              padContent: false,
             );
           },
         );
@@ -715,10 +771,12 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
           _buildEditor(context, withFullscreenToggle: true),
           value: widget.ctx!.value,
           action: _ChromeAction.commit,
+          // `_buildEditor` rembourre lui-même sous chrome (barre à fleur).
+          padContent: false,
         );
       case _RenderMode.blockPreview:
         widget.onBuild?.call();
-        if (!chromed) return _buildBlockPreview(widget.ctx!.value);
+        if (!chromed) return _buildBlockPreview(context, widget.ctx!.value);
         // sous chrome, l'affordance d'édition MONTE dans la pilule
         // d'en-tête (« Rédiger »/« Modifier », parité `mef`) — le bouton bas
         // du rendu par défaut disparaît (une seule affordance).
@@ -912,7 +970,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     // précédent côté lecteur (`none` retire cadre ET padding
     // l'appelant habille). Sans chrome : rendu historique STRICTEMENT
     // inchangé, c'est la bordure qui matérialise le champ.
-    final bool chromed = widget.chrome != null;
+    final bool chromed = _chrome != null;
     final editor = Semantics(
       textField: true,
       label: label,
@@ -935,6 +993,67 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     final bool showToolbar = _renderMode == _RenderMode.inlineEditor
         ? true
         : widget.showToolbar;
+
+    final Widget? toolbarRow = !showToolbar
+        ? null
+        : Semantics(
+            container: true,
+            label: '$label toolbar',
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  // Le fond de barre passe par la config Quill (transparence)
+                  // + cette décoration : cf. `buildZToolbarConfig`.
+                  child: zDecorateToolbar(
+                    context,
+                    _effectiveToolbarConfig,
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight:
+                            _effectiveToolbarConfig.barHeight ?? kZMinTapTarget,
+                      ),
+                      child: QuillSimpleToolbar(
+                        controller: _quill!,
+                        config: _toolbarConfig!,
+                      ),
+                    ),
+                  ),
+                ),
+                if (withFullscreenToggle) _fullscreenToggleButton(context),
+              ],
+            ),
+          );
+
+    // Sous chrome carte, la barre est À FLEUR des bords de la carte (son fond
+    // et son liseré bas traversent toute la largeur) : c'est le contenu SOUS
+    // la barre qui porte le rembourrage, pas la colonne entière. Sans chrome,
+    // le rembourrage vit dans la bordure de la zone d'édition — rien ne bouge.
+    if (chromed) {
+      return Localizations.override(
+        context: context,
+        delegates: const <LocalizationsDelegate<dynamic>>[
+          FlutterQuillLocalizations.delegate,
+        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ?toolbarRow,
+            Padding(
+              padding: zTheme.fieldPadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  editor,
+                  if (widget.characterLimit != null) _characterCounter(context),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     final column = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -959,32 +1078,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
               child: Text(label, style: _labelStyle(context)),
             ),
           ),
-        if (showToolbar)
-          Semantics(
-            container: true,
-            label: '$label toolbar',
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  // fond de barre thémé OPT-IN — drapeau `false` ⇒
-                  // aucun wrapper (rendu historique inchangé).
-                  child: zDecorateToolbar(
-                    context,
-                    _effectiveToolbarConfig,
-                    ConstrainedBox(
-                      constraints:
-                          const BoxConstraints(minHeight: kZMinTapTarget),
-                      child: QuillSimpleToolbar(
-                        controller: _quill!,
-                        config: _toolbarConfig!,
-                      ),
-                    ),
-                  ),
-                ),
-                if (withFullscreenToggle) _fullscreenToggleButton(label),
-              ],
-            ),
-          ),
+        ?toolbarRow,
         editor,
         if (widget.characterLimit != null) _characterCounter(context),
       ],
@@ -1007,7 +1101,16 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   /// dans l'EN-TÊTE de la carte — le doubler produirait une annonce
   /// d'accessibilité redondante.
   bool get _showLabel =>
-      widget.showLabel && _field.label != null && widget.chrome == null;
+      widget.showLabel && _field.label != null && _chrome == null;
+
+  /// L'EN-TÊTE de la carte doit-il porter le libellé ?
+  ///
+  /// Même drapeau que le libellé texte : un hôte qui pose déjà le sien
+  /// (`showLabel: false`) ne doit pas le voir réapparaître dans l'en-tête —
+  /// sinon le drapeau devient inopérant du seul fait que la carte est le rendu
+  /// par défaut. Sans libellé propre, le champ n'affiche pas son `name`
+  /// (identifiant technique).
+  bool get _showChromeLabel => widget.showLabel && _field.label != null;
 
   /// Style du libellé — aligné sur celui d'un `InputDecoration.labelText`, pour
   /// que le champ riche s'accorde visuellement à ses voisins ( : aucune
@@ -1063,22 +1166,41 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   }
 
   /// Bouton toggle plein-écran (mode inline) — cible ≥ 48 dp, `Semantics`.
-  Widget _fullscreenToggleButton(String label) => Semantics(
-        button: true,
-        label: 'Agrandir',
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minWidth: kZMinTapTarget,
-            minHeight: kZMinTapTarget,
-          ),
-          child: IconButton(
-            key: const Key('z-markdown-fullscreen-toggle'),
-            icon: const Icon(Icons.fullscreen),
-            tooltip: 'Agrandir',
-            onPressed: _openFullscreen,
-          ),
+  /// Libellé résolu par le système l10n injecté (aucun texte codé ici).
+  Widget _fullscreenToggleButton(BuildContext context) {
+    final String expand = label(context, 'z.markdown.expand');
+    return Semantics(
+      button: true,
+      label: expand,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: kZMinTapTarget,
+          minHeight: kZMinTapTarget,
         ),
-      );
+        child: IconButton(
+          key: const Key('z-markdown-fullscreen-toggle'),
+          icon: const Icon(Icons.fullscreen),
+          tooltip: expand,
+          onPressed: _openFullscreen,
+        ),
+      ),
+    );
+  }
+
+  /// Libellé de l'affordance d'édition, résolu par le système l10n injecté.
+  ///
+  /// `commit` valide la saisie en cours ; sinon le libellé dépend de la
+  /// PRÉSENCE de contenu — rédiger un champ vide n'est pas modifier un champ
+  /// rempli.
+  String _actionLabel(
+    BuildContext context, {
+    required bool commit,
+    required bool hasContent,
+  }) =>
+      commit
+          ? label(context, 'z.markdown.commit')
+          : label(context,
+              hasContent ? 'z.markdown.edit' : 'z.markdown.write');
 
   // ───────────────────────── Chrome carte ─────────────────────────
 
@@ -1087,7 +1209,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   /// champ) > rôles `primaryContainer → tertiaireContainer` (même paire mesurée
   /// que `zDerivedGradientResolver`). AUCUNE couleur legacy dans le paquet.
   (List<Color>, Color) _chromeColors(BuildContext context) {
-    final ZMarkdownFieldChrome chrome = widget.chrome!;
+    final ZMarkdownFieldChrome chrome = _chrome!;
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final List<Color>? fromParam = chrome.gradient;
     if (fromParam != null && fromParam.isNotEmpty) {
@@ -1105,24 +1227,33 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     );
   }
 
-  /// Enveloppe [content] dans la carte chrome si un
-  /// [ZMarkdownFieldChrome] est fourni — sinon retourne [content] TEL QUEL
-  /// (rendu historique STRICTEMENT inchangé, AD-57).
+  /// Enveloppe [content] dans la carte chrome quand un chrome est effectif —
+  /// sinon retourne [content] TEL QUEL.
+  ///
+  /// [padContent] `false` quand [content] porte DÉJÀ son propre rembourrage
+  /// (cas de la barre à fleur de carte, qui doit échapper au rembourrage).
   Widget _maybeChrome(
     BuildContext context,
     Widget content, {
     required Object? value,
     required _ChromeAction action,
+    bool padContent = true,
   }) {
-    final ZMarkdownFieldChrome? chrome = widget.chrome;
+    final ZMarkdownFieldChrome? chrome = _chrome;
     if (chrome == null) return content;
     final ThemeData theme = Theme.of(context);
     final zTheme = ZcrudTheme.of(context);
     final (List<Color> gradient, Color onGradient) = _chromeColors(context);
     final Color first = gradient.first;
-    final bool hasContent = !_isValueEmpty(
-      _quill != null ? DeltaNeutralOps.encodeNeutral(_quill!.document) : value,
-    );
+    // 🔴 CHEMIN CHAUD : la carte se reconstruit à chaque frappe, donc cette
+    // mesure aussi. Quand un document VIVANT existe, l'émettre en ops neutres
+    // puis le redécoder par le codec ferait entrer la couture de persistance
+    // dans le chemin de frappe (mesuré : 100 appels de codec pour 100
+    // caractères) — le document répond directement à la question posée.
+    final QuillController? live = _quill;
+    final bool hasContent = live != null
+        ? live.document.toPlainText().trim().isNotEmpty
+        : !_isValueEmpty(value);
     final String label = _field.label ?? _field.name;
 
     // En-tête : puce d'icône dégradée + libellé (+ pilule d'action).
@@ -1172,17 +1303,21 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
           Expanded(
             // Libellé DÉJÀ porté par la sémantique du contenu (éditeur
             // `Semantics(textField:, label:)` / lecteur `Semantics(label:)`) —
-            // même exclusion que le libellé texte historique.
-            child: ExcludeSemantics(
-              child: chrome.labelBuilder?.call(context, label) ??
-                  Text(
-                    label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
+            // même exclusion que le libellé texte historique. `Expanded` est
+            // conservé même sans libellé : c'est lui qui pousse la pilule
+            // d'action au bout de l'en-tête.
+            child: !_showChromeLabel
+                ? const SizedBox.shrink()
+                : ExcludeSemantics(
+                    child: chrome.labelBuilder?.call(context, label) ??
+                        Text(
+                          label,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
                   ),
-            ),
           ),
           if (chrome.showActionButton && action != _ChromeAction.none)
             _chromeActionPill(
@@ -1224,10 +1359,10 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           header,
-          Padding(
-            padding: zTheme.fieldPadding,
-            child: content,
-          ),
+          if (padContent)
+            Padding(padding: zTheme.fieldPadding, child: content)
+          else
+            content,
         ],
       ),
     );
@@ -1245,8 +1380,8 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     required Color onGradient,
   }) {
     final bool commit = action == _ChromeAction.commit;
-    final String label =
-        commit ? 'Valider' : (hasContent ? 'Modifier' : 'Rédiger');
+    final String text =
+        _actionLabel(context, commit: commit, hasContent: hasContent);
     final IconData icon = commit
         ? Icons.save_rounded
         : (hasContent ? Icons.edit_rounded : Icons.edit_note);
@@ -1264,7 +1399,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
 
     return Semantics(
       button: true,
-      label: label,
+      label: text,
       child: ConstrainedBox(
         constraints: const BoxConstraints(
           minWidth: kZMinTapTarget,
@@ -1296,7 +1431,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
                     Icon(icon, size: 16, color: onGradient),
                     const SizedBox(width: 6),
                     Text(
-                      label,
+                      text,
                       style: Theme.of(context)
                           .textTheme
                           .labelMedium
@@ -1315,10 +1450,11 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     );
   }
 
-  /// Mode block : aperçu lecteur + bouton « Rédiger »/« Modifier ».
-  Widget _buildBlockPreview(Object? value) {
+  /// Mode block : aperçu lecteur + affordance d'édition (libellé l10n).
+  Widget _buildBlockPreview(BuildContext context, Object? value) {
     final bool empty = _isValueEmpty(value);
-    final String actionLabel = empty ? 'Rédiger' : 'Modifier';
+    final String actionLabel =
+        _actionLabel(context, commit: false, hasContent: !empty);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,

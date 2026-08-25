@@ -90,10 +90,45 @@ void main() {
       await _settle(t);
     });
 
-    testWidgets('sans `toolbarConfig` au registre : rendu historique (aucun '
-        'fond thémé) — rétro-compat DP-3', (t) async {
+    // RELEVÉ (contrat DÉLIBÉRÉMENT changé) : ce cas assertait qu'un registre
+    // SANS `toolbarConfig` ne peignait aucun fond de barre. C'est précisément
+    // le défaut corrigé — un champ compact rend désormais sa barre habillée
+    // sans qu'un hôte ne déclare quoi que ce soit, et les deux hôtes qui
+    // posaient ce drapeau à la main n'ont plus à le faire. Le cas est
+    // RETOURNÉ : il garde la même mécanique (registre → builder → rendu) et
+    // asserte le nouveau défaut.
+    testWidgets('sans `toolbarConfig` au registre : la barre est habillée PAR '
+        'DÉFAUT (fond `surfaceContainerLow` + liseré `outlineVariant`)',
+        (t) async {
       final r = ZWidgetRegistry();
       registerZMarkdownFields(r);
+      final c = _controller(<String, Object?>{'note': null});
+      await t.pumpWidget(_app(c, <ZFieldSpec>[_inlineField('note')], r));
+      await t.pump();
+
+      final ColorScheme scheme = ThemeData().colorScheme;
+      final decorations = _toolbarDecorations(t).where((box) =>
+          (box.decoration as BoxDecoration).color ==
+          scheme.surfaceContainerLow);
+      expect(decorations, isNotEmpty,
+          reason: '🔴 le champ compact doit rendre sa barre habillée SANS '
+              'aucune déclaration hôte — c\'est le bénéfice du défaut');
+      expect(
+          ((decorations.first.decoration as BoxDecoration).border! as Border)
+              .bottom
+              .color,
+          scheme.outlineVariant);
+      await _settle(t);
+    });
+
+    testWidgets('un `toolbarConfig` posé au registre PRIME sur le défaut : '
+        '`themedBarBackground: false` retire l\'habillage', (t) async {
+      final r = ZWidgetRegistry();
+      registerZMarkdownFields(
+        r,
+        toolbarConfig: ZRichTextToolbarConfig.inline
+            .copyWith(themedBarBackground: false),
+      );
       final c = _controller(<String, Object?>{'note': null});
       await t.pumpWidget(_app(c, <ZFieldSpec>[_inlineField('note')], r));
       await t.pump();
@@ -104,7 +139,7 @@ void main() {
               (box.decoration as BoxDecoration).color ==
               scheme.surfaceContainerLow),
           isEmpty,
-          reason: 'omis ⇒ comportement v0.82.0 STRICTEMENT inchangé');
+          reason: 'le paramètre hôte l\'emporte sur le défaut du socle');
       await _settle(t);
     });
 
@@ -149,7 +184,8 @@ void main() {
           _app(c2, <ZFieldSpec>[_inlineField('note', label: 'Remarques')], r2));
       await t.pump();
       expect(find.text('Remarques'), findsOneWidget,
-          reason: 'omis ⇒ libellé rendu comme en v0.82.0 (rétro-compat)');
+          reason: 'omis ⇒ libellé rendu — désormais dans l\'EN-TÊTE de la '
+              'carte par défaut, et non plus au-dessus du champ');
       await _settle(t);
     });
   });

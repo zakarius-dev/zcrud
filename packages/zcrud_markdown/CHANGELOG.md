@@ -3,6 +3,26 @@
 Toutes les modifications notables de `zcrud_markdown` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.21.0 — 2026-08-25
+
+### Ajouté
+- **Le champ compact a un chrome et une barre d'outils PAR DÉFAUT** : carte, en-tête et barre habillée à fleur, sans qu'un hôte n'écrive quoi que ce soit. Tout reste remplaçable par paramètre et par jeton.
+- **Préréglage `ZRichTextToolbarConfig.inline`** : les seize boutons du champ compact, dans leur ordre, groupés — et sans ceux qu'il n'a pas. Un préréglage est une **donnée**, jamais un comportement.
+- **Géométrie de barre exprimable** : `showSectionDividers`, `iconSize`, `iconButtonFactor`, `iconColor`, `selectedIconColor`, `barHeight`.
+- **Quatre libellés du chrome sortis du code** vers les tables de localisation ; la garde de couverture des clés balaie désormais aussi ce paquet, qui lui échappait.
+- **Garde de source** pour ce paquet, qui n'en avait aucune : elle encadre le fichier de référence et **déclare** ce qu'elle ne couvre pas encore, au lieu de le prétendre couvert.
+
+### Corrigé
+- 🔴 **`themedBarBackground` était INERTE** en affichage sur une seule ligne — le mode dans lequel la barre de formulaire est **toujours** rendue : basculer le drapeau changeait **0 pixel sur 1 823 500**. Quill peignait son propre conteneur aux bornes exactes de la décoration du socle, et **après** elle — fond et liseré compris. Le drapeau agit désormais, et une garde l'asserte **au pixel** : les sept tests qui le citaient montaient un carré de 10 dp à la place de la vraie barre et seraient restés verts.
+
+### Modifié
+- Les dartdocs qui promettaient « aucun chrome déclaré ⇒ rendu inchangé » sont **réécrites** : la promesse a changé en même temps que le code.
+
+### Attention
+- **Le rendu d'un hôte passif change** — c'est l'objet de cette version.
+- 🔴 **Un hôte francophone qui ne monte pas le delegate de localisation verra l'anglais** là où le paquet écrivait le français en dur.
+- La hauteur de barre du legacy (42 dp) **n'est pas adoptée en défaut** : les boutons portent le plancher interactif de 48 dp, que la forcer rognerait. `barHeight` est exposé, avec cet avertissement.
+
 ## 3.14.0 — 2026-08-24
 
 ### Ajouté

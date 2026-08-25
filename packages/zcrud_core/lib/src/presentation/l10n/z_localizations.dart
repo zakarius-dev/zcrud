@@ -196,6 +196,14 @@ const _enLabels = <String, String>{
   'batchSucceeded': 'succeeded',
   'batchFailed': 'failed',
   'batchSkipped': 'skipped',
+  // Champ rich-text compact : les trois états de son bouton d'en-tête et son
+  // agrandissement. `write`/`edit` se distinguent par la PRÉSENCE de contenu
+  // (rédiger un champ vide ≠ modifier un champ rempli) ; `commit` valide la
+  // saisie en cours sans quitter le formulaire.
+  'z.markdown.write': 'Write',
+  'z.markdown.edit': 'Edit',
+  'z.markdown.commit': 'Confirm',
+  'z.markdown.expand': 'Expand',
 };
 
 const _frLabels = <String, String>{
@@ -348,6 +356,11 @@ const _frLabels = <String, String>{
   'batchSucceeded': 'réussi(s)',
   'batchFailed': 'en échec',
   'batchSkipped': 'écarté(s)',
+  // Cf. commentaires de la table `en`.
+  'z.markdown.write': 'Rédiger',
+  'z.markdown.edit': 'Modifier',
+  'z.markdown.commit': 'Valider',
+  'z.markdown.expand': 'Agrandir',
 };
 
 /// Tables de libellés génériques par `languageCode` (baseline `en`/`fr`).

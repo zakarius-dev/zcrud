@@ -333,15 +333,30 @@ QuillSimpleToolbarConfig buildZToolbarConfig({
   bool autoMultiRow = false,
 }) =>
     QuillSimpleToolbarConfig(
-      toolbarSize: kZMinTapTarget,
+      toolbarSize: zToolbarSizeFor(config.barHeight),
       // CR 2026-08-11 : tri-état — `null` = AUTO par surface ([autoMultiRow]),
       // `true`/`false` = forçage hôte respecté sur les deux surfaces.
       multiRowsDisplay: config.multiRow ?? autoMultiRow,
+      showDividers: config.showSectionDividers,
+      // 🔴 Le fond de barre DOIT transiter par la config de la barre elle-même,
+      // jamais par un wrapper : en une rangée, `QuillSimpleToolbar` peint un
+      // `Container` opaque (`config.color ?? canvasColor`) AUX MÊMES BORNES que
+      // toute décoration posée autour de lui, et APRÈS elle
+      // (`simple_toolbar.dart:350-354` de flutter_quill 11.5.1). Mesuré : sans
+      // ce `transparent`, basculer `themedBarBackground` changeait
+      // 0 pixel sur 1 823 500 — fond ET liseré bas recouverts. `Colors.transparent`
+      // est une constante : la config reste STABLE et sans dépendance au thème
+      // (AD-2), toute la couleur restant dans `zDecorateToolbar`, réactive au
+      // thème.
+      color: config.themedBarBackground ? Colors.transparent : null,
       // icônes rounded OPT-IN — SEUL `iconData` est posé, jamais de
       // `tooltip` : les tooltips restent ceux de Quill, DÉJÀ localisés.
-      buttonOptions: config.roundedIcons
-          ? _kZRoundedButtonOptions
-          : const QuillSimpleToolbarButtonOptions(),
+      // La géométrie et les couleurs de glyphe passent par les options de BASE :
+      // `QuillSimpleToolbarConfig.iconTheme` n'atteint QUE les boutons d'embed
+      // (`simple_toolbar.dart:171`), les autres résolvant
+      // `specificOptions.iconTheme ?? baseOptions.iconTheme`
+      // (`base_button_options_resolver.dart:32`).
+      buttonOptions: _zButtonOptions(config),
       showUndo: config.showUndoRedo,
       showRedo: config.showUndoRedo,
       showFontFamily: config.showFontFamily,
@@ -407,15 +422,64 @@ QuillSimpleToolbarConfig buildZToolbarConfig({
       ],
     );
 
+/// Facteur de conversion « taille de barre » → hauteur RENDUE de la rangée,
+/// appliqué par la barre sous-jacente (`simple_toolbar.dart:43` de
+/// flutter_quill 11.5.1 : `toolbarSize * 1.4`). Une garde mesure la hauteur
+/// rendue : si ce facteur change en amont, elle rougit.
+const double _kZBarHeightFactor = 1.4;
+
+/// Traduit une hauteur de barre DEMANDÉE (dp rendus) en `toolbarSize`.
+/// `null` ⇒ hauteur dérivée de la cible de tap minimale (comportement
+/// historique).
+@visibleForTesting
+double zToolbarSizeFor(double? barHeight) =>
+    barHeight == null ? kZMinTapTarget : barHeight / _kZBarHeightFactor;
+
+/// Options de bouton EFFECTIVES : jeu d'icônes + géométrie + couleurs de
+/// glyphe. Construite UNE FOIS avec la config (jamais dans le chemin chaud).
+QuillSimpleToolbarButtonOptions _zButtonOptions(ZRichTextToolbarConfig config) {
+  final QuillIconTheme? iconTheme =
+      (config.iconColor == null && config.selectedIconColor == null)
+          ? null
+          : QuillIconTheme(
+              iconButtonUnselectedData:
+                  IconButtonData(color: config.iconColor),
+              iconButtonSelectedData:
+                  IconButtonData(color: config.selectedIconColor),
+            );
+  if (config.iconSize == null &&
+      config.iconButtonFactor == null &&
+      iconTheme == null) {
+    // Chemin inchangé : aucune allocation nouvelle quand rien n'est demandé.
+    return config.roundedIcons
+        ? _zRoundedButtonOptions(
+            const QuillToolbarBaseButtonOptions<dynamic, dynamic>())
+        : const QuillSimpleToolbarButtonOptions();
+  }
+  final QuillToolbarBaseButtonOptions<dynamic, dynamic> base =
+      QuillToolbarBaseButtonOptions<dynamic, dynamic>(
+    iconSize: config.iconSize,
+    iconButtonFactor: config.iconButtonFactor,
+    iconTheme: iconTheme,
+  );
+  return config.roundedIcons
+      ? _zRoundedButtonOptions(base)
+      : QuillSimpleToolbarButtonOptions(base: base);
+}
+
 /// jeu d'icônes **`*_rounded`** (opt-in [ZRichTextToolbarConfig.roundedIcons]).
 ///
 /// Jeu MESURÉ sur le legacy : seuls les boutons que le
 /// legacy re-skinnait sont couverts — on n'INVENTE pas d'icône pour les autres
 /// (search, couleur, police… gardent l'icône Quill). AUCUN `tooltip` posé :
 /// Quill fournit les siens, déjà localisés (l10n) — poser un libellé ici
-/// serait un libellé en dur.
-const QuillSimpleToolbarButtonOptions _kZRoundedButtonOptions =
+/// serait un libellé en dur. [base] porte la géométrie/les couleurs communes,
+/// que chaque bouton hérite faute d'option spécifique.
+QuillSimpleToolbarButtonOptions _zRoundedButtonOptions(
+  QuillToolbarBaseButtonOptions<dynamic, dynamic> base,
+) =>
     QuillSimpleToolbarButtonOptions(
+  base: base,
   bold: QuillToolbarToggleStyleButtonOptions(
       iconData: Icons.format_bold_rounded),
   italic: QuillToolbarToggleStyleButtonOptions(
@@ -454,11 +518,15 @@ const QuillSimpleToolbarButtonOptions _kZRoundedButtonOptions =
   clipboardPaste: QuillToolbarClipboardButtonOptions(iconData: Icons.paste_rounded),
 );
 
-/// habillage OPT-IN de la barre d'outils
-/// ([ZRichTextToolbarConfig.themedBarBackground]) : surface + liseré bas
-/// dérivés des RÔLES du thème ( : zéro couleur en dur — les gris figés du
-/// legacy ne sont PAS repris, c'est le thème de l'hôte qui parle).
-/// Drapeau `false` ⇒ [child] retourné TEL QUEL (rendu historique, AD-4).
+/// Habillage de la barre d'outils ([ZRichTextToolbarConfig.themedBarBackground])
+/// : surface + liseré bas dérivés des RÔLES du thème — zéro couleur en dur,
+/// c'est le thème de l'hôte qui parle. Drapeau `false` ⇒ [child] retourné TEL
+/// QUEL.
+///
+/// 🔴 Cette décoration n'est VISIBLE que si la barre elle-même est
+/// transparente : en une rangée, elle peint un fond opaque aux mêmes bornes et
+/// APRÈS cette décoration. `buildZToolbarConfig` s'en charge sous le même
+/// drapeau — les deux vont donc TOUJOURS ensemble.
 Widget zDecorateToolbar(
   BuildContext context,
   ZRichTextToolbarConfig config,

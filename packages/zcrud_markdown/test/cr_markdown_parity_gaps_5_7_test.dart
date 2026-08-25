@@ -202,7 +202,10 @@ void main() {
       expect(find.text('Contenu'), findsOneWidget);
       final pill = find.byKey(const Key('z-markdown-chrome-action'));
       expect(pill, findsOneWidget);
-      expect(find.text('Valider'), findsOneWidget);
+      // RELEVÉ : le libellé de la pilule est résolu par
+      // `label(context, 'z.markdown.commit')` — plus aucun littéral français
+      // dans le paquet. Cet hôte ne monte pas de delegate ⇒ repli `en`.
+      expect(find.text('Confirm'), findsOneWidget);
       // Cible tactile ≥ 48 dp par CONTRAINTE (AD-13) — jamais tester.getSize.
       final box = tester.widget<ConstrainedBox>(find
           .ancestor(of: pill, matching: find.byType(ConstrainedBox))
@@ -344,7 +347,8 @@ void main() {
         ),
       )));
       await tester.pump(const Duration(milliseconds: 50));
-      expect(find.text('Rédiger'), findsOneWidget);
+      // RELEVÉ : `label(context, 'z.markdown.write')`, repli `en`.
+      expect(find.text('Write'), findsOneWidget);
       expect(find.byKey(const Key('z-markdown-block-edit')), findsNothing,
           reason: 'sous chrome, une SEULE affordance (la pilule d\'en-tête)');
       await tester.tap(find.byKey(const Key('z-markdown-chrome-action')));

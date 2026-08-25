@@ -41,13 +41,18 @@ import 'z_rich_text_toolbar_config.dart';
 /// REGISTRE partagés par tous les champs rich-text du sous-arbre (styles
 /// « signature » de l'hôte, habillage carte, échelle, formules).
 /// [toolbarConfig] :
-/// config granulaire de la barre d'outils (boutons + `themedBarBackground`)
-/// partagée par tous les champs rich-text — le registre est la SEULE voie de
-/// construction pour un hôte, donc tout paramètre par-champ de [ZMarkdownField]
-/// DOIT être posable ici (garde de parité
-/// `z_markdown_registration_parity_test.dart`). [showLabel] : `false` masque
-/// le libellé rendu par le champ (hôte posant le sien).
-/// Tous OPTIONNELS : omis ⇒ comportement INCHANGÉ.
+/// config granulaire de la barre d'outils (boutons + habillage) partagée par
+/// tous les champs rich-text — le registre est la SEULE voie de construction
+/// pour un hôte, donc tout paramètre par-champ de [ZMarkdownField] DOIT être
+/// posable ici (garde de parité `z_markdown_registration_parity_test.dart`).
+/// [showLabel] : `false` masque le libellé rendu par le champ (hôte posant le
+/// sien).
+///
+/// Tous OPTIONNELS. **Omis ne veut pas dire « nu »** : un champ
+/// `inlineMarkdown` rend par défaut sa carte (en-tête icône + libellé, bordure
+/// teintée, pilule d'action) et sa barre compacte habillée. [chrome] et
+/// [toolbarConfig] REMPLACENT ces défauts, ils ne s'y ajoutent pas ; les modes
+/// `markdown`/`richText` (`block`) gardent leur rendu.
 void registerZMarkdownFields(
   ZWidgetRegistry registry, {
   ZCodec? codec,

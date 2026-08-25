@@ -8,23 +8,27 @@
 /// AUCUN type Quill ne fuit dans cette classe ni dans la surface publique
 /// (AD-1/AD-7).
 ///
-/// RÉTRO-COMPAT (NON-NÉGOCIABLE) : `toolbarConfig` est OPTIONNEL. Un
-/// `ZMarkdownField` sans `toolbarConfig` conserve EXACTEMENT le comportement
-/// (drapeau `showToolbar` honoré, toolbar pleine en voie `controller`,
-/// toolbar compacte en mode `inline`).
+/// `toolbarConfig` est OPTIONNEL : un `ZMarkdownField` qui n'en fournit pas
+/// applique le préset de son MODE (`inline` pour le champ compact, `full` pour
+/// la voie `controller` et le plein-écran). Fournie, elle REMPLACE ce préset —
+/// elle ne s'y ajoute pas.
 ///
 /// ISOLATION : classe de DONNÉES pure (booléens `const`) — sûre à exporter par le
 /// barrel. Sa traduction en `QuillSimpleToolbarConfig` vit dans
 /// `z_rich_text_core.dart` (interne), jamais ici.
 library;
 
+import 'dart:ui' show Color;
+
 import 'package:flutter/foundation.dart';
 
 /// Configuration granulaire (par bouton) de la toolbar rich-text.
 ///
-/// Chaque drapeau active/désactive UN groupe de boutons de la barre. Les présets
-/// [full]/[minimal]/[markdown] couvrent les cas parité legacy ; [copyWith] permet
-/// une personnalisation fine par field.
+/// Chaque drapeau active/désactive UN groupe de boutons de la barre, ou fixe un
+/// trait de son habillage (icônes, fond, géométrie). Les présets
+/// [inline]/[minimal]/[markdown]/[full] couvrent les cas courants — [inline]
+/// est celui qu'un champ compact applique sans configuration ; [copyWith]
+/// personnalise finement par champ.
 @immutable
 class ZRichTextToolbarConfig {
   /// Construit une config granulaire. Tous les groupes sont activés par DÉFAUT
@@ -64,6 +68,12 @@ class ZRichTextToolbarConfig {
     this.roundedIcons = false,
     this.multiRow,
     this.themedBarBackground = false,
+    this.showSectionDividers = true,
+    this.iconSize,
+    this.iconButtonFactor,
+    this.iconColor,
+    this.selectedIconColor,
+    this.barHeight,
   });
 
   /// Boutons Annuler/Rétablir.
@@ -189,11 +199,46 @@ class ZRichTextToolbarConfig {
   /// flux, quel que soit inline/block.
   final bool? multiRow;
 
-  /// Opt-in : **fond de barre thémé** — surface + liseré bas dérivés
-  /// des RÔLES du thème (`surfaceContainerLow`/`outlineVariant`) :
-  /// zéro couleur en dur ; le legacy posait des gris figés, non repris.
-  /// Défaut `false` ⇒ aucune décoration (rendu historique).
+  /// **Fond de barre thémé** — surface + liseré bas dérivés des RÔLES du thème
+  /// (`surfaceContainerLow` / `outlineVariant`) : zéro couleur en dur, c'est le
+  /// thème de l'hôte qui parle.
+  ///
+  /// `false` ⇒ aucune décoration (barre transparente sur le fond ambiant).
+  /// Le préset [inline] le pose à `true` — c'est ce que rend un champ
+  /// `inlineMarkdown` sans configuration.
   final bool themedBarBackground;
+
+  /// Séparateurs verticaux entre les GROUPES de boutons. Défaut `true`.
+  final bool showSectionDividers;
+
+  /// Taille de base du glyphe d'un bouton, en dp.
+  ///
+  /// Le glyphe rendu mesure `iconSize × iconButtonFactor` : les deux valeurs se
+  /// composent, changer l'une sans l'autre change la taille finale. `null`
+  /// (défaut) ⇒ valeur de la barre sous-jacente.
+  final double? iconSize;
+
+  /// Facteur multiplicateur du glyphe (cf. [iconSize]). `null` ⇒ valeur de la
+  /// barre sous-jacente.
+  final double? iconButtonFactor;
+
+  /// Couleur des glyphes NON sélectionnés. `null` (défaut) ⇒ couleur héritée du
+  /// thème ambiant. Une couleur posée ici vient de l'HÔTE : le paquet n'en code
+  /// aucune.
+  final Color? iconColor;
+
+  /// Couleur des glyphes SÉLECTIONNÉS (bouton actif). `null` ⇒ couleur héritée
+  /// du thème ambiant.
+  final Color? selectedIconColor;
+
+  /// Hauteur RENDUE de la rangée de boutons, en dp — la barre en une rangée
+  /// occupe exactement cette hauteur.
+  ///
+  /// `null` (défaut) ⇒ hauteur dérivée de la cible de tap minimale. ⚠️ Chaque
+  /// bouton porte la contrainte interactive minimale de la plateforme : une
+  /// hauteur inférieure à cette contrainte ROGNE les boutons. Sans effet en
+  /// mode multi-rangées, où la hauteur est celle du contenu.
+  final double? barHeight;
 
   /// Préset **complet** : tous les boutons (défaut de la voie `controller`),
   /// SAUF le barré (cf. [showStrikethrough]) ; l'habillage reste opt-in.
@@ -228,6 +273,60 @@ class ZRichTextToolbarConfig {
     showTableButton: false,
     showImageButton: false,
     showVideoButton: false,
+  );
+
+  /// Préset **inline** — celui qu'applique un champ rich-text compact rendu
+  /// DANS LE FLUX d'un formulaire quand aucune configuration n'est fournie.
+  ///
+  /// C'est une **donnée**, jamais un comportement : il n'active et ne masque
+  /// que des boutons, et fixe l'habillage (icônes arrondies, fond de barre
+  /// thémé, géométrie). L'ordre de rendu et le groupement ne s'écrivent pas
+  /// ici — ils appartiennent à la barre, qui range les boutons par groupe
+  /// (style de caractère · paragraphe · listes · retraits · presse-papier ·
+  /// insertions) et les sépare de traits verticaux.
+  ///
+  /// Boutons RENDUS, dans l'ordre : annuler · rétablir · gras · italique ·
+  /// souligné · code inline ┃ style de titre ┃ liste numérotée · liste à puces ·
+  /// cases à cocher ┃ retrait + · retrait − ┃ copier · coller ┃ formule ·
+  /// tableau.
+  ///
+  /// Boutons volontairement ABSENTS : barré, couleur de texte, couleur de
+  /// fond, effacer le format, alignements, citation, bloc de code, lien,
+  /// recherche, indice, exposant, police, taille de police, image, vidéo. Un
+  /// hôte qui en veut un l'ajoute par [copyWith].
+  static const ZRichTextToolbarConfig inline = ZRichTextToolbarConfig(
+    showUndoRedo: true,
+    showFontFamily: false,
+    showFontSize: false,
+    showUnderline: true,
+    showStrikethrough: false,
+    showInlineCode: true,
+    showColor: false,
+    showBackgroundColor: false,
+    showClearFormat: false,
+    showHeaderStyle: true,
+    showAlignment: false,
+    showList: true,
+    showIndent: true,
+    showBlockQuote: false,
+    showCodeBlock: false,
+    showLink: false,
+    showSearch: false,
+    showSubscript: false,
+    showSuperscript: false,
+    showClipboardCopy: true,
+    showClipboardPaste: true,
+    showLatexButton: true,
+    showTableButton: true,
+    showImageButton: false,
+    showVideoButton: false,
+    roundedIcons: true,
+    themedBarBackground: true,
+    // Composent le MÊME glyphe que les valeurs par défaut de la barre
+    // sous-jacente (20 × 1,2 = 15 × 1,6 = 24 dp, mesuré) : le préset rend la
+    // géométrie EXPLICITE sans rien déplacer à l'écran.
+    iconSize: 20,
+    iconButtonFactor: 1.2,
   );
 
   /// Préset **markdown** (parité legacy `markdown`) : style + listes + insertions
@@ -300,6 +399,12 @@ class ZRichTextToolbarConfig {
     bool? roundedIcons,
     Object? multiRow = _zMultiRowUnset,
     bool? themedBarBackground,
+    bool? showSectionDividers,
+    double? iconSize,
+    double? iconButtonFactor,
+    Color? iconColor,
+    Color? selectedIconColor,
+    double? barHeight,
   }) {
     return ZRichTextToolbarConfig(
       showUndoRedo: showUndoRedo ?? this.showUndoRedo,
@@ -334,6 +439,12 @@ class ZRichTextToolbarConfig {
           ? this.multiRow
           : multiRow as bool?,
       themedBarBackground: themedBarBackground ?? this.themedBarBackground,
+      showSectionDividers: showSectionDividers ?? this.showSectionDividers,
+      iconSize: iconSize ?? this.iconSize,
+      iconButtonFactor: iconButtonFactor ?? this.iconButtonFactor,
+      iconColor: iconColor ?? this.iconColor,
+      selectedIconColor: selectedIconColor ?? this.selectedIconColor,
+      barHeight: barHeight ?? this.barHeight,
     );
   }
 
@@ -371,7 +482,13 @@ class ZRichTextToolbarConfig {
           showVideoButton == other.showVideoButton &&
           roundedIcons == other.roundedIcons &&
           multiRow == other.multiRow &&
-          themedBarBackground == other.themedBarBackground;
+          themedBarBackground == other.themedBarBackground &&
+          showSectionDividers == other.showSectionDividers &&
+          iconSize == other.iconSize &&
+          iconButtonFactor == other.iconButtonFactor &&
+          iconColor == other.iconColor &&
+          selectedIconColor == other.selectedIconColor &&
+          barHeight == other.barHeight;
 
   @override
   int get hashCode => Object.hashAll(<Object?>[
@@ -405,6 +522,12 @@ class ZRichTextToolbarConfig {
         roundedIcons,
         multiRow,
         themedBarBackground,
+        showSectionDividers,
+        iconSize,
+        iconButtonFactor,
+        iconColor,
+        selectedIconColor,
+        barHeight,
       ]);
 }
 

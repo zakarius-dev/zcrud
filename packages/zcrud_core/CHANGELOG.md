@@ -3,6 +3,14 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.21.0 — 2026-08-25
+
+### Ajouté
+- **Quatre clés de localisation** pour le chrome du champ rich-text compact (`write`, `edit`, `commit`, `expand`), servies dans les deux tables. `write` et `edit` sont distinctes à dessein : rédiger un champ vide n'est pas modifier un champ rempli.
+
+### Garde
+- La couverture des clés de libellés balaie désormais aussi le `lib/` de `zcrud_markdown`, qui lui échappait.
+
 ## 3.20.0 — 2026-08-25
 
 ### Ajouté

@@ -36,6 +36,11 @@ const List<String> _scannedPackages = <String>[
   'zcrud_core',
   'zcrud_screen',
   'zcrud_select',
+  // `zcrud_markdown` ajouté avec les clés du chrome carte du champ rich-text
+  // (bouton d'en-tête + agrandissement) : ce `lib/` compose lui aussi des
+  // libellés l10n depuis son propre paquet, et rien n'y rougissait jusqu'ici
+  // si une clé manquait à l'une des deux tables.
+  'zcrud_markdown',
 ];
 
 /// Fichiers `.dart` de `lib/` d'un paquet du dépôt (hors code généré).

@@ -204,9 +204,16 @@ void main() {
       await _settle(tester);
     });
 
+    // RELEVÉ (contrat DÉLIBÉRÉMENT changé) : « voie ctx mode inline SANS
+    // chrome » n'est plus un état atteignable — la carte est le rendu par
+    // DÉFAUT du champ compact servi par le registre. Le cas conserve tout son
+    // intérêt pour CE fichier (la double bordure) : il prouve que le champ
+    // compact rend UN SEUL cadre, celui de la carte, sans qu'aucun hôte n'ait
+    // rien déclaré. La ligne de base « sans chrome » reste couverte par les
+    // deux cas voie `controller` ci-dessus, où le chrome demeure un paramètre.
     testWidgets(
-        'voie ctx mode inline sans chrome : bordure de zone conservée '
-        '(rayon radiusM)', (tester) async {
+        'voie ctx mode inline SANS déclaration : un seul cadre — la CARTE par '
+        'défaut (rayon cardRadius)', (tester) async {
       await tester.pumpWidget(_host(ZMarkdownField.fromContext(
         key: const ValueKey('z-markdown-notes'),
         ctx: ZFieldWidgetContext(
@@ -224,11 +231,16 @@ void main() {
 
       final editor = find.byType(QuillEditor).first;
       final frames = _borderedAncestors(tester, editor);
-      expect(frames.length, 1);
+      expect(frames.length, 1,
+          reason: 'un seul cadre : la carte — jamais carte + bordure de zone');
       expect(
         frames.single.borderRadius,
-        BorderRadius.all(const ZcrudTheme().radiusM),
+        const BorderRadius.all(ZMarkdownChromeReference.cardRadius),
+        reason: 'le cadre du champ compact par défaut est la CARTE (rayon 14), '
+            'plus la bordure de zone d\'édition (radiusM)',
       );
+      expect(_fieldPaddingAncestors(tester, editor), 1,
+          reason: 'un seul fieldPadding, porté par le contenu SOUS la barre');
       await _settle(tester);
     });
   });

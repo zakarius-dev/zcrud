@@ -13,7 +13,7 @@
 # que des mécanismes TRANSVERSES.
 name: zcrud_chat_kernel
 description: "Neutral AI conversation kernel for zcrud: ZChatConversation, ZChatMessage, content blocks, sources, suggestions, quotas and the sealed message-action contract. Depends only on zcrud_core."
-version: 3.20.0
+version: 3.21.0
 publish_to: none
 resolution: workspace
 
@@ -42,7 +42,7 @@ environment:
 # ⚠️ PAS de `dartz` en direct : `Either`/`Left`/`Right`/`Unit`/`unit` sont
 # RÉEXPORTÉS par `package:zcrud_core/domain.dart` (une dépendance de moins).
 dependencies:
-  zcrud_core: ^3.20.0
+  zcrud_core: ^3.21.0
 
 # Package PUR-DART (aucun `flutter:` ici) : sa suite tourne sous `dart test`,
 # comme `zcrud_study_kernel` — même convention, même runner (`melos run

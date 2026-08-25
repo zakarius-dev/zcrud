@@ -211,7 +211,15 @@ void main() {
       expect(find.byType(QuillSimpleToolbar), findsNothing,
           reason: 'pas d\'édition en place en mode block');
       expect(find.byKey(const Key('z-markdown-block-edit')), findsOneWidget);
-      expect(find.text('Rédiger'), findsOneWidget);
+      // RELEVÉ (contrat changé, pas un affaiblissement) : l'affordance
+      // d'édition ne porte plus un littéral français codé dans le paquet, elle
+      // est résolue par `label(context, 'z.markdown.write')`. Cet hôte de test
+      // ne monte AUCUN `ZcrudLocalizationsDelegate` : `label()` retombe donc
+      // légitimement sur la table `en`. La preuve que la table `fr` est bien
+      // atteinte vit dans `z_inline_markdown_default_test.dart` (locale fr
+      // montée), et la preuve qu'aucun littéral ne subsiste dans la source
+      // vit dans `z_markdown_source_scan_test.dart`.
+      expect(find.text('Write'), findsOneWidget);
       await _settle(t);
     });
 
@@ -224,7 +232,9 @@ void main() {
         registry: _registry(),
       ));
       await t.pump();
-      expect(find.text('Modifier'), findsOneWidget);
+      // RELEVÉ : cf. le cas « vide » ci-dessus — libellé résolu par
+      // `label(context, 'z.markdown.edit')`, repli `en` faute de delegate.
+      expect(find.text('Edit'), findsOneWidget);
       expect(_quillFirst(t).document.toPlainText().contains('Bonjour'), isTrue);
       await _settle(t);
     });

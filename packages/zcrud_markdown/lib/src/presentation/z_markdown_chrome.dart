@@ -1,35 +1,37 @@
-/// Habillage « carte » OPT-IN du champ rich-text
-/// — en-tête icône + libellé, bordure/ombre, pilule d'action « Rédiger /
-/// Modifier / Valider ».
+/// Habillage « carte » du champ rich-text — en-tête icône + libellé,
+/// bordure/ombre teintées par le contenu, pilule d'action.
 ///
-/// MESURE legacy : carte rayon 14 à bordure colorée par
-/// contenu + ombre ; en-tête à fond dégradé (icône `article_rounded` dans une
-/// puce dégradée + libellé `titleMedium` w600, `labelBuilder` optionnel) ;
-/// pilule dégradée « Rédiger » (vide) / « Modifier » (contenu) en mode block,
-/// « Valider » (save) en mode inline. Articulation save legacy MESURÉE :
-/// le listener `changes` est COMMENTÉ — l'inline n'écrit que
-/// sur PERTE DE FOCUS ou sur « Valider », jamais à la frappe.
+/// Carte de rayon 14 dont la bordure et l'ombre se teintent quand le champ
+/// porte du contenu ; en-tête à fond dégradé (icône dans une puce dégradée +
+/// libellé `titleMedium` w600, [labelBuilder] optionnel) ; pilule dégradée
+/// portant l'affordance d'édition — « rédiger »/« modifier » en mode `block`,
+/// « valider » en mode `inline`, libellés résolus par le système l10n injecté.
 ///
 /// ## Chaîne de couleurs — paramètre > jeton/seam > rôle
 ///
-/// AUCUNE couleur legacy n'entre dans le paquet : le dégradé signature d'un
-/// éditeur historique (`[Colors.blue, Colors.purple]` / `0xFF667EEA→0xFF764BA2`) reste CHEZ
-/// L'HÔTE, qui le passe par [gradient] (voie « injection par l'hôte » —
-/// suffisante, donc préférée au fichier de référence de couleurs). À défaut :
-/// le seam `zResolveGradient` de `ZcrudScope` (jeton injecté, [gradientKey]),
-/// puis les rôles `primaryContainer → tertiaryContainer` du `ColorScheme`
-/// (même paire mesurée que `zDerivedGradientResolver` du cœur). Le fichier de
+/// AUCUNE couleur n'est codée dans le paquet. Le dégradé signature de l'hôte
+/// se passe par [gradient] ; à défaut, le seam `zResolveGradient` de
+/// `ZcrudScope` (jeton injecté, [gradientKey]) ; à défaut encore, les rôles
+/// `primaryContainer → tertiaryContainer` du `ColorScheme`. Le fichier de
 /// référence [ZMarkdownChromeReference] ne fige que des DIMENSIONS et des
-/// scalaires d'opacité (patron `ZStudyCardReference` : « AUCUNE couleur ici »).
+/// scalaires d'opacité — jamais une couleur.
 ///
-/// ## Opt-in strict (AD-57 / AD-4)
+/// ## Quand la carte s'applique
 ///
-/// `chrome: null` (défaut) ⇒ rendu actuel STRICTEMENT inchangé (boîte bordée +
-/// libellé texte). [deferWrites] est un SECOND opt-in : par défaut l'auto-save
-/// actuel (écriture de tranche à chaque mutation) est CONSERVÉ — la pilule
-/// « Valider » ne fait alors que committer/défocaliser explicitement. Un hôte
-/// qui veut l'articulation legacy exacte (écriture sur blur/Valider SEULEMENT)
-/// pose `deferWrites: true`.
+/// Elle est le rendu PAR DÉFAUT du champ rich-text **compact** servi par le
+/// registre (`inlineMarkdown`), en édition comme en lecture seule : un hôte
+/// n'a rien à déclarer pour l'obtenir. La voie `ZMarkdownField(controller:)`
+/// et le mode `block` gardent leur rendu sans carte — leur chrome reste un
+/// paramètre. Passer un [ZMarkdownFieldChrome] REMPLACE le défaut trait par
+/// trait ; il n'existe pas de valeur pour retirer la carte d'un champ compact
+/// (poser son propre libellé ou masquer la pilule s'obtient par [labelBuilder]
+/// et [showActionButton]).
+///
+/// [deferWrites] reste un OPT-IN et vaut `false` par défaut : l'écriture de
+/// tranche à chaque mutation est conservée, la pilule ne faisant que
+/// committer/défocaliser explicitement. Un hôte qui veut l'écriture différée
+/// (sur blur ou sur pilule SEULEMENT) la demande — cf. l'avertissement porté
+/// par [ZMarkdownFieldChrome.deferWrites].
 library;
 
 import 'package:flutter/widgets.dart';
@@ -85,10 +87,11 @@ abstract final class ZMarkdownChromeReference {
       EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 6);
 }
 
-/// Configuration OPT-IN de l'habillage carte d'un champ rich-text.
+/// Configuration de l'habillage carte d'un champ rich-text.
 ///
-/// Passée à `ZMarkdownField(chrome: …)` — `null` (défaut) ⇒ rendu historique
-/// STRICTEMENT inchangé.
+/// Passée à `ZMarkdownField(chrome: …)`. `null` ⇒ le champ applique le chrome
+/// par DÉFAUT de son mode (carte pour le champ compact du registre, aucune
+/// carte pour la voie `controller` et le mode `block`).
 @immutable
 class ZMarkdownFieldChrome {
   /// Construit un chrome carte — tout est optionnel.
@@ -128,9 +131,16 @@ class ZMarkdownFieldChrome {
   /// « Valider » en mode inline). Sans objet en lecture seule.
   final bool showActionButton;
 
-  /// **Articulation legacy de l'écriture** (inline uniquement, OPT-IN) :
-  /// `true` ⇒ la tranche n'est écrite QUE sur « Valider » ou sur perte de
-  /// focus (mesuré sur le legacy) — plus d'écriture à la frappe. `false`
-  /// (défaut) ⇒ l'auto-save actuel des hôtes existants est CONSERVÉ.
+  /// **Écriture DIFFÉRÉE** (mode compact uniquement, opt-in).
+  ///
+  /// `true` ⇒ la tranche n'est écrite QUE sur la pilule d'action ou sur perte
+  /// de focus — plus rien à la frappe. `false` (DÉFAUT) ⇒ chaque mutation
+  /// écrit la tranche.
+  ///
+  /// ⚠️ Le différé n'est sûr que si la soumission du formulaire est PRÉCÉDÉE
+  /// d'une perte de focus du champ. Un écran qui soumet directement depuis un
+  /// bouton n'ayant pas défocalisé l'éditeur enregistre la tranche telle
+  /// qu'elle était avant la saisie : l'utilisateur perd son texte, sans aucun
+  /// message. C'est pourquoi le défaut ne l'active pas.
   final bool deferWrites;
 }
