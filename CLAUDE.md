@@ -275,6 +275,18 @@ dart pub get --dry-run
 
 **Vérif verte (à rejouer réellement avant tout `done`)** : `melos run generate` OK → `analyze` RC=0 → `flutter test` RC=0.
 
+⚠️ **La recette de consommation fait partie du rituel de release** (mesuré le 2026-08-26, signalé
+par le **primo-intégrant** de DLCFTI) : `docs/private-git-consumption.md` épinglait `v0.14.0` et
+`v0.18.0` alors que le dépôt était à `v3.22.0` — **trois majeures d'écart**, et une incohérence
+interne entre ses deux moitiés. Le document n'était pas oublié : il avait été relu et corrigé **deux
+fois sur son mécanisme** par deux CR de lex, pendant que ses **valeurs** dérivaient sans que rien ne
+les garde. Un hôte qui recopie ce bloc obtient ce socle-là **sans aucun signal** : `pub get` réussit,
+le code compile, les écrans s'affichent ; il découvre l'écart en cherchant un symbole d'un handoff
+récent que le barrel n'exporte pas. Le gate `consumption-recipe` exige désormais que **tous** les
+`ref:` valent la version de `zcrud_core` — la version du **pubspec**, pas le dernier tag git, parce
+que le bump précède le tag et qu'un gate calé sur le tag refuserait la version qu'on publie. Ordre
+imposé : **bump → mise à jour de la recette → verify**.
+
 🔴 **`flutter test` DOIT être lancé DEPUIS LE DOSSIER DU PACKAGE** (`cd packages/<pkg> && flutter test`),
 jamais depuis la racine (`flutter test packages/<pkg>`). Mesuré le 2026-08-01 : depuis la racine,
 `zcrud_study` rend **48 rouges**, `zcrud_session` **27**, `zcrud_flashcard` **11** — et **0 depuis le

@@ -221,8 +221,10 @@ Navigator
                                                                                                                                     AnimatedDefaultTextStyle
                                                                                                                                       DefaultTextStyle
                                                                                                                                         NotificationListener<DraggableScrollableNotification>
-                                                                                                                                          Text text=CORPS align=null
-                                                                                                                                            RichText rich=CORPS w=FontWeight.w400 d=TextDecoration.none
+                                                                                                                                          ZSheetKeyboardInset
+                                                                                                                                            Padding p=EdgeInsets.zero
+                                                                                                                                              Text text=CORPS align=null
+                                                                                                                                                RichText rich=CORPS w=FontWeight.w400 d=TextDecoration.none
 === dialog ===
 Navigator
   HeroControllerScope

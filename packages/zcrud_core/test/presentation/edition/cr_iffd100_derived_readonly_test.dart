@@ -84,8 +84,23 @@ void main() {
       const ZFieldSpec(name: 'mode', type: EditionFieldType.text),
       _derived('fige', EditionFieldType.text, statik: true),
     ];
+    // Rendu par DÉFAUT : le champ déclaré `readOnly` est présenté en fiche —
+    // la dérivation qui rend `false` ne lui rend donc même pas un champ de
+    // saisie. Seul le champ SOURCE en garde un.
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(body: DynamicEdition(controller: c, fields: fields)),
+    ));
+    await tester.pump();
+    expect(find.byType(EditableText), findsOneWidget,
+        reason: 'le champ figé n\'a aucun champ de saisie ; la source, si');
+
+    // Même précédence sur le rendu de saisie VERROUILLÉ (échappatoire posée) :
+    // c'est la mesure historique, conservée telle quelle.
+    await tester.pumpWidget(ZcrudScope(
+      readOnlyFieldsAsCards: false,
+      child: MaterialApp(
+        home: Scaffold(body: DynamicEdition(controller: c, fields: fields)),
+      ),
     ));
     await tester.pump();
     expect(

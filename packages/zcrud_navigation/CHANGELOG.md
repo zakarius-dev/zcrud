@@ -3,6 +3,20 @@
 Toutes les modifications notables de `zcrud_navigation` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.23.0 — 2026-08-26
+
+### Corrigé
+- 🔴 **La feuille d'édition réserve la place du clavier.** Elle est présentée en mode contrôlé — le réglage qui transfère à l'appelant la charge des encarts — et ne les appliquait nulle part : le champ qui prenait le focus passait **sous le clavier**, invisible, sans que le défilement le ramène. On saisissait à l'aveugle, et le message de validation était invisible lui aussi.
+
+### Ajouté
+- `ZSheetKeyboardInset` — nœud **inconditionnel** qui retranche l'encart clavier du corps de la feuille, exporté pour un assemblage maison.
+
+### Attention
+- **Le nœud est inconditionnel à dessein.** Ne l'insérer que lorsque l'encart n'est pas nul est géométriquement correct **et détruit la saisie** : le champ est reconstruit et le texte déjà tapé disparaît. Le prix est de deux lignes dans l'arbre de la seule voie feuille ; les voies page et dialogue sont inchangées à l'octet.
+- **Retrancher l'encart de la hauteur maximale ne résout rien** : la feuille est ancrée au bas de l'écran entier, donc une feuille plus courte reste sous le clavier — et cumuler les deux voies compte l'encart **deux fois**.
+- Un `maxHeight` posé par l'hôte reste prioritaire et borne la feuille entière : un corps défilable est recommandé.
+- 🔴 **Hôte qui compensait par son propre rembourrage : le retirer**, sinon la réservation est double.
+
 ## 0.93.0 — 2026-08-13
 
 ### Corrigé

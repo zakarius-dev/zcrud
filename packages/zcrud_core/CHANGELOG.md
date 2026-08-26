@@ -3,6 +3,19 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.23.0 — 2026-08-26
+
+### Modifié
+- 🔴 **Un champ déclaré en lecture seule se VOIT** : il rend désormais la fiche de consultation, sans qu'il faille mettre le formulaire entier en mode lecture. Un champ non éditable qui ressemblait à un champ éditable prenait le focus, colorait sa bordure — et n'ouvrait pas le clavier.
+
+### Ajouté
+- **Échappatoire en une ligne** : `ZcrudScope(readOnlyFieldsAsCards: false)` (ou par dérivation) rétablit le champ de saisie verrouillé.
+
+### Attention
+- **Un hôte qui déclarait `readOnly` comme simple verrou fonctionnel verra son rendu changer** — bordure, libellé flottant et ornements cèdent la place à la fiche, mot de passe compris. C'est pour lui que l'échappatoire existe.
+- Le déclenchement est arrêté **au montage**, comme la voie globale : un champ rendu lecture seule par une dérivation **en cours de saisie** ne bascule pas de forme, et ne perd ni sa valeur ni son focus.
+- Les familles que la fiche ne couvre pas gardent leur rendu : pour elles, l'écart entre l'état et son apparence **subsiste**.
+
 ## 3.22.0 — 2026-08-26
 
 ### Ajouté

@@ -20,6 +20,7 @@ import '../domain/z_edition_presentation.dart';
 import 'z_form_presenter.dart';
 import 'z_implicit_dismiss_control.dart';
 import 'z_sheet_frame.dart';
+import 'z_sheet_keyboard_inset.dart';
 
 /// Bornes d'écran par défaut de la présentation adaptative (dp) — **publiques**
 /// pour qu'un binding qui implémente le port `ZFormPresenter` puisse s'aligner
@@ -149,7 +150,24 @@ class ZAdaptivePresenter implements ZFormPresenter, ZImplicitDismissControl {
             maxHeight: effectiveMaxHeight,
             maxWidth: effectiveMaxWidth,
           ),
-          builder: builder,
+          // `isScrollControlled: true` (ci-dessus) transfère à l'appelant la
+          // charge des encarts système : la feuille est posée au bas de
+          // l'écran ENTIER, clavier compris. Mesuré : sans cette enveloppe, le
+          // champ qui prend le focus reste à sa place et se retrouve SOUS le
+          // clavier, hors de portée du défilement.
+          //
+          // Le rembourrage est pris DANS la boîte (`constraints` inchangées) :
+          // à encart nul il vaut zéro, donc ni les contraintes de la route ni
+          // la géométrie rendue ne bougent. `maxHeight` — celui de l'hôte
+          // comme le défaut à 90 % — continue de borner la feuille ENTIÈRE,
+          // réservation du clavier comprise.
+          //
+          // Retrancher l'encart de `effectiveMaxHeight` à la place serait
+          // INERTE : mesuré, une feuille plus courte reste ancrée au bas de
+          // l'écran, donc toujours sous le clavier. Et cumuler les deux
+          // compterait l'encart DEUX fois.
+          builder: (BuildContext sheetContext) =>
+              ZSheetKeyboardInset(child: builder(sheetContext)),
         );
 
       case ZEditionPresentation.dialog:

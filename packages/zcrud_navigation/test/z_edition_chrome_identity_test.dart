@@ -16,6 +16,33 @@
 ///
 /// ⚠️ Chemin RELATIF au dossier du package (convention du dépôt : `flutter
 /// test` se lance depuis `packages/zcrud_navigation`).
+///
+/// ## CR-IFFD-122 (2026-08-26) — l'étalon `sheet` gagne DEUX lignes, et deux
+/// seulement
+///
+/// La réservation de la place du clavier introduit dans la feuille un
+/// `ZSheetKeyboardInset` + son `Padding p=EdgeInsets.zero`. Le nœud est
+/// INCONDITIONNEL, et c'est le cœur du correctif : mesuré, un rembourrage qui
+/// n'apparaîtrait qu'à la montée du clavier change la FORME de l'arbre pendant
+/// la saisie — l'élément du corps est alors reconstruit depuis zéro
+/// (`initState` rejoué : 1 → 2) et **le texte déjà tapé est perdu**
+/// (`find.text('SAISIE')` : 1 occurrence avec le nœud stable, **0** avec le
+/// nœud conditionnel). Le prix payé est donc deux lignes d'arbre à encart nul ;
+/// le prix évité est la perte de la saisie.
+///
+/// L'étalon a été régénéré à partir du rendu réel, et le `diff` avec l'étalon
+/// d'avant est **exactement** :
+///
+/// ```text
+/// 223a224,225
+/// > ZSheetKeyboardInset
+/// > Padding p=EdgeInsets.zero
+/// ```
+///
+/// Aucune marge, aucune contrainte, aucun alignement ne bouge ; les sections
+/// `dialog` et `page` sont inchangées **à l'octet**. La géométrie, elle, reste
+/// épinglée par les 187 autres tests du paquet (matrice de paramètres, cadre
+/// de feuille) — tous verts sans retouche.
 library;
 
 import 'dart:io';

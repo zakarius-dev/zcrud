@@ -250,7 +250,7 @@ void main() {
       visibleFields: const <String>['ops'],
     );
     addTearDown(c.dispose);
-    await tester.pumpWidget(_host(c, const <ZFieldSpec>[
+    const List<ZFieldSpec> fields = <ZFieldSpec>[
       ZFieldSpec(
         name: 'ops',
         type: EditionFieldType.rowChips,
@@ -259,8 +259,22 @@ void main() {
         readOnly: true,
         choices: _choices,
       ),
-    ]));
+    ];
+
+    // Rendu par DÉFAUT d'un champ déclaré `readOnly` : la fiche de
+    // consultation — aucune puce, donc aucune puce basculable.
+    await tester.pumpWidget(_host(c, fields));
     await tester.pumpAndSettle();
+    expect(find.byType(FilterChip), findsNothing);
+
+    // Rendu de saisie VERROUILLÉ (échappatoire posée) : les puces sont là,
+    // et c'est celles-là qui ne doivent pas basculer.
+    await tester.pumpWidget(ZcrudScope(
+      readOnlyFieldsAsCards: false,
+      child: _host(c, fields),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byType(FilterChip), findsWidgets);
     for (final chip in tester.widgetList<FilterChip>(find.byType(FilterChip))) {
       expect(chip.onSelected, isNull);
     }

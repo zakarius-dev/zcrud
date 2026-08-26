@@ -60,7 +60,53 @@ void main() {
     exit(1);
   }
 
+  // La LISTE des paquets était gardée ; la VALEUR du `ref:` ne l'était par
+  // rien. Le document a donc dérivé de trois majeures pendant qu'il était relu
+  // et corrigé deux fois sur son mécanisme — un primo-intégrant a recopié le
+  // bloc et obtenu un socle antérieur de plusieurs mois, sans qu'aucun signal
+  // ne l'avertisse : `pub get` réussit, le code compile, les écrans s'affichent.
+  // La référence est la version de `zcrud_core`, et non le dernier tag git :
+  // pendant une publication, le bump précède le tag, et un gate qui exigerait
+  // le tag refuserait la version qu'on est précisément en train de publier.
+  final pubspec = File('packages/zcrud_core/pubspec.yaml');
+  if (!pubspec.existsSync()) {
+    stderr.writeln('❌ packages/zcrud_core/pubspec.yaml introuvable — contrôle '
+        'positif en échec.');
+    exit(1);
+  }
+  final versionLigne = RegExp(r'^version:\s*(\S+)', multiLine: true)
+      .firstMatch(pubspec.readAsStringSync());
+  if (versionLigne == null) {
+    stderr.writeln('❌ aucune ligne `version:` dans zcrud_core/pubspec.yaml.');
+    exit(1);
+  }
+  final attendu = 'v${versionLigne.group(1)}';
+
+  final refs = RegExp(r'ref:\s*(v[0-9]+\.[0-9]+\.[0-9]+)')
+      .allMatches(texte)
+      .map((m) => m.group(1)!)
+      .toSet();
+  if (refs.isEmpty) {
+    stderr.writeln('❌ aucun `ref: vX.Y.Z` dans la recette — contrôle positif '
+        'en échec : le motif de lecture ne correspond plus au document.');
+    exit(1);
+  }
+  final perimes = refs.where((r) => r != attendu).toList()..sort();
+  if (perimes.isNotEmpty) {
+    stderr.writeln(
+      '❌ la recette de consommation épingle ${perimes.length} tag(s) qui ne '
+      'sont pas la version courante :\n'
+      '   trouvé(s) : ${perimes.join(', ')}\n'
+      '   attendu   : $attendu (version de zcrud_core)\n\n'
+      '   Un hôte qui recopie ce bloc obtient CE socle-là, et rien ne l\'en\n'
+      '   avertit : la résolution réussit et le code compile. Mettez à jour\n'
+      '   TOUS les `ref:` de docs/private-git-consumption.md — y compris ceux\n'
+      '   des exemples pédagogiques, qu\'un lecteur recopie aussi.',
+    );
+    exit(1);
+  }
+
   stdout.writeln(
       'consumption-recipe OK — les ${paquets.length} paquets `zcrud_*` sont '
-      'listés dans la recette de consommation.');
+      'listés dans la recette de consommation, tous épinglés à $attendu.');
 }

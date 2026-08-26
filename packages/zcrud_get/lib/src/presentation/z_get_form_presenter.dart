@@ -329,6 +329,14 @@ class ZGetFormPresenter implements ZFormPresenter, ZImplicitDismissControl {
   }) {
     final content = ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
+      // La réservation de la place du clavier n'est PAS reprise ici, et c'est
+      // une décision mesurée, pas un oubli : `GetModalBottomSheetRoute` borne
+      // déjà sa mise en page à la hauteur d'écran MOINS `viewInsets.bottom`,
+      // là où `showModalBottomSheet` du SDK, lui, pose la feuille au bas de
+      // l'écran entier. Envelopper ici compterait l'encart DEUX fois et
+      // écraserait le corps (mesuré : zone utile 288 → 200 dp, et le champ
+      // focalisé remonte hors de sa place). Épinglé par
+      // `test/z_get_sheet_keyboard_inset_test.dart`.
       child: Builder(builder: builder),
     );
     return useSafeArea ? SafeArea(child: content) : content;

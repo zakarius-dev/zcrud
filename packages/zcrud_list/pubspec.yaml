@@ -9,7 +9,7 @@
 # config plateforme de l'app hôte (Key Don'ts « never de secret dans un package »).
 name: zcrud_list
 description: "DynamicList data-grid for zcrud powered by Syncfusion, isolated behind the neutral ZListRenderer port."
-version: 3.22.0
+version: 3.23.0
 publish_to: none
 resolution: workspace
 
@@ -34,12 +34,12 @@ dependencies:
   # Bump coordonné 32→34 (le `syncfusion_flutter_core` partagé impose de bouger
   # tout le stack ensemble : pdf/xlsio/datagrid) pour débloquer `printing ^5.15.0`.
   syncfusion_flutter_datagrid: ^34.1.31
-  zcrud_core: ^3.22.0
+  zcrud_core: ^3.23.0
   # Toaster INJECTÉ (`zToast`/`ZToasterScope`) du retour visuel de copie
   # (long-press d'une cellule). `zcrud_ui_kit` ne dépend QUE de `zcrud_core`
   # (+ flutter) : l'arête zcrud_list → zcrud_ui_kit reste ACYCLIQUE et laisse
   # `CORE OUT = 0` intact (AD-1, vérifié par scripts/dev/graph_proof.py).
-  zcrud_ui_kit: ^3.22.0
+  zcrud_ui_kit: ^3.23.0
 
 dev_dependencies:
   flutter_test:

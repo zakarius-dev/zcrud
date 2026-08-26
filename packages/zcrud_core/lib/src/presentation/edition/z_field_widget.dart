@@ -127,6 +127,14 @@ class ZFieldWidget extends StatefulWidget {
   /// surface, dans les deux sens : `false` force la saisie au milieu d'une
   /// fiche, `true` force la fiche au milieu d'un formulaire.
   ///
+  /// **Un champ déclaré `ZFieldSpec.readOnly` est présenté en fiche même dans
+  /// une surface éditable** (famille fiche-able) : il n'est pas modifiable, il
+  /// ne se présente donc pas comme modifiable. Ce déclencheur-là ne se
+  /// désarme pas en passant `false` ici — une surface éditable passe déjà ce
+  /// `false` à tous ses champs : c'est `ZcrudScope.readOnlyFieldsAsCards:
+  /// false` qui rétablit le rendu de saisie verrouillé (application entière,
+  /// ou sous-arbre si le scope y est re-posé).
+  ///
   /// Le mode est arrêté au **montage** du champ (une fiche n'alloue ni
   /// contrôleur de texte ni clavier) : le faire changer suppose de remonter le
   /// champ, ce que fait l'écran assemblé en keyant la place sur le mode.
@@ -151,9 +159,12 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
   late final EditionFamily _family;
 
   /// `true` si ce champ est rendu en **fiche de lecture** : mode de
-  /// présentation effectif ET famille fiche-able. Aucun contrôleur de texte
-  /// n'est alloué dans ce cas (pas de clavier — invariant AD-2). Résolu UNE
-  /// FOIS, au montage.
+  /// présentation effectif (surface en consultation OU champ déclaré
+  /// `readOnly`) ET famille fiche-able. Aucun contrôleur de texte n'est alloué
+  /// dans ce cas (pas de clavier — invariant AD-2). Résolu UNE FOIS, au
+  /// montage : une lecture seule qui survient PENDANT la saisie (dérivation
+  /// `ZDerivation.readOnly`) verrouille le champ sans changer sa forme, et ne
+  /// lui fait donc perdre ni sa valeur ni son focus.
   late final bool _readModeCard;
 
   /// Masquage courant d'un champ `password` (œil afficher/masquer). Toujours
@@ -254,7 +265,17 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     // de la surface environnante. C'est ce second canal qui rend le mode
     // indépendant du builder qui a monté ce champ — un builder de
     // remplacement n'a rien à recopier.
-    final readMode = widget.readMode ?? ZReadModeScope.of(context);
+    final surfaceReadMode = ZReadModeScope.of(context);
+    final readMode = widget.readMode ?? surfaceReadMode;
+    // Édition FORCÉE : un appelant qui passe `readMode: false` alors que la
+    // surface, elle, est en consultation va délibérément à contre-courant —
+    // c'est le contrat « le paramètre prime ». Ce cas-là, et lui seul, désarme
+    // aussi le déclencheur par champ : dans une surface en consultation, le
+    // moteur a déjà rabattu `readOnly: true` sur la spec EFFECTIVE de chaque
+    // champ, si bien que la spec ne dit plus si la lecture seule vient du
+    // schéma ou de la surface. Sans cette distinction, forcer l'édition d'un
+    // champ au milieu d'une fiche redonnerait… une fiche.
+    final forcedEdition = widget.readMode == false && surfaceReadMode;
     // Un `select` ordinaire reste fiche-able en consultation. En revanche, une
     // clé de rendu riche explicitement déclarée et effectivement résolue dans
     // le registre signifie que l'hôte a pris la main sur ce rendu : conserver
@@ -271,8 +292,46 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
                 ?.selectChoiceBuilderRegistry
                 ?.tryBuildersFor(choiceBuilderKey) !=
             null;
-    _readModeCard =
-        readMode && zReadModeCardable(_family) && !hasResolvedChoiceBuilder;
+    // Second déclencheur de la fiche : le CHAMP lui-même. Un champ déclaré
+    // `readOnly` n'est pas éditable — le rendre comme un champ de saisie le
+    // fait prendre le focus, teinte sa bordure au bleu du focus et n'ouvre
+    // aucun clavier : la forme promet une saisie que le moteur refuse. La
+    // fiche existait déjà, mais n'était atteignable que par la surface
+    // entière ; ce déclencheur-ci la rend atteignable champ par champ.
+    //
+    // ÉCHAPPATOIRE — `ZcrudScope.readOnlyFieldsAsCards: false`, UNE ligne dans
+    // le scope déjà posé par l'application, qui rétablit partout le champ de
+    // saisie verrouillé. Le seam vit sur `ZcrudScope` et non ailleurs :
+    //  * pas sur `ZReadModeScope`, qui est RE-POSÉ par `DynamicEdition`,
+    //    `ZStepperEdition` et le dialogue d'item — un réglage posé à la racine
+    //    y serait masqué par le premier formulaire rencontré, donc inerte ;
+    //  * pas sur un jeton de `ZcrudTheme`, parce que ce mode est arrêté en
+    //    `initState`, où `Theme.of` (dépendance) est interdit : le jeton ne
+    //    serait lisible que par la voie `ZcrudScope.theme` et resterait mort
+    //    pour un hôte qui déclare son thème en `ThemeExtension` — une capacité
+    //    câblée mais inerte selon le canal de déclaration ;
+    //  * pas sur `ZFieldSpec`, qui demanderait une ligne PAR CHAMP à un hôte
+    //    qui, précisément, ne veut pas de ce rendu du tout.
+    // Lecture SANS abonnement (`getInheritedWidgetOfExactType`), comme le
+    // registre de builders ci-dessus : `initState` interdit la dépendance, et
+    // le mode d'un champ est de toute façon arrêté à son montage.
+    // ⚠️ `readMode: false` n'est PAS un veto ici. `DynamicEdition`,
+    // `ZStepperEdition` et le dialogue d'item passent TOUS `readMode:
+    // <leur propre readOnly>` — un formulaire éditable transmet donc un
+    // `false` explicite à chacun de ses champs. En faire une échappatoire
+    // rendrait le déclencheur inerte partout où il est utile : le seul cas
+    // qu'il couvrirait serait un `ZFieldWidget` monté à la main. Le `false`
+    // d'une surface dit « CETTE SURFACE n'est pas en consultation », jamais
+    // « ce champ non modifiable doit se déguiser en champ modifiable ».
+    final readOnlyFieldCard = widget.field.readOnly &&
+        !forcedEdition &&
+        (context
+                .getInheritedWidgetOfExactType<ZcrudScope>()
+                ?.readOnlyFieldsAsCards ??
+            true);
+    _readModeCard = (readMode || readOnlyFieldCard) &&
+        zReadModeCardable(_family) &&
+        !hasResolvedChoiceBuilder;
     // Validateur combiné (champ-local + inter-champs) pour toutes les familles.
     _validator =
         ZCrossFieldValidator.compileField(widget.field, widget.controller);

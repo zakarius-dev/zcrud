@@ -103,6 +103,7 @@ class ZcrudScope extends InheritedWidget {
     this.dateDisplayFormatter,
     this.numberDisplayFormatter,
     this.defaultTextConfig,
+    this.readOnlyFieldsAsCards,
     super.key,
   });
 
@@ -319,6 +320,33 @@ class ZcrudScope extends InheritedWidget {
   /// clavier…) champ par champ sur tout un formulaire.
   final ZTextConfig? defaultTextConfig;
 
+  /// Un champ déclaré `ZFieldSpec.readOnly` est-il présenté en **fiche de
+  /// consultation** (`ZReadOnlyFieldCard`) plutôt qu'en champ de saisie ?
+  ///
+  /// `null` (défaut) ⇒ **oui** : un champ non modifiable ne se présente pas
+  /// comme un champ modifiable — il ne prend ni focus ni clavier, et sa forme
+  /// l'annonce. Cela vaut pour un champ isolé au milieu d'un formulaire
+  /// éditable, sans que la surface ait à passer en consultation.
+  ///
+  /// `false` ⇒ un champ `readOnly` garde le rendu de saisie **verrouillé**
+  /// (bordure, libellé flottant, ornements), comme une surface d'édition
+  /// ordinaire. C'est le réglage d'une application qui se sert de `readOnly`
+  /// comme d'un simple **verrou fonctionnel** et n'en attend aucun changement
+  /// de forme.
+  ///
+  /// Ne concerne **que** ce déclencheur par champ : une surface entière ouverte
+  /// en consultation (`DynamicEdition.readOnly`, `ZReadModeScope`) rend ses
+  /// fiches quelle que soit la valeur posée ici.
+  ///
+  /// La portée est celle du scope : posé à la racine, le réglage vaut pour
+  /// l'application ; re-posé (ou dérivé via [derive]) autour d'un écran ou
+  /// d'un seul champ, il ne vaut que là.
+  ///
+  /// Ne concerne que les familles **fiche-ables** : une famille qui n'a pas de
+  /// rendu de fiche (sous-liste, item dynamique, signature, fichier…) conserve
+  /// son rendu `readOnly` existant dans les deux réglages.
+  final bool? readOnlyFieldsAsCards;
+
   /// Dérive un nouveau scope à partir de celui-ci en ne remplaçant que les
   /// seams nommés.
   ///
@@ -372,6 +400,7 @@ class ZcrudScope extends InheritedWidget {
     Object? dateDisplayFormatter = _zScopeUndefined,
     Object? numberDisplayFormatter = _zScopeUndefined,
     Object? defaultTextConfig = _zScopeUndefined,
+    Object? readOnlyFieldsAsCards = _zScopeUndefined,
   }) =>
       ZcrudScope(
         key: key,
@@ -450,6 +479,10 @@ class ZcrudScope extends InheritedWidget {
         defaultTextConfig: identical(defaultTextConfig, _zScopeUndefined)
             ? this.defaultTextConfig
             : defaultTextConfig as ZTextConfig?,
+        readOnlyFieldsAsCards:
+            identical(readOnlyFieldsAsCards, _zScopeUndefined)
+                ? this.readOnlyFieldsAsCards
+                : readOnlyFieldsAsCards as bool?,
         child: child,
       );
 
@@ -504,6 +537,7 @@ class ZcrudScope extends InheritedWidget {
     Object? dateDisplayFormatter = _zScopeUndefined,
     Object? numberDisplayFormatter = _zScopeUndefined,
     Object? defaultTextConfig = _zScopeUndefined,
+    Object? readOnlyFieldsAsCards = _zScopeUndefined,
   }) {
     final ZcrudScope base = maybeOf(context) ?? ZcrudScope(child: child);
     return base.copyWith(
@@ -533,6 +567,7 @@ class ZcrudScope extends InheritedWidget {
       dateDisplayFormatter: dateDisplayFormatter,
       numberDisplayFormatter: numberDisplayFormatter,
       defaultTextConfig: defaultTextConfig,
+      readOnlyFieldsAsCards: readOnlyFieldsAsCards,
       child: child,
     );
   }
@@ -592,5 +627,10 @@ class ZcrudScope extends InheritedWidget {
       // `defaultTextConfig` est un pur-données à égalité de valeur : la
       // comparaison d'identité suffit (une instance `const` partagée est
       // identique à elle-même ; en changer d'instance doit notifier).
-      !identical(defaultTextConfig, oldWidget.defaultTextConfig);
+      !identical(defaultTextConfig, oldWidget.defaultTextConfig) ||
+      // Politique de rendu, lue au MONTAGE de chaque champ : la comparer ici
+      // ne remonte pas les champs déjà montés (leur mode est arrêté), mais un
+      // dépendant qui la lit dans un `build` doit se reconstruire — et la
+      // garde de parité exige que tout paramètre déclaré participe.
+      readOnlyFieldsAsCards != oldWidget.readOnlyFieldsAsCards;
 }

@@ -98,7 +98,20 @@ void main() {
     final controller = _controller(fields);
     addTearDown(controller.dispose);
 
+    // Rendu par DÉFAUT d'un champ déclaré `readOnly` : la fiche de
+    // consultation — donc aucun radio du tout, a fortiori aucun radio
+    // interactif. La garde de sémantique ci-dessous porte, elle, sur le rendu
+    // de saisie VERROUILLÉ, que l'échappatoire de scope conserve : c'est ce
+    // rendu-là qu'il s'agit d'empêcher de redevenir interactif.
     await tester.pumpWidget(_app(controller, fields));
+    await tester.pumpAndSettle();
+    expect(find.byType(Radio<Object?>), findsNothing,
+        reason: 'un champ non modifiable ne présente pas de commande');
+
+    await tester.pumpWidget(ZcrudScope(
+      readOnlyFieldsAsCards: false,
+      child: _app(controller, fields),
+    ));
     await tester.pumpAndSettle();
 
     // Tap sur une option : AUCUN changement (le groupe est inerte car désactivé).

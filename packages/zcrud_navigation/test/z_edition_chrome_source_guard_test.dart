@@ -33,6 +33,11 @@ const List<String> _chromeSources = <String>[
   // précisément ce que cette garde doit continuer d'établir demain : un
   // fichier neuf non listé serait un TROU dans la garde FR-26.
   'lib/src/presentation/z_edition_body_fit.dart',
+  // CR-IFFD-122 (2026-08-26) — la réservation de la place du clavier est un
+  // fichier neuf du chrome d'édition. Il n'a aujourd'hui ni couleur ni
+  // libellé : la garde doit l'établir DEMAIN aussi, faute de quoi le fichier
+  // serait un trou dans la couverture FR-26/AD-13.
+  'lib/src/presentation/z_sheet_keyboard_inset.dart',
 ];
 
 /// Motifs BANNIS pour le RTL (AD-13) — les variantes directionnelles existent.

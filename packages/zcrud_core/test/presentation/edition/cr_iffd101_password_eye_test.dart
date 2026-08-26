@@ -69,12 +69,43 @@ void main() {
     c.dispose();
   });
 
-  testWidgets('un mot de passe en LECTURE SEULE n\'offre pas la bascule', (
+  // Un champ déclaré `readOnly` est désormais présenté en FICHE, même seul au
+  // milieu d'une surface éditable : il n'y a donc plus de `TextField` à
+  // interroger. L'INTENTION de cette garde est inchangée — aucune bascule, et
+  // surtout jamais le secret en clair — mais elle se mesure là où le champ est
+  // réellement rendu. La mesure est renforcée : elle exige maintenant que la
+  // valeur affichée soit la valeur MASQUÉE, ce que la version « obscureText »
+  // ne disait que par procuration.
+  testWidgets('un mot de passe en LECTURE SEULE n\'offre pas la bascule '
+      'et ne montre jamais le secret', (
+    tester,
+  ) async {
+    final c = ZFormController();
+    c.setValue('secret', 'hunter2');
+    await tester.pumpWidget(
+      _host(c, _password.copyWith(readOnly: true)),
+    );
+    expect(find.byType(IconButton), findsNothing,
+        reason: 'aucune bascule afficher/masquer sur un champ non modifiable');
+    expect(find.text('hunter2'), findsNothing,
+        reason: 'le secret n\'est JAMAIS rendu en clair');
+    expect(find.text('••••'), findsOneWidget);
+    c.dispose();
+  });
+
+  // Échappatoire de l'hôte qui se sert de `readOnly` comme d'un simple verrou
+  // fonctionnel : le champ de saisie VERROUILLÉ revient — et reste masqué,
+  // sans bascule.
+  testWidgets('échappatoire de scope : le mot de passe en lecture seule '
+      'retrouve son champ masqué, toujours sans bascule', (
     tester,
   ) async {
     final c = ZFormController();
     await tester.pumpWidget(
-      _host(c, _password.copyWith(readOnly: true)),
+      ZcrudScope(
+        readOnlyFieldsAsCards: false,
+        child: _host(c, _password.copyWith(readOnly: true)),
+      ),
     );
     expect(find.byType(IconButton), findsNothing);
     expect(_tf(tester).obscureText, isTrue);

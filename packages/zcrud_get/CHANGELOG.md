@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_get` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.23.0 — 2026-08-26
+
+### Garde
+- **Le présentateur GetX n'a PAS le défaut d'encart clavier** du présentateur adaptatif, et n'y touche pas : son châssis borne déjà la feuille à la hauteur moins les encarts. La réservation y a été posée, **mesurée nuisible** (zone utile réduite de 288 à 200 dp) puis retirée ; une garde interdit désormais le double comptage.
+
 ## 3.3.1 — 2026-08-21
 
 ### Corrigé — la dartdoc inversait le défaut d'autorisation
