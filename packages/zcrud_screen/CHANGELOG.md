@@ -3,6 +3,15 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.22.0 — 2026-08-26
+
+### Ajouté
+- **`presentFormEdition(preserveInitialValues: true)`** — les valeurs rendues sont celles du formulaire **posées sur** `initialValues` : une clé que le formulaire ne décide pas **survit**. Sans l'option, la carte rendue est celle des seuls champs déclarés, actifs et modifiables — et toute clé étrangère au catalogue en est **absente**.
+
+### Attention
+- Ce canal ferme un chemin de **perte de données** : un hôte qui réécrivait son document à partir de la carte rendue le réécrivait **amputé** de ses clés non déclarées. Un champ déclaré mais en lecture seule est **conservé** par le mode fusionnant — la carte étant destinée à être réécrite en entier, un `readOnly` disparu serait effacé alors que personne ne l'a touché.
+- **Opt-in strict** : l'option absente rend **la même instance** qu'auparavant — aucune copie, aucun ordre de clés nouveau.
+
 ## 3.14.0 — 2026-08-24
 
 ### Ajouté

@@ -998,6 +998,10 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T>
   /// des écritures concurrentes) est la responsabilité de la couche de
   /// synchronisation offline-first — hors du périmètre de cet adaptateur.
   ///
+  /// La voie **fusionnante** est [saveMerging] : même contrat, mais les champs
+  /// du document existant que la map écrite ne nomme pas y **survivent**. Un
+  /// enregistrement qui ne décrit qu'une partie d'un document passe par elle.
+  ///
   /// **[collectionId] est un CHEMIN DE COLLECTION**, pas une clé de droits :
   /// renseigné, il **remplace** le `collectionPath` du dépôt pour cette
   /// écriture — c'est une redirection délibérée. Firestore crée toute
@@ -1006,7 +1010,55 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T>
   /// (toutes ancrées sur `collectionPath`) n'interrogeront jamais. Ne jamais y
   /// passer l'identifiant de collection soumis à `ZAcl.can`.
   @override
-  Future<ZResult<T>> save(T item, {String? collectionId}) => _guard(() async {
+  Future<ZResult<T>> save(T item, {String? collectionId}) =>
+      _write(item, collectionId: collectionId, merging: false);
+
+  /// Persiste [item] en écriture **FUSIONNANTE** (`SetOptions(merge: true)`) :
+  /// les champs du document existant que la map d'écriture **ne nomme pas**
+  /// survivent, au lieu d'être effacés.
+  ///
+  /// Même contrat que [save] par ailleurs — même matérialisation de
+  /// l'éphémère, même corps portant son `id` logique, mêmes métadonnées
+  /// `ZSyncMeta` réécrites (`updated_at=now`, `is_deleted:false` ⇒ une entité
+  /// soft-deletée **redevient vivante**), même `WriteBatch` committé, même
+  /// round-trip de relecture typée. Seule la **portée de l'écrasement**
+  /// change.
+  ///
+  /// | Clé du document distant | [save] | [saveMerging] |
+  /// |---|---|---|
+  /// | présente dans la map écrite | remplacée | remplacée |
+  /// | absente de la map écrite | **effacée** | **conservée** |
+  ///
+  /// C'est la voie d'un enregistrement **PARTIEL** : une surface d'édition qui
+  /// ne déclare qu'une partie des champs d'un document, un formulaire de
+  /// correction, une action qui ne touche qu'une section. Sur cette voie, la
+  /// map écrite n'a plus à décrire le document entier pour ne pas l'amputer.
+  ///
+  /// ⚠️ **Une clé présente à `null` EFFACE la valeur distante** — la fusion
+  /// Firestore ne distingue pas « je ne sais pas » de « efface ». Un moteur
+  /// qui encode ses entités nulls compris transformerait donc chaque
+  /// enregistrement partiel en effacement : déclarer `omitNullFields: true`
+  /// (le hint symétrique, qui retire les clés nulles du corps) est la
+  /// contrepartie normale de cette voie.
+  ///
+  /// ⚠️ Une clé de map est fusionnée **champ à champ** par Firestore, mais une
+  /// **liste** est remplacée en bloc : la fusion ne descend pas dans les
+  /// éléments d'un tableau.
+  ///
+  /// [collectionId] a exactement le sens qu'il a sur [save] : un **chemin de
+  /// collection** qui remplace celui du dépôt pour cette écriture, jamais une
+  /// clé de droits.
+  Future<ZResult<T>> saveMerging(T item, {String? collectionId}) =>
+      _write(item, collectionId: collectionId, merging: true);
+
+  /// Corps commun de [save] (`merging: false`) et [saveMerging]
+  /// (`merging: true`).
+  Future<ZResult<T>> _write(
+    T item, {
+    required String? collectionId,
+    required bool merging,
+  }) =>
+      _guard(() async {
         final collection = _rawCollection(collectionId);
         // Matérialisation de l'éphémère (AD-14, invariant porté par le repo).
         // `isEphemeral` fait foi, pas `id == null`.
@@ -1016,8 +1068,16 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T>
         final map = _encode(item)..[_kId] = id;
 
         // Écriture ATOMIQUE via WriteBatch committé (jamais partielle).
+        //
+        // `merging: false` passe `null` en options — l'appel EXACT de la voie
+        // historique, pas un `SetOptions(merge: false)` qui lui ressemblerait :
+        // la voie par défaut ne traverse aucune option nouvelle.
         final batch = _firestore.batch();
-        batch.set(collection.doc(id), map);
+        batch.set(
+          collection.doc(id),
+          map,
+          merging ? SetOptions(merge: true) : null,
+        );
         await batch.commit();
 
         // Round-trip fidèle : relecture via la collection **typée**

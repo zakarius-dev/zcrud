@@ -50,12 +50,14 @@ class ZAnnotationToolbar extends StatefulWidget {
   ///   `dispose` ;
   /// - [palette] : registre borné de `colorKey` proposées (défaut
   ///   `ZColorPalette.defaultStudy()`) ;
+  /// - [kinds] : natures proposées, dans l'ordre (défaut : toutes) ;
   /// - [onKindSelected] / [onColorSelected] : callbacks de remontée (`null`
   ///   = action absente, invariant AD-4) — la `colorKey` remonte brute
   ///   (`String`).
   const ZAnnotationToolbar({
     this.controller,
     this.palette = const ZColorPalette.defaultStudy(),
+    this.kinds = ZDocumentAnnotationKind.values,
     this.onKindSelected,
     this.onColorSelected,
     this.onDebugBuild,
@@ -69,6 +71,13 @@ class ZAnnotationToolbar extends StatefulWidget {
   /// Palette de `colorKey` proposées (injectée, jamais une couleur
   /// concrète).
   final ZColorPalette palette;
+
+  /// Natures d'annotation proposées, dans l'ordre de rendu.
+  ///
+  /// Défaut : toutes les natures connues. Restreindre cette liste est le
+  /// moyen de figer le jeu d'outils d'une visionneuse — une nature ajoutée
+  /// plus tard au socle n'apparaîtra alors pas d'elle-même dans la barre.
+  final List<ZDocumentAnnotationKind> kinds;
 
   /// Remontée du `kind` sélectionné (`null` = non câblé).
   final ValueChanged<ZDocumentAnnotationKind>? onKindSelected;
@@ -133,7 +142,7 @@ class _ZAnnotationToolbarState extends State<ZAnnotationToolbar> {
               runSpacing: theme.gapM,
               alignment: WrapAlignment.start,
               children: <Widget>[
-                for (final kind in ZDocumentAnnotationKind.values)
+                for (final kind in widget.kinds)
                   _KindButton(
                     key: ValueKey<String>('$kAnnotationKindKeyPrefix${kind.name}'),
                     kind: kind,
@@ -307,6 +316,12 @@ IconData _kindIcon(ZDocumentAnnotationKind kind) {
       return Icons.brush_outlined;
     case ZDocumentAnnotationKind.stickyNote:
       return Icons.sticky_note_2_outlined;
+    case ZDocumentAnnotationKind.underline:
+      return Icons.format_underlined;
+    case ZDocumentAnnotationKind.strikethrough:
+      return Icons.format_strikethrough;
+    case ZDocumentAnnotationKind.squiggly:
+      return Icons.waves;
   }
 }
 

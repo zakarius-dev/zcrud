@@ -267,11 +267,18 @@ class ZTintedAdornment {
 /// **Ce qui reste à l'appelant** : poser le widget (placement, espacement,
 /// sémantique de la tuile), décider de ses propres surfaces — et ne PAS
 /// re-teinter [ZTintedAdornment.child], qui porte déjà sa couleur.
+///
+/// [backgroundAlpha] permet à un présentateur d'atténuer la pastille pour
+/// signaler un **état** (typiquement : le champ ne porte pas encore de
+/// valeur). Il **ne crée jamais** de pastille : sans le jeton
+/// `adornmentIconBackgroundAlpha`, l'ornement reste nu, exactement comme sans
+/// ce paramètre. `null` ⇒ l'alpha du jeton, inchangé.
 ZTintedAdornment zResolveTintedAdornment(
   BuildContext context,
   ZFieldAdornment? adornment, {
   required ZFieldSpec field,
   ZValueOf? valueOf,
+  double? backgroundAlpha,
 }) {
   final Color? tint = zResolveFieldTint(context, field);
   if (adornment == null) return ZTintedAdornment(tint: tint);
@@ -286,7 +293,13 @@ ZTintedAdornment zResolveTintedAdornment(
       final tokens = ZcrudTheme.of(context);
       final icon =
           Icon(data, size: tokens.adornmentIconSize, color: tint);
-      child = _maybeIconPill(icon, adornment, tint, tokens);
+      child = _maybeIconPill(
+        icon,
+        adornment,
+        tint,
+        tokens,
+        alphaOverride: backgroundAlpha,
+      );
     }
   } else {
     child = resolveAdornment(context, adornment, field: field, valueOf: valueOf);
@@ -307,8 +320,8 @@ const double _kAdornmentIconPillInset = 7.0;
 /// `adornmentIconBackgroundRadius`.
 ///
 /// Strictement opt-in, dans les DEUX directions :
-/// - `alpha == null` (aucun jeton posé) ⇒ [icon] rendu tel quel, aucun
-///   conteneur ajouté à l'arbre ;
+/// - jeton d'alpha absent ⇒ [icon] rendu tel quel, aucun conteneur ajouté à
+///   l'arbre — y compris quand l'appelant demande une atténuation d'état ;
 /// - `tint == null` (aucune teinte résolue pour le champ) ⇒ idem : le fond n'a
 ///   pas d'autre source de couleur, une pastille « neutre » serait une couleur
 ///   inventée (invariant FR-26) — les jetons seuls ne peignent RIEN.
@@ -321,10 +334,16 @@ Widget _maybeIconPill(
   Widget icon,
   ZFieldAdornment adornment,
   Color? tint,
-  ZcrudTheme tokens,
-) {
-  final double? alpha = tokens.adornmentIconBackgroundAlpha;
-  if (alpha == null || tint == null || adornment.onTap != null) return icon;
+  ZcrudTheme tokens, {
+  double? alphaOverride,
+}) {
+  final double? posed = tokens.adornmentIconBackgroundAlpha;
+  if (posed == null || tint == null || adornment.onTap != null) return icon;
+  // L'atténuation d'ÉTAT ne se substitue qu'à la VALEUR de l'alpha, jamais à
+  // la condition d'existence : c'est le jeton, et lui seul, qui décide qu'il y
+  // a une pastille. Sans lui, un appelant qui demande une atténuation obtient
+  // toujours l'icône nue — l'opt-in reste entier dans les deux directions.
+  final double alpha = alphaOverride ?? posed;
   final Radius? radius = tokens.adornmentIconBackgroundRadius;
   // `Center` : la pastille ÉPOUSE le glyphe au centre du slot `prefixIcon`/
   // `suffixIcon` (contraint à ≥ 48 dp par `InputDecoration`) au lieu de

@@ -3,6 +3,17 @@
 Toutes les modifications notables de `zcrud_markdown` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.22.0 — 2026-08-26
+
+### Ajouté
+- **Retour à la ligne souple déclarable** (`ZMarkdownCodec.softBreak`) — défaut inchangé. Un corpus dont chaque note et chaque explication était recollée en pavé se relit enfin comme il a été écrit. Le réglage porte sur les **deux** chemins du retour souple : sans le second, il gardait un angle mort d'une espace de large.
+- **Largeur de tableau déclarable** (`ZTableWidthScope` / `ZTableWidth`) — l'échappatoire que le bloc de formule avait déjà, portée telle quelle sur le chemin de rendu partagé.
+- **Sous-titre du dialogue plein écran** (`subtitle`) — absent de l'arbre quand il n'est pas déclaré.
+- **Forçage de la présentation plein cadre** (`fullscreen` sur le point d'entrée) — `null` conserve la décision automatique par la largeur.
+
+### Attention
+- Poser une largeur de tableau a **deux effets au-delà du débordement** : les petits tableaux **cessent de s'étirer**, et le texte **ne se replie plus** en cellule.
+
 ## 3.21.0 — 2026-08-25
 
 ### Ajouté

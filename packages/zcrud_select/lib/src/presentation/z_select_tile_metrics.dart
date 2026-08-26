@@ -1,7 +1,7 @@
 /// **Résolution** des métriques du déclencheur de sélection — maillon central de
 /// la chaîne `paramètre > jeton > référence`.
 ///
-/// Les jetons `ZcrudTheme.select*` (douze, posés dans `zcrud_core`) complètent
+/// Les jetons `ZcrudTheme.select*` (posés dans `zcrud_core`) complètent
 /// cette chaîne, et ce fichier est le seul endroit du paquet où ses trois
 /// maillons se rencontrent.
 ///
@@ -80,6 +80,9 @@ class ZSelectTileMetrics {
   const ZSelectTileMetrics({
     required this.borderColor,
     required this.borderWidth,
+    required this.selectedBorderColor,
+    required this.selectedBorderWidth,
+    required this.emptyAdornmentAlpha,
     required this.radius,
     required this.elevation,
     required this.minHeight,
@@ -108,6 +111,24 @@ class ZSelectTileMetrics {
 
   /// Épaisseur de la bordure (dp).
   final double borderWidth;
+
+  /// Teinte de la bordure **quand le champ porte une valeur**.
+  ///
+  /// Égale à [borderColor] lorsque rien ne la distingue — c'est le cas d'une
+  /// application qui ne sert aucune teinte par type de champ et n'a posé ni
+  /// paramètre ni jeton d'état.
+  final Color selectedBorderColor;
+
+  /// Épaisseur (dp) de la bordure **quand le champ porte une valeur**. Égale à
+  /// [borderWidth] lorsque rien ne la distingue (cf. [selectedBorderColor]).
+  final double selectedBorderWidth;
+
+  /// Opacité du fond de la pastille d'ornement d'un déclencheur **vide**.
+  ///
+  /// `null` ⇒ la pastille garde l'opacité de son jeton dans les deux états —
+  /// c'est le cas d'une application qui n'a posé aucun jeton de pastille (il
+  /// n'y a alors pas de pastille du tout).
+  final double? emptyAdornmentAlpha;
 
   /// Rayon des coins (dp).
   final double radius;
@@ -182,11 +203,19 @@ class ZSelectTileMetrics {
 ///
 /// **Aucun jeton n'agit tant qu'il n'est pas déclaré** : sans `spec` ET sans
 /// jeton, chaque valeur rendue est **exactement** celle de la référence. Les
-/// douze jetons sont absents de `ZcrudTheme.fallback()` — un hôte qui n'a rien
-/// déclaré obtient l'apparence de référence, jamais une valeur neutre.
+/// jetons `select*` sont absents de `ZcrudTheme.fallback()` — un hôte qui n'a
+/// rien déclaré obtient l'apparence de référence, jamais une valeur neutre.
+///
+/// [tint] est la **teinte par type de champ** déjà normalisée
+/// (`zResolveFieldTint`), ou `null` si aucun résolveur ne la sert. Elle n'est
+/// consultée que pour le dernier maillon du duo d'état renseigné
+/// ([ZSelectTileMetrics.selectedBorderColor] / `selectedBorderWidth`) : sans
+/// elle, ce duo vaut **exactement** celui du repos, et le déclencheur ne
+/// réagit pas à la présence d'une valeur.
 ZSelectTileMetrics zSelectTileMetricsOf(
   BuildContext context, {
   ZSelectTileSpec? spec,
+  Color? tint,
 }) {
   final ZcrudTheme token = ZcrudTheme.of(context);
   final ThemeData theme = Theme.of(context);
@@ -214,14 +243,59 @@ ZSelectTileMetrics zSelectTileMetricsOf(
           ? requestedMaxChips
           : null;
 
+  // Duo de REPOS, résolu d'abord : il sert aussi de dernier maillon à l'état
+  // renseigné, ce qui est la charnière de l'inertie décrite plus bas.
+  final Color borderColor = spec?.borderColor ??
+      token.selectTileBorderColor ??
+      scheme.outlineVariant;
+  final double borderWidth = spec?.borderWidth ??
+      token.selectTileBorderWidth ??
+      ZSelectTileReference.borderWidth;
+
+  // ── État RENSEIGNÉ ────────────────────────────────────────────────────────
+  // Application DIRECTE de la teinte, sans jeton booléen d'activation : un
+  // drapeau à défaut `true` serait le premier du socle qu'il faudrait DÉPOSER
+  // pour retenir un rendu, exactement l'inverse de la grammaire opt-in du
+  // canal de teinte (cf. le libellé flottant dans `z_theme.dart`). Le
+  // déclencheur est ici : `tint == null` ⇒ le duo de repos est reconduit tel
+  // quel dans les deux états.
+  //
+  // Conséquence MESURÉE et voulue : l'ÉPAISSEUR ne bouge jamais seule. Sans
+  // résolveur de dégradé, une bordure qui s'épaissirait au remplissage serait
+  // un changement de rendu que l'application n'a pas demandé et que rien ne
+  // rend lisible (aucune couleur ne l'accompagne). Avec résolveur, couleur et
+  // épaisseur changent ENSEMBLE — deux canaux pour un même état, jamais la
+  // couleur seule (AD-13).
+  final Color selectedBorderColor = spec?.selectedBorderColor ??
+      token.selectTileSelectedBorderColor ??
+      (tint == null
+          ? borderColor
+          : tint.withValues(
+              alpha: ZSelectTileReference.selectedBorderTintAlpha,
+            ));
+  final double selectedBorderWidth = spec?.selectedBorderWidth ??
+      token.selectTileSelectedBorderWidth ??
+      (tint == null
+          ? borderWidth
+          : ZSelectTileReference.selectedBorderWidth);
+
+  // Pastille d'ornement de l'état VIDE. L'atténuation n'existe que là où la
+  // pastille existe : sans le jeton d'opacité du cœur, il n'y a rien à
+  // atténuer et la valeur reste `null` — aucun canal ne s'ouvre tout seul.
+  final double? pillAlpha = token.adornmentIconBackgroundAlpha;
+  final double? emptyAdornmentAlpha = spec?.emptyAdornmentAlpha ??
+      token.selectTileEmptyAdornmentAlpha ??
+      (pillAlpha == null
+          ? null
+          : pillAlpha * ZSelectTileReference.emptyAdornmentAlphaFactor);
+
   return ZSelectTileMetrics(
     // Dernier maillon = RÔLE, jamais un littéral.
-    borderColor: spec?.borderColor ??
-        token.selectTileBorderColor ??
-        scheme.outlineVariant,
-    borderWidth: spec?.borderWidth ??
-        token.selectTileBorderWidth ??
-        ZSelectTileReference.borderWidth,
+    borderColor: borderColor,
+    borderWidth: borderWidth,
+    selectedBorderColor: selectedBorderColor,
+    selectedBorderWidth: selectedBorderWidth,
+    emptyAdornmentAlpha: emptyAdornmentAlpha,
     radius: spec?.cardRadius ??
         token.selectTileRadius ??
         ZSelectTileReference.cardRadius,

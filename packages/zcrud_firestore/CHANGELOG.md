@@ -2,6 +2,11 @@
 
 All notable changes to `zcrud_firestore` are documented in this file.
 
+## 3.22.0 — 2026-08-26
+
+### Ajouté
+- **`saveMerging()`** — écriture **fusionnante** (`SetOptions(merge: true)`) : les champs absents de la carte **survivent** dans le document. `save` reste un écrasement total, à l'octet près : la voie historique passe `null` et non un `SetOptions(merge: false)`.
+
 ## 3.6.0 — 2026-08-23
 
 ### Corrigé

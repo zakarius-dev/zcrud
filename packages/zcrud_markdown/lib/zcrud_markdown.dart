@@ -67,3 +67,8 @@ export 'src/presentation/z_rich_text_toolbar_config.dart'
 // brut, c'est-à-dire le rendu historique.
 export 'src/presentation/z_table_cell_scope.dart'
     show ZTableCellScope, ZTableCellContent;
+// Politique de largeur du tableau RENDU, OPT-IN (AD-57) : la charge persistée
+// ne change pas, seule la géométrie du rendu change. Absent ⇒ dimensionnement
+// au contenu, c'est-à-dire le rendu historique.
+export 'src/presentation/z_table_width_scope.dart'
+    show ZTableWidth, ZTableWidthScope;

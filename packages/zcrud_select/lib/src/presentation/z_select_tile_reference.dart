@@ -209,6 +209,42 @@ abstract final class ZSelectTileReference {
   /// rendu NATIF que l'enrôlement doit conserver, pas une invention de style.
   static const double ornamentGap = 4;
 
+  /// Épaisseur (dp) de la bordure du déclencheur **quand le champ porte une
+  /// valeur** et qu'une teinte par type de champ est servie.
+  ///
+  /// Ne s'applique **jamais** sans teinte : sans résolveur de dégradé, l'état
+  /// renseigné garde [borderWidth]. La bordure ne s'épaissit donc qu'en même
+  /// temps qu'elle se colore — l'épaisseur seule ne serait pas un signal
+  /// lisible, et ferait bouger le rendu d'une application qui n'a pas demandé
+  /// de teinte.
+  static const double selectedBorderWidth = 1.5;
+
+  /// Opacité appliquée à la teinte par type de champ pour peindre la bordure
+  /// de l'état renseigné.
+  ///
+  /// La teinte servie par le résolveur est **normalisée pour le contraste**
+  /// avant d'arriver ici : elle est faite pour un glyphe. Une bordure à pleine
+  /// saturation encadrerait chaque champ renseigné d'un trait dur ; l'atténuer
+  /// la rend lisible comme un **accent** sans transformer un formulaire
+  /// rempli en grille colorée.
+  ///
+  /// Métrique, jamais une couleur (FR-26 ne porte que sur les couleurs) : la
+  /// teinte, elle, vient toujours du résolveur de l'hôte.
+  static const double selectedBorderTintAlpha = 80 / 255;
+
+  /// Proportion appliquée à `ZcrudTheme.adornmentIconBackgroundAlpha` pour
+  /// peindre la pastille d'ornement d'un déclencheur **vide**.
+  ///
+  /// La pastille suit la bordure : un champ renseigné porte sa teinte pleine,
+  /// un champ vide la porte **estompée**. Exprimée en proportion, et non en
+  /// opacité absolue, pour que la décision d'intensité reste celle de
+  /// l'application (le jeton qu'elle a posé) — le socle ne fait que la
+  /// dégrader.
+  ///
+  /// Sans jeton de pastille, cette proportion ne s'applique à rien : il n'y a
+  /// pas de pastille à atténuer.
+  static const double emptyAdornmentAlphaFactor = 0.375;
+
   /// Marge intérieure horizontale du `ListTile` (dp).
   static const double contentPaddingHorizontal = 16;
 
@@ -274,6 +310,9 @@ class ZSelectTileSpec {
   const ZSelectTileSpec({
     this.borderColor,
     this.borderWidth,
+    this.selectedBorderColor,
+    this.selectedBorderWidth,
+    this.emptyAdornmentAlpha,
     this.cardRadius,
     this.cardElevation,
     this.cardColor,
@@ -303,6 +342,34 @@ class ZSelectTileSpec {
 
   /// Épaisseur de la bordure (dp). `null` ⇒ [ZSelectTileReference.borderWidth].
   final double? borderWidth;
+
+  /// Teinte de la bordure **quand le champ porte une valeur**.
+  ///
+  /// `null` ⇒ jeton `ZcrudTheme.selectTileSelectedBorderColor`, puis la
+  /// **teinte par type de champ** atténuée par
+  /// [ZSelectTileReference.selectedBorderTintAlpha] — et, si aucune teinte
+  /// n'est servie, la couleur de repos ([borderColor] résolue). Un
+  /// déclencheur ne se colore donc jamais sans teinte déclarée.
+  ///
+  /// Poser ici la même valeur que [borderColor] rend la bordure insensible à
+  /// l'état.
+  final Color? selectedBorderColor;
+
+  /// Épaisseur (dp) de la bordure **quand le champ porte une valeur**.
+  ///
+  /// `null` ⇒ jeton `ZcrudTheme.selectTileSelectedBorderWidth`, puis
+  /// [ZSelectTileReference.selectedBorderWidth] **si une teinte est servie**,
+  /// et sinon l'épaisseur de repos ([borderWidth] résolue).
+  final double? selectedBorderWidth;
+
+  /// Opacité du fond de la **pastille d'ornement** quand le champ ne porte pas
+  /// de valeur.
+  ///
+  /// N'a d'effet que là où la pastille existe (jeton
+  /// `ZcrudTheme.adornmentIconBackgroundAlpha` posé **et** teinte servie).
+  /// `null` ⇒ jeton `ZcrudTheme.selectTileEmptyAdornmentAlpha`, puis
+  /// l'atténuation de référence ([ZSelectTileReference.emptyAdornmentAlphaFactor]).
+  final double? emptyAdornmentAlpha;
 
   /// Rayon du `Card` (dp). `null` ⇒ [ZSelectTileReference.cardRadius].
   final double? cardRadius;
@@ -409,6 +476,9 @@ class ZSelectTileSpec {
   ZSelectTileSpec copyWith({
     Color? borderColor,
     double? borderWidth,
+    Color? selectedBorderColor,
+    double? selectedBorderWidth,
+    double? emptyAdornmentAlpha,
     double? cardRadius,
     double? cardElevation,
     Color? cardColor,
@@ -435,6 +505,9 @@ class ZSelectTileSpec {
       ZSelectTileSpec(
         borderColor: borderColor ?? this.borderColor,
         borderWidth: borderWidth ?? this.borderWidth,
+        selectedBorderColor: selectedBorderColor ?? this.selectedBorderColor,
+        selectedBorderWidth: selectedBorderWidth ?? this.selectedBorderWidth,
+        emptyAdornmentAlpha: emptyAdornmentAlpha ?? this.emptyAdornmentAlpha,
         cardRadius: cardRadius ?? this.cardRadius,
         cardElevation: cardElevation ?? this.cardElevation,
         cardColor: cardColor ?? this.cardColor,

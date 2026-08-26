@@ -18,7 +18,10 @@
 ///   ancrée) — `ZEntity` + `ZExtensible`, top-level à identité propre. Son
 ///   rectangle d'ancrage `ZAnnotationBounds` est un value object borné
 ///   `[0,1]` (`sanitizeCoord` aux deux frontières) ; `ZDocumentAnnotationKind`
-///   en fixe la nature (repli défensif `highlight`).
+///   en fixe la nature — surlignage, note ancrée, soulignage, barrage,
+///   soulignage ondulé — avec repli défensif `highlight` pour toute valeur
+///   inconnue. `ZAnnotationMark` en donne le rendu canonique (une apparence
+///   observable par nature).
 ///
 /// Aucune de ces entités ne déclare `updated_at`/`is_deleted` — l'autorité
 /// Last-Write-Wins et le soft-delete vivent hors-entité (`ZSyncMeta`,
@@ -79,6 +82,8 @@ export 'src/domain/z_study_document.dart' hide ZStudyDocumentZcrud;
 // livrés. Aucun type Flutter/`Color` n'apparaît en signature publique : la
 // surface exportée n'expose que `String colorKey`, `ZColorPalette`,
 // `ZDocumentAnnotation` et des callbacks neutres.
+export 'src/presentation/z_annotation_mark.dart'
+    show ZAnnotationMark, kAnnotationMarkKeyPrefix;
 export 'src/presentation/z_annotation_panel.dart' show ZAnnotationPanel;
 export 'src/presentation/z_annotation_tool_controller.dart'
     show

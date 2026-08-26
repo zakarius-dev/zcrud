@@ -39,47 +39,68 @@ const double _kFullscreenBreakpoint = 600;
 /// (Delta JSON) si l'utilisateur **valide**, ou `null` s'il **annule**/ferme.
 ///
 /// [initialValue] pré-remplit l'éditeur (valeur neutre OU format persisté du
-/// [codec]). [title] est le titre affiché (défaut « Éditer »). AUCUN type Quill
-/// dans la signature (AD-7).
+/// [codec]). [title] est le titre affiché (défaut « Éditer »), [subtitle] la
+/// ligne secondaire rendue sous lui. AUCUN type Quill dans la signature (AD-7).
+///
+/// [fullscreen] fige la présentation : `true` ⇒ plein cadre (`Scaffold`),
+/// `false` ⇒ dialogue centré 80 %×70 %. `null` (défaut) ⇒ arbitrage
+/// **automatique** sur la largeur de l'écran, le comportement historique — un
+/// hôte qui ne passe rien ne voit aucune différence, à aucune largeur.
+///
+/// Le forçage sert l'hôte dont toutes les éditions ouvrent une ROUTE plein
+/// cadre : sans lui, il devait remonter le helper autour de
+/// `ZRichTextFullscreenDialog`, et figeait au passage **sa** valeur du seuil de
+/// bascule au lieu de suivre celle du socle.
 Future<Object?> showZRichTextFullscreenDialog(
   BuildContext context, {
   required Object? initialValue,
   String? title,
+  String? subtitle,
   ZCodec? codec,
   String? placeholder,
   ZRichTextStyleSet? styleSet,
   double? textScaleFactor,
   ZRichTextFormulaSpec? formulaSpec,
   ZRichTextToolbarConfig? toolbarConfig,
+  bool? fullscreen,
 }) {
   final size = MediaQuery.sizeOf(context);
-  final bool fullscreen = size.width < _kFullscreenBreakpoint;
+  // `null` ⇒ arbitrage AUTOMATIQUE sur la largeur, exactement comme avant :
+  // la valeur calculée est la même expression, au même endroit. Un booléen
+  // explicite le REMPLACE et fige la présentation quelle que soit la largeur.
+  final bool isFullscreen = fullscreen ?? (size.width < _kFullscreenBreakpoint);
   return showDialog<Object?>(
     context: context,
     // Plein-écran (petit écran) : dialog opaque plein cadre ; sinon dialog
     // centré dimensionné.
-    useSafeArea: !fullscreen,
+    useSafeArea: !isFullscreen,
     builder: (BuildContext dialogContext) => ZRichTextFullscreenDialog(
       initialValue: initialValue,
       title: title,
+      subtitle: subtitle,
       codec: codec,
       placeholder: placeholder,
       styleSet: styleSet,
       textScaleFactor: textScaleFactor,
       formulaSpec: formulaSpec,
       toolbarConfig: toolbarConfig,
-      fullscreen: fullscreen,
+      fullscreen: isFullscreen,
     ),
   );
 }
 
-/// Contenu du dialog d'édition plein-écran (exposé pour les tests widget).
+/// Contenu du dialog d'édition plein-écran.
+///
+/// Montage DIRECT prévu : un hôte qui gère lui-même sa route (ou son
+/// `showDialog`) construit ce widget et fige la présentation par [fullscreen].
+/// Passer par [showZRichTextFullscreenDialog] reste la voie courte.
 class ZRichTextFullscreenDialog extends StatefulWidget {
   /// Construit le dialog. [fullscreen] `true` ⇒ présentation `Scaffold`
   /// plein-écran ; `false` ⇒ dialog centré 80 %×70 %.
   const ZRichTextFullscreenDialog({
     required this.initialValue,
     this.title,
+    this.subtitle,
     this.codec,
     this.placeholder,
     this.styleSet,
@@ -95,6 +116,24 @@ class ZRichTextFullscreenDialog extends StatefulWidget {
 
   /// Titre du dialog (défaut « Éditer »).
   final String? title;
+
+  /// Ligne secondaire rendue **sous** le [title], dans les deux présentations
+  /// (barre plein-écran et en-tête du dialogue dimensionné).
+  ///
+  /// Un éditeur plein cadre REMPLACE l'écran d'où l'on vient : il porte donc
+  /// les deux informations que cet écran donnait — **sur quoi** on travaille
+  /// (l'item) et **quel** champ on édite. Composer les deux dans [title]
+  /// préserve l'information et perd la hiérarchie.
+  ///
+  /// Le texte vient de l'appelant (aucun libellé n'est fabriqué ici) et est
+  /// tronqué à **une ligne**. `null` (défaut) ⇒ **absent de l'arbre** : aucune
+  /// `Column` interposée, rendu strictement identique à celui d'avant
+  /// l'ouverture du créneau.
+  ///
+  /// Sa typographie dérive des **métriques** de `TextTheme.titleSmall` ; sa
+  /// couleur reste HÉRITÉE de la surface qui l'accueille, pour rester lisible
+  /// sur une barre teintée.
+  final String? subtitle;
 
   /// Codec de normalisation de l'entrée / défaut `ZDeltaCodec`.
   final ZCodec? codec;
@@ -286,7 +325,7 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
           tooltip: MaterialLocalizations.of(context).cancelButtonLabel,
           onPressed: _cancel,
         ),
-        title: Semantics(header: true, child: Text(title)),
+        title: _titleBlock(context, title),
         actions: <Widget>[
           Padding(
             padding: const EdgeInsetsDirectional.only(end: 8),
@@ -316,6 +355,57 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
     );
   }
 
+  /// Bloc titre (+ sous-titre) partagé par les DEUX présentations.
+  ///
+  /// Sans sous-titre, il rend exactement le nœud d'avant — un `Semantics`
+  /// d'en-tête portant le seul `Text` du titre. Avec, la `Column` groupe les
+  /// deux lignes SOUS le même `Semantics` : l'annonce du lecteur d'écran reste
+  /// un en-tête unique (« titre sous-titre ») au lieu de deux nœuds
+  /// concurrents.
+  Widget _titleBlock(
+    BuildContext context,
+    String title, {
+    TextStyle? titleStyle,
+  }) {
+    final Widget titleText = Text(
+      title,
+      textAlign: TextAlign.start,
+      style: titleStyle,
+    );
+    final String? subtitle = widget.subtitle;
+    if (subtitle == null) {
+      return Semantics(header: true, child: titleText);
+    }
+    // Métriques SEULEMENT (taille, graisse, interlettrage, hauteur) : la
+    // couleur reste celle héritée de la surface. Forcer ici une couleur du
+    // `textTheme` rendrait le sous-titre illisible sur une barre teintée par
+    // l'hôte — le pendant exact de l'arbitrage déjà tenu sur l'en-tête de page.
+    final TextStyle? small = Theme.of(context).textTheme.titleSmall;
+    return Semantics(
+      header: true,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        // DIRECTIONNEL (AD-13) : jamais `left`.
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          titleText,
+          Text(
+            subtitle,
+            textAlign: TextAlign.start,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: small?.fontSize,
+              fontWeight: small?.fontWeight,
+              letterSpacing: small?.letterSpacing,
+              height: small?.height,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _sizedDialog(BuildContext context, String title) {
     final size = MediaQuery.sizeOf(context);
     return Dialog(
@@ -327,13 +417,10 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Semantics(
-                header: true,
-                child: Text(
-                  title,
-                  textAlign: TextAlign.start,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
+              _titleBlock(
+                context,
+                title,
+                titleStyle: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
               Expanded(child: _buildBody(context)),

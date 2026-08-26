@@ -533,6 +533,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.editionChromePageHeaderExpandedHeight,
     this.selectTileBorderColor,
     this.selectTileBorderWidth,
+    this.selectTileSelectedBorderColor,
+    this.selectTileSelectedBorderWidth,
+    this.selectTileEmptyAdornmentAlpha,
     this.selectTileRadius,
     this.selectTileMinHeight,
     this.selectDialogBreakpoint,
@@ -2164,6 +2167,50 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// [editionSheetBorderWidth]).
   final double? selectTileBorderWidth;
 
+  /// Teinte de la bordure du déclencheur de sélection **quand le champ porte
+  /// une valeur**, pour toute l'app.
+  ///
+  /// `null` ⇒ le consommateur applique la **teinte par type de champ** servie
+  /// par le résolveur de dégradé du scope, atténuée ; et si aucune teinte
+  /// n'est servie, il reprend [selectTileBorderColor] — l'état renseigné se
+  /// peint alors exactement comme l'état au repos.
+  ///
+  /// Poser ici la **même valeur** que [selectTileBorderColor] rend la bordure
+  /// insensible à l'état, quelle que soit la teinte servie par ailleurs.
+  ///
+  /// `lerp` par [_lerpNullableColor] et **non** `Color.lerp`, pour la raison
+  /// dite en [selectTileBorderColor].
+  final Color? selectTileSelectedBorderColor;
+
+  /// Épaisseur (dp) de la bordure du déclencheur de sélection **quand le champ
+  /// porte une valeur**.
+  ///
+  /// `null` ⇒ le consommateur épaissit la bordure **seulement** si une teinte
+  /// par type de champ est servie ; sans teinte il reprend
+  /// [selectTileBorderWidth], si bien qu'une application qui n'a pas de
+  /// résolveur de dégradé ne voit aucune épaisseur bouger.
+  ///
+  /// `lerp` par [_lerpNullableFloor] — une épaisseur `0` est une bordure
+  /// **absente**, pas une absence de réglage (identique à
+  /// [selectTileBorderWidth]).
+  final double? selectTileSelectedBorderWidth;
+
+  /// Opacité du fond de la **pastille d'ornement** du déclencheur de sélection
+  /// **quand le champ ne porte pas de valeur**.
+  ///
+  /// N'a d'effet que là où la pastille existe déjà, c'est-à-dire quand
+  /// [adornmentIconBackgroundAlpha] est posé **et** qu'une teinte par type de
+  /// champ est servie : ce jeton règle une opacité, il n'en crée jamais une.
+  ///
+  /// `null` ⇒ le consommateur atténue la pastille de l'état vide dans une
+  /// proportion de référence par rapport à [adornmentIconBackgroundAlpha].
+  /// Poser ici **la même valeur** que [adornmentIconBackgroundAlpha] rend la
+  /// pastille insensible à l'état.
+  ///
+  /// `lerp` par [_lerpNullableFloor] — une opacité `0` est une pastille
+  /// **invisible**, pas une absence de réglage.
+  final double? selectTileEmptyAdornmentAlpha;
+
   /// Rayon (dp) des coins du déclencheur de sélection. `null` ⇒ référence (`12`).
   ///
   /// Décision app-scale (la « rondeur » est un choix de marque), inatteignable
@@ -2755,6 +2802,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? editionChromePageHeaderExpandedHeight,
     Color? selectTileBorderColor,
     double? selectTileBorderWidth,
+    Color? selectTileSelectedBorderColor,
+    double? selectTileSelectedBorderWidth,
+    double? selectTileEmptyAdornmentAlpha,
     double? selectTileRadius,
     double? selectTileMinHeight,
     double? selectDialogBreakpoint,
@@ -3072,6 +3122,12 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         this.editionChromePageHeaderExpandedHeight,
     selectTileBorderColor: selectTileBorderColor ?? this.selectTileBorderColor,
     selectTileBorderWidth: selectTileBorderWidth ?? this.selectTileBorderWidth,
+    selectTileSelectedBorderColor:
+        selectTileSelectedBorderColor ?? this.selectTileSelectedBorderColor,
+    selectTileSelectedBorderWidth:
+        selectTileSelectedBorderWidth ?? this.selectTileSelectedBorderWidth,
+    selectTileEmptyAdornmentAlpha:
+        selectTileEmptyAdornmentAlpha ?? this.selectTileEmptyAdornmentAlpha,
     selectTileRadius: selectTileRadius ?? this.selectTileRadius,
     selectTileMinHeight: selectTileMinHeight ?? this.selectTileMinHeight,
     selectDialogBreakpoint:
@@ -4090,6 +4146,24 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       selectTileBorderWidth: _lerpNullableFloor(
         selectTileBorderWidth,
         other.selectTileBorderWidth,
+        t,
+      ),
+      // État RENSEIGNÉ : mêmes familles de `lerp` que le duo de repos —
+      // couleur nullable par `_lerpNullableColor`, épaisseur par plancher.
+      selectTileSelectedBorderColor: _lerpNullableColor(
+        selectTileSelectedBorderColor,
+        other.selectTileSelectedBorderColor,
+        t,
+      ),
+      selectTileSelectedBorderWidth: _lerpNullableFloor(
+        selectTileSelectedBorderWidth,
+        other.selectTileSelectedBorderWidth,
+        t,
+      ),
+      // Opacité : `0` serait une pastille INVISIBLE, pas une absence.
+      selectTileEmptyAdornmentAlpha: _lerpNullableFloor(
+        selectTileEmptyAdornmentAlpha,
+        other.selectTileEmptyAdornmentAlpha,
         t,
       ),
       selectTileRadius: _lerpNullableFloor(

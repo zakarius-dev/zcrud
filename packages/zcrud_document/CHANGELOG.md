@@ -3,6 +3,19 @@
 Toutes les modifications notables de `zcrud_document` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.22.0 — 2026-08-26
+
+### Ajouté
+- **Trois natures d'annotation** — souligné, barré, ondulé — en **queue** d'énumération, les natures existantes gardant leur rang. Une apparence canonique par nature, deux à deux distinctes.
+- **Jeu d'outils déclarable** sur la barre d'annotation (`kinds:`).
+
+### Attention
+- 🔴 **Un hôte qui montait la barre d'annotation voit ses outils passer de deux à cinq** sans avoir touché son code. Le paramètre `kinds:` fige le jeu ; à défaut, fournir les libellés de localisation des trois natures neuves, faute de quoi les boutons afficheront les noms bruts.
+- Une nature **inconnue** — d'une version future, ou d'une casse divergente — retombe sur la première valeur **sans lever**, et la valeur est **consommée**.
+
+### Garde
+- Les trois `switch` de rendu sont **exhaustifs sans `default`** : une nature future ne compile pas tant qu'elle n'a pas d'apparence.
+
 ## 3.3.1 — 2026-08-21
 
 ### Modifié — un seul calculateur de contraste dans tout le dépôt

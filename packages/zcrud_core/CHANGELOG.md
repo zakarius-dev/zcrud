@@ -3,6 +3,13 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.22.0 — 2026-08-26
+
+### Ajouté
+- **Opacité d'ornement déclarable** (`backgroundAlpha` sur la résolution d'ornement teinté) — elle **remplace l'opacité, jamais la condition d'existence** : sans jeton de pastille, aucun présentateur ne peut en faire apparaître une.
+- **Trois jetons d'état pour le déclencheur de sélection** : couleur et épaisseur de bordure à l'état renseigné, et opacité d'ornement à l'état vide. Absents de la palette de repli.
+- **Quatre clés de localisation** pour les natures d'annotation.
+
 ## 3.21.0 — 2026-08-25
 
 ### Ajouté

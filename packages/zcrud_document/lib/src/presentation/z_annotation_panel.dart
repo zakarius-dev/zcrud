@@ -195,5 +195,11 @@ IconData _entryIcon(ZDocumentAnnotationKind kind) {
       return Icons.brush_outlined;
     case ZDocumentAnnotationKind.stickyNote:
       return Icons.sticky_note_2_outlined;
+    case ZDocumentAnnotationKind.underline:
+      return Icons.format_underlined;
+    case ZDocumentAnnotationKind.strikethrough:
+      return Icons.format_strikethrough;
+    case ZDocumentAnnotationKind.squiggly:
+      return Icons.waves;
   }
 }

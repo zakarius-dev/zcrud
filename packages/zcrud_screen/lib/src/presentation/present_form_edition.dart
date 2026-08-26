@@ -231,10 +231,51 @@ typedef ZFormBodyBuilder = Widget Function(
 /// propre portée**, dérivée de [formId] et du titre de l'étape). Un
 /// [bodyBuilder], lui, compose son corps : c'est à lui de les passer au
 /// `ZFormOnly` ou au `DynamicEdition` qu'il monte.
+/// ## Ce que la fenêtre REND ([preserveInitialValues])
+///
+/// Par défaut, la carte rendue est la **projection du formulaire** : les
+/// champs déclarés, actifs et modifiables, et **rien d'autre**. Une clé
+/// d'[initialValues] qu'aucun [ZFieldSpec] ne déclare n'y figure donc pas —
+/// pas plus qu'un champ en lecture seule ou masqué par une condition.
+/// C'est le contrat juste quand la carte décrit **une décision de
+/// l'utilisateur** : un jeu de filtres, un réglage d'export, une saisie neuve.
+///
+/// Ce n'est pas celui qui convient quand la carte rendue est **réécrite telle
+/// quelle** sur un document existant : tout ce que le formulaire ne déclare
+/// pas — l'identifiant, le dossier de rattachement, un champ technique — est
+/// alors absent de l'écriture, et une persistance en écrasement total le perd.
+///
+/// `preserveInitialValues: true` change la carte rendue : les valeurs du
+/// formulaire sont **posées sur** [initialValues], qui devient le fond.
+///
+/// | Clé | Valeur rendue |
+/// |---|---|
+/// | déclarée, active, modifiable | celle du **formulaire** — elle gagne toujours |
+/// | déclarée en lecture seule | celle d'[initialValues], **conservée** |
+/// | déclarée mais masquée par une condition | celle d'[initialValues], **conservée** |
+/// | absente du catalogue | celle d'[initialValues], **conservée telle quelle** |
+/// | absente d'[initialValues] | celle du formulaire |
+///
+/// Autrement dit : le formulaire **écrase** ce qu'il décide, et ce dont il ne
+/// décide pas **survit**. Aucune clé n'est jamais retirée, aucune valeur
+/// conservée n'est renormalisée — elle sort telle qu'elle est entrée.
+///
+/// ```dart
+/// final maj = await presentFormEdition(
+///   context,
+///   fields: documentFields,
+///   initialValues: document.toMap(),
+///   preserveInitialValues: true, // la carte rendue reste un document COMPLET
+/// );
+/// ```
+///
+/// `false` (défaut) ⇒ **rien ne change** : la carte rendue est exactement la
+/// projection du formulaire, [initialValues] ne servant qu'à pré-remplir.
 Future<Map<String, dynamic>?> presentFormEdition(
   BuildContext context, {
   required List<ZFieldSpec> fields,
   Map<String, Object?>? initialValues,
+  bool preserveInitialValues = false,
   String? title,
   String? submitLabel,
   String? discardLabel,
@@ -293,7 +334,13 @@ Future<Map<String, dynamic>?> presentFormEdition(
     // l'est plus, sinon la fermeture demanderait de confirmer un abandon qui
     // n'a pas lieu.
     controller.form.markPristine();
-    Navigator.of(ctx).pop(values);
+    Navigator.of(ctx).pop(
+      _projectedValues(
+        values,
+        initialValues,
+        preserveInitialValues: preserveInitialValues,
+      ),
+    );
   }
 
   // Préséance DÉFINIE (AD-10) : le corps de l'appelant, puis les étapes, puis
@@ -357,6 +404,33 @@ Future<Map<String, dynamic>?> presentFormEdition(
       );
     },
   ).whenComplete(controller.dispose);
+}
+
+/// Carte rendue par la fenêtre : la projection [values] du formulaire, posée
+/// sur [initialValues] quand [preserveInitialValues] est demandé.
+///
+/// Option absente ⇒ [values] est rendue **telle quelle**, la même instance : la
+/// voie par défaut ne passe par aucune copie, aucune fusion, aucun ordre de
+/// clés nouveau.
+Map<String, dynamic> _projectedValues(
+  Map<String, dynamic> values,
+  Map<String, Object?>? initialValues, {
+  required bool preserveInitialValues,
+}) {
+  if (!preserveInitialValues) return values;
+  final seed = initialValues;
+  if (seed == null || seed.isEmpty) return values;
+  // `values` en SECOND : une clé que le formulaire a décidée écrase toujours la
+  // clé initiale de même nom. Le reste du fond survit intact — clé étrangère au
+  // catalogue, champ `readOnly` (que `zNormalizeFormValues` retire), champ
+  // qu'une condition d'affichage masque. Conserver la valeur initiale d'un
+  // `readOnly` est l'arbitrage de cette voie : on y rend un document destiné à
+  // être réécrit en entier, et un champ non modifiable qui disparaîtrait de la
+  // carte serait effacé du document alors que personne ne l'a touché.
+  return Map<String, dynamic>.unmodifiable(<String, dynamic>{
+    ...seed,
+    ...values,
+  });
 }
 
 /// `true` si chaque nom cité par une étape existe dans le catalogue.

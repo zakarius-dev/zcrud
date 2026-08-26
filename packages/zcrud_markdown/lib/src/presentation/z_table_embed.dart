@@ -38,6 +38,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import '../data/z_table_markdown.dart';
 import '../data/z_table_ops.dart';
 import 'z_table_cell.dart';
+import 'z_table_width_scope.dart';
 
 // Alias locaux privés pour préserver le corps inchangé (clés importées).
 const String _kRowsKey = kTableRowsKey;
@@ -174,6 +175,9 @@ class ZLegacyTableEmbedBuilder extends EmbedBuilder {
 /// directionnel). [IntrinsicColumnWidth] : dimensionnement au contenu (robuste).
 /// PARTAGÉ par [ZTableEmbedBuilder] (structure `{cells}`) et
 /// [ZLegacyTableEmbedBuilder] (string Markdown legacy) — un seul chemin de rendu.
+///
+/// La politique de largeur est celle du [ZTableWidthScope] hérité, absent par
+/// défaut : le tableau est alors rendu exactement comme avant.
 Widget _buildTable(
   BuildContext context,
   List<List<String>> matrix,
@@ -182,7 +186,7 @@ Widget _buildTable(
     final ZcrudTheme zTheme = ZcrudTheme.of(context);
     final Color borderColor =
         zTheme.fieldBorderColor ?? Theme.of(context).colorScheme.outline;
-    return Table(
+    final Widget table = Table(
       border: TableBorder.all(color: borderColor),
       defaultColumnWidth: const IntrinsicColumnWidth(),
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
@@ -205,6 +209,19 @@ Widget _buildTable(
             ],
           ),
       ],
+    );
+    // Échappatoire IDENTIQUE à celle du bloc LaTeX (`ZLatexBlockEmbedBuilder`) :
+    // un viewport horizontal, et rien d'autre. Le tableau garde son
+    // dimensionnement au contenu ; ce qui dépassait le cadre devient
+    // atteignable au lieu d'être écrêté. Non déclarée, l'enveloppe n'existe
+    // pas dans l'arbre : aucun nœud interposé, aucun `Scrollable` de plus à
+    // traverser pour les gestes ou pour la sémantique.
+    if (ZTableWidthScope.widthOf(context) == ZTableWidth.intrinsic) {
+      return table;
+    }
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: table,
     );
   }
 

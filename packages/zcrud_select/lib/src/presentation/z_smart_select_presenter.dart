@@ -95,10 +95,20 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         presentation.field.label ??
         presentation.field.name;
 
+    // Teinte par TYPE de champ, résolue une fois : elle alimente à la fois
+    // l'ornement de tête (ci-dessous) et le duo de bordure de l'état
+    // renseigné porté par les métriques. `null` sans résolveur de dégradé —
+    // aucune couleur n'est inventée.
+    final ZTintedAdornment tinted = zResolveTintedAdornment(
+      context,
+      presentation.field.leading,
+      field: presentation.field,
+    );
+
     // chaîne `paramètre > jeton > référence`, résolue UNE fois
     // pour tout le sous-arbre.
     final ZSelectTileMetrics metrics =
-        zSelectTileMetricsOf(context, spec: spec);
+        zSelectTileMetricsOf(context, spec: spec, tint: tinted.tint);
 
     // Valeurs portées par la tranche, normalisées (mono ⇒ singleton ; `null`
     // n'est jamais orphelin — c'est la place vide légitime du champ).
@@ -153,11 +163,19 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     // hors catalogue), ni le placeholder de chargement, ni la disparition du
     // tile en lecture seule vide (le `SizedBox.shrink()` du tile
     // court-circuite AVANT que le slot soit peint).
-    final Widget? tintedLeading = zResolveTintedAdornment(
-      context,
-      presentation.field.leading,
-      field: presentation.field,
-    ).child;
+    final Widget? tintedLeading = tinted.child;
+    // Variante de l'état VIDE : la pastille suit la bordure, teinte pleine
+    // quand le champ porte une valeur, estompée quand il est vide. `null`
+    // (aucune pastille, donc rien à atténuer) ⇒ le MÊME widget est réemployé
+    // pour les deux états : l'arbre est strictement celui d'avant.
+    final Widget? tintedLeadingEmpty = metrics.emptyAdornmentAlpha == null
+        ? tintedLeading
+        : zResolveTintedAdornment(
+            context,
+            presentation.field.leading,
+            field: presentation.field,
+            backgroundAlpha: metrics.emptyAdornmentAlpha,
+          ).child;
     // Placement — la part du CONTRAT qui revient à la tuile. MESURÉ : la
     // pastille du cœur épouse son glyphe au centre d'un slot CONTRAINT
     // (`InputDecoration` borne ses slots d'icône) ; `ListTile.leading`, lui,
@@ -169,6 +187,11 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     // aucun pixel ne bouge sans déclaration.
     final Widget? leading =
         tintedLeading == null ? null : UnconstrainedBox(child: tintedLeading);
+    final Widget? leadingEmpty = identical(tintedLeadingEmpty, tintedLeading)
+        ? leading
+        : (tintedLeadingEmpty == null
+            ? null
+            : UnconstrainedBox(child: tintedLeadingEmpty));
 
     // règle d'inertie EXACTE de référence :
     // `choiceBuilder == null && (readOnly || isLoading) ? null : showModal`.
@@ -466,6 +489,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
           enabled: enabled,
           tappable: tappable,
           leading: leading,
+          leadingEmpty: leadingEmpty,
           onTap: state.showModal,
           metrics: metrics,
           showChevron: spec?.showTrailingChevron ?? enabled,
@@ -552,6 +576,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         enabled: enabled,
         tappable: tappable,
         leading: leading,
+        leadingEmpty: leadingEmpty,
         onTap: state.showModal,
         metrics: metrics,
         showChevron: spec?.showTrailingChevron ?? enabled,
@@ -1300,6 +1325,7 @@ class _ZSmartSelectTile extends StatelessWidget {
     required this.isLoading,
     required this.summaryOverflowLabel,
     this.leading,
+    this.leadingEmpty,
     this.valueText,
     this.chipLabels,
     this.helperText,
@@ -1351,7 +1377,17 @@ class _ZSmartSelectTile extends StatelessWidget {
   /// pastillé quand la teinte du champ et les jetons d'ornement sont déclarés,
   /// icône nue sinon. Déjà teinté — jamais re-coloré par la tuile. `null` ⇒
   /// slot ABSENT de l'arbre (AD-4), rendu antérieur strictement conservé.
+  ///
+  /// C'est la variante de l'état **renseigné** ; cf. [leadingEmpty].
   final Widget? leading;
+
+  /// Ornement de tête de l'état **vide** — même résolution que [leading], à
+  /// la pastille estompée près.
+  ///
+  /// Vaut la **même instance** que [leading] quand rien ne distingue les deux
+  /// états (aucune pastille à atténuer) : l'arbre est alors strictement celui
+  /// d'une tuile qui ne réagit pas à l'état.
+  final Widget? leadingEmpty;
 
   /// Ouvre le modal S2.
   final VoidCallback onTap;
@@ -1442,17 +1478,25 @@ class _ZSmartSelectTile extends StatelessWidget {
         color: metrics.cardColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(metrics.radius),
+          // Le seul canal de la tuile qui dépende de l'ÉTAT : porter une
+          // valeur teinte et épaissit la bordure. Le duo « renseigné » a déjà
+          // été résolu par `zSelectTileMetricsOf`, qui le fait retomber sur le
+          // duo de repos quand aucune teinte n'est servie — cette expression
+          // est donc l'identité pour toute application sans résolveur de
+          // dégradé, dans les DEUX états, y compris en lecture seule.
           side: BorderSide(
-            color: metrics.borderColor,
-            width: metrics.borderWidth,
+            color: hasValue ? metrics.selectedBorderColor : metrics.borderColor,
+            width: hasValue ? metrics.selectedBorderWidth : metrics.borderWidth,
           ),
         ),
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: minHeight),
           child: ListTile(
             contentPadding: metrics.contentPadding,
-            // AD-4 : `null` ⇒ le slot n'existe pas dans l'arbre.
-            leading: leading,
+            // AD-4 : `null` ⇒ le slot n'existe pas dans l'arbre. La variante
+            // est choisie par l'ÉTAT — même source (`hasValue`) que la
+            // bordure, jamais deux lectures concurrentes du même état.
+            leading: hasValue ? leading : leadingEmpty,
             // aucun style imposé (`style: null`) — le
             // titre garde la typographie de `ListTileThemeData.titleTextStyle`.
             title: _labelWithRequiredIndicator(

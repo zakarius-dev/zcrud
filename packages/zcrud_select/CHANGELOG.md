@@ -3,6 +3,16 @@
 Toutes les modifications notables de `zcrud_select` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.22.0 — 2026-08-26
+
+### Modifié
+- 🔴 **La tuile de sélection se teinte quand elle porte une valeur** — bordure teintée et épaissie, ornement de tête plus dense. Sur un formulaire qui aligne douze tuiles de choix, c'est le seul repère qui dit, sans lire, lesquelles sont renseignées.
+
+### Attention
+- **Sans résolveur de teinte, rien ne change** — et pas par convention : le dernier maillon de l'état renseigné **est le duo de repos lui-même**, si bien que l'épaisseur ne peut pas bouger seule.
+- **Échappatoire** : poser les jetons d'état aux valeurs de repos rétablit le rendu statique — le jeton prime sur la teinte.
+- **Hôte ayant compensé** : sa compensation **s'additionne**. Une couleur de bordure calculée depuis la valeur teindra désormais aussi l'état vide, le paramètre de repos primant.
+
 ## 3.20.0 — 2026-08-25
 
 ### Ajouté

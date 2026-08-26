@@ -281,15 +281,25 @@ final class _ZImageSyntax extends md.InlineSyntax {
 /// c'est-à-dire exactement les deux formes de saut de ligne forcé de CommonMark
 /// (`  \n` et `\\\n`), qui restent traitées par `LineBreakSyntax`.
 final class _ZSoftLineBreakSyntax extends md.InlineSyntax {
-  _ZSoftLineBreakSyntax()
+  _ZSoftLineBreakSyntax(this._softBreak)
       : super(
           r'(?<![ \\])\n *',
           startCharacter: 0x0A, // '\n'
         );
 
+  /// Sort du retour souple, déclaré par le codec appelant.
+  final ZSoftBreak _softBreak;
+
   @override
   bool onMatch(md.InlineParser parser, Match match) {
-    parser.addNode(md.Text(' '));
+    // `br` est EXACTEMENT le noeud qu'émet `LineBreakSyntax` pour un retour
+    // DUR : le mode `lineBreak` ne fabrique donc pas une forme nouvelle, il
+    // réutilise celle que le convertisseur sait déjà traduire (`_delta.insert
+    // ('\n')`). Le mode `space` reste inchangé, jusqu'au noeud produit.
+    final md.Node node = _softBreak == ZSoftBreak.lineBreak
+        ? md.Element.empty('br')
+        : md.Text(' ');
+    parser.addNode(node);
     return true;
   }
 }
@@ -345,6 +355,35 @@ const Set<String> _kNativeEmbedTypes = <String>{
   'table',
 };
 
+/// Sort d'un retour à la ligne **souple** au DÉCODAGE d'un document Markdown.
+///
+/// Un retour souple est un simple `\n` de continuation, sans les deux espaces
+/// (ou l'antislash) qui font un retour **dur**. CommonMark laisse au moteur de
+/// rendu le choix de ce qu'il en fait ; ce réglage expose ce choix.
+///
+/// Il porte sur le **décodage seulement** : la valeur persistée n'en dépend pas,
+/// et un même document se relit à l'identique sous l'autre valeur.
+enum ZSoftBreak {
+  /// Le retour souple est fusionné en **espace** — le défaut, et ce que
+  /// prescrit CommonMark. Trois lignes saisies forment un paragraphe continu.
+  space,
+
+  /// Le retour souple produit un **saut de ligne** : le texte s'affiche sur
+  /// autant de lignes qu'il en portait à la saisie.
+  ///
+  /// À réserver aux corpus qui ne sont pas écrits en Markdown — des contenus
+  /// saisis dans un champ de texte (ou produits par un modèle), où l'auteur
+  /// sépare ses lignes avec la touche Entrée.
+  ///
+  /// ⚠️ **Aller-retour** : le saut de ligne obtenu est une ligne Delta à part
+  /// entière ; ré-encodé en Markdown, il ressort en **changement de
+  /// paragraphe**, pas en retour souple. Sur une surface qui ÉDITE et
+  /// ré-enregistre, la structure du document se stabilise donc après le premier
+  /// cycle. Sur une surface de LECTURE, la valeur persistée n'est jamais
+  /// réécrite et la question ne se pose pas.
+  lineBreak,
+}
+
 /// Codec **Markdown** : le format persisté est une `String` Markdown lisible.
 ///
 /// - [encode] : ops Delta neutres → `Delta` (interne) → `String` Markdown.
@@ -378,7 +417,7 @@ const Set<String> _kNativeEmbedTypes = <String>{
 /// | Alignement (`align`)            | **perdu**                              |
 /// | Texte **ALT** d'image contenant `]` ou un saut de ligne | **perdu** — l'ALT est omis (`!(src)`), l'URL SURVIT. Écrire `\]` rouvrirait (l'encodeur fabriquerait un délimiteur de bloc LaTeX) : la perte est préférée à la corruption du texte voisin |
 /// | Numéro de départ d'une liste ordonnée **indentée** | **perdu** (renumérotée depuis 1) — la correspondance run Delta ↔ run Markdown n'est pas triviale pour une liste imbriquée, et renuméroter de travers serait pire |
-/// | Retour **souple** (`\n` de continuation) | **fusionné en espace**, conformément à CommonMark — hors blockquote c'était déjà le cas ; dans un blockquote il RECOLLAIT les mots |
+/// | Retour **souple** (`\n` de continuation) | **fusionné en espace**, conformément à CommonMark — hors blockquote c'était déjà le cas ; dans un blockquote il RECOLLAIT les mots. Déclarer `softBreak: ZSoftBreak.lineBreak` le rend visible au décodage (cf. [ZSoftBreak]) |
 /// | Vidéo (`video`)                 | **dégradé en LIEN** `[src](src)` — la source SURVIT, le type d'embed non |
 /// | Entité HTML littérale (`&amp;`) | **résolue** en son caractère (`&`) dès le premier round-trip — la forme entité n'est pas restituée |
 /// | Embed LaTeX/tableau | dégradé en placeholder `\[embed:<type>]` (crochet ouvrant échappé), texte environnant PRÉSERVÉ (perte **BORNÉE** à l'embed) |
@@ -403,11 +442,21 @@ final class ZMarkdownCodec implements ZCodec {
   /// placeholder. Cf. `ZMarkdownBridges.latex` pour un jeu prêt à l'emploi.
   const ZMarkdownCodec({
     this.bridges = const <ZMarkdownEmbedBridge>[],
+    this.softBreak = ZSoftBreak.space,
   });
 
   /// Ponts Markdown ↔ embed déclarés par l'hôte. L'ordre compte : le premier
   /// motif qui correspond gagne (d'où `$$…$$` avant `$…$`).
   final List<ZMarkdownEmbedBridge> bridges;
+
+  /// Sort d'un retour à la ligne **souple** au décodage.
+  ///
+  /// [ZSoftBreak.space] par défaut : le comportement CommonMark, strictement
+  /// celui d'avant l'ouverture du réglage. [ZSoftBreak.lineBreak] rend chaque
+  /// retour souple visible, dans un blockquote comme au fil du texte.
+  ///
+  /// Sans effet sur [encode] : la valeur persistée ne dépend pas de ce réglage.
+  final ZSoftBreak softBreak;
 
   /// Types d'embed exprimables : natifs + ceux qu'un pont sait réémettre.
   Set<String> get _expressibleEmbedTypes => <String>{
@@ -505,8 +554,9 @@ final class ZMarkdownCodec implements ZCodec {
           // `~~x~~` → `{strike: true}`. L'encodeur émettait déjà
           // du `~~` que le décodeur ne savait pas relire.
           _ZDoubleTildeStrikethroughSyntax(),
-          // retour souple → espace, y compris DANS un blockquote.
-          _ZSoftLineBreakSyntax(),
+          // retour souple, y compris DANS un blockquote : espace par défaut,
+          // saut de ligne si le codec le déclare.
+          _ZSoftLineBreakSyntax(softBreak),
         ],
       );
 
@@ -522,6 +572,13 @@ final class ZMarkdownCodec implements ZCodec {
   /// surchargée par ce chemin. On n'y AJOUTE que des clés absentes.
   MarkdownToDelta _markdownToDelta() => MarkdownToDelta(
         markdownDocument: _markdownDocument(),
+        // Le retour souple précédé d'UNE seule espace (` \n`) n'est pas capté
+        // par `_ZSoftLineBreakSyntax` — sa garde `(?<![ \\])` l'exclut, parce
+        // qu'elle vise les retours durs. Ce reliquat est traité par le
+        // convertisseur lui-même, dont la normalisation ` ?\n *` → espace doit
+        // donc être désactivée dans le même mode, sans quoi le réglage aurait
+        // un angle mort d'une espace de large.
+        softLineBreak: softBreak == ZSoftBreak.lineBreak,
         customElementToBlockAttribute: <String, ElementToAttributeConvertor>{
           'h4': (_) => <Attribute<dynamic>>[Attribute.h4],
           'h5': (_) => <Attribute<dynamic>>[Attribute.h5],
