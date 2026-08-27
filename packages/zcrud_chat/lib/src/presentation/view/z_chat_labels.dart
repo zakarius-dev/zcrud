@@ -55,6 +55,13 @@ const String kZChatLabelAttachments = '${kZChatLabelPrefix}attachments';
 const String kZChatLabelRemoveAttachment =
     '${kZChatLabelPrefix}removeAttachment';
 
+/// Annonce « un téléversement est en cours ».
+///
+/// Elle dit qu'un transfert **tourne**, jamais où il en est : le socle n'a
+/// pas le compteur d'octets. Un hôte qui affiche un pourcentage remplace la
+/// pièce entière.
+const String kZChatLabelUploading = '${kZChatLabelPrefix}uploading';
+
 /// Action « lire à voix haute ».
 const String kZChatLabelSpeak = '${kZChatLabelPrefix}speak';
 
@@ -98,6 +105,16 @@ const String kZChatLabelAcceptCapture = '${kZChatLabelPrefix}acceptCapture';
 
 /// Action « abandonner la relecture » — n'efface JAMAIS la saisie.
 const String kZChatLabelCancelCapture = '${kZChatLabelPrefix}cancelCapture';
+
+/// Annonce « la saisie affichée vient d'un brouillon enregistré ».
+///
+/// Sans elle, un texte réapparu à l'ouverture d'une conversation est
+/// indiscernable d'un texte qu'on vient de taper.
+const String kZChatLabelDraftRestored = '${kZChatLabelPrefix}draftRestored';
+
+/// Action « masquer l'indication de brouillon » — n'efface JAMAIS la saisie.
+const String kZChatLabelDismissDraftNotice =
+    '${kZChatLabelPrefix}dismissDraftNotice';
 
 /// Étiquette sémantique de la **zone de saisie** partagée.
 const String kZChatLabelComposer = '${kZChatLabelPrefix}composer';
@@ -250,6 +267,18 @@ const String kZChatLabelArtifactCancel = '${kZChatLabelPrefix}artifactCancel';
 /// (`ZChatComposerSendTarget`). La clé traverse le registre de l'hôte comme
 /// toutes les autres.
 const String kZChatLabelSend = '${kZChatLabelPrefix}send';
+
+/// Annonce de l'affordance d'envoi pendant une **préparation d'hôte** (un
+/// téléversement, typiquement) : l'envoi n'est pas encore possible.
+const String kZChatLabelSendBusy = '${kZChatLabelPrefix}sendBusy';
+
+/// Annonce de l'affordance d'envoi en mode **modification** : le geste valide
+/// la modification d'un message existant, il n'en poste pas un nouveau.
+const String kZChatLabelSendEdit = '${kZChatLabelPrefix}sendEdit';
+
+/// Étiquette sémantique de la BANDE D'ÉTAT du composer (rang 0) — la région
+/// live qui porte l'annonce que l'hôte lui donne.
+const String kZChatLabelComposerStatus = '${kZChatLabelPrefix}composerStatus';
 
 /// Action « réinitialiser les réglages » — l'en-tête par défaut de la feuille.
 const String kZChatLabelSettingsReset = '${kZChatLabelPrefix}settingsReset';
@@ -437,6 +466,7 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelStreaming,
   kZChatLabelAttachments,
   kZChatLabelRemoveAttachment,
+  kZChatLabelUploading,
   kZChatLabelSpeak,
   kZChatLabelStopSpeaking,
   kZChatLabelShare,
@@ -450,6 +480,8 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelReviewCapture,
   kZChatLabelAcceptCapture,
   kZChatLabelCancelCapture,
+  kZChatLabelDraftRestored,
+  kZChatLabelDismissDraftNotice,
   kZChatLabelComposer,
   kZChatLabelComposerHint,
   kZChatLabelSettings,
@@ -481,6 +513,9 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelArtifactConfirm,
   kZChatLabelArtifactCancel,
   kZChatLabelSend,
+  kZChatLabelSendBusy,
+  kZChatLabelSendEdit,
+  kZChatLabelComposerStatus,
   kZChatLabelSettingsReset,
   kZChatLabelSettingsClose,
   kZChatLabelComputeBudgetFast,
@@ -547,6 +582,7 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelStreaming: 'Réponse en cours',
   kZChatLabelAttachments: 'Pièces jointes',
   kZChatLabelRemoveAttachment: 'Retirer',
+  kZChatLabelUploading: 'Téléversement en cours',
   kZChatLabelSpeak: 'Lire à voix haute',
   kZChatLabelStopSpeaking: 'Arrêter la lecture',
   kZChatLabelShare: 'Partager',
@@ -560,6 +596,8 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelReviewCapture: 'Relire avant envoi',
   kZChatLabelAcceptCapture: 'Insérer dans le message',
   kZChatLabelCancelCapture: 'Abandonner',
+  kZChatLabelDraftRestored: 'Brouillon restauré',
+  kZChatLabelDismissDraftNotice: 'Masquer l\'indication',
   kZChatLabelComposer: 'Zone de saisie',
   kZChatLabelComposerHint: 'Écrivez votre message',
   kZChatLabelSettings: 'Réglages de génération',
@@ -591,6 +629,9 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelArtifactConfirm: 'Confirmer',
   kZChatLabelArtifactCancel: 'Annuler',
   kZChatLabelSend: 'Envoyer',
+  kZChatLabelSendBusy: 'Envoi en préparation',
+  kZChatLabelSendEdit: 'Valider la modification',
+  kZChatLabelComposerStatus: 'État',
   kZChatLabelSettingsReset: 'Réinitialiser',
   kZChatLabelSettingsClose: 'Fermer',
   kZChatLabelComputeBudgetFast: 'Rapide',

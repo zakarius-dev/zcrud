@@ -153,6 +153,10 @@ ZChatArtifactSpec zChatArtifactSpecOf(
     icon: resolvers.iconOf(declaration.iconKey),
     label: resolvers.labelOf(declaration.labelToken) ?? '',
     accent: resolvers.accentOf(declaration.accentToken),
+    // La condition d'application de la teinte voyage AVEC la teinte : sans
+    // ce relais, un hôte qui déclare ses artefacts par le registre n'y avait
+    // simplement pas accès.
+    alwaysAccented: declaration.alwaysAccented,
     presence: (ZChatMessage m) => status(m).isPresent,
     count: declaration.hasCount
         ? (ZChatMessage m) => status(m).badgeCount

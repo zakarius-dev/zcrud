@@ -142,6 +142,16 @@ abstract final class ZChatComposerReference {
   /// `MediaQuery.disableAnimations`.
   static const Duration accentCycleDuration = Duration(seconds: 2);
 
+  // ── Bande d'état (rang 0) ──────────────────────────────────────────────
+
+  /// Marge de la bande d'état — la MÊME que celle du bandeau d'édition.
+  ///
+  /// Les rangs 0 et 1 sont deux **annonces** empilées : deux marges
+  /// différentes feraient sauter le texte d'un dp à l'autre quand l'une
+  /// apparaît au-dessus de l'autre.
+  static const EdgeInsetsDirectional statusBandPadding =
+      EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 8);
+
   // ── Bandeau du mode édition ────────────────────────────────────────────
 
   /// Marge du bandeau « modification en cours ».
@@ -202,6 +212,38 @@ abstract final class ZChatComposerReference {
   /// Écart de début entre le nom du fichier et sa cible de retrait —
   /// directionnel par construction, comme tous les écarts de ce fichier.
   static const double attachmentRemoveStartGap = 4;
+
+  // ── Bande de propositions (rang 3) ─────────────────────────────────────
+
+  /// Hauteur de la bande de propositions.
+  ///
+  /// Fixe et bornée : le rang 3 pousse le champ vers le bas d'une hauteur
+  /// connue, et le débordement se scrolle À L'INTÉRIEUR du rang. Sans borne,
+  /// une livraison de dix propositions ferait sortir le champ du cadre.
+  static const double suggestionsBandHeight = kZChatMinTapTarget;
+
+  /// Marge autour de la bande de propositions.
+  static const EdgeInsetsDirectional suggestionsBandPadding =
+      EdgeInsetsDirectional.symmetric(horizontal: 8, vertical: 2);
+
+  /// Écart de fin entre deux propositions.
+  static const double suggestionsEndGap = 8;
+
+  /// Largeur maximale d'une proposition — au-delà, le texte est écrêté.
+  ///
+  /// Une proposition est un raccourci, pas un paragraphe : sans plafond, une
+  /// phrase longue occuperait à elle seule toute la bande et masquerait les
+  /// suivantes.
+  static const double suggestionMaxWidth = 240;
+
+  // ── Indicateur de brouillon restitué ───────────────────────────────────
+
+  /// Marge de l'indicateur de brouillon restitué.
+  static const EdgeInsetsDirectional draftNoticePadding =
+      EdgeInsetsDirectional.fromSTEB(8, 2, 4, 2);
+
+  /// Écart entre le glyphe d'hôte et le texte de l'indicateur.
+  static const double draftNoticeGap = 8;
 
   // ── Couleurs — exception encadrée (cf. dartdoc de bibliothèque) ────────
 

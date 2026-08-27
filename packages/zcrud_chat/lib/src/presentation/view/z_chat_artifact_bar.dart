@@ -4,10 +4,22 @@
 ///
 /// ## 🔴 « C'est un ÉTAT, pas un style »
 ///
-/// C'est la seule règle de ce fichier : la
+/// C'est la règle par **défaut** de ce fichier : la
 /// teinte n'est peinte **que si l'artefact existe**. Un glyphe teinté en
 /// permanence est une décoration ; un glyphe qui se teint quand le contenu
 /// arrive est une information — c'est ce qui fait la valeur de l'écran.
+///
+/// Une application peut vouloir l'autre convention : la couleur dit la
+/// **nature** de l'artefact — « ceci EST la carte mentale » — et l'existence
+/// se lit à la pastille et à l'annonce. Neuf pictogrammes de même couleur se
+/// distinguent moins vite que neuf couleurs. C'est un choix par artefact,
+/// posé sur sa déclaration ([ZChatArtifactSpec.alwaysAccented]), et
+/// **strictement opt-in** : rien ne change pour qui ne le pose pas.
+///
+/// 🔴 Ce drapeau n'a pas d'équivalent en forçant la lecture de présence : la
+/// présence gouverne AUSSI l'annonce, et un artefact vide qui s'annoncerait
+/// « déjà généré » mentirait au lecteur d'écran. Les deux canaux sont
+/// séparés pour cette raison précise.
 ///
 /// Et parce qu'une information ne repose jamais sur la seule couleur
 /// (invariant AD-13), l'état est **annoncé** : `Semantics.value` porte
@@ -430,8 +442,20 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
 
   /// La teinte réellement peinte : la teinte déclarée, portée au plancher de
   /// contraste des composants graphiques. `null` ⇒ couleur ambiante.
+  ///
+  /// Un artefact **absent** n'est teinté que si sa déclaration le demande
+  /// ([ZChatArtifactSpec.alwaysAccented]). La correction de contraste est la
+  /// même dans les deux cas : une teinte peinte est une teinte lisible.
   Color? _tint(BuildContext context, {required bool present}) {
-    if (!present) return null;
+    // OPT-IN STRICT. La condition par défaut est INCHANGÉE : sans drapeau sur
+    // la déclaration, un artefact absent reste à la couleur ambiante — un hôte
+    // qui s'appuie sur « teinté = existe » ne voit rien bouger.
+    //
+    // Et le drapeau ne relâche QUE cette condition-ci : `present` continue
+    // d'alimenter `_stateValue` (l'annonce) et les conditions de visibilité
+    // des verbes. C'est toute la raison d'être de ce second canal — forcer la
+    // présence pour teindre ferait annoncer « généré » un artefact vide.
+    if (!present && !widget.spec.alwaysAccented) return null;
     final Color? accent = _accent();
     final Color? surface = _surface(context);
     if (accent == null || surface == null) return null;
@@ -545,8 +569,11 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
     return Icon(
       icon,
       size: ZChatNotebookReference.perMessageActionIconSize,
-      // 🔴 L'ÉTAT, et rien d'autre : teinte si le contenu existe ou si une
-      // génération est en cours, couleur ambiante sinon.
+      // Par DÉFAUT l'état, et rien d'autre : teinte si le contenu existe ou si
+      // une génération est en cours, couleur ambiante sinon. Une déclaration
+      // qui pose `alwaysAccented` échange ce canal contre la NATURE de
+      // l'artefact — sans jamais toucher à ce que l'annonce dit de son
+      // existence (cf. `_tint`).
       color: color,
     );
   }

@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.24.0 — 2026-08-27
+
+### Ajouté
+- **Quatre jetons de cadre du composer de chat** — fond, couleur et épaisseur de filet, rayon. Absents de la palette de repli : `null` partout ⇒ rendu strictement inchangé. Le rayon est **unique** : fond, filet et rognage ne peuvent pas diverger.
+
 ## 3.23.0 — 2026-08-26
 
 ### Modifié

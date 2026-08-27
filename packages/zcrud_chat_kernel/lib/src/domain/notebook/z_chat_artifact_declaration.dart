@@ -297,6 +297,7 @@ class ZChatArtifactDeclaration {
     this.accentToken,
     Iterable<ZChatArtifactVerb> verbs = const <ZChatArtifactVerb>[],
     this.hasCount = false,
+    this.alwaysAccented = false,
     this.subjectRequired = false,
     this.style,
     this.order = 0,
@@ -325,6 +326,21 @@ class ZChatArtifactDeclaration {
   /// `true` si l'artefact porte un **compte** (nœuds, cartes…) affiché en
   /// pastille quand il est strictement positif.
   final bool hasCount;
+
+  /// L'accent de cet artefact est-il porté **même quand il est absent** ?
+  ///
+  /// `false` (défaut) : la teinte dit l'**état** — un artefact vide est
+  /// rendu éteint.
+  ///
+  /// `true` : la teinte dit la **nature** de l'artefact et l'accompagne en
+  /// permanence ; l'existence reste portée par le compte et par l'annonce
+  /// d'accessibilité, qui continuent de distinguer « déjà généré » de
+  /// « aucun contenu ».
+  ///
+  /// Le drapeau vit sur la déclaration, à côté de [accentToken] : la teinte
+  /// et sa condition d'application se lisent au même endroit. Il ne touche
+  /// **que** cette condition — jamais la présence, jamais ce qui est annoncé.
+  final bool alwaysAccented;
 
   /// `true` si la génération de cet artefact exige un **sujet** non vide, au
   /// même titre qu'une matière non vide (`ZChatArtifactGenerationRequest.
@@ -363,6 +379,7 @@ class ZChatArtifactDeclaration {
     'accent_token',
     'verbs',
     'has_count',
+    'always_accented',
     'subject_required',
     kZChatGenerationStyleKindKey,
     kZChatGenerationStyleParamsKey,
@@ -421,6 +438,7 @@ class ZChatArtifactDeclaration {
           ) ??
           const <ZChatArtifactVerb>[],
       hasCount: zJsonBool(map['has_count'], false),
+      alwaysAccented: zJsonBool(map['always_accented'], false),
       subjectRequired: zJsonBool(map['subject_required'], false),
       // Le style est à PLAT sur la déclaration, sous ses propres clés
       // (`style`, `style_params`) : `fromJson` lit la carte entière.
@@ -443,6 +461,7 @@ class ZChatArtifactDeclaration {
             for (final ZChatArtifactVerb v in verbs) v.toJson(),
           ],
         if (hasCount) 'has_count': true,
+        if (alwaysAccented) 'always_accented': true,
         if (subjectRequired) 'subject_required': true,
         if (style != null) ...style!.toJson(typeRegistry: typeRegistry),
         if (order != 0) 'order': order,

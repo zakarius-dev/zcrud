@@ -49,6 +49,14 @@
 /// [ZChatComposerDictationTrigger] est le déclencheur de dictée compact : le
 /// socle livre le bouton, l'hôte garde le geste et le moteur de
 /// reconnaissance.
+///
+/// ## La bande d'état et l'affordance d'envoi
+///
+/// [ZChatComposerStatusBand] (rang 0) **rend** l'annonce que l'hôte lui donne
+/// — quota, échec, mode hors ligne : le socle ne sonde rien et n'applique
+/// aucune politique. [ZChatComposerSendControl] choisit, selon l'état
+/// (`ZChatComposerSendState`), entre l'envoi et le STOP existant : deux
+/// verbes, deux pièces, aucun troisième chemin.
 library;
 
 import 'dart:async';
@@ -60,7 +68,10 @@ import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
 import '../settings/z_chat_settings_controller.dart';
+import '../tools/z_chat_tool_controller.dart';
+import '../tools/z_chat_tool_settings_adapter.dart' show ZChatToolTokenResolver;
 import '../z_chat_controller.dart';
+import 'z_chat_composer.dart';
 import 'z_chat_composer_chrome.dart';
 import 'z_chat_composer_reference.dart';
 import 'z_chat_labels.dart';
@@ -154,11 +165,17 @@ double _gapOf(BuildContext context) =>
 /// `ZChatNotebookReference.composerRadius` et
 /// `ZChatComposerReference.containerRadius` publient déjà (tous deux à 12).
 ///
-/// * **rayon** : chaîne du chrome (paramètre > jeton `radiusM` > référence
-///   12) ;
-/// * **fond** : [backgroundColor] > jeton `surfaceColor` > **rien** — le
-///   socle n'invente aucune couleur : sans fond résolu, l'enfant est rendu
-///   tel quel, jamais une décoration inerte (invariant AD-4).
+/// * **rayon** : chaîne du chrome (paramètre > jeton `chatComposerRadius` >
+///   jeton `radiusM` > référence 12) — UN seul rayon pour le fond, le filet
+///   et le rognage, ils ne peuvent pas diverger ;
+/// * **fond** : [backgroundColor] > jeton `chatComposerFill` > jeton
+///   `surfaceColor` > **rien** — le socle n'invente aucune couleur : sans
+///   fond résolu, l'enfant est rendu tel quel, jamais une décoration inerte
+///   (invariant AD-4) ;
+/// * **filet** : [borderColor] > jeton `chatComposerBorderColor` > **rien**,
+///   et son épaisseur suit la chaîne du chrome (paramètre > jeton
+///   `chatComposerBorderWidth` > référence 1). Teinte et épaisseur sont
+///   deux réglages séparés parce qu'ils se posent séparément.
 ///
 /// ## Le canal de BORDURE
 ///
@@ -200,11 +217,17 @@ class ZChatComposerSurface extends StatelessWidget {
   /// Réglage de chrome — `null` ⇒ jeton puis référence.
   final ZChatComposerChrome? chrome;
 
-  /// Fond du conteneur. `null` ⇒ jeton `surfaceColor`, sinon aucun fond.
+  /// Fond du conteneur. `null` ⇒ jeton `chatComposerFill`, puis
+  /// `surfaceColor`, sinon aucun fond.
   final Color? backgroundColor;
 
   /// Couleur du FILET — un **rôle** de bordure que l'hôte fournit. `null` ⇒
   /// jeton `chatComposerBorderColor`, sinon **aucun filet** (invariant AD-4).
+  ///
+  /// Un filet n'est peint que si une teinte ET une épaisseur utile sont
+  /// connues : l'épaisseur vient de [ZChatComposerChromeStyle.borderWidth]
+  /// (paramètre `chrome`, puis jeton `chatComposerBorderWidth`, puis
+  /// référence).
   final Color? borderColor;
 
   /// Rognage du contenu au rayon du conteneur. `Clip.none` par défaut —
@@ -217,11 +240,16 @@ class ZChatComposerSurface extends StatelessWidget {
       context,
       chrome: chrome,
     );
+    final ZcrudTheme? theme = ZcrudScope.maybeOf(context)?.theme;
+    // Le rôle PRÉCIS (le fond du cadre du composer) avant le rôle LARGE (la
+    // surface de l'application) : un hôte qui n'a réglé que `surfaceColor`
+    // obtient exactement ce qu'il obtenait.
     final Color? fill =
-        backgroundColor ?? ZcrudScope.maybeOf(context)?.theme?.surfaceColor;
-    // Le jeton `chatComposerBorderColor` de `zcrud_core`, quand il existera,
-    // s'insérera ici, entre le paramètre et le « rien ».
-    final Color? line = borderColor;
+        backgroundColor ?? theme?.chatComposerFill ?? theme?.surfaceColor;
+    // Le jeton `chatComposerBorderColor` s'insère ici, entre le paramètre et
+    // le « rien » : sans paramètre NI jeton, il n'y a toujours aucun filet —
+    // le socle n'invente pas de contour.
+    final Color? line = borderColor ?? theme?.chatComposerBorderColor;
     // Symétrique : un rayon uniforme n'a pas de côté (AD-13). UN seul rayon
     // pour le fond, le filet et le rognage — ils ne peuvent pas diverger.
     final BorderRadius radius = BorderRadius.all(style.containerRadius);
@@ -507,10 +535,25 @@ class _ZChatComposerBandTarget extends StatelessWidget {
     this.liveRegion = false,
     this.foreground,
     this.minTarget = kZChatMinTapTarget,
+    this.semanticsValue,
+    this.enabled,
   });
 
   final String semanticsLabel;
-  final VoidCallback onTap;
+
+  /// `null` ⇒ cible **inerte** : ni geste, ni action sémantique. Une pièce
+  /// rendue mais non actionnable (outil indisponible) reste lisible et
+  /// explicable au lieu de disparaître.
+  final VoidCallback? onTap;
+
+  /// Valeur sémantique lue **après** l'étiquette — palier courant, ou motif
+  /// d'indisponibilité. `null` ⇒ nœud identique à celui d'avant ce canal.
+  final String? semanticsValue;
+
+  /// `null` ⇒ le nœud ne porte **aucun** drapeau d'activation (arbre
+  /// identique à celui d'avant ce canal) ; `false` annonce une pièce rendue
+  /// mais non actionnable.
+  final bool? enabled;
 
   /// `true` ⇒ le changement d'étiquette est **annoncé** : une capture en
   /// cours ne doit pas être seulement visible.
@@ -535,6 +578,8 @@ class _ZChatComposerBandTarget extends StatelessWidget {
     return Semantics(
       button: true,
       toggled: toggled,
+      enabled: enabled,
+      value: semanticsValue,
       liveRegion: liveRegion,
       label: semanticsLabel,
       excludeSemantics: true,
@@ -1254,6 +1299,278 @@ class ZChatComposerStopTarget extends StatelessWidget {
   }
 }
 
+/// La GRAVITÉ d'une annonce du composer — trois paliers, et rien de plus.
+///
+/// Elle dit ce que l'annonce vaut, jamais ce qu'il faut en faire : le socle
+/// ne bloque aucun envoi, n'applique aucune politique de quota et ne sonde
+/// aucun réseau. Ces décisions sont commerciales ou applicatives ; elles
+/// appartiennent à l'hôte.
+enum ZChatComposerStatusSeverity {
+  /// Une information (un solde restant, un mode dégradé assumé).
+  info,
+
+  /// Un avertissement (un quota bientôt épuisé, une connexion instable).
+  warning,
+
+  /// Un échec (une génération refusée, une perte de connexion).
+  error,
+}
+
+/// UNE ANNONCE du composer — ce que la bande d'état rend, tel que l'hôte le
+/// lui donne.
+///
+/// Le libellé suit le même contrat que [ZChatComposerPickerAction] : soit un
+/// texte **déjà localisé par l'hôte**, soit une **clé** résolue par le
+/// registre. Rien n'est composé par concaténation — un message assemblé de
+/// morceaux ne se traduit pas.
+@immutable
+class ZChatComposerStatus {
+  /// Annonce à message **déjà localisé par l'hôte**.
+  const ZChatComposerStatus({
+    required String this.message,
+    this.severity = ZChatComposerStatusSeverity.info,
+    this.action,
+  }) : messageKey = null;
+
+  /// Annonce à message par **clé** (registre + repli de l'hôte).
+  const ZChatComposerStatus.byKey({
+    required String this.messageKey,
+    this.severity = ZChatComposerStatusSeverity.info,
+    this.action,
+  }) : message = null;
+
+  /// Message d'hôte. Exclusif de [messageKey].
+  final String? message;
+
+  /// Clé de message. Exclusive de [message].
+  final String? messageKey;
+
+  /// La gravité de l'annonce.
+  final ZChatComposerStatusSeverity severity;
+
+  /// L'action offerte avec l'annonce (« réessayer », « voir les offres »…).
+  /// `null` ⇒ aucune affordance (invariant AD-4).
+  ///
+  /// Le geste appartient à l'hôte : le socle ne réessaie rien de son propre
+  /// chef et ne connaît aucune boutique.
+  final ZChatComposerPickerAction? action;
+}
+
+/// La BANDE D'ÉTAT du composer — le rang 0, celui des annonces.
+///
+/// ## Elle rend un état ; elle ne le décide pas
+///
+/// La tranche est fournie par l'hôte ([status]). Le socle ne sonde pas le
+/// réseau, ne compte aucun quota et ne refuse aucun envoi : il n'a ni la
+/// donnée ni la légitimité de le faire. Un hôte qui veut annoncer un quota y
+/// pousse ce que `ZChatStreamProgress.quota` lui a rendu ; un hôte qui veut
+/// annoncer un échec y pousse ce que `ZChatController.lastFailure` lui a
+/// rendu.
+///
+/// ## Absente quand il n'y a rien à dire
+///
+/// Une tranche à `null` ne rend RIEN — jamais une bande vide qui volerait sa
+/// hauteur au champ de saisie (invariant AD-4).
+///
+/// ## Le canal de gravité n'est jamais SEULEMENT une couleur
+///
+/// La gravité est portée par le **message** (que l'hôte écrit) et par une
+/// région **live** qui l'annonce. [accents] n'ajoute qu'un canal visuel de
+/// plus, et seulement si l'hôte le déclare : sans lui, la bande est rendue
+/// dans la couleur ambiante, jamais dans une couleur inventée (FR-26,
+/// AD-13).
+class ZChatComposerStatusBand extends StatelessWidget {
+  /// Construit la bande.
+  const ZChatComposerStatusBand({
+    required this.status,
+    this.glyphs,
+    this.accents,
+    super.key,
+  });
+
+  /// L'annonce courante, ou `null` — la tranche appartient à l'hôte.
+  final ValueListenable<ZChatComposerStatus?> status;
+
+  /// Glyphes d'HÔTE, par gravité. Clé absente ⇒ aucun glyphe (AD-4).
+  final Map<ZChatComposerStatusSeverity, Widget>? glyphs;
+
+  /// Teintes d'HÔTE, par gravité. Clé absente ⇒ couleur ambiante.
+  final Map<ZChatComposerStatusSeverity, Color>? accents;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<ZChatComposerStatus?>(
+      // LA tranche d'annonce, et elle seule — jamais les messages, jamais la
+      // frappe (invariant AD-2).
+      valueListenable: status,
+      builder:
+          (BuildContext context, ZChatComposerStatus? value, Widget? _) {
+            if (value == null) return const SizedBox.shrink();
+            final String message =
+                value.message ?? zChatLabel(context, value.messageKey!);
+            final Widget? face = glyphs?[value.severity];
+            final Color? accent = accents?[value.severity];
+            final ZChatComposerPickerAction? action = value.action;
+            final Widget row = Row(
+              children: <Widget>[
+                if (face != null) ...<Widget>[
+                  ExcludeSemantics(child: face),
+                  const SizedBox(width: kZChatSettingsReferenceMarkGap),
+                ],
+                Expanded(
+                  child: Semantics(
+                    // L'annonce est ANNONCÉE, pas seulement affichée : une
+                    // bande d'état qui n'existe qu'à l'écran est muette pour
+                    // un lecteur d'écran (invariant AD-13).
+                    liveRegion: true,
+                    label: message,
+                    excludeSemantics: true,
+                    child: Text(
+                      message,
+                      textAlign: TextAlign.start,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                if (action != null)
+                  _ZChatComposerBandTarget(
+                    semanticsLabel:
+                        action.label ??
+                        zChatLabel(context, action.labelKey!),
+                    onTap: action.onTap,
+                    foreground: accent,
+                    children: <Widget>[
+                      if (action.icon == null)
+                        Text(
+                          action.label ??
+                              zChatLabel(context, action.labelKey!),
+                          textAlign: TextAlign.start,
+                        )
+                      else
+                        ExcludeSemantics(child: action.icon!),
+                    ],
+                  ),
+              ],
+            );
+            return Padding(
+              padding: ZChatComposerReference.statusBandPadding,
+              // Un glyphe d'hôte est opaque : seule une enveloppe de premier
+              // plan peut le teinter, et c'est la primitive du socle qui le
+              // fait — jamais un `IconTheme` coloré posé ici.
+              child: accent == null
+                  ? row
+                  : ZForegroundOverride(color: accent, child: row),
+            );
+          },
+    );
+  }
+}
+
+/// « Jamais occupé » — l'état de repli quand l'hôte ne fournit AUCUNE tranche
+/// de préparation.
+///
+/// Même raison que [_kZChatNeverListening] : UN SEUL chemin de rendu dans
+/// [ZChatComposerSendControl]. Une seconde branche « sans occupation »
+/// laisserait passer une régression du chemin réactif.
+final ValueNotifier<bool> _kZChatNeverBusy = ValueNotifier<bool>(false);
+
+/// L'AFFORDANCE D'ENVOI COMPLÈTE — la face et l'annonce qui correspondent à
+/// ce qui se passe, à partir des tranches que le contrôleur porte déjà.
+///
+/// ## Deux verbes, deux pièces — jamais une cible qui change de verbe
+///
+/// Quand une requête est en vol, cette pièce monte [ZChatComposerStopTarget]
+/// **tel quel** : le verbe d'arrêt garde son unique site d'appel
+/// (`runAction(ZChatCancelAction(...))`) et son rendu. Sinon elle monte
+/// [ZChatComposerSendTarget], dont le tap reste [ZChatComposerSlot.submit].
+/// Le socle n'introduit ici aucun troisième chemin.
+///
+/// ## Pourquoi l'état n'est pas un champ de [ZChatComposerSlot]
+///
+/// Un état porté par le créneau serait résolu **au build du composer** :
+/// chaque changement d'état devrait alors reconstruire le composer entier,
+/// donc le champ de saisie — la perte de focus que ce paquet existe pour
+/// éviter (invariant AD-2). L'état est donc résolu **ici**, dans une feuille
+/// qui n'écoute que ses trois tranches.
+///
+/// ## Ce que l'hôte doit fournir, et pourquoi
+///
+/// [busy] est une tranche d'**hôte** : le socle n'a aucun moyen de savoir
+/// qu'un téléversement tourne, et il n'en invente pas. `null` ⇒ l'état
+/// [ZChatComposerSendState.busy] n'est jamais atteint, ce qui est la vérité
+/// pour un hôte qui ne prépare rien.
+class ZChatComposerSendControl extends StatelessWidget {
+  /// Construit l'affordance.
+  const ZChatComposerSendControl({
+    required this.slot,
+    required this.glyphs,
+    this.busy,
+    this.chrome,
+    this.showStopLabel = true,
+    super.key,
+  });
+
+  /// Le contexte du créneau, fourni par `ZChatComposer` — le contrôleur et le
+  /// site de soumission viennent de lui.
+  final ZChatComposerSlot slot;
+
+  /// Les faces d'hôte, une par état (repli sur `idle`).
+  final ZChatComposerSendGlyphs glyphs;
+
+  /// La préparation en cours, fournie par l'hôte. `null` ⇒ jamais occupé.
+  final ValueListenable<bool>? busy;
+
+  /// Réglage de chrome — `null` signifie jetons puis référence.
+  final ZChatComposerChrome? chrome;
+
+  /// `false` ⇒ le STOP est compact (libellé masqué s'il a un glyphe). Passé
+  /// tel quel à [ZChatComposerStopTarget] : son rendu n'est pas réécrit ici.
+  final bool showStopLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<String>>(
+      // Tranche 1 — les requêtes EN VOL. La plus prioritaire des trois.
+      valueListenable: slot.controller.activeRequests,
+      builder: (BuildContext context, List<String> ids, Widget? _) {
+        if (ids.isNotEmpty) {
+          return ZChatComposerStopTarget(
+            controller: slot.controller,
+            glyph: glyphs.resolve(ZChatComposerSendState.streaming),
+            showLabel: showStopLabel,
+          );
+        }
+        return ValueListenableBuilder<ZChatEditingSession?>(
+          // Tranche 2 — le mode ÉDITION.
+          valueListenable: slot.controller.editing,
+          builder:
+              (BuildContext context, ZChatEditingSession? session, Widget? _) {
+                return ValueListenableBuilder<bool>(
+                  // Tranche 3 — la préparation d'hôte.
+                  valueListenable: busy ?? _kZChatNeverBusy,
+                  builder:
+                      (BuildContext context, bool isBusy, Widget? _) {
+                        final ZChatComposerSendState state =
+                            ZChatComposerSendState.resolve(
+                              streaming: false,
+                              busy: isBusy,
+                              editing: session != null,
+                            );
+                        return ZChatComposerSendTarget(
+                          slot: slot,
+                          chrome: chrome,
+                          state: state,
+                          child: glyphs.resolve(state),
+                        );
+                      },
+                );
+              },
+        );
+      },
+    );
+  }
+}
+
 /// Le bandeau de MODE ÉDITION — il REND les verbes existants du contrôleur :
 /// visible quand [ZChatController.editing] porte une session, sortie par
 /// `cancelEditing` (la saisie d'avant l'édition est restituée par le
@@ -1455,6 +1772,549 @@ class ZChatComposerDictationTrigger extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// La BANDE DE PROPOSITIONS du composer — le rang 3, celui des propositions.
+///
+/// ## Elle rend un agrégat ; elle ne le fabrique pas
+///
+/// La tranche vient de `ZChatController.suggestions` : la dernière livraison
+/// reçue **dans la conversation courante**. Le socle n'invente aucune
+/// proposition, n'en traduit aucune ([ZChatSuggestion.content] est écrit par
+/// l'hôte) et n'en filtre aucune.
+///
+/// ## Absente quand il n'y a rien à proposer
+///
+/// Une liste vide ne rend RIEN — jamais une bande vide qui volerait sa
+/// hauteur au champ de saisie (invariant AD-4). Un rang 3 qui occuperait de
+/// la place en permanence remonterait le champ pour rien.
+///
+/// ## Le geste appartient à l'hôte
+///
+/// [onSelect] est **exigé** : une proposition qui ne fait rien est une
+/// affordance morte. Le socle ne choisit pas entre « semer le texte dans la
+/// saisie » (`ZChatController.seedDraft`) et « exécuter l'action portée par
+/// [ZChatSuggestion.actions] » — les deux sont des politiques d'application.
+///
+/// ## Hauteur bornée, débordement DANS le rang
+///
+/// La bande a une hauteur fixe et fait défiler ses propositions
+/// horizontalement : c'est ce qui fait qu'une livraison de dix propositions
+/// pousse le champ d'une hauteur connue au lieu de faire déborder le cadre.
+class ZChatComposerSuggestionsBand extends StatelessWidget {
+  /// Construit la bande.
+  const ZChatComposerSuggestionsBand({
+    required this.suggestions,
+    required this.onSelect,
+    this.glyphBuilder,
+    super.key,
+  });
+
+  /// L'agrégat par conversation — jamais la tranche par requête, qu'un rendu
+  /// ne peut pas lire faute de `requestId`.
+  final ValueListenable<List<ZChatSuggestion>> suggestions;
+
+  /// Ce que taper une proposition déclenche, côté hôte.
+  final void Function(ZChatSuggestion suggestion) onSelect;
+
+  /// Glyphe d'HÔTE par proposition. `null` — ou un rendu `null` — signifie
+  /// aucun glyphe (AD-4).
+  final Widget? Function(BuildContext context, ZChatSuggestion suggestion)?
+      glyphBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<ZChatSuggestion>>(
+      // LA tranche des propositions, et elle seule — jamais les messages,
+      // jamais la frappe : une proposition qui arrive ne doit pas
+      // reconstruire le champ de saisie (invariant AD-2).
+      valueListenable: suggestions,
+      builder:
+          (BuildContext context, List<ZChatSuggestion> value, Widget? _) {
+            if (value.isEmpty) return const SizedBox.shrink();
+            return Padding(
+              padding: ZChatComposerReference.suggestionsBandPadding,
+              child: SizedBox(
+                height: ZChatComposerReference.suggestionsBandHeight,
+                child: Semantics(
+                  // `container: true` : la bande forme SON nœud et laisse
+                  // chaque proposition former le sien. Sans lui, l'étiquette
+                  // fusionnerait dans le parent et les boutons
+                  // disparaîtraient de l'arbre sémantique.
+                  container: true,
+                  label: zChatLabel(context, kZChatLabelSuggestions),
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: value.length,
+                    itemBuilder: (BuildContext context, int i) {
+                      final ZChatSuggestion s = value[i];
+                      final Widget? face = glyphBuilder?.call(context, s);
+                      return Padding(
+                        padding: EdgeInsetsDirectional.only(
+                          end: i == value.length - 1
+                              ? 0
+                              : ZChatComposerReference.suggestionsEndGap,
+                        ),
+                        child: _ZChatComposerBandTarget(
+                          semanticsLabel: s.content,
+                          onTap: () => onSelect(s),
+                          children: <Widget>[
+                            if (face != null) ...<Widget>[
+                              ExcludeSemantics(child: face),
+                              const SizedBox(
+                                width: kZChatSettingsReferenceMarkGap,
+                              ),
+                            ],
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                maxWidth:
+                                    ZChatComposerReference.suggestionMaxWidth,
+                              ),
+                              child: Text(
+                                s.content,
+                                textAlign: TextAlign.start,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
+    );
+  }
+}
+
+/// L'INDICATEUR DE BROUILLON RESTITUÉ — la pièce d'annonce du brouillon
+/// persistant.
+///
+/// ## Ce qu'il dit, et pourquoi il existe
+///
+/// Un texte qui réapparaît à l'ouverture d'une conversation est, à l'écran,
+/// indiscernable d'un texte qu'on vient de taper : l'utilisateur peut
+/// l'envoyer sans savoir d'où il vient. Cette pièce rend cette provenance
+/// perceptible — visuellement **et** par une région live (invariant AD-13).
+///
+/// ## Le geste ne coûte jamais le texte
+///
+/// [onDismiss] éteint l'indication, il ne vide pas la saisie : un indicateur
+/// qui effacerait le champ ferait perdre exactement le texte qu'il vient de
+/// rendre. Le verbe correspondant du contrôleur est
+/// `dismissRestoredDraft()`, qui ne touche pas au champ non plus.
+///
+/// ## Absent quand il n'y a rien à annoncer
+///
+/// Tranche à `false` ⇒ RIEN dans l'arbre rendu (invariant AD-4). Un hôte sans
+/// `ZChatDraftStore` ne voit donc jamais cette pièce.
+class ZChatComposerDraftNotice extends StatelessWidget {
+  /// Construit l'indicateur.
+  const ZChatComposerDraftNotice({
+    required this.restored,
+    required this.onDismiss,
+    this.glyph,
+    super.key,
+  });
+
+  /// `true` quand la saisie affichée vient du store de brouillons.
+  final ValueListenable<bool> restored;
+
+  /// Le geste « j'ai vu » — n'efface jamais la saisie.
+  final VoidCallback onDismiss;
+
+  /// Glyphe d'HÔTE. `null` ⇒ aucun glyphe (AD-4).
+  final Widget? glyph;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: restored,
+      builder: (BuildContext context, bool value, Widget? _) {
+        if (!value) return const SizedBox.shrink();
+        final String message = zChatLabel(context, kZChatLabelDraftRestored);
+        return Padding(
+          padding: ZChatComposerReference.draftNoticePadding,
+          child: Row(
+            children: <Widget>[
+              if (glyph != null) ...<Widget>[
+                ExcludeSemantics(child: glyph!),
+                const SizedBox(width: ZChatComposerReference.draftNoticeGap),
+              ],
+              Expanded(
+                child: Semantics(
+                  // L'annonce est ANNONCÉE, pas seulement affichée.
+                  liveRegion: true,
+                  label: message,
+                  excludeSemantics: true,
+                  child: Text(
+                    message,
+                    textAlign: TextAlign.start,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              _ZChatComposerBandTarget(
+                semanticsLabel: zChatLabel(
+                  context,
+                  kZChatLabelDismissDraftNotice,
+                ),
+                onTap: onDismiss,
+                children: <Widget>[
+                  Text(
+                    zChatLabel(context, kZChatLabelDismissDraftNotice),
+                    textAlign: TextAlign.start,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ── Le vocabulaire commun des PUCES D'OUTIL ─────────────────────────────────
+
+/// Rend le badge d'une puce d'outil à partir de l'**entrée résolue** — la
+/// donnée que le geste de la puce écrit, jamais un champ voisin.
+///
+/// Rendre `null` signifie **aucun badge** (invariant AD-4) : le socle ne pose
+/// pas de pastille vide.
+typedef ZChatToolChipBadgeBuilder =
+    Widget? Function(BuildContext context, ZChatToolResolvedEntry resolved);
+
+/// Le geste que le socle sait tenir **seul**, selon la nature de l'outil.
+///
+/// Une bascule se retourne, un cycle avance d'un cran — et c'est le domaine
+/// qui décide du cran suivant (`ZChatToolController.advance`). Toute autre
+/// nature (choix, échelle, catalogue, action, nature d'hôte) demande une
+/// surface que la bande n'est pas : le socle rend alors `null`, et c'est
+/// l'hôte qui fournit le geste s'il en veut un.
+VoidCallback? _toolChipGesture(
+  ZChatToolController controller,
+  ZChatToolEntry entry,
+) {
+  final ZChatToolState state = entry.state;
+  if (state is ZChatToggleState) {
+    // Le refus d'une entrée grisée arrive du domaine en `Left` et est
+    // absorbé : un tap ne lève jamais.
+    return () => controller.setEntryState(entry.key, state.toggled());
+  }
+  if (state is ZChatCycleState) {
+    return () => controller.advance(entry.key);
+  }
+  return null;
+}
+
+/// Le compte que l'état **détient** — jamais un compte voisin.
+///
+/// Un cycle porte son cran, un catalogue porte le nombre d'entrées retenues.
+/// Une bascule ne porte aucun nombre : lui coller un badge inventerait une
+/// donnée. `null` ⇒ pas de badge par défaut.
+int? _toolChipBadgeCount(ZChatToolState state) {
+  if (state is ZChatCycleState) return state.step;
+  if (state is ZChatCatalogState) return state.selectedKeys.length;
+  return null;
+}
+
+/// Le corps commun des puces d'outil : la géométrie, les canaux d'état et la
+/// règle du canal visible, à un seul endroit.
+Widget _toolChipBody(
+  BuildContext context, {
+  required ZChatToolResolvedEntry? resolved,
+  required Widget? glyph,
+  required bool showLabel,
+  required Widget? badge,
+  required ZChatToolTokenResolver? reasonOf,
+  required Color? activeAccent,
+  required VoidCallback? gesture,
+}) {
+  // Entrée inconnue ou non révélée : affordance ABSENTE (invariant AD-4) —
+  // jamais un bouton fantôme dans la rangée.
+  if (resolved == null) return const SizedBox.shrink();
+  final ZChatToolEntry entry = resolved.entry;
+  final String? resolvedLabel = entry.label;
+  // Sans libellé d'hôte, il n'y a rien à annoncer : le socle n'en fabrique
+  // aucun (FR-26), et une cible sans étiquette sémantique serait muette pour
+  // un lecteur d'écran (invariant AD-13). Même doctrine que la projection en
+  // tuiles de réglages, qui écarte une entrée sans titre.
+  if (resolvedLabel == null) return const SizedBox.shrink();
+  final bool enabled = resolved.isEnabled;
+  // Actionnable mais sans geste : ce serait un bouton inerte sans raison.
+  // Indisponible sans geste, en revanche, est exactement l'état qu'il faut
+  // rendre — il porte sa raison.
+  if (enabled && gesture == null) return const SizedBox.shrink();
+  final bool active = entry.isActive;
+  final ({TextStyle plain, TextStyle chosen}) styles = _emphasisStyles(context);
+  final Widget? face = glyph;
+  // Un état indisponible n'a aucun canal visible que le socle puisse peindre
+  // sans inventer de couleur : garder le libellé laisse au moins lire DE QUEL
+  // outil il s'agit, au lieu d'un glyphe opaque.
+  final bool labelVisible = _labelVisible(
+    showLabel: showLabel,
+    hasGlyph: face != null || badge != null,
+    stateful: active || !enabled,
+  );
+  final Color? tint = active && enabled
+      ? _activeAccent(context, activeAccent)
+      : null;
+  // La raison PRIME sur la description d'état : quand on ne peut pas agir, le
+  // « pourquoi » passe avant le « où l'on en est » — même arbitrage que le
+  // sous-titre des tuiles de réglages.
+  final String? reasonToken = resolved.disabledReasonToken;
+  final String? reason = reasonToken == null ? null : reasonOf?.call(reasonToken);
+  final String? semanticsValue = reason ?? entry.describeState();
+  return _ZChatComposerBandTarget(
+    semanticsLabel: resolvedLabel,
+    semanticsValue: semanticsValue,
+    enabled: enabled,
+    // `toggled` n'a de sens que sur une bascule : sur un cycle, l'état est un
+    // palier, porté par la valeur sémantique.
+    toggled: entry.state is ZChatToggleState ? active : null,
+    foreground: tint,
+    onTap: enabled ? gesture : null,
+    children: <Widget>[
+      if (face != null) ExcludeSemantics(child: face),
+      if (face != null && labelVisible)
+        const SizedBox(width: kZChatSettingsReferenceMarkGap),
+      if (labelVisible)
+        Text(
+          resolvedLabel,
+          // Le canal VISIBLE de l'état : l'emphase. La teinte s'y AJOUTE,
+          // elle ne la remplace pas (invariant AD-13).
+          style: active ? _tinted(styles.chosen, tint) : styles.plain,
+          textAlign: TextAlign.start,
+        ),
+      if (badge != null) ...<Widget>[
+        if (face != null || labelVisible)
+          SizedBox(width: ZChatComposerReference.badgeStartGap),
+        // DANS la cible, donc dans son hit-test ; hors de l'arbre sémantique
+        // (le nombre est un rappel visuel, l'état est déjà annoncé).
+        ExcludeSemantics(child: badge),
+      ],
+    ],
+  );
+}
+
+/// **La puce d'outil de la bande** — le vocabulaire commun des composers,
+/// piloté par l'entrée d'outil déclarée et par elle seule.
+///
+/// Icône au repos, libellé dès que l'outil est actif, badge de compte intégré
+/// au libellé quand l'état en porte un : c'est la grammaire que chaque hôte
+/// réécrivait. Elle est **offerte**, jamais imposée — la bande reste un
+/// créneau libre, et un hôte qui monte ses propres pilules ne voit rien
+/// changer.
+///
+/// ## Ce que la puce décide, et ce qu'elle ne décide pas
+///
+/// Elle **rend** ce que l'hôte a déclaré : le libellé
+/// ([ZChatToolEntry.label]), le glyphe, la nature et l'état de l'outil. Elle
+/// ne choisit ni les outils qui existent, ni ce qu'ils font, ni quand ils
+/// sont disponibles. Le geste natif se limite à ce que le domaine sait tenir
+/// seul (retourner une bascule, faire avancer un cycle) ; toute autre nature
+/// exige un [onTap] d'hôte, faute de quoi la puce est **absente** plutôt
+/// qu'inerte (invariant AD-4).
+///
+/// ## Un état, deux surfaces
+///
+/// La puce lit et écrit le **même** `ZChatToolController` que la feuille
+/// d'outils — jamais un second état. Elle n'écoute que **sa** tranche
+/// (`entryOf(toolKey)`) : basculer une puce ne reconstruit ni le champ de
+/// saisie, ni les autres puces (invariant AD-2).
+///
+/// ## Indisponible : rendu, inerte, et EXPLIQUÉ
+///
+/// Une entrée grisée reste rendue, ne réagit à aucun tap, et annonce sa
+/// raison — [reasonOf] traduit le jeton opaque porté par le domaine. Sans
+/// résolveur, la puce annonce au moins qu'elle est désactivée ; le socle
+/// n'invente aucun texte à la place de l'hôte (FR-26).
+class ZChatComposerToolChip extends StatelessWidget {
+  /// Construit la puce.
+  const ZChatComposerToolChip({
+    required this.controller,
+    required this.toolKey,
+    this.glyph,
+    this.showLabel = true,
+    this.badgeBuilder,
+    this.reasonOf,
+    this.activeAccent,
+    this.onTap,
+    super.key,
+  });
+
+  /// Le contrôleur d'outils PARTAGÉ avec la feuille — jamais un second.
+  final ZChatToolController controller;
+
+  /// La clé de l'entrée rendue. Inconnue ou non révélée ⇒ puce absente.
+  final String toolKey;
+
+  /// Glyphe d'HÔTE. `null` ⇒ libellé seul.
+  final Widget? glyph;
+
+  /// `false` ⇒ mode compact : le libellé est masqué **si un canal visible
+  /// existe ET que l'outil est au repos et disponible**. Actif — ou
+  /// indisponible — il garde son libellé (cf. la règle du canal visible).
+  final bool showLabel;
+
+  /// Remplace le badge par défaut. Non fourni ⇒ le socle rend le compte que
+  /// l'état **détient** (cran d'un cycle, nombre d'entrées retenues d'un
+  /// catalogue), et rien sur une nature qui n'en porte pas.
+  final ZChatToolChipBadgeBuilder? badgeBuilder;
+
+  /// Traduit le jeton opaque de la raison d'indisponibilité. `null` ⇒ la puce
+  /// reste annoncée comme désactivée, sans motif : le socle ne nomme rien.
+  final ZChatToolTokenResolver? reasonOf;
+
+  /// Teinte de l'état **ACTIF** — un rôle d'hôte, jamais un style. `null` ⇒
+  /// jeton `chatComposerActiveAccent`, sinon **aucune teinte**. Elle
+  /// s'AJOUTE au libellé emphasé et aux drapeaux sémantiques.
+  final Color? activeAccent;
+
+  /// Geste d'hôte, **prioritaire** sur le geste natif. C'est la voie des
+  /// natures que la bande ne sait pas régler seule (ouvrir un menu de choix,
+  /// déclencher une action).
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<ZChatToolResolvedEntry?>(
+      // LA tranche de cette entrée, et elle seule (invariant AD-2).
+      valueListenable: controller.entryOf(toolKey),
+      builder:
+          (
+            BuildContext context,
+            ZChatToolResolvedEntry? resolved,
+            Widget? _,
+          ) {
+            final ZChatToolEntry? entry = resolved?.entry;
+            final int? count = entry == null
+                ? null
+                : _toolChipBadgeCount(entry.state);
+            return _toolChipBody(
+              context,
+              resolved: resolved,
+              glyph: glyph,
+              showLabel: showLabel,
+              badge: resolved == null
+                  ? null
+                  : badgeBuilder?.call(context, resolved) ??
+                        (count == null || count <= 0
+                            ? null
+                            : ZChatComposerCountBadge(count: count)),
+              reasonOf: reasonOf,
+              activeAccent: activeAccent,
+              gesture:
+                  onTap ??
+                  (entry == null ? null : _toolChipGesture(controller, entry)),
+            );
+          },
+    );
+  }
+}
+
+/// **La puce à PALIERS** — la même grammaire, pour un outil qui compte plus
+/// de deux positions (un effort de raisonnement de 0 à 5, par exemple).
+///
+/// Elle **rend** le palier courant et **déclenche** l'avancement ; elle ne
+/// décide ni du nombre de paliers, ni de leur sens, ni du retour à zéro —
+/// tout cela appartient au domaine (`ZChatCycleState` et
+/// `ZChatToolController.advance`). Le socle ne réimplémente pas la mécanique
+/// du cycle, il la met à portée du pouce.
+///
+/// ## Les deux canaux du palier
+///
+/// * **visible** : le badge du cran (rien au cran 0, qui est le cran
+///   inactif) ;
+/// * **lecteur d'écran** : la valeur sémantique, prise dans le texte que
+///   l'hôte a associé au jeton d'état (`step.<n>`) — le socle ne nomme aucun
+///   palier (FR-26).
+///
+/// ## Nature étrangère ⇒ puce absente
+///
+/// Montée sur une entrée qui n'est pas un cycle, elle ne rend **rien** : une
+/// puce à paliers sur une bascule afficherait un palier qui n'existe pas.
+class ZChatComposerCycleChip extends StatelessWidget {
+  /// Construit la puce à paliers.
+  const ZChatComposerCycleChip({
+    required this.controller,
+    required this.toolKey,
+    this.glyph,
+    this.showLabel = true,
+    this.badgeBuilder,
+    this.reasonOf,
+    this.activeAccent,
+    super.key,
+  });
+
+  /// Le contrôleur d'outils PARTAGÉ avec la feuille — jamais un second.
+  final ZChatToolController controller;
+
+  /// La clé de l'entrée rendue. Inconnue, non révélée, ou d'une nature qui
+  /// n'est pas un cycle ⇒ puce absente.
+  final String toolKey;
+
+  /// Glyphe d'HÔTE. `null` ⇒ libellé seul.
+  final Widget? glyph;
+
+  /// `false` ⇒ mode compact (même règle du canal visible que la puce
+  /// d'outil).
+  final bool showLabel;
+
+  /// Remplace le badge de palier. Non fourni ⇒ le cran courant, et rien au
+  /// cran 0.
+  final ZChatToolChipBadgeBuilder? badgeBuilder;
+
+  /// Traduit le jeton opaque de la raison d'indisponibilité.
+  final ZChatToolTokenResolver? reasonOf;
+
+  /// Teinte de l'état **ACTIF** (cran > 0). `null` ⇒ jeton
+  /// `chatComposerActiveAccent`, sinon aucune teinte.
+  final Color? activeAccent;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<ZChatToolResolvedEntry?>(
+      // LA tranche de cette entrée, et elle seule (invariant AD-2).
+      valueListenable: controller.entryOf(toolKey),
+      builder:
+          (
+            BuildContext context,
+            ZChatToolResolvedEntry? resolved,
+            Widget? _,
+          ) {
+            final ZChatToolEntry? entry = resolved?.entry;
+            final ZChatToolState? state = entry?.state;
+            // Une nature étrangère n'est pas la sienne : elle s'efface au
+            // lieu de rendre un palier qui n'existe pas.
+            if (entry == null || state is! ZChatCycleState) {
+              return const SizedBox.shrink();
+            }
+            return _toolChipBody(
+              context,
+              resolved: resolved,
+              glyph: glyph,
+              showLabel: showLabel,
+              badge:
+                  badgeBuilder?.call(context, resolved!) ??
+                  (state.step <= 0
+                      ? null
+                      : ZChatComposerCountBadge(count: state.step)),
+              reasonOf: reasonOf,
+              activeAccent: activeAccent,
+              // L'avancement passe par le domaine — la puce ne calcule
+              // jamais le cran suivant.
+              gesture: () => controller.advance(toolKey),
+            );
+          },
     );
   }
 }

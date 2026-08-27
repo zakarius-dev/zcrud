@@ -246,6 +246,11 @@ class ZChatController extends ChangeNotifier {
   /// [liveLabels] porte les libellés des annonces de région live ; omis,
   /// les jalons sans contenu sont silencieux (cf. [ZChatLiveLabels]).
   ///
+  /// [draftStore] est **optionnel** : présent, la saisie en cours est confiée
+  /// au port quand la conversation change (et par [saveDraft] à la demande),
+  /// puis restituée au retour dans la conversation ; absent, la saisie ne
+  /// survit pas à la session — sans qu'aucun appel n'échoue.
+  ///
   /// [routeResolver] est **optionnel** : présent, chaque requête — envoi,
   /// édition rejouée, régénération — lui est soumise après les réglages et
   /// avant toute trace dans le fil ; absent, la requête envoyée est celle du
@@ -258,6 +263,7 @@ class ZChatController extends ChangeNotifier {
     required ZChatRequestBuilder buildRequest,
     ZChatConversationLifecyclePort? lifecycle,
     ZChatRouteResolver? routeResolver,
+    ZChatDraftStore? draftStore,
     ZChatLiveLabels liveLabels = ZChatLiveLabels.none,
     this.maxResumeAttempts = 2,
     String conversationId = '',
@@ -280,6 +286,7 @@ class ZChatController extends ChangeNotifier {
        _lifecycle = lifecycle,
        // ignore: prefer_initializing_formals
        _routeResolver = routeResolver,
+       _draftStore = draftStore ?? const ZChatNullDraftStore(),
        // ignore: prefer_initializing_formals
        _labels = liveLabels,
        // ignore: prefer_initializing_formals
@@ -307,6 +314,13 @@ class ZChatController extends ChangeNotifier {
   /// Résolveur de route — **optionnel, à défaut inerte** : `null` envoie la
   /// requête du builder telle quelle.
   final ZChatRouteResolver? _routeResolver;
+
+  /// Conservation du brouillon — **jamais `null`, à défaut inerte**.
+  ///
+  /// Le contrôleur n'écrit sur aucun support : il délègue. Sans store
+  /// déclaré, l'inerte rend « rien d'enregistré » et réussit toute écriture ;
+  /// aucun chemin d'exception n'existe donc pour ce défaut (invariant AD-10).
+  final ZChatDraftStore _draftStore;
 
   /// Libellés d'annonce fournis par l'hôte (aucune phrase n'est écrite ici).
   final ZChatLiveLabels _labels;
@@ -346,6 +360,15 @@ class ZChatController extends ChangeNotifier {
   final ValueNotifier<ZChatEditingSession?> _editing =
       ValueNotifier<ZChatEditingSession?>(null);
   final ValueNotifier<int> _draftSeeds = ValueNotifier<int>(0);
+
+  /// Propositions de la conversation COURANTE — l'agrégat de [suggestions].
+  ///
+  /// Vidé par [attach] : c'est ce qui rend l'agrégat cloisonné plutôt que
+  /// cumulatif.
+  final ValueNotifier<List<ZChatSuggestion>> _suggestions =
+      ValueNotifier<List<ZChatSuggestion>>(const <ZChatSuggestion>[]);
+
+  final ValueNotifier<bool> _draftRestored = ValueNotifier<bool>(false);
 
   /// Saisie en cours AVANT l'entrée en mode édition — restituée à la sortie.
   ///
@@ -436,6 +459,34 @@ class ZChatController extends ChangeNotifier {
   /// réagir au geste (donner le focus, dérouler la vue) écoute cette
   /// tranche — elle signale chaque semis, même à texte égal.
   ValueListenable<int> get draftSeeds => _draftSeeds;
+
+  /// Les propositions de relance de la conversation courante.
+  ///
+  /// Vue **agrégée par conversation** : `progress(requestId).suggestions` est
+  /// la même donnée indexée par requête, illisible pour un rendu qui n'a pas
+  /// de `requestId` en main — un composer, typiquement. Ici, la dernière
+  /// livraison reçue **dans la conversation courante** ; jamais celle d'une
+  /// autre, et jamais un cumul entre conversations.
+  ///
+  /// Instance **stable** : un `ValueListenableBuilder` ne se ré-abonne jamais.
+  /// Vide tant qu'aucun `ZChatSuggestionsEvent` n'est arrivé.
+  ValueListenable<List<ZChatSuggestion>> get suggestions => _suggestions;
+
+  /// `true` quand la saisie courante provient d'un brouillon **restitué** par
+  /// [ZChatDraftStore], et non de la frappe de l'utilisateur.
+  ///
+  /// C'est le canal d'un indicateur : sans lui, un texte réapparu à
+  /// l'ouverture d'une conversation est indiscernable d'un texte tapé.
+  /// Retombe à `false` dès que la saisie est soumise, que la conversation
+  /// change, ou que [dismissRestoredDraft] est appelé.
+  ValueListenable<bool> get draftRestored => _draftRestored;
+
+  /// `true` si un [ZChatDraftStore] **effectif** est déclaré.
+  ///
+  /// Un assemblage s'en sert pour ne monter l'indicateur de restitution que
+  /// là où quelque chose peut être restitué : sans store, le rang resterait
+  /// muet à vie.
+  bool get persistsDraft => _draftStore is! ZChatNullDraftStore;
 
   /// Saisie courante, telle qu'un verbe la transporte (`ZChatDraft`).
   ZChatDraft get currentDraft => ZChatDraft(
@@ -586,6 +637,112 @@ class ZChatController extends ChangeNotifier {
     _draftSeeds.value = _draftSeeds.value + 1;
   }
 
+  // ── Brouillon PERSISTÉ — le port, et rien d'autre ────────────────────────
+  //
+  // Deux choses portent le mot « brouillon », et elles ne se confondent
+  // jamais ici :
+  //
+  //   * le brouillon TRANSPORTÉ : `ZChatDraft`, la valeur qu'un verbe passe
+  //     (`currentDraft`, `seedDraft`, `_preEditingDraft`). Il vit en mémoire,
+  //     le temps d'un geste, et n'a aucun support.
+  //   * le brouillon PERSISTÉ : la MÊME valeur, confiée à `ZChatDraftStore`
+  //     sous une identité de conversation, pour survivre au changement de
+  //     conversation ou à la session.
+  //
+  // Le pont entre les deux tient en deux points : `currentDraft` est ce qu'on
+  // écrit, `_setComposer` est ce qui applique un brouillon relu. Aucun autre
+  // site ne franchit la frontière.
+
+  /// Confie la saisie courante au [ZChatDraftStore] de la conversation
+  /// courante.
+  ///
+  /// À appeler quand l'application passe en arrière-plan ou se ferme : le
+  /// contrôleur, lui, ne sauvegarde spontanément qu'au changement de
+  /// conversation. Sans store déclaré, l'appel réussit sans effet.
+  Future<void> saveDraft() => _saveDraftFor(_conversationId, currentDraft);
+
+  /// Restitue le brouillon enregistré de la conversation courante, s'il y en
+  /// a un **et** si le champ est libre.
+  ///
+  /// Rend `true` si un brouillon a effectivement été appliqué.
+  ///
+  /// **Une saisie en cours l'emporte toujours** : si l'utilisateur a déjà
+  /// tapé du texte ou joint une pièce, rien n'est restitué. Une édition
+  /// active bloque de même — le champ y porte le message qu'on modifie.
+  Future<bool> restoreDraft() async {
+    if (!_draftFieldIsFree) return false;
+    final String at = _conversationId;
+    final ZChatDraft? read = await _readDraftFor(at);
+    // Tout a pu bouger PENDANT la lecture : le port est asynchrone. Trois
+    // choses se revérifient donc après l'attente, et pas avant :
+    //   * le contrôleur est-il encore vivant ;
+    //   * est-on encore dans la conversation dont on vient de lire le
+    //     brouillon (sinon on le poserait dans une autre) ;
+    //   * le champ est-il encore libre — c'est ICI que se joue « ne pas
+    //     écraser une saisie en cours » : l'utilisateur a pu taper pendant
+    //     que le stockage répondait, et un contrôle fait seulement à
+    //     l'entrée l'aurait manqué.
+    if (_disposed || _conversationId != at || !_draftFieldIsFree) return false;
+    if (read == null) return false;
+    if (read.text.isEmpty && read.attachmentIds.isEmpty) return false;
+    _setComposer(read);
+    _draftRestored.value = true;
+    return true;
+  }
+
+  /// Éteint l'indicateur de restitution **sans toucher à la saisie**.
+  ///
+  /// Le geste dit « j'ai vu », pas « efface » : un indicateur qui viderait le
+  /// champ ferait perdre le texte qu'il venait de rendre.
+  void dismissRestoredDraft() => _draftRestored.value = false;
+
+  /// `true` si le champ n'appartient à personne — ni à une frappe, ni à une
+  /// pièce jointe, ni à une session d'édition.
+  bool get _draftFieldIsFree =>
+      composer.text.isEmpty &&
+      _attachmentIds.value.isEmpty &&
+      _editing.value == null;
+
+  /// Écrit — **sans jamais lever** (invariant AD-10).
+  Future<void> _saveDraftFor(String conversationId, ZChatDraft draft) async {
+    // Le port est contractuellement sans exception (`ZResult`, invariant
+    // AD-5). Mais la sauvegarde est déclenchée sans être attendue au
+    // changement de conversation : un store d'hôte fautif produirait alors
+    // une erreur asynchrone NON RATTRAPÉE — un plantage à distance du site
+    // fautif. Le repli garde la faute là où elle a lieu.
+    try {
+      await _draftStore.write(conversationId, draft);
+      // ignore: avoid_catches_without_on_clauses
+    } catch (_) {
+      // Un brouillon non enregistré ne coûte rien à la saisie en cours.
+    }
+  }
+
+  /// Efface — **sans jamais lever** (invariant AD-10), même raison que
+  /// [_saveDraftFor] : l'appel n'est pas attendu.
+  Future<void> _clearDraftFor(String conversationId) async {
+    try {
+      await _draftStore.clear(conversationId);
+      // ignore: avoid_catches_without_on_clauses
+    } catch (_) {
+      // Un brouillon qui survit à son envoi est un défaut d'hôte, pas une
+      // raison de faire échouer l'envoi.
+    }
+  }
+
+  /// Lit — **sans jamais lever**. Rend `null` pour « rien d'enregistré »
+  /// comme pour « le stockage est en panne » : ni l'un ni l'autre ne
+  /// justifie de vider le champ ou d'alarmer l'utilisateur (invariant AD-10).
+  Future<ZChatDraft?> _readDraftFor(String conversationId) async {
+    try {
+      final ZResult<ZChatDraft?> read = await _draftStore.read(conversationId);
+      return read.fold((ZFailure _) => null, (ZChatDraft? draft) => draft);
+      // ignore: avoid_catches_without_on_clauses
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// **L'unique écrivain de la saisie de l'utilisateur.**
   ///
   /// Si plusieurs chemins pouvaient écrire dans le champ de saisie, un
@@ -619,6 +776,12 @@ class ZChatController extends ChangeNotifier {
   /// Toutes les requêtes en vol sont annulées (chacune par **son** jeton), les
   /// tranches par requête sont libérées, la saisie est remise à zéro.
   void attach({required String conversationId, List<ZChatMessage> messages = const <ZChatMessage>[]}) {
+    // La saisie de la conversation QUITTÉE est confiée au port AVANT toute
+    // remise à zéro : lue après `_setComposer(const ZChatDraft())`, elle
+    // serait déjà vide, et le changement de conversation effacerait le
+    // brouillon au lieu de le conserver.
+    final String leaving = _conversationId;
+    final ZChatDraft outgoing = currentDraft;
     for (final ZChatRequestToken token in _tokens.values) {
       token.cancel();
     }
@@ -645,7 +808,16 @@ class ZChatController extends ChangeNotifier {
     // (c'est un signal de geste, pas un état de conversation).
     _editing.value = null;
     _preEditingDraft = null;
+    // L'agrégat appartient à SA conversation : gardé, il ferait apparaître
+    // les propositions de la précédente sous le champ de la suivante.
+    _suggestions.value = const <ZChatSuggestion>[];
+    _draftRestored.value = false;
     _setComposer(const ZChatDraft());
+    // Ni la sauvegarde ni la restitution ne retiennent le changement de
+    // conversation : le fil s'affiche tout de suite, le brouillon rejoint le
+    // champ quand le port a répondu — et seulement s'il est encore libre.
+    unawaited(_saveDraftFor(leaving, outgoing));
+    unawaited(restoreDraft());
     notifyListeners();
   }
 
@@ -793,6 +965,11 @@ class ZChatController extends ChangeNotifier {
 
     if (emitsUserMessage) {
       _setComposer(const ZChatDraft());
+      // Le brouillon conservé a été SOUMIS : le garder le ferait
+      // réapparaître à la prochaine ouverture, sous le message qu'il vient
+      // de produire. Effacer ce qui n'existe pas réussit (contrat du port).
+      _draftRestored.value = false;
+      unawaited(_clearDraftFor(_conversationId));
       _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
         ..._messages.value,
         ZChatMessage(
@@ -945,6 +1122,21 @@ class ZChatController extends ChangeNotifier {
           key,
           (ZChatStreamProgress p) => p.copyWith(suggestions: e.suggestions),
         );
+        // La tranche par REQUÊTE ci-dessus n'est lisible qu'avec un
+        // `requestId` en main ; le composer n'en a pas. D'où l'agrégat par
+        // CONVERSATION ci-dessous — la seule vue qu'un rang du cadre peut
+        // consommer.
+        //
+        // `identical(_states[key], state)` est le cloisonnement : `attach`
+        // vide `_states`, donc un événement en retard d'une requête lancée
+        // dans une AUTRE conversation ne retrouve plus son état et ne
+        // rejoint pas l'agrégat. Sans ce test, la proposition de la
+        // conversation quittée s'afficherait sous le champ de la suivante.
+        if (identical(_states[key], state)) {
+          _suggestions.value = List<ZChatSuggestion>.unmodifiable(
+            e.suggestions,
+          );
+        }
       case final ZChatQuotaEvent e:
         _publish(key, (ZChatStreamProgress p) => p.copyWith(quota: e.snapshot));
       case final ZChatRetrievalProgressEvent e:
@@ -1449,6 +1641,8 @@ class ZChatController extends ChangeNotifier {
     _liveAnnouncement.dispose();
     _editing.dispose();
     _draftSeeds.dispose();
+    _suggestions.dispose();
+    _draftRestored.dispose();
     for (final ValueNotifier<String> n in _streamTexts.values) {
       n.dispose();
     }

@@ -51,6 +51,14 @@ import 'z_chat_settings_sheet.dart'
 /// n'en lit jamais le contenu ; le libellé vient d'une clé de registre
 /// ([labelKey]) ou d'un texte déjà localisé ([label]) — exactement l'un des
 /// deux.
+///
+/// ## Dire autre chose qu'un identifiant
+///
+/// Une option peut porter une **description** ([description] ou
+/// [descriptionKey], exactement l'une des deux) et un **badge** ([badge]) :
+/// de quoi distinguer deux modèles autrement que par leur nom. Les deux sont
+/// **additifs** — `null` de part et d'autre, le menu est rendu exactement
+/// comme avant qu'ils existent (invariant AD-4).
 @immutable
 class ZChatModelOption {
   /// Option à libellé **déjà localisé par l'hôte**.
@@ -58,14 +66,26 @@ class ZChatModelOption {
     required this.id,
     required String this.label,
     this.icon,
-  }) : labelKey = null;
+    this.description,
+    this.descriptionKey,
+    this.badge,
+  })  : labelKey = null,
+        // Une description vient du texte OU de la clé, jamais des deux —
+        // même règle d'exclusivité que le libellé.
+        assert(description == null || descriptionKey == null);
 
   /// Option à libellé par **clé** (registre + repli de l'hôte).
   const ZChatModelOption.byKey({
     required this.id,
     required String this.labelKey,
     this.icon,
-  }) : label = null;
+    this.description,
+    this.descriptionKey,
+    this.badge,
+  })  : label = null,
+        // Une description vient du texte OU de la clé, jamais des deux —
+        // même règle d'exclusivité que le libellé.
+        assert(description == null || descriptionKey == null);
 
   /// Identifiant **opaque et stable** — c'est lui qui remonte par `onSelect`.
   final String id;
@@ -80,16 +100,33 @@ class ZChatModelOption {
   /// AD-4).
   final Widget? icon;
 
+  /// Description **déjà localisée par l'hôte**, rendue sous le libellé dans
+  /// le menu et annoncée après lui. Exclusive de [descriptionKey] ; `null`
+  /// signifie absente — le menu est alors rendu comme sans ce canal.
+  final String? description;
+
+  /// Clé de description (registre + repli de l'hôte). Exclusive de
+  /// [description].
+  final String? descriptionKey;
+
+  /// Badge d'hôte posé après le libellé dans le menu — décoratif pour le
+  /// lecteur d'écran (l'état de sélection est déjà annoncé). `null` signifie
+  /// absent (invariant AD-4).
+  final Widget? badge;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ZChatModelOption &&
           id == other.id &&
           label == other.label &&
-          labelKey == other.labelKey;
+          labelKey == other.labelKey &&
+          description == other.description &&
+          descriptionKey == other.descriptionKey;
 
   @override
-  int get hashCode => Object.hash(id, label, labelKey);
+  int get hashCode =>
+      Object.hash(id, label, labelKey, description, descriptionKey);
 }
 
 /// Construit — ou retire — le déclencheur du sélecteur. Rendre `null`
@@ -235,6 +272,13 @@ class _ZChatComposerModelSelectorState
 
   String _optionLabel(BuildContext context, ZChatModelOption o) =>
       o.label ?? zChatLabel(context, o.labelKey!);
+
+  /// La description résolue, ou `null` si l'hôte n'en a déclaré aucune — le
+  /// socle n'en fabrique pas (FR-26).
+  String? _optionDescription(BuildContext context, ZChatModelOption o) {
+    final String? key = o.descriptionKey;
+    return o.description ?? (key == null ? null : zChatLabel(context, key));
+  }
 
   double _gap(BuildContext context) =>
       widget.spacing ??
@@ -390,10 +434,16 @@ class _ZChatComposerModelSelectorState
     final String resolved = _optionLabel(context, option);
     final Widget? icon = option.icon;
     final Widget? mark = widget.selectionMark;
+    // Canaux ADDITIFS : sans description ni badge, l'arbre est exactement
+    // celui d'avant qu'ils existent (invariant AD-4).
+    final String? described = _optionDescription(context, option);
+    final Widget? badge = option.badge;
     return Semantics(
       button: true,
       selected: selected,
       label: resolved,
+      // La description est lue APRÈS l'étiquette. `null` ⇒ nœud inchangé.
+      value: described,
       excludeSemantics: true,
       onTap: () => _select(option.id),
       child: GestureDetector(
@@ -416,14 +466,41 @@ class _ZChatComposerModelSelectorState
                   ExcludeSemantics(child: icon),
                   SizedBox(width: gap),
                 ],
-                Text(
-                  resolved,
-                  // L'état passe par le style, mesurable sur le
-                  // RenderParagraph — jamais par la seule couleur (invariant
-                  // AD-13).
-                  style: selected ? styles.chosen : styles.plain,
-                  textAlign: TextAlign.start,
-                ),
+                if (described == null)
+                  Text(
+                    resolved,
+                    // L'état passe par le style, mesurable sur le
+                    // RenderParagraph — jamais par la seule couleur
+                    // (invariant AD-13).
+                    style: selected ? styles.chosen : styles.plain,
+                    textAlign: TextAlign.start,
+                  )
+                else
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    // Invariant AD-13 : alignement directionnel.
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        resolved,
+                        style: selected ? styles.chosen : styles.plain,
+                        textAlign: TextAlign.start,
+                      ),
+                      // La description ne porte JAMAIS l'emphase : c'est le
+                      // libellé qui dit la sélection, pas le commentaire.
+                      Text(
+                        described,
+                        style: styles.plain,
+                        textAlign: TextAlign.start,
+                      ),
+                    ],
+                  ),
+                if (badge != null) ...<Widget>[
+                  SizedBox(width: gap),
+                  // Décoratif : la description est déjà annoncée par la
+                  // valeur sémantique, l'état par `selected`.
+                  ExcludeSemantics(child: badge),
+                ],
                 if (selected && mark != null) ...<Widget>[
                   SizedBox(width: gap),
                   // Décorative : l'état est déjà annoncé par `selected`.

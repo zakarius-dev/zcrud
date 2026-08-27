@@ -138,6 +138,24 @@ void main() {
           'contentOf',
           'previewEditImpact',
           'isInterrupted',
+          // 🔴 EXTENSION ARBITRÉE (lot L6) : l'AGRÉGAT de propositions et le
+          // BROUILLON PERSISTANT. `suggestions` est une tranche de lecture —
+          // la même donnée que `progress(requestId).suggestions`, agrégée par
+          // conversation parce qu'un composer n'a pas de `requestId` en main.
+          // `draftRestored` et `persistsDraft` sont deux lectures d'état ;
+          // `saveDraft`/`restoreDraft`/`dismissRestoredDraft` sont trois
+          // gestes de SAISIE, jamais des verbes de conversation : ils
+          // délèguent à `ZChatDraftStore` et passent, pour écrire dans le
+          // champ, par l'écrivain unique `_setComposer` — exactement la
+          // raison qui a fait entrer `seedDraft` ici en K2. La soumission
+          // reste `send`/`runAction`. La garde a rougi en montrant
+          // exactement ces six noms, puis a été étendue ICI, délibérément.
+          'suggestions',
+          'draftRestored',
+          'persistsDraft',
+          'saveDraft',
+          'restoreDraft',
+          'dismissRestoredDraft',
           // 🔴 L'UNIQUE point d'entrée des verbes.
           'runAction',
           'dispose',

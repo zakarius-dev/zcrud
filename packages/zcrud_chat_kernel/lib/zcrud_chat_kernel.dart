@@ -78,12 +78,20 @@ export 'src/domain/ai/z_chat_stream_event.dart';
 // rendue structurelle — `ZUnreviewedText` n'expose aucune `String`, son
 // unique sortie est un dépôt `void` dans une surface éditable.
 export 'src/domain/capture/z_chat_capture_port.dart';
+// Vocabulaire du composer avancé : les mentions (candidat, déclencheur,
+// port de source), les commandes déclarées et leur catalogue, le port de
+// MESURE du texte (le socle ne compte pas de jetons : il demande) et le port
+// de BROUILLON (le socle ne persiste pas : il délègue). Aucune politique —
+// ni résolution de candidat, ni exécution de commande.
+export 'src/domain/composer/z_chat_draft_store.dart';
+export 'src/domain/composer/z_chat_mention.dart';
+export 'src/domain/composer/z_chat_slash_command.dart';
+export 'src/domain/composer/z_chat_text_measure_port.dart';
 // Gestion de conversation en ports (invariant AD-11) : recherche, épinglage
 // (un seul verbe), partage en lecture seule, et cycle de vie **soft** — la
 // suppression définitive en lot est refusée, seul le retrait réversible est
 // porté.
-export 'src/domain/conversation/z_chat_conversation_ports.dart';
-// Diffusion vocale : la chaîne de repli devient une donnée
+export 'src/domain/conversation/z_chat_conversation_ports.dart';// Diffusion vocale : la chaîne de repli devient une donnée
 // (`ZChatSpeechChain`), site unique du repli, échecs conservés.
 export 'src/domain/diffusion/z_chat_speech_port.dart';
 // Vocabulaire et ports du fil de travail (« notebook ») : artefacts

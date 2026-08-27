@@ -519,6 +519,10 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.chatComposerHintRotationPeriod,
     this.chatComposerHintSwitchDuration,
     this.chatComposerActiveAccent,
+    this.chatComposerFill,
+    this.chatComposerBorderColor,
+    this.chatComposerBorderWidth,
+    this.chatComposerRadius,
     this.chatResponseLengthAccents,
     this.chatSelectedEmphasisWeight,
     this.chatSelectedEmphasisDecoration,
@@ -1951,6 +1955,45 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// corrigé, jamais peint tel quel.
   final Color? chatComposerActiveAccent;
 
+  /// Fond du **CADRE** du composer — la boîte qui entoure le champ de saisie
+  /// et ses rangs, jamais le champ lui-même. `null` ⇒ le consommateur garde sa
+  /// référence : un thème qui ne dit rien ne repeint rien.
+  ///
+  /// Priorité de résolution : paramètre du widget > ce jeton > référence du
+  /// consommateur. Poser ce jeton n'impose donc rien à l'appelant qui passe
+  /// déjà un fond explicite.
+  final Color? chatComposerFill;
+
+  /// Teinte du **FILET** du cadre du composer. `null` ⇒ **aucun filet de
+  /// thème** : le socle n'invente pas de contour.
+  ///
+  /// Teinte et épaisseur sont deux jetons SÉPARÉS parce qu'ils se posent
+  /// séparément — épaissir un filet déjà coloré par un paramètre, ou colorer
+  /// un filet dont l'épaisseur reste la référence. Un cadre n'est peint que si
+  /// une teinte ET une épaisseur utile sont connues : ce jeton seul, sans
+  /// épaisseur, ne dessine rien.
+  final Color? chatComposerBorderColor;
+
+  /// Épaisseur du filet du cadre du composer, en dp. `null` ⇒ référence du
+  /// consommateur.
+  ///
+  /// Une valeur nulle ou négative vaut « pas de filet », jamais un trait de
+  /// largeur zéro qui rognerait le contenu.
+  ///
+  /// `lerp` de PLANCHER ([_lerpNullableFloor]), comme
+  /// [chatComposerSendTargetSize] : un côté `null` signifie « le consommateur
+  /// applique SA référence », valeur que le thème ignore — rien n'y est
+  /// interpolable, et un filet qui s'efface le temps d'une transition de thème
+  /// serait une perte de contour, pas une épaisseur qui « grandit ».
+  final double? chatComposerBorderWidth;
+
+  /// Rayon des coins du cadre du composer. `null` ⇒ référence du consommateur.
+  ///
+  /// UN SEUL rayon pour le fond, le filet et le rognage : ils ne peuvent pas
+  /// diverger, et un rayon uniforme n'a pas de côté (AD-13). `lerp` par le
+  /// patron des autres rayons nullables ([countPillRadius]).
+  final Radius? chatComposerRadius;
+
   /// Accents des paliers de verbosité du chat, indexés par le **nom** du
   /// palier kernel (`'concise'`, `'standard'`, `'detailed'` —
   /// `ZChatResponseLength.name`, AD-1 : ce package ne peut pas importer
@@ -2788,6 +2831,10 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Duration? chatComposerHintRotationPeriod,
     Duration? chatComposerHintSwitchDuration,
     Color? chatComposerActiveAccent,
+    Color? chatComposerFill,
+    Color? chatComposerBorderColor,
+    double? chatComposerBorderWidth,
+    Radius? chatComposerRadius,
     Map<String, Color>? chatResponseLengthAccents,
     FontWeight? chatSelectedEmphasisWeight,
     TextDecoration? chatSelectedEmphasisDecoration,
@@ -3097,6 +3144,12 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         chatComposerHintSwitchDuration ?? this.chatComposerHintSwitchDuration,
     chatComposerActiveAccent:
         chatComposerActiveAccent ?? this.chatComposerActiveAccent,
+    chatComposerFill: chatComposerFill ?? this.chatComposerFill,
+    chatComposerBorderColor:
+        chatComposerBorderColor ?? this.chatComposerBorderColor,
+    chatComposerBorderWidth:
+        chatComposerBorderWidth ?? this.chatComposerBorderWidth,
+    chatComposerRadius: chatComposerRadius ?? this.chatComposerRadius,
     chatResponseLengthAccents:
         chatResponseLengthAccents ?? this.chatResponseLengthAccents,
     chatSelectedEmphasisWeight:
@@ -4059,6 +4112,27 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       chatComposerActiveAccent: Color.lerp(
         chatComposerActiveAccent,
         other.chatComposerActiveAccent,
+        t,
+      ),
+      // CADRE du composer. COULEURS : interpolables, `null` des deux côtés
+      // reste `null`. ÉPAISSEUR : PLANCHER — un filet ramené à 0 le temps
+      // d'une transition est un contour PERDU, pas un trait qui s'affine ;
+      // c'est l'argument des cibles et des échelles ci-dessus. RAYON : patron
+      // commun `_lerpNullableRadius` de tous les rayons nullables.
+      chatComposerFill: Color.lerp(chatComposerFill, other.chatComposerFill, t),
+      chatComposerBorderColor: Color.lerp(
+        chatComposerBorderColor,
+        other.chatComposerBorderColor,
+        t,
+      ),
+      chatComposerBorderWidth: _lerpNullableFloor(
+        chatComposerBorderWidth,
+        other.chatComposerBorderWidth,
+        t,
+      ),
+      chatComposerRadius: _lerpNullableRadius(
+        chatComposerRadius,
+        other.chatComposerRadius,
         t,
       ),
       // TABLE : discrète, comme `chatCapabilityAccents` (pas de demi-palette).

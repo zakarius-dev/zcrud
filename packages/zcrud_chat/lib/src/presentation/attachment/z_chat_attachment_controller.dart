@@ -58,7 +58,8 @@ import 'z_pending_attachment.dart';
 /// État réactif des pièces jointes du composer.
 ///
 /// Tranches granulaires (invariant AD-2) : la liste des pièces en attente,
-/// celle des pièces téléversées et le dernier échec changent indépendamment.
+/// celle des pièces téléversées, le dernier échec et le transfert en cours
+/// changent indépendamment.
 /// Le canal global de `ChangeNotifier` reste réservé aux changements
 /// structurels — ici [reset], qui change de composer.
 class ZChatAttachmentController extends ChangeNotifier {
@@ -105,6 +106,15 @@ class ZChatAttachmentController extends ChangeNotifier {
   final ValueNotifier<ZChatAttachmentFailure?> _lastFailure =
       ValueNotifier<ZChatAttachmentFailure?>(null);
 
+  final ValueNotifier<bool> _uploading = ValueNotifier<bool>(false);
+
+  /// Le nombre de [upload] EN VOL, et non un booléen.
+  ///
+  /// Deux téléversements simultanés sont un cas nominal (l'utilisateur joint
+  /// deux fichiers d'affilée) : avec un simple booléen, le premier des deux à
+  /// finir remettrait la tranche au repos alors que l'autre monte encore.
+  int _uploadsInFlight = 0;
+
   bool _disposed = false;
 
   /// Pièces choisies, **pas encore téléversées**.
@@ -116,6 +126,22 @@ class ZChatAttachmentController extends ChangeNotifier {
 
   /// Dernier échec, ou `null`. Purement informatif : la conversation continue.
   ValueListenable<ZChatAttachmentFailure?> get lastFailure => _lastFailure;
+
+  /// `true` tant qu'au moins un [upload] est en vol.
+  ///
+  /// Tranche granulaire (invariant AD-2) : elle change SEULE, sans toucher
+  /// ni [pending], ni [uploaded], ni [lastFailure]. Une vue qui n'écoute
+  /// qu'elle — un indicateur de progression, l'état occupé d'un bouton
+  /// d'envoi — se reconstruit sans reconstruire le champ de saisie, donc
+  /// sans lui faire perdre le focus.
+  ///
+  /// Elle dit qu'un transfert **tourne**, jamais où il en est : ce socle n'a
+  /// pas le compteur d'octets, et [ZChatAttachmentUploader] ne le lui rend
+  /// pas. Un hôte qui veut un pourcentage le porte lui-même.
+  ///
+  /// Elle revient au repos quand le DERNIER transfert en vol se termine —
+  /// succès, refus ou exception d'hôte confondus.
+  ValueListenable<bool> get uploading => _uploading;
 
   /// `true` tant que le plafond local n'est pas atteint.
   bool get canAddMore => _pending.value.length < maxFiles;
@@ -166,7 +192,10 @@ class ZChatAttachmentController extends ChangeNotifier {
     return picked.fold(
       (ZFailure failure) => Left<ZFailure, ZPendingAttachment?>(
         _fail(
-          ZChatAttachmentRejection.pickFailed,
+          // Le motif vient du SÉLECTEUR quand il l'a nommé, du repli sinon :
+          // ce socle n'a ni la permission système, ni l'inventaire des
+          // périphériques, ni le descripteur de fichier — il ne devine pas.
+          zChatPickRejectionOf(failure),
           failure.message,
           cause: failure,
         ),
@@ -249,6 +278,8 @@ class ZChatAttachmentController extends ChangeNotifier {
     }
 
     final ZResult<ZChatAttachment> result;
+    _uploadsInFlight += 1;
+    _uploading.value = true;
     try {
       result = await u.upload(attachment);
     } catch (error) {
@@ -259,6 +290,12 @@ class ZChatAttachmentController extends ChangeNotifier {
           fileName: attachment.fileName,
         ),
       );
+    } finally {
+      // `finally` et non deux sites de remise au repos : le chemin
+      // d'exception d'hôte est justement celui qu'on oublie, et une tranche
+      // restée à `true` bloquerait l'envoi pour toujours.
+      _uploadsInFlight -= 1;
+      if (_uploadsInFlight == 0 && !_disposed) _uploading.value = false;
     }
 
     return result.fold(
@@ -344,6 +381,7 @@ class ZChatAttachmentController extends ChangeNotifier {
     _pending.dispose();
     _uploaded.dispose();
     _lastFailure.dispose();
+    _uploading.dispose();
     super.dispose();
   }
 }

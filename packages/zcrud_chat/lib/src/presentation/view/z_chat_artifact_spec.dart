@@ -249,6 +249,7 @@ class ZChatArtifactSpec {
     this.count,
     this.busy,
     this.accent,
+    this.alwaysAccented = false,
     this.actions = const <ZChatArtifactAction>[],
   });
 
@@ -280,6 +281,44 @@ class ZChatArtifactSpec {
   /// au jeton `ZcrudTheme.chatCapabilityAccents`, puis à la référence
   /// `ZChatNotebookReference.capabilities`.
   final Color? accent;
+
+  // FORME RETENUE : un drapeau sur la DÉCLARATION, et non un jeton de style.
+  //
+  // Deux formes étaient possibles pour découpler la condition d'application de
+  // la teinte de la présence : ce drapeau, ou un réglage à l'échelle de la
+  // rangée (skin/jeton). Le drapeau vit ICI parce que c'est ici que vit déjà
+  // `accent` — la teinte et sa condition d'application se lisent alors au même
+  // endroit, dans le même objet, avec le même vocabulaire. Un réglage de skin
+  // aurait demandé une quatrième chaîne de résolution (skin > jeton >
+  // référence) pour une donnée qui n'est pas une VALEUR de rendu mais une
+  // DÉCLARATION de sens — exactement l'argument qui a déjà écarté le niveau
+  // « jeton » pour `ZChatNotebookSkin.tile` : un thème ne doit pas pouvoir
+  // changer ce qu'une couleur SIGNIFIE dans une application qui ne l'a pas
+  // demandé.
+  //
+  // Et la granularité est la bonne : la teinte est déjà résolue par clé
+  // d'artefact, donc la décision « cette couleur dit la nature » se prend
+  // aussi par artefact. Un hôte qui la veut partout la pose sur chacune de ses
+  // specs — qui sont déclarées une fois, dans une seule liste.
+  /// L'accent est-il peint **même quand l'artefact est absent** ?
+  ///
+  /// `false` (défaut) : le glyphe ne porte sa teinte que si l'artefact
+  /// existe — la couleur dit alors l'**état**, et un glyphe éteint signale un
+  /// artefact vide.
+  ///
+  /// `true` : le glyphe porte sa teinte en permanence — la couleur dit la
+  /// **nature** de l'artefact, et l'existence reste portée par les deux
+  /// canaux qui la portaient déjà : la pastille de compte et l'annonce
+  /// d'accessibilité, qui continue de distinguer « déjà généré » de « aucun
+  /// contenu ».
+  ///
+  /// 🔴 Ce drapeau ne touche **que** la condition d'application de la teinte.
+  /// Il n'existe pas d'équivalent en forçant [presence] à `true` : cela
+  /// teindrait bien le glyphe, mais ferait **annoncer « généré » un artefact
+  /// vide** — un mensonge au lecteur d'écran. L'occupation animée, la
+  /// correction de contraste et la pastille sont identiques dans les deux
+  /// cas.
+  final bool alwaysAccented;
 
   /// Les verbes, **dans l'ordre voulu par l'hôte**.
   final List<ZChatArtifactAction> actions;

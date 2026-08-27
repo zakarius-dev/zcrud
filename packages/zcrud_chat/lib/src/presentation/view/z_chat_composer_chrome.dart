@@ -74,7 +74,9 @@ class ZChatComposerChrome {
   /// Marge externe. `null` ⇒ jeton `formPadding`, puis référence.
   final EdgeInsetsDirectional? padding;
 
-  /// Rayon du conteneur. `null` ⇒ jeton `radiusM`, puis référence (12).
+  /// Rayon du conteneur — le SEUL rayon du cadre : fond, filet et rognage le
+  /// partagent, ils ne peuvent pas diverger. `null` ⇒ jeton
+  /// `chatComposerRadius`, puis `radiusM`, puis référence (12).
   final Radius? containerRadius;
 
   /// Marge interne du champ. `null` ⇒ jeton `inputContentPadding`, puis
@@ -223,8 +225,13 @@ ZChatComposerChromeStyle zChatComposerChromeOf(
         chrome?.padding ??
         theme?.formPadding ??
         ZChatComposerReference.outerPadding,
+    // Le rayon du CADRE avant le rayon générique : `chatComposerRadius` est
+    // le rôle précis, `radiusM` le rôle large. Un hôte qui n'a réglé que
+    // `radiusM` obtient exactement ce qu'il obtenait — l'insertion est
+    // additive, elle ne déplace personne.
     containerRadius:
         chrome?.containerRadius ??
+        theme?.chatComposerRadius ??
         theme?.radiusM ??
         ZChatComposerReference.containerRadius,
     fieldContentPadding:
@@ -236,9 +243,14 @@ ZChatComposerChromeStyle zChatComposerChromeOf(
         theme?.badgeRadius ??
         ZChatComposerReference.badgeRadius,
     // Une épaisseur négative est écrêtée à 0 (invariant AD-10 : un
-    // paramètre absurde ne fait pas lever le rendu).
-    borderWidth: (chrome?.borderWidth ?? ZChatComposerReference.borderWidth)
-        .clamp(0.0, double.infinity),
+    // paramètre absurde ne fait pas lever le rendu) — et l'écrêtage vaut
+    // aussi pour le jeton, dont la dartdoc annonce « nulle ou négative vaut
+    // pas de filet ».
+    borderWidth:
+        (chrome?.borderWidth ??
+                theme?.chatComposerBorderWidth ??
+                ZChatComposerReference.borderWidth)
+            .clamp(0.0, double.infinity),
     // Invariant AD-13 : écrêté au plancher — une cible tactile trop petite
     // est inexprimable, par paramètre comme par jeton.
     sendTargetSize: requestedSend < floor ? floor : requestedSend,
@@ -271,6 +283,111 @@ ZChatComposerChromeStyle zChatComposerChromeOf(
   );
 }
 
+/// L'ÉTAT DE RENDU de l'affordance d'envoi — ce que le bouton doit dire,
+/// jamais ce que l'application doit faire.
+///
+/// Quatre états, parce que le bouton d'envoi a quatre choses à dire et qu'un
+/// glyphe unique n'en dirait qu'une :
+///
+/// | état | ce qui est vrai | ce que l'affordance annonce |
+/// |---|---|---|
+/// | [idle] | rien en cours | « envoyer » |
+/// | [busy] | une préparation d'hôte est en cours (téléversement…) | « envoi en préparation » |
+/// | [streaming] | une requête est en vol | « arrêter la génération » |
+/// | [editing] | un message existant est en cours de modification | « valider la modification » |
+///
+/// C'est un état **dérivé**, jamais persisté : il se recalcule à partir de
+/// tranches que le contrôleur porte déjà ([ZChatComposerSendState.resolve]).
+/// Rien à sérialiser, rien à synchroniser.
+enum ZChatComposerSendState {
+  /// Repos — l'envoi est l'action offerte.
+  idle,
+
+  /// Une préparation fournie par l'hôte est en cours : l'envoi attend.
+  ///
+  /// Le socle ne devine jamais cet état — il n'a aucun moyen de savoir
+  /// qu'un téléversement d'hôte tourne. Il est **injecté**.
+  busy,
+
+  /// Une requête est en vol : l'action offerte est l'ARRÊT.
+  streaming,
+
+  /// Un message existant est en cours de modification : l'action offerte est
+  /// la validation de cette modification.
+  editing;
+
+  /// La clé de libellé de l'état — l'affordance n'annonce jamais « envoyer »
+  /// quand elle arrête, ni « arrêter » quand elle valide.
+  ///
+  /// [idle] rend [kZChatLabelSend] : un appelant qui ne règle pas d'état
+  /// obtient exactement l'annonce d'avant.
+  String get labelKey => switch (this) {
+    ZChatComposerSendState.idle => kZChatLabelSend,
+    ZChatComposerSendState.busy => kZChatLabelSendBusy,
+    ZChatComposerSendState.streaming => kZChatLabelStopGeneration,
+    ZChatComposerSendState.editing => kZChatLabelSendEdit,
+  };
+
+  /// Résout l'état à partir des trois faits observables, **dans cet ordre de
+  /// priorité** : [streaming] > [busy] > [editing] > [idle].
+  ///
+  /// L'ordre n'est pas un détail de mise en œuvre : il dit ce que
+  /// l'utilisateur doit pouvoir faire quand deux faits sont vrais en même
+  /// temps. Une requête en vol prime sur tout — sans quoi une génération
+  /// lancée depuis le mode édition deviendrait ININTERROMPABLE. Une
+  /// préparation en cours prime sur l'édition, parce que valider une
+  /// modification dont la pièce jointe n'est pas encore prête l'enverrait
+  /// sans elle.
+  static ZChatComposerSendState resolve({
+    required bool streaming,
+    required bool busy,
+    required bool editing,
+  }) {
+    if (streaming) return ZChatComposerSendState.streaming;
+    if (busy) return ZChatComposerSendState.busy;
+    if (editing) return ZChatComposerSendState.editing;
+    return ZChatComposerSendState.idle;
+  }
+}
+
+/// Les glyphes de l'affordance d'envoi, un par [ZChatComposerSendState].
+///
+/// Le socle ne peut rendre aucune icône : les quatre faces viennent de
+/// l'hôte. Seule [idle] est exigée — les trois autres retombent sur elle,
+/// pour qu'un hôte qui n'en fournit qu'une obtienne l'affordance d'hier, à la
+/// face près, tout en gagnant l'annonce sémantique par état.
+@immutable
+class ZChatComposerSendGlyphs {
+  /// Construit le jeu de faces. Seule [idle] est requise.
+  const ZChatComposerSendGlyphs({
+    required this.idle,
+    this.busy,
+    this.streaming,
+    this.editing,
+  });
+
+  /// La face au repos — celle de l'avion en papier.
+  final Widget idle;
+
+  /// La face « préparation en cours » (un indicateur d'activité, typiquement).
+  /// `null` ⇒ [idle].
+  final Widget? busy;
+
+  /// La face « arrêter » (le carré). `null` ⇒ [idle].
+  final Widget? streaming;
+
+  /// La face « valider la modification » (la coche). `null` ⇒ [idle].
+  final Widget? editing;
+
+  /// La face de [state], avec repli sur [idle] — jamais de créneau vide.
+  Widget resolve(ZChatComposerSendState state) => switch (state) {
+    ZChatComposerSendState.idle => idle,
+    ZChatComposerSendState.busy => busy ?? idle,
+    ZChatComposerSendState.streaming => streaming ?? idle,
+    ZChatComposerSendState.editing => editing ?? idle,
+  };
+}
+
 /// Le créneau d'envoi par défaut — la géométrie et le geste de référence, en
 /// widget pur : la cible 48 dp, l'échelle 0.7 → 1.0 en 150 ms, la sémantique
 /// de bouton. Le glyphe vient de l'hôte ([child]) : ce paquet ne peut rendre
@@ -293,6 +410,7 @@ class ZChatComposerSendTarget extends StatelessWidget {
     required this.slot,
     required this.child,
     this.chrome,
+    this.state = ZChatComposerSendState.idle,
     super.key,
   });
 
@@ -304,6 +422,16 @@ class ZChatComposerSendTarget extends StatelessWidget {
 
   /// Réglage de chrome — `null` signifie jetons puis référence.
   final ZChatComposerChrome? chrome;
+
+  /// Ce que l'affordance ANNONCE. [ZChatComposerSendState.idle] par défaut :
+  /// l'annonce est alors « envoyer », exactement comme sans ce réglage.
+  ///
+  /// Il gouverne l'étiquette sémantique, pas le geste : le tap reste
+  /// [ZChatComposerSlot.submit], l'unique chemin d'envoi. L'ARRÊT est une
+  /// autre pièce (`ZChatComposerStopTarget`), parce que c'est un autre verbe —
+  /// une cible qui changerait de verbe sous le doigt serait un second site
+  /// d'appel déguisé.
+  final ZChatComposerSendState state;
 
   @override
   Widget build(BuildContext context) {
@@ -322,7 +450,7 @@ class ZChatComposerSendTarget extends StatelessWidget {
       builder: (BuildContext context, bool canSend, Widget? glyph) => Semantics(
         button: true,
         enabled: canSend,
-        label: zChatLabel(context, kZChatLabelSend),
+        label: zChatLabel(context, state.labelKey),
         excludeSemantics: true,
         onTap: slot.submit,
         child: GestureDetector(

@@ -165,6 +165,8 @@ buildController({
   int maxResumeAttempts = 2,
   List<ZChatMessage> initialMessages = const <ZChatMessage>[],
   Future<bool> Function(ZChatActionPlan plan)? confirm,
+  ZChatDraftStore? draftStore,
+  String conversationId = '',
 }) {
   final FakeStreamPort port = FakeStreamPort();
   final SpyExecutor executor = SpyExecutor();
@@ -186,6 +188,8 @@ buildController({
     ),
     maxResumeAttempts: maxResumeAttempts,
     initialMessages: initialMessages,
+    draftStore: draftStore,
+    conversationId: conversationId,
   );
   return (
     controller: controller,

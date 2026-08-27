@@ -28,18 +28,45 @@
 /// cela ne s'applique sur une plateforme tactile. La table invoque la MÊME
 /// fermeture que le bouton d'envoi. Cf. [ZChatComposer.submitPolicy].
 ///
-/// ## Les quatre créneaux, et pourquoi ce sont des builders
+/// ## Les créneaux, leur RANG, et pourquoi ce sont des builders
+///
+/// Tout vit dans une seule `Column`, à un rang fixe. C'est le rang — et non
+/// le voisinage — qui tient la promesse de disposition : un créneau qui
+/// grandit (une vignette de plus, une bande d'état qui apparaît) **pousse le
+/// champ** sans jamais sortir du cadre, parce que le cadre est son parent.
 ///
 /// ```
 /// ZChatComposer
-///   ├── capture    <- l'hote y branche le `ZChatCaptureBar` EXISTANT
-///   ├── Row [ leading | champ | trailing ]
-///   |        pieces jointes / '+'        envoi
-///   └── tools      <- acces aux reglages
+///   0 status         annonce   <- hors ligne / quota / erreur
+///   1 editingBanner  annonce   <- « vous modifiez ce message »
+///   2 progress       annonce   <- progression d'un televersement
+///   3 suggestions    proposition
+///   4 attachments    proposition  <- apercu des pieces jointes
+///   5 capture        proposition  <- le `ZChatCaptureBar` EXISTANT
+///   6 Row [ leading | champ + hint | trailing ]   <- l'ANCRE
+///   7 tools          accessoire   <- acces aux reglages
+///   8 counter        accessoire   <- compteur de caracteres / jetons
 /// ```
 ///
+/// L'ordre n'est pas décoratif. Les rangs 0-2 sont des **annonces** : elles
+/// doivent rester visibles et ne jamais être poussées hors du cadre. Les
+/// rangs 3-5 sont des **propositions** : elles poussent le champ vers le bas
+/// quand elles apparaissent. Le rang 6 est l'**ancre** : il ne bouge jamais
+/// du bas, clavier monté ou non. Les rangs 7-8 sont des **accessoires** :
+/// ils suivent l'ancre.
+///
+/// Deux paramètres seulement font varier cette disposition, et aucun n'est un
+/// second arbre : [sendAlignment] choisit où l'envoi se pose sur la hauteur
+/// du champ, [bandPlacement] échange les rangs 6 et 7.
+///
+/// Contrainte imposée à tout créneau monté ici : hauteur **minimale**, jamais
+/// fixe, et débordement scrollable **à l'intérieur du rang** — sans quoi le
+/// rang cesse de pousser et se met à déborder.
+///
 /// Invariant AD-4 : un créneau nul — ou un créneau dont le builder rend
-/// `null` — est absent de l'arbre, jamais un `SizedBox.shrink()` inerte.
+/// `null` — est absent de l'arbre, jamais un `SizedBox.shrink()` inerte. Un
+/// hôte qui ne fournit que `capture`, la `Row` et `tools` obtient donc
+/// exactement l'arbre à trois enfants d'hier, au widget près.
 ///
 /// Un builder plutôt qu'un `Widget` figé, et un objet [ZChatComposerSlot]
 /// plutôt qu'une liste de paramètres positionnels : c'est ce qui rend
@@ -74,7 +101,10 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
+import '../attachment/z_chat_attachment_controller.dart';
+import '../capture/z_chat_capture_controller.dart';
 import '../settings/z_chat_settings_controller.dart';
+import '../tools/z_chat_tool_controller.dart';
 import '../z_chat_controller.dart';
 import 'z_chat_composer_keys.dart';
 import 'z_chat_labels.dart';
@@ -93,6 +123,10 @@ class ZChatComposerSlot {
     required this.controller,
     required this.submit,
     this.settings,
+    this.attachments,
+    this.tools,
+    this.capture,
+    this.compact = false,
   });
 
   /// Le contrôleur de la conversation — l'hôte y lit les tranches réactives
@@ -121,6 +155,64 @@ class ZChatComposerSlot {
   /// dans un second, qui laisserait des réglages affichés, réglés, puis
   /// jetés avant l'appel.
   final ZChatSettingsController? settings;
+
+  /// Les pièces jointes en attente, ou `null` si l'hôte n'en a branché
+  /// aucune.
+  ///
+  /// Le même motif que [settings], pour la même raison : l'aperçu du rang 4
+  /// et le menu `+` du créneau de tête lisent **la même** instance. Deux
+  /// contrôleurs donneraient une bande qui montre des pièces que l'envoi
+  /// n'emporte pas.
+  final ZChatAttachmentController? attachments;
+
+  /// Le catalogue d'outils, ou `null` si l'hôte n'en a branché aucun.
+  ///
+  /// La bande d'accessoires et la feuille qu'elle ouvre lisent le même
+  /// catalogue : un outil activé dans la feuille est celui que la bande
+  /// montre actif.
+  final ZChatToolController? tools;
+
+  /// La dictée et la reconnaissance de texte, ou `null` si l'hôte n'en a
+  /// branché aucune.
+  ///
+  /// La saisie n'a qu'un écrivain hors du contrôleur de conversation, et
+  /// c'est celui-ci : le partager par le créneau évite qu'un second
+  /// apparaisse pour un geste posé ailleurs dans le cadre.
+  final ZChatCaptureController? capture;
+
+  /// `true` demande à un créneau sa forme resserrée (typiquement mobile).
+  ///
+  /// Résolu **une fois**, en amont, et distribué à tous les créneaux : chaque
+  /// pièce mesurant la largeur de son côté finirait par basculer à un point
+  /// différent de sa voisine.
+  final bool compact;
+}
+
+/// Où l'envoi se pose sur la hauteur du champ de saisie.
+///
+/// Ce n'est pas un mode et cela ne produit pas un second arbre : c'est
+/// l'alignement transversal de la seule `Row` du composer.
+enum ZChatComposerSendAlignment {
+  /// L'envoi suit le **bas** du champ — il reste sur la dernière ligne quand
+  /// la saisie grandit. C'est le défaut.
+  bottom,
+
+  /// L'envoi reste **centré** sur la hauteur du champ, quel que soit le
+  /// nombre de lignes.
+  center,
+}
+
+/// De quel côté du champ la bande d'accessoires se pose.
+///
+/// Les deux valeurs décrivent le même arbre : seuls deux enfants de la
+/// `Column` échangent leur rang.
+enum ZChatComposerBandPlacement {
+  /// La bande suit le champ — elle reste sous l'ancre. C'est le défaut.
+  below,
+
+  /// La bande précède le champ — elle passe au-dessus de l'ancre, sans
+  /// changer sa position relative aux créneaux qui la précèdent déjà.
+  above,
 }
 
 /// Construit le contenu d'un créneau du composer.
@@ -141,12 +233,24 @@ class ZChatComposer extends StatefulWidget {
   const ZChatComposer({
     required this.controller,
     required this.cursorColor,
+    this.status,
+    this.editingBanner,
+    this.progress,
+    this.suggestions,
+    this.attachments,
     this.leading,
     this.trailing,
     this.tools,
     this.capture,
+    this.counter,
     this.hint,
     this.settings,
+    this.attachmentController,
+    this.toolController,
+    this.captureController,
+    this.compact = false,
+    this.sendAlignment = ZChatComposerSendAlignment.bottom,
+    this.bandPlacement = ZChatComposerBandPlacement.below,
     this.focusNode,
     this.padding,
     this.minLines = 1,
@@ -167,6 +271,54 @@ class ZChatComposer extends StatefulWidget {
   /// `ZChatCaptureReviewField.cursorColor`.
   final Color cursorColor;
 
+  /// Créneau d'annonce — rang 0, tout en haut du cadre.
+  ///
+  /// C'est la place d'un état qui concerne la conversation entière et qui ne
+  /// doit jamais quitter l'écran : hors ligne, quota atteint, dernier envoi
+  /// refusé. Il est au-dessus de tout le reste précisément pour qu'aucune
+  /// proposition n'ait le pouvoir de le pousser dehors.
+  ///
+  /// `null` signifie absent (invariant AD-4).
+  final ZChatComposerSlotBuilder? status;
+
+  /// Créneau du bandeau d'édition — rang 1.
+  ///
+  /// « Vous modifiez ce message », et l'abandon qui va avec. Il a son propre
+  /// rang, distinct de [capture] : le bandeau et la dictée sont deux
+  /// mécanismes sans rapport, et un hôte qui affiche les deux ne doit pas
+  /// choisir lequel montrer.
+  ///
+  /// `null` signifie absent (invariant AD-4).
+  final ZChatComposerSlotBuilder? editingBanner;
+
+  /// Créneau de progression — rang 2.
+  ///
+  /// La progression d'un téléversement en cours, indéterminée ou chiffrée.
+  /// Elle est une annonce, pas une proposition : elle reste visible tant que
+  /// le transfert dure.
+  ///
+  /// `null` signifie absent (invariant AD-4).
+  final ZChatComposerSlotBuilder? progress;
+
+  /// Créneau des suggestions — rang 3.
+  ///
+  /// Amorces de conversation et relances proposées après une réponse. C'est
+  /// la première des propositions : elle pousse le champ vers le bas quand
+  /// elle apparaît, et le laisse remonter quand elle disparaît.
+  ///
+  /// `null` signifie absent (invariant AD-4).
+  final ZChatComposerSlotBuilder? suggestions;
+
+  /// Créneau d'aperçu des pièces jointes — rang 4.
+  ///
+  /// Les vignettes des pièces en attente, **dans** le cadre : c'est ce rang
+  /// qui fait qu'une pièce ajoutée pousse le champ au lieu de déborder de la
+  /// boîte. Le contenu monté ici et le menu `+` de [leading] doivent lire le
+  /// même [ZChatComposerSlot.attachments].
+  ///
+  /// `null` signifie absent (invariant AD-4).
+  final ZChatComposerSlotBuilder? attachments;
+
   /// Créneau de tête — pièces jointes, menu `+`. `null` signifie absent
   /// (invariant AD-4).
   final ZChatComposerSlotBuilder? leading;
@@ -175,12 +327,28 @@ class ZChatComposer extends StatefulWidget {
   /// la touche « valider » du clavier reste alors le seul déclencheur.
   final ZChatComposerSlotBuilder? trailing;
 
-  /// Créneau des réglages — la bande sous le champ. `null` signifie absent.
+  /// Créneau des réglages — la bande d'accessoires, rang 7. `null` signifie
+  /// absent.
+  ///
+  /// Elle suit l'ancre par défaut ; [bandPlacement] la fait passer devant.
   final ZChatComposerSlotBuilder? tools;
 
-  /// Créneau de capture — la bande au-dessus du champ, où l'hôte branche le
-  /// [ZChatCaptureBar] existant (dictée/reconnaissance de texte).
+  /// Créneau de capture — rang 5, juste au-dessus du champ, où l'hôte branche
+  /// le [ZChatCaptureBar] existant (dictée/reconnaissance de texte).
+  ///
+  /// Un hôte qui y empilait aussi son bandeau d'édition a désormais
+  /// [editingBanner] pour cela ; ce créneau-ci n'a pas changé de
+  /// comportement.
   final ZChatComposerSlotBuilder? capture;
+
+  /// Créneau du compteur — rang 8, tout en bas du cadre.
+  ///
+  /// Caractères restants, jetons estimés, indication de brouillon
+  /// enregistré : ce qui commente la saisie sans la commander. Dernier rang
+  /// parce qu'il suit l'ancre, et non l'inverse.
+  ///
+  /// `null` signifie absent (invariant AD-4).
+  final ZChatComposerSlotBuilder? counter;
 
   /// Créneau du placeholder visuel. Règle des trois cas, la même que les
   /// tuiles de `ZChatSettingsSheet` :
@@ -214,6 +382,38 @@ class ZChatComposer extends StatefulWidget {
   /// `ZChatRequestBuilder`. C'est la règle de remplacement du kernel, et
   /// c'est ce qui rend un réglage retirable depuis la feuille.
   final ZChatSettingsController? settings;
+
+  /// Les pièces jointes en attente, offertes à **tous** les créneaux par
+  /// [ZChatComposerSlot.attachments]. `null` signifie qu'aucune n'est
+  /// branchée.
+  ///
+  /// Le composer ne s'y abonne pas et n'en rend rien : il le distribue, pour
+  /// que l'aperçu et le menu `+` ne puissent pas lire deux instances.
+  final ZChatAttachmentController? attachmentController;
+
+  /// Le catalogue d'outils, offert à tous les créneaux par
+  /// [ZChatComposerSlot.tools]. `null` signifie qu'aucun n'est branché.
+  final ZChatToolController? toolController;
+
+  /// La dictée et la reconnaissance de texte, offertes à tous les créneaux
+  /// par [ZChatComposerSlot.capture]. `null` signifie qu'aucune n'est
+  /// branchée.
+  final ZChatCaptureController? captureController;
+
+  /// Forme resserrée demandée aux créneaux (typiquement mobile).
+  ///
+  /// Résolue par l'hôte — le composer ne mesure aucune largeur — et
+  /// distribuée telle quelle par [ZChatComposerSlot.compact], pour que
+  /// toutes les pièces basculent au même point.
+  final bool compact;
+
+  /// Où l'envoi se pose sur la hauteur du champ. Défaut :
+  /// [ZChatComposerSendAlignment.bottom], l'alignement d'origine.
+  final ZChatComposerSendAlignment sendAlignment;
+
+  /// De quel côté du champ la bande [tools] se pose. Défaut :
+  /// [ZChatComposerBandPlacement.below], le placement d'origine.
+  final ZChatComposerBandPlacement bandPlacement;
 
   /// Nœud de focus de l'hôte. `null` signifie que le composer en possède un,
   /// créé une fois et disposé avec lui (jamais dans un `build` — interdit
@@ -289,21 +489,64 @@ class _ZChatComposerState extends State<ZChatComposer> {
           controller: widget.controller,
           submit: _submit,
           settings: widget.settings,
+          attachments: widget.attachmentController,
+          tools: widget.toolController,
+          capture: widget.captureController,
+          compact: widget.compact,
         ),
       );
 
   @override
   Widget build(BuildContext context) {
     final ZcrudTheme theme = ZcrudTheme.of(context);
+    // Résolus dans l'ORDRE DES RANGS — c'est la seule liste où l'ordre du
+    // cadre est écrit, et elle se lit de haut en bas comme le rendu.
+    final Widget? status = _slot(context, widget.status);
+    final Widget? editingBanner = _slot(context, widget.editingBanner);
+    final Widget? progress = _slot(context, widget.progress);
+    final Widget? suggestions = _slot(context, widget.suggestions);
+    final Widget? attachments = _slot(context, widget.attachments);
     final Widget? capture = _slot(context, widget.capture);
     final Widget? leading = _slot(context, widget.leading);
     final Widget? trailing = _slot(context, widget.trailing);
     final Widget? tools = _slot(context, widget.tools);
+    final Widget? counter = _slot(context, widget.counter);
     // Règle des trois cas du créneau `hint` (cf. son dartdoc) : la distinction
     // « builder absent » / « builder rendant null » se lit ici, jamais dans le
     // champ.
     final Widget? hostHint = _slot(context, widget.hint);
     final bool suppressHint = widget.hint != null && hostHint == null;
+
+    // Le rang 6 — l'ancre. Extrait pour que [bandPlacement] puisse échanger
+    // sa place avec celle de la bande sans dupliquer la disposition : il n'y
+    // a qu'UNE `Row` dans ce fichier, quel que soit le placement.
+    final Widget anchor = Row(
+      crossAxisAlignment: switch (widget.sendAlignment) {
+        // Les affordances suivent le BAS du champ quand il grandit.
+        ZChatComposerSendAlignment.bottom => CrossAxisAlignment.end,
+        ZChatComposerSendAlignment.center => CrossAxisAlignment.center,
+      },
+      children: <Widget>[
+        if (leading != null) _ZChatComposerTarget(child: leading),
+        Expanded(
+          child: _ZChatComposerField(
+            controller: widget.controller,
+            focusNode: widget.focusNode ?? _owned,
+            cursorColor: widget.cursorColor,
+            minLines: widget.minLines,
+            maxLines: widget.maxLines,
+            hint: hostHint,
+            suppressHint: suppressHint,
+            // Le MÊME site de soumission que celui du créneau d'envoi.
+            onSubmit: _submit,
+            submitPolicy: widget.submitPolicy,
+          ),
+        ),
+        if (trailing != null) _ZChatComposerTarget(child: trailing),
+      ],
+    );
+    final bool bandAbove =
+        widget.bandPlacement == ZChatComposerBandPlacement.above;
 
     return Semantics(
       container: true,
@@ -314,31 +557,20 @@ class _ZChatComposerState extends State<ZChatComposer> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          // LES NEUF RANGS. Un créneau absent n'occupe RIEN — pas même un
+          // enfant de taille nulle (invariant AD-4) : l'hôte qui n'en fournit
+          // aucun retrouve l'arbre à trois enfants d'hier.
           children: <Widget>[
-            ?capture,
-            Row(
-              // Les affordances suivent le BAS du champ quand il grandit.
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                if (leading != null) _ZChatComposerTarget(child: leading),
-                Expanded(
-                  child: _ZChatComposerField(
-                    controller: widget.controller,
-                    focusNode: widget.focusNode ?? _owned,
-                    cursorColor: widget.cursorColor,
-                    minLines: widget.minLines,
-                    maxLines: widget.maxLines,
-                    hint: hostHint,
-                    suppressHint: suppressHint,
-                    // Le MÊME site de soumission que celui du créneau d'envoi.
-                    onSubmit: _submit,
-                    submitPolicy: widget.submitPolicy,
-                  ),
-                ),
-                if (trailing != null) _ZChatComposerTarget(child: trailing),
-              ],
-            ),
-            ?tools,
+            ?status, // 0 — annonce
+            ?editingBanner, // 1 — annonce
+            ?progress, // 2 — annonce
+            ?suggestions, // 3 — proposition
+            ?attachments, // 4 — proposition
+            ?capture, // 5 — proposition
+            if (bandAbove && tools != null) tools, // 7, remonté devant l'ancre
+            anchor, // 6 — l'ancre
+            if (!bandAbove && tools != null) tools, // 7 — accessoire
+            ?counter, // 8 — accessoire
           ],
         ),
       ),

@@ -3,6 +3,24 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.24.0 — 2026-08-27
+
+### Ajouté
+- **Neuf rangs déclarés dans le composer** — annonces (état, bandeau d'édition, progression), propositions (suggestions, pièces jointes, capture), l'ancre (champ et envoi), accessoires (outils, compteur). C'est le **rang** qui fait qu'une vignette ajoutée pousse le champ sans sortir du cadre. Créneau non fourni ⇒ **aucun nœud** dans l'arbre.
+- **Le cadre du composer** consomme les quatre jetons de thème — précédence paramètre > jeton > rien.
+- **Bande d'état** et **états d'envoi** : le socle **rend** ce que l'hôte lui donne ; il ne sonde pas le réseau et n'applique aucune politique de quota.
+- **Pièces jointes de bout en bout** : aperçu monté au rang des propositions, progression au rang des annonces, tranche d'état de téléversement (un **compteur** de transferts, deux envois simultanés étant nominaux), trois causes de rejet distinguées, geste de relecture sur une vignette.
+- **Suggestions** agrégées **par conversation** et rendues au rang des propositions — montées seulement si l'hôte déclare quoi faire d'une suggestion, le socle n'arbitrant pas entre « semer le texte » et « exécuter l'action ».
+- **Brouillon** sauvegardé et restauré par le port du noyau. Le socle **ne persiste rien lui-même** ; port absent ⇒ inerte, rien ne lève.
+- **Puce d'outil** et **puce à paliers**, pilotées par ce que le noyau porte déjà ; **description** et **badge** sur une option de modèle.
+- **Teinte permanente d'artefact** (`alwaysAccented`) : la couleur peut dire la **nature** de l'artefact, là où le défaut la réserve à son **existence**. Opt-in strict.
+
+### Attention
+- 🔴 **Le bandeau d'édition change de place** chez un hôte utilisant le composer par défaut : il passe de juste au-dessus du champ au haut du cadre. Qui compensait cette position par une marge ou un séparateur doit la **retirer**.
+- **Une saisie en cours l'emporte sur un brouillon restauré** — vérifié à l'entrée **et** après l'attente asynchrone, puisque c'est pendant celle-ci que l'utilisateur peut s'être mis à écrire.
+- **Hôte ayant compensé le cadre** par sa propre boîte : la retirer **au moment où il pose un jeton**, sinon double contour et double rayon.
+- Les bascules existantes **n'ont pas été migrées** vers la puce commune : mesure faite, les pixels sont identiques mais les deux familles n'ont pas la même source d'état — migrer aurait imposé de **fabriquer** une donnée que la source ne possède pas.
+
 ## 3.11.0 — 2026-08-23
 
 ### Ajouté

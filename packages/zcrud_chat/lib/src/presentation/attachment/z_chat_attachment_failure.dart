@@ -17,6 +17,11 @@
 ///   [fileTooLarge] — bornes locales et purement ergonomiques (éviter un
 ///   aller-retour réseau certain d'échouer). Elles ne sont pas des contrôles
 ///   de sécurité et ne prétendent pas l'être.
+/// * [ZChatAttachmentRejection.permissionDenied], [sourceUnavailable],
+///   [fileUnreadable] — trois causes de sélection que la PLATEFORME nomme.
+///   Elles ne sont jamais devinées : elles arrivent au contrôleur parce
+///   qu'un `ZChatAttachmentPicker` les a nommées, et le socle les relaie.
+///   Ce qu'il ne sait pas lire retombe sur [ZChatAttachmentRejection.pickFailed].
 /// * [ZChatAttachmentRejection.rejectedByServer] — le serveur a refusé. Le
 ///   client transporte son verdict ([ZChatAttachmentFailure.cause]) sans
 ///   l'interpréter : exposer ce qui échoue, sans décider à la place de
@@ -37,8 +42,13 @@ enum ZChatAttachmentRejection {
   /// Fichier au-delà de la borne locale de taille.
   fileTooLarge,
 
-  /// Le sélecteur de la plateforme a échoué (permission refusée, caméra
-  /// indisponible, fichier illisible…).
+  /// Le sélecteur de la plateforme a échoué, sans cause discernable.
+  ///
+  /// C'est le **repli** de la famille de sélection : une cause que la
+  /// plateforme n'a pas nommée, ou qu'elle a nommée d'une façon que ce socle
+  /// ne sait pas lire, retombe ici — sans exception (invariant AD-10). Les
+  /// causes nommées ont leurs propres valeurs : [permissionDenied],
+  /// [sourceUnavailable], [fileUnreadable].
   pickFailed,
 
   /// Le téléversement a échoué pour une raison de transport.
@@ -47,7 +57,52 @@ enum ZChatAttachmentRejection {
   /// Le serveur a refusé (antivirus, contrôle d'accès, quota multimodal…).
   /// Le client n'a rien décidé : il relaie.
   rejectedByServer,
+
+  /// L'utilisateur — ou la plateforme — a **refusé l'accès** à la source.
+  ///
+  /// Le remède est un réglage système : aucun réessai ne peut aboutir tant
+  /// que l'autorisation n'a pas changé. C'est ce qui distingue ce motif de
+  /// [sourceUnavailable] et de [fileUnreadable], que le même message
+  /// couvrirait à tort.
+  permissionDenied,
+
+  /// La source elle-même est **indisponible** : pas d'appareil photo, service
+  /// de galerie absent, sélecteur non installé sur la plateforme.
+  ///
+  /// Rien à autoriser et rien à relire : l'affordance n'a simplement pas de
+  /// moteur derrière elle.
+  sourceUnavailable,
+
+  /// Le fichier choisi n'a **pas pu être lu** : introuvable, effacé entre le
+  /// choix et la lecture, corrompu, ou verrouillé par une autre application.
+  fileUnreadable,
 }
+
+/// Les motifs qu'un `ZChatAttachmentPicker` peut légitimement rendre.
+///
+/// Ce socle ne **devine** aucune cause : il ne la distingue que là où la
+/// plateforme la lui a donnée, c'est-à-dire quand l'implémentation d'hôte
+/// rend elle-même un [ZChatAttachmentFailure] portant l'un de ces motifs.
+/// Tout autre échec — y compris un motif de cette énumération qui n'a rien à
+/// faire dans une sélection ([ZChatAttachmentRejection.rejectedByServer], par
+/// exemple) — retombe sur [ZChatAttachmentRejection.pickFailed].
+const Set<ZChatAttachmentRejection> kZChatPickRejections =
+    <ZChatAttachmentRejection>{
+      ZChatAttachmentRejection.pickFailed,
+      ZChatAttachmentRejection.permissionDenied,
+      ZChatAttachmentRejection.sourceUnavailable,
+      ZChatAttachmentRejection.fileUnreadable,
+    };
+
+/// Le motif de sélection porté par [failure], ou le repli.
+///
+/// Un seul site de décision : la règle « le socle relaie, il ne devine pas »
+/// vaut d'être écrite une fois, pas à chaque site d'appel.
+ZChatAttachmentRejection zChatPickRejectionOf(ZFailure failure) =>
+    failure is ZChatAttachmentFailure &&
+        kZChatPickRejections.contains(failure.reason)
+    ? failure.reason
+    : ZChatAttachmentRejection.pickFailed;
 
 /// Échec typé d'une opération de pièce jointe.
 ///

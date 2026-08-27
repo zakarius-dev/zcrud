@@ -13,7 +13,8 @@
 ///   `TextAlign.start` — jamais `left`/`right`, sans quoi la bande est à
 ///   l'envers en RTL ;
 /// * sémantique : chaque vignette est un nœud annoncé, chaque retrait est un
-///   `Semantics(button: true)`.
+///   `Semantics(button: true)` — de même pour l'affordance de relecture de
+///   texte, quand l'hôte la câble.
 ///
 /// ## Aucune image n'est décodée ici
 ///
@@ -42,12 +43,26 @@ import 'z_chat_message_tile.dart' show kZChatMinTapTarget;
 typedef ZChatAttachmentThumbnailBuilder =
     Widget? Function(BuildContext context, ZPendingAttachment attachment);
 
+/// Le geste de **relecture de texte** offert sur une vignette.
+///
+/// Le socle PROPOSE l'affordance ; l'hôte l'EXÉCUTE. Ce paquet ne décide ni
+/// du moteur, ni de ce qu'on fait du texte reconnu : `ZChatOcrPort` est une
+/// couture d'hôte, et déposer le texte dans le brouillon, l'ouvrir en
+/// relecture ou l'ignorer sont trois politiques légitimes qui n'appartiennent
+/// pas à une bande de vignettes.
+///
+/// Les octets sont fournis tels quels : une implémentation les passe à
+/// `ZChatOcrRequest.bytes` sans rien recalculer.
+typedef ZChatAttachmentScanCallback =
+    void Function(ZPendingAttachment attachment);
+
 /// Rend les pièces jointes **en attente** d'un [ZChatAttachmentController].
 class ZChatAttachmentStrip extends StatelessWidget {
   /// Construit la bande.
   const ZChatAttachmentStrip({
     required this.controller,
     this.thumbnailBuilder,
+    this.onScanText,
     this.height = _kStripHeight,
     super.key,
   });
@@ -58,6 +73,16 @@ class ZChatAttachmentStrip extends StatelessWidget {
 
   /// Couture d'aperçu, ou `null` (aucune vignette).
   final ZChatAttachmentThumbnailBuilder? thumbnailBuilder;
+
+  /// Le geste de relecture de texte, ou `null` — aucune affordance de
+  /// relecture n'entre alors dans l'arbre (invariant AD-4), jamais un bouton
+  /// inerte.
+  ///
+  /// L'affordance n'est offerte que sur une pièce dont le socle sait qu'elle
+  /// porte une image ([ZPendingAttachment.isImage]) : proposer d'extraire du
+  /// texte d'un PDF déjà textuel serait une promesse que ce paquet ne tient
+  /// pas.
+  final ZChatAttachmentScanCallback? onScanText;
 
   /// Hauteur de la bande demandée par l'hôte.
   ///
@@ -78,6 +103,7 @@ class ZChatAttachmentStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ZcrudTheme theme = ZcrudTheme.of(context);
+    final ZChatAttachmentScanCallback? scan = onScanText;
     return ValueListenableBuilder<List<ZPendingAttachment>>(
       valueListenable: controller.pending,
       builder:
@@ -116,6 +142,9 @@ class ZChatAttachmentStrip extends StatelessWidget {
                         attachment: attachment,
                         thumbnail: thumbnailBuilder?.call(context, attachment),
                         onRemove: () => controller.remove(index),
+                        onScanText: scan == null || !attachment.isImage
+                            ? null
+                            : () => scan(attachment),
                       ),
                     );
                   },
@@ -133,12 +162,14 @@ class _ZAttachmentChip extends StatelessWidget {
     required this.attachment,
     required this.onRemove,
     this.thumbnail,
+    this.onScanText,
     super.key,
   });
 
   final ZPendingAttachment attachment;
   final Widget? thumbnail;
   final VoidCallback onRemove;
+  final VoidCallback? onScanText;
 
   @override
   Widget build(BuildContext context) {
@@ -187,8 +218,61 @@ class _ZAttachmentChip extends StatelessWidget {
         const SizedBox(
           width: ZChatComposerReference.attachmentRemoveStartGap,
         ),
+        if (onScanText != null) ...<Widget>[
+          _ZChipAction(
+            onTap: onScanText!,
+            labelKey: kZChatLabelScanText,
+          ),
+          const SizedBox(
+            width: ZChatComposerReference.attachmentRemoveStartGap,
+          ),
+        ],
         _ZRemoveButton(onRemove: onRemove),
       ],
+    );
+  }
+}
+
+/// Une action de vignette — cible ≥ 48 dp, sémantique de bouton, libellé
+/// résolu par le registre.
+///
+/// La même primitive que le retrait, et non une seconde forme : deux cibles
+/// voisines sur la même vignette qui ne partageraient ni leur plancher
+/// tactile ni leur sémantique divergeraient au premier changement.
+class _ZChipAction extends StatelessWidget {
+  const _ZChipAction({required this.onTap, required this.labelKey});
+
+  final VoidCallback onTap;
+  final String labelKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final String label = zChatLabel(context, labelKey);
+    return Semantics(
+      // `container` explicite : sans lui, l'annotation FUSIONNE dans le nœud
+      // du parent au lieu d'être un nœud de bouton à elle. Deux affordances
+      // voisines sur la même vignette deviendraient alors un seul nœud
+      // ambigu pour un lecteur d'écran.
+      container: true,
+      button: true,
+      label: label,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: ZChatComposerReference.attachmentRemoveTargetSize,
+            minWidth: ZChatComposerReference.attachmentRemoveTargetSize,
+          ),
+          child: Align(
+            // Invariant AD-13 : alignement directionnel.
+            alignment: AlignmentDirectional.center,
+            child: Text(label, textAlign: TextAlign.start),
+          ),
+        ),
+      ),
     );
   }
 }

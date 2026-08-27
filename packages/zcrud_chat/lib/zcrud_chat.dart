@@ -169,9 +169,19 @@ export 'src/presentation/view/z_chat_composer.dart';
 // badge, arrêt câblé sur le verbe existant `runAction(ZChatCancelAction)`,
 // bandeau d'édition) ; et `ZDefaultChatComposer`, l'assemblage par défaut
 // opt-in de ces pièces.
+// S'y ajoutent les PUCES D'OUTIL — `ZChatComposerToolChip` (icône au repos,
+// libellé dès l'état actif, badge du compte que l'état détient, entrée
+// indisponible rendue, inerte et expliquée) et `ZChatComposerCycleChip`
+// (le palier d'un outil à crans) : elles sont pilotées par le
+// `ZChatToolController` déjà partagé avec la feuille d'outils, et
+// n'écoutent que la tranche de leur entrée. Elles sont OFFERTES, jamais
+// imposées : le créneau des outils reste libre.
 export 'src/presentation/view/z_chat_composer_band.dart';
 export 'src/presentation/view/z_chat_composer_chrome.dart';
 export 'src/presentation/view/z_chat_composer_keys.dart';
+// Le sélecteur de modèle à contrat opaque ; `ZChatModelOption` porte, en
+// plus de son libellé, une DESCRIPTION (texte ou clé) et un BADGE d'hôte —
+// additifs : `null` de part et d'autre, le menu est rendu comme avant.
 export 'src/presentation/view/z_chat_composer_model_selector.dart';
 export 'src/presentation/view/z_chat_composer_reference.dart';
 export 'src/presentation/view/z_chat_conversation_actions.dart';

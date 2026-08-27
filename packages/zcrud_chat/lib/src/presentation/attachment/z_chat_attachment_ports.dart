@@ -27,6 +27,7 @@ library;
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 import 'package:zcrud_core/domain.dart';
 
+import 'z_chat_attachment_failure.dart';
 import 'z_pending_attachment.dart';
 
 /// D'où provient le fichier choisi.
@@ -59,6 +60,21 @@ abstract class ZChatAttachmentPicker {
   /// * `Right(ZPendingAttachment)` — un fichier a été choisi ;
   /// * `Right(null)` — l'utilisateur a **annulé** (issue nominale) ;
   /// * `Left(ZFailure)` — le sélecteur a échoué.
+  ///
+  /// ## Nommer la cause d'un échec
+  ///
+  /// Trois causes appellent trois messages différents — « fichier
+  /// introuvable » n'est pas « accès caméra refusé ». Seule la plateforme les
+  /// connaît : ce socle ne les devine pas et ne les infère d'aucun texte.
+  ///
+  /// Une implémentation qui sait laquelle s'est produite rend un
+  /// `Left(ZChatAttachmentFailure(..., reason: …))` portant
+  /// [ZChatAttachmentRejection.permissionDenied],
+  /// [ZChatAttachmentRejection.sourceUnavailable] ou
+  /// [ZChatAttachmentRejection.fileUnreadable] : le contrôleur relaie ce
+  /// motif tel quel. Tout autre `ZFailure` — et toute implémentation qui ne
+  /// sait pas discriminer — retombe sur
+  /// [ZChatAttachmentRejection.pickFailed], sans exception (invariant AD-10).
   Future<ZResult<ZPendingAttachment?>> pick(ZChatAttachmentSource source);
 }
 

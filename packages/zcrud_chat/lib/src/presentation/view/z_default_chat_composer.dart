@@ -45,10 +45,13 @@ library;
 
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
+import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart' show ZChatSuggestion;
 
+import '../attachment/z_chat_attachment_controller.dart';
 import '../settings/z_chat_settings_controller.dart';
 import '../z_chat_assembly_contract.dart';
 import '../z_chat_controller.dart';
+import 'z_chat_attachment_strip.dart';
 import 'z_chat_composer.dart';
 import 'z_chat_composer_band.dart';
 import 'z_chat_composer_chrome.dart';
@@ -106,7 +109,17 @@ class ZDefaultChatComposer extends StatelessWidget {
     this.dictationGlyph,
     this.dictationListeningGlyph,
     this.dictationBuilder,
+    this.attachments,
+    this.attachmentThumbnailBuilder,
+    this.onScanAttachment,
+    this.attachmentsBuilder,
+    this.progressBuilder,
     this.editingBannerBuilder,
+    this.onSelectSuggestion,
+    this.suggestionGlyphBuilder,
+    this.suggestionsBuilder,
+    this.draftNoticeGlyph,
+    this.draftNoticeBuilder,
     this.plusBuilder,
     this.thinkingBuilder,
     this.webSearchBuilder,
@@ -276,6 +289,37 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// Remplace le déclencheur de dictée (règle des trois cas).
   final ZChatComposerSlotBuilder? dictationBuilder;
 
+  /// Le contrôleur de pièces jointes — ni créé ni disposé ici (invariant
+  /// AD-2). `null` signifie qu'aucune pièce de pièce jointe n'entre dans
+  /// l'arbre : ni l'aperçu du rang 4, ni la progression du rang 2.
+  ///
+  /// Fourni, il est aussi distribué aux créneaux d'hôte par
+  /// [ZChatComposerSlot.attachments] : un builder d'hôte n'a pas à se le
+  /// faire passer une seconde fois.
+  final ZChatAttachmentController? attachments;
+
+  /// Couture d'aperçu des vignettes — passée telle quelle à
+  /// [ZChatAttachmentStrip.thumbnailBuilder]. `null` signifie aucune
+  /// vignette : le socle ne décode aucune image.
+  final ZChatAttachmentThumbnailBuilder? attachmentThumbnailBuilder;
+
+  /// Le geste de **relecture de texte** offert sur une vignette d'image.
+  ///
+  /// Le socle propose l'affordance, l'hôte l'exécute (il détient le moteur
+  /// `ZChatOcrPort` et décide de ce que devient le texte reconnu). `null`
+  /// signifie aucune affordance (invariant AD-4).
+  final ZChatAttachmentScanCallback? onScanAttachment;
+
+  /// Remplace l'aperçu des pièces jointes du rang 4 (règle des trois cas).
+  final ZChatComposerSlotBuilder? attachmentsBuilder;
+
+  /// Remplace la progression du rang 2 (règle des trois cas).
+  ///
+  /// Le défaut du socle ANNONCE qu'un téléversement tourne ; il n'affiche
+  /// aucun pourcentage, faute de compteur d'octets. Un hôte qui en a un
+  /// remplace la pièce entière par ce builder.
+  final ZChatComposerSlotBuilder? progressBuilder;
+
   /// Overrides pièce par pièce — règle des trois cas (absent donne le
   /// défaut ; widget rendu remplace ; `null` rendu donne une pièce absente,
   /// invariant AD-4).
@@ -349,13 +393,43 @@ class ZDefaultChatComposer extends StatelessWidget {
         maxLines: ZChatComposerReference.fieldMaxLines,
         submitPolicy: submitPolicy,
         padding: style.fieldContentPadding,
+        attachmentController: attachments,
         hint: _hintSlot(),
+        // LES RANGS, dans l'ordre du cadre. Le bandeau d'édition vit au rang
+        // 1 — son rang —, plus dans le créneau `capture` : monté aux deux, un
+        // hôte qui fournit `editingBanner` le verrait DEUX FOIS.
+        status: _draftNoticeSlot(),
+        editingBanner: _editingBannerSlot(),
+        progress: _progressSlot(),
+        suggestions: _suggestionsSlot(),
+        attachments: _attachmentsSlot(),
         capture: _captureSlot(),
         trailing: _trailingSlot(),
         tools: _bandSlotOrNull(style),
       ),
     );
   }
+
+  /// Ce que taper une proposition du rang 3 déclenche. `null` ⇒ le rang 3
+  /// n'est pas monté.
+  ///
+  /// Le socle ne choisit pas la politique : semer le texte dans la saisie
+  /// (`controller.seedDraft(suggestion.content)`) et exécuter l'action portée
+  /// par la proposition sont deux réponses également légitimes.
+  final void Function(ZChatSuggestion suggestion)? onSelectSuggestion;
+
+  /// Glyphe d'HÔTE par proposition. `null` ⇒ aucun glyphe (AD-4).
+  final Widget? Function(BuildContext context, ZChatSuggestion suggestion)?
+      suggestionGlyphBuilder;
+
+  /// Remplace le rang 3 entier.
+  final ZChatComposerSlotBuilder? suggestionsBuilder;
+
+  /// Glyphe d'HÔTE de l'indicateur de brouillon restitué.
+  final Widget? draftNoticeGlyph;
+
+  /// Remplace le rang 0 entier.
+  final ZChatComposerSlotBuilder? draftNoticeBuilder;
 
   /// Créneau `hint` : le placeholder animé quand l'hôte fournit des
   /// suggestions — sinon l'invite par défaut du composer.
@@ -370,29 +444,94 @@ class ZDefaultChatComposer extends StatelessWidget {
         );
   }
 
-  /// Créneau `capture` (au-dessus du champ) : le bandeau d'édition — qui
-  /// rend les verbes existants du contrôleur — puis l'éventuel slot de
-  /// dictée d'hôte.
-  ZChatComposerSlotBuilder _captureSlot() {
-    return (BuildContext context, ZChatComposerSlot slot) {
-      final Widget? banner = _piece(
-        context,
-        slot,
-        editingBannerBuilder,
-        () => ZChatComposerEditingBanner(
-          controller: controller,
-          glyph: editingGlyph,
-          cancelGlyph: editingCancelGlyph,
-        ),
-      );
-      final Widget? dictate = dictation?.call(context, slot);
-      if (banner == null && dictate == null) return null;
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[?banner, ?dictate],
-      );
-    };
+  /// Créneau `editingBanner` — LE RANG 1, celui des annonces.
+  ///
+  /// Le bandeau n'est monté qu'ICI. Un second montage dans `capture` (son
+  /// ancien créneau) ferait apparaître deux bandeaux dès qu'un hôte
+  /// fournirait le rang 1 lui-même.
+  ZChatComposerSlotBuilder _editingBannerSlot() {
+    return (BuildContext context, ZChatComposerSlot slot) => _piece(
+      context,
+      slot,
+      editingBannerBuilder,
+      () => ZChatComposerEditingBanner(
+        controller: controller,
+        glyph: editingGlyph,
+        cancelGlyph: editingCancelGlyph,
+      ),
+    );
+  }
+
+  /// Créneau `capture` (rang 5, au-dessus du champ) : le slot de dictée
+  /// d'hôte, et lui seul.
+  ///
+  /// `null` quand l'hôte n'en fournit pas : le créneau est alors absent de
+  /// l'arbre (invariant AD-4), jamais une `Column` à un enfant vide.
+  ZChatComposerSlotBuilder? _captureSlot() => dictation;
+
+  /// Créneau `progress` — LE RANG 2.
+  ///
+  /// `null` quand aucun contrôleur de pièces jointes n'est fourni : sans
+  /// tranche à écouter, la pièce n'aurait rien à annoncer.
+  ZChatComposerSlotBuilder? _progressSlot() {
+    if (progressBuilder != null) return progressBuilder;
+    final ZChatAttachmentController? source = attachments;
+    if (source == null) return null;
+    return (BuildContext context, ZChatComposerSlot slot) =>
+        _ZChatUploadProgress(uploading: source.uploading);
+  }
+
+  /// Créneau `suggestions` — LE RANG 3, celui des propositions.
+  ///
+  /// Monté **seulement** si l'hôte a dit ce que taper une proposition fait
+  /// ([onSelectSuggestion]) ou s'il rend le rang lui-même
+  /// ([suggestionsBuilder]). Sans geste déclaré, la bande n'aurait rien à
+  /// faire de ce qu'elle affiche : un hôte passif garde donc l'arbre d'avant,
+  /// rang compris.
+  ZChatComposerSlotBuilder? _suggestionsSlot() {
+    if (suggestionsBuilder != null) return suggestionsBuilder;
+    final void Function(ZChatSuggestion suggestion)? select =
+        onSelectSuggestion;
+    if (select == null) return null;
+    return (BuildContext context, ZChatComposerSlot slot) =>
+        ZChatComposerSuggestionsBand(
+          suggestions: controller.suggestions,
+          onSelect: select,
+          glyphBuilder: suggestionGlyphBuilder,
+        );
+  }
+
+  /// Créneau `status` — LE RANG 0, occupé par l'indicateur de brouillon
+  /// restitué.
+  ///
+  /// Monté **seulement** si le contrôleur porte un `ZChatDraftStore`
+  /// effectif : sans store, rien ne peut être restitué et le rang resterait
+  /// muet à vie.
+  ZChatComposerSlotBuilder? _draftNoticeSlot() {
+    if (draftNoticeBuilder != null) return draftNoticeBuilder;
+    if (!controller.persistsDraft) return null;
+    return (BuildContext context, ZChatComposerSlot slot) =>
+        ZChatComposerDraftNotice(
+          restored: controller.draftRestored,
+          onDismiss: controller.dismissRestoredDraft,
+          glyph: draftNoticeGlyph,
+        );
+  }
+
+  /// Créneau `attachments` — LE RANG 4, celui des propositions.
+  ///
+  /// C'est le fait d'être DANS le cadre, à ce rang, qui fait qu'une vignette
+  /// ajoutée pousse le champ vers le bas au lieu de sortir de la boîte.
+  ZChatComposerSlotBuilder? _attachmentsSlot() {
+    if (attachmentsBuilder != null) return attachmentsBuilder;
+    final ZChatAttachmentController? source = attachments;
+    if (source == null) return null;
+    return (BuildContext context, ZChatComposerSlot slot) =>
+        ZChatAttachmentStrip(
+          controller: source,
+          thumbnailBuilder: attachmentThumbnailBuilder,
+          onScanText: onScanAttachment,
+        );
   }
 
   /// Créneau `trailing` : le bouton d'arrêt (pendant le flux — la pièce se
@@ -594,6 +733,57 @@ class ZDefaultChatComposer extends StatelessWidget {
           ),
         );
         return row;
+      },
+    );
+  }
+}
+
+/// L'annonce « un téléversement tourne » — la pièce par défaut du rang 2.
+///
+/// ## Ce qu'elle dit, et ce qu'elle ne dit pas
+///
+/// Elle annonce qu'un transfert est en cours. Elle n'affiche aucun
+/// pourcentage : la couture de téléversement ne rend pas de compteur
+/// d'octets, et inventer une barre qui n'avance pas serait mentir. Un hôte
+/// qui a la mesure remplace la pièce entière (`progressBuilder`).
+///
+/// ## Ce qu'elle ne reconstruit pas
+///
+/// Elle n'écoute QUE la tranche de téléversement (invariant AD-2) : un octet
+/// qui monte ne reconstruit ni le champ de saisie, ni la bande d'accessoires.
+///
+/// ## Aucune couleur, aucun glyphe inventé
+///
+/// Le rendu est un texte localisé dans la couleur ambiante (FR-26), annoncé
+/// par une région live pour qu'un lecteur d'écran l'entende au lieu de le
+/// rater (invariant AD-13).
+class _ZChatUploadProgress extends StatelessWidget {
+  const _ZChatUploadProgress({required this.uploading});
+
+  final ValueListenable<bool> uploading;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: uploading,
+      builder: (BuildContext context, bool busy, Widget? _) {
+        // Au repos, RIEN — jamais une bande vide qui volerait sa hauteur au
+        // champ de saisie (invariant AD-4).
+        if (!busy) return const SizedBox.shrink();
+        final String message = zChatLabel(context, kZChatLabelUploading);
+        return Padding(
+          padding: ZChatComposerReference.statusBandPadding,
+          child: Semantics(
+            liveRegion: true,
+            label: message,
+            excludeSemantics: true,
+            child: Text(
+              message,
+              textAlign: TextAlign.start,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        );
       },
     );
   }

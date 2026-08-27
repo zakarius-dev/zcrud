@@ -3,6 +3,16 @@
 Toutes les modifications notables de `zcrud_chat_kernel` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.24.0 — 2026-08-27
+
+### Ajouté
+- **Vocabulaire de contexte du composer** : candidat, déclencheur et source de **mention** ; **commande** et son catalogue ; **port de mesure de texte** ; **port de brouillon** (implémentations inerte et en mémoire).
+- Le drapeau de teinte permanente sur la **déclaration** d'artefact, relayé jusqu'à sa spec.
+
+### Attention
+- 🔴 **Le socle transporte, il ne résout pas.** Il n'exécute aucune commande, ne résout aucun candidat, ne filtre ni ne trie — filtrer, c'est résoudre. Un plafond de candidats est **transporté, jamais appliqué**.
+- **Compter des jetons dépend du tokenizer** : le socle ne compte pas, il **demande** au port. Sans port, la mesure est absente — jamais zéro, qui serait pris pour une mesure.
+
 ## 3.10.0 — 2026-08-23
 
 ### Ajouté
