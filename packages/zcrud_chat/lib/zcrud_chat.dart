@@ -72,11 +72,13 @@ library;
 export 'src/presentation/attachment/z_chat_attachment_controller.dart';
 export 'src/presentation/attachment/z_chat_attachment_failure.dart';
 export 'src/presentation/attachment/z_chat_attachment_ports.dart';
+export 'src/presentation/attachment/z_chat_composer_paste_port.dart';
 export 'src/presentation/attachment/z_pending_attachment.dart';
 // Saisie assistée : la dictée et l'OCR entrent par des ports du kernel, et la
 // relecture est structurelle — `ZChatCaptureController.acceptInto` rend un
 // `ZResult<Unit>`, aucune `String` ne s'échappe directement vers l'envoi.
 export 'src/presentation/capture/z_chat_capture_controller.dart';
+export 'src/presentation/capture/z_chat_voice_session_controller.dart';
 export 'src/presentation/conversation/z_chat_conversation_selection.dart';
 export 'src/presentation/conversation/z_chat_group_expansion.dart';
 // Diffusion : la voix passe par la chaîne de repli du kernel ; l'export et le
@@ -176,14 +178,21 @@ export 'src/presentation/view/z_chat_composer.dart';
 // `ZChatToolController` déjà partagé avec la feuille d'outils, et
 // n'écoutent que la tranche de leur entrée. Elles sont OFFERTES, jamais
 // imposées : le créneau des outils reste libre.
+export 'src/presentation/view/z_chat_composer_affordance.dart';
+export 'src/presentation/view/z_chat_composer_affordance_overlay.dart';
 export 'src/presentation/view/z_chat_composer_band.dart';
 export 'src/presentation/view/z_chat_composer_chrome.dart';
+export 'src/presentation/view/z_chat_composer_counter.dart';
+export 'src/presentation/view/z_chat_composer_drop_zone.dart';
+export 'src/presentation/view/z_chat_composer_edit.dart';
+export 'src/presentation/view/z_chat_composer_history.dart';
 export 'src/presentation/view/z_chat_composer_keys.dart';
 // Le sélecteur de modèle à contrat opaque ; `ZChatModelOption` porte, en
 // plus de son libellé, une DESCRIPTION (texte ou clé) et un BADGE d'hôte —
 // additifs : `null` de part et d'autre, le menu est rendu comme avant.
 export 'src/presentation/view/z_chat_composer_model_selector.dart';
 export 'src/presentation/view/z_chat_composer_reference.dart';
+export 'src/presentation/view/z_chat_composer_slots.dart';
 export 'src/presentation/view/z_chat_conversation_actions.dart';
 export 'src/presentation/view/z_chat_conversation_list.dart';
 // L'écran assemblé du CHAT, miroir de l'écran de fil de travail : contrôleur
@@ -232,6 +241,7 @@ export 'src/presentation/view/z_chat_settings_sheet.dart';
 // dépli, format d'horodatage. Rien n'est peint tant qu'elle n'est pas
 // déclarée — cf. `ZChatTileShell`.
 export 'src/presentation/view/z_chat_tile_shell.dart';
+export 'src/presentation/view/z_chat_voice_session_banner.dart';
 export 'src/presentation/view/z_default_chat_composer.dart';
 export 'src/presentation/z_chat_assembly_contract.dart';
 export 'src/presentation/z_chat_controller.dart';

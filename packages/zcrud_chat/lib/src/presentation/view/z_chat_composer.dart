@@ -98,17 +98,22 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
 import '../attachment/z_chat_attachment_controller.dart';
 import '../capture/z_chat_capture_controller.dart';
+import '../capture/z_chat_voice_session_controller.dart';
 import '../settings/z_chat_settings_controller.dart';
 import '../tools/z_chat_tool_controller.dart';
 import '../z_chat_controller.dart';
+import 'z_chat_composer_affordance.dart';
+import 'z_chat_composer_history.dart';
 import 'z_chat_composer_keys.dart';
 import 'z_chat_labels.dart';
 import 'z_chat_message_tile.dart' show kZChatMinTapTarget;
+import 'z_chat_voice_session_banner.dart';
 
 /// Ce que le socle offre à un créneau du composer.
 ///
@@ -256,6 +261,9 @@ class ZChatComposer extends StatefulWidget {
     this.minLines = 1,
     this.maxLines = 5,
     this.submitPolicy = ZChatComposerSubmitPolicy.standard,
+    this.history,
+    this.affordance,
+    this.voice,
     super.key,
   });
 
@@ -442,6 +450,49 @@ class ZChatComposer extends StatefulWidget {
   /// de soumission unique du composer, celui de [ZChatComposerSlot.submit].
   final ZChatComposerSubmitPolicy submitPolicy;
 
+  /// Le rappel d'historique sur **flèche haut**.
+  ///
+  /// `null` — le défaut — signifie qu'aucun rappel n'est monté : la flèche
+  /// haut garde intégralement son sens de navigation, et l'arbre du champ est
+  /// celui d'un composer sans ce geste.
+  ///
+  /// Branché, il n'agit **que sur un champ vide** : dès qu'un caractère est
+  /// saisi, la touche redevient une navigation (cf.
+  /// [ZChatComposerHistoryPort]).
+  final ZChatComposerHistoryPort? history;
+
+  /// Les déclencheurs de contexte (`@`, `/`) et leur panneau de candidats.
+  ///
+  /// `null` — le défaut — signifie qu'aucun déclencheur n'est monté : la
+  /// saisie ne reconnaît rien, aucune touche ne change de sens, et l'arbre du
+  /// champ est celui d'un composer sans cette mécanique.
+  ///
+  /// Branché, il ajoute quatre gestes **au clavier seulement quand un panneau
+  /// est ouvert** : flèches haut/bas pour parcourir, Entrée pour retenir,
+  /// Échap pour fermer. Panneau fermé, ces touches retrouvent leur sens — y
+  /// compris Entrée, qui redevient le raccourci d'envoi.
+  final ZChatComposerAffordanceController? affordance;
+
+  /// La session vocale continue, ou `null`.
+  ///
+  /// `null` — le défaut — signifie qu'aucune session n'est montée : rien n'est
+  /// ajouté à l'arbre, aucune touche ne change de sens, et le composer est
+  /// **à l'octet** celui d'hier.
+  ///
+  /// Branchée, elle ajoute deux choses, et rien d'autre :
+  ///
+  /// * le bandeau d'annonce de la phase, au rang 5 (à côté de la capture, dont
+  ///   la session est le mode continu) ;
+  /// * une couche de clavier qui **arrête la session à la première frappe** —
+  ///   elle ne consomme aucune touche : l'événement poursuit sa route intact
+  ///   vers les gestes, le raccourci d'envoi et la saisie.
+  ///
+  /// La destruction de ce widget arrête la session : une boucle vocale dont la
+  /// zone de saisie a disparu n'a plus de destination pour sa transcription, et
+  /// laisser le micro ouvert derrière un écran fermé est le défaut que cette
+  /// mécanique doit rendre impossible.
+  final ZChatVoiceSessionController? voice;
+
   @override
   State<ZChatComposer> createState() => _ZChatComposerState();
 }
@@ -454,8 +505,33 @@ class _ZChatComposerState extends State<ZChatComposer> {
 
   @override
   void dispose() {
+    // La session est arrêtée parce que ce widget disparaît : c'est le seul
+    // moment où il sait encore qu'elle existe. `stop()` est best-effort et ne
+    // lève jamais (invariant AD-10).
+    //
+    // DIFFÉRÉ d'une microtâche, et ce n'est pas une précaution de style :
+    // `dispose` s'exécute pendant que l'arbre est VERROUILLÉ, et l'arrêt fait
+    // retomber une tranche que le bandeau écoute encore. Arrêter ici même fait
+    // lever « markNeedsBuild called when widget tree was locked » — sur le
+    // chemin le plus nominal qui soit : fermer l'écran pendant que le micro
+    // écoute. La microtâche s'exécute une fois l'arbre déverrouillé, quand le
+    // bandeau s'est déjà désabonné.
+    final ZChatVoiceSessionController? session = widget.voice;
+    if (session != null) scheduleMicrotask(() => unawaited(session.stop()));
     _owned.dispose();
     super.dispose();
+  }
+
+  /// Arrête la session à la première frappe, sans rien consommer.
+  ///
+  /// `KeyEventResult.ignored` est structurel : cette couche observe le
+  /// clavier, elle ne l'intercepte pas. Une frappe traverse donc les gestes,
+  /// le raccourci d'envoi et la saisie exactement comme sans session.
+  KeyEventResult _onComposerKey(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent) {
+      unawaited(widget.voice?.stop() ?? Future<void>.value());
+    }
+    return KeyEventResult.ignored;
   }
 
   /// L'unique site de soumission du composer.
@@ -540,11 +616,29 @@ class _ZChatComposerState extends State<ZChatComposer> {
             // Le MÊME site de soumission que celui du créneau d'envoi.
             onSubmit: _submit,
             submitPolicy: widget.submitPolicy,
+            history: widget.history,
+            affordance: widget.affordance,
           ),
         ),
         if (trailing != null) _ZChatComposerTarget(child: trailing),
       ],
     );
+    final ZChatVoiceSessionController? voice = widget.voice;
+    // La couche de clavier de la session : ancêtre du champ dans l'arbre de
+    // focus, donc elle VOIT chaque frappe qui atteint la saisie — et elle la
+    // laisse passer (`KeyEventResult.ignored`). Sans session, `anchor` est
+    // rendue telle quelle.
+    final Widget anchorRow = voice == null
+        ? anchor
+        : Focus(
+            // Elle observe, elle ne prend jamais le focus : sans ces deux
+            // réglages, une couche invisible s'insérerait dans le parcours au
+            // clavier et volerait une tabulation au champ.
+            canRequestFocus: false,
+            skipTraversal: true,
+            onKeyEvent: _onComposerKey,
+            child: anchor,
+          );
     final bool bandAbove =
         widget.bandPlacement == ZChatComposerBandPlacement.above;
 
@@ -566,9 +660,12 @@ class _ZChatComposerState extends State<ZChatComposer> {
             ?progress, // 2 — annonce
             ?suggestions, // 3 — proposition
             ?attachments, // 4 — proposition
+            // 5 — proposition : la session vocale annonce sa phase à côté de
+            // la capture, dont elle est le mode continu.
+            if (voice != null) ZChatVoiceSessionBanner(controller: voice),
             ?capture, // 5 — proposition
             if (bandAbove && tools != null) tools, // 7, remonté devant l'ancre
-            anchor, // 6 — l'ancre
+            anchorRow, // 6 — l'ancre
             if (!bandAbove && tools != null) tools, // 7 — accessoire
             ?counter, // 8 — accessoire
           ],
@@ -594,6 +691,8 @@ class _ZChatComposerField extends StatelessWidget {
     required this.submitPolicy,
     this.hint,
     this.suppressHint = false,
+    this.history,
+    this.affordance,
   });
 
   final ZChatController controller;
@@ -614,6 +713,86 @@ class _ZChatComposerField extends StatelessWidget {
   /// `true` signifie aucune invite visuelle (le builder d'hôte a rendu
   /// `null`, invariant AD-4).
   final bool suppressHint;
+
+  /// Le rappel d'historique, ou `null` — le geste n'est alors pas monté.
+  final ZChatComposerHistoryPort? history;
+
+  /// Les déclencheurs de contexte, ou `null` — les gestes ne sont pas montés.
+  final ZChatComposerAffordanceController? affordance;
+
+  /// Monte les gestes additifs autour du champ.
+  ///
+  /// Rend [field] **inchangé** quand rien n'est déclaré : l'inertie est
+  /// structurelle, pas promise.
+  Widget _withGestures(Widget field) {
+    Widget monte = field;
+    // ORDRE DES COUCHES — la plus INTERNE est consultée la première.
+    //
+    // Le panneau de candidats vient donc en premier : tant qu'il est ouvert,
+    // les flèches le parcourent et Entrée y retient un candidat. Fermé, ses
+    // actions sont DÉSACTIVÉES, la frappe poursuit sa route, et la couche
+    // suivante la reçoit intacte — le rappel d'historique, puis le raccourci
+    // d'envoi, puis les raccourcis d'édition de Flutter.
+    monte = _withAffordance(monte);
+    monte = _withHistory(monte);
+    return monte;
+  }
+
+  Widget _withAffordance(Widget field) {
+    final ZChatComposerAffordanceController? panneau = affordance;
+    if (panneau == null) return field;
+    return Shortcuts(
+      shortcuts: const <ShortcutActivator, Intent>{
+        SingleActivator(LogicalKeyboardKey.arrowUp):
+            ZChatComposerAffordancePreviousIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowDown):
+            ZChatComposerAffordanceNextIntent(),
+        SingleActivator(LogicalKeyboardKey.enter):
+            ZChatComposerAffordanceCommitIntent(),
+        SingleActivator(LogicalKeyboardKey.escape):
+            ZChatComposerAffordanceDismissIntent(),
+      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          ZChatComposerAffordancePreviousIntent: _ZChatAffordanceMoveAction<
+            ZChatComposerAffordancePreviousIntent
+          >(panel: panneau, delta: -1),
+          ZChatComposerAffordanceNextIntent: _ZChatAffordanceMoveAction<
+            ZChatComposerAffordanceNextIntent
+          >(panel: panneau, delta: 1),
+          ZChatComposerAffordanceCommitIntent: _ZChatAffordanceCommitAction(
+            panel: panneau,
+          ),
+          ZChatComposerAffordanceDismissIntent: _ZChatAffordanceDismissAction(
+            panel: panneau,
+          ),
+        },
+        child: field,
+      ),
+    );
+  }
+
+  Widget _withHistory(Widget field) {
+    final ZChatComposerHistoryPort? recall = history;
+    if (recall == null) return field;
+    return Shortcuts(
+      shortcuts: const <ShortcutActivator, Intent>{
+        SingleActivator(LogicalKeyboardKey.arrowUp):
+            ZChatComposerHistoryIntent(),
+      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          ZChatComposerHistoryIntent: ZChatComposerHistoryAction(
+            // La MÊME tranche que celle du champ : le rappel écrit là où la
+            // saisie se lit, jamais dans une copie.
+            composer: controller.composer,
+            history: recall,
+          ),
+        },
+        child: field,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -638,6 +817,12 @@ class _ZChatComposerField extends StatelessWidget {
       // Le MÊME site de soumission que celui du créneau d'envoi.
       onSubmitted: (String _) => onSubmit(),
     );
+    // Gestes additifs montés SEULEMENT quand l'hôte les a déclarés : sans
+    // déclaration, `core` EST le champ, et non un `Shortcuts` inerte de plus
+    // dans l'arbre. C'est la couche la plus INTERNE — plus interne que le
+    // raccourci d'envoi — pour que ses actions désactivées laissent la frappe
+    // poursuivre sa route vers les raccourcis d'édition de Flutter.
+    final Widget core = _withGestures(field);
     return Semantics(
       container: true,
       textField: true,
@@ -654,7 +839,7 @@ class _ZChatComposerField extends StatelessWidget {
         children: <Widget>[
           if (!suppressHint) _ZChatComposerHint(controller: controller, hint: hint),
           if (resolved == ZChatComposerSubmitKey.none)
-            field
+            core
           else
             Shortcuts(
               // Posée SOUS `DefaultTextEditingShortcuts` (inséré par
@@ -673,7 +858,7 @@ class _ZChatComposerField extends StatelessWidget {
                         },
                       ),
                 },
-                child: field,
+                child: core,
               ),
             ),
         ],
@@ -768,5 +953,66 @@ class _ZChatComposerTarget extends StatelessWidget {
         child: child,
       ),
     );
+  }
+}
+
+/// Déplace la mise en avant — **désactivée** quand aucun panneau n'est ouvert,
+/// pour que la flèche poursuive sa route vers la couche suivante.
+class _ZChatAffordanceMoveAction<T extends Intent> extends Action<T> {
+  _ZChatAffordanceMoveAction({required this.panel, required this.delta});
+
+  // Nommé `panel`, jamais `controller` : le fichier du composer ne doit
+  // toucher du `ZChatController` que `composer`, `canSend` et `send`, et la
+  // garde qui l'exige lit le motif `controller.<membre>` sur tout le fichier.
+  final ZChatComposerAffordanceController panel;
+  final int delta;
+
+  @override
+  bool isEnabled(T intent) {
+    final ZChatComposerAffordanceState s = panel.state.value;
+    return s.isOpen && s.entries.isNotEmpty;
+  }
+
+  @override
+  Object? invoke(T intent) {
+    panel.moveSelection(delta);
+    return null;
+  }
+}
+
+/// Retient le candidat mis en avant — **désactivée** panneau fermé, ce qui
+/// rend Entrée au raccourci d'envoi.
+class _ZChatAffordanceCommitAction
+    extends Action<ZChatComposerAffordanceCommitIntent> {
+  _ZChatAffordanceCommitAction({required this.panel});
+
+  final ZChatComposerAffordanceController panel;
+
+  @override
+  bool isEnabled(ZChatComposerAffordanceCommitIntent intent) =>
+      panel.state.value.selected != null;
+
+  @override
+  Object? invoke(ZChatComposerAffordanceCommitIntent intent) {
+    panel.commit();
+    return null;
+  }
+}
+
+/// Ferme sans rien retenir — **désactivée** panneau fermé.
+class _ZChatAffordanceDismissAction
+    extends Action<ZChatComposerAffordanceDismissIntent> {
+  _ZChatAffordanceDismissAction({required this.panel});
+
+  final ZChatComposerAffordanceController panel;
+
+  @override
+  bool isEnabled(ZChatComposerAffordanceDismissIntent intent) =>
+      panel.state.value.isOpen;
+
+  @override
+  Object? invoke(ZChatComposerAffordanceDismissIntent intent) {
+    panel.dismiss();
+    return null;
   }
 }

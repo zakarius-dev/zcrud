@@ -3,6 +3,21 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.25.0 — 2026-08-27
+
+### Ajouté
+- **Gestes d'entrée, en ports et créneaux** : port de collage, zone de dépôt, rappel du dernier message sur flèche haut, compteur adossé au port de mesure. Le socle **reçoit et transmet** — il ne lit pas le presse-papier, n'ouvre aucun fichier, ne compte aucun jeton.
+- **Déclencheurs de contexte** (`@` et `/`) : reconnaissance dans la saisie et présentation des candidats fournis par l'hôte, appuyées sur le vocabulaire du noyau. Le socle **ne filtre pas, ne trie pas, ne tronque pas** et n'exécute aucune commande ; un plafond de candidats est **transporté, jamais appliqué**.
+- **Session vocale continue** : la boucle écouter → soumettre → énoncer → réécouter, qui manquait entre deux ports déjà présents. Elle **appelle** la dictée ponctuelle existante au lieu de la dupliquer, et **refuse d'envoyer sans surface de relecture montée**.
+- **Porteur de créneaux pour les écrans assemblés** : styliser une pièce du composer sans remonter un composer entier — et **sans perdre** les cinq câblages que l'écran fait pour l'hôte (contrôleur de réglages, feuille projetée, badge et son arbitrage, sélecteur de routeur, jetons).
+
+### Attention
+- 🔴 **Déclarer à la fois le remplacement total du composer et le porteur de créneaux lève en debug** : deux intentions contradictoires. Le remplacement total reste l'échappatoire et prime. Migrer en **un seul** changement.
+- 🔴 **Hôte ayant câblé sa propre boucle dictée ↔ énoncé** : la **retirer** avant d'adopter le créneau vocal, sous peine de **deux micros ouverts**.
+- **Hôte ayant compensé** par un composer complet pour styliser une pièce : il retire ce composer, passe le porteur, et **récupère** le câblage — s'il avait recopié l'arbitrage du badge, il doit le retirer, sinon double comptage.
+- Le créneau de modèle **prime** sur le sélecteur de routeur quand une session de routage est déclarée.
+- La flèche haut ne rappelle le dernier message que dans un champ **vide** : dès qu'il contient du texte, la touche garde son sens de navigation.
+
 ## 3.24.0 — 2026-08-27
 
 ### Ajouté

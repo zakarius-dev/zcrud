@@ -173,12 +173,35 @@ void main() {
       expect(sites, isNotEmpty,
           reason: '🔴 GARDE VACUELLE : plus aucune écriture — la capture '
               'n\'atteindrait plus jamais le composer');
+      // Deux fichiers, et deux seulement, ont le droit d'écrire dans la
+      // saisie :
+      //  * le contrôleur de capture, qui CONCATÈNE le texte relu ;
+      //  * le site d'écriture unique des gestes de contexte, qui ne sait que
+      //    remplacer un intervalle en préservant tout ce qui est en dehors
+      //    (rappel d'historique, insertion d'un candidat).
+      // Tout autre fichier est un chemin de plus, et c'est ce que cette garde
+      // refuse. La PRÉSERVATION de chacun des deux est assertée séparément —
+      // ici et dans les gardes des gestes.
+      const Set<String> autorises = <String>{
+        'z_chat_capture_controller.dart',
+        'z_chat_composer_edit.dart',
+      };
       expect(
-        sites.every((String s) => s.contains('z_chat_capture_controller.dart')),
-        isTrue,
+        sites
+            .where(
+              (String s) => !autorises.any((String f) => s.contains(f)),
+            )
+            .toList(),
+        isEmpty,
         reason: '🔴 un TROISIÈME chemin écrit dans la saisie de l\'utilisateur. '
             'IFFD en avait cinq, dont un qui SUPPRIME la question tapée à '
             'l\'annulation. Sites : $sites',
+      );
+      expect(
+        sites.where((String s) => s.contains('z_chat_composer_edit.dart')),
+        hasLength(1),
+        reason: '🔴 le site d\'écriture des gestes doit rester UNIQUE dans son '
+            'propre fichier : deux écritures = deux comportements possibles',
       );
     });
 

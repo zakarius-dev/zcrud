@@ -19,7 +19,7 @@ repo privé `zakarius-dev/zcrud` :
 
 ## Épinglage
 
-Utiliser un **tag de release** (ex. `v3.24.0`) comme `ref`, jamais `main` (stabilité
+Utiliser un **tag de release** (ex. `v3.25.0`) comme `ref`, jamais `main` (stabilité
 et reproductibilité). Le versionnage se fait **par tag git**, pas par contrainte
 `^0.4.5`.
 
@@ -52,22 +52,22 @@ export + annotations :
 ```yaml
 dependencies:
   zcrud_flashcard:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_flashcard }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_flashcard }
   # … les autres packages RÉELLEMENT importés par ton code
 
 # OBLIGATOIRE : impose la source git à TOUTE la fermeture transitive `zcrud_*`.
 # Doit lister les packages transitifs même si tu ne les importes jamais toi-même.
 dependency_overrides:
   zcrud_core:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_core }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_core }
   zcrud_annotations:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_annotations }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_annotations }
   zcrud_study_kernel:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_study_kernel }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_study_kernel }
   zcrud_markdown:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_markdown }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_markdown }
   zcrud_export:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_export }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_export }
 ```
 
 ---
@@ -131,87 +131,87 @@ graphe atteint — pas seulement ceux que vous importez.
 ```yaml
 dependency_overrides:
   zcrud_annotations:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_annotations }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_annotations }
   zcrud_chat:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_chat }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_chat }
   zcrud_chat_kernel:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_chat_kernel }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_chat_kernel }
   zcrud_chat_syncfusion:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_chat_syncfusion }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_chat_syncfusion }
   zcrud_chat_study:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_chat_study }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_chat_study }
   zcrud_chat_markdown:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_chat_markdown }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_chat_markdown }
   zcrud_chat_firestore:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_chat_firestore }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_chat_firestore }
   zcrud_chat_material:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_chat_material }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_chat_material }
   zcrud_core:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_core }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_core }
   zcrud_dnd:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_dnd }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_dnd }
   zcrud_document:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_document }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_document }
   zcrud_exam:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_exam }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_exam }
   zcrud_export:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_export }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_export }
   zcrud_export_pdf:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_export_pdf }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_export_pdf }
   zcrud_export_ui:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_export_ui }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_export_ui }
   zcrud_field_extras:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_field_extras }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_field_extras }
   zcrud_firestore:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_firestore }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_firestore }
   zcrud_flashcard:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_flashcard }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_flashcard }
   zcrud_generator:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_generator }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_generator }
   zcrud_geo:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_geo }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_geo }
   zcrud_geo_location:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_geo_location }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_geo_location }
   zcrud_get:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_get }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_get }
   zcrud_html:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_html }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_html }
   zcrud_intl:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_intl }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_intl }
   zcrud_list:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_list }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_list }
   zcrud_markdown:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_markdown }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_markdown }
   zcrud_media:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_media }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_media }
   zcrud_menu:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_menu }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_menu }
   zcrud_mindmap:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_mindmap }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_mindmap }
   zcrud_navigation:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_navigation }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_navigation }
   zcrud_note:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_note }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_note }
   zcrud_provider:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_provider }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_provider }
   zcrud_reorder:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_reorder }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_reorder }
   zcrud_responsive:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_responsive }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_responsive }
   zcrud_riverpod:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_riverpod }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_riverpod }
   zcrud_screen:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_screen }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_screen }
   zcrud_select:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_select }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_select }
   zcrud_session:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_session }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_session }
   zcrud_study:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_study }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_study }
   zcrud_study_kernel:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_study_kernel }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_study_kernel }
   zcrud_ui_kit:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.24.0, path: packages/zcrud_ui_kit }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v3.25.0, path: packages/zcrud_ui_kit }
 ```
 
 ### Où placer le bloc — deux cas, à ne pas confondre (CR-LEX-5)

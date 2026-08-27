@@ -20,3 +20,13 @@ const String kZChatBandSheetAssertMessage =
     'CR-IFFD-76 (defaut 1) : la bande du composer est une BANDE - la feuille '
     'de reglages ne s\'y monte jamais inline (deborde de 149 px mesure chez '
     'IFFD). Fournir onOpenTools pour OUVRIR la feuille.';
+
+/// Message de l'assertion qui refuse les deux intentions contradictoires de
+/// remplacement du composer sur un écran assemblé : `composerBuilder`
+/// remplace le composer **entier**, `composerSlots` en habille les pièces
+/// une à une. Déclarer les deux perd silencieusement l'un des deux — en
+/// release, le remplacement total prime.
+const String kZChatComposerSlotsExclusiveAssertMessage =
+    'composerBuilder et composerSlots sont exclusifs : le premier remplace le '
+    'composer ENTIER, le second en habille les pieces. Choisir l\'un des deux '
+    '- le remplacement total prime, les creneaux seraient perdus.';

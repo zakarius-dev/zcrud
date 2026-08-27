@@ -47,6 +47,7 @@ import '../routing/z_chat_route_settings_adapter.dart';
 import '../settings/z_chat_settings_controller.dart';
 import '../tools/z_chat_tool_controller.dart';
 import '../tools/z_chat_tool_settings_adapter.dart';
+import '../z_chat_assembly_contract.dart';
 import '../z_chat_controller.dart';
 import '../z_chat_conversation_controller.dart';
 import '../z_chat_live_labels.dart';
@@ -54,6 +55,7 @@ import 'z_chat_composer_band.dart';
 import 'z_chat_composer_chrome.dart';
 import 'z_chat_composer_keys.dart';
 import 'z_chat_composer_model_selector.dart';
+import 'z_chat_composer_slots.dart';
 import 'z_chat_conversation_view.dart';
 import 'z_chat_message_tile.dart';
 import 'z_chat_notebook_screen.dart'
@@ -125,6 +127,7 @@ class ZChatConversationScreen extends StatefulWidget {
     this.shell,
     this.settings,
     this.composerBuilder,
+    this.composerSlots,
     this.composerChrome,
     this.composerBackgroundColor,
     this.composerBorderColor,
@@ -154,7 +157,10 @@ class ZChatConversationScreen extends StatefulWidget {
     this.failureBuilder,
     this.headerBuilder,
     super.key,
-  });
+  })  : assert(
+         composerBuilder == null || composerSlots == null,
+         kZChatComposerSlotsExclusiveAssertMessage,
+       );
 
   // ── Le contrôleur de conversation ─────────────────────────────────────────
 
@@ -231,6 +237,15 @@ class ZChatConversationScreen extends StatefulWidget {
 
   /// Remplace la zone de saisie par défaut. Ignoré en lecture seule.
   final ZChatConversationComposerBuilder? composerBuilder;
+
+  /// Habille le composer par défaut **pièce par pièce**, sans remonter de
+  /// composer : chaque créneau renseigné remplace la pièce correspondante,
+  /// tout le reste du câblage de l'écran (réglages, déclencheur d'outils et
+  /// son badge, sélecteur de routeur, chrome) est **conservé**.
+  ///
+  /// `null` laisse l'écran strictement inchangé. Exclusif de
+  /// [composerBuilder], qui prime. Ignoré en lecture seule.
+  final ZChatComposerSlots? composerSlots;
 
   /// Chrome du composer par défaut.
   final ZChatComposerChrome? composerChrome;
@@ -452,6 +467,7 @@ class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
     final ZChatNotebookSheetPresenter? present = widget.presentTools;
     final ZChatToolController? tools = _tools;
     final ZChatRouteSession? session = widget.routeSession;
+    final ZChatComposerSlots? slots = widget.composerSlots;
     return ZDefaultChatComposer(
       controller: _chat,
       settings: _settings,
@@ -479,13 +495,33 @@ class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
       modelSelectionMark: widget.modelSelectionMark,
       // Le sélecteur de ROUTEUR remplace le sélecteur de modèle de l'hôte
       // (règle des trois cas) — seulement si une session est déclarée.
-      modelBuilder: session == null
-          ? null
-          : zChatRouteModelSlot(
-              session: session,
-              options: widget.routerOptions,
-              selectionMark: widget.modelSelectionMark,
-            ),
+      // Les créneaux d'hôte, relayés TELS QUELS — le reste du câblage de
+      // l'écran (réglages, badge d'outils, routeur, chrome) reste en place.
+      // `slots.model` prime sur le sélecteur de routeur : règle des trois
+      // cas, un créneau d'hôte remplace le défaut de l'écran quel qu'il soit.
+      modelBuilder: slots?.model ??
+          (session == null
+              ? null
+              : zChatRouteModelSlot(
+                  session: session,
+                  options: widget.routerOptions,
+                  selectionMark: widget.modelSelectionMark,
+                )),
+      draftNoticeBuilder: slots?.draftNotice,
+      editingBannerBuilder: slots?.editingBanner,
+      progressBuilder: slots?.progress,
+      suggestionsBuilder: slots?.suggestions,
+      attachmentsBuilder: slots?.attachments,
+      dictation: slots?.capture,
+      hintBuilder: slots?.hint,
+      plusBuilder: slots?.plus,
+      thinkingBuilder: slots?.thinking,
+      webSearchBuilder: slots?.webSearch,
+      toolsBuilder: slots?.tools,
+      effortBuilder: slots?.effort,
+      dictationBuilder: slots?.dictationTrigger,
+      stopBuilder: slots?.stop,
+      sendBuilder: slots?.send,
     );
   }
 

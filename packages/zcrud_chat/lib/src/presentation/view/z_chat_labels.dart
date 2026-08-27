@@ -123,6 +123,34 @@ const String kZChatLabelComposer = '${kZChatLabelPrefix}composer';
 /// libellé du champ pour un lecteur d'écran.
 const String kZChatLabelComposerHint = '${kZChatLabelPrefix}composerHint';
 
+/// Étiquette sémantique du compteur de saisie.
+///
+/// Elle nomme la **quantité**, jamais son unité : l'unité vient du port de
+/// mesure, et c'est l'hôte qui décide comment la dire.
+const String kZChatLabelComposerCounter =
+    '${kZChatLabelPrefix}composerCounter';
+
+/// Étiquette sémantique du **mode vocal continu**, au repos.
+const String kZChatLabelVoiceSession = '${kZChatLabelPrefix}voiceSession';
+
+/// Phase « la transcription part dans le tour ».
+const String kZChatLabelVoiceSubmitting = '${kZChatLabelPrefix}voiceSubmitting';
+
+/// Phase « la réponse est lue à voix haute ».
+const String kZChatLabelVoiceSpeaking = '${kZChatLabelPrefix}voiceSpeaking';
+
+/// Action « arrêter le mode vocal continu ».
+const String kZChatLabelStopVoiceSession =
+    '${kZChatLabelPrefix}stopVoiceSession';
+
+/// Étiquette sémantique de la superposition de candidats (mentions, commandes).
+const String kZChatLabelAffordanceCandidates =
+    '${kZChatLabelPrefix}affordanceCandidates';
+
+/// Action « fermer la liste de candidats sans rien choisir ».
+const String kZChatLabelAffordanceDismiss =
+    '${kZChatLabelPrefix}affordanceDismiss';
+
 // ── Feuille de réglages de génération ────────────────────────────────────
 //
 // Aucune valeur métier ici : les paliers nommés ci-dessous sont ceux des
@@ -484,6 +512,13 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelDismissDraftNotice,
   kZChatLabelComposer,
   kZChatLabelComposerHint,
+  kZChatLabelComposerCounter,
+  kZChatLabelVoiceSession,
+  kZChatLabelVoiceSubmitting,
+  kZChatLabelVoiceSpeaking,
+  kZChatLabelStopVoiceSession,
+  kZChatLabelAffordanceCandidates,
+  kZChatLabelAffordanceDismiss,
   kZChatLabelSettings,
   kZChatLabelResponseLength,
   kZChatLabelLengthConcise,
@@ -599,6 +634,13 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelDraftRestored: 'Brouillon restauré',
   kZChatLabelDismissDraftNotice: 'Masquer l\'indication',
   kZChatLabelComposer: 'Zone de saisie',
+  kZChatLabelComposerCounter: 'Longueur de la saisie',
+  kZChatLabelVoiceSession: 'Mode vocal',
+  kZChatLabelVoiceSubmitting: 'Envoi du message dicté',
+  kZChatLabelVoiceSpeaking: 'Lecture de la réponse',
+  kZChatLabelStopVoiceSession: 'Arrêter le mode vocal',
+  kZChatLabelAffordanceCandidates: 'Candidats',
+  kZChatLabelAffordanceDismiss: 'Fermer la liste',
   kZChatLabelComposerHint: 'Écrivez votre message',
   kZChatLabelSettings: 'Réglages de génération',
   kZChatLabelResponseLength: 'Longueur de réponse',
