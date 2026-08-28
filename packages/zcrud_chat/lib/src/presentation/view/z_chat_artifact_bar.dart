@@ -11,11 +11,6 @@
 ///
 /// Une application peut vouloir l'autre convention : la couleur dit la
 /// **nature** de l'artefact — « ceci EST la carte mentale » — et l'existence
-/// se lit à la pastille et à l'annonce. Neuf pictogrammes de même couleur se
-/// distinguent moins vite que neuf couleurs. C'est un choix par artefact,
-/// posé sur sa déclaration ([ZChatArtifactSpec.alwaysAccented]), et
-/// **strictement opt-in** : rien ne change pour qui ne le pose pas.
-///
 /// 🔴 Ce drapeau n'a pas d'équivalent en forçant la lecture de présence : la
 /// présence gouverne AUSSI l'annonce, et un artefact vide qui s'annoncerait
 /// « déjà généré » mentirait au lecteur d'écran. Les deux canaux sont
@@ -121,6 +116,29 @@
 /// retrouve une colonne. La sélection — filtrage des verbes, question posée
 /// avant un effet destructeur, fermeture — reste au socle dans les deux cas.
 ///
+/// **Le verbe unique : trois activations, au choix de l'hôte.** Quand un seul
+/// verbe est visible, ce que le toucher déclenche est déclaré **par spec**
+/// ([ZChatArtifactSpec.activation]) :
+///
+/// * `menu` (défaut) — le menu, même à un seul élément : rien ne part au
+///   toucher, le verbe part au second geste. C'est le défaut parce qu'un
+///   verbe unique est souvent une **génération** — coûteuse, parfois longue —
+///   qu'un simple toucher ne doit pas lancer sans que l'hôte l'ait demandé ;
+/// * `direct` — le tap invoque le verbe directement, aucun menu, et l'entrée
+///   est annoncée comme un bouton simple, jamais comme un menu dépliable.
+///   C'est ce qui permet de déclarer une **commande** — un artefact dont la
+///   seule raison d'être est son verbe — au même rang que les artefacts
+///   d'état, dans la même grille, soumise au même repli responsive ;
+/// * `confirm` — une **question** est posée avant tout effet (message et
+///   libellés de l'hôte, localisation du socle en repli) ; annuler n'exécute
+///   rien. Le cycle complet précède le lancement.
+///
+/// Dans les trois modes, un verbe destructeur garde sa confirmation
+/// destructrice — et n'en reçoit jamais deux : en mode `confirm`, la question
+/// destructrice tient lieu de question d'activation. Quand plusieurs verbes
+/// sont visibles, le menu est la seule forme possible et le mode est sans
+/// effet.
+///
 /// ## Additif strict
 ///
 /// Le cycle n'est monté que si la spec **déclare** une lecture `busy`. Un hôte
@@ -176,6 +194,30 @@ typedef ZChatArtifactMenuBuilder =
       void Function(ZChatArtifactAction action) select,
     );
 
+/// Où [ZChatArtifactBar.slot] place le créneau d'actions que l'hôte avait
+/// déjà, relativement à la rangée d'artefacts.
+///
+/// Le défaut est [above] — la composition historique, inchangée. [inline]
+/// est la valeur qui reconstruit une **grille unique** : le contenu de
+/// l'hôte entre dans le même `Wrap` que les glyphes, à la suite des
+/// artefacts, soumis au même repli responsive et au même espacement.
+enum ZChatArtifactHostPosition {
+  /// Le contenu de l'hôte est rendu **au-dessus** de la rangée (défaut).
+  above,
+
+  /// Le contenu de l'hôte est rendu **en dessous** de la rangée.
+  below,
+
+  /// Le contenu de l'hôte entre **dans la grille**, à la suite des
+  /// artefacts — même `Wrap`, même repli, même espacement.
+  ///
+  /// Le contenu est un enfant du `Wrap` : un hôte qui veut que chacune de
+  /// ses commandes se replie indépendamment les déclare plutôt comme des
+  /// artefacts à verbe unique en activation
+  /// [ZChatArtifactActivation.direct] — elles s'exécutent alors au clic.
+  inline,
+}
+
 /// La rangée d'artefacts d'**un** message.
 ///
 /// Montée automatiquement par `ZChatNotebookView.artifacts` ; un hôte qui
@@ -191,6 +233,7 @@ class ZChatArtifactBar extends StatelessWidget {
     this.spacing,
     this.menuBuilder,
     this.menuCrossAxisCount = kZChatArtifactMenuCrossAxisCount,
+    this.trailing,
     super.key,
   })
     // Un nombre de colonnes nul ou négatif est une erreur d'appelant : elle
@@ -204,13 +247,17 @@ class ZChatArtifactBar extends StatelessWidget {
   /// (invariant AD-4), et l'hôte passif retrouve son rendu au widget près.
   ///
   /// [host] est le créneau d'actions que l'hôte avait déjà : les deux
-  /// **cohabitent** — son contenu est rendu au-dessus de la rangée, jamais
-  /// remplacé par elle. La composition vit ICI, et non dans
-  /// `ZChatNotebookView` : la surface notebook doit rester une composition
-  /// mince — elle relaie, elle ne dispose pas (garde CMP-F2).
+  /// **cohabitent** — son contenu n'est jamais remplacé par la rangée, et
+  /// [hostPosition] dit où il va : au-dessus (défaut), en dessous, ou dans
+  /// la grille elle-même ([ZChatArtifactHostPosition.inline] — même `Wrap`,
+  /// même repli responsive, même espacement que les glyphes). La composition
+  /// vit ICI, et non dans `ZChatNotebookView` : la surface notebook doit
+  /// rester une composition mince — elle relaie, elle ne dispose pas (garde
+  /// CMP-F2).
   static ZChatMessageSlotBuilder slot({
     required List<ZChatArtifactSpec> artifacts,
     ZChatMessageSlotBuilder? host,
+    ZChatArtifactHostPosition hostPosition = ZChatArtifactHostPosition.above,
     ZChatNotebookSkin? skin,
     ZChatArtifactConfirm? confirm,
     double? spacing,
@@ -219,6 +266,8 @@ class ZChatArtifactBar extends StatelessWidget {
   }) => (BuildContext context, ZChatMessage message) {
     final Widget? own = host?.call(context, message);
     if (artifacts.isEmpty) return own;
+    final bool inline =
+        own != null && hostPosition == ZChatArtifactHostPosition.inline;
     final Widget bar = ZChatArtifactBar(
       message: message,
       artifacts: artifacts,
@@ -227,12 +276,15 @@ class ZChatArtifactBar extends StatelessWidget {
       spacing: spacing,
       menuBuilder: menuBuilder,
       menuCrossAxisCount: menuCrossAxisCount,
+      trailing: inline ? own : null,
     );
-    if (own == null) return bar;
+    if (own == null || inline) return bar;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
-      children: <Widget>[own, bar],
+      children: hostPosition == ZChatArtifactHostPosition.below
+          ? <Widget>[bar, own]
+          : <Widget>[own, bar],
     );
   };
 
@@ -269,6 +321,12 @@ class ZChatArtifactBar extends StatelessWidget {
   /// présentation injectée dispose comme elle l'entend.
   final int menuCrossAxisCount;
 
+  /// Contenu rendu **dans la grille**, après le dernier glyphe — même `Wrap`,
+  /// même repli responsive, même espacement. C'est ce que [slot] alimente
+  /// pour [ZChatArtifactHostPosition.inline]. `null` (défaut) ne change rien
+  /// à l'arbre.
+  final Widget? trailing;
+
   @override
   Widget build(BuildContext context) {
     final ZcrudTheme theme = ZcrudTheme.of(context);
@@ -287,9 +345,11 @@ class ZChatArtifactBar extends StatelessWidget {
             menuCrossAxisCount: menuCrossAxisCount,
           ),
     ];
+    final Widget? own = trailing;
     // Aucun artefact à montrer sur ce message : rien dans l'arbre, pas même
-    // un conteneur vide (invariant AD-4).
-    if (entries.isEmpty) return const SizedBox.shrink();
+    // un conteneur vide (invariant AD-4). Un contenu hôte en grille, lui,
+    // reste rendu — c'est le sien.
+    if (entries.isEmpty && own == null) return const SizedBox.shrink();
     return Semantics(
       container: true,
       explicitChildNodes: true,
@@ -304,7 +364,10 @@ class ZChatArtifactBar extends StatelessWidget {
       child: Wrap(
         spacing: spacing ?? theme.gapS,
         runSpacing: spacing ?? theme.gapS,
-        children: entries,
+        // Le contenu hôte APRÈS le dernier glyphe : la grille du legacy met
+        // ses verbes de carte à la suite de ses artefacts. Sans [trailing],
+        // la liste est `entries` à l'identique.
+        children: own == null ? entries : <Widget>[...entries, own],
       ),
     );
   }
@@ -363,6 +426,11 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
   final ValueNotifier<ZChatArtifactAction?> _pending =
       ValueNotifier<ZChatArtifactAction?>(null);
 
+  // La question en attente est-elle celle de l'ACTIVATION (`confirm`) plutôt
+  // que celle d'un verbe destructeur ? Simple drapeau, toujours posé avant
+  // `_pending` : c'est `_pending` qui déclenche le rebuild du portail.
+  bool _pendingActivation = false;
+
   @override
   void dispose() {
     _open.dispose();
@@ -376,6 +444,7 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
   }
 
   void _close() {
+    _pendingActivation = false;
     _pending.value = null;
     if (_open.value) {
       _portal.hide();
@@ -394,10 +463,64 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
     if (ask == null) {
       // Confirmation EN PLACE : le socle ne dépend d'aucune surface stylée,
       // il ne peut pas pousser un dialogue — il transforme donc son menu.
+      // Une seule question, même en activation `confirm` : la question
+      // DESTRUCTRICE prime (elle porte le message du verbe), et
+      // `_confirmActivation` route déjà les destructeurs ici sans poser la
+      // sienne — deux confirmations empilées ne sont pas exprimables.
+      _pendingActivation = false;
       _pending.value = action;
+      // Verbe exécuté au clic (activation `direct`) : aucun menu n'est
+      // ouvert quand la sélection arrive, le portail doit donc être monté
+      // ICI pour que la question soit posée. Depuis un menu, `_open` est
+      // déjà vrai — rien ne bouge.
+      if (!_open.value) {
+        _portal.show();
+        _open.value = true;
+      }
       return;
     }
     _close();
+    final bool ok = await ask(
+      context,
+      ZChatArtifactConfirmRequest(
+        message: widget.message,
+        artifact: widget.spec,
+        action: action,
+      ),
+    );
+    if (!mounted || !ok) return;
+    action.onSelected(widget.message);
+  }
+
+  /// Le toucher d'un artefact en activation `confirm` : la question, PUIS le
+  /// verbe — jamais l'inverse, et jamais deux questions.
+  Future<void> _confirmActivation(ZChatArtifactAction action) async {
+    // Un verbe DESTRUCTEUR porte déjà sa propre question, plus spécifique
+    // (message du verbe, chemin `confirm` de l'hôte compris) : la poser via
+    // `_select` suffit — y superposer la question d'activation ferait payer
+    // deux confirmations pour un seul effet. Même arbitrage pour un rappel
+    // qui confirme EN AVAL (`confirmsDownstream` — chaîne déclarative : le
+    // contrôleur pose la question des verbes destructeurs) : la question
+    // aval est LA question.
+    if (action.destructive || action.confirmsDownstream) {
+      return _select(action);
+    }
+    final ZChatArtifactConfirm? ask = widget.confirm;
+    if (ask == null) {
+      // Même mécanisme que la confirmation destructrice : le portail en
+      // place, jamais un second dialogue maison (le socle ne dépend d'aucune
+      // surface stylée). Seuls le message et les libellés diffèrent.
+      _pendingActivation = true;
+      _pending.value = action;
+      if (!_open.value) {
+        _portal.show();
+        _open.value = true;
+      }
+      return;
+    }
+    // L'hôte a fourni sa couture de confirmation : elle vaut pour la question
+    // d'activation comme pour la destructrice — un seul dialogue d'hôte pour
+    // tout ce que la barre demande de confirmer.
     final bool ok = await ask(
       context,
       ZChatArtifactConfirmRequest(
@@ -442,20 +565,13 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
 
   /// La teinte réellement peinte : la teinte déclarée, portée au plancher de
   /// contraste des composants graphiques. `null` ⇒ couleur ambiante.
-  ///
-  /// Un artefact **absent** n'est teinté que si sa déclaration le demande
-  /// ([ZChatArtifactSpec.alwaysAccented]). La correction de contraste est la
-  /// même dans les deux cas : une teinte peinte est une teinte lisible.
   Color? _tint(BuildContext context, {required bool present}) {
-    // OPT-IN STRICT. La condition par défaut est INCHANGÉE : sans drapeau sur
-    // la déclaration, un artefact absent reste à la couleur ambiante — un hôte
-    // qui s'appuie sur « teinté = existe » ne voit rien bouger.
-    //
-    // Et le drapeau ne relâche QUE cette condition-ci : `present` continue
-    // d'alimenter `_stateValue` (l'annonce) et les conditions de visibilité
-    // des verbes. C'est toute la raison d'être de ce second canal — forcer la
-    // présence pour teindre ferait annoncer « généré » un artefact vide.
-    if (!present && !widget.spec.alwaysAccented) return null;
+    // L'ÉTAT, et rien d'autre : teinte si le contenu existe ou si une
+    // génération est en cours, couleur ambiante sinon. Un canal découplant la
+    // teinte de la présence a été publié puis RETIRÉ : l'observation qui le
+    // demandait s'est révélée fausse (l'absence de pastille avait été prise
+    // pour l'absence d'artefact), et la règle ci-dessus correspond au legacy.
+    if (!present) return null;
     final Color? accent = _accent();
     final Color? surface = _surface(context);
     if (accent == null || surface == null) return null;
@@ -519,6 +635,23 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
       );
     }
 
+    // Le verbe UNIQUE suit le mode d'activation DÉCLARÉ par la spec ; à
+    // plusieurs verbes, le menu est la seule forme possible. Le défaut est le
+    // menu — même à un seul élément : rien ne part d'un simple toucher tant
+    // que l'hôte n'a pas déclaré `direct` ou `confirm`. En `direct` et
+    // `confirm`, le portail reste monté — c'est lui qui porte les questions
+    // en place — mais il ne s'ouvre jamais sur un menu, et l'entrée n'est
+    // plus annoncée comme dépliable : un bouton qui agit, pas un bouton qui
+    // ouvre.
+    final ZChatArtifactAction? sole =
+        actions.length == 1 && spec.activation != ZChatArtifactActivation.menu
+        ? actions.single
+        : null;
+    final VoidCallback activate = sole == null
+        ? _toggle
+        : spec.activation == ZChatArtifactActivation.confirm
+        ? () => unawaited(_confirmActivation(sole))
+        : () => unawaited(_select(sole));
     return OverlayPortal(
       controller: _portal,
       overlayChildBuilder: (BuildContext context) => _overlay(context, actions),
@@ -529,14 +662,14 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
           builder: (BuildContext context, bool open, Widget? child) =>
               Semantics(
                 button: true,
-                expanded: open,
+                expanded: sole == null ? open : null,
                 label: spec.label,
                 value: value,
                 excludeSemantics: true,
-                onTap: _toggle,
+                onTap: activate,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: _toggle,
+                  onTap: activate,
                   child: child,
                 ),
               ),
@@ -569,11 +702,8 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
     return Icon(
       icon,
       size: ZChatNotebookReference.perMessageActionIconSize,
-      // Par DÉFAUT l'état, et rien d'autre : teinte si le contenu existe ou si
-      // une génération est en cours, couleur ambiante sinon. Une déclaration
-      // qui pose `alwaysAccented` échange ce canal contre la NATURE de
-      // l'artefact — sans jamais toucher à ce que l'annonce dit de son
-      // existence (cf. `_tint`).
+      // L'ÉTAT, et rien d'autre : teinte si le contenu existe ou si une
+      // génération est en cours, couleur ambiante sinon (cf. `_tint`).
       color: color,
     );
   }
@@ -762,10 +892,7 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
 
   /// La présentation de l'hôte si elle est fournie ET qu'elle rend, celle du
   /// socle sinon.
-  Widget _menuContent(
-    BuildContext context,
-    List<ZChatArtifactAction> actions,
-  ) {
+  Widget _menuContent(BuildContext context, List<ZChatArtifactAction> actions) {
     final ZChatArtifactMenuBuilder? host = widget.menuBuilder;
     if (host == null) return _defaultMenu(context, actions);
     try {
@@ -899,9 +1026,22 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
   /// appelé que par « confirmer » : une suppression qui partirait sans question
   /// n'est pas exprimable ici.
   Widget _confirmation(BuildContext context, ZChatArtifactAction action) {
-    final String question =
-        action.confirmMessage ??
-        zChatLabel(context, kZChatLabelArtifactConfirmPrompt);
+    // Deux saveurs pour un même portail : la question DESTRUCTRICE (message
+    // du verbe) et la question d'ACTIVATION (message et libellés de la spec).
+    // Chaque texte retombe sur le libellé localisé du socle.
+    final bool activation = _pendingActivation;
+    final ZChatArtifactSpec spec = widget.spec;
+    final String question = activation
+        ? spec.activationPrompt ??
+              zChatLabel(context, kZChatLabelArtifactActivatePrompt)
+        : action.confirmMessage ??
+              zChatLabel(context, kZChatLabelArtifactConfirmPrompt);
+    final String confirmLabel =
+        (activation ? spec.activationConfirmLabel : null) ??
+        zChatLabel(context, kZChatLabelArtifactConfirm);
+    final String cancelLabel =
+        (activation ? spec.activationCancelLabel : null) ??
+        zChatLabel(context, kZChatLabelArtifactCancel);
     return Semantics(
       container: true,
       explicitChildNodes: true,
@@ -913,14 +1053,14 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
           Text(question, textAlign: TextAlign.start),
           _tappableRow(
             context,
-            label: zChatLabel(context, kZChatLabelArtifactConfirm),
+            label: confirmLabel,
             icon: null,
             accent: action.accent,
             onTap: _confirmPending,
           ),
           _tappableRow(
             context,
-            label: zChatLabel(context, kZChatLabelArtifactCancel),
+            label: cancelLabel,
             icon: null,
             accent: null,
             onTap: _close,

@@ -366,15 +366,16 @@ void main() {
       );
     });
 
-    testWidgets('l\'artefact ABSENT n\'offre que « créer »', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('l\'artefact ABSENT n\'offre que « créer » — et un verbe '
+        'unique s\'exécute au clic', (WidgetTester tester) async {
       final rig = buildController(
         initialMessages: <ZChatMessage>[
           assistant(<ZContentBlock>[const ZTextBlock(text: 'corps')]),
         ],
       );
       addTearDown(rig.controller.dispose);
+      int created = 0;
+      int autres = 0;
       await tester.pumpWidget(
         harness(
           ZChatNotebookView(
@@ -385,10 +386,19 @@ void main() {
                 icon: _iconB,
                 label: 'Flashcards',
                 presence: (ZChatMessage _) => false,
+                // Ré-ancré sur le nouveau contrat : l'exécution au clic est un
+                // OPT-IN (`direct`), le défaut est redevenu le menu.
+                activation: ZChatArtifactActivation.direct,
                 actions: <ZChatArtifactAction>[
-                  ZChatArtifactAction.create(onSelected: (ZChatMessage _) {}),
-                  ZChatArtifactAction.open(onSelected: (ZChatMessage _) {}),
-                  ZChatArtifactAction.delete(onSelected: (ZChatMessage _) {}),
+                  ZChatArtifactAction.create(
+                    onSelected: (ZChatMessage _) => created++,
+                  ),
+                  ZChatArtifactAction.open(
+                    onSelected: (ZChatMessage _) => autres++,
+                  ),
+                  ZChatArtifactAction.delete(
+                    onSelected: (ZChatMessage _) => autres++,
+                  ),
                 ],
               ),
             ],
@@ -399,9 +409,18 @@ void main() {
         find.byWidgetPredicate((Widget w) => w is Icon && w.icon == _iconB),
       );
       await tester.pump();
-      expect(_verbTexts(tester, _standardVerbs), <String>[
-        _fb(kZChatLabelArtifactCreate),
-      ]);
+      // La SÉLECTION reste mesurée par l'EFFET : « créer », seul verbe dont
+      // la condition tient, part au clic — sans menu à un élément — et les
+      // verbes écartés ne partent jamais.
+      expect(created, 1);
+      expect(
+        autres,
+        0,
+        reason:
+            '🔴 un verbe dont la condition ne tient pas a été exécuté : la '
+            'sélection a changé de main',
+      );
+      expect(_verbTexts(tester, _standardVerbs), isEmpty);
     });
   });
 
@@ -429,6 +448,8 @@ void main() {
                 label: 'Carte mentale',
                 presence: (ZChatMessage _) => true,
                 count: (ZChatMessage _) => count,
+                // Opt-in `direct` : l'exécution identifie le tap atteint.
+                activation: ZChatArtifactActivation.direct,
                 actions: <ZChatArtifactAction>[
                   ZChatArtifactAction.open(
                     onSelected: (ZChatMessage _) => tapped?.call(),
@@ -488,16 +509,15 @@ void main() {
       // le geste chez IFFD (tap au centre du glyphe : 1 ; à 8 px du coin : 0).
       await tester.tapAt(tester.getCenter(badge));
       await tester.pump();
+      // Le verbe unique part AU CLIC : l'exécution elle-même prouve que le
+      // tap a atteint le bouton — c'est la mesure la plus directe possible.
       expect(
-        find.text(_fb(kZChatLabelArtifactOpen)),
-        findsOneWidget,
+        opened,
+        1,
         reason:
             '🔴 le tap sous la pastille n\'a pas atteint le bouton : la '
             'pastille est redevenue hit-testable (défaut ① de la CR)',
       );
-      await tester.tap(find.text(_fb(kZChatLabelArtifactOpen)));
-      await tester.pump();
-      expect(opened, 1);
     });
   });
 
@@ -706,6 +726,8 @@ void main() {
           ],
         );
         addTearDown(rig.controller.dispose);
+        int cree = 0;
+        int ouvert = 0;
         final List<FlutterErrorDetails> caught = await captureFlutterErrors(
           () async {
             await tester.pumpWidget(
@@ -722,12 +744,14 @@ void main() {
                       count: (ZChatMessage _) =>
                           throw StateError('compte cassé'),
                       accent: _legacyOrange,
+                      // Opt-in `direct` : l'effet mesure le verbe survivant.
+                      activation: ZChatArtifactActivation.direct,
                       actions: <ZChatArtifactAction>[
                         ZChatArtifactAction.create(
-                          onSelected: (ZChatMessage _) {},
+                          onSelected: (ZChatMessage _) => cree++,
                         ),
                         ZChatArtifactAction.open(
-                          onSelected: (ZChatMessage _) {},
+                          onSelected: (ZChatMessage _) => ouvert++,
                         ),
                       ],
                     ),
@@ -758,9 +782,13 @@ void main() {
           find.byWidgetPredicate((Widget w) => w is Icon && w.icon == _iconA),
         );
         await tester.pump();
+        // Repli FERMANT mesuré par l'EFFET : seul « créer » (verbe de
+        // l'ABSENT) tient — verbe unique, donc exécuté au clic — et les
+        // verbes du présent ne partent jamais.
+        expect(cree, 1);
         expect(
-          _verbTexts(tester, _standardVerbs),
-          <String>[_fb(kZChatLabelArtifactCreate)],
+          ouvert,
+          0,
           reason:
               '🔴 les verbes d\'un artefact PRÉSENT sont offerts sur un état '
               'qu\'on n\'a pas pu lire',
@@ -780,6 +808,8 @@ void main() {
           ],
         );
         addTearDown(rig.controller.dispose);
+        int masque = 0;
+        int ouvert = 0;
         await captureFlutterErrors(() async {
           await tester.pumpWidget(
             harness(
@@ -791,14 +821,18 @@ void main() {
                     icon: _iconA,
                     label: 'Carte mentale',
                     presence: (ZChatMessage _) => true,
+                    // Opt-in `direct` : l'effet mesure le verbe survivant.
+                    activation: ZChatArtifactActivation.direct,
                     actions: <ZChatArtifactAction>[
                       ZChatArtifactAction(
                         labelKey: kZChatLabelArtifactEdit,
                         visible: (ZChatMessage _, bool _) =>
                             throw StateError('condition cassée'),
-                        onSelected: (ZChatMessage _) {},
+                        onSelected: (ZChatMessage _) => masque++,
                       ),
-                      ZChatArtifactAction.open(onSelected: (ZChatMessage _) {}),
+                      ZChatArtifactAction.open(
+                        onSelected: (ZChatMessage _) => ouvert++,
+                      ),
                     ],
                   ),
                 ],
@@ -811,9 +845,10 @@ void main() {
           await tester.pump();
         });
         expect(tester.takeException(), isNull);
-        expect(_verbTexts(tester, _standardVerbs), <String>[
-          _fb(kZChatLabelArtifactOpen),
-        ]);
+        // Le verbe masqué ne part JAMAIS ; le seul verbe restant — unique,
+        // donc exécuté au clic — part, lui.
+        expect(masque, 0);
+        expect(ouvert, 1);
       });
     },
   );
@@ -1050,6 +1085,8 @@ void main() {
                 icon: _iconA,
                 label: 'Carte mentale',
                 presence: (ZChatMessage _) => true,
+                // Opt-in `direct` : un destructeur direct garde sa question.
+                activation: ZChatArtifactActivation.direct,
                 actions: <ZChatArtifactAction>[
                   ZChatArtifactAction.delete(
                     onSelected: (ZChatMessage _) => fired[0]++,
@@ -1067,11 +1104,11 @@ void main() {
     testWidgets('choisir « supprimer » n\'exécute RIEN : le socle demande '
         'd\'abord', (WidgetTester tester) async {
       final List<int> fired = await mountDelete(tester);
+      // Verbe destructeur UNIQUE : le clic va droit à la question — sans
+      // menu à un élément — et n'exécute toujours rien.
       await tester.tap(
         find.byWidgetPredicate((Widget w) => w is Icon && w.icon == _iconA),
       );
-      await tester.pump();
-      await tester.tap(find.text(_fb(kZChatLabelArtifactDelete)));
       await tester.pump();
       expect(fired.single, 0);
       expect(find.text('Supprimer la carte mentale ?'), findsOneWidget);
@@ -1086,8 +1123,6 @@ void main() {
       await tester.tap(
         find.byWidgetPredicate((Widget w) => w is Icon && w.icon == _iconA),
       );
-      await tester.pump();
-      await tester.tap(find.text(_fb(kZChatLabelArtifactDelete)));
       await tester.pump();
       await tester.tap(find.text(_fb(kZChatLabelArtifactConfirm)));
       await tester.pump();
@@ -1110,8 +1145,6 @@ void main() {
       await tester.tap(
         find.byWidgetPredicate((Widget w) => w is Icon && w.icon == _iconA),
       );
-      await tester.pump();
-      await tester.tap(find.text(_fb(kZChatLabelArtifactDelete)));
       await tester.pumpAndSettle();
       expect(asked, hasLength(1));
       expect(asked.single.artifact.key, 'k');
@@ -1537,6 +1570,8 @@ void main() {
                   icon: _nthIcon(i),
                   label: 'A$i',
                   presence: (ZChatMessage _) => true,
+                  // Opt-in `direct` : l'effet identifie la cible atteinte.
+                  activation: ZChatArtifactActivation.direct,
                   actions: <ZChatArtifactAction>[
                     ZChatArtifactAction.open(
                       onSelected: (ZChatMessage _) => touches.add('a$i'),
@@ -1548,9 +1583,9 @@ void main() {
         ),
       );
       for (int i = 0; i < 9; i++) {
+        // Verbe unique ⇒ le tap exécute directement : l'effet identifie la
+        // cible atteinte, sans étape de menu.
         await tester.tap(_targetOf(_nthIcon(i)));
-        await tester.pump();
-        await tester.tap(find.text(_fb(kZChatLabelArtifactOpen)));
         await tester.pump();
       }
       expect(touches, <String>[for (int i = 0; i < 9; i++) 'a$i'],

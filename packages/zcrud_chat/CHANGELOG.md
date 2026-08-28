@@ -3,6 +3,18 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.26.0 — 2026-08-28
+
+### Ajouté (mode d'activation)
+- **Le geste d'un artefact à verbe unique se règle PAR ITEM** : `menu` (défaut — le menu à option unique, comportement historique inchangé), `direct` (exécution au clic), ou `confirm` (exécution précédée d'un dialogue de confirmation au message personnalisable, avec repli localisé). Le mode `confirm` passe par le **portail de confirmation existant** — jamais deux questions : un verbe destructeur est routé vers sa question destructrice.
+- Les specs-verbes d'un hôte (modifier, régénérer, supprimer) posées dans la grille déclarent `direct` : exécution immédiate, sans menu.
+
+### Ajouté
+- **Position déclarable du créneau hôte** de la rangée d'artefacts : au-dessus (défaut inchangé), en dessous, ou **dans la même grille** — soumise alors au même repli responsive que les artefacts.
+
+### Retiré
+- 🔴 **Le drapeau de teinte permanente** (spec, rendu, relais) — cf. le noyau. La règle restaurée est gardée par un tripwire : la teinte dit l'état, et rien d'autre.
+
 ## 3.25.0 — 2026-08-27
 
 ### Ajouté

@@ -886,6 +886,9 @@ void main() {
         'confirmArtifactAction',
         'artifactMenuBuilder',
         'artifactMenuCrossAxisCount',
+        // Position du créneau hôte relative à la rangée d'artefacts — un
+        // relais vers `ZChatArtifactBar.slot`, pas une dépendance neuve.
+        'artifactHostPosition',
         'collapsedMaxHeight',
         'padding',
         'reverse',

@@ -8,8 +8,13 @@ import '../contracts/z_entity.dart';
 
 /// Action CRUD soumise à autorisation. Valeurs en **camelCase** (canonique §5).
 ///
+/// Ce vocabulaire n'est **pas clos** : une application gouverne ses propres
+/// gestes par des clés ouvertes ([ZActionKey] libre + [ZKeyedAcl]), décidées
+/// fail-closed par [ZAclActionKey.canAction]. L'enum reste le chemin typé des
+/// verbes canoniques.
+///
 /// **Ordre ADDITIF, jamais réordonné/renommé** : les actions étendues
-/// (`copy`…`history`) sont ajoutées **après** les cinq actions historiques
+/// (`copy`…`move`) sont ajoutées **après** les cinq actions historiques
 /// (`view`/`create`/`update`/`delete`/`restore`) pour couvrir des besoins
 /// applicatifs plus riches (dupliquer, archiver, publier, vider, valider,
 /// consulter l'historique) tout en gardant une rétro-compatibilité stricte.
@@ -58,6 +63,9 @@ enum ZCrudAction {
 
   /// Consulter l'historique d'une entité.
   history,
+
+  /// Déplacer une entité d'un conteneur à un autre (dossier, classeur…).
+  move,
 }
 
 /// Classification **lecture / écriture** d'une action CRUD.
@@ -85,9 +93,101 @@ extension ZCrudActionMutation on ZCrudAction {
         ZCrudAction.archive ||
         ZCrudAction.publish ||
         ZCrudAction.clear ||
-        ZCrudAction.validate =>
+        ZCrudAction.validate ||
+        ZCrudAction.move =>
           true,
       };
+}
+
+/// Clé d'action **ouverte** soumise à autorisation.
+///
+/// Le vocabulaire des actions n'est pas clos par [ZCrudAction] : une
+/// application peut gouverner des gestes qui lui sont propres (générations
+/// assistées, workflows métier…) avec la même matrice de droits que les verbes
+/// canoniques. Une [ZActionKey] transporte ce droit sous forme de **clé
+/// opaque** : le socle la véhicule de la déclaration au point de décision
+/// **sans l'interpréter** — il ne sait pas ce que la clé signifie, et n'a pas
+/// à le savoir.
+///
+/// Deux familles de clés :
+/// * les **clés canoniques** — une par valeur de [ZCrudAction], de même nom
+///   camelCase ([view]…[move]). Elles sont décidées par le chemin typé
+///   existant ([ZAcl.can]) : une ACL déjà écrite les gouverne à l'identique,
+///   qu'elles arrivent par l'enum ou par la clé.
+/// * les **clés libres** — n'importe quelle autre chaîne, déclarée par
+///   l'application (`const ZActionKey('monGeste')`). Elles ne sont décidées
+///   que par une ACL qui a **choisi** de les comprendre ([ZKeyedAcl]) ;
+///   partout ailleurs, elles sont **refusées** (fail-closed).
+///
+/// **Sérialisation défensive** : une clé est une chaîne — si elle voyage en
+/// persistance, une valeur inconnue à la relecture reste une [ZActionKey]
+/// valide (opaque) et sera simplement refusée par une ACL qui ne la connaît
+/// pas ; [asCrudAction] retourne `null` plutôt que d'échouer.
+class ZActionKey {
+  /// Construit une clé d'action à partir de sa chaîne opaque (`const`).
+  const ZActionKey(this.key);
+
+  /// Clé canonique équivalente à [action] (même nom camelCase).
+  ZActionKey.of(ZCrudAction action) : key = action.name;
+
+  /// Chaîne opaque de l'action. Convention : **camelCase**, comme les valeurs
+  /// canoniques.
+  final String key;
+
+  /// Clé canonique « consulter / lister » ([ZCrudAction.view]).
+  static const ZActionKey view = ZActionKey('view');
+
+  /// Clé canonique « créer » ([ZCrudAction.create]).
+  static const ZActionKey create = ZActionKey('create');
+
+  /// Clé canonique « modifier » ([ZCrudAction.update]).
+  static const ZActionKey update = ZActionKey('update');
+
+  /// Clé canonique « supprimer » ([ZCrudAction.delete]).
+  static const ZActionKey delete = ZActionKey('delete');
+
+  /// Clé canonique « restaurer » ([ZCrudAction.restore]).
+  static const ZActionKey restore = ZActionKey('restore');
+
+  /// Clé canonique « dupliquer » ([ZCrudAction.copy]).
+  static const ZActionKey copy = ZActionKey('copy');
+
+  /// Clé canonique « archiver » ([ZCrudAction.archive]).
+  static const ZActionKey archive = ZActionKey('archive');
+
+  /// Clé canonique « publier » ([ZCrudAction.publish]).
+  static const ZActionKey publish = ZActionKey('publish');
+
+  /// Clé canonique « vider / réinitialiser » ([ZCrudAction.clear]).
+  static const ZActionKey clear = ZActionKey('clear');
+
+  /// Clé canonique « valider » ([ZCrudAction.validate]).
+  static const ZActionKey validate = ZActionKey('validate');
+
+  /// Clé canonique « consulter l'historique » ([ZCrudAction.history]).
+  static const ZActionKey history = ZActionKey('history');
+
+  /// Clé canonique « déplacer » ([ZCrudAction.move]).
+  static const ZActionKey move = ZActionKey('move');
+
+  // Index nom → valeur, construit une seule fois depuis l'enum lui-même :
+  // aucune table parallèle à maintenir quand une valeur canonique s'ajoute.
+  static final Map<String, ZCrudAction> _canonical =
+      ZCrudAction.values.asNameMap();
+
+  /// Valeur canonique équivalente, ou `null` si la clé est **libre** (ou
+  /// inconnue — posture défensive AD-10 : jamais d'exception).
+  ZCrudAction? get asCrudAction => _canonical[key];
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is ZActionKey && other.key == key;
+
+  @override
+  int get hashCode => key.hashCode;
+
+  @override
+  String toString() => 'ZActionKey($key)';
 }
 
 /// Port d'autorisation **synchrone** fourni par l'application hôte.
@@ -102,6 +202,56 @@ abstract class ZAcl {
   /// Retourne `true` si [action] est autorisée sur la [target] optionnelle
   /// (ou la collection [collectionId]), `false` sinon. Décision **synchrone**.
   bool can(ZCrudAction action, {ZEntity? target, String? collectionId});
+}
+
+/// Port d'autorisation à **vocabulaire ouvert** — opt-in de l'application.
+///
+/// Une ACL qui n'implémente que [ZAcl] gouverne les verbes canoniques
+/// ([ZCrudAction]) ; toute clé **libre** lui est refusée d'office par
+/// [ZAclActionKey.canAction] (fail-closed). Implémenter ce contrat est le
+/// geste par lequel une application déclare : « je sais décider des clés qui
+/// ne sont pas dans l'enum ».
+///
+/// [canKey] ne reçoit **que des clés libres** : les clés canoniques sont
+/// toujours décidées par [ZAcl.can], que l'ACL soit ouverte ou non — une
+/// même action ne peut pas avoir deux points de décision.
+abstract class ZKeyedAcl implements ZAcl {
+  /// Retourne `true` si l'action **libre** [actionKey] (clé opaque, jamais
+  /// interprétée par le socle) est autorisée sur la [target] optionnelle (ou
+  /// la collection [collectionId]), `false` sinon. Décision **synchrone**.
+  ///
+  /// Posture attendue des implémentations : **fail-closed** — une clé
+  /// inconnue de la matrice de l'application doit être refusée, jamais
+  /// accordée par défaut.
+  bool canKey(String actionKey, {ZEntity? target, String? collectionId});
+}
+
+/// Décision d'autorisation sur une [ZActionKey], pour **toute** [ZAcl] —
+/// y compris celles écrites avant l'ouverture du vocabulaire.
+extension ZAclActionKey on ZAcl {
+  /// Retourne `true` si [action] est autorisée sur la [target] optionnelle
+  /// (ou la collection [collectionId]), `false` sinon.
+  ///
+  /// Routage, sans interprétation :
+  /// 1. clé **canonique** → délégué à [ZAcl.can] avec la valeur
+  ///    [ZCrudAction] équivalente — une ACL existante décide à l'identique ;
+  /// 2. clé **libre** et ACL ouverte ([ZKeyedAcl]) → délégué à
+  ///    [ZKeyedAcl.canKey] ;
+  /// 3. clé **libre** et ACL fermée → **refusé** (`false`, fail-closed) :
+  ///    une action qu'une ACL ne connaît pas n'est jamais accordée au motif
+  ///    qu'elle n'était pas dans l'enum.
+  bool canAction(ZActionKey action, {ZEntity? target, String? collectionId}) {
+    final ZCrudAction? canonical = action.asCrudAction;
+    if (canonical != null) {
+      return can(canonical, target: target, collectionId: collectionId);
+    }
+    final ZAcl self = this;
+    if (self is ZKeyedAcl) {
+      return self.canKey(action.key,
+          target: target, collectionId: collectionId);
+    }
+    return false;
+  }
 }
 
 /// Implémentation **permissive** : autorise tout, sans condition.
@@ -120,12 +270,19 @@ abstract class ZAcl {
 ///
 /// En production, remplacez-la par votre propre implémentation de [ZAcl]
 /// (rôles, droits par collection…) : aucune règle métier ne vit dans le socle.
-class ZAllowAllAcl implements ZAcl {
+class ZAllowAllAcl implements ZKeyedAcl {
   /// Construit l'ACL permissive (`const`).
   const ZAllowAllAcl();
 
   @override
   bool can(ZCrudAction action, {ZEntity? target, String? collectionId}) => true;
+
+  /// Permissive aussi sur les clés **libres** : « autorise tout » couvre le
+  /// vocabulaire ouvert, sinon un prototype déclaré permissif verrait ses
+  /// gestes applicatifs refusés sans signal.
+  @override
+  bool canKey(String actionKey, {ZEntity? target, String? collectionId}) =>
+      true;
 }
 
 /// Implémentation **refusante** : interdit tout, sans condition. C'est le
@@ -174,12 +331,16 @@ class ZAllowAllAcl implements ZAcl {
 ///
 /// Ce geste est **volontaire et lisible** dans le code de l'application : c'est
 /// toute la différence avec un repli implicite.
-class ZDenyAllAcl implements ZAcl {
+class ZDenyAllAcl implements ZKeyedAcl {
   /// Construit l'ACL refusante (`const`).
   const ZDenyAllAcl();
 
   @override
   bool can(ZCrudAction action, {ZEntity? target, String? collectionId}) =>
+      false;
+
+  @override
+  bool canKey(String actionKey, {ZEntity? target, String? collectionId}) =>
       false;
 }
 
@@ -207,7 +368,7 @@ class ZDenyAllAcl implements ZAcl {
 /// // L'onglet « Archives » ne rend AUCUN geste : au mieux, il en retire.
 /// final aclDeLOnglet = zRestrictAcl(aclDeLEcran, aclDeclareeSurLOnglet);
 /// ```
-class ZRestrictedAcl implements ZAcl {
+class ZRestrictedAcl implements ZKeyedAcl {
   /// Compose [base] (l'autorisation héritée) et [restriction] (la déclaration
   /// la plus proche de l'usager) en **conjonction**.
   const ZRestrictedAcl(this.base, this.restriction);
@@ -223,6 +384,17 @@ class ZRestrictedAcl implements ZAcl {
   bool can(ZCrudAction action, {ZEntity? target, String? collectionId}) =>
       base.can(action, target: target, collectionId: collectionId) &&
       restriction.can(action, target: target, collectionId: collectionId);
+
+  /// Conjonction sur une clé **libre** : chaque côté décide par
+  /// [ZAclActionKey.canAction] — un côté fermé au vocabulaire ouvert refuse
+  /// donc la clé (fail-closed), et l'intersection reste inélargissable.
+  @override
+  bool canKey(String actionKey, {ZEntity? target, String? collectionId}) {
+    final ZActionKey key = ZActionKey(actionKey);
+    return base.canAction(key, target: target, collectionId: collectionId) &&
+        restriction.canAction(key,
+            target: target, collectionId: collectionId);
+  }
 
   @override
   bool operator ==(Object other) =>

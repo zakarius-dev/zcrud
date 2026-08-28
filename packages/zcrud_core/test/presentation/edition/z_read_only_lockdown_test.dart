@@ -170,6 +170,7 @@ void main() {
         ZCrudAction.publish,
         ZCrudAction.clear,
         ZCrudAction.validate,
+        ZCrudAction.move,
       ]) {
         expect(a.mutatesData, isTrue, reason: '${a.name} écrit');
       }

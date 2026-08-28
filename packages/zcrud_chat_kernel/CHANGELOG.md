@@ -3,6 +3,14 @@
 Toutes les modifications notables de `zcrud_chat_kernel` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.26.0 — 2026-08-28
+
+### Ajouté
+- **Mode d'activation d'un artefact à verbe unique** sur la déclaration (`activation` : menu / direct / confirm, défaut `menu`, valeur inconnue ⇒ `menu` sans lever) et jeton de message de confirmation — persistés, défensifs, clés réservées filtrées.
+
+### Retiré
+- 🔴 **Le drapeau de teinte permanente d'artefact** (déclaration et relais) : l'observation qui l'avait demandé s'est révélée fausse — l'absence de pastille avait été prise pour l'absence d'artefact, alors que le compte n'est porté que par certains artefacts. La règle d'origine — la teinte dit l'**état** — était juste, et correspond au legacy. Sa clé de sérialisation reste **filtrée** : un document écrit par une version qui la posait ne la fait pas resurgir dans `extra`.
+
 ## 3.24.0 — 2026-08-27
 
 ### Ajouté

@@ -153,10 +153,14 @@ ZChatArtifactSpec zChatArtifactSpecOf(
     icon: resolvers.iconOf(declaration.iconKey),
     label: resolvers.labelOf(declaration.labelToken) ?? '',
     accent: resolvers.accentOf(declaration.accentToken),
-    // La condition d'application de la teinte voyage AVEC la teinte : sans
-    // ce relais, un hôte qui déclare ses artefacts par le registre n'y avait
-    // simplement pas accès.
-    alwaysAccented: declaration.alwaysAccented,
+    // Le mode d'activation voyage comme les autres réglages déclaratifs
+    // (`hasCount`, l'ordre) : déclaré une fois dans le kernel, relayé tel
+    // quel. Le message de la question `confirm` suit la même voie que les
+    // libellés : un jeton, résolu par l'hôte ; non résolu ⇒ question
+    // localisée du socle (`null`, jamais une chaîne vide qui rendrait une
+    // question muette).
+    activation: declaration.activation,
+    activationPrompt: resolvers.labelOf(declaration.activationPromptToken),
     presence: (ZChatMessage m) => status(m).isPresent,
     count: declaration.hasCount
         ? (ZChatMessage m) => status(m).badgeCount
@@ -169,6 +173,11 @@ ZChatArtifactSpec zChatArtifactSpecOf(
           icon: resolvers.iconOf(verb.iconKey),
           accent: resolvers.accentOf(verb.accentToken),
           visible: (ZChatMessage m, bool _) => offered(m, verb.key),
+          // La question d'un verbe destructeur est posée PAR LE CONTRÔLEUR
+          // (`runArtifactVerb`, seam `confirm`) : la barre ne doit ni la
+          // doubler, ni — en activation `confirm` — y superposer la question
+          // d'activation. Une seule question, toujours celle de l'aval.
+          confirmsDownstream: verb.destructive,
           onSelected: (ZChatMessage m) {
             final String? id = m.id;
             if (id == null) return;
@@ -188,11 +197,10 @@ ZChatArtifactSpec zChatArtifactSpecOf(
 List<ZChatArtifactSpec> zChatArtifactSpecsOf(
   ZChatNotebookController controller, {
   ZChatArtifactResolvers resolvers = ZChatArtifactResolvers.none,
-}) =>
-    List<ZChatArtifactSpec>.unmodifiable(<ZChatArtifactSpec>[
-      for (final ZChatArtifactDeclaration d in controller.registry.declarations)
-        zChatArtifactSpecOf(d, controller: controller, resolvers: resolvers),
-    ]);
+}) => List<ZChatArtifactSpec>.unmodifiable(<ZChatArtifactSpec>[
+  for (final ZChatArtifactDeclaration d in controller.registry.declarations)
+    zChatArtifactSpecOf(d, controller: controller, resolvers: resolvers),
+]);
 
 /// Le créneau d'actions par message, branché sur [controller] : la barre
 /// d'artefacts de chaque message est rendue sous un écouteur de **ses**
@@ -213,8 +221,10 @@ ZChatMessageSlotBuilder zChatNotebookArtifactsSlot({
   ZChatArtifactMenuBuilder? menuBuilder,
   int menuCrossAxisCount = kZChatArtifactMenuCrossAxisCount,
 }) {
-  final List<ZChatArtifactSpec> specs =
-      zChatArtifactSpecsOf(controller, resolvers: resolvers);
+  final List<ZChatArtifactSpec> specs = zChatArtifactSpecsOf(
+    controller,
+    resolvers: resolvers,
+  );
   final ZChatMessageSlotBuilder bar = ZChatArtifactBar.slot(
     artifacts: specs,
     skin: skin,

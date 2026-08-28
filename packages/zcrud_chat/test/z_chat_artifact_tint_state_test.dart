@@ -17,7 +17,6 @@
 ///   implémentation indépendante de celle du socle.
 library;
 
-import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
@@ -41,12 +40,6 @@ const IconData _iconB = IconData(0xE931);
 const Color _darkA = Color(0xFF004D40);
 const Color _darkB = Color(0xFF311B92);
 
-/// Une teinte vive qui NE tient PAS le plancher sur une surface claire : c'est
-/// le témoin de T4. Si elle le tenait, la garde mesurerait du vide.
-const Color _vif = Color(0xFFFF9800);
-
-String _fb(String key) => kZChatLabelFallbacks[key]!;
-
 /// La couleur **réellement peinte** sur le glyphe de [icon].
 ///
 /// 🔴 Lue sur le `RenderParagraph` que l'`Icon` monte — pas sur `Icon.color`.
@@ -64,21 +57,6 @@ Color? _painted(WidgetTester tester, IconData icon) {
     ),
   );
   return paragraph.text.style?.color;
-}
-
-/// Luminance relative WCAG 2.x — implémentation **indépendante** de celle du
-/// socle : c'est ce qui empêche T4 d'être tautologique.
-double _luminance(Color c) {
-  double lin(double channel) => channel <= 0.03928
-      ? channel / 12.92
-      : math.pow((channel + 0.055) / 1.055, 2.4).toDouble();
-  return 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b);
-}
-
-double _ratio(Color a, Color b) {
-  final double la = _luminance(a);
-  final double lb = _luminance(b);
-  return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
 }
 
 /// Ce qu'une montée rend au test : les couleurs ambiantes et la surface
@@ -123,8 +101,8 @@ Future<_Rig> _mount(
   return _Rig(ambient: ambient, surface: surface);
 }
 
-/// Un artefact déclaré : [present] gouverne sa présence, [alwaysAccented] la
-/// condition d'application de sa teinte. Le verbe « créer » est là pour que
+/// Un artefact déclaré : [present] gouverne sa présence. Le verbe « créer »
+/// est là pour que
 /// l'entrée soit RENDUE même absente — sans lui, un artefact ni présent ni
 /// actionnable n'entre pas dans l'arbre.
 ZChatArtifactSpec _spec({
@@ -132,13 +110,11 @@ ZChatArtifactSpec _spec({
   required IconData icon,
   required Color accent,
   required bool present,
-  bool alwaysAccented = false,
 }) => ZChatArtifactSpec(
   key: key,
   icon: icon,
   label: key,
   accent: accent,
-  alwaysAccented: alwaysAccented,
   presence: (ZChatMessage _) => present,
   actions: <ZChatArtifactAction>[
     ZChatArtifactAction.create(onSelected: (ZChatMessage _) {}),
@@ -147,7 +123,7 @@ ZChatArtifactSpec _spec({
 );
 
 void main() {
-  group('🔴 CR126-T1 — INERTIE : sans le drapeau, la teinte reste l\'ÉTAT', () {
+  group('🔴 La TEINTE dit l\'ÉTAT, et rien d\'autre — la règle confirmée par le legacy', () {
     testWidgets('artefact absent ⇒ couleur AMBIANTE peinte ; artefact présent '
         '⇒ son accent peint', (WidgetTester tester) async {
       final _Rig rig = await _mount(tester, <ZChatArtifactSpec>[
@@ -180,125 +156,4 @@ void main() {
     });
   });
 
-  group('🔴 CR126-T2 — EFFET : drapeau posé, la teinte dit la NATURE', () {
-    testWidgets('deux artefacts ABSENTS portent CHACUN son accent, et les deux '
-        'couleurs diffèrent', (WidgetTester tester) async {
-      final _Rig rig = await _mount(tester, <ZChatArtifactSpec>[
-        _spec(
-          key: kZChatCapabilityMindmap,
-          icon: _iconA,
-          accent: _darkA,
-          present: false,
-          alwaysAccented: true,
-        ),
-        _spec(
-          key: kZChatCapabilityFlashcards,
-          icon: _iconB,
-          accent: _darkB,
-          present: false,
-          alwaysAccented: true,
-        ),
-      ]);
-
-      final Color? peintA = _painted(tester, _iconA);
-      final Color? peintB = _painted(tester, _iconB);
-
-      // Chaque nature porte SON accent — égalité exacte, les deux teintes
-      // tenant déjà le plancher sur cette surface.
-      expect(peintA, _darkA);
-      expect(peintB, _darkB);
-      // Et elles ne se confondent pas : c'est tout l'intérêt du canal — neuf
-      // pictogrammes de même couleur se distinguent moins vite que neuf
-      // couleurs.
-      expect(peintA, isNot(peintB));
-      // Ni l'une ni l'autre n'est retombée sur l'ambiante.
-      expect(peintA, isNot(rig.ambient));
-      expect(peintB, isNot(rig.ambient));
-    });
-  });
-
-  group('🔴 CR126-T3 — L\'ANNONCE NE BOUGE PAS', () {
-    testWidgets('drapeau posé sur un artefact VIDE : le glyphe est teint, et '
-        'l\'annonce dit toujours « aucun contenu »', (
-      WidgetTester tester,
-    ) async {
-      final SemanticsHandle handle = tester.ensureSemantics();
-      await _mount(tester, <ZChatArtifactSpec>[
-        _spec(
-          key: kZChatCapabilityMindmap,
-          icon: _iconA,
-          accent: _darkA,
-          present: false,
-          alwaysAccented: true,
-        ),
-      ]);
-
-      // Anti-vacuité : la garde ne vaut que si la teinte A RÉELLEMENT bougé.
-      // Sans cette assertion, elle resterait verte sur un canal inerte, et ne
-      // prouverait rien de la séparation des deux canaux.
-      expect(
-        _painted(tester, _iconA),
-        _darkA,
-        reason: '🔴 le canal doit avoir teint un artefact ABSENT — sinon la '
-            'garde ci-dessous ne mesure pas la séparation qu\'elle prétend '
-            'protéger',
-      );
-
-      final SemanticsNode? node = findSemantics(
-        tester,
-        (SemanticsNode n) => n.label == kZChatCapabilityMindmap,
-      );
-      expect(node, isNotNull);
-      expect(
-        node!.value,
-        contains(_fb(kZChatLabelArtifactEmpty)),
-        reason: '🔴 un artefact vide s\'annonce VIDE, teinté ou non',
-      );
-      expect(
-        node.value,
-        isNot(contains(_fb(kZChatLabelGenerated))),
-        reason: '🔴 teindre en forçant la présence ferait annoncer « déjà '
-            'généré » un artefact SANS CONTENU — un mensonge au lecteur '
-            'd\'écran. C\'est exactement ce que ce second canal évite.',
-      );
-      handle.dispose();
-    });
-  });
-
-  group('🔴 CR126-T4 — CONTRASTE : la correction vaut AUSSI pour un absent', () {
-    testWidgets('un artefact ABSENT teinté d\'une couleur trop claire est '
-        'relevé au plancher, comme un artefact présent', (
-      WidgetTester tester,
-    ) async {
-      final _Rig rig = await _mount(tester, <ZChatArtifactSpec>[
-        _spec(
-          key: kZChatCapabilityMindmap,
-          icon: _iconA,
-          accent: _vif,
-          present: false,
-          alwaysAccented: true,
-        ),
-      ]);
-
-      final Color? surface = rig.surface;
-      expect(surface, isNotNull);
-      // Anti-vacuité : le témoin doit RÉELLEMENT être sous le plancher sur
-      // cette surface, sinon la garde mesurerait du vide.
-      expect(
-        _ratio(_vif, surface!),
-        lessThan(3),
-        reason: '🔴 témoin mal choisi : cette teinte tient déjà le plancher, '
-            'la garde ne mesurerait rien',
-      );
-
-      final Color? peint = _painted(tester, _iconA);
-      expect(peint, isNotNull);
-      // La teinte peinte n'est PAS la teinte brute…
-      expect(peint, isNot(_vif));
-      // …et elle tient le plancher §1.4.11 contre la surface réellement
-      // résolue par le rendu. Rapport recalculé ici, sans jamais rappeler la
-      // fonction de correction du socle.
-      expect(_ratio(peint!, surface), greaterThanOrEqualTo(3));
-    });
-  });
 }

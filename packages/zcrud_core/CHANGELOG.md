@@ -3,6 +3,18 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.26.0 — 2026-08-28
+
+### Ajouté
+- **Le vocabulaire des actions s'ouvre** : `ZActionKey` (clé opaque, douze constantes canoniques indexées depuis l'enum — aucune table parallèle), port opt-in `ZKeyedAcl.canKey`, et `ZCrudAction.move`. L'enum reste intact : chaque consommateur existant compile et se comporte à l'identique.
+
+### Garde
+- 🔴 **Fail-closed préservé, dans son cas le plus contre-intuitif** : une clé libre soumise à une ACL restée fermée est **refusée** — même si cette ACL est permissive sur l'enum. Le refus vient du routage, pas de la bonne volonté de l'ACL : aucune matrice écrite avant cette version ne peut accorder un droit qu'elle ne connaît pas.
+
+### Attention
+- Un hôte dont un `switch` exhaustif couvre l'enum doit ajouter `move`. Un hôte qui étendait par une **matrice parallèle** la retire en passant son ACL au port à clés.
+- Le socle transporte des clés **opaques** : aucune clé d'hôte n'y figure, et il n'interprète aucun droit.
+
 ## 3.24.0 — 2026-08-27
 
 ### Ajouté

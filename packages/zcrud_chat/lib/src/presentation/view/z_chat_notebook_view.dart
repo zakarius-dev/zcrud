@@ -65,6 +65,7 @@ class ZChatNotebookView extends StatelessWidget {
     this.confirmArtifactAction,
     this.artifactMenuBuilder,
     this.artifactMenuCrossAxisCount = kZChatArtifactMenuCrossAxisCount,
+    this.artifactHostPosition = ZChatArtifactHostPosition.above,
     this.collapsedMaxHeight,
     this.padding,
     this.reverse = false,
@@ -94,9 +95,20 @@ class ZChatNotebookView extends StatelessWidget {
   /// pastille de compte, menu des verbes dont la condition tient,
   /// confirmation d'un verbe destructeur, état annoncé.
   ///
-  /// Les deux créneaux **cohabitent** : le contenu de [actionsBuilder] est
-  /// rendu au-dessus de la rangée d'artefacts, pas remplacé par elle.
+  /// Les deux créneaux **cohabitent** : le contenu de [actionsBuilder] n'est
+  /// pas remplacé par la rangée d'artefacts, et [artifactHostPosition] dit
+  /// où il va — au-dessus par défaut.
   final List<ZChatArtifactSpec> artifacts;
+
+  /// Où va le contenu de [actionsBuilder] relativement à la rangée
+  /// d'artefacts — relayé tel quel à [ZChatArtifactBar.slot].
+  ///
+  /// [ZChatArtifactHostPosition.above] (défaut) garde la composition
+  /// historique ; [ZChatArtifactHostPosition.inline] fait entrer le contenu
+  /// de l'hôte dans la grille des glyphes, soumis au même repli responsive.
+  /// Sans artefact déclaré, ce paramètre est sans effet : [actionsBuilder]
+  /// est relayé tel quel.
+  final ZChatArtifactHostPosition artifactHostPosition;
 
   /// Présentation **injectée** du contenu des menus d'artefact — relayée telle
   /// quelle à [ZChatArtifactBar.menuBuilder].
@@ -181,6 +193,7 @@ class ZChatNotebookView extends StatelessWidget {
       : ZChatArtifactBar.slot(
           artifacts: artifacts,
           host: actionsBuilder,
+          hostPosition: artifactHostPosition,
           skin: skin,
           confirm: confirmArtifactAction,
           menuBuilder: artifactMenuBuilder,

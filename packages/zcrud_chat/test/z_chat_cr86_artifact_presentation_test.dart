@@ -348,6 +348,10 @@ void main() {
                 label: 'Carte mentale',
                 presence: (ZChatMessage _) => true,
                 actions: <ZChatArtifactAction>[
+                  // DEUX verbes visibles : un verbe unique ne passe plus par
+                  // un menu (il s'exécute au clic) — c'est la couture de MENU
+                  // qui est mesurée ici.
+                  ZChatArtifactAction.open(onSelected: (ZChatMessage _) {}),
                   ZChatArtifactAction.delete(
                     onSelected: (ZChatMessage _) => supprime++,
                   ),
@@ -360,7 +364,7 @@ void main() {
                   List<ZChatArtifactAction> actions,
                   void Function(ZChatArtifactAction) select,
                 ) => GestureDetector(
-                  onTap: () => select(actions.single),
+                  onTap: () => select(actions.last),
                   child: const Text('MENU-HÔTE'),
                 ),
           ),
@@ -495,7 +499,11 @@ void main() {
                 label: 'Carte mentale',
                 presence: (ZChatMessage _) => true,
                 actions: <ZChatArtifactAction>[
+                  // Deux verbes visibles : c'est le MENU qui est mesuré.
                   ZChatArtifactAction.open(onSelected: (ZChatMessage _) {}),
+                  ZChatArtifactAction.regenerate(
+                    onSelected: (ZChatMessage _) {},
+                  ),
                 ],
               ),
             ],
@@ -548,7 +556,11 @@ void main() {
                 label: 'Carte mentale',
                 presence: (ZChatMessage _) => true,
                 actions: <ZChatArtifactAction>[
+                  // Deux verbes visibles : c'est le MENU qui est mesuré.
                   ZChatArtifactAction.open(onSelected: (ZChatMessage _) {}),
+                  ZChatArtifactAction.regenerate(
+                    onSelected: (ZChatMessage _) {},
+                  ),
                 ],
               ),
             ],
@@ -631,7 +643,12 @@ void main() {
                 label: 'Carte mentale',
                 presence: (ZChatMessage _) => true,
                 actions: <ZChatArtifactAction>[
+                  // Deux verbes visibles : c'est la grille de MENU par défaut
+                  // qui est mesurée.
                   ZChatArtifactAction.open(onSelected: (ZChatMessage _) {}),
+                  ZChatArtifactAction.regenerate(
+                    onSelected: (ZChatMessage _) {},
+                  ),
                 ],
               ),
             ],

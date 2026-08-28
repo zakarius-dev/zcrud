@@ -119,6 +119,7 @@ class ZChatArtifactAction {
     this.accent,
     this.visible,
     this.destructive = false,
+    this.confirmsDownstream = false,
     this.confirmMessage,
   }) : assert(label != null || labelKey != null);
 
@@ -131,6 +132,7 @@ class ZChatArtifactAction {
   }) : labelKey = kZChatLabelArtifactCreate,
        visible = zChatArtifactWhenAbsent,
        destructive = false,
+       confirmsDownstream = false,
        confirmMessage = null;
 
   /// « Ouvrir » — visible **si l'artefact est présent**.
@@ -145,6 +147,7 @@ class ZChatArtifactAction {
   }) : labelKey = kZChatLabelArtifactOpen,
        visible = zChatArtifactWhenPresent,
        destructive = false,
+       confirmsDownstream = false,
        confirmMessage = null;
 
   /// « Régénérer » — visible si l'artefact est présent.
@@ -156,6 +159,7 @@ class ZChatArtifactAction {
   }) : labelKey = kZChatLabelArtifactRegenerate,
        visible = zChatArtifactWhenPresent,
        destructive = false,
+       confirmsDownstream = false,
        confirmMessage = null;
 
   /// « Modifier » — visible si l'artefact est présent.
@@ -167,6 +171,7 @@ class ZChatArtifactAction {
   }) : labelKey = kZChatLabelArtifactEdit,
        visible = zChatArtifactWhenPresent,
        destructive = false,
+       confirmsDownstream = false,
        confirmMessage = null;
 
   /// « Supprimer » — visible si l'artefact est présent, et **destructeur** :
@@ -179,7 +184,8 @@ class ZChatArtifactAction {
     this.confirmMessage,
   }) : labelKey = kZChatLabelArtifactDelete,
        visible = zChatArtifactWhenPresent,
-       destructive = true;
+       destructive = true,
+       confirmsDownstream = false;
 
   /// Libellé **déjà localisé** par l'hôte. Prioritaire sur [labelKey].
   final String? label;
@@ -204,6 +210,12 @@ class ZChatArtifactAction {
 
   /// `true` ⇒ le socle demande une **confirmation** avant [onSelected].
   final bool destructive;
+
+  /// `true` ⇒ [onSelected] pose **lui-même** sa question avant tout effet
+  /// (un rappel qui délègue à une couche qui confirme déjà). Le socle n'en
+  /// ajoute alors aucune, quel que soit le mode d'activation : un verbe ne
+  /// reçoit jamais deux confirmations.
+  final bool confirmsDownstream;
 
   /// Message de confirmation, **déjà localisé** par l'hôte. `null` avec
   /// [destructive] laisse le socle poser sa question générique.
@@ -249,7 +261,10 @@ class ZChatArtifactSpec {
     this.count,
     this.busy,
     this.accent,
-    this.alwaysAccented = false,
+    this.activation = ZChatArtifactActivation.menu,
+    this.activationPrompt,
+    this.activationConfirmLabel,
+    this.activationCancelLabel,
     this.actions = const <ZChatArtifactAction>[],
   });
 
@@ -312,16 +327,41 @@ class ZChatArtifactSpec {
   /// d'accessibilité, qui continue de distinguer « déjà généré » de « aucun
   /// contenu ».
   ///
-  /// 🔴 Ce drapeau ne touche **que** la condition d'application de la teinte.
-  /// Il n'existe pas d'équivalent en forçant [presence] à `true` : cela
-  /// teindrait bien le glyphe, mais ferait **annoncer « généré » un artefact
-  /// vide** — un mensonge au lecteur d'écran. L'occupation animée, la
-  /// correction de contraste et la pastille sont identiques dans les deux
-  /// cas.
-  final bool alwaysAccented;
-
   /// Les verbes, **dans l'ordre voulu par l'hôte**.
   final List<ZChatArtifactAction> actions;
+
+  /// Ce que le toucher du glyphe déclenche quand un **seul** verbe est
+  /// visible (cf. [ZChatArtifactActivation]).
+  ///
+  /// * [ZChatArtifactActivation.menu] (défaut) — le menu, même à un élément :
+  ///   rien ne part au toucher, le verbe part au second geste ;
+  /// * [ZChatArtifactActivation.direct] — le verbe part au toucher, sans
+  ///   menu ; l'entrée est annoncée comme un bouton simple ;
+  /// * [ZChatArtifactActivation.confirm] — une question est posée, puis le
+  ///   verbe part si elle est confirmée. Le message vient de
+  ///   [activationPrompt], les libellés de [activationConfirmLabel] et
+  ///   [activationCancelLabel] — chacun retombe sur le libellé localisé du
+  ///   socle quand l'hôte ne le fournit pas.
+  ///
+  /// Quand plusieurs verbes sont visibles, le menu est la seule forme
+  /// possible et ce réglage est sans effet. Un verbe **destructeur** garde sa
+  /// confirmation quel que soit le mode — et n'en reçoit jamais deux : en
+  /// mode [ZChatArtifactActivation.confirm], la question destructrice tient
+  /// lieu de question d'activation.
+  final ZChatArtifactActivation activation;
+
+  /// Message **déjà localisé** de la question posée en mode
+  /// [ZChatArtifactActivation.confirm]. `null` ⇒ la question générique
+  /// localisée du socle.
+  final String? activationPrompt;
+
+  /// Libellé **déjà localisé** du verbe qui confirme la question
+  /// d'activation. `null` ⇒ le libellé localisé du socle.
+  final String? activationConfirmLabel;
+
+  /// Libellé **déjà localisé** du verbe qui annule la question d'activation.
+  /// `null` ⇒ le libellé localisé du socle.
+  final String? activationCancelLabel;
 
   /// L'artefact est-il présent sur [message] ? Repli **fermant** (invariant
   /// AD-10) : une lecture qui lève rend `false`.

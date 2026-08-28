@@ -283,6 +283,12 @@ const String kZChatLabelArtifactCount = '${kZChatLabelPrefix}artifactCount';
 const String kZChatLabelArtifactConfirmPrompt =
     '${kZChatLabelPrefix}artifactConfirmPrompt';
 
+/// Question générique posée avant d'exécuter le verbe unique d'un artefact
+/// en mode d'activation `confirm`, quand l'hôte n'a pas fourni la sienne
+/// (`ZChatArtifactSpec.activationPrompt`).
+const String kZChatLabelArtifactActivatePrompt =
+    '${kZChatLabelPrefix}artifactActivatePrompt';
+
 /// Action « confirmer » de la confirmation en place.
 const String kZChatLabelArtifactConfirm = '${kZChatLabelPrefix}artifactConfirm';
 
@@ -545,6 +551,7 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelArtifactBusy,
   kZChatLabelArtifactCount,
   kZChatLabelArtifactConfirmPrompt,
+  kZChatLabelArtifactActivatePrompt,
   kZChatLabelArtifactConfirm,
   kZChatLabelArtifactCancel,
   kZChatLabelSend,
@@ -668,6 +675,7 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelArtifactBusy: 'Génération en cours',
   kZChatLabelArtifactCount: '$kZChatCountPlaceholder élément(s)',
   kZChatLabelArtifactConfirmPrompt: 'Confirmer cette action ?',
+  kZChatLabelArtifactActivatePrompt: 'Lancer cette action ?',
   kZChatLabelArtifactConfirm: 'Confirmer',
   kZChatLabelArtifactCancel: 'Annuler',
   kZChatLabelSend: 'Envoyer',

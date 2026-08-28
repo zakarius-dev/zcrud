@@ -50,6 +50,53 @@ const String kZChatArtifactVerbPrint = 'print';
 /// Verbe « partager » — offert quand présent, lecture seule comprise.
 const String kZChatArtifactVerbShare = 'share';
 
+/// Ce que le **toucher** d'un artefact déclenche quand un **seul** verbe est
+/// offert.
+///
+/// Sur un artefact à plusieurs verbes visibles, le menu est la seule forme
+/// possible et ce réglage est sans effet. Sur un verbe unique, trois
+/// comportements sont déclarables :
+///
+/// * [menu] (défaut) — le menu, même à un seul élément : le toucher n'a
+///   jamais d'effet direct, le verbe part au second geste ;
+/// * [direct] — le verbe part au toucher, sans menu — pour une commande dont
+///   l'effet est bon marché et réversible ;
+/// * [confirm] — le verbe part au toucher, **après** une question : la forme
+///   à déclarer quand l'effet est coûteux (une génération) sans être
+///   destructeur.
+///
+/// Un verbe **destructeur** garde sa confirmation quel que soit le mode, et
+/// n'en reçoit jamais deux.
+enum ZChatArtifactActivation {
+  /// Le toucher ouvre le menu, même à un seul élément (défaut).
+  menu,
+
+  /// Le toucher exécute le verbe unique, sans menu ni question — hors
+  /// confirmation d'un verbe destructeur, qui demeure.
+  direct,
+
+  /// Le toucher pose une **question** puis exécute le verbe unique. Le
+  /// message et les libellés de la question sont déclarables au rendu.
+  confirm;
+
+  /// Valeur persistée (camelCase).
+  String get jsonValue => name;
+
+  /// Parse **total** — une valeur inconnue retombe sur la plus **prudente**
+  /// ([menu]) : un mode mal déclaré ne doit jamais exécuter au toucher un
+  /// verbe qui ne l'a pas demandé. Ne lève jamais.
+  static ZChatArtifactActivation fromJson(Object? raw) {
+    switch (raw) {
+      case 'direct':
+        return ZChatArtifactActivation.direct;
+      case 'confirm':
+        return ZChatArtifactActivation.confirm;
+      default:
+        return ZChatArtifactActivation.menu;
+    }
+  }
+}
+
 /// Dans quel **état** de l'artefact un verbe est offert.
 ///
 /// Trois valeurs suffisent à couvrir tous les verbes rencontrés, et la
@@ -296,8 +343,9 @@ class ZChatArtifactDeclaration {
     this.labelToken,
     this.accentToken,
     Iterable<ZChatArtifactVerb> verbs = const <ZChatArtifactVerb>[],
+    this.activation = ZChatArtifactActivation.menu,
+    this.activationPromptToken,
     this.hasCount = false,
-    this.alwaysAccented = false,
     this.subjectRequired = false,
     this.style,
     this.order = 0,
@@ -323,6 +371,16 @@ class ZChatArtifactDeclaration {
   /// déclaration **légitime** : l'artefact est alors un pur indicateur d'état.
   final List<ZChatArtifactVerb> verbs;
 
+  /// Ce que le toucher déclenche quand un **seul** verbe est offert
+  /// (cf. [ZChatArtifactActivation]). Sans effet sur un artefact dont
+  /// plusieurs verbes sont visibles. Défaut : le menu.
+  final ZChatArtifactActivation activation;
+
+  /// Jeton du message de la question posée en mode
+  /// [ZChatArtifactActivation.confirm], résolu par l'hôte au rendu. `null` ⇒
+  /// le rendu pose sa question générique localisée.
+  final String? activationPromptToken;
+
   /// `true` si l'artefact porte un **compte** (nœuds, cartes…) affiché en
   /// pastille quand il est strictement positif.
   final bool hasCount;
@@ -337,11 +395,6 @@ class ZChatArtifactDeclaration {
   /// d'accessibilité, qui continuent de distinguer « déjà généré » de
   /// « aucun contenu ».
   ///
-  /// Le drapeau vit sur la déclaration, à côté de [accentToken] : la teinte
-  /// et sa condition d'application se lisent au même endroit. Il ne touche
-  /// **que** cette condition — jamais la présence, jamais ce qui est annoncé.
-  final bool alwaysAccented;
-
   /// `true` si la génération de cet artefact exige un **sujet** non vide, au
   /// même titre qu'une matière non vide (`ZChatArtifactGenerationRequest.
   /// subjectRequired`). Déclaré ici pour que le cas courant n'exige aucun
@@ -378,7 +431,11 @@ class ZChatArtifactDeclaration {
     'label_token',
     'accent_token',
     'verbs',
+    'activation',
+    'activation_prompt_token',
     'has_count',
+    // Clé publiée puis retirée : filtrée pour qu'un document écrit par une
+    // version qui la posait ne la fasse pas resurgir dans `extra`.
     'always_accented',
     'subject_required',
     kZChatGenerationStyleKindKey,
@@ -437,8 +494,9 @@ class ZChatArtifactDeclaration {
             ZChatArtifactVerb.fromJson,
           ) ??
           const <ZChatArtifactVerb>[],
+      activation: ZChatArtifactActivation.fromJson(map['activation']),
+      activationPromptToken: zJsonStringOrNull(map['activation_prompt_token']),
       hasCount: zJsonBool(map['has_count'], false),
-      alwaysAccented: zJsonBool(map['always_accented'], false),
       subjectRequired: zJsonBool(map['subject_required'], false),
       // Le style est à PLAT sur la déclaration, sous ses propres clés
       // (`style`, `style_params`) : `fromJson` lit la carte entière.
@@ -460,8 +518,11 @@ class ZChatArtifactDeclaration {
           'verbs': <Map<String, dynamic>>[
             for (final ZChatArtifactVerb v in verbs) v.toJson(),
           ],
+        if (activation != ZChatArtifactActivation.menu)
+          'activation': activation.jsonValue,
+        if (activationPromptToken != null)
+          'activation_prompt_token': activationPromptToken,
         if (hasCount) 'has_count': true,
-        if (alwaysAccented) 'always_accented': true,
         if (subjectRequired) 'subject_required': true,
         if (style != null) ...style!.toJson(typeRegistry: typeRegistry),
         if (order != 0) 'order': order,

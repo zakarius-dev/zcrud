@@ -78,8 +78,8 @@ void main() {
   });
 
   group('ZCrudAction — extension additive DODLP (DP-14, gap M7)', () {
-    test('11 valeurs : 5 historiques + 6 étendues, ordre additif', () {
-      expect(ZCrudAction.values, hasLength(11));
+    test('12 valeurs : 5 historiques + 7 étendues, ordre additif', () {
+      expect(ZCrudAction.values, hasLength(12));
       // Les 5 historiques restent en tête, dans l'ordre (rétro-compat).
       expect(ZCrudAction.values.take(5), <ZCrudAction>[
         ZCrudAction.view,
@@ -88,7 +88,8 @@ void main() {
         ZCrudAction.delete,
         ZCrudAction.restore,
       ]);
-      // Les 6 étendues (copy/archive/publish/clear/validate/history) SUIVENT.
+      // Les étendues (copy/archive/publish/clear/validate/history/move)
+      // SUIVENT, dans l'ordre additif.
       expect(ZCrudAction.values.skip(5), <ZCrudAction>[
         ZCrudAction.copy,
         ZCrudAction.archive,
@@ -96,10 +97,11 @@ void main() {
         ZCrudAction.clear,
         ZCrudAction.validate,
         ZCrudAction.history,
+        ZCrudAction.move,
       ]);
     });
 
-    test('ZAllowAllAcl autorise les 11 valeurs (dont les 6 étendues)', () {
+    test('ZAllowAllAcl autorise les 12 valeurs (dont les étendues)', () {
       const acl = ZAllowAllAcl();
       for (final action in <ZCrudAction>[
         ZCrudAction.copy,
@@ -108,6 +110,7 @@ void main() {
         ZCrudAction.clear,
         ZCrudAction.validate,
         ZCrudAction.history,
+        ZCrudAction.move,
       ]) {
         expect(acl.can(action), isTrue, reason: '$action doit être autorisée');
       }
@@ -120,6 +123,7 @@ void main() {
       expect(ZCrudAction.clear.name, 'clear');
       expect(ZCrudAction.validate.name, 'validate');
       expect(ZCrudAction.history.name, 'history');
+      expect(ZCrudAction.move.name, 'move');
     });
   });
 }
