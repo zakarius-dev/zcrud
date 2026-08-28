@@ -3,6 +3,42 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.28.0 — 2026-08-28
+
+### Ajouté
+- `ZExamEditor.showWeeklyReminders` (défaut `false`) : section de **rappel
+  hebdomadaire éditable**. Activée, elle rend les sept jours de la semaine
+  (ordre de la locale) puis la ligne d'heure existante, et compose
+  `ZExam.reminderRecurrence.weekdays` en convention ISO-8601.
+- `ZExamWeekdayLabeler` + `ZExamEditor.weekdayLabeler` : libellé de jour
+  INJECTÉ. Repli `MaterialLocalizations.narrowWeekdays` — aucun nom de jour
+  n'est écrit dans le paquet.
+- `ZExamEditor.weeklyRemindersLabel` : intitulé injecté de la section.
+
+### Garanties
+- **Hôte passif inchangé** : sans `showWeeklyReminders`, l'arbre rendu et le
+  `ZExam` émis sont strictement identiques à la version précédente, et
+  `reminderRecurrence` n'entre pas dans le `copyWith` de soumission — une
+  récurrence portée par l'examen édité est donc préservée à l'octet, sans être
+  affichée ni effacée.
+- La section n'édite que la famille **hebdomadaire** : `daysBefore` de la
+  récurrence initiale est reporté tel quel, et `ZExam.reminderDaysBefore`
+  (champ distinct, édité par la liste de seuils) n'est jamais touché. Aucun
+  jour coché et aucun `daysBefore` à reporter ⇒ `reminderRecurrence == null`,
+  emplacement absent plutôt que récurrence vide.
+- Chaque puce de jour : cible ≥ 48 dp sur les deux axes, nœud `Semantics` avec
+  label et état `selected`, couleurs par jetons de thème
+  (`selectTileSelectedBorderColor` / `selectTileBorderColor`, replis
+  `ColorScheme`).
+
+### Limite connue
+- Le repli `MaterialLocalizations.narrowWeekdays` est **ambigu au lecteur
+  d'écran** : en `en_US` il rend `S M T W T F S`, soit cinq libellés pour sept
+  jours (mardi/jeudi et samedi/dimanche homographes). Flutter n'expose aucun
+  nom de jour complet sans une date réelle. Un hôte soucieux d'accessibilité
+  injecte `weekdayLabeler` avec ses noms complets ; c'est cette chaîne qui
+  devient le `Semantics.label`.
+
 ## 3.6.0 — 2026-08-23
 
 ### Corrigé

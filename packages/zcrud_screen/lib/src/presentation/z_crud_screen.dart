@@ -198,6 +198,7 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
     this.tabsScopeKey,
     this.query = const ZListQueryPolicy(),
     this.header,
+    this.emptyStateBuilder,
     this.canCreate = true,
     this.canDuplicate = true,
     this.titles,
@@ -456,6 +457,34 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// Widget partagé posé au-dessus du corps (au-dessus de la barre d'onglets
   /// en mode [tabs]).
   final Widget? header;
+
+  /// Rendu de l'écran **quand la source ne contient rien** — le premier écran
+  /// d'une collection neuve, celui qui doit expliquer et proposer le geste de
+  /// création.
+  ///
+  /// `null` (défaut) ⇒ **rien ne change** : l'état vide reste celui que la
+  /// liste rend elle-même.
+  ///
+  /// ## Ce qui est « vide », et ce qui ne l'est pas
+  ///
+  /// Le constructeur est appelé pour le seul état **source vide**. Il ne l'est
+  /// pas :
+  ///
+  /// | État | Rendu |
+  /// |---|---|
+  /// | source vide | **ce constructeur** |
+  /// | chargement en cours | l'attente de la liste — un écran vide affiché pendant une lecture annoncerait une collection vide qui ne l'est pas |
+  /// | recherche/filtre sans résultat | l'état « aucun résultat » de la liste : la collection n'est pas vide, c'est le critère qui ne rend rien |
+  /// | erreur de lecture | l'état d'erreur de la liste |
+  /// | `ZCrudAction.view` refusé | l'état **accès refusé** de l'écran, qui prime : le refus est décidé avant toute lecture de la source (refus par défaut, cf. [acl]) |
+  ///
+  /// Le constructeur reçoit un contexte situé **sous** l'ACL de l'écran quand
+  /// [acl] en déclare une : ce qu'il monte lit donc la même autorisation que
+  /// la liste qu'il remplace.
+  ///
+  /// La vue corbeille et les onglets assemblés passent par le même chemin :
+  /// une corbeille vide, ou un onglet vide, rend ce même constructeur.
+  final WidgetBuilder? emptyStateBuilder;
 
   /// Autorise la création (défaut `true`). `false` ⇒ aucun bouton « + »,
   /// quelle que soit l'ACL.
@@ -3209,6 +3238,18 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
     // Lecture notifiée : armée seulement si quelqu'un l'a demandée, honorée en
     // fin de trame et seulement si le contenu a changé (AD-2).
     _publishEntitiesInView();
+    // Seam de l'état vide : posé ICI, au point exact où l'état « source vide »
+    // est connu, et APRÈS le relevé des lignes visibles + la publication de la
+    // vue — remplacer le rendu ne doit pas faire mentir ce que l'écran dit
+    // avoir à l'écran. `ZListNoResults` (recherche/filtre) et `ZListLoading`
+    // ne passent pas par là : ce ne sont pas des collections vides.
+    final WidgetBuilder? emptyBuilder = widget.emptyStateBuilder;
+    if (emptyBuilder != null && state is ZListEmpty) {
+      // `Builder` : le constructeur de l'hôte est appelé SOUS l'ACL dérivée
+      // ci-dessous, donc il lit la même autorisation que la liste qu'il
+      // remplace.
+      return _scoped(context, Builder(builder: emptyBuilder), tabKey: tabKey);
+    }
     final list = DynamicList<T>(
       fields: _listFields,
       state: state,
@@ -3232,11 +3273,18 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
       actionAclMode: widget.actionAclMode,
       collectionId: widget.collectionId,
     );
+    return _scoped(context, list, tabKey: tabKey);
+  }
+
+  /// Pose l'ACL d'écran autour du rendu du listing — **un seul** endroit où
+  /// cette décision est prise, pour que l'état vide injecté ne puisse pas en
+  /// hériter d'une autre.
+  Widget _scoped(BuildContext context, Widget child, {String? tabKey}) {
     final acl = widget.acl;
-    if (acl == null || tabKey != null) return list;
+    if (acl == null || tabKey != null) return child;
     // ACL d'écran : posée par dérivation du scope ambiant (les autres seams
     // sont hérités, jamais recopiés).
-    return ZcrudScope.derive(context, acl: acl, child: list);
+    return ZcrudScope.derive(context, acl: acl, child: child);
   }
 
   /// Corps « voie repository » : contrôleur (vivants ou corbeille) écouté sur

@@ -2045,6 +2045,58 @@ et le repli reste celui de la vie du widget.
 délibéré : son formulaire ne déclare aucune section, donc rien n'y est
 repliable et un store n'y serait jamais ni lu ni écrit.
 
+#### Ce qui se règle par voie {#slots-par-voie}
+
+Le conteneur est choisi par la politique ; quatre paramètres décrivent ce que
+la fenêtre devient **une fois le conteneur choisi**. Chacun est `null` par
+défaut, et `null` ⇒ rien n'entre dans l'arbre.
+
+| Paramètre | `page` | `sheet` | `dialog` |
+|---|---|---|---|
+| `maxWidth` | inerte | honoré | honoré |
+| `maxHeight` | inerte | honoré | honoré |
+| `sheetFrame` | inerte | honoré | inerte |
+| `floatingActionButton` | honoré | inerte | inerte |
+
+```dart
+await presentFormEdition(
+  context,
+  fields: reglagesFields,
+  maxWidth: 480,                                   // borne la surface
+  sheetFrame: (context, child) => Card(child: child), // décor de la FEUILLE
+  floatingActionButton: FloatingActionButton(       // bouton de la PAGE
+    onPressed: _aider,
+    child: const Icon(Icons.help_outline),
+  ),
+);
+```
+
+`sheetFrame` (`ZFormSheetFrame`) devient l'**ancêtre direct** du corps monté,
+et seulement en feuille — à ne pas confondre avec `ZSheetFrameSpec` de
+`zcrud_navigation`, qui règle la largeur et le cadre de la surface elle-même.
+`floatingActionButton` est porté par un `Scaffold` posé au-dessus du chrome de
+page : c'est le seul mode où un bouton flottant a une place.
+
+⚠️ **Si vous compensiez** — un `ConstrainedBox` autour de votre corps, un
+présentateur maison qui imposait sa largeur, un `Stack` superposant votre
+propre bouton — **retirez la compensation** avant de déclarer ces paramètres :
+les deux se composent, et la borne effective devient la plus petite.
+
+### L'écran vide, écrit par l'application {#etat-vide}
+
+`ZCrudScreen(emptyStateBuilder: (context) => …)` remplace l'état vide interne
+de la liste quand **la source ne contient rien** — le premier écran d'une
+collection neuve, celui qui doit expliquer et proposer la création.
+
+Il n'est appelé **ni** pendant le chargement (la collection n'est pas vide,
+elle est inconnue), **ni** sur « aucun résultat » d'une recherche ou d'un
+filtre (c'est le critère qui ne rend rien), **ni** en erreur. Et l'état
+**accès refusé** continue de primer : le refus est décidé avant toute lecture
+de la source. Le constructeur est appelé **sous** l'ACL dérivée de l'écran, il
+lit donc la même autorisation que la liste qu'il remplace.
+
+`null` (le défaut) ⇒ l'écran rend exactement ce qu'il rendait.
+
 ## API principale {#api-principale}
 
 | Type | Rôle |
@@ -2062,6 +2114,7 @@ repliable et un store n'y serait jamais ni lu ni écrit.
 | `ZTrashPolicy` | Gestes offerts par la corbeille : `full` (défaut), `withoutPurge`, `readOnly`, ou combinaison libre ; plus `showCount` (pastille), `visibleWhenEmpty` (accès masqué à vide) et `viewAccess` (condition d'accès à la vue, sans ouvrir les gestes). |
 | `trashCount` (`ValueListenable<int>?`) | Nombre d'éléments en corbeille fourni par l'application : pastille sur le bouton d'accès, et condition de visibilité. Dérivé gratuitement sur la voie `items`. |
 | `ZListQueryPolicy` (`query`) | Tri par défaut (`sort`), filtres permanents (`baseFilters`), taille de page (`pageSize`) et sémantique de recherche (`searchScope`, `searchFolding` ; raccourci `ZListQueryPolicy.legacySearch()`) et voie de pagination (`paginationMode`) du listing. `filtersWith` ajoute, `sortFor` remplace ; `ZListQueryPolicy.of(context)` la rend aux vues que l'application pose sous l'écran (page d'onglet). Rien de déclaré ⇒ requêtes strictement inchangées. |
+| `emptyStateBuilder` (`WidgetBuilder?`) | Rendu de l'écran quand la **source est vide**, à la place de l'état vide interne de la liste. Jamais appelé pendant le chargement, sur « aucun résultat » ou en erreur ; l'état **accès refusé** prime. `null` (défaut) ⇒ rendu strictement inchangé. Voir [L'écran vide, écrit par l'application](#etat-vide). |
 | `ZAppBarActionsBuilder` / `ZAppBarActionsContext` (`actionsBuilder`) | Actions d'app-bar **dépendantes de l'état**, toujours rendues en **données** (`ZAppBarAction`, donc `semanticLabel` conservé). Le contexte porte `acl` (résolue, onglet actif composé), `tabIndex`, `itemCount`, `isEmpty`, `isTrashView`. **Exclusif avec `actions`** (assertion). Voir [Une action de barre qui dépend de l'état](#actions-conditionnelles). |
 | `ZListTabsStore` (`tabsStore`) / `tabsScopeKey` | Persistance de l'**onglet actif** et du **défilement par onglet** entre deux ouvertures — `loadTabIndex`/`saveTabIndex`/`loadScrollOffset`/`saveScrollOffset`, synchrones, qui ne lèvent jamais. Écriture **par emplacement** (jamais par portée entière). Clé de portée **dérivée** (entité + identité d'écran + jeu d'onglets), `tabsScopeKey` en voie d'échappement. `null` (défaut) ⇒ aucune lecture, aucune écriture. `ZInMemoryListTabsStore` sert les tests. Voir [L'onglet et son défilement qui survivent à la fermeture](#persistance-onglets). |
 | `ZListTab` (`tabs`) | Onglet de catégorisation : `labelKey`, `builder`, `pageKey`, `canCreate`, `defaultItemBuilder`, plus `acl` (restriction du segment), `titles` (intitulés du formulaire) et `countOf` (pastille de comptage). |

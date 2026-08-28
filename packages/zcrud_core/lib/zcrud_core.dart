@@ -252,6 +252,11 @@ export 'src/presentation/state/z_display_state.dart';
 // palette ni tempo à lui : les deux lui sont passés par le module appelant.
 export 'src/presentation/theme/z_color_cycle.dart';
 export 'src/presentation/theme/z_color_key_resolver.dart';
+// Styles RÉSOLUS du dialogue de confirmation et de l'état vide : ils lisent les
+// jetons `confirmDialog*`/`emptyState*` et appliquent le repli que documente
+// chaque jeton, pour que deux composants rendus dans le même thème soient
+// identiques par construction.
+export 'src/presentation/theme/z_dialog_state_styles.dart';
 export 'src/presentation/theme/z_foreground_override.dart';
 export 'src/presentation/theme/z_gradient_resolver.dart';
 export 'src/presentation/theme/z_inverted_surface.dart';

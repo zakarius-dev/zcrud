@@ -111,6 +111,9 @@ export 'src/domain/z_study_session_selector.dart';
 // extension générée est complète et sûre, et c'est elle qui porte
 // `toMap`/`copyWith` (aucun doublon à la main).
 export 'src/domain/z_study_streak.dart';
+// Référence légère vers une matière possédée et résolue par l'application.
+// Le kernel n'introduit ni entité matière ni port de résolution.
+export 'src/domain/z_study_subject_ref.dart';
 // `ZSuggestedTag` : value object non-`ZExtensible`. Son extension générée
 // `ZSuggestedTagZcrud` est exportée sans `hide` : un value object n'a ni
 // `extra` ni `extension`, son `copyWith` généré est donc complet et sûr.

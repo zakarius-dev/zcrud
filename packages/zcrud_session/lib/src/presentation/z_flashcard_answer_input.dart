@@ -59,7 +59,7 @@ library;
 
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/foundation.dart' show ValueListenable, setEquals;
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 // `ZReviewMode` (kernel) est RÉEXPORTÉ par le barrel `zcrud_flashcard` : un
@@ -72,6 +72,75 @@ import 'z_card_advance_behavior.dart';
 import 'z_correction_visibility.dart';
 import 'z_srs_quality_buttons.dart';
 import 'z_timer_display.dart';
+
+/// Construit le contenu visuel d'un choix de réponse.
+///
+/// Le builder reçoit le [ZChoice] complet afin qu'un hôte puisse rendre son
+/// contenu riche sans que cette surface dépende d'un moteur d'édition.
+typedef ZFlashcardChoiceContentBuilder =
+    Widget Function(BuildContext context, ZChoice choice);
+
+/// Construit le champ de réponse rédigée.
+///
+/// Le builder reçoit le `controller` et le `focusNode` **détenus par la
+/// surface** : les réutiliser est obligatoire, sinon la valeur saisie ne part
+/// pas au barème (la soumission lit ce controller-là, et lui seul). Le
+/// `validator` est déjà localisé et mémoïsé ; `isSubmitted` porte le verrou
+/// à appliquer au champ (le rendre inerte, sans le vider).
+typedef ZFlashcardWrittenAnswerFieldBuilder =
+    Widget Function(
+      BuildContext context, {
+      required TextEditingController controller,
+      required FocusNode focusNode,
+      required FormFieldValidator<String> validator,
+      required bool isSubmitted,
+    });
+
+/// Représentation courante de la réponse en cours de saisie.
+///
+/// Instantané advisory : la surface reste propriétaire de son état. Écrire
+/// dans cet objet ne change rien à la saisie.
+@immutable
+class ZFlashcardAnswerDraft {
+  /// Construit un instantané de réponse.
+  const ZFlashcardAnswerDraft({
+    this.text = '',
+    this.selectedChoiceIndexes = const <int>{},
+    this.answeredTrue,
+  });
+
+  /// Texte rédigé courant (`''` hors carte à rédaction).
+  final String text;
+
+  /// Positions cochées d'un QCM (vide hors QCM).
+  ///
+  /// Ce sont des **positions**, jamais des identifiants : `ZChoice` n'en
+  /// porte pas, et deux choix peuvent avoir le même contenu.
+  final Set<int> selectedChoiceIndexes;
+
+  /// Réponse d'un Vrai/Faux (`null` hors Vrai/Faux, et tant que rien n'est
+  /// répondu).
+  final bool? answeredTrue;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ZFlashcardAnswerDraft &&
+      other.text == text &&
+      other.answeredTrue == answeredTrue &&
+      setEquals(other.selectedChoiceIndexes, selectedChoiceIndexes);
+
+  @override
+  int get hashCode =>
+      Object.hash(text, answeredTrue, Object.hashAllUnordered(
+        selectedChoiceIndexes,
+      ));
+
+  @override
+  String toString() =>
+      'ZFlashcardAnswerDraft(text: $text, '
+      'selectedChoiceIndexes: $selectedChoiceIndexes, '
+      'answeredTrue: $answeredTrue)';
+}
 
 /// Résultat **local** d'une soumission (état de correction affiché).
 @immutable
@@ -106,6 +175,11 @@ class ZFlashcardAnswerInput extends StatefulWidget {
     required this.mode,
     this.srsConfig = const ZSrsConfig(),
     this.contentBuilder,
+    this.choiceContentBuilder,
+    this.writtenAnswerFieldBuilder,
+    this.initialAnswer,
+    this.onAnswerChanged,
+    this.isSubmitted,
     this.evaluationPort,
     this.allowSkipEvaluation = false,
     this.hintPort,
@@ -135,6 +209,61 @@ class ZFlashcardAnswerInput extends StatefulWidget {
   /// Slot de rendu du contenu (`null` : défaut texte brut thématisé).
   final ZFlashcardContentBuilder? contentBuilder;
 
+  /// Slot de rendu du contenu de chaque choix.
+  ///
+  /// `null` conserve le [Text] brut historique, au même emplacement dans la
+  /// ligne. Le builder ne remplace ni la sélection, ni les sémantiques, ni la
+  /// cible tactile : il ne produit que l'enfant du `Expanded` du libellé.
+  final ZFlashcardChoiceContentBuilder? choiceContentBuilder;
+
+  /// Slot de rendu du champ de réponse rédigée.
+  ///
+  /// `null` conserve le `TextFormField` historique. Le builder remplace le
+  /// champ, et lui seul : les `Semantics` de la zone de saisie, le verrou de
+  /// soumission et la place du champ dans la colonne restent ceux de la
+  /// surface. Sans effet sur un QCM ou un Vrai/Faux, qui n'ont pas de champ.
+  final ZFlashcardWrittenAnswerFieldBuilder? writtenAnswerFieldBuilder;
+
+  /// Réponse rédigée préremplie, appliquée **une seule fois, au montage**.
+  ///
+  /// Jamais réinjectée ensuite : une valeur repoussée dans le controller à
+  /// chaque build écraserait la sélection et le curseur de l'utilisateur en
+  /// pleine frappe. Changer cette valeur sur une surface déjà montée est donc
+  /// sans effet — pour repartir d'un autre brouillon, remontez la surface
+  /// (`key` distincte).
+  ///
+  /// Un changement de carte remet le champ à vide, comme sans ce paramètre.
+  final String? initialAnswer;
+
+  /// Observe la réponse en cours (`null` : rien n'est observé).
+  ///
+  /// Émis à chaque changement de saisie : frappe dans le champ rédigé,
+  /// (dé)cochage d'un choix, et tap d'un Vrai/Faux — dans ce dernier cas
+  /// juste avant la soumission qu'il déclenche. Purement advisory : la
+  /// surface reste propriétaire de son état.
+  ///
+  /// Jamais émis au montage, ni au changement de carte : la valeur initiale
+  /// et la remise à zéro ne sont pas des saisies de l'utilisateur.
+  ///
+  /// Ne reconstruit rien : la notification part d'un écouteur, pas d'un
+  /// `setState`. Ce que l'hôte fait de la valeur reçue lui appartient — la
+  /// remonter dans son propre état reconstruira son arbre à lui, à chaque
+  /// frappe.
+  final ValueChanged<ZFlashcardAnswerDraft>? onAnswerChanged;
+
+  /// Verrou de soumission imposé (`null` : la correction locale décide).
+  ///
+  /// `true` rend la saisie inerte — choix, boutons Vrai/Faux, champ rédigé,
+  /// « Indice » et « Je ne sais pas » — exactement comme après une
+  /// soumission interne, mais **sans peindre de correction** : la surface
+  /// n'en a pas fabriqué. Utile à un hôte qui gouverne lui-même la fin de
+  /// réponse (examen minuté, remise groupée).
+  ///
+  /// `false` maintient les affordances visibles, mais ne rouvre pas une
+  /// soumission déjà consommée : le verrou interne « une carte, au plus une
+  /// soumission » reste seul maître de ce qui part au barème.
+  final bool? isSubmitted;
+
   /// Port d'évaluation advisory (`null` : repli qualité neutre).
   ///
   /// Jamais appelé pour un QCM/Vrai-Faux : l'évaluation locale y est
@@ -154,8 +283,9 @@ class ZFlashcardAnswerInput extends StatefulWidget {
   final bool allowSkipEvaluation;
 
   /// Clé du bouton « évaluer sans IA », pour la testabilité.
-  static const ValueKey<String> skipEvaluationKey =
-      ValueKey<String>('zSkipEvaluation');
+  static const ValueKey<String> skipEvaluationKey = ValueKey<String>(
+    'zSkipEvaluation',
+  );
 
   /// Port d'indices (`null` : bouton « Indice » absent après épuisement du
   /// stocké — absent si non fourni, jamais grisé).
@@ -342,6 +472,16 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
   /// le plafond et rendant l'anti-répétition aveugle.
   bool _hintInFlight = false;
 
+  /// Coupe l'observation pendant une écriture qui n'est pas une saisie de
+  /// l'utilisateur (amorçage, remise à zéro d'une nouvelle carte).
+  ///
+  /// Sans elle, `_answerController.clear()` et `_selected.value = {}` du
+  /// changement de carte partiraient à `onAnswerChanged` comme si
+  /// l'utilisateur avait effacé sa réponse — un hôte qui persiste ce qu'il
+  /// reçoit écraserait le brouillon de la carte précédente par du vide, au
+  /// moment précis où elle disparaît de l'écran.
+  bool _muteAnswerNotifications = false;
+
   @override
   void initState() {
     super.initState();
@@ -352,6 +492,61 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     // (zéro).
     _syncTicker(resync: false);
     _maybeRevealStoredHint();
+    _applyInitialAnswer();
+    // Abonnements posés APRÈS l'amorçage : la valeur initiale n'est pas une
+    // saisie, elle ne doit donc rien notifier. L'observation passe par des
+    // écouteurs, jamais par un `setState` — la frappe ne reconstruit toujours
+    // que l'`EditableText` (invariant AD-2).
+    _answerController.addListener(_onAnswerTextChanged);
+    _selected.addListener(_notifyAnswerChanged);
+  }
+
+  /// Dernier texte notifié — voir [_onAnswerTextChanged].
+  String _lastAnswerText = '';
+
+  /// Filtre les notifications du controller qui ne changent pas la réponse.
+  ///
+  /// Un `TextEditingController` notifie aussi sur la sélection et le curseur :
+  /// le seul fait de poser le focus dans le champ (la sélection passe d'un
+  /// offset invalide à zéro) émettrait une « saisie » vide avant la première
+  /// frappe, et chaque déplacement de curseur en émettrait une identique à la
+  /// précédente.
+  void _onAnswerTextChanged() {
+    final text = _answerController.text;
+    if (text == _lastAnswerText) return;
+    _lastAnswerText = text;
+    _notifyAnswerChanged();
+  }
+
+  /// Préremplit le champ rédigé — une fois, au montage.
+  ///
+  /// La sélection est posée en fin de texte : sans elle, `TextEditingValue`
+  /// laisserait un `offset` de `-1`, et le premier tap dans le champ ferait
+  /// sauter le curseur au début.
+  void _applyInitialAnswer() {
+    final initial = widget.initialAnswer;
+    if (initial == null || initial.isEmpty) return;
+    _answerController.value = TextEditingValue(
+      text: initial,
+      selection: TextSelection.collapsed(offset: initial.length),
+    );
+    _lastAnswerText = initial;
+  }
+
+  /// Voie unique de notification de la réponse courante.
+  void _notifyAnswerChanged({bool? answeredTrue}) {
+    if (_muteAnswerNotifications) return;
+    final observer = widget.onAnswerChanged;
+    if (observer == null) return;
+    observer(
+      ZFlashcardAnswerDraft(
+        text: _answerController.text,
+        // Copie défensive : l'hôte reçoit un instantané, jamais le `Set`
+        // vivant que la surface remplace à chaque tap.
+        selectedChoiceIndexes: Set<int>.unmodifiable(_selected.value),
+        answeredTrue: answeredTrue,
+      ),
+    );
   }
 
   /// Sert l'indice stocké d'emblée quand l'hôte le demande.
@@ -383,6 +578,16 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
 
   /// Réinitialise tout l'état de réponse pour une nouvelle carte.
   void _resetForNewCard() {
+    // Une remise à zéro n'est pas une saisie (voir [_muteAnswerNotifications]).
+    _muteAnswerNotifications = true;
+    try {
+      _resetStateForNewCard();
+    } finally {
+      _muteAnswerNotifications = false;
+    }
+  }
+
+  void _resetStateForNewCard() {
     // Périme tout appel de port en vol (voir [_generation]).
     _generation++;
     _submitLocked = false;
@@ -765,10 +970,15 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
           // émise — et déclencherait un appel IA facturé pour une carte
           // déjà corrigée.
           correction: _correction,
+          submittedOverride: widget.isSubmitted,
           onRequestHint: _requestHint,
         ),
         SizedBox(height: theme.gapM),
-        _DontKnowButton(correction: _correction, onPressed: _submitDontKnow),
+        _DontKnowButton(
+          correction: _correction,
+          submittedOverride: widget.isSubmitted,
+          onPressed: _submitDontKnow,
+        ),
         SizedBox(height: theme.gapM),
         _CorrectionSection(
           correction: _correction,
@@ -792,14 +1002,22 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
       selected: _selected,
       correction: _correction,
       visibility: widget.correctionVisibility,
+      choiceContentBuilder: widget.choiceContentBuilder,
+      submittedOverride: widget.isSubmitted,
       onSubmit: _submitLocal,
     ),
     ZFlashcardType.trueOrFalse => _TrueFalseInput(
       card: widget.card,
       correction: _correction,
       visibility: widget.correctionVisibility,
+      submittedOverride: widget.isSubmitted,
       // Le tap vaut la soumission (auto-soumission, aucun second geste).
-      onAnswer: (value) => _submitLocal(answeredTrue: value),
+      // L'observation précède la soumission : l'hôte apprend ce qui a été
+      // répondu avant d'apprendre que c'est parti au barème.
+      onAnswer: (value) {
+        _notifyAnswerChanged(answeredTrue: value);
+        _submitLocal(answeredTrue: value);
+      },
     ),
     ZFlashcardType.openQuestion ||
     ZFlashcardType.exercise ||
@@ -809,11 +1027,13 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
       focusNode: _answerFocus,
       correction: _correction,
       validator: _requiredValidator(context),
+      fieldBuilder: widget.writtenAnswerFieldBuilder,
+      submittedOverride: widget.isSubmitted,
       onSubmit: _submitWritten,
       onSubmitWithoutEvaluation:
           (widget.allowSkipEvaluation && widget.evaluationPort != null)
-              ? () => _submitWritten(skipEvaluation: true)
-              : null,
+          ? () => _submitWritten(skipEvaluation: true)
+          : null,
     ),
   };
 
@@ -923,6 +1143,8 @@ class _ChoicesInput extends StatelessWidget {
     required this.selected,
     required this.correction,
     required this.visibility,
+    required this.choiceContentBuilder,
+    required this.submittedOverride,
     required this.onSubmit,
   });
 
@@ -932,6 +1154,10 @@ class _ChoicesInput extends StatelessWidget {
 
   /// Régime d'apparition de la correction — rendu seul.
   final ZCorrectionVisibility visibility;
+  final ZFlashcardChoiceContentBuilder? choiceContentBuilder;
+
+  /// Verrou imposé par l'hôte (`null` : la correction décide seule).
+  final bool? submittedOverride;
   final VoidCallback onSubmit;
 
   /// Préfixe de clé d'un choix, pour la testabilité.
@@ -958,46 +1184,55 @@ class _ChoicesInput extends StatelessWidget {
       valueListenable: correction,
       builder: (context, corrected, _) => ValueListenableBuilder<Set<int>>(
         valueListenable: selected,
-        builder: (context, current, _) => Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            for (var i = 0; i < choices.length; i++)
-              _ChoiceRow(
-                key: ValueKey<String>('$choiceKeyPrefix$i'),
-                index: i,
-                choice: choices[i],
-                isSelected: current.contains(i),
-                // La correction n'apparaît qu'après soumission (causée par
-                // la soumission, jamais par un tap) — et, en `deferred`
-                // (examen blanc), jamais : l'hôte la révèle en fin d'examen.
-                // Polarité unique via `paintsCorrection` (`switch`
-                // exhaustif) — jamais une comparaison `==` recopiée site
-                // par site.
-                showCorrection: corrected != null && visibility.paintsCorrection,
-                single: single,
-                // Ne jamais mêler `visibility` à ce gate : il porte le
-                // verrou d'interaction, pas l'affichage. Le rendre sensible
-                // au report ferait re-taper un choix après soumission,
-                // donc un double `onSubmitted`.
-                onTap: corrected != null
-                    ? null
-                    : () {
-                        // Un seul correct : exclusif (cocher B décoche A) ;
-                        // deux ou plus corrects : cumulatif.
-                        if (single) {
-                          selected.value = <int>{i};
-                        } else {
-                          final next = <int>{...current};
-                          if (!next.remove(i)) next.add(i);
-                          selected.value = next;
-                        }
-                      },
-              ),
-            SizedBox(height: theme.gapM),
-            if (corrected == null) _SubmitButton(onPressed: onSubmit),
-          ],
-        ),
+        builder: (context, current, _) {
+          // Verrou effectif : l'imposition de l'hôte prime, sinon la
+          // correction locale décide — jamais l'inverse, jamais un mélange
+          // avec `visibility` (qui ne gouverne que la peinture).
+          final locked = submittedOverride ?? corrected != null;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              for (var i = 0; i < choices.length; i++)
+                _ChoiceRow(
+                  key: ValueKey<String>('$choiceKeyPrefix$i'),
+                  index: i,
+                  choice: choices[i],
+                  isSelected: current.contains(i),
+                  // La correction n'apparaît qu'après soumission (causée par
+                  // la soumission, jamais par un tap) — et, en `deferred`
+                  // (examen blanc), jamais : l'hôte la révèle en fin
+                  // d'examen. Polarité unique via `paintsCorrection`
+                  // (`switch` exhaustif) — jamais une comparaison `==`
+                  // recopiée site par site. Une soumission IMPOSÉE ne peint
+                  // rien : la surface n'a fabriqué aucune correction.
+                  showCorrection:
+                      corrected != null && visibility.paintsCorrection,
+                  single: single,
+                  choiceContentBuilder: choiceContentBuilder,
+                  // Ne jamais mêler `visibility` à ce gate : il porte le
+                  // verrou d'interaction, pas l'affichage. Le rendre sensible
+                  // au report ferait re-taper un choix après soumission,
+                  // donc un double `onSubmitted`.
+                  onTap: locked
+                      ? null
+                      : () {
+                          // Un seul correct : exclusif (cocher B décoche A) ;
+                          // deux ou plus corrects : cumulatif.
+                          if (single) {
+                            selected.value = <int>{i};
+                          } else {
+                            final next = <int>{...current};
+                            if (!next.remove(i)) next.add(i);
+                            selected.value = next;
+                          }
+                        },
+                ),
+              SizedBox(height: theme.gapM),
+              if (!locked) _SubmitButton(onPressed: onSubmit),
+            ],
+          );
+        },
       ),
     );
   }
@@ -1013,6 +1248,7 @@ class _ChoiceRow extends StatelessWidget {
     required this.isSelected,
     required this.showCorrection,
     required this.single,
+    required this.choiceContentBuilder,
     required this.onTap,
     super.key,
   });
@@ -1022,6 +1258,7 @@ class _ChoiceRow extends StatelessWidget {
   final bool isSelected;
   final bool showCorrection;
   final bool single;
+  final ZFlashcardChoiceContentBuilder? choiceContentBuilder;
   final VoidCallback? onTap;
 
   /// Cible tap minimale (invariant AD-13).
@@ -1080,7 +1317,9 @@ class _ChoiceRow extends StatelessWidget {
                   Icon(icon, color: theme.labelColor),
                   SizedBox(width: theme.gapM),
                   Expanded(
-                    child: Text(choice.content, textAlign: TextAlign.start),
+                    child:
+                        choiceContentBuilder?.call(context, choice) ??
+                        Text(choice.content, textAlign: TextAlign.start),
                   ),
                 ],
               ),
@@ -1099,6 +1338,7 @@ class _TrueFalseInput extends StatelessWidget {
     required this.card,
     required this.correction,
     required this.visibility,
+    required this.submittedOverride,
     required this.onAnswer,
   });
 
@@ -1107,6 +1347,9 @@ class _TrueFalseInput extends StatelessWidget {
 
   /// Régime d'apparition de la correction — rendu seul.
   final ZCorrectionVisibility visibility;
+
+  /// Verrou imposé par l'hôte (`null` : la correction décide seule).
+  final bool? submittedOverride;
   final ValueChanged<bool> onAnswer;
 
   /// Clé du bouton « Vrai ».
@@ -1194,9 +1437,12 @@ class _TrueFalseInput extends StatelessWidget {
                     'zcrud.flashcard.incorrect',
                     fallback: 'incorrect',
                   )),
-      // Verrou d'interaction gaté sur la correction seule, jamais sur
-      // `visibility`. Une réponse V/F reste définitive en `deferred`.
-      onPressed: corrected != null ? null : () => onAnswer(value),
+      // Verrou d'interaction gaté sur la correction (ou sur l'imposition de
+      // l'hôte), jamais sur `visibility`. Une réponse V/F reste définitive en
+      // `deferred`.
+      onPressed: (submittedOverride ?? corrected != null)
+          ? null
+          : () => onAnswer(value),
     );
   }
 }
@@ -1222,6 +1468,8 @@ class _WrittenInput extends StatelessWidget {
     required this.focusNode,
     required this.correction,
     required this.validator,
+    required this.fieldBuilder,
+    required this.submittedOverride,
     required this.onSubmit,
     this.onSubmitWithoutEvaluation,
   });
@@ -1233,6 +1481,12 @@ class _WrittenInput extends StatelessWidget {
   /// Validateur résolu et mémoïsé par l'hôte (`_requiredValidator`) : son
   /// message est localisé et son identité est stable entre builds.
   final FormFieldValidator<String> validator;
+
+  /// Slot du champ (`null` : `TextFormField` historique).
+  final ZFlashcardWrittenAnswerFieldBuilder? fieldBuilder;
+
+  /// Verrou imposé par l'hôte (`null` : la correction décide seule).
+  final bool? submittedOverride;
   final VoidCallback onSubmit;
 
   /// Soumission qui n'appelle pas le port d'évaluation. `null` : bouton
@@ -1258,10 +1512,25 @@ class _WrittenInput extends StatelessWidget {
           ),
           child: ValueListenableBuilder<_Correction?>(
             valueListenable: correction,
-            builder: (context, corrected, _) => TextFormField(
-              key: fieldKey,
-              controller: controller,
-              focusNode: focusNode,
+            builder: (context, corrected, _) {
+              final locked = submittedOverride ?? corrected != null;
+              final injected = fieldBuilder;
+              // Le champ injecté remplace le champ, et rien d'autre : il
+              // reçoit le controller et le focus de la surface (la
+              // soumission lit ce controller-là), et le verrou déjà résolu.
+              if (injected != null) {
+                return injected(
+                  context,
+                  controller: controller,
+                  focusNode: focusNode,
+                  validator: validator,
+                  isSubmitted: locked,
+                );
+              }
+              return TextFormField(
+                key: fieldKey,
+                controller: controller,
+                focusNode: focusNode,
               // Verrou one-shot du champ rédigé, sur le même patron que les
               // autres contrôles (`_ChoiceRow` : `onTap: null` ; `_tfButton` :
               // `onPressed: null` ; `_DontKnowButton` : disparaît ;
@@ -1279,13 +1548,14 @@ class _WrittenInput extends StatelessWidget {
               // `readOnly` (et non `enabled: false`) : le texte noté reste
               // lisible et sélectionnable — l'apprenant doit pouvoir relire
               // ce qui a été évalué.
-              readOnly: corrected != null,
-              // Par champ.
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              validator: validator,
-              textAlign: TextAlign.start,
-              maxLines: null,
-            ),
+                readOnly: locked,
+                // Par champ.
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: validator,
+                textAlign: TextAlign.start,
+                maxLines: null,
+              );
+            },
           ),
         ),
         SizedBox(height: theme.gapM),
@@ -1296,7 +1566,8 @@ class _WrittenInput extends StatelessWidget {
         // charge).
         ValueListenableBuilder<_Correction?>(
           valueListenable: correction,
-          builder: (context, corrected, _) => corrected != null
+          builder: (context, corrected, _) =>
+              (submittedOverride ?? corrected != null)
               ? const SizedBox.shrink()
               : Row(
                   mainAxisSize: MainAxisSize.min,
@@ -1329,6 +1600,7 @@ class _HintSection extends StatelessWidget {
     required this.hasStoredHint,
     required this.hasPort,
     required this.correction,
+    required this.submittedOverride,
     required this.onRequestHint,
   });
 
@@ -1343,6 +1615,9 @@ class _HintSection extends StatelessWidget {
 
   /// Un port d'indices est-il fourni ?
   final bool hasPort;
+
+  /// Verrou imposé par l'hôte (`null` : la correction décide seule).
+  final bool? submittedOverride;
   final VoidCallback onRequestHint;
 
   /// Le bouton « Indice » est-il offert ?
@@ -1395,7 +1670,8 @@ class _HintSection extends StatelessWidget {
               ValueListenableBuilder<_Correction?>(
                 valueListenable: correction,
                 builder: (context, corrected, _) =>
-                    corrected == null && _available(hints)
+                    !(submittedOverride ?? corrected != null) &&
+                        _available(hints)
                     ? _ControlButton(
                         buttonKey: hintButtonKey,
                         labelKey: 'zcrud.flashcard.hint',
@@ -1428,9 +1704,16 @@ class _HintSection extends StatelessWidget {
 
 /// Bouton « Je ne sais pas » — borne basse, sans appel au port.
 class _DontKnowButton extends StatelessWidget {
-  const _DontKnowButton({required this.correction, required this.onPressed});
+  const _DontKnowButton({
+    required this.correction,
+    required this.submittedOverride,
+    required this.onPressed,
+  });
 
   final ValueListenable<_Correction?> correction;
+
+  /// Verrou imposé par l'hôte (`null` : la correction décide seule).
+  final bool? submittedOverride;
   final VoidCallback onPressed;
 
   /// Clé du bouton.
@@ -1441,8 +1724,11 @@ class _DontKnowButton extends StatelessWidget {
     valueListenable: correction,
     // One-shot : absent une fois la correction affichée — la réponse est
     // révélée, « je ne sais pas » n'a plus de sens et ré-émettrait la
-    // borne basse par-dessus une note déjà acquise.
-    builder: (context, corrected, _) => corrected != null
+    // borne basse par-dessus une note déjà acquise. Une soumission imposée
+    // le retire pour la même raison : sans cela, ce bouton resterait la
+    // seule voie ouverte pour envoyer une note basse au barème sur une carte
+    // que l'hôte a déclarée close.
+    builder: (context, corrected, _) => (submittedOverride ?? corrected != null)
         ? const SizedBox.shrink()
         : _ControlButton(
             buttonKey: dontKnowKey,

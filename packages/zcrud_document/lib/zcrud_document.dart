@@ -71,9 +71,11 @@ export 'src/domain/z_doc_page_quality.dart';
 export 'src/domain/z_document_annotation.dart' hide ZDocumentAnnotationZcrud;
 export 'src/domain/z_document_annotation_kind.dart';
 export 'src/domain/z_document_learning_info.dart';
+export 'src/domain/z_document_ocr_port.dart';
 export 'src/domain/z_document_reading_state.dart'
     hide ZDocumentReadingStateZcrud;
 export 'src/domain/z_document_status.dart';
+export 'src/domain/z_document_text_extraction_port.dart';
 export 'src/domain/z_document_viewer_prefs.dart' hide ZDocumentViewerPrefsZcrud;
 export 'src/domain/z_study_document.dart' hide ZStudyDocumentZcrud;
 
@@ -98,4 +100,5 @@ export 'src/presentation/z_document_viewer_chrome.dart'
     show
         ZDocumentPageNavigation,
         ZDocumentViewerChrome,
-        ZDocumentViewerLoadState;
+        ZDocumentViewerLoadState,
+        kZDocumentRecognizeTextLabelKey;

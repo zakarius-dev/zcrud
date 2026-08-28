@@ -41,9 +41,9 @@
 /// `canBeJoinedWithLink`/`coWorkersCanInviteOthers`/`shareId` portent des
 /// défauts sûrs et sont round-trip, mais ne déclenchent aucune logique de
 /// partage dans ce kernel (discipline « figer tôt » du schéma canonique —
-/// évite une migration ultérieure). Les métadonnées libres (sujets
-/// associés, explication du dossier, code pays…) ne sont pas first-class :
-/// elles transitent par [extra].
+/// évite une migration ultérieure). Le lien optionnel vers une matière est
+/// porté par [subjectId] ; les autres métadonnées libres (explication du
+/// dossier, code pays…) transitent par [extra].
 ///
 /// **Slots d'extension (invariant AD-4)** : mixe `ZExtensible` (cœur) →
 /// [extra] (échappatoire non typée, round-trip des clés inconnues) +
@@ -69,7 +69,8 @@ part 'z_study_folder.g.dart';
 /// sous-classes concrètes (invariant AD-4). Toute exception est absorbée en
 /// `null` par [ZExtension.guard] (invariant AD-10), le parent survivant
 /// toujours.
-typedef ZFolderExtensionParser = ZExtension? Function(Map<String, dynamic> json);
+typedef ZFolderExtensionParser =
+    ZExtension? Function(Map<String, dynamic> json);
 
 /// Dossier d'organisation canonique immuable (données + `copyWith` ;
 /// invariants au repository).
@@ -81,6 +82,7 @@ class ZStudyFolder extends ZEntity with ZExtensible {
     required this.title,
     this.colorKey = '',
     this.parentId,
+    this.subjectId,
     this.ownerId = '',
     this.archivedAt,
     this.createdAt,
@@ -119,6 +121,7 @@ class ZStudyFolder extends ZEntity with ZExtensible {
       title: base.title,
       colorKey: base.colorKey,
       parentId: base.parentId,
+      subjectId: _asString(map['subject_id']),
       ownerId: base.ownerId,
       archivedAt: base.archivedAt,
       createdAt: base.createdAt,
@@ -153,6 +156,13 @@ class ZStudyFolder extends ZEntity with ZExtensible {
   /// Parent (`null` = racine ; profondeur validée au repository).
   @ZcrudField()
   final String? parentId;
+
+  /// Identifiant opaque de la matière associée, résolu par l'application.
+  ///
+  /// `null` signifie qu'aucune matière n'est associée. Dans ce cas,
+  /// [toMap] n'émet pas la clé `subject_id`.
+  @ZcrudField(label: 'Matière')
+  final String? subjectId;
 
   /// Propriétaire (identifiant utilisateur, ou une valeur conventionnelle
   /// hors-ligne ; attribué par l'application, jamais par l'entité), défaut
@@ -258,6 +268,9 @@ class ZStudyFolder extends ZEntity with ZExtensible {
       ...extra,
       ...ZStudyFolderZcrud(this).toMap(),
     };
+    if (subjectId == null) {
+      map.remove('subject_id');
+    }
     if (extension != null) {
       map['extension'] = extension!.toJson();
     }
@@ -274,6 +287,7 @@ class ZStudyFolder extends ZEntity with ZExtensible {
     Object? title = _$undefined,
     Object? colorKey = _$undefined,
     Object? parentId = _$undefined,
+    Object? subjectId = _$undefined,
     Object? ownerId = _$undefined,
     Object? archivedAt = _$undefined,
     Object? createdAt = _$undefined,
@@ -285,47 +299,52 @@ class ZStudyFolder extends ZEntity with ZExtensible {
     Object? shareId = _$undefined,
     Object? extension = _$undefined,
     Object? extra = _$undefined,
-  }) =>
-      ZStudyFolder(
-        id: identical(id, _$undefined) ? this.id : id as String?,
-        title: identical(title, _$undefined) ? this.title : title as String,
-        colorKey:
-            identical(colorKey, _$undefined) ? this.colorKey : colorKey as String,
-        parentId:
-            identical(parentId, _$undefined) ? this.parentId : parentId as String?,
-        ownerId:
-            identical(ownerId, _$undefined) ? this.ownerId : ownerId as String,
-        archivedAt: identical(archivedAt, _$undefined)
-            ? this.archivedAt
-            : archivedAt as DateTime?,
-        createdAt: identical(createdAt, _$undefined)
-            ? this.createdAt
-            : createdAt as DateTime?,
-        updatedAt: identical(updatedAt, _$undefined)
-            ? this.updatedAt
-            : updatedAt as DateTime?,
-        isPublic:
-            identical(isPublic, _$undefined) ? this.isPublic : isPublic as bool,
-        sharedWith: identical(sharedWith, _$undefined)
-            ? this.sharedWith
-            : sharedWith as List<String>,
-        canBeJoinedWithLink: identical(canBeJoinedWithLink, _$undefined)
-            ? this.canBeJoinedWithLink
-            : canBeJoinedWithLink as bool,
-        coWorkersCanInviteOthers: identical(coWorkersCanInviteOthers, _$undefined)
-            ? this.coWorkersCanInviteOthers
-            : coWorkersCanInviteOthers as bool,
-        shareId:
-            identical(shareId, _$undefined) ? this.shareId : shareId as String?,
-        extension: identical(extension, _$undefined)
-            ? this.extension
-            : extension as ZExtension?,
-        // La garde est la même fonction nommée qu'en `fromMap` —
-        // `copyWith` ne peut pas rouvrir le filtre des clés réservées.
-        extra: identical(extra, _$undefined)
-            ? this.extra
-            : _sanitizeExtra(extra as Map<String, dynamic>),
-      );
+  }) => ZStudyFolder(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    title: identical(title, _$undefined) ? this.title : title as String,
+    colorKey: identical(colorKey, _$undefined)
+        ? this.colorKey
+        : colorKey as String,
+    parentId: identical(parentId, _$undefined)
+        ? this.parentId
+        : parentId as String?,
+    subjectId: identical(subjectId, _$undefined)
+        ? this.subjectId
+        : subjectId as String?,
+    ownerId: identical(ownerId, _$undefined) ? this.ownerId : ownerId as String,
+    archivedAt: identical(archivedAt, _$undefined)
+        ? this.archivedAt
+        : archivedAt as DateTime?,
+    createdAt: identical(createdAt, _$undefined)
+        ? this.createdAt
+        : createdAt as DateTime?,
+    updatedAt: identical(updatedAt, _$undefined)
+        ? this.updatedAt
+        : updatedAt as DateTime?,
+    isPublic: identical(isPublic, _$undefined)
+        ? this.isPublic
+        : isPublic as bool,
+    sharedWith: identical(sharedWith, _$undefined)
+        ? this.sharedWith
+        : sharedWith as List<String>,
+    canBeJoinedWithLink: identical(canBeJoinedWithLink, _$undefined)
+        ? this.canBeJoinedWithLink
+        : canBeJoinedWithLink as bool,
+    coWorkersCanInviteOthers: identical(coWorkersCanInviteOthers, _$undefined)
+        ? this.coWorkersCanInviteOthers
+        : coWorkersCanInviteOthers as bool,
+    shareId: identical(shareId, _$undefined)
+        ? this.shareId
+        : shareId as String?,
+    extension: identical(extension, _$undefined)
+        ? this.extension
+        : extension as ZExtension?,
+    // La garde est la même fonction nommée qu'en `fromMap` —
+    // `copyWith` ne peut pas rouvrir le filtre des clés réservées.
+    extra: identical(extra, _$undefined)
+        ? this.extra
+        : _sanitizeExtra(extra as Map<String, dynamic>),
+  );
 
   /// Décode défensivement l'extension via [parser] (repli `null`).
   static ZExtension? _decodeExtension(
@@ -384,6 +403,7 @@ class ZStudyFolder extends ZEntity with ZExtensible {
           title == other.title &&
           colorKey == other.colorKey &&
           parentId == other.parentId &&
+          subjectId == other.subjectId &&
           ownerId == other.ownerId &&
           archivedAt == other.archivedAt &&
           createdAt == other.createdAt &&
@@ -398,23 +418,26 @@ class ZStudyFolder extends ZEntity with ZExtensible {
 
   @override
   int get hashCode => Object.hashAll(<Object?>[
-        id,
-        title,
-        colorKey,
-        parentId,
-        ownerId,
-        archivedAt,
-        createdAt,
-        updatedAt,
-        isPublic,
-        Object.hashAll(sharedWith),
-        canBeJoinedWithLink,
-        coWorkersCanInviteOthers,
-        shareId,
-        extension,
-        zJsonHash(extra),
-      ]);
+    id,
+    title,
+    colorKey,
+    parentId,
+    subjectId,
+    ownerId,
+    archivedAt,
+    createdAt,
+    updatedAt,
+    isPublic,
+    Object.hashAll(sharedWith),
+    canBeJoinedWithLink,
+    coWorkersCanInviteOthers,
+    shareId,
+    extension,
+    zJsonHash(extra),
+  ]);
 }
+
+String? _asString(Object? value) => value is String ? value : null;
 
 bool _listEquals<T>(List<T>? a, List<T>? b) {
   if (identical(a, b)) return true;

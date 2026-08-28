@@ -3,6 +3,17 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.28.0 — 2026-08-28
+
+### Ajouté
+- **`presentFormEdition` — quatre passe-plats de présentation** : `maxWidth`, `maxHeight` (bornes de la surface, relayées au présentateur : honorées en feuille et en dialogue, **inertes en page** — la route pleine occupe l'écran), `sheetFrame` (`ZFormSheetFrame` : décor rendu **ancêtre direct du corps**, sur la voie feuille et sur elle seule) et `floatingActionButton` (bouton flottant porté par un `Scaffold`, sur la voie page et sur elle seule). La table paramètre × voie du dartdoc est **mesurée** par les gardes, jamais déclarée à la main.
+- **`ZCrudScreen.emptyStateBuilder`** — rendu de l'écran quand la **source est vide**, à la place de l'état vide interne de la liste. Il n'est appelé ni pendant le chargement, ni sur « aucun résultat » de recherche, ni en erreur ; l'état **accès refusé** continue de primer, le refus étant décidé avant toute lecture de la source. Le constructeur est appelé **sous** l'ACL dérivée de l'écran.
+
+### Attention
+- **Hôte passif : rien ne change, et c'est mesuré.** Quatre étalons d'arbre (page / feuille / dialogue de `presentFormEdition`, `ZCrudScreen` sur source vide) ont été relevés sur le code antérieur puis comparés **nœud pour nœud** après le lot : identiques. Sans les nouveaux paramètres, aucun nœud n'entre dans l'arbre — pas même neutre.
+- **Hôte qui COMPENSAIT** : celui qui bornait lui-même la fenêtre (un `ConstrainedBox` autour du corps, un présentateur maison substitué par `ZFormPresenterScope` qui imposait sa largeur) doit **retirer sa compensation** avant de déclarer `maxWidth`/`maxHeight` — les deux se composent, et la borne effective devient la plus petite. Même règle pour celui qui enveloppait son corps d'un décor conditionnel à la feuille, ou qui superposait son propre bouton flottant par un `Stack` au-dessus de la fenêtre en page.
+- Déclarer `sheetFrame` ou `floatingActionButton` interpose un **adaptateur** devant le présentateur du seam. Il reproduit à l'identique la capacité `ZImplicitDismissControl` du présentateur délégué (marge, cadre et glissement gardé de la feuille sont donc conservés) et ne lui impose aucun paramètre nouveau.
+
 ## 3.22.0 — 2026-08-26
 
 ### Ajouté

@@ -183,6 +183,7 @@ ZStudyFolder _$ZStudyFolderFromMap(Map<String, dynamic> map) => ZStudyFolder(
   title: map['title'] is String ? map['title'] as String : '',
   colorKey: map['color_key'] is String ? map['color_key'] as String : '',
   parentId: map['parent_id'] is String ? map['parent_id'] as String : null,
+  subjectId: map['subject_id'] is String ? map['subject_id'] as String : null,
   ownerId: map['owner_id'] is String ? map['owner_id'] as String : '',
   archivedAt: _$asDateTime(map['archived_at']),
   createdAt: _$asDateTime(map['created_at']),
@@ -207,6 +208,7 @@ extension ZStudyFolderZcrud on ZStudyFolder {
     'title': this.title,
     'color_key': this.colorKey,
     'parent_id': this.parentId,
+    'subject_id': this.subjectId,
     'owner_id': this.ownerId,
     'archived_at': this.archivedAt?.toIso8601String(),
     'created_at': this.createdAt?.toIso8601String(),
@@ -224,6 +226,7 @@ extension ZStudyFolderZcrud on ZStudyFolder {
     Object? title = _$undefined,
     Object? colorKey = _$undefined,
     Object? parentId = _$undefined,
+    Object? subjectId = _$undefined,
     Object? ownerId = _$undefined,
     Object? archivedAt = _$undefined,
     Object? createdAt = _$undefined,
@@ -242,6 +245,9 @@ extension ZStudyFolderZcrud on ZStudyFolder {
     parentId: identical(parentId, _$undefined)
         ? this.parentId
         : parentId as String?,
+    subjectId: identical(subjectId, _$undefined)
+        ? this.subjectId
+        : subjectId as String?,
     ownerId: identical(ownerId, _$undefined) ? this.ownerId : ownerId as String,
     archivedAt: identical(archivedAt, _$undefined)
         ? this.archivedAt
@@ -281,6 +287,7 @@ const List<ZFieldSpec> $ZStudyFolderFieldSpecs = <ZFieldSpec>[
   ),
   ZFieldSpec(name: 'color_key', type: EditionFieldType.text),
   ZFieldSpec(name: 'parent_id', type: EditionFieldType.text),
+  ZFieldSpec(name: 'subject_id', type: EditionFieldType.text, label: 'Matière'),
   ZFieldSpec(name: 'owner_id', type: EditionFieldType.text),
   ZFieldSpec(name: 'archived_at', type: EditionFieldType.dateTime),
   ZFieldSpec(name: 'created_at', type: EditionFieldType.dateTime),
@@ -303,6 +310,7 @@ const Set<String> $ZStudyFolderPersistedKeys = <String>{
   'title',
   'color_key',
   'parent_id',
+  'subject_id',
   'owner_id',
   'archived_at',
   'created_at',

@@ -89,6 +89,7 @@ export 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
         // historique.
         ZStudyDocumentRef,
         ZStudyNoteRef,
+        ZStudySubjectRef,
         // Podcast content-addressed : symboles study-niveau, non pertinents
         // flashcard.
         ZStudyPodcast,

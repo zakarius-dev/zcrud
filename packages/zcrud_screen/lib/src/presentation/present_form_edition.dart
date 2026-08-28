@@ -19,6 +19,7 @@
 /// | `bodyBuilder` | le corps que vous composez vous-même |
 library;
 
+import 'package:flutter/material.dart' show Scaffold;
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart'
     show
@@ -37,8 +38,12 @@ import 'package:zcrud_navigation/zcrud_navigation.dart'
         ZEditionBodyFit,
         ZEditionChrome,
         ZEditionPresentation,
+        ZFormPresenter,
+        ZFormPresenterScope,
         ZFormWeight,
+        ZImplicitDismissControl,
         ZPresentationPolicy,
+        ZSheetFrameSpec,
         presentEdition;
 
 import 'z_form_only.dart';
@@ -55,6 +60,19 @@ typedef ZFormBodyBuilder = Widget Function(
   BuildContext context,
   ZFormOnlyController controller,
 );
+
+/// Décor **propre à la voie feuille** : reçoit le corps déjà monté et rend son
+/// enveloppe.
+///
+/// Le retour de ce constructeur devient l'**ancêtre direct** du corps
+/// (formulaire à plat, assistant, ou corps de [ZFormBodyBuilder]). Il n'est
+/// appelé que lorsque la fenêtre s'ouvre en **feuille** : ni en page, ni en
+/// dialogue.
+///
+/// À ne pas confondre avec `ZSheetFrameSpec` de `zcrud_navigation`, qui règle
+/// la **largeur et le cadre de la feuille elle-même** (la surface modale). Ce
+/// constructeur-ci décore le **contenu** à l'intérieur de cette surface.
+typedef ZFormSheetFrame = Widget Function(BuildContext context, Widget child);
 
 /// Présente le formulaire déclaré par [fields] et retourne ses valeurs
 /// **validées et normalisées**.
@@ -271,6 +289,40 @@ typedef ZFormBodyBuilder = Widget Function(
 ///
 /// `false` (défaut) ⇒ **rien ne change** : la carte rendue est exactement la
 /// projection du formulaire, [initialValues] ne servant qu'à pré-remplir.
+///
+/// ## Ce qui se règle PAR VOIE ([maxWidth], [maxHeight], [sheetFrame],
+/// [floatingActionButton])
+///
+/// Le conteneur est choisi par la politique ; ces quatre paramètres décrivent
+/// ce que la fenêtre doit devenir **une fois le conteneur choisi**. Chacun est
+/// `null` par défaut, et `null` ⇒ **rien n'entre dans l'arbre** : la fenêtre
+/// est exactement celle d'avant, nœud pour nœud.
+///
+/// Chaque paramètre est soit **honoré** sur une voie, soit **inerte** sur
+/// elle. Il n'y a pas de troisième statut, et rien n'est promis ailleurs :
+///
+/// | Paramètre | `page` | `sheet` | `dialog` |
+/// |---|---|---|---|
+/// | [maxWidth] | inerte | **honoré** | **honoré** |
+/// | [maxHeight] | inerte | **honoré** | **honoré** |
+/// | [sheetFrame] | inerte | **honoré** | inerte |
+/// | [floatingActionButton] | **honoré** | inerte | inerte |
+///
+/// * [maxWidth] / [maxHeight] bornent la **surface** (dp). Ils sont relayés
+///   tels quels au présentateur : c'est lui qui les exécute. En mode `page` la
+///   route occupe l'écran, et le présentateur par défaut les ignore — un
+///   présentateur tiers reste libre de les honorer, cette table décrit le
+///   présentateur du socle.
+/// * [sheetFrame] enveloppe le **corps** de la feuille (cf. [ZFormSheetFrame]).
+/// * [floatingActionButton] est le bouton flottant de la **page** : la fenêtre
+///   ouverte en page reçoit alors un `Scaffold` qui le porte, au-dessus du
+///   chrome. C'est le seul mode où un bouton flottant a une place — une
+///   feuille et un dialogue n'en ont pas.
+///
+/// Un présentateur **tiers** substitué par `ZFormPresenterScope` reste
+/// pleinement maître de la surface : [sheetFrame] et [floatingActionButton]
+/// lui sont transmis sous forme de corps déjà décoré, sans jamais lui imposer
+/// de paramètre nouveau (invariant AD-4).
 Future<Map<String, dynamic>?> presentFormEdition(
   BuildContext context, {
   required List<ZFieldSpec> fields,
@@ -295,6 +347,10 @@ Future<Map<String, dynamic>?> presentFormEdition(
   EdgeInsetsGeometry? padding,
   ZSectionCollapseStore? collapseStore,
   String? formId,
+  double? maxWidth,
+  double? maxHeight,
+  ZFormSheetFrame? sheetFrame,
+  Widget? floatingActionButton,
 }) {
   assert(
     bodyBuilder == null || steps.isEmpty,
@@ -349,11 +405,73 @@ Future<Map<String, dynamic>?> presentFormEdition(
   final bool stepped = bodyBuilder == null && steps.isNotEmpty;
   if (stepped) _warnFieldsOutsideSteps(fields, steps);
 
+  // Le mode EFFECTIF n'est pas recalculé ici : il est relevé au passage, par
+  // l'adaptateur, à l'instant où `presentEdition` appelle le présentateur —
+  // donc AVANT que le corps ne soit construit (la route ne bâtit son contenu
+  // qu'à la trame suivante). Le recalculer localement dupliquerait la
+  // résolution `forcedMode ?? policy.resolve(classe de fenêtre)` et finirait
+  // par en diverger ; le lire au passage ne le peut pas.
+  ZEditionPresentation? resolvedMode;
+  // Adaptateur monté SEULEMENT si un slot par voie est déclaré : sans cela,
+  // `presenter` reste `null` et `presentEdition` résout le seam lui-même,
+  // exactement comme avant.
+  final ZFormPresenter? presenter = (sheetFrame == null &&
+          floatingActionButton == null)
+      ? null
+      : _slotPresenter(
+          ZFormPresenterScope.of(context),
+          onMode: (ZEditionPresentation mode) => resolvedMode = mode,
+          floatingActionButton: floatingActionButton,
+        );
+
+  /// Le corps tel que les voies historiques le montent — inchangé.
+  Widget rawBody(BuildContext ctx) {
+    final custom = bodyBuilder;
+    if (custom != null) return custom(ctx, controller);
+    if (stepped) {
+      return ZStepperEdition(
+        controller: controller.form,
+        // Le CATALOGUE complet : les étapes n'en nomment que des
+        // sous-ensembles, et la soumission valide l'ensemble.
+        fields: controller.fields,
+        steps: steps,
+        config: stepperConfig,
+        padding: padding,
+        readOnly: readOnly,
+        layout: layout,
+        // Une étape porte ses propres sections repliables : le seam la suit
+        // jusque-là. Le stepper donne à chaque étape SA portée (dérivée de
+        // `formId`), sinon la dernière étape repliée effacerait le repli des
+        // autres.
+        collapseStore: collapseStore,
+        formId: formId,
+        // Le bouton final de la dernière étape soumet par la MÊME voie que le
+        // bouton d'enregistrement du chrome — une seconde voie de soumission
+        // finirait par diverger de la première.
+        onComplete: readOnly ? null : submit,
+      );
+    }
+    return ZFormOnly(
+      controller: controller,
+      readOnly: readOnly,
+      sections: sections,
+      layout: layout,
+      padding: padding,
+      shrinkWrap: true,
+      // Relayés tels quels jusqu'à `DynamicEdition`, qui porte le seam.
+      collapseStore: collapseStore,
+      formId: formId,
+    );
+  }
+
   return presentEdition<Map<String, dynamic>>(
     context,
     policy: policy,
     formWeight: formWeight,
     forcedMode: forcedMode,
+    presenter: presenter,
+    maxWidth: maxWidth,
+    maxHeight: maxHeight,
     bodyFit: bodyFit ??
         (stepped ? ZEditionBodyFit.scrollable : ZEditionBodyFit.intrinsic),
     chrome: ZEditionChrome(
@@ -366,44 +484,128 @@ Future<Map<String, dynamic>?> presentFormEdition(
     ),
     builder: (ctx) {
       body = ctx;
-      final custom = bodyBuilder;
-      if (custom != null) return custom(ctx, controller);
-      if (stepped) {
-        return ZStepperEdition(
-          controller: controller.form,
-          // Le CATALOGUE complet : les étapes n'en nomment que des
-          // sous-ensembles, et la soumission valide l'ensemble.
-          fields: controller.fields,
-          steps: steps,
-          config: stepperConfig,
-          padding: padding,
-          readOnly: readOnly,
-          layout: layout,
-          // Une étape porte ses propres sections repliables : le seam la suit
-          // jusque-là. Le stepper donne à chaque étape SA portée (dérivée de
-          // `formId`), sinon la dernière étape repliée effacerait le repli des
-          // autres.
-          collapseStore: collapseStore,
-          formId: formId,
-          // Le bouton final de la dernière étape soumet par la MÊME voie que le
-          // bouton d'enregistrement du chrome — une seconde voie de soumission
-          // finirait par diverger de la première.
-          onComplete: readOnly ? null : submit,
-        );
+      final Widget content = rawBody(ctx);
+      final ZFormSheetFrame? frame = sheetFrame;
+      // Slot absent, ou voie qui ne le porte pas ⇒ le corps est rendu TEL
+      // QUEL : aucun nœud d'enveloppe, pas même neutre (invariant AD-4).
+      if (frame == null || resolvedMode != ZEditionPresentation.sheet) {
+        return content;
       }
-      return ZFormOnly(
-        controller: controller,
-        readOnly: readOnly,
-        sections: sections,
-        layout: layout,
-        padding: padding,
-        shrinkWrap: true,
-        // Relayés tels quels jusqu'à `DynamicEdition`, qui porte le seam.
-        collapseStore: collapseStore,
-        formId: formId,
-      );
+      return frame(ctx, content);
     },
   ).whenComplete(controller.dispose);
+}
+
+/// Adaptateur de présentation portant les slots par voie.
+///
+/// Deux formes, choisies sur la capacité RÉELLE du présentateur délégué :
+/// `presentEdition` teste `is ZImplicitDismissControl` pour décider par quel
+/// canal présenter. Un adaptateur qui implémenterait toujours la capacité
+/// ferait donc emprunter à un présentateur tiers un canal qu'il n'offre pas ;
+/// un adaptateur qui ne l'implémenterait jamais priverait le présentateur du
+/// socle de la marge, du cadre et du glissement gardé. La capacité du délégué
+/// est donc reproduite à l'identique.
+ZFormPresenter _slotPresenter(
+  ZFormPresenter delegate, {
+  required void Function(ZEditionPresentation mode) onMode,
+  required Widget? floatingActionButton,
+}) =>
+    delegate is ZImplicitDismissControl
+        ? _ZSlotDismissPresenter(
+            delegate: delegate,
+            onMode: onMode,
+            floatingActionButton: floatingActionButton,
+          )
+        : _ZSlotPresenter(
+            delegate: delegate,
+            onMode: onMode,
+            floatingActionButton: floatingActionButton,
+          );
+
+class _ZSlotPresenter implements ZFormPresenter {
+  const _ZSlotPresenter({
+    required this.delegate,
+    required this.onMode,
+    required this.floatingActionButton,
+  });
+
+  final ZFormPresenter delegate;
+  final void Function(ZEditionPresentation mode) onMode;
+  final Widget? floatingActionButton;
+
+  /// Relève le mode et n'enveloppe que la voie concernée.
+  ///
+  /// Le relevé a lieu ICI, donc avant l'appel au délégué, donc avant que la
+  /// route ne construise le corps : c'est ce qui rend le mode lisible par le
+  /// constructeur du corps sans le recalculer.
+  WidgetBuilder decorate(WidgetBuilder builder, ZEditionPresentation mode) {
+    onMode(mode);
+    final Widget? fab = floatingActionButton;
+    if (fab == null || mode != ZEditionPresentation.page) return builder;
+    // Le chrome de page monte déjà son propre `Scaffold` ; celui-ci le
+    // surmonte pour porter le bouton flottant, seule place que le SDK lui
+    // reconnaisse. Aucune couleur n'est posée : le `Scaffold` interne, opaque,
+    // peint le fond comme avant.
+    return (BuildContext ctx) => Scaffold(
+          body: builder(ctx),
+          floatingActionButton: fab,
+        );
+  }
+
+  @override
+  Future<T?> present<T>(
+    BuildContext context, {
+    required WidgetBuilder builder,
+    required ZEditionPresentation mode,
+    double? maxWidth,
+    double? maxHeight,
+    bool useSafeArea = true,
+    bool barrierDismissible = true,
+  }) =>
+      delegate.present<T>(
+        context,
+        builder: decorate(builder, mode),
+        mode: mode,
+        maxWidth: maxWidth,
+        maxHeight: maxHeight,
+        useSafeArea: useSafeArea,
+        barrierDismissible: barrierDismissible,
+      );
+}
+
+class _ZSlotDismissPresenter extends _ZSlotPresenter
+    implements ZImplicitDismissControl {
+  const _ZSlotDismissPresenter({
+    required super.delegate,
+    required super.onMode,
+    required super.floatingActionButton,
+  });
+
+  @override
+  Future<T?> presentWithDismissControl<T>(
+    BuildContext context, {
+    required WidgetBuilder builder,
+    required ZEditionPresentation mode,
+    double? maxWidth,
+    double? maxHeight,
+    bool useSafeArea = true,
+    bool barrierDismissible = true,
+    bool allowImplicitDismiss = true,
+    bool isDismissible = true,
+    ZSheetFrameSpec? sheetFrame,
+  }) =>
+      (delegate as ZImplicitDismissControl).presentWithDismissControl<T>(
+        context,
+        builder: decorate(builder, mode),
+        mode: mode,
+        maxWidth: maxWidth,
+        maxHeight: maxHeight,
+        useSafeArea: useSafeArea,
+        barrierDismissible: barrierDismissible,
+        allowImplicitDismiss: allowImplicitDismiss,
+        isDismissible: isDismissible,
+        sheetFrame: sheetFrame,
+      );
 }
 
 /// Carte rendue par la fenêtre : la projection [values] du formulaire, posée

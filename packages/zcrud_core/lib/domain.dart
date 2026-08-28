@@ -95,6 +95,11 @@ export 'src/domain/ports/z_acl.dart';
 // `AppFile` (invariants AD-1/AD-10). Impl hors cœur (`zcrud_firestore`/app),
 // injecté via `ZcrudScope`.
 export 'src/domain/ports/z_app_file_resolver.dart';
+// Port neutre de LECTURE AUDIO (invariants AD-1/AD-11) : `ZAudioPlaybackPort`
+// (contrat pur, résultats `ZResult`, flux nus) + repli zéro-dépendance
+// `ZInertAudioPlaybackPort`. Le moteur réel vit chez l'hôte ou dans un
+// satellite : il impose un plugin natif que le cœur n'inflige à personne.
+export 'src/domain/ports/z_audio_playback_port.dart';
 // Port neutre + registre de source d'options CALCULÉES du champ `select`
 // (invariants AD-1/AD-4/AD-5) : `ZChoicesSource` (liste `List<ZFieldChoice>`
 // SYNCHRONE, impl hors cœur) + `ZChoicesSourceRegistry` (instanciable, injecté

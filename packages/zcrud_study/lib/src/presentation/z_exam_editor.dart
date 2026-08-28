@@ -23,6 +23,11 @@
 ///   tel quel et JAMAIS disposé. Chaque champ est une frontière de rebuild
 ///   (`ValueListenableBuilder` + `ValueKey`) — aucun `setState` de page,
 ///   aucun gestionnaire d'état importé (objectif produit n°1).
+/// - **Récurrence hebdomadaire OPT-IN** : `showWeeklyReminders` (défaut
+///   `false`) ajoute une section de jours de semaine autour de la ligne
+///   d'heure. Tant qu'elle est absente, `reminderRecurrence` n'est pas touché —
+///   une valeur portée par l'examen édité SURVIT à la soumission, sans être
+///   affichée ni effacée.
 /// - **Seam horloge/pickers INJECTÉS** : le widget ne fait NI `DateTime.now()`
 ///   NI `showDatePicker`/`showTimePicker` en dur — la date et l'heure sont choisies
 ///   via les callbacks INJECTÉS [onPickDate]/[onPickTime] (l'app fournit son picker,
@@ -47,6 +52,12 @@ const IconData _kAddThresholdFallbackIcon = Icons.add;
 /// Icône de REPLI du bouton de suppression de seuil (INJECTABLE).
 const IconData _kRemoveThresholdFallbackIcon = Icons.close;
 
+/// Index Material (0 = dimanche … 6 = samedi) → jour ISO-8601 (1 = lundi …
+/// 7 = dimanche), la convention de `DateTime.weekday` et de
+/// `ZReminderRecurrence.weekdays`. Seul dimanche diffère.
+int _isoWeekdayOf(int materialIndex) =>
+    materialIndex == 0 ? DateTime.sunday : materialIndex;
+
 /// Sélectionne une date d'examen (picker INJECTÉ — l'app apporte SON horloge, AC5).
 ///
 /// Reçoit la date COURANTE (`null` si non planifiée) et rend la date choisie, ou
@@ -63,6 +74,18 @@ typedef ZExamTimePicker = Future<ZReminderTime?> Function(ZReminderTime? current
 
 /// Formate une date pour l'affichage (INJECTÉ, i18n — AD-13/FR-23).
 typedef ZExamDateLabeler = String Function(DateTime date);
+
+/// Rend le libellé d'un jour de la semaine, en convention **ISO-8601** :
+/// `1` = lundi … `7` = dimanche (celle de `DateTime.weekday` et de
+/// `ZReminderRecurrence.weekdays`).
+///
+/// Injecté par l'hôte quand il dispose d'un catalogue de noms complets. Le
+/// repli du widget est `MaterialLocalizations.narrowWeekdays`, qui rend une
+/// abréviation d'une ou deux lettres : suffisant à l'affichage, pauvre au
+/// lecteur d'écran. Un hôte soucieux d'accessibilité injecte donc un labeler
+/// rendant le **nom complet** — c'est cette même chaîne qui devient le
+/// `Semantics.label` de la puce.
+typedef ZExamWeekdayLabeler = String Function(int weekday);
 
 /// Éditeur d'examen — composition d'un `ZExam` à saisie PRÉSERVÉE (AC1).
 ///
@@ -94,6 +117,9 @@ class ZExamEditor extends StatefulWidget {
     this.timeLabel = 'Heure du rappel',
     this.timeNotSetLabel = 'Choisir une heure',
     this.timeSemanticLabel = 'Choisir l\'heure du rappel',
+    this.showWeeklyReminders = false,
+    this.weeklyRemindersLabel = 'Rappels hebdomadaires',
+    this.weekdayLabeler,
     this.submitLabel = 'Enregistrer',
     this.submitSemanticLabel = 'Enregistrer l\'examen',
     this.addThresholdIcon,
@@ -168,6 +194,44 @@ class ZExamEditor extends StatefulWidget {
   /// Libellé sémantique INJECTÉ du bouton d'heure (lecteur d'écran).
   final String timeSemanticLabel;
 
+  /// Affiche la section de **récurrence hebdomadaire** (`false` par défaut).
+  ///
+  /// `false` — le rendu et la valeur émise sont ceux d'un éditeur sans cette
+  /// notion : aucune section supplémentaire, et
+  /// [ZExam.reminderRecurrence] **n'est pas touché**. Une récurrence déjà
+  /// portée par [initialExam] est donc **préservée à l'identique** à la
+  /// soumission ; elle n'est ni affichée, ni éditable, ni effacée.
+  ///
+  /// `true` — une section remplace la ligne d'heure historique et la
+  /// **contient** : les sept jours de la semaine, puis cette même ligne
+  /// d'heure. L'heure passe toujours par [onPickTime] — le widget n'ouvre
+  /// aucun sélecteur lui-même.
+  ///
+  /// Règle de composition quand la section est affichée :
+  /// - jours cochés ⇒ `reminderRecurrence.weekdays` vaut EXACTEMENT
+  ///   l'ensemble coché (convention ISO-8601, 1 = lundi … 7 = dimanche) ;
+  /// - `reminderRecurrence.daysBefore` de [initialExam] est **reporté tel
+  ///   quel** — cette section n'édite que les jours de semaine, et n'a donc
+  ///   aucun titre à effacer l'autre famille ;
+  /// - tout décoché **et** aucun `daysBefore` de récurrence à reporter ⇒
+  ///   `reminderRecurrence == null` (emplacement ABSENT, jamais une récurrence
+  ///   vide persistée). [ZExam.reminderDaysBefore], lui, reste intact : c'est
+  ///   un champ distinct, édité par la liste de seuils.
+  final bool showWeeklyReminders;
+
+  /// Libellé INJECTÉ de la section hebdomadaire (i18n). Utilisé seulement
+  /// quand [showWeeklyReminders] vaut `true`.
+  final String weeklyRemindersLabel;
+
+  /// Libellé INJECTÉ d'un jour de semaine (i18n). `null` ⇒ repli
+  /// `MaterialLocalizations.narrowWeekdays` (abréviation LOCALISÉE de l'hôte
+  /// Material) — aucun nom de jour n'est codé en dur dans ce widget.
+  ///
+  /// Le libellé rendu sert à la fois de texte de la puce et de
+  /// `Semantics.label` : injecter un labeler de noms complets améliore
+  /// directement la restitution au lecteur d'écran.
+  final ZExamWeekdayLabeler? weekdayLabeler;
+
   /// Libellé INJECTÉ du bouton d'enregistrement (i18n).
   final String submitLabel;
 
@@ -222,6 +286,14 @@ class _ZExamEditorState extends State<ZExamEditor> {
   /// Heure de rappel **TYPÉE** — état LOCAL (AC2/AD-28, jamais une `String`).
   late final ValueNotifier<ZReminderTime?> _time;
 
+  /// Jours de semaine cochés (ISO-8601, 1 = lundi … 7 = dimanche) — état LOCAL.
+  ///
+  /// Toujours initialisé, même quand la section est masquée : l'état ne coûte
+  /// rien et son absence obligerait à un `late` conditionnel. Il n'est LU à la
+  /// soumission que si `widget.showWeeklyReminders` est vrai — c'est ce qui
+  /// garantit l'inertie du mode par défaut.
+  late final ValueNotifier<Set<int>> _weekdays;
+
   @override
   void initState() {
     super.initState();
@@ -240,6 +312,10 @@ class _ZExamEditorState extends State<ZExamEditor> {
       List<int>.of(initial?.reminderDaysBefore ?? const <int>[]),
     );
     _time = ValueNotifier<ZReminderTime?>(initial?.reminderTime);
+    // Copie DÉFENSIVE : l'ensemble du domaine n'est jamais muté sur place.
+    _weekdays = ValueNotifier<Set<int>>(
+      Set<int>.of(initial?.reminderRecurrence?.weekdays ?? const <int>{}),
+    );
   }
 
   @override
@@ -270,6 +346,7 @@ class _ZExamEditorState extends State<ZExamEditor> {
     _reminderEnabled.dispose();
     _thresholds.dispose();
     _time.dispose();
+    _weekdays.dispose();
     super.dispose();
   }
 
@@ -325,7 +402,7 @@ class _ZExamEditorState extends State<ZExamEditor> {
   /// dans l'ordre EXACT (aucune normalisation, AC3). `reminderTime` reste TYPÉ (AC2).
   void _submit() {
     final base = widget.initialExam ?? const ZExam();
-    final exam = base.copyWith(
+    var exam = base.copyWith(
       folderId: widget.folderId ?? base.folderId,
       title: _titleController.text,
       date: _date.value,
@@ -333,7 +410,40 @@ class _ZExamEditorState extends State<ZExamEditor> {
       reminderDaysBefore: List<int>.of(_thresholds.value),
       reminderTime: _time.value,
     );
+    // Second `copyWith` DÉLIBÉRÉMENT conditionnel : `ZExam.copyWith` distingue
+    // « omis » de « null » par sentinelle, mais un argument nommé ne peut pas
+    // être omis dynamiquement. Ne pas entrer ici est donc la SEULE façon de
+    // laisser `reminderRecurrence` intact — passer `base.reminderRecurrence`
+    // « à l'identique » ferait entrer la valeur dans le filtre de copie, et
+    // n'aurait plus rien d'une omission.
+    if (widget.showWeeklyReminders) {
+      exam = exam.copyWith(reminderRecurrence: _composeRecurrence(base));
+    }
     widget.onSubmit(exam);
+  }
+
+  /// Compose la récurrence à émettre depuis les jours cochés.
+  ///
+  /// Reporte `daysBefore` de la récurrence initiale : la section n'édite que
+  /// les jours de semaine et n'a aucun titre à effacer l'autre famille. Rend
+  /// `null` quand les deux familles seraient vides — un emplacement ABSENT,
+  /// jamais une récurrence vide (`ZReminderRecurrence.fromJsonSafe` tient la
+  /// même règle au retour de persistance).
+  ZReminderRecurrence? _composeRecurrence(ZExam base) {
+    final carried = base.reminderRecurrence?.daysBefore ?? const <int>[];
+    final selected = _weekdays.value;
+    if (carried.isEmpty && selected.isEmpty) return null;
+    return ZReminderRecurrence(
+      daysBefore: List<int>.of(carried),
+      weekdays: Set<int>.of(selected),
+    );
+  }
+
+  /// Coche / décoche un jour ISO — nouvelle valeur d'ensemble (immutabilité).
+  void _toggleWeekday(int isoWeekday) {
+    final next = Set<int>.of(_weekdays.value);
+    if (!next.remove(isoWeekday)) next.add(isoWeekday);
+    _weekdays.value = next;
   }
 
   // ── Rendu ─────────────────────────────────────────────────────────────────────
@@ -354,7 +464,12 @@ class _ZExamEditorState extends State<ZExamEditor> {
         SizedBox(height: theme.gapM),
         _buildThresholdsField(theme),
         SizedBox(height: theme.gapM),
-        _buildTimeRow(theme),
+        // La section CONTIENT la ligne d'heure (jamais un doublon) ; sans elle,
+        // c'est la ligne historique qui est construite, au MÊME rang.
+        if (widget.showWeeklyReminders)
+          _buildWeeklySection(theme)
+        else
+          _buildTimeRow(theme),
         SizedBox(height: theme.gapL),
         _buildSubmit(theme),
       ],
@@ -566,6 +681,99 @@ class _ZExamEditorState extends State<ZExamEditor> {
           ],
         );
       },
+    );
+  }
+
+  // ── Section hebdomadaire (opt-in) ─────────────────────────────────────────────
+
+  /// Section « jours de semaine + heure », rendue seulement en mode opt-in.
+  Widget _buildWeeklySection(ZcrudTheme theme) {
+    return Column(
+      key: const ValueKey<String>('z-exam-weekly-reminders'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(widget.weeklyRemindersLabel, textAlign: TextAlign.start),
+        SizedBox(height: theme.gapS),
+        _buildWeekdayChips(theme),
+        SizedBox(height: theme.gapM),
+        _buildTimeRow(theme),
+      ],
+    );
+  }
+
+  /// Les sept puces de jour, dans l'ordre de la LOCALE (le premier jour de
+  /// semaine varie : lundi ici, dimanche ailleurs).
+  Widget _buildWeekdayChips(ZcrudTheme theme) {
+    // `MaterialLocalizations` indexe les jours à partir de DIMANCHE (0) ;
+    // `ZReminderRecurrence` parle ISO (1 = lundi … 7 = dimanche). La
+    // conversion est faite ici, une fois, plutôt qu'à chaque site d'usage.
+    final l10n = MaterialLocalizations.of(context);
+    final first = l10n.firstDayOfWeekIndex;
+    return ValueListenableBuilder<Set<int>>(
+      key: const ValueKey<String>('z-exam-weekdays'),
+      valueListenable: _weekdays,
+      builder: (context, selected, _) {
+        return Wrap(
+          spacing: theme.gapS,
+          runSpacing: theme.gapS,
+          children: <Widget>[
+            for (var i = 0; i < DateTime.daysPerWeek; i++)
+              _buildWeekdayChip(
+                theme,
+                l10n,
+                (first + i) % DateTime.daysPerWeek,
+                selected,
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Puce d'un jour. [materialIndex] est l'index Material (0 = dimanche).
+  Widget _buildWeekdayChip(
+    ZcrudTheme theme,
+    MaterialLocalizations l10n,
+    int materialIndex,
+    Set<int> selected,
+  ) {
+    final iso = _isoWeekdayOf(materialIndex);
+    final label = widget.weekdayLabeler?.call(iso) ??
+        // Repli LOCALISÉ : jamais un nom de jour écrit dans ce fichier.
+        l10n.narrowWeekdays[materialIndex];
+    final isSelected = selected.contains(iso);
+    return Semantics(
+      // Clé portée par la SÉMANTIQUE : c'est le nœud que mesure la garde de
+      // cible tactile, et celui que lit le test d'accessibilité.
+      key: ValueKey<String>('z-exam-weekday:$iso'),
+      label: label,
+      selected: isSelected,
+      button: true,
+      container: true,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: _kMinTapTarget,
+          minHeight: _kMinTapTarget,
+        ),
+        child: TextButton(
+          onPressed: () => _toggleWeekday(iso),
+          style: TextButton.styleFrom(
+            side: BorderSide(
+              color: isSelected
+                  ? theme.selectTileSelectedBorderColor ??
+                      Theme.of(context).colorScheme.primary
+                  : theme.selectTileBorderColor ??
+                      theme.fieldBorderColor ??
+                      Theme.of(context).colorScheme.outline,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(theme.radiusM),
+            ),
+          ),
+          child: Text(label, textAlign: TextAlign.start),
+        ),
+      ),
     );
   }
 

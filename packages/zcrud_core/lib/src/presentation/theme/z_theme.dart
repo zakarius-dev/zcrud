@@ -564,6 +564,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.booleanPillThumbSize,
     this.booleanPillRadius,
     this.booleanPillTextStyle,
+    this.confirmDialogShape,
+    this.confirmDialogTitleStyle,
+    this.confirmDialogContentStyle,
+    this.confirmDialogActionsPadding,
+    this.confirmDialogDestructiveColor,
+    this.emptyStateIconSize,
+    this.emptyStateIconColor,
+    this.emptyStateTitleStyle,
+    this.emptyStateMessageStyle,
+    this.emptyStateSpacing,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -2493,6 +2503,59 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// sont (patron [studySectionTitleStyle]).
   final TextStyle? booleanPillTextStyle;
 
+  // ── Famille `confirmDialog*` (dialogue de confirmation) ─────────────
+  // Tous ces jetons sont NULLABLES et absents de [fallback]. Leur absence
+  // laisse le consommateur suivre le `DialogTheme` et les rôles Material
+  // ambiants, sans figer leur valeur dans l'extension zcrud.
+
+  /// Forme du dialogue de confirmation. `null` laisse `AlertDialog` résoudre
+  /// `DialogThemeData.shape`, puis son propre défaut Material.
+  final ShapeBorder? confirmDialogShape;
+
+  /// Style du titre du dialogue de confirmation. `null` laisse `AlertDialog`
+  /// suivre `DialogThemeData.titleTextStyle`, puis le `TextTheme` ambiant.
+  final TextStyle? confirmDialogTitleStyle;
+
+  /// Style du message du dialogue de confirmation. `null` laisse
+  /// `AlertDialog` suivre `DialogThemeData.contentTextStyle`, puis le
+  /// `TextTheme` ambiant.
+  final TextStyle? confirmDialogContentStyle;
+
+  /// Padding autour des actions du dialogue de confirmation. `null` laisse
+  /// `AlertDialog` suivre `DialogThemeData.actionsPadding`, puis sa géométrie
+  /// Material. Une valeur directionnelle est recommandée pour le RTL.
+  final EdgeInsetsGeometry? confirmDialogActionsPadding;
+
+  /// Couleur de l'action destructive. `null` délègue au rôle
+  /// `ColorScheme.error` du thème ambiant ; aucun rôle de succès ou
+  /// d'avertissement n'est inventé par le cœur.
+  final Color? confirmDialogDestructiveColor;
+
+  // ── Famille `emptyState*` (état vide) ──────────────────────────────
+  // Jetons opt-in, absents de [fallback]. Le lecteur public les résout
+  // depuis le `ThemeData` et cette extension, sans couleur codée en dur.
+
+  /// Taille du glyphe illustrant un état vide. `null` conserve la mesure de
+  /// référence du composant (48 dp).
+  final double? emptyStateIconSize;
+
+  /// Couleur du glyphe illustrant un état vide. `null` délègue au rôle
+  /// `ColorScheme.onSurfaceVariant` du thème ambiant.
+  final Color? emptyStateIconColor;
+
+  /// Style du titre d'un état vide. `null` délègue à
+  /// `TextTheme.titleMedium`.
+  final TextStyle? emptyStateTitleStyle;
+
+  /// Style du message d'un état vide. `null` délègue à
+  /// `TextTheme.bodyMedium`.
+  final TextStyle? emptyStateMessageStyle;
+
+  /// Rythme principal entre l'illustration, le bloc textuel et l'action d'un
+  /// état vide. `null` suit [gapL]. Le sous-écart titre→message reste une
+  /// décision interne du composant et n'est pas remplacé par ce jeton.
+  final double? emptyStateSpacing;
+
   /// Fabrique centrale d'`InputDecoration` : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -2876,6 +2939,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? booleanPillThumbSize,
     Radius? booleanPillRadius,
     TextStyle? booleanPillTextStyle,
+    ShapeBorder? confirmDialogShape,
+    TextStyle? confirmDialogTitleStyle,
+    TextStyle? confirmDialogContentStyle,
+    EdgeInsetsGeometry? confirmDialogActionsPadding,
+    Color? confirmDialogDestructiveColor,
+    double? emptyStateIconSize,
+    Color? emptyStateIconColor,
+    TextStyle? emptyStateTitleStyle,
+    TextStyle? emptyStateMessageStyle,
+    double? emptyStateSpacing,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     fieldFillColor: fieldFillColor ?? this.fieldFillColor,
@@ -3216,6 +3289,21 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     booleanPillThumbSize: booleanPillThumbSize ?? this.booleanPillThumbSize,
     booleanPillRadius: booleanPillRadius ?? this.booleanPillRadius,
     booleanPillTextStyle: booleanPillTextStyle ?? this.booleanPillTextStyle,
+    confirmDialogShape: confirmDialogShape ?? this.confirmDialogShape,
+    confirmDialogTitleStyle:
+        confirmDialogTitleStyle ?? this.confirmDialogTitleStyle,
+    confirmDialogContentStyle:
+        confirmDialogContentStyle ?? this.confirmDialogContentStyle,
+    confirmDialogActionsPadding:
+        confirmDialogActionsPadding ?? this.confirmDialogActionsPadding,
+    confirmDialogDestructiveColor:
+        confirmDialogDestructiveColor ?? this.confirmDialogDestructiveColor,
+    emptyStateIconSize: emptyStateIconSize ?? this.emptyStateIconSize,
+    emptyStateIconColor: emptyStateIconColor ?? this.emptyStateIconColor,
+    emptyStateTitleStyle: emptyStateTitleStyle ?? this.emptyStateTitleStyle,
+    emptyStateMessageStyle:
+        emptyStateMessageStyle ?? this.emptyStateMessageStyle,
+    emptyStateSpacing: emptyStateSpacing ?? this.emptyStateSpacing,
   );
 
   @override
@@ -4370,8 +4458,75 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.booleanPillTextStyle,
         t,
       ),
+      // Forme : un côté absent signifie « le `DialogTheme` décide », pas
+      // « une forme mise à l'échelle depuis zéro ». Le helper conserve donc
+      // l'unique forme connue ; deux formes explicites utilisent le lerp
+      // polymorphe de Flutter.
+      confirmDialogShape: _lerpNullableShape(
+        confirmDialogShape,
+        other.confirmDialogShape,
+        t,
+      ),
+      // Styles : `TextStyle.lerp` préserve `null` quand les deux thèmes
+      // délèguent au `DialogTheme`/`TextTheme`.
+      confirmDialogTitleStyle: TextStyle.lerp(
+        confirmDialogTitleStyle,
+        other.confirmDialogTitleStyle,
+        t,
+      ),
+      confirmDialogContentStyle: TextStyle.lerp(
+        confirmDialogContentStyle,
+        other.confirmDialogContentStyle,
+        t,
+      ),
+      // Padding directionnel-compatible et null-préservant.
+      confirmDialogActionsPadding: _lerpNullableInsets(
+        confirmDialogActionsPadding,
+        other.confirmDialogActionsPadding,
+        t,
+      ),
+      // Couleurs opt-in : jamais de teinte transparente fantôme lorsque le
+      // consommateur devrait encore suivre un rôle de `ColorScheme`.
+      confirmDialogDestructiveColor: _lerpNullableColor(
+        confirmDialogDestructiveColor,
+        other.confirmDialogDestructiveColor,
+        t,
+      ),
+      emptyStateIconSize: _lerpNullableFloor(
+        emptyStateIconSize,
+        other.emptyStateIconSize,
+        t,
+      ),
+      emptyStateIconColor: _lerpNullableColor(
+        emptyStateIconColor,
+        other.emptyStateIconColor,
+        t,
+      ),
+      emptyStateTitleStyle: TextStyle.lerp(
+        emptyStateTitleStyle,
+        other.emptyStateTitleStyle,
+        t,
+      ),
+      emptyStateMessageStyle: TextStyle.lerp(
+        emptyStateMessageStyle,
+        other.emptyStateMessageStyle,
+        t,
+      ),
+      // Espacement et taille sont des planchers visuels : `0` serait un choix
+      // explicite (contenu collé / glyphe invisible), pas l'absence de jeton.
+      emptyStateSpacing: _lerpNullableFloor(
+        emptyStateSpacing,
+        other.emptyStateSpacing,
+        t,
+      ),
     );
   }
+}
+
+ShapeBorder? _lerpNullableShape(ShapeBorder? a, ShapeBorder? b, double t) {
+  if (a == null) return b;
+  if (b == null) return a;
+  return ShapeBorder.lerp(a, b, t);
 }
 
 /// Interpole deux graisses nullables — **sans jamais matérialiser `w400`**.

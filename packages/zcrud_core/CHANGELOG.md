@@ -3,6 +3,18 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.28.0 — 2026-08-28
+
+### Ajouté
+- **Dix jetons de thème pour le dialogue de confirmation et l'état vide** : `confirmDialogShape`, `confirmDialogTitleStyle`, `confirmDialogContentStyle`, `confirmDialogActionsPadding`, `confirmDialogDestructiveColor`, `emptyStateIconSize`, `emptyStateIconColor`, `emptyStateTitleStyle`, `emptyStateMessageStyle`, `emptyStateSpacing`. Tous **nullables**, câblés aux quatre sites (déclaration, constructeur, `copyWith`, `lerp`) et **absents de `ZcrudTheme.fallback`** : un hôte qui n'en pose aucun ne voit strictement rien changer. Aucune couleur sémantique de succès ou d'avertissement n'a été introduite.
+- **`ZConfirmDialogStyle` / `ZEmptyStateStyle`** : deux objets de style immuables avec `resolve(context)`, qui lisent `ZcrudTheme.of(context)` et appliquent, jeton par jeton, le repli que sa documentation promet. Deux régimes de nullité volontairement différents — le dialogue transporte ses `null` (c'est l'instruction « suis le `DialogTheme` »), l'état vide résout tout (aucun composant Material ne porte de repli derrière lui).
+- **`ZAudioPlaybackPort`** : port de lecture audio **pur-Dart**, résultats `ZResult<Unit>`, flux `position`/`state` nus (AD-11), `ZAudioSource` (url/asset/fichier) et `ZAudioPlaybackState` (six états). Repli `ZInertAudioPlaybackPort` `const` : `isAvailable == false`, `Left(ZUnsupportedOperationFailure)` nommant le membre appelé, flux déjà clos. Le moteur réel vit chez l'hôte ou dans un satellite — sa chaîne de build native n'entre pas dans le cœur.
+
+### Garde
+- **Transport des dix jetons mesuré au comportement**, et non plus seulement à la source : inertie d'un thème vide à travers `fallback`/`copyWith`/`lerp`, extrêmes exacts de `lerp` à t=0 et t=1, valeurs discriminantes détectant un croisement de champs. La garde structurelle des quatre sites ne voit pas un jeton câblé sur le mauvais champ ; celle-ci le voit.
+- **Pureté nominative du port audio** : liste blanche d'imports et refus des moteurs connus (`just_audio`, `audioplayers`, `media_kit`…) dans le fichier **et** dans le `pubspec.yaml`. La garde de pureté du domaine énumérait Flutter et les backends, pas les moteurs audio — c'est précisément la dépendance qu'un port audio attire.
+- **Repli inerte tenu au contrat** : chaque opération rend un `Left` typé nommant le membre, et les deux flux sont mesurés **sous délai borné** — un flux qui ne se fermerait pas fait échouer la garde en deux secondes au lieu de suspendre l'appelant.
+
 ## 3.26.0 — 2026-08-28
 
 ### Ajouté

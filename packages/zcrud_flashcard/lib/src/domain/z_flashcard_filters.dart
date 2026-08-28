@@ -102,7 +102,7 @@ ZMasteryLevel zMasteryLevelOf(ZRepetitionInfo? info, ZSrsConfig config) {
 /// question sans réponse (« lequel gagne ? »).
 ///
 /// Un filtre, une source : dossier/tags/types → `selector` ; maîtrise,
-/// sources et taille du tirage → ici (le noyau ignore `ZSrsConfig` et
+/// provenance et taille du tirage → ici (le noyau ignore `ZSrsConfig` et
 /// `ZFlashcardSource`).
 class ZFlashcardTestFilters {
   /// Construit des filtres de test.
@@ -111,11 +111,14 @@ class ZFlashcardTestFilters {
   ///   aléatoire (voir [zDrawQuestions]) ;
   /// - [masteryLevels] : seaux retenus — vide = tous (aucun filtre) ;
   /// - [sources] : `kind` de provenance retenus (registre ouvert, invariant
-  ///   AD-4) — vide = toutes.
+  ///   AD-4) — vide = toutes ;
+  /// - [sourceIds] : identifiants de provenance retenus — vide = tous. Si
+  ///   [sources] est aussi renseigné, les deux critères se composent en ET.
   const ZFlashcardTestFilters({
     this.questionCount = 10,
     this.masteryLevels = const <ZMasteryLevel>{},
     this.sources = const <String>{},
+    this.sourceIds = const <String>{},
   });
 
   /// Nombre de questions voulu (défaut 10). `<= 0` ⇒ sélection vide
@@ -129,20 +132,30 @@ class ZFlashcardTestFilters {
   /// registre ouvert (invariant AD-4) : jamais une enum fermée ici.
   final Set<String> sources;
 
+  /// Identifiants de source retenus — vide = toutes les provenances.
+  ///
+  /// Mesure l'identifiant canonique du contenu d'origine : `noteId` pour une
+  /// note, `messageId` pour une conversation et `documentId` pour un
+  /// document. Une source ouverte sans identifiant canonique ne correspond
+  /// pas à un filtre non vide. Ce critère se compose en ET avec [sources].
+  final Set<String> sourceIds;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ZFlashcardTestFilters &&
           questionCount == other.questionCount &&
           _setEquals(masteryLevels, other.masteryLevels) &&
-          _setEquals(sources, other.sources);
+          _setEquals(sources, other.sources) &&
+          _setEquals(sourceIds, other.sourceIds);
 
   @override
   int get hashCode => Object.hash(
-        questionCount,
-        Object.hashAllUnordered(masteryLevels),
-        Object.hashAllUnordered(sources),
-      );
+    questionCount,
+    Object.hashAllUnordered(masteryLevels),
+    Object.hashAllUnordered(sources),
+    Object.hashAllUnordered(sourceIds),
+  );
 }
 
 /// Égalité d'ensembles (sans dépendance à `collection`).
@@ -178,11 +191,33 @@ bool zMatchesSourceKind(ZFlashcard card, Set<String> sources) {
   return sources.contains(kind);
 }
 
+/// Prédicat d'identifiant de source — implémentation unique.
+///
+/// [sourceIds] vide n'applique aucun filtre. Sinon, une carte correspond si
+/// sa provenance porte un identifiant canonique contenu dans [sourceIds] :
+/// `noteId` pour [ZNoteSource], `messageId` pour [ZConversationSource] et
+/// `documentId` pour [ZDocumentSource]. Une carte sans source ou portant une
+/// [ZCustomSource] ne correspond pas.
+///
+/// Ce prédicat est appliqué en ET avec [zMatchesSourceKind] par les filtres
+/// de session et de consultation. Il est pur et total : aucun cas ne lève.
+bool zMatchesSourceId(ZFlashcard card, Set<String> sourceIds) {
+  if (sourceIds.isEmpty) return true;
+  final source = card.source;
+  if (source == null) return false;
+  return switch (source) {
+    ZNoteSource(:final noteId) => sourceIds.contains(noteId),
+    ZConversationSource(:final messageId) => sourceIds.contains(messageId),
+    ZDocumentSource(:final documentId) => sourceIds.contains(documentId),
+    ZCustomSource() => false,
+  };
+}
+
 /// Applique les filtres test/examen — fonction pure.
 ///
 /// - [srsById] : état SRS indexé par `flashcardId` ⇒ lookup O(1) par carte,
 ///   jamais un `firstWhere` ;
-/// - [filters] : maîtrise / sources / taille du tirage ;
+/// - [filters] : maîtrise / provenance / taille du tirage ;
 /// - [config] : propriétaire des bornes ;
 /// - [selector] : consommé pour dossier, tags et types — jamais réécrits ;
 /// - [random] : source d'aléa injectée — jamais un générateur capturé.
@@ -192,7 +227,7 @@ bool zMatchesSourceKind(ZFlashcard card, Set<String> sources) {
 /// 1. `selector.matches(card)` — dossier, tags et types (délégué au noyau) ;
 /// 2. seau de maîtrise (`zMasteryLevelOf`) — ce que le noyau ne sait pas
 ///    faire ;
-/// 3. `kind` de source ;
+/// 3. `kind` puis identifiant de source, composés en ET ;
 /// 4. tirage à `filters.questionCount` (aléatoire si excédent).
 ///
 /// On appelle `selector.matches` (le prédicat) et non `selectFrom` :
@@ -230,6 +265,9 @@ List<ZFlashcard> zApplyTestFilters(
     //    unique `zMatchesSourceKind`, partagée avec `zApplyBrowseFilters`.
     if (!zMatchesSourceKind(card, filters.sources)) continue;
 
+    // 3. Identifiant canonique de la provenance, en ET avec son `kind`.
+    if (!zMatchesSourceId(card, filters.sourceIds)) continue;
+
     eligible.add(card);
   }
 
@@ -249,8 +287,9 @@ List<ZFlashcard> zApplyTestFilters(
 // imposerait le SRS à une surface de simple consultation.
 //
 // Les deux fonctions partagent donc ce qui doit l'être — `selector.matches`
-// (dossier, tags et types) et `zMatchesSourceKind` (provenance) — et rien
-// d'autre. « Un filtre, une source » est tenu sans confondre deux intentions.
+// (dossier, tags et types), `zMatchesSourceKind` et `zMatchesSourceId`
+// (provenance) — et rien d'autre. « Un filtre, une source » est tenu sans
+// confondre deux intentions.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Champ de flashcard sur lequel porte la recherche texte.
@@ -278,11 +317,12 @@ enum ZFlashcardSearchField {
 }
 
 /// L'ensemble par défaut des champs cherchés : les trois.
-const Set<ZFlashcardSearchField> _kDefaultSearchFields = <ZFlashcardSearchField>{
-  ZFlashcardSearchField.question,
-  ZFlashcardSearchField.answer,
-  ZFlashcardSearchField.tags,
-};
+const Set<ZFlashcardSearchField> _kDefaultSearchFields =
+    <ZFlashcardSearchField>{
+      ZFlashcardSearchField.question,
+      ZFlashcardSearchField.answer,
+      ZFlashcardSearchField.tags,
+    };
 
 /// Filtres de consultation de la liste — value object immuable.
 ///
@@ -297,11 +337,14 @@ class ZFlashcardBrowseFilters {
   ///   vide/espaces seuls ⇒ aucun filtre texte ;
   /// - [searchFields] : champs cherchés — défaut les trois ;
   /// - [sources] : `kind` de provenance retenus (registre ouvert, invariant
-  ///   AD-4) — vide = toutes.
+  ///   AD-4) — vide = toutes ;
+  /// - [sourceIds] : identifiants de provenance retenus — vide = tous. Si
+  ///   [sources] est aussi renseigné, les deux critères se composent en ET.
   const ZFlashcardBrowseFilters({
     this.query = '',
     this.searchFields = _kDefaultSearchFields,
     this.sources = const <String>{},
+    this.sourceIds = const <String>{},
   });
 
   /// Recherche texte brute. Normalisée par [zFlashcardSearchText] au moment
@@ -320,20 +363,29 @@ class ZFlashcardBrowseFilters {
   /// `kind` de source retenus — vide = toutes (patron des autres filtres).
   final Set<String> sources;
 
+  /// Identifiants de source retenus — vide = toutes les provenances.
+  ///
+  /// Mesure `noteId`, `messageId` ou `documentId` selon la provenance. Une
+  /// source ouverte sans identifiant canonique ne correspond pas à un filtre
+  /// non vide. Ce critère se compose en ET avec [sources].
+  final Set<String> sourceIds;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ZFlashcardBrowseFilters &&
           query == other.query &&
           _setEquals(searchFields, other.searchFields) &&
-          _setEquals(sources, other.sources);
+          _setEquals(sources, other.sources) &&
+          _setEquals(sourceIds, other.sourceIds);
 
   @override
   int get hashCode => Object.hash(
-        query,
-        Object.hashAllUnordered(searchFields),
-        Object.hashAllUnordered(sources),
-      );
+    query,
+    Object.hashAllUnordered(searchFields),
+    Object.hashAllUnordered(sources),
+    Object.hashAllUnordered(sourceIds),
+  );
 }
 
 /// Applique les filtres de consultation — fonction pure et déterministe.
@@ -342,8 +394,8 @@ class ZFlashcardBrowseFilters {
 ///   appelle `matches` (le prédicat) et jamais `selectFrom` : ce dernier
 ///   applique un plafond qui tronquerait la liste de gestion en silence (un
 ///   dossier de 2 000 cartes n'en montrerait qu'une fraction) ;
-/// - [filters] : recherche texte et `kind` de source — tout ce que le noyau
-///   ignore, et rien de plus ;
+/// - [filters] : recherche texte, `kind` et identifiant de source — tout ce
+///   que le noyau ignore, et rien de plus ;
 /// - [tagLabels] : résolution optionnelle identifiant → libellé pour la
 ///   recherche sur les tags. Absente ⇒ la recherche porte sur les
 ///   identifiants (le libellé vit dans une entité séparée que ce paquet ne
@@ -381,6 +433,9 @@ List<ZFlashcard> zApplyBrowseFilters(
     // 2. `kind` de source — implémentation unique partagée avec le tirage.
     if (!zMatchesSourceKind(card, filters.sources)) continue;
 
+    // 2. Identifiant canonique de source — même prédicat que le tirage.
+    if (!zMatchesSourceId(card, filters.sourceIds)) continue;
+
     // 3. Recherche texte normalisée.
     if (hasQuery &&
         !_matchesQuery(card, needle, filters.searchFields, tagLabels)) {
@@ -414,8 +469,7 @@ bool _matchesQuery(
         // d'`answer`, et une carte ouverte n'a pas de `choices` : n'en lire
         // qu'un rendrait la recherche muette sur la moitié des types.
         final answer = card.answer;
-        if (answer != null &&
-            zFlashcardSearchText(answer).contains(needle)) {
+        if (answer != null && zFlashcardSearchText(answer).contains(needle)) {
           return true;
         }
         final choices = card.choices;
