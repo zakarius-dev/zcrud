@@ -23,6 +23,7 @@ library;
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:zcrud_chat/zcrud_chat.dart';
+import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart' show ZChatSuggestion;
 
 import 'z_chat_material_badge.dart';
 import 'z_chat_material_send_fab.dart';
@@ -57,6 +58,26 @@ class ZChatMaterialComposer extends StatelessWidget {
     this.dictation,
     this.onDictate,
     this.dictationListening,
+    this.attachments,
+    this.onScanAttachment,
+    this.onSelectSuggestion,
+    this.plusBuilder,
+    this.thinkingBuilder,
+    this.webSearchBuilder,
+    this.toolsBuilder,
+    this.effortBuilder,
+    this.modelBuilder,
+    this.stopBuilder,
+    this.sendBuilder,
+    this.hintBuilder,
+    this.attachmentsBuilder,
+    this.attachmentThumbnailBuilder,
+    this.dictationBuilder,
+    this.draftNoticeBuilder,
+    this.editingBannerBuilder,
+    this.progressBuilder,
+    this.suggestionsBuilder,
+    this.suggestionGlyphBuilder,
     super.key,
   });
 
@@ -135,6 +156,79 @@ class ZChatMaterialComposer extends StatelessWidget {
   /// `error` pendant l'écoute.
   final ValueListenable<bool>? dictationListening;
 
+  /// Le contrôleur de pièces jointes — ni créé ni disposé ici. `null` ⇒
+  /// aucune pièce de pièce jointe dans l'arbre (aperçu, progression).
+  final ZChatAttachmentController? attachments;
+
+  /// Le geste de relecture de texte offert sur une vignette d'image.
+  /// `null` ⇒ aucune affordance.
+  final ZChatAttachmentScanCallback? onScanAttachment;
+
+  /// Ce que taper une proposition déclenche. `null` ⇒ le rang des
+  /// propositions n'est pas monté.
+  final void Function(ZChatSuggestion suggestion)? onSelectSuggestion;
+
+  /// Les créneaux de remplacement de `ZDefaultChatComposer`, relayés tels
+  /// quels. Chacun vaut `null` par défaut : la pièce Material correspondante
+  /// (glyphe, rôle, disque d'envoi, badge) est alors rendue. Fourni, le
+  /// builder de l'hôte **remplace la pièce entière** — glyphe compris — et
+  /// les autres pièces gardent leur habillage Material. Règle des trois cas
+  /// du socle : absent ⇒ défaut ; widget rendu ⇒ remplace ; `null` rendu ⇒
+  /// pièce absente.
+  ///
+  /// Remplace le `+` des pickers.
+  final ZChatComposerSlotBuilder? plusBuilder;
+
+  /// Remplace la bascule « réfléchir ».
+  final ZChatComposerSlotBuilder? thinkingBuilder;
+
+  /// Remplace la bascule « recherche web ».
+  final ZChatComposerSlotBuilder? webSearchBuilder;
+
+  /// Remplace le déclencheur « outils » (jamais la feuille) — badge compris.
+  final ZChatComposerSlotBuilder? toolsBuilder;
+
+  /// Remplace le déclencheur d'effort.
+  final ZChatComposerSlotBuilder? effortBuilder;
+
+  /// Remplace le sélecteur de modèle.
+  final ZChatComposerSlotBuilder? modelBuilder;
+
+  /// Remplace le bouton d'arrêt.
+  final ZChatComposerSlotBuilder? stopBuilder;
+
+  /// Remplace la cible d'envoi — à la place du disque Material
+  /// [ZChatMaterialSendFab].
+  final ZChatComposerSlotBuilder? sendBuilder;
+
+  /// Remplace le placeholder du champ.
+  final ZChatComposerSlotBuilder? hintBuilder;
+
+  /// Remplace l'aperçu des pièces jointes.
+  final ZChatComposerSlotBuilder? attachmentsBuilder;
+
+  /// Couture d'aperçu des vignettes, passée telle quelle au socle.
+  final ZChatAttachmentThumbnailBuilder? attachmentThumbnailBuilder;
+
+  /// Remplace le déclencheur de dictée.
+  final ZChatComposerSlotBuilder? dictationBuilder;
+
+  /// Remplace l'indicateur de brouillon restitué.
+  final ZChatComposerSlotBuilder? draftNoticeBuilder;
+
+  /// Remplace le bandeau d'édition.
+  final ZChatComposerSlotBuilder? editingBannerBuilder;
+
+  /// Remplace la progression de téléversement.
+  final ZChatComposerSlotBuilder? progressBuilder;
+
+  /// Remplace le rang des propositions.
+  final ZChatComposerSlotBuilder? suggestionsBuilder;
+
+  /// Glyphe d'hôte par proposition, passé tel quel au socle.
+  final Widget? Function(BuildContext context, ZChatSuggestion suggestion)?
+      suggestionGlyphBuilder;
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -193,8 +287,34 @@ class ZChatMaterialComposer extends StatelessWidget {
         color: scheme.error,
       ),
       // Via le créneau du socle : même site d'envoi que le geste « valider ».
-      sendBuilder: (BuildContext context, ZChatComposerSlot slot) =>
-          ZChatMaterialSendFab(slot: slot, chrome: chrome),
+      // Précédence : le builder de l'hôte prime sur le disque Material —
+      // l'hôte remplace UNE pièce et garde toutes les autres. Pour les seize
+      // autres créneaux, le socle applique lui-même cette précédence : un
+      // builder fourni rend la pièce entière, le glyphe Material posé
+      // ci-dessus n'est alors pas consommé.
+      sendBuilder:
+          sendBuilder ??
+          (BuildContext context, ZChatComposerSlot slot) =>
+              ZChatMaterialSendFab(slot: slot, chrome: chrome),
+      attachments: attachments,
+      onScanAttachment: onScanAttachment,
+      onSelectSuggestion: onSelectSuggestion,
+      plusBuilder: plusBuilder,
+      thinkingBuilder: thinkingBuilder,
+      webSearchBuilder: webSearchBuilder,
+      toolsBuilder: toolsBuilder,
+      effortBuilder: effortBuilder,
+      modelBuilder: modelBuilder,
+      stopBuilder: stopBuilder,
+      hintBuilder: hintBuilder,
+      attachmentsBuilder: attachmentsBuilder,
+      attachmentThumbnailBuilder: attachmentThumbnailBuilder,
+      dictationBuilder: dictationBuilder,
+      draftNoticeBuilder: draftNoticeBuilder,
+      editingBannerBuilder: editingBannerBuilder,
+      progressBuilder: progressBuilder,
+      suggestionsBuilder: suggestionsBuilder,
+      suggestionGlyphBuilder: suggestionGlyphBuilder,
     );
   }
 }

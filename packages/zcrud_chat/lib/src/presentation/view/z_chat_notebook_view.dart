@@ -65,6 +65,7 @@ class ZChatNotebookView extends StatelessWidget {
     this.confirmArtifactAction,
     this.artifactMenuBuilder,
     this.artifactMenuCrossAxisCount = kZChatArtifactMenuCrossAxisCount,
+    this.artifactMenuAnchor = ZChatArtifactMenuAnchor.adaptive,
     this.artifactHostPosition = ZChatArtifactHostPosition.above,
     this.collapsedMaxHeight,
     this.padding,
@@ -123,6 +124,11 @@ class ZChatNotebookView extends StatelessWidget {
   /// `null` — relayé à [ZChatArtifactBar.menuCrossAxisCount]. `1` retrouve une
   /// disposition en colonne.
   final int artifactMenuCrossAxisCount;
+
+  /// Où chaque menu d'artefact s'ouvre relativement à son glyphe — relayé à
+  /// [ZChatArtifactBar.menuAnchor]. Le défaut est adaptatif : vers le bas
+  /// quand la place suffit dans la liste, vers le haut sinon.
+  final ZChatArtifactMenuAnchor artifactMenuAnchor;
 
   /// Réglage de rendu du notebook — c'est lui qui porte
   /// `capabilityAccents`, la table d'accents par clé d'artefact, et la
@@ -198,5 +204,6 @@ class ZChatNotebookView extends StatelessWidget {
           confirm: confirmArtifactAction,
           menuBuilder: artifactMenuBuilder,
           menuCrossAxisCount: artifactMenuCrossAxisCount,
+          menuAnchor: artifactMenuAnchor,
         );
 }

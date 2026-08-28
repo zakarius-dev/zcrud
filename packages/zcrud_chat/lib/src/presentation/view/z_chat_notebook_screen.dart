@@ -90,9 +90,9 @@ const double kZChatNotebookCollapsedHeightFactor = 0.3;
 /// fois [screenHeight]. Une explication de plusieurs milliers de caractères
 /// reste ainsi parcourable sur tout écran.
 double zChatNotebookCollapsedMaxHeightOf(double screenHeight) => math.min(
-      kZChatNotebookCollapsedMaxHeight,
-      screenHeight * kZChatNotebookCollapsedHeightFactor,
-    );
+  kZChatNotebookCollapsedMaxHeight,
+  screenHeight * kZChatNotebookCollapsedHeightFactor,
+);
 
 /// `true` si [failure] mérite d'être **montré** à l'utilisateur.
 ///
@@ -107,49 +107,46 @@ bool zChatNotebookFailureIsReportable(ZFailure failure) =>
 /// Présente la feuille de réglages et d'outils — modale, page, panneau :
 /// l'hôte décide. [sheet] construit la feuille dans le contexte de
 /// présentation que l'hôte lui donne.
-typedef ZChatNotebookSheetPresenter = Future<void> Function(
-  BuildContext context,
-  WidgetBuilder sheet,
-);
+typedef ZChatNotebookSheetPresenter =
+    Future<void> Function(BuildContext context, WidgetBuilder sheet);
 
 /// Remplace la feuille de réglages et d'outils par défaut. [tools] est `null`
 /// quand aucun catalogue d'outils n'a été déclaré.
-typedef ZChatNotebookToolsSheetBuilder = Widget Function(
-  BuildContext context,
-  ZChatSettingsController settings,
-  ZChatToolController? tools,
-);
+typedef ZChatNotebookToolsSheetBuilder =
+    Widget Function(
+      BuildContext context,
+      ZChatSettingsController settings,
+      ZChatToolController? tools,
+    );
 
 /// Remplace la zone de saisie par défaut. Rendre `null` signifie aucune zone
 /// de saisie (invariant AD-4).
-typedef ZChatNotebookComposerBuilder = Widget? Function(
-  BuildContext context,
-  ZChatNotebookController controller,
-  ZChatSettingsController settings,
-);
+typedef ZChatNotebookComposerBuilder =
+    Widget? Function(
+      BuildContext context,
+      ZChatNotebookController controller,
+      ZChatSettingsController settings,
+    );
 
 /// Rend un échec **global** (écriture du fil, tour de conversation). Rendre
 /// `null` signifie rien d'affiché pour cet échec.
-typedef ZChatNotebookFailureBuilder = Widget? Function(
-  BuildContext context,
-  ZFailure failure,
-);
+typedef ZChatNotebookFailureBuilder =
+    Widget? Function(BuildContext context, ZFailure failure);
 
 /// Rend l'échec d'un **artefact** d'un message. Rendre `null` signifie rien
 /// d'affiché pour cet échec.
-typedef ZChatNotebookArtifactFailureBuilder = Widget? Function(
-  BuildContext context,
-  ZChatMessage message,
-  String artifactKey,
-  ZFailure failure,
-);
+typedef ZChatNotebookArtifactFailureBuilder =
+    Widget? Function(
+      BuildContext context,
+      ZChatMessage message,
+      String artifactKey,
+      ZFailure failure,
+    );
 
 /// Un créneau de l'écran qui reçoit le contrôleur de fil de travail. Rendre
 /// `null` signifie absent de l'arbre (invariant AD-4).
-typedef ZChatNotebookSlotBuilder = Widget? Function(
-  BuildContext context,
-  ZChatNotebookController controller,
-);
+typedef ZChatNotebookSlotBuilder =
+    Widget? Function(BuildContext context, ZChatNotebookController controller);
 
 /// L'écran assemblé d'un fil de travail : une déclaration (ports, registre,
 /// résolveurs, confirmation) et un écran fonctionnel.
@@ -188,6 +185,7 @@ class ZChatNotebookScreen extends StatefulWidget {
     this.skin,
     this.artifactMenuBuilder,
     this.artifactMenuCrossAxisCount = kZChatArtifactMenuCrossAxisCount,
+    this.artifactMenuAnchor = ZChatArtifactMenuAnchor.adaptive,
     this.artifactSpacing,
     this.collapsedMaxHeight,
     this.padding,
@@ -225,7 +223,7 @@ class ZChatNotebookScreen extends StatefulWidget {
     this.artifactFailureBuilder,
     this.headerBuilder,
     super.key,
-  })  : assert(
+  }) : assert(
          composerBuilder == null || composerSlots == null,
          kZChatComposerSlotsExclusiveAssertMessage,
        );
@@ -307,6 +305,10 @@ class ZChatNotebookScreen extends StatefulWidget {
 
   /// Colonnes de la grille de menu par défaut.
   final int artifactMenuCrossAxisCount;
+
+  /// Où chaque menu d'artefact s'ouvre relativement à son glyphe — adaptatif
+  /// par défaut (cf. [ZChatArtifactMenuAnchor]).
+  final ZChatArtifactMenuAnchor artifactMenuAnchor;
 
   /// Écart entre deux artefacts de la barre.
   final double? artifactSpacing;
@@ -549,9 +551,11 @@ class _ZChatNotebookScreenState extends State<ZChatNotebookScreen> {
           spacing: widget.artifactSpacing,
           menuBuilder: widget.artifactMenuBuilder,
           menuCrossAxisCount: widget.artifactMenuCrossAxisCount,
+          menuAnchor: widget.artifactMenuAnchor,
         ),
         skin: widget.skin,
-        collapsedMaxHeight: widget.collapsedMaxHeight ??
+        collapsedMaxHeight:
+            widget.collapsedMaxHeight ??
             zChatNotebookCollapsedMaxHeightOf(
               MediaQuery.sizeOf(context).height,
             ),
@@ -581,7 +585,10 @@ class _ZChatNotebookScreenState extends State<ZChatNotebookScreen> {
     // région live, vue — rien autour (invariant AD-4).
     if (above.isEmpty) return body;
     return Column(
-      children: <Widget>[...above, Expanded(child: body)],
+      children: <Widget>[
+        ...above,
+        Expanded(child: body),
+      ],
     );
   }
 
@@ -635,9 +642,7 @@ class _ZChatNotebookScreenState extends State<ZChatNotebookScreen> {
       hints: widget.hints,
       submitPolicy: widget.submitPolicy,
       pickers: widget.pickers,
-      onOpenTools: present == null
-          ? null
-          : () => present(context, _sheet),
+      onOpenTools: present == null ? null : () => present(context, _sheet),
       // Le compte des OUTILS remplace celui des réglages sur le déclencheur
       // quand un catalogue est déclaré : un seul nombre, celui de la feuille
       // que le bouton ouvre.
@@ -659,7 +664,8 @@ class _ZChatNotebookScreenState extends State<ZChatNotebookScreen> {
       // l'écran (réglages, badge d'outils, routeur, chrome) reste en place.
       // `slots.model` prime sur le sélecteur de routeur : règle des trois
       // cas, un créneau d'hôte remplace le défaut de l'écran quel qu'il soit.
-      modelBuilder: slots?.model ??
+      modelBuilder:
+          slots?.model ??
           (session == null
               ? null
               : zChatRouteModelSlot(
@@ -802,8 +808,8 @@ class _ZChatArtifactFailureSlice extends StatelessWidget {
     final String id = message.id!;
     final List<ValueListenable<ZFailure?>> slices =
         <ValueListenable<ZFailure?>>[
-      for (final String k in keys) controller.failureOf(id, k),
-    ];
+          for (final String k in keys) controller.failureOf(id, k),
+        ];
     return ListenableBuilder(
       listenable: Listenable.merge(slices),
       builder: (BuildContext context, Widget? _) {

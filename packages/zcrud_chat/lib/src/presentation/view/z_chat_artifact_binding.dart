@@ -220,6 +220,7 @@ ZChatMessageSlotBuilder zChatNotebookArtifactsSlot({
   double? spacing,
   ZChatArtifactMenuBuilder? menuBuilder,
   int menuCrossAxisCount = kZChatArtifactMenuCrossAxisCount,
+  ZChatArtifactMenuAnchor menuAnchor = ZChatArtifactMenuAnchor.adaptive,
 }) {
   final List<ZChatArtifactSpec> specs = zChatArtifactSpecsOf(
     controller,
@@ -232,6 +233,7 @@ ZChatMessageSlotBuilder zChatNotebookArtifactsSlot({
     spacing: spacing,
     menuBuilder: menuBuilder,
     menuCrossAxisCount: menuCrossAxisCount,
+    menuAnchor: menuAnchor,
   );
   return (BuildContext context, ZChatMessage message) {
     final Widget? own = host?.call(context, message);

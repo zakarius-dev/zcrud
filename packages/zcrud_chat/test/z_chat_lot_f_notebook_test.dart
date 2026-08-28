@@ -889,6 +889,8 @@ void main() {
         // Position du créneau hôte relative à la rangée d'artefacts — un
         // relais vers `ZChatArtifactBar.slot`, pas une dépendance neuve.
         'artifactHostPosition',
+        // Ancrage des menus d'artefact — relais vers `ZChatArtifactBar.slot`.
+        'artifactMenuAnchor',
         'collapsedMaxHeight',
         'padding',
         'reverse',

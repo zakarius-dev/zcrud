@@ -218,6 +218,30 @@ enum ZChatArtifactHostPosition {
   inline,
 }
 
+/// Où le menu de verbes d'un artefact s'ouvre, relativement à son glyphe.
+///
+/// Le défaut est [adaptive] : le menu se déroule vers le bas quand la place
+/// suffit sous le glyphe, vers le haut sinon. Les deux valeurs fixes ne
+/// mesurent rien.
+enum ZChatArtifactMenuAnchor {
+  /// Vers le bas quand la place suffit en dessous, vers le haut sinon
+  /// (défaut).
+  ///
+  /// La place est mesurée dans le **viewport défilable** qui porte la rangée
+  /// — la liste des messages — et non dans la fenêtre entière : un menu qui
+  /// tiendrait dans la fenêtre mais recouvrirait ce qui suit la liste (le
+  /// composer) n'est pas à sa place. Sans ancêtre défilable, c'est la surface
+  /// de l'`Overlay` qui borne. Quand la place manque des deux côtés, le côté
+  /// le plus vaste est retenu, sans réduire le menu.
+  adaptive,
+
+  /// Toujours vers le bas : le haut du menu accroche le bas du glyphe.
+  below,
+
+  /// Toujours vers le haut : le bas du menu accroche le haut du glyphe.
+  above,
+}
+
 /// La rangée d'artefacts d'**un** message.
 ///
 /// Montée automatiquement par `ZChatNotebookView.artifacts` ; un hôte qui
@@ -233,6 +257,7 @@ class ZChatArtifactBar extends StatelessWidget {
     this.spacing,
     this.menuBuilder,
     this.menuCrossAxisCount = kZChatArtifactMenuCrossAxisCount,
+    this.menuAnchor = ZChatArtifactMenuAnchor.adaptive,
     this.trailing,
     super.key,
   })
@@ -263,6 +288,7 @@ class ZChatArtifactBar extends StatelessWidget {
     double? spacing,
     ZChatArtifactMenuBuilder? menuBuilder,
     int menuCrossAxisCount = kZChatArtifactMenuCrossAxisCount,
+    ZChatArtifactMenuAnchor menuAnchor = ZChatArtifactMenuAnchor.adaptive,
   }) => (BuildContext context, ZChatMessage message) {
     final Widget? own = host?.call(context, message);
     if (artifacts.isEmpty) return own;
@@ -276,6 +302,7 @@ class ZChatArtifactBar extends StatelessWidget {
       spacing: spacing,
       menuBuilder: menuBuilder,
       menuCrossAxisCount: menuCrossAxisCount,
+      menuAnchor: menuAnchor,
       trailing: inline ? own : null,
     );
     if (own == null || inline) return bar;
@@ -321,6 +348,13 @@ class ZChatArtifactBar extends StatelessWidget {
   /// présentation injectée dispose comme elle l'entend.
   final int menuCrossAxisCount;
 
+  /// Où le menu s'ouvre relativement au glyphe — cf.
+  /// [ZChatArtifactMenuAnchor]. Le défaut est adaptatif ;
+  /// [ZChatArtifactMenuAnchor.below] redonne l'ouverture toujours vers le
+  /// bas. S'applique aussi à la présentation injectée par [menuBuilder] : le
+  /// rappel décide du contenu, ce réglage décide de l'ancrage.
+  final ZChatArtifactMenuAnchor menuAnchor;
+
   /// Contenu rendu **dans la grille**, après le dernier glyphe — même `Wrap`,
   /// même repli responsive, même espacement. C'est ce que [slot] alimente
   /// pour [ZChatArtifactHostPosition.inline]. `null` (défaut) ne change rien
@@ -343,6 +377,7 @@ class ZChatArtifactBar extends StatelessWidget {
             confirm: confirm,
             menuBuilder: menuBuilder,
             menuCrossAxisCount: menuCrossAxisCount,
+            menuAnchor: menuAnchor,
           ),
     ];
     final Widget? own = trailing;
@@ -398,6 +433,7 @@ class _ZChatArtifactButton extends StatefulWidget {
     required this.confirm,
     required this.menuBuilder,
     required this.menuCrossAxisCount,
+    required this.menuAnchor,
     super.key,
   });
 
@@ -407,6 +443,7 @@ class _ZChatArtifactButton extends StatefulWidget {
   final ZChatArtifactConfirm? confirm;
   final ZChatArtifactMenuBuilder? menuBuilder;
   final int menuCrossAxisCount;
+  final ZChatArtifactMenuAnchor menuAnchor;
 
   @override
   State<_ZChatArtifactButton> createState() => _ZChatArtifactButtonState();
@@ -841,37 +878,142 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
   /// Le portail : toile de fermeture + menu ancré sur le bouton.
   Widget _overlay(BuildContext context, List<ZChatArtifactAction> actions) {
     final TextDirection direction = Directionality.of(context);
-    return Stack(
-      children: <Widget>[
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _close,
-            child: const ExcludeSemantics(child: SizedBox.expand()),
-          ),
+    final Widget content = ValueListenableBuilder<ZChatArtifactAction?>(
+      valueListenable: _pending,
+      builder:
+          (BuildContext context, ZChatArtifactAction? pending, Widget? _) =>
+              pending == null
+              ? _menu(context, actions)
+              : _confirmation(context, pending),
+    );
+    // Les deux ancrages FIXES restent un pur jeu d'ancres sur le suiveur —
+    // `below` est, à l'octet, l'ancrage historique. Le mode adaptatif seul
+    // mesure la place ; il reste sur le même suiveur (le menu suit le glyphe
+    // sans reconstruire), avec une boîte assez haute pour porter les deux
+    // côtés — un enfant posé HORS de la boîte de son suiveur se peindrait
+    // mais ne recevrait aucun toucher.
+    final Widget? follower = switch (widget.menuAnchor) {
+      ZChatArtifactMenuAnchor.below => CompositedTransformFollower(
+        link: _link,
+        targetAnchor: AlignmentDirectional.bottomStart.resolve(direction),
+        followerAnchor: AlignmentDirectional.topStart.resolve(direction),
+        child: Align(
+          alignment: AlignmentDirectional.topStart.resolve(direction),
+          child: content,
         ),
-        Positioned.fill(
-          child: CompositedTransformFollower(
-            link: _link,
-            targetAnchor: AlignmentDirectional.bottomStart.resolve(direction),
-            followerAnchor: AlignmentDirectional.topStart.resolve(direction),
-            child: Align(
-              alignment: AlignmentDirectional.topStart.resolve(direction),
-              child: ValueListenableBuilder<ZChatArtifactAction?>(
-                valueListenable: _pending,
-                builder:
-                    (
-                      BuildContext context,
-                      ZChatArtifactAction? pending,
-                      Widget? _,
-                    ) => pending == null
-                    ? _menu(context, actions)
-                    : _confirmation(context, pending),
-              ),
-            ),
-          ),
+      ),
+      ZChatArtifactMenuAnchor.above => CompositedTransformFollower(
+        link: _link,
+        targetAnchor: AlignmentDirectional.topStart.resolve(direction),
+        followerAnchor: AlignmentDirectional.bottomStart.resolve(direction),
+        child: Align(
+          alignment: AlignmentDirectional.bottomStart.resolve(direction),
+          child: content,
         ),
-      ],
+      ),
+      // La boîte du mode adaptatif est dimensionnée par le `Positioned`
+      // lui-même : un `OverflowBox` garderait une boîte propre d'une hauteur
+      // d'overlay, et `RenderBox.hitTest` refuse tout toucher hors de sa
+      // boîte — le menu ouvert vers le bas se peignait sans recevoir de tap.
+      ZChatArtifactMenuAnchor.adaptive => null,
+    };
+    if (follower != null) return _portalStack(Positioned.fill(child: follower));
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final Size overlay = constraints.biggest;
+        return _portalStack(
+          Positioned(
+            left: 0,
+            top: 0,
+            width: overlay.width,
+            height: overlay.height * 2,
+            child: _adaptiveFollower(overlay, direction, content),
+          ),
+        );
+      },
+    );
+  }
+
+  /// La toile de fermeture, puis le suiveur positionné.
+  Widget _portalStack(Widget positionedFollower) => Stack(
+    children: <Widget>[
+      Positioned.fill(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _close,
+          child: const ExcludeSemantics(child: SizedBox.expand()),
+        ),
+      ),
+      positionedFollower,
+    ],
+  );
+
+  /// Le suiveur du mode adaptatif : une boîte de **deux** hauteurs d'overlay
+  /// dont le milieu est posé sur le bord haut du glyphe, et dans laquelle le
+  /// délégué place le menu au-dessus ou en dessous selon la place mesurée.
+  Widget _adaptiveFollower(
+    Size overlay,
+    TextDirection direction,
+    Widget content,
+  ) {
+    final _ZChatMenuRoom room = _measureRoom(overlay);
+    final Alignment start = AlignmentDirectional.topStart.resolve(direction);
+    return CompositedTransformFollower(
+      link: _link,
+      targetAnchor: start,
+      followerAnchor: start,
+      offset: Offset(0, -overlay.height),
+      child: CustomSingleChildLayout(
+        delegate: _ZChatMenuLayout(room: room, direction: direction),
+        child: content,
+      ),
+    );
+  }
+
+  /// Mesure, dans le repère de l'overlay, la place libre au-dessus et en
+  /// dessous du glyphe.
+  ///
+  /// Le borne est le **viewport défilable** le plus proche (la liste des
+  /// messages), intersecté avec l'overlay — pas l'overlay seul : la rangée
+  /// d'artefacts est en bas de la carte, et le composer suit la liste. Un
+  /// menu mesuré contre la fenêtre entière se croirait à l'aise et viendrait
+  /// recouvrir la saisie ; c'est précisément le défaut à corriger. Sans
+  /// ancêtre défilable (rangée montée seule), l'overlay borne.
+  _ZChatMenuRoom _measureRoom(Size overlay) {
+    final RenderObject? target = context.findRenderObject();
+    final RenderObject? overlayBox = Overlay.maybeOf(
+      context,
+    )?.context.findRenderObject();
+    final Rect window = Offset.zero & overlay;
+    if (target is! RenderBox ||
+        overlayBox is! RenderBox ||
+        !target.hasSize ||
+        !overlayBox.hasSize) {
+      // Rien de mesurable (première disposition) : on ouvre vers le bas, le
+      // comportement historique, plutôt que de lever (AD-10).
+      return const _ZChatMenuRoom(targetHeight: 0, above: 0, below: 1);
+    }
+    final Rect anchor = MatrixUtils.transformRect(
+      target.getTransformTo(overlayBox),
+      Offset.zero & target.size,
+    );
+    Rect bounds = window;
+    final RenderObject? viewport = Scrollable.maybeOf(
+      context,
+      axis: Axis.vertical,
+    )?.context.findRenderObject();
+    if (viewport is RenderBox && viewport.hasSize) {
+      bounds = window.intersect(
+        MatrixUtils.transformRect(
+          viewport.getTransformTo(overlayBox),
+          Offset.zero & viewport.size,
+        ),
+      );
+    }
+    return _ZChatMenuRoom(
+      targetHeight: anchor.height,
+      above: anchor.top - bounds.top,
+      below: bounds.bottom - anchor.bottom,
     );
   }
 
@@ -1123,4 +1265,74 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
       ),
     );
   }
+}
+
+/// La place mesurée autour du glyphe, en dp, dans le repère de l'overlay.
+@immutable
+class _ZChatMenuRoom {
+  const _ZChatMenuRoom({
+    required this.targetHeight,
+    required this.above,
+    required this.below,
+  });
+
+  final double targetHeight;
+  final double above;
+  final double below;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _ZChatMenuRoom &&
+      other.targetHeight == targetHeight &&
+      other.above == above &&
+      other.below == below;
+
+  @override
+  int get hashCode => Object.hash(targetHeight, above, below);
+}
+
+/// Place le menu dans la boîte du suiveur adaptatif.
+///
+/// Le repère : la boîte fait deux hauteurs d'overlay, son milieu vertical est
+/// le bord HAUT du glyphe. Vers le bas, le menu part du bas du glyphe ; vers
+/// le haut, son bas touche le haut du glyphe — il ne recouvre jamais l'ancre.
+class _ZChatMenuLayout extends SingleChildLayoutDelegate {
+  const _ZChatMenuLayout({required this.room, required this.direction});
+
+  final _ZChatMenuRoom room;
+  final TextDirection direction;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      // Le menu est mesuré à sa taille NATURELLE, jamais écrasé dans la place
+      // restante : la grille du socle ne défile pas, et la borner la rendrait
+      // partiellement inatteignable. Quand la place manque des deux côtés, le
+      // côté le plus vaste est choisi et le menu y déborde — comme il
+      // débordait toujours avant.
+      BoxConstraints.loose(constraints.biggest);
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final double top = size.height / 2;
+    final bool fitsBelow = childSize.height <= room.below;
+    final bool fitsAbove = childSize.height <= room.above;
+    // La même règle que les menus Material : d'abord la place demandée
+    // (le bas), puis l'autre côté, puis le côté le plus vaste.
+    final bool openBelow =
+        fitsBelow || (!fitsAbove && room.below >= room.above);
+    final double dy = openBelow
+        ? top + room.targetHeight
+        : top - childSize.height;
+    // Le bord de DÉPART du menu sur le bord de départ du glyphe : à gauche en
+    // LTR, à droite en RTL (AD-13) — la boîte a la largeur de l'overlay et sa
+    // fin est posée sur la fin du glyphe en RTL.
+    final double dx = direction == TextDirection.ltr
+        ? 0
+        : size.width - childSize.width;
+    return Offset(dx, dy);
+  }
+
+  @override
+  bool shouldRelayout(_ZChatMenuLayout oldDelegate) =>
+      oldDelegate.room != room || oldDelegate.direction != direction;
 }

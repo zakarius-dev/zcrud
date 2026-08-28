@@ -3,6 +3,17 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.27.0 — 2026-08-28
+
+### Modifié
+- 🔴 **Le menu d'artefact s'ancre de façon ADAPTATIVE par défaut** : vers le bas quand la place suffit, vers le haut quand elle manque en dessous — la place étant mesurée dans le viewport défilable et l'overlay, pour que le menu ne recouvre ni la saisie ni l'ancre. Quand aucun côté ne suffit, le plus vaste l'emporte. `ZChatArtifactMenuAnchor.below` rend l'ancrage historique à l'octet ; `above` l'inverse. Relayé par la vue et l'écran notebook.
+
+### Ajouté
+- **Élévation de la carte de message** : `ZChatTileShell.elevation` et `shadowColor`, `null` ⇒ arbre identique nœud pour nœud — l'ombre vit dans la même décoration, aucune surface n'est intercalée. Ombres calibrées sur la table Material, référence dans le fichier audité.
+
+### Corrigé
+- Le suiveur du menu ne couvrait qu'une hauteur d'overlay : les taps sous le glyphe étaient refusés par le test de frappe. Attrapé par sept gardes de lots antérieurs.
+
 ## 3.26.0 — 2026-08-28
 
 ### Ajouté (mode d'activation)

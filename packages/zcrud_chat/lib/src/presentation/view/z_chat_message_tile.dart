@@ -235,7 +235,10 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
     // typographie de référence à une coiffe posée sans carte.
     final ZChatTileShellStyle? style = (shell == null && subject == null)
         ? null
-        : zChatTileShellStyleOf(context, shell: shell ?? const ZChatTileShell());
+        : zChatTileShellStyleOf(
+            context,
+            shell: shell ?? const ZChatTileShell(),
+          );
     // Le bouton de dépli ne suit QUE la coquille : une coiffe seule ne le
     // déplace pas.
     final ZChatTileShellStyle? shellStyle = shell == null ? null : style;
@@ -371,10 +374,7 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
     // AD-13). Pas de `Row` avec un `Expanded` vide : on n'insère pas un
     // conteneur qui ne borne rien (invariant AD-4).
     if (parts.isEmpty) {
-      return Align(
-        alignment: AlignmentDirectional.centerEnd,
-        child: trailing,
-      );
+      return Align(alignment: AlignmentDirectional.centerEnd, child: trailing);
     }
     final Widget lead = parts.length == 1
         ? parts.single
@@ -390,7 +390,10 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
     // le créneau, ou déborderait.
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
-      children: <Widget>[Expanded(child: lead), trailing],
+      children: <Widget>[
+        Expanded(child: lead),
+        trailing,
+      ],
     );
   }
 
@@ -743,6 +746,12 @@ class _ZTileShell extends StatelessWidget {
                 )
               : null,
           borderRadius: BorderRadius.all(style.radius),
+          // L'ombre vit dans la MÊME décoration : sans élévation, `boxShadow`
+          // reste `null` et l'arbre est, nœud pour nœud, celui d'avant — pas
+          // de `Material` ni de `PhysicalModel` ajouté pour une ombre absente.
+          boxShadow: style.hasElevation
+              ? zChatTileElevationShadows(style.elevation, style.shadowColor)
+              : null,
         ),
         child: Padding(padding: style.padding, child: child),
       ),
@@ -765,12 +774,11 @@ class _ZCollapsibleContent extends SingleChildRenderObjectWidget {
   final ValueChanged<bool> onOverflowChanged;
 
   @override
-  RenderObject createRenderObject(BuildContext context) =>
-      _ZRenderCollapsible(
-        expanded: expanded,
-        collapsedMaxHeight: collapsedMaxHeight,
-        onOverflowChanged: onOverflowChanged,
-      );
+  RenderObject createRenderObject(BuildContext context) => _ZRenderCollapsible(
+    expanded: expanded,
+    collapsedMaxHeight: collapsedMaxHeight,
+    onOverflowChanged: onOverflowChanged,
+  );
 
   @override
   void updateRenderObject(

@@ -252,12 +252,17 @@ abstract final class ZChatNotebookReference {
   static const int tileBorderColorSlot = 4;
 
   /// Marge interne d'une carte de tuile — directionnelle (invariant AD-13).
-  static const EdgeInsetsDirectional tilePadding =
-      EdgeInsetsDirectional.all(8);
+  static const EdgeInsetsDirectional tilePadding = EdgeInsetsDirectional.all(8);
 
   /// Marge externe d'une carte de tuile — directionnelle (invariant AD-13).
   static const EdgeInsetsDirectional tileMargin =
       EdgeInsetsDirectional.symmetric(vertical: 4);
+
+  /// Teinte de l'ombre d'une carte de tuile élevée — la teinte d'ombre des
+  /// surfaces Material (`ThemeData.shadowColor`), indépendante du thème :
+  /// une ombre reste sombre sur un fond sombre. Remplaçable par
+  /// `ZChatTileShell.shadowColor`.
+  static const Color tileShadowColor = Color(0xFF000000);
 
   /// Lignes de la coiffe avant troncature **visuelle**. Le sujet complet
   /// reste annoncé.

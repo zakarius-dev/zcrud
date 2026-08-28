@@ -3,6 +3,14 @@
 Toutes les modifications notables de `zcrud_chat_material` sont documentées
 dans ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.27.0 — 2026-08-28
+
+### Ajouté
+- **`ZChatMaterialComposer` relaie les DIX-SEPT créneaux** du composer neutre, tous `null` par défaut ⇒ rendu inchangé. Un hôte habille **un seul** contrôle sans renoncer aux glyphes, aux rôles Material, au disque d'envoi ni au badge d'outils — et sans recopier vingt lignes de glyphes. Précédence : builder d'hôte > glyphe du satellite. Trois relais annexes (`attachments`, `onScanAttachment`, `onSelectSuggestion`) sans lesquels deux créneaux visaient un rang jamais monté.
+
+### Attention
+- La puce d'outil optionnelle que l'on pourrait être tenté de réécrire **existe déjà** : `ZChatComposerToolChip` dans `zcrud_chat`. Le style « pilule » reste une décision d'apparence propre à chaque produit : le socle ne le tranche pas, il laisse l'hôte le faire.
+
 ## 3.7.0 — 2026-08-23
 
 ### Ajouté

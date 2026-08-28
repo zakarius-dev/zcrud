@@ -205,6 +205,8 @@ class ZChatTileShell {
     this.borderWidth,
     this.radius,
     this.backgroundColor,
+    this.elevation,
+    this.shadowColor,
     this.padding,
     this.margin,
     this.topicOf,
@@ -231,6 +233,19 @@ class ZChatTileShell {
   /// Fond de la carte. `null` ⇒ **transparent** : la carte est cernée, pas
   /// remplie, à la manière d'une carte à filet.
   final Color? backgroundColor;
+
+  /// Élévation de la carte, en dp — l'ordre de grandeur d'une carte Material
+  /// au repos est `1`. `null` ou `0` ⇒ **aucune ombre**, et la carte est
+  /// peinte exactement comme sans ce réglage : aucune surface n'est ajoutée
+  /// pour porter une ombre absente.
+  ///
+  /// L'ombre est peinte par la décoration de la carte elle-même, sous sa
+  /// forme arrondie ; elle suit [radius] et ne rogne jamais le contenu.
+  final double? elevation;
+
+  /// Teinte de l'ombre. `null` ⇒ référence (la teinte d'ombre Material).
+  /// Sans [elevation], ce réglage n'a aucun effet.
+  final Color? shadowColor;
 
   /// Marge **interne** de la carte. `null` ⇒ référence. Directionnelle
   /// (invariant AD-13).
@@ -313,6 +328,8 @@ class ZChatTileShell {
           borderWidth == other.borderWidth &&
           radius == other.radius &&
           backgroundColor == other.backgroundColor &&
+          elevation == other.elevation &&
+          shadowColor == other.shadowColor &&
           padding == other.padding &&
           margin == other.margin &&
           topicOf == other.topicOf &&
@@ -329,6 +346,8 @@ class ZChatTileShell {
     borderWidth,
     radius,
     backgroundColor,
+    elevation,
+    shadowColor,
     padding,
     margin,
     topicOf,
@@ -352,6 +371,8 @@ class ZChatTileShellStyle {
     required this.borderWidth,
     required this.radius,
     required this.backgroundColor,
+    required this.elevation,
+    required this.shadowColor,
     required this.padding,
     required this.margin,
     required this.topicMaxLines,
@@ -375,6 +396,12 @@ class ZChatTileShellStyle {
 
   /// Fond de la carte — `null` signifie transparent.
   final Color? backgroundColor;
+
+  /// Élévation de la carte — `0` signifie aucune ombre.
+  final double elevation;
+
+  /// Teinte de l'ombre, jamais nulle : la référence est le repli.
+  final Color shadowColor;
 
   /// Marge interne de la carte.
   final EdgeInsetsDirectional padding;
@@ -418,6 +445,12 @@ class ZChatTileShellStyle {
   /// Une épaisseur nulle ne peint rien : sans elle, on ne pose pas de côté
   /// (invariant AD-4 — on n'insère pas un décor invisible).
   bool get hasBorder => borderWidth > 0;
+
+  /// Une ombre est-elle réellement peinte ?
+  ///
+  /// Une élévation nulle ne peint rien : la décoration reste celle d'une
+  /// carte sans ombre (invariant AD-4 — aucun décor invisible n'est posé).
+  bool get hasElevation => elevation > 0;
 }
 
 /// Résout une coquille contre le thème ambiant : paramètre, puis jeton, puis
@@ -447,16 +480,23 @@ ZChatTileShellStyle zChatTileShellStyleOf(
     // pas lever le rendu.
     borderWidth: (shell.borderWidth ?? ZChatNotebookReference.tileBorderWidth)
         .clamp(0.0, double.infinity),
-    radius:
-        shell.radius ?? theme?.radiusM ?? ZChatNotebookReference.tileRadius,
+    radius: shell.radius ?? theme?.radiusM ?? ZChatNotebookReference.tileRadius,
     backgroundColor: shell.backgroundColor,
+    // Une élévation négative ou non finie est écrêtée à 0 : un paramètre
+    // absurde ne fait pas lever le rendu (AD-10).
+    elevation: (shell.elevation ?? 0).isFinite
+        ? (shell.elevation ?? 0).clamp(0.0, double.infinity)
+        : 0.0,
+    shadowColor: shell.shadowColor ?? ZChatNotebookReference.tileShadowColor,
     padding: shell.padding ?? ZChatNotebookReference.tilePadding,
     margin: shell.margin ?? ZChatNotebookReference.tileMargin,
     // Une coiffe de zéro ligne serait une coiffe invisible mais annoncée :
     // le plancher est 1.
-    topicMaxLines: (shell.topicMaxLines ??
-            ZChatNotebookReference.tileTopicMaxLines)
-        .clamp(1, 0x7fffffff),
+    topicMaxLines:
+        (shell.topicMaxLines ?? ZChatNotebookReference.tileTopicMaxLines).clamp(
+          1,
+          0x7fffffff,
+        ),
     topicWeight: ZChatNotebookReference.messageTitleWeight,
     topicTrailingIconSize: ZChatNotebookReference.tileTopicTrailingIconSize,
     showTimestamp:
@@ -479,4 +519,40 @@ ZChatTileShellStyle zChatTileShellStyleOf(
           )
         : null,
   );
+}
+
+/// Les ombres d'une carte de tuile à [elevation] dp, teintées de [color].
+///
+/// Le modèle est celui des surfaces Material : trois ombres portées par une
+/// même lumière — une ombre dense et serrée, une pénombre, une ombre
+/// ambiante diffuse — dont la portée croît avec l'élévation. Les opacités
+/// s'appliquent à l'alpha de [color], si bien qu'une teinte déjà translucide
+/// reste plus légère.
+///
+/// Rend une liste vide pour une élévation nulle ou négative.
+List<BoxShadow> zChatTileElevationShadows(double elevation, Color color) {
+  if (!(elevation > 0)) return const <BoxShadow>[];
+  // Coefficients lus sur la table d'ombres Material (elevations 1, 4, 8) :
+  // ombre dense  ≈ (0, 0.6e) flou 0.6e, étalement -0.4e, alpha 0.20 ;
+  // pénombre     ≈ (0, e)    flou 1.2e, alpha 0.14 ;
+  // ambiante     ≈ (0, 0.4e) flou 1.75e, alpha 0.12.
+  Color tint(double opacity) => color.withValues(alpha: color.a * opacity);
+  return <BoxShadow>[
+    BoxShadow(
+      color: tint(0.20),
+      offset: Offset(0, 0.6 * elevation),
+      blurRadius: 0.6 * elevation,
+      spreadRadius: -0.4 * elevation,
+    ),
+    BoxShadow(
+      color: tint(0.14),
+      offset: Offset(0, elevation),
+      blurRadius: 1.2 * elevation,
+    ),
+    BoxShadow(
+      color: tint(0.12),
+      offset: Offset(0, 0.4 * elevation),
+      blurRadius: 1.75 * elevation,
+    ),
+  ];
 }
