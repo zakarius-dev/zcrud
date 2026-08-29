@@ -164,10 +164,13 @@ class ZSmartNote extends ZEntity with ZExtensible {
   /// **Corps de la note — ops Delta NEUTRES** (`List<Map<String, dynamic>>`),
   /// **CANAL HORS-CODEGEN**, défaut `[]`.
   ///
-  /// **Pourquoi hors-codegen** : le générateur ne supporte **aucun type `Map`**
-  /// (`_classify` : `List<T>` récurse sur `T`, et `Map` n'a **aucune branche`) ⇒
-  /// annoter ce champ `@ZcrudField` rendrait le **build ROUGE**. Il est donc
-  /// décodé et réémis **À LA MAIN** (patron `ZFlashcard.source` /
+  /// **Pourquoi hors-codegen** : le générateur sérialise les `Map` (y compris
+  /// `List<Map<…>>`), mais ce champ garde trois propriétés qu'un champ généré
+  /// ne fournit pas : (1) l'accesseur rend une **vue non modifiable** à chaque
+  /// niveau ; (2) le slot stocké est **privé et brut** (le ctor `const`
+  /// l'exige) ; (3) l'absence de `ZFieldSpec` est **délibérée** (voir la
+  /// conséquence assumée ci-dessous). Il est donc décodé et réémis **À LA
+  /// MAIN** (patron `ZFlashcard.source` /
   /// `ZDocumentReadingState.learning`), et sa clé [kContentKey] est
   /// **RÉSERVÉE** — sinon elle atterrirait dans [extra] **et** serait réémise
   /// **en double** par [toMap], cassant l'`==` entre une note en mémoire et la

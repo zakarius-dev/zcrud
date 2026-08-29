@@ -3,6 +3,36 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.34.0 — 2026-08-29
+
+### Modifié (aucun changement du rendu par défaut)
+
+- Le défaut global du socle passe à `ZReferenceProfile.neutral`
+  (cf. `zcrud_core`). **Le carnet de chat ne suit pas ce défaut** : il possède
+  sa propre référence auditée (`ZChatNotebookReference`) et la garde comme
+  rendu par défaut. Un hôte qui n'a rien déclaré voit **exactement** le même
+  chat qu'avant — accent d'outils, neuf accents de capacité, séquence
+  d'occupation de 7 teintes et tempo de 2 s inchangés.
+- La bascule aurait éteint ce rendu : `zBusyPaletteOf` et `zLegacyOrIn` rendent
+  désormais la valeur neutre dès que le profil est absent. Le repli **local** de
+  `ZChatNotebookSkin.resolve` retombe donc explicitement sur
+  `ZChatNotebookReference` au lieu de l'arbitrage global.
+- L'échappatoire reste entière et inchangée :
+  `ZcrudScope(theme: ZcrudTheme(referenceProfile: ZReferenceProfile.neutral))`
+  éteint la référence du carnet comme avant (accents au rôle
+  `ZColorSlot.primary`, séquence d'occupation vide, canaux non chromatiques
+  intacts). La chaîne **paramètre > jeton > référence** est inchangée.
+
+### Tests
+
+- Les gardes d'inertie APPD-2 sont conservées **telles quelles** et restent
+  vertes : ce sont elles qui ont détecté la dégradation.
+- Garde ajoutée : « le carnet garde sa référence quand le socle, lui, ne la
+  garde pas » — elle vérifie d'abord, par sonde, que `zBusyPaletteOf` rend bien
+  `null` sans profil (sinon elle ne prouverait rien), puis que le rendu par
+  défaut est identique sans `ZcrudScope` et sous un `ZcrudScope` muet, et
+  qu'un `neutral` déclaré éteint toujours.
+
 ## 3.32.0 — 2026-08-29
 
 ### Modifié (gardes — aucun changement de comportement)

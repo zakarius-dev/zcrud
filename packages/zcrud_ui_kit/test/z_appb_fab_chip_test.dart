@@ -36,7 +36,13 @@ BoxDecoration? fabDecoration(WidgetTester tester) {
 FloatingActionButton fabOf(WidgetTester tester) =>
     tester.widget<FloatingActionButton>(find.byType(FloatingActionButton));
 
-Widget host(Widget child, {ZcrudTheme? theme}) {
+/// Thème CRUD posant l'opt-in d'habillage de référence. L'habillage mesuré ici
+/// n'est plus le défaut du socle : il faut le demander, comme le fera l'hôte.
+const ZcrudTheme kLegacy = ZcrudTheme(
+  referenceProfile: ZReferenceProfile.legacy,
+);
+
+Widget host(Widget child, {ZcrudTheme? theme = kLegacy}) {
   final Widget app = MaterialApp(
     debugShowCheckedModeBanner: false,
     home: Scaffold(floatingActionButton: child),
@@ -169,6 +175,39 @@ void main() {
       },
     );
 
+    testWidgets(
+      '🔴 DÉFAUT du socle (aucun profil déclaré) : bouton Material NU, '
+      'indiscernable de `neutral` explicite',
+      (tester) async {
+        for (final ZcrudTheme? muet in <ZcrudTheme?>[
+          null,
+          const ZcrudTheme(),
+        ]) {
+          await tester.pumpWidget(
+            host(
+              const ZGradientFab(
+                onPressed: null,
+                icon: Icons.add,
+                label: 'Nouveau',
+              ),
+              theme: muet,
+            ),
+          );
+          expect(
+            fabDecoration(tester),
+            isNull,
+            reason: '🔴 un hôte qui n\'a rien déclaré reçoit le conteneur '
+                'dégradé : le défaut du socle a dérivé vers `legacy`',
+          );
+          final FloatingActionButton fab = fabOf(tester);
+          expect(fab.backgroundColor, isNull);
+          expect(fab.foregroundColor, isNull);
+          expect(fab.elevation, isNull);
+          expect(tester.widget<Icon>(find.byType(Icon)).size, isNull);
+        }
+      },
+    );
+
     testWidgets('gradientKey vide : bouton nu, MÊME sous legacy', (
       tester,
     ) async {
@@ -225,7 +264,7 @@ void main() {
   group('Apparence B — ZChoiceChipStyle', () {
     Future<ZChoiceChipStyle> resolve(
       WidgetTester tester, {
-      ZcrudTheme? theme,
+      ZcrudTheme? theme = kLegacy,
       String? signatureKey,
     }) async {
       late ZChoiceChipStyle style;
@@ -245,7 +284,41 @@ void main() {
       return style;
     }
 
-    testWidgets('legacy : rayon 12, pas de coche, teinte = tête de palette', (
+    testWidgets(
+        '🔴 DÉFAUT du socle (aucun profil déclaré) : la teinte de sélection '
+        'est `ColorScheme.primary`, jamais la palette de référence',
+        (tester) async {
+      // Les deux formes muettes — aucun `ZcrudScope`, un `ZcrudScope` sans
+      // jeton de profil — doivent rendre la MÊME chose que `neutral`.
+      for (final ZcrudTheme? muet in <ZcrudTheme?>[null, const ZcrudTheme()]) {
+        late ColorScheme scheme;
+        Widget app = MaterialApp(
+          home: Builder(
+            builder: (BuildContext context) {
+              scheme = Theme.of(context).colorScheme;
+              final ZChoiceChipStyle s = ZChoiceChipStyle.resolve(context);
+              expect(
+                s.selectedColor,
+                scheme.primary,
+                reason: '🔴 une puce d\'un hôte non déclarant prend la teinte '
+                    'de référence : le défaut du socle a dérivé',
+              );
+              expect(
+                s.selectedColor,
+                isNot(ZSignaturePaletteReference
+                    .gradients.first.gradient.colors.first),
+              );
+              return const SizedBox();
+            },
+          ),
+        );
+        if (muet != null) app = ZcrudScope(theme: muet, child: app);
+        await tester.pumpWidget(app);
+      }
+    });
+
+    testWidgets('`legacy` EXPLICITE : rayon 12, pas de coche, teinte = tête '
+        'de palette', (
       tester,
     ) async {
       final ZChoiceChipStyle style = await resolve(tester);
@@ -417,13 +490,18 @@ void main() {
       tester,
     ) async {
       late ChipThemeData data;
+      late ChipThemeData defaut;
+      late ColorScheme scheme;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (BuildContext context) {
-              data = zChipThemeFor(context);
-              return const SizedBox();
-            },
+        ZcrudScope(
+          theme: kLegacy,
+          child: MaterialApp(
+            home: Builder(
+              builder: (BuildContext context) {
+                data = zChipThemeFor(context);
+                return const SizedBox();
+              },
+            ),
           ),
         ),
       );
@@ -441,6 +519,28 @@ void main() {
       expect(data.labelStyle, isNull);
       expect(data.side, isNull);
       expect(data.padding, isNull);
+
+      // …et la projection suit le DÉFAUT du socle quand rien n'est déclaré :
+      // les scalaires (forme, coche) tiennent, la COULEUR retombe au rôle.
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (BuildContext context) {
+              scheme = Theme.of(context).colorScheme;
+              defaut = zChipThemeFor(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+      expect(defaut.showCheckmark, isFalse);
+      expect(defaut.shape, data.shape);
+      expect(
+        defaut.selectedColor,
+        scheme.primary,
+        reason: '🔴 la projection sans profil déclaré porte la teinte de '
+            'référence : le défaut du socle a dérivé vers `legacy`',
+      );
     });
   });
 }

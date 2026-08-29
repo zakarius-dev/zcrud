@@ -216,13 +216,39 @@ void main() {
       return captured;
     }
 
-    testWidgets('profil LEGACY (défaut) : une clé inconnue prend la RÉFÉRENCE',
+    testWidgets('profil LEGACY EXPLICITE : une clé inconnue prend la RÉFÉRENCE',
         (WidgetTester tester) async {
       // `success` n'est ni une clé d'hôte (aucun resolver) ni un rôle M3.
-      final ZColorPair p =
-          await resolve(tester, colorKey: 'success', slotIndex: 3);
+      final ZColorPair p = await resolve(
+        tester,
+        colorKey: 'success',
+        slotIndex: 3,
+        profile: ZReferenceProfile.legacy,
+      );
       expect(p, ZAnnotationPaletteReference.pairAt(3));
       expect(_hex(p.color), '#FF909090');
+    });
+
+    testWidgets('🔴 DÉFAUT (aucun profil déclaré) : la même clé retombe sur le '
+        'RÔLE indexé, exactement comme sous `neutral`',
+        (WidgetTester tester) async {
+      final ZColorPair defaut =
+          await resolve(tester, colorKey: 'success', slotIndex: 3);
+      expect(
+        ZAnnotationPaletteReference.colors,
+        isNot(contains(defaut.color)),
+        reason: '🔴 un hôte qui n\'a rien déclaré reçoit la teinte de '
+            'référence : le défaut du socle a dérivé vers `legacy`',
+      );
+      final ZColorPair neutre = await resolve(
+        tester,
+        colorKey: 'success',
+        slotIndex: 3,
+        profile: ZReferenceProfile.neutral,
+      );
+      expect(defaut, neutre,
+          reason: 'profil absent et `neutral` explicite doivent être '
+              'INDISCERNABLES');
     });
 
     testWidgets('profil NEUTRAL : la même clé retombe sur le RÔLE indexé',
@@ -309,22 +335,42 @@ void main() {
             .color,
         const Color(0xFF020202),
       );
-      // Une liste VIDE n'est pas un paramètre : la chaîne continue.
+      // Une liste VIDE n'est pas un paramètre : la chaîne continue — jusqu'à
+      // la référence sous `legacy`, jusqu'au rôle indexé par défaut.
       final ZColorPair vide = await resolve(
         tester,
         colorKey: 'success',
         slotIndex: 3,
         swatchColors: const <Color>[],
+        profile: ZReferenceProfile.legacy,
       );
       expect(vide, ZAnnotationPaletteReference.pairAt(3));
+      final ZColorPair videParDefaut = await resolve(
+        tester,
+        colorKey: 'success',
+        slotIndex: 3,
+        swatchColors: const <Color>[],
+      );
+      expect(
+        videParDefaut,
+        await resolve(tester, colorKey: 'success', slotIndex: 3),
+        reason: 'une liste vide ne doit rien changer à la chaîne, dans les '
+            'deux profils',
+      );
     });
   });
 
-  group('palette par défaut sous LEGACY — la barre peint la référence', () {
+  group('palette d\'étude sous LEGACY EXPLICITE — la barre peint la '
+      'référence', () {
     testWidgets('les clés non-rôles de ZColorPalette.defaultStudy prennent '
         'EXACTEMENT la référence à leur rang', (WidgetTester tester) async {
       const ZColorPalette palette = ZColorPalette.defaultStudy();
-      await tester.pumpWidget(_host(const ZAnnotationToolbar()));
+      await tester.pumpWidget(
+        _host(
+          const ZAnnotationToolbar(),
+          profile: ZReferenceProfile.legacy,
+        ),
+      );
 
       // `primary`/`secondary`/`tertiary`/`neutral` sont des RÔLES M3 : le
       // thème les résout, la référence ne les touche pas. Les quatre autres
@@ -346,20 +392,33 @@ void main() {
       }
     });
 
-    testWidgets('sous NEUTRAL aucune de ces quatre swatches ne porte une '
-        'teinte de la référence', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        _host(
-          const ZAnnotationToolbar(),
-          profile: ZReferenceProfile.neutral,
-        ),
-      );
-      for (final String key in <String>['success', 'warning', 'danger', 'info']) {
-        final ColoredBox box = tester.widget<ColoredBox>(
-          find.byKey(ValueKey<String>('$kAnnotationSwatchFillKeyPrefix$key')),
+    testWidgets('🔴 par DÉFAUT et sous NEUTRAL, aucune de ces quatre swatches '
+        'ne porte une teinte de la référence', (WidgetTester tester) async {
+      // Les deux formes du défaut, mesurées séparément : un repli qui
+      // divergerait entre elles ne se verrait dans aucune prise isolée.
+      for (final ZReferenceProfile? profil in <ZReferenceProfile?>[
+        null,
+        ZReferenceProfile.neutral,
+      ]) {
+        await tester.pumpWidget(
+          _host(const ZAnnotationToolbar(), profile: profil),
         );
-        expect(ZAnnotationPaletteReference.colors, isNot(contains(box.color)),
-            reason: 'swatch "$key" a lu la référence sous profil neutral');
+        for (final String key in <String>[
+          'success',
+          'warning',
+          'danger',
+          'info',
+        ]) {
+          final ColoredBox box = tester.widget<ColoredBox>(
+            find.byKey(ValueKey<String>('$kAnnotationSwatchFillKeyPrefix$key')),
+          );
+          expect(
+            ZAnnotationPaletteReference.colors,
+            isNot(contains(box.color)),
+            reason: '🔴 la swatch "$key" a lu la référence (profil $profil) : '
+                'le défaut du socle a dérivé vers `legacy`',
+          );
+        }
       }
     });
   });

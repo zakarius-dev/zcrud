@@ -3,6 +3,46 @@
 Toutes les modifications notables de `zcrud_document` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.34.0 — 2026-08-29
+
+### Modifié
+
+- 🔴 **Le défaut du socle devient `ZReferenceProfile.neutral`** (décidé dans
+  `zcrud_core`). Sans profil déclaré, ce paquet rend ce qu'il rendait avant le
+  lot d'apparence du lecteur :
+  - `zResolveAnnotationColor` : une clé qui n'est ni une clé d'hôte ni un rôle
+    Material 3 retombe sur le **rôle indexé** (`zColorSlotPair`), plus sur la
+    teinte de `ZAnnotationPaletteReference` ;
+  - `ZAnnotationToolbar` : pastille à la **pleine cible de 48 dp** et glyphes à
+    la taille du SDK, au lieu des scalaires de référence (40 / 20) ;
+  - `ZDocumentViewerChrome` / `ZAnnotationPanel` : filets, plancher de barre et
+    rayon d'encre reviennent aux valeurs d'avant.
+- Un paramètre déclaré (`swatchSize`, `entryCornerRadius`, `swatchColors`) et un
+  `ZcrudScope.colorKeyResolver` l'emportent dans les **deux** profils,
+  inchangés. Le plancher tactile de 48 dp (AD-13) reste souverain.
+- L'habillage complet reste disponible par
+  `ZcrudScope(theme: ZcrudTheme(referenceProfile: ZReferenceProfile.legacy))`.
+
+### Corrigé
+
+- `zDocumentLegacyOrNeutral` **recopiait** le repli de profil
+  (`profile ?? ZReferenceProfile.legacy`) au lieu de le déléguer. C'était le
+  seul arbitre parallèle du dépôt : le défaut de ce paquet aurait divergé de
+  celui du socle à la bascule. Il délègue désormais à `zLegacyOrIn`, arbitre
+  unique.
+
+### Tests
+
+- Le groupe d'inertie mesure désormais les **deux formes du défaut** — aucun
+  profil déclaré, `neutral` explicite — sur les trois signatures figées
+  (`_kChromeBefore`, `_kPanelBefore`, `_kToolbarSwatchesBefore`), inchangées à
+  l'octet.
+- Nouvelles gardes du défaut sur la chaîne de couleur d'annotation et sur les
+  quatre swatches non-rôles, avec assertion d'**indiscernabilité** entre profil
+  absent et `neutral` explicite.
+- Les gardes de l'habillage déclarent `legacy` explicitement ; leurs assertions
+  (rangs, hex, rects) sont conservées à l'identique.
+
 ## 3.32.0 — 2026-08-29
 
 ### Garde

@@ -327,8 +327,9 @@ class ZSessionSummaryView extends StatefulWidget {
   ///
   /// Elle sélectionne — de façon stable et déterministe — le dégradé de
   /// référence peint derrière un verdict réussi sous le profil
-  /// `ZReferenceProfile.legacy`. Sous `ZReferenceProfile.neutral`, aucune
-  /// référence n'est peinte : les rôles du `ColorScheme` prennent le relais.
+  /// `ZReferenceProfile.legacy`, opt-in de l'hôte. Sous
+  /// `ZReferenceProfile.neutral` — **le défaut** —, aucune référence n'est
+  /// peinte : les rôles du `ColorScheme` prennent le relais.
   static const String verdictGradientIdentity = 'zcrud.session.summary.verdict';
 
   /// Clé l10n du libellé d'un verdict réussi.

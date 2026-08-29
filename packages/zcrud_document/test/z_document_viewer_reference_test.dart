@@ -9,12 +9,13 @@
 //      retenu : le type de widget, sa taille au dixième de point, et les
 //      propriétés que le lot pourrait faire bouger (couleur, taille, marge,
 //      contraintes, rayon d'encre, épaisseur de filet, texte, glyphe).
-//      Un hôte qui pose `referenceProfile: neutral` doit retrouver EXACTEMENT
-//      l'arbre d'avant le lot.
+//      Un hôte qui ne déclare RIEN — comme un hôte qui pose
+//      `referenceProfile: neutral` — doit retrouver EXACTEMENT l'arbre
+//      d'avant le lot. Les deux formes sont mesurées.
 //
-//  (2) Sous profil `legacy` (le DÉFAUT), la géométrie est celle de la
-//      référence auditée — et le plancher tactile de 48 dp (AD-13) survit à
-//      la fidélité.
+//  (2) Sous profil `legacy` — opt-in EXPLICITE de l'hôte, jamais le défaut —
+//      la géométrie est celle de la référence auditée, et le plancher tactile
+//      de 48 dp (AD-13) survit à la fidélité.
 //
 // 🔴 La table de scalaires est relevée à la main sur le legacy IFFD (branche
 // `main`) et FIGÉE ici avec ses `fichier:ligne` ; elle n'est jamais relue
@@ -293,7 +294,12 @@ void main() {
       // Ce que la garde de style vérifie par le disque, énoncé ici comme
       // contrat : la référence GÉOMÉTRIE ne doit jamais devenir une porte
       // d'entrée pour un hex (elle n'est pas dans la liste d'exemption).
-      expect(zDocumentLegacyOrNeutral<double>(null, 1, 2), 1);
+      expect(
+        zDocumentLegacyOrNeutral<double>(null, 1, 2),
+        2,
+        reason: '🔴 un profil ABSENT prend la référence : le défaut de ce '
+            'paquet a divergé du défaut du socle (`neutral`)',
+      );
       expect(
         zDocumentLegacyOrNeutral<double>(ZReferenceProfile.legacy, 1, 2),
         1,
@@ -301,6 +307,12 @@ void main() {
       expect(
         zDocumentLegacyOrNeutral<double>(ZReferenceProfile.neutral, 1, 2),
         2,
+      );
+      expect(
+        zDocumentLegacyOrNeutral<double>(null, 1, 2),
+        zDocumentLegacyOrNeutral<double>(ZReferenceProfile.neutral, 1, 2),
+        reason: 'profil absent et `neutral` explicite doivent être '
+            'INDISCERNABLES',
       );
     });
 
@@ -314,56 +326,67 @@ void main() {
     });
   });
 
-  group('INERTIE ABSOLUE sous profil neutral — arbre STRICTEMENT identique '
+  // Les DEUX formes qui doivent rendre le défaut du socle : aucun profil
+  // déclaré (aucun `ZcrudScope`) et `neutral` explicite. Mesurer la seule
+  // seconde laisserait passer une divergence du repli de profil.
+  const Map<String, ZReferenceProfile?> formesDuDefaut =
+      <String, ZReferenceProfile?>{
+    'aucun profil déclaré': null,
+    '`neutral` explicite': ZReferenceProfile.neutral,
+  };
+
+  group('INERTIE ABSOLUE par DÉFAUT — arbre STRICTEMENT identique '
       'à celui d\'avant le lot', () {
-    testWidgets('ZDocumentViewerChrome', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        _host(_chrome, profile: ZReferenceProfile.neutral),
-      );
-      expect(
-        signature(tester, find.byType(ZDocumentViewerChrome)),
-        _kChromeBefore,
-        reason: '🔴 le profil neutral n\'est PLUS inerte : l\'arbre du chrome '
-            'diffère de celui relevé avant le lot.',
-      );
-    });
+    formesDuDefaut.forEach((String forme, ZReferenceProfile? profil) {
+      testWidgets('ZDocumentViewerChrome ($forme)', (WidgetTester tester) async {
+        await tester.pumpWidget(_host(_chrome, profile: profil));
+        expect(
+          signature(tester, find.byType(ZDocumentViewerChrome)),
+          _kChromeBefore,
+          reason: '🔴 le défaut n\'est PLUS inerte ($forme) : l\'arbre du '
+              'chrome diffère de celui relevé avant le lot.',
+        );
+      });
 
-    testWidgets('ZAnnotationPanel', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        _host(_panel(), profile: ZReferenceProfile.neutral),
-      );
-      expect(
-        signature(tester, find.byType(ZAnnotationPanel)),
-        _kPanelBefore,
-        reason: '🔴 le profil neutral n\'est PLUS inerte : l\'arbre du panneau '
-            'diffère de celui relevé avant le lot.',
-      );
-    });
+      testWidgets('ZAnnotationPanel ($forme)', (WidgetTester tester) async {
+        await tester.pumpWidget(_host(_panel(), profile: profil));
+        expect(
+          signature(tester, find.byType(ZAnnotationPanel)),
+          _kPanelBefore,
+          reason: '🔴 le défaut n\'est PLUS inerte ($forme) : l\'arbre du '
+              'panneau diffère de celui relevé avant le lot.',
+        );
+      });
 
-    testWidgets('ZAnnotationToolbar — fonds de swatch et taille de pastille',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        _host(const ZAnnotationToolbar(), profile: ZReferenceProfile.neutral),
-      );
-      final ZColorPalette palette = ZColorPalette.defaultStudy();
-      final List<String> rendus = <String>[];
-      for (final String key in palette.keys) {
-        final Finder fill =
-            find.byKey(ValueKey<String>('$kAnnotationSwatchFillKeyPrefix$key'));
-        rendus.add(_hex(tester.widget<ColoredBox>(fill).color));
-        // La pastille reprend la pleine cible, comme avant le lot.
-        expect(tester.getSize(fill), const Size(48, 48), reason: 'swatch $key');
-      }
-      expect(rendus, _kToolbarSwatchesBefore,
-          reason: '🔴 le profil neutral n\'est PLUS inerte : les fonds de '
-              'swatch diffèrent de ceux relevés avant le lot.');
+      testWidgets(
+          'ZAnnotationToolbar ($forme) — fonds de swatch et taille de pastille',
+          (WidgetTester tester) async {
+        await tester.pumpWidget(
+          _host(const ZAnnotationToolbar(), profile: profil),
+        );
+        final ZColorPalette palette = ZColorPalette.defaultStudy();
+        final List<String> rendus = <String>[];
+        for (final String key in palette.keys) {
+          final Finder fill = find
+              .byKey(ValueKey<String>('$kAnnotationSwatchFillKeyPrefix$key'));
+          rendus.add(_hex(tester.widget<ColoredBox>(fill).color));
+          // La pastille reprend la pleine cible, comme avant le lot.
+          expect(tester.getSize(fill), const Size(48, 48),
+              reason: 'swatch $key');
+        }
+        expect(rendus, _kToolbarSwatchesBefore,
+            reason: '🔴 le défaut n\'est PLUS inerte ($forme) : les fonds de '
+                'swatch diffèrent de ceux relevés avant le lot.');
+      });
     });
   });
 
-  group('profil legacy (le DÉFAUT) — la géométrie de référence est peinte', () {
+  group('profil legacy EXPLICITE — la géométrie de référence est peinte', () {
     testWidgets('la pastille rétrécit à la taille de référence, la CIBLE reste '
         'à 48 dp', (WidgetTester tester) async {
-      await tester.pumpWidget(_host(const ZAnnotationToolbar()));
+      await tester.pumpWidget(
+        _host(const ZAnnotationToolbar(), profile: ZReferenceProfile.legacy),
+      );
       final ZColorPalette palette = ZColorPalette.defaultStudy();
       for (final String key in palette.keys) {
         expect(
@@ -385,7 +408,7 @@ void main() {
 
     testWidgets('le filet du chrome porte l\'épaisseur de référence',
         (WidgetTester tester) async {
-      await tester.pumpWidget(_host(_chrome));
+      await tester.pumpWidget(_host(_chrome, profile: ZReferenceProfile.legacy));
       final Iterable<Divider> dividers =
           tester.widgetList<Divider>(find.byType(Divider));
       expect(dividers, hasLength(2));
@@ -397,7 +420,7 @@ void main() {
 
     testWidgets('les glyphes de navigation prennent la taille de référence, '
         'et la barre son plancher', (WidgetTester tester) async {
-      await tester.pumpWidget(_host(_chrome));
+      await tester.pumpWidget(_host(_chrome, profile: ZReferenceProfile.legacy));
       for (final IconData glyph in <IconData>[
         Icons.chevron_left,
         Icons.chevron_right,
@@ -418,7 +441,9 @@ void main() {
 
     testWidgets('l\'encre d\'une entrée de panneau prend le rayon de référence',
         (WidgetTester tester) async {
-      await tester.pumpWidget(_host(_panel()));
+      await tester.pumpWidget(
+        _host(_panel(), profile: ZReferenceProfile.legacy),
+      );
       for (final InkWell ink in tester.widgetList<InkWell>(
         find.descendant(
           of: find.byType(ZAnnotationPanel),

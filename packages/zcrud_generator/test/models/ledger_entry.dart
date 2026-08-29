@@ -9,7 +9,9 @@
 ///     décodeur émis et dans `$LedgerEntryFieldSpecs`, **avant** les champs
 ///     locaux et dans l'ordre de linéarisation ;
 ///   - cinq formes de `Map` : valeurs scalaires, `dynamic`, `DateTime`, valeurs
-///     nullables, et **clés enum** (encodées par `.name`).
+///     nullables, et **clés enum** (encodées par `.name`) ;
+///   - trois formes **IMBRIQUÉES** : `List<Map<…>>`, `Map<String, Map<…>>` et
+///     une map à deux niveaux dont le niveau interne porte des clés enum.
 ///
 /// Le `part 'ledger_entry.g.dart'` est produit par **build_runner réel**
 /// (`melos run generate`) — gitignoré, jamais édité à la main.
@@ -62,6 +64,9 @@ class LedgerEntry extends LedgerBase {
     this.zones = const <LedgerZone, String>{},
     this.stamps = const <String, DateTime>{},
     this.notes = const <String, String?>{},
+    this.rows = const <Map<String, dynamic>>[],
+    this.matrix = const <String, Map<String, int>>{},
+    this.schedule = const <String, Map<LedgerZone, DateTime>>{},
   });
 
   /// Décodeur de DOMAINE exigé par le générateur. `LedgerEntry` n'est pas
@@ -92,4 +97,19 @@ class LedgerEntry extends LedgerBase {
   /// Map à valeurs NULLABLES : un `null` déclaré est préservé au round-trip.
   @ZcrudField()
   final Map<String, String?> notes;
+
+  /// Liste de maps — un élément non-map est écarté, la liste survit amputée.
+  @ZcrudField()
+  final List<Map<String, dynamic>> rows;
+
+  /// Map de maps TYPÉE : une entrée interne illisible n'emporte ni la map
+  /// interne, ni l'entrée externe, ni le parent.
+  @ZcrudField()
+  final Map<String, Map<String, int>> matrix;
+
+  /// Deux niveaux dont l'INTERNE porte des clés enum et des valeurs `DateTime` :
+  /// la map persistée reste à clés `String` (`.name`) et à dates ISO-8601 aux
+  /// deux niveaux.
+  @ZcrudField()
+  final Map<String, Map<LedgerZone, DateTime>> schedule;
 }

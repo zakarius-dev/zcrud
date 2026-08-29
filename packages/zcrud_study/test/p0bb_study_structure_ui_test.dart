@@ -235,7 +235,8 @@ void main() {
       expect(find.text('Petit-enfant'), findsNothing);
     });
 
-    testWidgets('pastille : PRÉSENTE sous `legacy`, ABSENTE sous `neutral`', (
+    testWidgets('pastille : PRÉSENTE sous `legacy`, ABSENTE sous `neutral` '
+        'ET par défaut', (
       WidgetTester tester,
     ) async {
       final Finder pastille = find.byKey(
@@ -247,10 +248,15 @@ void main() {
 
       await tester.pumpWidget(
         _host(
-          ZStudyUnitPicker(
-            roots: roots,
-            onSelect: (_) {},
-            searchEnabled: false,
+          ZcrudScope(
+            theme: const ZcrudTheme(
+              referenceProfile: ZReferenceProfile.legacy,
+            ),
+            child: ZStudyUnitPicker(
+              roots: roots,
+              onSelect: (_) {},
+              searchEnabled: false,
+            ),
           ),
         ),
       );
@@ -271,6 +277,24 @@ void main() {
         ),
       );
       expect(pastille, findsNothing);
+
+      // 🔴 Et le DÉFAUT du socle — aucun profil déclaré, pas même de
+      // `ZcrudScope` — doit être indiscernable du profil neutre.
+      await tester.pumpWidget(
+        _host(
+          ZStudyUnitPicker(
+            roots: roots,
+            onSelect: (_) {},
+            searchEnabled: false,
+          ),
+        ),
+      );
+      expect(
+        pastille,
+        findsNothing,
+        reason: '🔴 la pastille d\'identité est montée sans profil déclaré : '
+            'le défaut du socle a dérivé vers `legacy`',
+      );
     });
   });
 

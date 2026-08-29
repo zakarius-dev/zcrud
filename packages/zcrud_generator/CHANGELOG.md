@@ -2,6 +2,69 @@
 
 All notable changes to `zcrud_generator` are documented in this file.
 
+## 3.34.0 — 2026-08-29
+
+### Ajouté — les structures IMBRIQUÉES : `List<Map<K, V>>` et `Map<K, Map<K2, V2>>`
+
+Une `Map<K, V>` était (dé)sérialisable comme **type de champ**, mais nulle part
+ailleurs : un élément de liste ou une valeur de map de type `Map` faisaient
+**échouer le build**. Les deux refus étaient des manques, pas des arbitrages —
+celui de la liste l'écrivait littéralement (« pas *encore* comme ÉLÉMENT de
+liste »), celui de la valeur ne proposait pour tout remède que de déclarer la
+valeur `dynamic`, c'est-à-dire de **renoncer au typage** et de rendre au
+consommateur l'entière charge du décodage défensif.
+
+Sont désormais émis, avec les **mêmes** types de valeur que `Map<K, V>`
+(`dynamic`/`Object?`, scalaires, `DateTime`, `ZDateRange`, enum, sous-modèle
+`@ZcrudModel`, `List<T>` de ceux-ci) et à **profondeur libre** :
+
+```dart
+@ZcrudField() final List<Map<String, dynamic>> rows;
+@ZcrudField() final Map<String, Map<String, int>> matrix;
+@ZcrudField() final Map<String, Map<LedgerZone, DateTime>> schedule;
+@ZcrudField() final Map<String, List<Map<String, int>>> deep;
+```
+
+Le décodage est **défensif à chaque niveau** (AD-10) : un élément non-map est
+écarté et la liste survit amputée ; une entrée illisible **à l'intérieur** d'une
+map interne n'emporte ni la map interne, ni l'entrée externe, ni le parent — qui
+ne lève jamais. Un `null` de valeur déclaré nullable reste **préservé**. La map
+persistée reste à clés `String` **à tous les niveaux** (clé enum → `.name`), et
+les `DateTime` internes sortent en ISO-8601.
+
+### Reste REFUSÉ, explicitement
+
+- `List<Map<K, V>?>` (élément map **nullable**) : le décodage d'une liste filtre
+  ses éléments illisibles par `whereType`, geste qui effacerait aussi les `null`
+  **déclarés** ; la liste rendue aurait alors une longueur différente de celle
+  écrite, sans signal. Le message nomme le remède (`List<Map<K, V>>`).
+- Une clé de map non `String`/enum et une valeur non (dé)sérialisable, **à
+  quelque niveau que ce soit** : le refus remonte du niveau interne comme du
+  niveau externe.
+
+### Aucun `.g.dart` existant ne change de contenu
+
+Les liaisons du code émis ne sont numérotées **qu'aux niveaux imbriqués**
+(`e$1`, `k$2`…) ; la profondeur 0 garde ses noms historiques (`e$`, `k$`, `v$`).
+Toutes les formes déjà supportées produisent donc un texte **identique à
+l'octet** — mesuré : les trois fixtures non touchées du paquet gardent leur
+sha256 après régénération. Deux gardes tiennent cette propriété : l'une exige
+`e$` (et l'absence de `e$1`) sur `Map<String, List<T>>`, l'autre exige la
+numérotation sur les formes imbriquées.
+
+### Conséquence à connaître
+
+Un champ **non annoté** de type `List<Map<…>>` ne fait plus rougir le build par
+le contrôle de perte silencieuse : comme tout type désormais sérialisable, il
+est simplement hors persistance tant qu'il n'est pas annoté. C'est le
+comportement déjà en vigueur pour `Map<K, V>` depuis son ouverture.
+
+Un hôte qui avait **contourné** ces refus par un canal manuel (décodage et
+réémission écrits à la main, clé réservée hors `extra`) peut désormais annoter
+le champ — mais **doit alors retirer son canal manuel**, sous peine de réémettre
+la clé en double. Le contournement et le codegen s'**additionnent**, ils ne se
+remplacent pas silencieusement.
+
 ## 3.33.0 — 2026-08-29
 
 ### Ajouté — le code émis est aussi disponible en MEMBRES D'INSTANCE (mixin `_$XxxZcrud`)

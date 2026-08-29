@@ -3,6 +3,41 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.34.0 — 2026-08-29
+
+### Modifié
+
+- 🔴 **Le défaut du socle devient `ZReferenceProfile.neutral`** (décidé dans
+  `zcrud_core`). Sans profil déclaré, ce paquet rend ce qu'il rendait avant le
+  lot d'apparence des cartes :
+  - `ZDefaultFolderCard` d'un dossier **sans couleur choisie** : bande **unie**,
+    plus de repli sur le dégradé de signature ;
+  - en-têtes de `ZSectionedStudyLayout` : ni bande d'accent de 3 dp ni tuile
+    d'icône 36/rayon 10 — le glyphe reste nu ;
+  - `ZSubfolderAccentPastille` : `signatureIdentity` est ignorée ;
+  - `ZStudyUnitPicker` : la pastille d'identité n'est pas montée.
+- Une couleur **choisie** (`colorKey`), un résolveur d'hôte
+  (`ZcrudScope.colorKeyResolver` / `gradientResolver`) et les jetons de thème
+  s'appliquent inchangés dans les deux profils : seul le dernier maillon —
+  la référence auditée — est arbitré.
+- L'habillage complet reste disponible par
+  `ZcrudScope(theme: ZcrudTheme(referenceProfile: ZReferenceProfile.legacy))`.
+
+### Tests
+
+- Nouveau groupe « 🔴 le DÉFAUT du socle est le rendu d'avant le lot
+  d'apparence » (`test/appearance_c_test.dart`) : en-tête, carte de dossier et
+  pastille mesurés **sans aucun profil déclaré**, chacun avec sa contre-preuve
+  sous `legacy` explicite — aucune garde ne peut devenir vacante si les deux
+  profils convergeaient.
+- Les gardes de l'habillage de référence déclarent `legacy` explicitement ;
+  leurs assertions (rects, rayons, ombres teintées, dégradés exacts) sont
+  conservées à l'identique.
+- Tripwire visuel `test/golden/goldens/study_tools_sectioned.png` **re-figé sur
+  le rendu neutre** : le harnais golden est zéro-config (aucun `ZcrudScope`),
+  il fige donc le défaut du socle. Le rendu `legacy` reste gardé par des
+  assertions de rects, jamais par comparaison de pixels.
+
 ## 3.33.0 — 2026-08-29
 
 ### Ajouté

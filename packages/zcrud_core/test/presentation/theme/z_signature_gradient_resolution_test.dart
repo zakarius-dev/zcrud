@@ -2,10 +2,12 @@
 // et sur quelles clés seulement.
 //
 // Trois propriétés sont en jeu, et elles se contredisent si on les relâche :
-//  (a) les clés `zcrud.signature.*` portent une valeur de RÉFÉRENCE par défaut ;
+//  (a) les clés `zcrud.signature.*` portent une valeur de RÉFÉRENCE, mais
+//      seulement sous le profil `legacy`, opt-in de l'hôte ; sans profil
+//      déclaré, elles rendent `null` — le rendu d'avant la vague d'apparence ;
 //  (b) les clés `zcrud.fieldType.*` / `zcrud.fieldAccent.*` restent SEAM-ONLY
 //      (un formulaire sans résolveur d'hôte ne se teinte pas) ;
-//  (c) le profil `neutral` est l'ÉCHAPPATOIRE : il rend (a) muet, sans toucher
+//  (c) le profil `legacy` est l'OPT-IN : lui seul allume (a), sans toucher
 //      au seam de l'hôte ni aux jetons posés explicitement.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,31 +44,51 @@ Future<ZGradientSpec?> _resolve(
 }
 
 void main() {
-  testWidgets('legacy (défaut) : `zcrud.signature.*` rend un dégradé de la '
-      'référence — même SANS aucun ZcrudScope', (tester) async {
-    final ZGradientSpec? sansScope =
-        await _resolve(tester, zSignatureKey('x'), withScope: false);
-    expect(sansScope, isNotNull);
+  testWidgets('🔴 DÉFAUT : `zcrud.signature.*` rend `null` — sans ZcrudScope, '
+      'avec un ZcrudScope muet, et sous `neutral` explicite', (tester) async {
+    // Le rendu par défaut du socle est celui d'avant la vague d'apparence :
+    // `zResolveGradient` ne parle que si l'hôte a posé un résolveur ou un
+    // jeton. Les trois formes ci-dessous doivent être STRICTEMENT égales.
     expect(
-      ZSignaturePaletteReference.gradients.contains(sansScope),
-      isTrue,
-      reason: 'le dégradé rendu ne vient pas de la référence auditée',
+      await _resolve(tester, zSignatureKey('x'), withScope: false),
+      isNull,
+      reason: '🔴 sans aucun ZcrudScope, le socle peint une couleur de '
+          'référence : le défaut a dérivé vers `legacy`',
     );
-
-    final ZGradientSpec? avecScope =
-        await _resolve(tester, zSignatureKey('x'), theme: const ZcrudTheme());
-    expect(avecScope, sansScope,
-        reason: 'un ZcrudScope sans jeton ne doit rien changer');
+    expect(
+      await _resolve(tester, zSignatureKey('x'), theme: const ZcrudTheme()),
+      isNull,
+      reason: '🔴 un ZcrudScope sans jeton allume la référence',
+    );
+    expect(
+      await _resolve(
+        tester,
+        zSignatureKey('x'),
+        theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.neutral),
+      ),
+      isNull,
+      reason: '`neutral` explicite doit valoir exactement le défaut',
+    );
   });
 
-  testWidgets('🔴 ÉCHAPPATOIRE : profil `neutral` ⇒ `zcrud.signature.*` rend '
-      '`null`', (tester) async {
+  testWidgets('OPT-IN : profil `legacy` ⇒ `zcrud.signature.*` rend un dégradé '
+      'de la référence auditée', (tester) async {
     final ZGradientSpec? spec = await _resolve(
       tester,
       zSignatureKey('x'),
-      theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.neutral),
+      theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.legacy),
     );
-    expect(spec, isNull);
+    expect(spec, isNotNull);
+    expect(
+      ZSignaturePaletteReference.gradients.contains(spec),
+      isTrue,
+      reason: 'le dégradé rendu ne vient pas de la référence auditée',
+    );
+    expect(
+      spec,
+      ZSignaturePaletteReference.gradients['x'.hashCode.abs() % 5],
+      reason: 'sous legacy, l\'indexation par défaut reste `hashCode`',
+    );
   });
 
   testWidgets('les préfixes `fieldType`/`fieldAccent` restent SEAM-ONLY dans '
@@ -156,7 +178,9 @@ void main() {
     );
   });
 
-  testWidgets('le jeton de stratégie est LU par la chaîne', (tester) async {
+  testWidgets('le jeton de stratégie est LU par la chaîne (sous `legacy`, '
+      'seul profil où la palette de référence alimente la chaîne)',
+      (tester) async {
     // 'Alpha' : FNV-1a % 5 == 4 ; hashCode % 5 vaut autre chose sur cette
     // plateforme (sinon le test ne distinguerait rien — vérifié ci-dessous).
     // Sans cette borne, le test serait VACUEL le jour où les deux stratégies
@@ -168,13 +192,17 @@ void main() {
       tester,
       zSignatureKey('Alpha'),
       theme: const ZcrudTheme(
+        referenceProfile: ZReferenceProfile.legacy,
         signaturePaletteIndexStrategy: ZPaletteIndexStrategy.stableFnv,
       ),
     );
     expect(fnv, ZSignaturePaletteReference.gradients[4]);
 
-    final ZGradientSpec? defaut =
-        await _resolve(tester, zSignatureKey('Alpha'));
+    final ZGradientSpec? defaut = await _resolve(
+      tester,
+      zSignatureKey('Alpha'),
+      theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.legacy),
+    );
     expect(
       defaut,
       ZSignaturePaletteReference
@@ -244,12 +272,24 @@ void main() {
     expect(zSignatureGradientFor('x'), isNotNull);
   });
 
-  test('`zLegacyOrIn` : un profil NUL vaut `legacy`', () {
-    expect(zLegacyOrIn<String>(null, 'ref', 'neutre'), 'ref');
+  test('🔴 `zLegacyOrIn` : un profil NUL vaut `neutral`', () {
+    // C'est l'arbitre UNIQUE du repli de profil : le défaut du socle tout
+    // entier tient à cette ligne.
+    expect(zLegacyOrIn<String>(null, 'ref', 'neutre'), 'neutre',
+        reason: '🔴 un profil absent retombe sur la référence : tous les '
+            'hôtes non déclarants se retrouveraient habillés');
+    expect(zLegacyOrIn<String>(null, 'ref'), isNull,
+        reason: 'sans valeur neutre, un profil absent rend `null`');
     expect(zLegacyOrIn<String>(ZReferenceProfile.legacy, 'ref', 'neutre'),
         'ref');
     expect(zLegacyOrIn<String>(ZReferenceProfile.neutral, 'ref', 'neutre'),
         'neutre');
     expect(zLegacyOrIn<String>(ZReferenceProfile.neutral, 'ref'), isNull);
+    expect(
+      zLegacyOrIn<String>(null, 'ref', 'neutre'),
+      zLegacyOrIn<String>(ZReferenceProfile.neutral, 'ref', 'neutre'),
+      reason: 'profil absent et `neutral` explicite doivent être '
+          'INDISCERNABLES',
+    );
   });
 }

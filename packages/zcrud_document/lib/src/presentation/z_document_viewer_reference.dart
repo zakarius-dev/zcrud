@@ -15,11 +15,11 @@
 /// Elles sont le **dernier maillon** d'une chaîne de priorité
 /// **paramètre > référence**, arbitré par [zDocumentLegacyOrNeutral] :
 ///
-/// * sous `ZReferenceProfile.legacy` (le défaut) le socle peint la valeur de
-///   référence ;
-/// * sous `ZReferenceProfile.neutral` il peint la valeur qu'il peignait
-///   auparavant — l'arbre produit est alors **strictement** celui d'avant
-///   l'introduction de cette référence, nœud pour nœud ;
+/// * sous `ZReferenceProfile.legacy`, opt-in de l'hôte, le socle peint la
+///   valeur de référence ;
+/// * sous `ZReferenceProfile.neutral` — **le défaut** — il peint la valeur
+///   qu'il peignait auparavant : l'arbre produit est alors **strictement**
+///   celui d'avant l'introduction de cette référence, nœud pour nœud ;
 /// * un paramètre non nul l'emporte **dans les deux profils**.
 ///
 /// ## Le plancher tactile domine la référence
@@ -31,7 +31,8 @@
 /// ne peut faire descendre une cible interactive sous [minTouchTarget].
 library;
 
-import 'package:zcrud_core/zcrud_core.dart' show ZReferenceProfile;
+import 'package:zcrud_core/zcrud_core.dart'
+    show ZReferenceProfile, zLegacyOrIn;
 
 /// Scalaires de référence du chrome de lecture et de la palette d'annotation.
 ///
@@ -83,21 +84,24 @@ abstract final class ZDocumentViewerReference {
 /// Arbitre un **scalaire** entre la référence auditée et la valeur historique
 /// du socle, à partir d'un profil déjà résolu.
 ///
-/// Rend [legacy] si [profile] vaut `ZReferenceProfile.legacy` **ou est nul**
-/// (le défaut est la référence), sinon [current].
+/// Rend [legacy] uniquement si [profile] vaut `ZReferenceProfile.legacy`,
+/// sinon [current]. Un profil **nul** vaut `ZReferenceProfile.neutral` — le
+/// défaut du socle — et rend donc [current].
 ///
 /// Fonction **pure** : elle ne lit aucun contexte.
 ///
-/// À ne pas confondre avec `zLegacyOrIn` du socle, qui arbitre les membres
-/// **couleur** et rend un `T?` (le profil neutre y vaut « aucune couleur »).
-/// Ici le profil neutre vaut « la valeur d'avant », qui n'est pas forcément
-/// nulle : c'est ce qui rend l'inertie du profil neutre **exacte** plutôt
-/// qu'approchée.
+/// Le repli de profil n'est pas décidé ici : cette fonction **délègue** à
+/// `zLegacyOrIn`, arbitre unique du socle. Recopier `profile ?? …` ferait
+/// diverger le défaut de ce paquet de celui de tous les autres.
+///
+/// À ne pas confondre avec l'usage habituel de `zLegacyOrIn`, qui arbitre les
+/// membres **couleur** et rend un `T?` (le profil neutre y vaut « aucune
+/// couleur »). Ici le profil neutre vaut « la valeur d'avant », qui n'est pas
+/// forcément nulle : c'est ce qui rend l'inertie du profil neutre **exacte**
+/// plutôt qu'approchée.
 T zDocumentLegacyOrNeutral<T>(
   ZReferenceProfile? profile,
   T legacy,
   T current,
 ) =>
-    (profile ?? ZReferenceProfile.legacy) == ZReferenceProfile.legacy
-        ? legacy
-        : current;
+    zLegacyOrIn<T>(profile, legacy, current) as T;

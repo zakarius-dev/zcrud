@@ -9,7 +9,7 @@
 # sans chat ne doivent pas tirer le chat).
 name: zcrud_chat_firestore
 description: "Firestore adapters for the zcrud chat route catalog: a factory building ZRepository<ZChatRouter> on the generic Firestore repository, a legacy codec hook, and host-chosen deletion semantics. Graph sink: depends on zcrud_core, zcrud_chat_kernel and zcrud_firestore."
-version: 3.33.0
+version: 3.34.0
 publish_to: none
 resolution: workspace
 homepage: https://github.com/zakarius-dev/zcrud
@@ -29,9 +29,9 @@ dependencies:
     sdk: flutter
   cloud_firestore: ^6.0.0
   dartz: ^0.10.1
-  zcrud_core: ^3.33.0
-  zcrud_chat_kernel: ^3.33.0
-  zcrud_firestore: ^3.33.0
+  zcrud_core: ^3.34.0
+  zcrud_chat_kernel: ^3.34.0
+  zcrud_firestore: ^3.34.0
 
 dev_dependencies:
   flutter_test:

@@ -16,9 +16,10 @@
 /// Ce n'est pas un défaut inconditionnel. Les valeurs d'ici ne sont peintes
 /// que par le **dernier maillon** d'une chaîne de priorité
 /// **paramètre > jeton > référence**, et seulement sous le profil
-/// [ZReferenceProfile.legacy] (le défaut). Sous [ZReferenceProfile.neutral],
-/// [zBusyPaletteOf] rend `null` et l'appelant peint sa propre couleur
-/// ambiante — une seule teinte, sans séquence.
+/// [ZReferenceProfile.legacy], opt-in de l'hôte. Sous
+/// [ZReferenceProfile.neutral] — **le défaut** —, [zBusyPaletteOf] rend `null`
+/// et l'appelant peint sa propre couleur ambiante — une seule teinte, sans
+/// séquence.
 ///
 /// ## Une référence de socle, pas une référence de module
 ///
@@ -86,8 +87,8 @@ abstract final class ZBusyPaletteReference {
 ///
 /// Chaîne de priorité : jeton [ZcrudTheme.busyPalette] d'abord ; à défaut, la
 /// référence [ZBusyPaletteReference.colors] sous le profil
-/// [ZReferenceProfile.legacy] (le défaut), et `null` sous
-/// [ZReferenceProfile.neutral].
+/// [ZReferenceProfile.legacy], et `null` sous [ZReferenceProfile.neutral],
+/// **qui est le défaut**.
 ///
 /// `null` n'est pas une panne : c'est le choix explicite d'un hôte neutre.
 /// L'appelant peint alors **une** couleur ambiante de son choix — typiquement

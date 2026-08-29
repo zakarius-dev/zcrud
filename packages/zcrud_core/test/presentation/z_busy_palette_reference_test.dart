@@ -81,8 +81,29 @@ void main() {
   });
 
   group('lecteur `zBusyPaletteOf` — priorité jeton > référence > neutre', () {
-    testWidgets('sans jeton ni profil : la référence auditée', (tester) async {
-      final List<Color>? p = await _pumpAndRead(tester, null, zBusyPaletteOf);
+    testWidgets('🔴 sans jeton ni profil : `null` — le DÉFAUT du socle ne '
+        'peint aucune séquence', (tester) async {
+      expect(
+        await _pumpAndRead(tester, null, zBusyPaletteOf),
+        isNull,
+        reason: '🔴 un hôte qui n\'a rien déclaré reçoit la séquence de '
+            'référence : le défaut a dérivé vers `legacy`',
+      );
+      expect(
+        await _pumpAndRead(tester, const ZcrudTheme(), zBusyPaletteOf),
+        isNull,
+        reason: 'un ZcrudScope muet doit valoir exactement l\'absence de '
+            'ZcrudScope',
+      );
+    });
+
+    testWidgets('profil `legacy` EXPLICITE : la référence auditée',
+        (tester) async {
+      final List<Color>? p = await _pumpAndRead(
+        tester,
+        const ZcrudTheme(referenceProfile: ZReferenceProfile.legacy),
+        zBusyPaletteOf,
+      );
       expect(p, _kTableFigee);
     });
 
@@ -212,11 +233,40 @@ void main() {
       return tester.widget<ZColorCycle>(find.byType(ZColorCycle));
     }
 
-    testWidgets('sans jeton : la référence, et le tour = 7 × 300 ms',
-        (tester) async {
-      final ZColorCycle w = await pumpBusy(tester, null);
+    testWidgets('profil `legacy` EXPLICITE : la référence, et le tour = '
+        '7 × 300 ms', (tester) async {
+      final ZColorCycle w = await pumpBusy(
+        tester,
+        const ZcrudTheme(referenceProfile: ZReferenceProfile.legacy),
+      );
       expect(w.palette, _kTableFigee);
       expect(w.period, const Duration(milliseconds: 2100));
+    });
+
+    testWidgets('🔴 sans jeton ni profil : UNE seule teinte, jamais la '
+        'séquence de référence', (tester) async {
+      late Color primary;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (BuildContext context) {
+              primary = Theme.of(context).colorScheme.primary;
+              return ZColorCycle.busy(
+                context,
+                builder: (BuildContext c, Color? color, Widget? child) =>
+                    const SizedBox(),
+              );
+            },
+          ),
+        ),
+      );
+      final ZColorCycle w =
+          tester.widget<ZColorCycle>(find.byType(ZColorCycle));
+      expect(
+        w.palette,
+        <Color>[primary],
+        reason: '🔴 le défaut du socle anime une séquence de 7 teintes',
+      );
     });
 
     testWidgets('jeton posé : il prime, et le tour suit sa longueur',

@@ -3,6 +3,24 @@
 Toutes les modifications notables de `zcrud_session` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.34.0 — 2026-08-29
+
+### Modifié
+
+- 🔴 **Le défaut du socle devient `ZReferenceProfile.neutral`** (décidé dans
+  `zcrud_core`). Sans profil déclaré, la **bande de verdict** de
+  `ZSessionSummaryView` peint désormais les rôles `primaryContainer` /
+  `onPrimaryContainer` du `ColorScheme` de l'hôte, au lieu du dégradé de la
+  palette signature auditée.
+- Le dégradé de référence reste disponible par
+  `ZcrudScope(theme: ZcrudTheme(referenceProfile: ZReferenceProfile.legacy))`.
+
+### Tests
+
+- Garde ajoutée « 🔴 K1b — DÉFAUT du socle : indiscernable du profil
+  `neutral` » ; la garde K2 de l'habillage déclare `legacy` explicitement, ses
+  assertions inchangées.
+
 ## 3.29.0 — 2026-08-28
 
 ### Corrigé

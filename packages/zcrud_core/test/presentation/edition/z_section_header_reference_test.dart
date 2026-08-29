@@ -1,16 +1,21 @@
-// GARDE — INERTIE ABSOLUE de l'en-tête de section sous le profil `neutral`,
-// et rendu de RÉFÉRENCE sous le profil `legacy` (le défaut).
+// GARDE — INERTIE ABSOLUE de l'en-tête de section par DÉFAUT, et rendu de
+// RÉFÉRENCE sous le profil `legacy`, opt-in explicite de l'hôte.
 //
-// C'est la garde de l'ÉCHAPPATOIRE. Les signatures ci-dessous ont été relevées
-// AVANT le lot (socle sans profil, sans palette signature) et sont FIGÉES ici :
-// sous `neutral`, l'arbre rendu doit leur être STRICTEMENT ÉGAL — même
+// C'est la garde du DÉFAUT DU SOCLE. Les signatures ci-dessous ont été relevées
+// AVANT le lot d'apparence (socle sans profil, sans palette signature) et sont
+// FIGÉES ici : par défaut, l'arbre rendu doit leur être STRICTEMENT ÉGAL — même
 // enchaînement de widgets, mêmes rectangles au dixième de point, mêmes insets.
-// Une inégalité, si petite soit-elle, signifie que l'hôte qui a demandé le
-// profil neutre subit quand même la référence.
+// Une inégalité, si petite soit-elle, signifie qu'un hôte qui n'a rien déclaré
+// subit quand même la référence.
 //
-// Le pendant `legacy` vérifie que la bande et la tuile SONT bien là, et que la
-// couleur de la bande est EXACTEMENT `gradients[hash % 5].colors.first` — pas
-// « une couleur », pas « une teinte proche ».
+// Les TROIS formes du défaut sont mesurées et doivent être indiscernables :
+// aucun `ZcrudScope`, un `ZcrudScope` muet, et `neutral` explicite. Mesurer la
+// seule troisième laisserait passer une divergence du repli de `zLegacyOrIn`.
+//
+// Le pendant `legacy` vérifie que la bande et la tuile SONT bien là quand
+// l'hôte les demande, et que la couleur de la bande est EXACTEMENT
+// `gradients[hash % 5].colors.first` — pas « une couleur », pas « une teinte
+// proche ».
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
@@ -243,64 +248,66 @@ Finder _enteteDe(String titre) => find.ancestor(
       ),
     );
 
+/// Les trois formes qui doivent rendre le DÉFAUT du socle, indiscernables :
+/// aucun `ZcrudScope`, un `ZcrudScope` muet, et `neutral` explicite.
+const Map<String, ZcrudTheme?> _formesDuDefaut = <String, ZcrudTheme?>{
+  'sans ZcrudScope': null,
+  'ZcrudScope muet': ZcrudTheme(),
+  '`neutral` explicite': ZcrudTheme(referenceProfile: ZReferenceProfile.neutral),
+};
+
 void main() {
   for (final double width in <double>[320, 480, 800]) {
     final _Fige fige = _avant['$width']!;
 
-    testWidgets(
-        '🔴 INERTIE ABSOLUE (w=$width) : sous `neutral`, l\'arbre de '
-        '`_SectionHeader` est STRICTEMENT celui d\'avant le lot',
-        (tester) async {
-      await _monte(
-        tester,
-        width,
-        theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.neutral),
-      );
-      expect(_sig('_SectionHeader'), fige.entete);
-    });
+    _formesDuDefaut.forEach((String forme, ZcrudTheme? theme) {
+      testWidgets(
+          '🔴 INERTIE ABSOLUE (w=$width, $forme) : l\'arbre de '
+          '`_SectionHeader` est STRICTEMENT celui d\'avant le lot',
+          (tester) async {
+        await _monte(tester, width, theme: theme);
+        expect(_sig('_SectionHeader'), fige.entete);
+      });
 
-    testWidgets(
-        '🔴 INERTIE ABSOLUE (w=$width) : sous `neutral`, l\'arbre de '
-        '`_CollapsibleSectionHeader` est STRICTEMENT celui d\'avant le lot',
-        (tester) async {
-      await _monte(
-        tester,
-        width,
-        theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.neutral),
-      );
-      expect(_sig('_CollapsibleSectionHeader'), fige.repliable);
-    });
+      testWidgets(
+          '🔴 INERTIE ABSOLUE (w=$width, $forme) : l\'arbre de '
+          '`_CollapsibleSectionHeader` est STRICTEMENT celui d\'avant le lot',
+          (tester) async {
+        await _monte(tester, width, theme: theme);
+        expect(_sig('_CollapsibleSectionHeader'), fige.repliable);
+      });
 
-    testWidgets('sous `neutral`, AUCUNE bande ni tuile n\'est montée '
-        '(w=$width)', (tester) async {
-      await _monte(
-        tester,
-        width,
-        theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.neutral),
-      );
-      for (final String titre in <String>['Alpha', 'Beta', 'Gamma']) {
+      testWidgets('$forme : AUCUNE bande ni tuile n\'est montée (w=$width)',
+          (tester) async {
+        await _monte(tester, width, theme: theme);
+        for (final String titre in <String>['Alpha', 'Beta', 'Gamma']) {
+          expect(
+            find.descendant(
+              of: _enteteDe(titre),
+              matching: find.byType(ColoredBox),
+            ),
+            findsNothing,
+            reason: 'bande de référence montée ($forme) pour « $titre »',
+          );
+        }
         expect(
-          find.descendant(
-            of: _enteteDe(titre),
-            matching: find.byType(ColoredBox),
+          find.ancestor(
+            of: find.byIcon(Icons.folder),
+            matching: find.byType(DecoratedBox),
           ),
           findsNothing,
-          reason: 'bande de référence montée sous `neutral` pour « $titre »',
         );
-      }
-      expect(
-        find.ancestor(
-          of: find.byIcon(Icons.folder),
-          matching: find.byType(DecoratedBox),
-        ),
-        findsNothing,
-      );
+      });
     });
   }
 
-  testWidgets('legacy (défaut) : bande de 3 dp, couleur EXACTE du dégradé '
+  testWidgets('`legacy` EXPLICITE : bande de 3 dp, couleur EXACTE du dégradé '
       'signature indexé par le titre', (tester) async {
-    await _monte(tester, 480);
+    await _monte(
+      tester,
+      480,
+      theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.legacy),
+    );
     for (final String titre in <String>['Alpha', 'Beta', 'Gamma']) {
       final Finder bande = find.descendant(
         of: _enteteDe(titre),
@@ -320,9 +327,13 @@ void main() {
     }
   });
 
-  testWidgets('legacy (défaut) : tuile d\'icône 36 dp, rayon 10',
+  testWidgets('`legacy` EXPLICITE : tuile d\'icône 36 dp, rayon 10',
       (tester) async {
-    await _monte(tester, 480);
+    await _monte(
+      tester,
+      480,
+      theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.legacy),
+    );
     final Finder tuile = find.ancestor(
       of: find.byIcon(Icons.folder),
       matching: find.byType(DecoratedBox),
@@ -346,6 +357,7 @@ void main() {
       tester,
       480,
       theme: const ZcrudTheme(
+        referenceProfile: ZReferenceProfile.legacy,
         sectionHeaderAccentHeight: 7,
         sectionHeaderIconTileSize: 44,
         sectionHeaderIconTileRadius: 21,

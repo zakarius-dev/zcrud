@@ -151,7 +151,13 @@ void main() {
         profile: ZReferenceProfile.neutral,
       );
       final Color neutral = fill(tester);
-      await _pump(tester, const ZSubfolderAccentPastille(colorKey: 'k'));
+      // Contre `legacy` EXPLICITE, et non contre le défaut : depuis que le
+      // défaut EST neutral, comparer au défaut ne mesurerait plus rien.
+      await _pump(
+        tester,
+        const ZSubfolderAccentPastille(colorKey: 'k'),
+        profile: ZReferenceProfile.legacy,
+      );
       expect(
         fill(tester),
         neutral,
@@ -159,14 +165,128 @@ void main() {
             '🔴 la pastille change de couleur sans identité de signature — le '
             'membre par défaut n\'est donc pas inerte',
       );
+      // …et le DÉFAUT du socle vaut bien le profil neutre.
+      await _pump(tester, const ZSubfolderAccentPastille(colorKey: 'k'));
+      expect(fill(tester), neutral);
+    });
+  });
+
+  group('🔴 le DÉFAUT du socle est le rendu d\'avant le lot d\'apparence', () {
+    // Le profil n'est déclaré NULLE PART : c'est l'hôte qui n'a rien fait.
+    // Chaque garde nomme aussi son pendant sous `legacy` explicite, pour
+    // qu'aucune ne puisse devenir vacante si les deux profils convergeaient.
+    testWidgets('en-tête de section : ni bande ni tuile', (
+      WidgetTester tester,
+    ) async {
+      await _pump(
+        tester,
+        ZSectionedStudyLayout(
+          sections: <ZStudyToolsSectionSpec>[
+            _section(icon: Icons.style_outlined),
+          ],
+        ),
+      );
+      expect(
+        find.byKey(kZStudySectionAccentKey),
+        findsNothing,
+        reason: '🔴 une bande d\'accent est montée sans profil déclaré : le '
+            'défaut du socle a dérivé vers `legacy`',
+      );
+      expect(find.byKey(kZStudySectionIconTileKey), findsNothing);
+      expect(find.byIcon(Icons.style_outlined), findsOneWidget);
+
+      // CONTRE-PREUVE : sous `legacy`, les deux SONT là.
+      await _pump(
+        tester,
+        ZSectionedStudyLayout(
+          sections: <ZStudyToolsSectionSpec>[
+            _section(icon: Icons.style_outlined),
+          ],
+        ),
+        profile: ZReferenceProfile.legacy,
+      );
+      expect(find.byKey(kZStudySectionAccentKey), findsOneWidget);
+      expect(find.byKey(kZStudySectionIconTileKey), findsOneWidget);
+    });
+
+    testWidgets('carte de dossier sans couleur : bande UNIE, aucun dégradé', (
+      WidgetTester tester,
+    ) async {
+      await _pump(tester, const ZDefaultFolderCard(title: 'Douane'));
+      final Finder band = find.byKey(ZDefaultFolderCard.accentKey);
+      expect(band, findsOneWidget);
+      expect(
+        find.descendant(of: band, matching: find.byType(DecoratedBox)),
+        findsNothing,
+        reason: '🔴 le repli de signature peint un dégradé sans profil '
+            'déclaré : le défaut du socle a dérivé vers `legacy`',
+      );
+      expect(
+        find.descendant(of: band, matching: find.byType(ColoredBox)),
+        findsOneWidget,
+      );
+
+      // CONTRE-PREUVE : sous `legacy`, la bande devient un dégradé.
+      await _pump(
+        tester,
+        const ZDefaultFolderCard(title: 'Douane'),
+        profile: ZReferenceProfile.legacy,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(ZDefaultFolderCard.accentKey),
+          matching: find.byType(DecoratedBox),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('pastille : l\'identité de signature est ignorée', (
+      WidgetTester tester,
+    ) async {
+      Color fill(WidgetTester t) =>
+          (t.widget<Container>(find.byType(Container)).decoration!
+                  as BoxDecoration)
+              .color!;
+      await _pump(tester, const ZSubfolderAccentPastille(colorKey: 'k'));
+      final Color sansIdentite = fill(tester);
+      await _pump(
+        tester,
+        const ZSubfolderAccentPastille(
+          colorKey: 'k',
+          signatureIdentity: 'Douane',
+        ),
+      );
+      expect(
+        fill(tester),
+        sansIdentite,
+        reason: '🔴 l\'identité teinte la pastille sans profil déclaré : le '
+            'défaut du socle a dérivé vers `legacy`',
+      );
+
+      // CONTRE-PREUVE : sous `legacy`, l'identité change RÉELLEMENT la teinte.
+      await _pump(
+        tester,
+        const ZSubfolderAccentPastille(
+          colorKey: 'k',
+          signatureIdentity: 'Douane',
+        ),
+        profile: ZReferenceProfile.legacy,
+      );
+      expect(fill(tester), isNot(sansIdentite));
     });
   });
 
   group('préséance de la couleur choisie', () {
-    testWidgets('dossier SANS couleur ⇒ dégradé de signature EXACT', (
+    testWidgets(
+        'dossier SANS couleur, profil `legacy` ⇒ dégradé de signature EXACT', (
       WidgetTester tester,
     ) async {
-      await _pump(tester, const ZDefaultFolderCard(title: 'Douane'));
+      await _pump(
+        tester,
+        const ZDefaultFolderCard(title: 'Douane'),
+        profile: ZReferenceProfile.legacy,
+      );
       final Finder band = find.byKey(ZDefaultFolderCard.accentKey);
       final DecoratedBox painted = tester.widget<DecoratedBox>(
         find.descendant(of: band, matching: find.byType(DecoratedBox)),
@@ -234,10 +354,12 @@ void main() {
   });
 
   group('en-tête de section — géométrie de référence', () {
-    testWidgets('bande PEINTE de 3 dp', (WidgetTester tester) async {
+    testWidgets('bande PEINTE de 3 dp (profil `legacy`)',
+        (WidgetTester tester) async {
       await _pump(
         tester,
         ZSectionedStudyLayout(sections: <ZStudyToolsSectionSpec>[_section()]),
+        profile: ZReferenceProfile.legacy,
       );
       final Finder band = find.byKey(kZStudySectionAccentKey);
       expect(band, findsOneWidget);
@@ -254,7 +376,9 @@ void main() {
       expect(paint.color, sig!.gradient.colors.first);
     });
 
-    testWidgets('tuile d\'icône 36 / rayon 10, seulement si un glyphe existe', (
+    testWidgets(
+        'tuile d\'icône 36 / rayon 10 (profil `legacy`), seulement si un '
+        'glyphe existe', (
       WidgetTester tester,
     ) async {
       await _pump(
@@ -262,6 +386,7 @@ void main() {
         ZSectionedStudyLayout(
           sections: <ZStudyToolsSectionSpec>[_section()],
         ),
+        profile: ZReferenceProfile.legacy,
       );
       expect(
         find.byKey(kZStudySectionIconTileKey),
@@ -276,6 +401,7 @@ void main() {
             _section(icon: Icons.style_outlined),
           ],
         ),
+        profile: ZReferenceProfile.legacy,
       );
       final Finder tile = find.byKey(kZStudySectionIconTileKey);
       expect(tile, findsOneWidget);
@@ -440,7 +566,8 @@ void main() {
   });
 
   group('pastille de sous-dossier', () {
-    testWidgets('identité fournie ⇒ tête du dégradé de signature', (
+    testWidgets(
+        'identité fournie, profil `legacy` ⇒ tête du dégradé de signature', (
       WidgetTester tester,
     ) async {
       await _pump(
@@ -449,6 +576,7 @@ void main() {
           colorKey: 'k',
           signatureIdentity: 'Douane',
         ),
+        profile: ZReferenceProfile.legacy,
       );
       final Finder pastille = find.byType(Container);
       final Color fill =

@@ -213,6 +213,51 @@ void main() {
       expect(tester.hasRunningAnimations, isTrue);
       await tester.pumpWidget(const SizedBox.shrink());
     });
+
+    testWidgets(
+        '🔴 le carnet garde sa référence quand le socle, lui, ne la garde pas',
+        (WidgetTester tester) async {
+      // Le défaut GLOBAL du socle est `neutral` : `zBusyPaletteOf` rend `null`
+      // sans profil déclaré. Le carnet ne suit PAS ce défaut — il possède sa
+      // propre référence et la garde. Sans cette garde, un futur « alignement »
+      // sur le socle éteindrait tout l'écran de chat en silence.
+      await tester.pumpWidget(
+        _host(
+          Builder(
+            builder: (BuildContext context) {
+              expect(
+                zBusyPaletteOf(context),
+                isNull,
+                reason: 'sonde cassée : le socle rend déjà sa référence sans '
+                    'profil, la garde ci-dessous ne prouverait plus rien',
+              );
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+
+      final ZChatNotebookStyle sansJeton = await _resolve(tester);
+      final ZChatNotebookStyle scopeMuet =
+          await _resolve(tester, theme: const ZcrudTheme());
+      expect(sansJeton.busyPalette, _sept);
+      expect(
+        scopeMuet.busyPalette,
+        _sept,
+        reason: '🔴 un ZcrudScope MUET éteint la séquence du carnet : le '
+            'repli local a été remplacé par le repli global',
+      );
+      expect(scopeMuet.toolAccentColor, sansJeton.toolAccentColor);
+      expect(scopeMuet.neutralAccent, isNull);
+
+      // …et l'échappatoire reste ENTIÈRE : `neutral` DÉCLARÉ éteint bien.
+      final ZChatNotebookStyle neutre = await _resolve(
+        tester,
+        theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.neutral),
+      );
+      expect(neutre.busyPalette, isEmpty);
+      expect(neutre.toolAccentColor, isNot(sansJeton.toolAccentColor));
+    });
   });
 
   group('🔴 APPD-3 — le profil `neutral` : les rôles M3, et rien d\'inventé',

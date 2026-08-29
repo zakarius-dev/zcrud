@@ -3,6 +3,41 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.34.0 — 2026-08-29
+
+### Modifié
+
+- 🔴 **Le défaut du profil de référence passe de `legacy` à `neutral`.**
+  `zLegacyOrIn` — arbitre unique du repli — rend désormais la valeur neutre
+  quand `ZcrudTheme.referenceProfile` est nul. Le rendu par défaut du socle
+  redevient exactement celui d'avant la vague d'apparence : aucune couleur de
+  référence n'est peinte, et la géométrie qui n'existait que pour la porter
+  n'est pas montée.
+- Familles de core qui changent de défaut :
+  - `zResolveGradient` sur les clés `zcrud.signature.*` rend `null` (au lieu
+    d'un dégradé de `ZSignaturePaletteReference`) ;
+  - `zBusyPaletteOf` rend `null`, et `ZColorCycle.busy` anime alors **une**
+    teinte (`ColorScheme.primary`) au lieu de la séquence de 7 ;
+  - l'en-tête de section (`DynamicEdition`) ne monte plus ni bande d'accent de
+    3 dp ni tuile d'icône de 36 dp.
+- L'habillage de référence devient un **opt-in**, à poser une fois à la racine :
+  `ZcrudScope(theme: ZcrudTheme(referenceProfile: ZReferenceProfile.legacy))`.
+  Aucun travail n'est retiré : la référence auditée reste complète et
+  inchangée, seul son déclenchement change.
+- La chaîne **paramètre > jeton > référence** est inchangée : un `topAccent`
+  déclaré, une `signaturePalette` ou une `busyPalette` posée en jeton
+  s'appliquent dans les deux profils, et les **scalaires** ne sont pas
+  concernés par le profil.
+
+### Tests
+
+- Les gardes du défaut mesurent désormais les **trois formes** qui doivent être
+  indiscernables — aucun `ZcrudScope`, un `ZcrudScope` muet, `neutral`
+  explicite. Les étalons figés « avant la vague » deviennent ceux du défaut ;
+  les assertions de la vague (bande 3 dp, tuile 36 dp/rayon 10, palette de 7
+  teintes, dégradé signature indexé) sont conservées à l'identique sous un
+  thème posant `legacy`. Aucune assertion affaiblie.
+
 ## 3.32.0 — 2026-08-29
 
 ### Modifié

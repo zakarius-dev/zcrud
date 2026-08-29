@@ -1,4 +1,5 @@
-/// Inertie ABSOLUE du chrome de page sous `ZReferenceProfile.neutral`.
+/// Inertie ABSOLUE du chrome de page par DÉFAUT — et sous
+/// `ZReferenceProfile.neutral`, qui doit lui être indiscernable.
 ///
 /// La signature figée plus bas a été relevée par une sonde jetable **AVANT**
 /// le lot « chrome de page » (app-bar teintée par défaut). Elle est comparée
@@ -221,10 +222,16 @@ void main() {
     });
 
     testWidgets(
-      'CONTRE-PREUVE : sous le profil legacy (le défaut), la MÊME page rend '
+      'CONTRE-PREUVE : sous le profil legacy EXPLICITE, la MÊME page rend '
       'une signature DIFFÉRENTE — la garde ne serait pas vacante',
       (tester) async {
-        await pumpAt(tester, host(const ZPageScaffold(title: 'Alpha')));
+        await pumpAt(
+          tester,
+          host(
+            const ZPageScaffold(title: 'Alpha'),
+            profile: ZReferenceProfile.legacy,
+          ),
+        );
         expect(
           signatureOf(tester, find.byType(AppBar)),
           isNot(_avantTitreSeul),
@@ -234,5 +241,59 @@ void main() {
         );
       },
     );
+  });
+
+  group('Apparence B — le DÉFAUT du socle est le rendu d\'avant le lot', () {
+    // Le profil n'est plus déclaré nulle part : c'est le cas de l'hôte qui n'a
+    // rien fait. Mesurer les DEUX formes muettes — aucun `ZcrudScope` et un
+    // `ZcrudScope` sans jeton de profil — parce qu'un repli qui divergerait
+    // entre les deux ne se verrait dans aucune des deux prises isolément.
+    testWidgets('🔴 aucun ZcrudScope : chrome STRICTEMENT celui d\'avant',
+        (tester) async {
+      await pumpAt(tester, host(const ZPageScaffold(title: 'Alpha')));
+      expect(
+        signatureOf(tester, find.byType(AppBar)),
+        _avantTitreSeul,
+        reason: '🔴 un hôte qui n\'a rien déclaré reçoit le lavis '
+            'd\'identité : le défaut du socle a dérivé vers `legacy`',
+      );
+    });
+
+    testWidgets('🔴 ZcrudScope MUET (aucun jeton de profil) : idem',
+        (tester) async {
+      await pumpAt(
+        tester,
+        ZcrudScope(
+          theme: const ZcrudTheme(),
+          child: const MaterialApp(
+            home: ZPageScaffold(title: 'Alpha'),
+            debugShowCheckedModeBanner: false,
+          ),
+        ),
+      );
+      expect(signatureOf(tester, find.byType(AppBar)), _avantTitreSeul);
+    });
+
+    testWidgets('🔴 le mode sliver suit le même défaut', (tester) async {
+      await pumpAt(
+        tester,
+        host(
+          const ZPageScaffold(
+            title: 'Alpha',
+            mode: ZPageAppBarMode.floatingPinned,
+            body: SizedBox(height: 2000),
+          ),
+        ),
+      );
+      expect(signatureOf(tester, find.byType(SliverAppBar)), _avantSliver);
+    });
+
+    testWidgets('🔴 ZSearchableAppBar nue suit le même défaut', (tester) async {
+      await pumpAt(
+        tester,
+        host(const Scaffold(appBar: ZSearchableAppBar(title: 'Alpha'))),
+      );
+      expect(signatureOf(tester, find.byType(AppBar)), _avantAppBarNue);
+    });
   });
 }

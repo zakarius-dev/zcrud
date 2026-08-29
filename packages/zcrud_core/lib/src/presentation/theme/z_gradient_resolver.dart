@@ -46,9 +46,10 @@ const String zSignatureKeyPrefix = 'zcrud.signature.';
 ///
 /// Contrairement à [zFieldTypeTintKey] et [zFieldAccentKey] — qui restent
 /// **seam-only** (aucun résolveur injecté ⇒ `null`) — cette clé-ci porte une
-/// valeur par défaut : sous le profil [ZReferenceProfile.legacy] (le défaut),
-/// [zResolveGradient] y répond avec la palette signature. Le seam de l'hôte
-/// reste prioritaire, et le profil neutre la ramène à `null`.
+/// valeur de référence : sous le profil [ZReferenceProfile.legacy], opt-in de
+/// l'hôte, [zResolveGradient] y répond avec la palette signature. Le seam de
+/// l'hôte reste prioritaire, et le profil neutre — **le défaut** — la ramène à
+/// `null`.
 String zSignatureKey(String identity) => '$zSignatureKeyPrefix$identity';
 
 /// Comment une identité textuelle se change en **index** dans une palette.

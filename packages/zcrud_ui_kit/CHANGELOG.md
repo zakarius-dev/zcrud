@@ -4,6 +4,42 @@ Format « Keep a Changelog » (sections Ajouté / Modifié / Corrigé, versions
 antéchronologiques). Toutes les modifications notables de `zcrud_ui_kit`
 sont documentées ici.
 
+## 3.34.0 — 2026-08-29
+
+### Modifié
+
+- 🔴 **Le défaut du socle devient `ZReferenceProfile.neutral`** (décidé dans
+  `zcrud_core`). Sans profil déclaré, ce paquet rend désormais ce qu'il rendait
+  avant la vague d'apparence :
+  - `ZPageScaffold` / `ZSearchableAppBar` : **aucun lavis d'identité**,
+    élévation et couleurs laissées au SDK (modes fixe **et** sliver) ;
+  - `ZGradientFab` : bouton Material **nu** — aucun conteneur dégradé, aucune
+    ombre, aucune taille de glyphe imposée ;
+  - `ZChoiceChipStyle` / `zChipThemeFor` : teinte de sélection au rôle
+    `ColorScheme.primary`. Les **scalaires** (rayon 12, coche absente) ne sont
+    pas concernés par le profil et restent inchangés.
+- L'habillage de référence reste complet et s'obtient par
+  `ZcrudScope(theme: ZcrudTheme(referenceProfile: ZReferenceProfile.legacy))`.
+
+### Corrigé
+
+- `ZChoiceChipStyle.resolve` effaçait sous profil neutre une palette
+  `ZcrudTheme.signaturePalette` **posée par l'hôte** : le jeton et la référence
+  auditée passaient par le même arbitrage de profil. Seule la référence est
+  désormais arbitrée ; un jeton posé s'applique dans les deux profils, comme
+  l'exige la chaîne **paramètre > jeton > référence**. Le défaut `legacy`
+  masquait le défaut.
+
+### Tests
+
+- Nouveau groupe « le DÉFAUT du socle est le rendu d'avant le lot » : les
+  étalons figés du chrome de page sont désormais mesurés sur les **deux formes
+  muettes** (aucun `ZcrudScope`, `ZcrudScope` sans jeton de profil) en plus de
+  `neutral` explicite. Gardes équivalentes pour le FAB et la puce.
+- Les gardes de l'habillage de référence (lavis, métriques du FAB, teintes de
+  puce) déclarent le profil `legacy` explicitement ; leurs assertions sont
+  conservées à l'identique.
+
 ## 3.29.0 — 2026-08-28
 
 ### Modifié

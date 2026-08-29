@@ -10,30 +10,32 @@ import 'z_theme.dart';
 ///
 /// Le socle porte une **référence auditée** de couleurs (palette signature,
 /// bande d'accent d'en-tête de section, tuile d'icône). Ce profil décide si
-/// cette référence s'applique — c'est l'unique échappatoire globale, à poser
-/// une seule fois, à la racine :
+/// cette référence s'applique. Le **défaut est [neutral]** : sans déclaration,
+/// le socle ne peint aucune couleur de référence. L'habillage de référence est
+/// un **opt-in**, à poser une seule fois, à la racine :
 ///
 /// ```dart
 /// ZcrudScope(
-///   theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.neutral),
+///   theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.legacy),
 ///   child: …,
 /// )
 /// ```
 ///
-/// La priorité reste **paramètre > jeton > référence** : un profil neutre
+/// La priorité reste **paramètre > jeton > référence** : le profil neutre
 /// n'efface que la RÉFÉRENCE. Une couleur passée en paramètre (par exemple
 /// `ZEditionSectionStyle.topAccent`) ou posée en jeton
 /// ([ZcrudTheme.signaturePalette]) continue de s'appliquer, dans les deux
 /// profils.
 enum ZReferenceProfile {
   /// Les membres COULEUR non déclarés prennent la valeur de la référence
-  /// auditée. C'est le **défaut** quand le jeton
-  /// [ZcrudTheme.referenceProfile] est nul.
+  /// auditée. C'est un **opt-in** : il faut poser le jeton
+  /// [ZcrudTheme.referenceProfile] pour l'obtenir.
   legacy,
 
   /// Les membres COULEUR non déclarés valent `null` : aucune couleur de
   /// référence n'est peinte, et la géométrie qui n'existait que pour la porter
-  /// (bande d'accent, tuile d'icône) n'est pas montée.
+  /// (bande d'accent, tuile d'icône) n'est pas montée. C'est le **défaut**
+  /// quand le jeton [ZcrudTheme.referenceProfile] est nul.
   ///
   /// Les **scalaires** ne sont pas concernés : ils restent remplaçables jeton
   /// par jeton dans les deux profils.
@@ -43,9 +45,12 @@ enum ZReferenceProfile {
 /// Arbitre un membre COULEUR entre la référence auditée et le profil neutre,
 /// à partir d'un profil **déjà résolu**.
 ///
-/// Rend [legacyValue] si [profile] vaut [ZReferenceProfile.legacy] **ou est
-/// nul** (le défaut est la référence), sinon [neutralValue] (`null` par
-/// défaut).
+/// Rend [legacyValue] uniquement si [profile] vaut [ZReferenceProfile.legacy].
+/// Un profil **nul** vaut [ZReferenceProfile.neutral] — le défaut du socle —
+/// et rend donc [neutralValue] (`null` par défaut).
+///
+/// C'est l'**unique arbitre** du repli de profil : aucun appelant ne doit
+/// recopier `profile ?? …`, sous peine de faire diverger le défaut du socle.
 ///
 /// Fonction **pure** : elle ne lit aucun contexte, ce qui la rend testable et
 /// utilisable hors arbre de widgets.
@@ -54,7 +59,7 @@ T? zLegacyOrIn<T>(
   T legacyValue, [
   T? neutralValue,
 ]) =>
-    (profile ?? ZReferenceProfile.legacy) == ZReferenceProfile.legacy
+    (profile ?? ZReferenceProfile.neutral) == ZReferenceProfile.legacy
         ? legacyValue
         : neutralValue;
 

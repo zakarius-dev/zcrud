@@ -14,8 +14,8 @@
 /// Ce n'est pas un défaut inconditionnel. Les valeurs d'ici ne sont peintes
 /// que par le **dernier maillon** d'une chaîne de priorité
 /// **paramètre > jeton > référence**, et seulement sous le profil
-/// [ZReferenceProfile.legacy] (le défaut). Sous
-/// [ZReferenceProfile.neutral], ce fichier n'est jamais lu.
+/// [ZReferenceProfile.legacy], opt-in de l'hôte. Sous
+/// [ZReferenceProfile.neutral] — **le défaut** —, ce fichier n'est jamais lu.
 ///
 /// ## `onGradient` est MESURÉ, jamais décrété
 ///

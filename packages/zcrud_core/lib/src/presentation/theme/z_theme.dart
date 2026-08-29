@@ -2565,9 +2565,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// décision interne du composant et n'est pas remplacé par ce jeton.
   final double? emptyStateSpacing;
 
-  /// Ce que le socle peint quand **rien** n'a été déclaré : la référence
-  /// auditée ([ZReferenceProfile.legacy], le défaut quand ce jeton est nul) ou
-  /// rien du tout ([ZReferenceProfile.neutral]).
+  /// Ce que le socle peint quand **rien** n'a été déclaré : rien du tout
+  /// ([ZReferenceProfile.neutral], le défaut quand ce jeton est nul) ou la
+  /// référence auditée ([ZReferenceProfile.legacy], opt-in de l'hôte).
   ///
   /// Le profil n'arbitre que les membres **couleur** non déclarés, au dernier
   /// maillon de la chaîne **paramètre > jeton > référence** — jamais un
@@ -2581,8 +2581,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Palette interrogée par les clés de dégradé `zcrud.signature.<identité>`.
   ///
   /// `null` délègue à la référence auditée (5 dégradés) sous le profil
-  /// `legacy`, et à `null` sous `neutral`. Posé, ce jeton s'applique dans les
-  /// **deux** profils : c'est une décision de l'hôte, pas une référence.
+  /// `legacy`, et à `null` sous `neutral` (le défaut). Posé, ce jeton
+  /// s'applique dans les **deux** profils : c'est une décision de l'hôte, pas
+  /// une référence.
   ///
   /// Une palette vide rend `null` pour toute clé (aucune exception).
   final List<ZGradientSpec>? signaturePalette;

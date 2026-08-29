@@ -11,6 +11,15 @@
 // passerait) : (a)+(b) ferment la faille. Powerless rejetés — surface pleine
 // (1000×1600, cf. kByteCaptureSize), tolérance de diff NULLE (comparateur local
 // exact), rendu NON constant (contenu Ahem dépendant de l'ordre/longueur).
+//
+// ── Profil de référence : ce golden fige le DÉFAUT du socle ─────────────────
+// Le harnais (`wrapSectioned`) ne monte AUCUN `ZcrudScope` : c'est le chemin
+// zéro-config. Depuis que le défaut du socle est `ZReferenceProfile.neutral`,
+// l'image de référence a été RE-FIGÉE sur ce rendu neutre — sans bande
+// d'accent ni tuile d'icône, comme avant la vague d'apparence. Le rendu de
+// l'habillage `legacy` reste gardé, par assertions de rects et de présence,
+// dans `test/appearance_c_test.dart` : le déplacer ici ferait dépendre une
+// mesure de couleur d'une comparaison de pixels.
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';

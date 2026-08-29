@@ -1,4 +1,8 @@
-/// Chrome d'identité de l'app-bar sous le profil `legacy` (le défaut).
+/// Chrome d'identité de l'app-bar sous le profil `legacy`, opt-in de l'hôte.
+///
+/// Le profil est déclaré explicitement par chaque montage de ce fichier
+/// ([kLegacy]) : sans lui, le socle rend son défaut neutre, mesuré par
+/// `z_appb_page_chrome_inertia_test.dart`.
 ///
 /// Ce que cette garde établit :
 /// * la teinte peinte est **exactement** le premier arrêt du dégradé de
@@ -65,17 +69,29 @@ LinearGradient? gradientOf(WidgetTester tester) {
 AppBar appBarOf(WidgetTester tester) =>
     tester.widget<AppBar>(find.byType(AppBar).first);
 
+/// Thème CRUD posant l'opt-in d'habillage de référence. Ce fichier mesure le
+/// rendu *sous* ce profil : il doit donc le déclarer, comme le fera l'hôte.
+const ZcrudTheme kLegacy = ZcrudTheme(
+  referenceProfile: ZReferenceProfile.legacy,
+);
+
+/// [scope] à `false` ne monte AUCUN `ZcrudScope` : réservé aux cas où
+/// l'appelant en pose déjà un au-dessus (un scope interne masquerait le seam
+/// de l'hôte, `maybeOf` ne remontant qu'au plus proche).
 Widget host(
   Widget child, {
   Brightness brightness = Brightness.light,
-  ZcrudTheme? theme,
+  ZcrudTheme? theme = kLegacy,
+  bool scope = true,
 }) {
   final Widget app = MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: ThemeData(brightness: brightness),
     home: child,
   );
-  return theme == null ? app : ZcrudScope(theme: theme, child: app);
+  return (!scope || theme == null)
+      ? app
+      : ZcrudScope(theme: theme, child: app);
 }
 
 void main() {
@@ -256,10 +272,12 @@ void main() {
         await pumpAt(
           tester,
           ZcrudScope(
+            theme: kLegacy,
             gradientResolver: (ColorScheme s, String k) =>
                 k == 'dossier-42' ? hote : null,
             child: host(
               const ZPageScaffold(title: 'Alpha', gradientKey: 'dossier-42'),
+              scope: false,
             ),
           ),
         );
@@ -302,9 +320,13 @@ void main() {
         await pumpAt(
           tester,
           ZcrudScope(
+            theme: kLegacy,
             gradientResolver: (ColorScheme s, String k) =>
                 k == zSignatureKey('Alpha') ? hote : null,
-            child: host(const ZPageScaffold(title: 'Alpha')),
+            child: host(
+              const ZPageScaffold(title: 'Alpha'),
+              scope: false,
+            ),
           ),
         );
         final LinearGradient g = gradientOf(tester)!;

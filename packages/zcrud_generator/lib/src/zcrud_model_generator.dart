@@ -914,7 +914,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     final nullable = type.nullabilitySuffix == NullabilitySuffix.question;
     final typeStr = type.getDisplayString();
 
-    final (category, elementTypeName, inferred, mapCodecs) =
+    final (category, elementTypeName, inferred, mapCodecs, elementCodec) =
         _classify(field, type);
 
     // Type de champ : explicite (@ZcrudField.type) sinon inféré.
@@ -947,6 +947,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       multiple: annoMultiple || category.isCollection,
       persistAsTimestamp: persistAsTimestamp,
       mapCodecs: mapCodecs,
+      elementCodec: elementCodec,
     );
   }
 
@@ -957,6 +958,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     String? elementTypeName,
     String inferred,
     _MapCodecs? mapCodecs,
+    _Codec? elementCodec,
   ) _classify(FieldElement field, DartType type) {
     // Collections homogènes : List<T>.
     if (type.isDartCoreList && type is InterfaceType) {
@@ -969,15 +971,36 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
           element: field,
         );
       }
-      final (elemCat, _, elemInferred, _) = _classify(field, arg);
+      final (elemCat, _, elemInferred, _, _) = _classify(field, arg);
       if (elemCat == _Cat.mapType) {
-        throw InvalidGenerationSourceError(
-          'Liste de maps non supportée sur ${field.name} '
-          '("${type.getDisplayString()}"). Une `Map` est (dé)sérialisable comme '
-          'type de champ, mais pas encore comme ÉLÉMENT de liste. Remèdes : '
-          'annoter le champ `@ZcrudIgnore()` et le persister par un canal '
-          'manuel, ou donner à l\'élément un type annoté `@ZcrudModel`.',
-          element: field,
+        // `List<Map<K, V>?>` reste REFUSÉE : le décodage d'une liste filtre ses
+        // éléments illisibles par `whereType`, geste qui effacerait aussi les
+        // `null` DÉCLARÉS. Le contrat « la liste survit amputée » ne saurait
+        // plus distinguer un trou voulu d'un élément corrompu — le générateur
+        // refuse plutôt que de rendre une liste dont la longueur ment.
+        if (arg.nullabilitySuffix == NullabilitySuffix.question) {
+          // `getDisplayString()` rend ici le `?` final (la branche n'est
+          // atteinte QUE sous suffixe `question`) : on le retire pour montrer le
+          // remède, plutôt que d'appeler la surcharge dépréciée.
+          final display = arg.getDisplayString();
+          throw InvalidGenerationSourceError(
+            'Élément de liste `Map` NULLABLE non supporté sur ${field.name} '
+            '("${type.getDisplayString()}"). Le décodage défensif filtre les '
+            'éléments illisibles : un `null` déclaré serait effacé avec eux, et '
+            'la liste rendue aurait une longueur différente de celle écrite. '
+            'Remède : déclarer l\'élément NON nullable '
+            '(`List<${display.substring(0, display.length - 1)}>`).',
+            element: field,
+          );
+        }
+        return (
+          _Cat.listMap,
+          arg.getDisplayString(),
+          elemInferred,
+          null,
+          // Profondeur 1 : la liste occupe déjà les noms de profondeur 0
+          // (`e$`), la map imbriquée prend `e$1`/`k$1`/`v$1`.
+          _nestedMapCodec(field, arg as InterfaceType, 1),
         );
       }
       final _Cat listCat = switch (elemCat) {
@@ -985,33 +1008,45 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         _Cat.subModel => _Cat.listModel,
         _ => _Cat.listScalar,
       };
-      return (listCat, _typeName(arg), elemInferred, null);
+      return (listCat, _typeName(arg), elemInferred, null, null);
     }
     // Dictionnaires homogènes : Map<K, V>.
     if (type.isDartCoreMap && type is InterfaceType) {
-      return (_Cat.mapType, null, 'dynamicItem', _mapCodecsOf(field, type));
+      return (
+        _Cat.mapType,
+        null,
+        'dynamicItem',
+        _mapCodecsOf(field, type, 0),
+        null,
+      );
     }
-    if (type.isDartCoreString) return (_Cat.stringType, null, 'text', null);
-    if (type.isDartCoreInt) return (_Cat.intType, null, 'integer', null);
-    if (type.isDartCoreDouble) return (_Cat.doubleType, null, 'float', null);
-    if (type.isDartCoreNum) return (_Cat.numType, null, 'number', null);
-    if (type.isDartCoreBool) return (_Cat.boolType, null, 'boolean', null);
+    if (type.isDartCoreString) {
+      return (_Cat.stringType, null, 'text', null, null);
+    }
+    if (type.isDartCoreInt) return (_Cat.intType, null, 'integer', null, null);
+    if (type.isDartCoreDouble) {
+      return (_Cat.doubleType, null, 'float', null, null);
+    }
+    if (type.isDartCoreNum) return (_Cat.numType, null, 'number', null, null);
+    if (type.isDartCoreBool) {
+      return (_Cat.boolType, null, 'boolean', null, null);
+    }
 
     final el = type.element;
     if (el is EnumElement) {
-      return (_Cat.enumType, _typeName(type), 'select', null);
+      return (_Cat.enumType, _typeName(type), 'select', null, null);
     }
     if (_typeName(type) == 'DateTime') {
-      return (_Cat.dateTimeType, null, 'dateTime', null);
+      return (_Cat.dateTimeType, null, 'dateTime', null, null);
     }
     // Plage de dates `ZDateRange` : (dé)sérialisation DÉFENSIVE via le
     // helper `_$asDateRange` (bâti sur `ZDateRange.fromJsonSafe` → jamais de
     // throw) ; `toMap` via `.toJson()`. Patron strict de la branche `DateTime`.
     if (_typeName(type) == 'ZDateRange') {
-      return (_Cat.dateRangeType, null, 'dateRange', null);
+      return (_Cat.dateRangeType, null, 'dateRange', null, null);
     }
     if (el != null && _modelChecker.hasAnnotationOf(el)) {
-      return (_Cat.subModel, _typeName(type), 'subItems', null);
+      return (_Cat.subModel, _typeName(type), 'subItems', null, null);
     }
 
     throw InvalidGenerationSourceError(
@@ -1033,13 +1068,21 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   /// build : la map persistée doit rester à clés `String`.
   ///
   /// **Valeur** : `dynamic`/`Object?` (recopiée telle quelle), scalaire supporté,
-  /// `DateTime`, `ZDateRange`, enum, sous-modèle `@ZcrudModel`, ou `List<T>` de
-  /// ceux-ci. Une valeur nullable est admise et son `null` est PRÉSERVÉ.
+  /// `DateTime`, `ZDateRange`, enum, sous-modèle `@ZcrudModel`, `List<T>` de
+  /// ceux-ci, ou une `Map<K2, V2>` IMBRIQUÉE obéissant aux mêmes règles (à
+  /// profondeur libre). Une valeur nullable est admise et son `null` est
+  /// PRÉSERVÉ.
   ///
   /// Le décodage émis est **défensif** (invariant AD-10) : une entrée dont la clé
   /// ou la valeur est illisible est ignorée, et le reste de la map survit — le
-  /// parent ne lève jamais.
-  _MapCodecs _mapCodecsOf(FieldElement field, InterfaceType type) {
+  /// parent ne lève jamais. Une map imbriquée applique la même règle à son
+  /// propre niveau : une entrée interne illisible n'emporte ni la map interne,
+  /// ni l'entrée externe, ni le parent.
+  ///
+  /// [depth] est la profondeur d'imbrication de CETTE map ; elle ne sert qu'à
+  /// nommer les variables liées du code émis ([_boundName]), de sorte qu'une map
+  /// imbriquée ne masque pas les liaisons de la map qui la porte.
+  _MapCodecs _mapCodecsOf(FieldElement field, InterfaceType type, int depth) {
     final args = type.typeArguments;
     if (args.length != 2) {
       throw InvalidGenerationSourceError(
@@ -1049,7 +1092,47 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     }
     return _MapCodecs(
       key: _mapKeyCodec(field, args[0]),
-      value: _mapValueCodec(field, args[1]),
+      value: _mapValueCodec(field, args[1], depth),
+    );
+  }
+
+  /// Nom d'une variable liée du code émis, qualifié par [depth].
+  ///
+  /// La profondeur 0 rend le nom HISTORIQUE (`e$`, `k$`, `v$`) : le texte émis
+  /// pour toutes les formes déjà supportées avant l'ouverture de l'imbrication
+  /// reste identique à l'octet. Seuls les niveaux imbriqués — inatteignables
+  /// auparavant — prennent un suffixe (`e$1`, `k$2`…).
+  static String _boundName(String base, int depth) =>
+      depth == 0 ? '$base\$' : '$base\$$depth';
+
+  /// Codec d'une `Map<K, V>` **imbriquée** — valeur d'une autre map, ou élément
+  /// d'une `List`.
+  ///
+  /// Rend le même triplet condition/décodage/encodage que la branche
+  /// `_Cat.mapType` d'un champ de premier niveau : `# is Map` en garde, une
+  /// compréhension de map qui saute les entrées illisibles en décodage, et
+  /// `.map((k, v) => MapEntry(…))` en encodage. La map persistée reste à clés
+  /// `String` à tous les niveaux.
+  _Codec _nestedMapCodec(FieldElement field, InterfaceType type, int depth) {
+    final c = _mapCodecsOf(field, type, depth);
+    final e = _boundName('e', depth);
+    final k = _boundName('k', depth);
+    final v = _boundName('v', depth);
+    final conds = <String>[
+      if (c.key.cond != null) c.key.condOf('$e.key'),
+      if (c.value.cond != null) c.value.condOf('$e.value'),
+    ];
+    final guard = conds.isEmpty ? '' : 'if (${conds.join(' && ')}) ';
+    return _Codec(
+      typeStr: type.getDisplayString(),
+      cond: '# is Map',
+      decode: '<${c.key.typeStr}, ${c.value.typeStr}>{'
+          'for (final $e in (# as Map).entries) '
+          '$guard${c.key.decodeOf('$e.key')}: '
+          '${c.value.decodeOf('$e.value')},'
+          '}',
+      encode: '#.map(($k, $v) => MapEntry(${c.key.encodeOf(k)}, '
+          '${c.value.encodeOf(v)}))',
     );
   }
 
@@ -1080,7 +1163,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     );
   }
 
-  _Codec _mapValueCodec(FieldElement field, DartType value) {
+  _Codec _mapValueCodec(FieldElement field, DartType value, int depth) {
     final nullable = value.nullabilitySuffix == NullabilitySuffix.question;
     final display = value.getDisplayString();
     // `dynamic` / `Object?` : recopie intégrale, aucune condition — c'est la
@@ -1089,7 +1172,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     if (value is DynamicType || (value.isDartCoreObject && nullable)) {
       return _Codec(typeStr: display, cond: null, decode: '#', encode: '#');
     }
-    final inner = _mapValueCodecNonNull(field, value);
+    final inner = _mapValueCodecNonNull(field, value, depth);
     if (!nullable) return inner;
     return _Codec(
       typeStr: display,
@@ -1101,7 +1184,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     );
   }
 
-  _Codec _mapValueCodecNonNull(FieldElement field, DartType value) {
+  _Codec _mapValueCodecNonNull(FieldElement field, DartType value, int depth) {
     final display = value.getDisplayString();
     if (value.isDartCoreString) {
       return _Codec(
@@ -1150,28 +1233,40 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     if (value.isDartCoreList && value is InterfaceType) {
       final arg = value.typeArguments.isEmpty ? null : value.typeArguments.first;
       if (arg != null && arg.nullabilitySuffix != NullabilitySuffix.question) {
-        final elem = _mapValueCodecNonNull(field, arg);
+        // L'élément est décodé un cran plus PROFOND : s'il est lui-même une map
+        // (`Map<String, List<Map<…>>>`), ses liaisons ne doivent pas masquer
+        // celles de la liste ni celles de la map qui la porte.
+        final elem = _mapValueCodecNonNull(field, arg, depth + 1);
         final elemType = arg.getDisplayString();
+        final e = _boundName('e', depth);
         // Élément illisible → `null`, filtré par `whereType` : la liste survit
         // amputée, jamais la map ni le parent (AD-10).
         final decodeElem = elem.cond == null
-            ? elem.decodeOf('e\$')
-            : '${elem.condOf('e\$')} ? ${elem.decodeOf('e\$')} : null';
+            ? elem.decodeOf(e)
+            : '${elem.condOf(e)} ? ${elem.decodeOf(e)} : null';
         return _Codec(
           typeStr: display,
           cond: '# is List',
-          decode: '(# as List).map((e\$) => $decodeElem)'
+          decode: '(# as List).map(($e) => $decodeElem)'
               '.whereType<$elemType>().toList()',
-          encode: '#.map((e\$) => ${elem.encodeOf('e\$')}).toList()',
+          encode: '#.map(($e) => ${elem.encodeOf(e)}).toList()',
         );
       }
+    }
+    // `Map<K2, V2>` IMBRIQUÉE : mêmes règles de clé et de valeur, appliquées un
+    // cran plus profond. Sans cette branche, la seule façon de persister une
+    // structure à deux niveaux était de déclarer la valeur `dynamic`, ce qui
+    // rendait le type de la map interne au consommateur — et lui laissait
+    // l'entière charge du décodage défensif.
+    if (value.isDartCoreMap && value is InterfaceType) {
+      return _nestedMapCodec(field, value, depth + 1);
     }
     throw InvalidGenerationSourceError(
       'Valeur de Map non (dé)sérialisable "$display" sur ${field.name} : ni '
       '`dynamic`, ni scalaire supporté, ni `DateTime`, ni enum, ni @ZcrudModel '
-      'annoté, ni `List` de ceux-ci. Remède le plus simple : déclarer la valeur '
-      '`dynamic` (`Map<String, dynamic>`), qui recopie la structure telle '
-      'quelle.',
+      'annoté, ni `List` ou `Map` de ceux-ci. Remède le plus simple : déclarer '
+      'la valeur `dynamic` (`Map<String, dynamic>`), qui recopie la structure '
+      'telle quelle.',
       element: field,
     );
   }
@@ -1240,6 +1335,15 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         return '$m is List ? ($m as List)'
             '.map((e) => _\$decodeModel(e, $t.fromMap))'
             '.whereType<$t>().toList() : $def';
+      case _Cat.listMap:
+        final c = f.elementCodec!;
+        final t = f.elementTypeName;
+        // Élément non-map → `null`, filtré par `whereType` ; entrée illisible
+        // À L'INTÉRIEUR d'un élément → sautée par la compréhension. Les deux
+        // niveaux sont défensifs (AD-10), et aucun ne remonte au parent.
+        return '$m is List ? ($m as List)'
+            '.map((e\$) => ${c.condOf('e\$')} ? ${c.decodeOf('e\$')} : null)'
+            '.whereType<$t>().toList() : $def';
       case _Cat.mapType:
         final c = f.mapCodecs!;
         // Entrée dont la clé OU la valeur est illisible : ignorée (AD-10). Le
@@ -1290,6 +1394,8 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       case _Cat.listEnum:
         return 'const <${f.elementTypeName}>[]';
       case _Cat.listModel:
+        return 'const <${f.elementTypeName}>[]';
+      case _Cat.listMap:
         return 'const <${f.elementTypeName}>[]';
       case _Cat.mapType:
         final c = f.mapCodecs!;
@@ -1445,6 +1551,11 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         return '$v$q.map((e) => e.name).toList()';
       case _Cat.listModel:
         return '$v$q.map((e) => e.toMap()).toList()';
+      case _Cat.listMap:
+        // Chaque élément réencodé par son codec de map : clés `String` à tous
+        // les niveaux, quelle que soit la clé Dart.
+        final c = f.elementCodec!;
+        return '$v$q.map((e\$) => ${c.encodeOf('e\$')}).toList()';
       case _Cat.mapType:
         final c = f.mapCodecs!;
         // Clé toujours réencodée en `String` (enum → `.name`) : la map persistée
@@ -2005,6 +2116,11 @@ enum _Cat {
   listScalar,
   listEnum,
   listModel,
+
+  /// `List<Map<K, V>>` — liste dont l'élément est un dictionnaire homogène. Son
+  /// codec d'élément vit dans `_Field.elementCodec` (les catégories `list*`
+  /// ci-dessus se décrivent, elles, par le seul `elementTypeName`).
+  listMap,
   mapType;
 
   /// `true` pour une collection ORDONNÉE de valeurs homogènes — ce que
@@ -2012,7 +2128,10 @@ enum _Cat {
   /// dictionnaire, pas une multi-valeur d'un même champ, et la marquer
   /// `multiple` ferait rendre une saisie de liste par le moteur d'édition.
   bool get isCollection =>
-      this == _Cat.listScalar || this == _Cat.listEnum || this == _Cat.listModel;
+      this == _Cat.listScalar ||
+      this == _Cat.listEnum ||
+      this == _Cat.listModel ||
+      this == _Cat.listMap;
 }
 
 /// Codec d'un fragment de valeur — un `#` marque l'expression source.
@@ -2061,6 +2180,7 @@ class _Field {
     required this.multiple,
     required this.persistAsTimestamp,
     this.mapCodecs,
+    this.elementCodec,
   });
 
   final String dartName;
@@ -2081,4 +2201,9 @@ class _Field {
   /// Codecs de clé/valeur — non nul si et seulement si [category] vaut
   /// `_Cat.mapType`.
   final _MapCodecs? mapCodecs;
+
+  /// Codec de l'ÉLÉMENT — non nul si et seulement si [category] vaut
+  /// `_Cat.listMap`. [elementTypeName] porte alors le type de l'élément écrit
+  /// en toutes lettres (`Map<String, int>`), pas un simple nom de classe.
+  final _Codec? elementCodec;
 }

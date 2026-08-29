@@ -73,6 +73,9 @@ void main() {
           'zones',
           'stamps',
           'notes',
+          'rows',
+          'matrix',
+          'schedule',
         ],
       );
       expect($LedgerEntryPersistedKeys, <String>{
@@ -85,6 +88,9 @@ void main() {
         'zones',
         'stamps',
         'notes',
+        'rows',
+        'matrix',
+        'schedule',
       });
     });
 
@@ -317,24 +323,6 @@ class Leaf {
       expect('$error', contains('Valeur de Map non (dé)sérialisable'));
     });
 
-    test('liste de maps : refus EXPLICITE, pas une émission approximative',
-        () async {
-      const src = '''
-import 'package:zcrud_annotations/zcrud_annotations.dart';
-
-$_model()
-class Leaf {
-  const Leaf({this.rows = const <Map<String, dynamic>>[]});
-  factory Leaf.fromMap(Map<String, dynamic> map) => _\$LeafFromMap(map);
-  $_field()
-  final List<Map<String, dynamic>> rows;
-}
-''';
-      final error = await _emitError(src);
-      expect(error, isA<InvalidGenerationSourceError>());
-      expect('$error', contains('Liste de maps non supportée'));
-    });
-
     test('valeur `List<T>` dans une map : émise, et défensive', () async {
       const src = '''
 import 'package:zcrud_annotations/zcrud_annotations.dart';
@@ -369,6 +357,243 @@ class Leaf {
       final text = await _emitText(src);
       // Non annoté ⇒ hors persistance, comme tout autre type sérialisable.
       expect(text, isNot(contains('scratch')));
+    });
+  });
+
+  group('GEN-3b — IMBRICATION : `List<Map<…>>` et `Map<…, Map<…>>`', () {
+    test('round-trip fidèle des trois formes imbriquées', () {
+      final entry = LedgerEntry(
+        label: 'l',
+        amount: 1,
+        rows: const <Map<String, dynamic>>[
+          <String, dynamic>{'n': 1, 'ok': true},
+          <String, dynamic>{'n': 2, 'ok': false},
+        ],
+        matrix: const <String, Map<String, int>>{
+          'q1': <String, int>{'a': 1, 'b': 2},
+          'q2': <String, int>{'c': 3},
+        },
+        schedule: <String, Map<LedgerZone, DateTime>>{
+          'w1': <LedgerZone, DateTime>{
+            LedgerZone.alpha: DateTime.utc(2026, 8, 29, 10),
+          },
+        },
+      );
+      final map = entry.toMap();
+
+      // Le document persisté reste à clés `String` et à dates ISO-8601 AUX DEUX
+      // NIVEAUX — c'est l'invariant que l'imbrication ne doit pas relâcher.
+      expect(map['rows'], <Map<String, dynamic>>[
+        <String, dynamic>{'n': 1, 'ok': true},
+        <String, dynamic>{'n': 2, 'ok': false},
+      ]);
+      expect(map['matrix'], <String, Map<String, int>>{
+        'q1': <String, int>{'a': 1, 'b': 2},
+        'q2': <String, int>{'c': 3},
+      });
+      expect(map['schedule'], <String, Map<String, String>>{
+        'w1': <String, String>{'alpha': '2026-08-29T10:00:00.000Z'},
+      });
+
+      final back = LedgerEntry.fromMap(map);
+      expect(back.rows, entry.rows);
+      expect(back.matrix, entry.matrix);
+      expect(back.schedule, entry.schedule);
+    });
+
+    test('décodage DÉFENSIF à DEUX niveaux : rien ne remonte au parent', () {
+      LedgerEntry decode() => LedgerEntry.fromMap(<String, dynamic>{
+            'label': 'l',
+            'amount': 1,
+            // Un élément non-map au milieu de la liste.
+            'rows': <dynamic>[
+              <String, dynamic>{'n': 1},
+              'pas-une-map',
+              42,
+              <dynamic, dynamic>{'n': 2, 7: 'clé non-String'},
+            ],
+            // Entrée externe illisible, entrée INTERNE illisible.
+            'matrix': <dynamic, dynamic>{
+              'q1': <dynamic, dynamic>{'a': 1, 'b': <int>[], 3: 4},
+              'q2': 'pas-une-map',
+              9: <String, dynamic>{'z': 1},
+            },
+            // Clé enum inconnue et date illisible au niveau INTERNE.
+            'schedule': <String, dynamic>{
+              'w1': <String, dynamic>{
+                'alpha': '2026-08-29T10:00:00.000Z',
+                'omega': '2026-01-01',
+                'beta': 'pas-une-date',
+              },
+            },
+          });
+      // Le PARENT ne lève JAMAIS — l'invariant AD-10 vaut à toute profondeur.
+      expect(decode, returnsNormally);
+
+      final back = decode();
+      // Élément non-map écarté, la liste survit AMPUTÉE ; à l'intérieur d'un
+      // élément gardé, la clé non-`String` disparaît seule.
+      expect(back.rows, <Map<String, dynamic>>[
+        <String, dynamic>{'n': 1},
+        <String, dynamic>{'n': 2},
+      ]);
+      // `q1` survit amputée de son entrée interne illisible ; `q2` (valeur non
+      // map) et la clé non-`String` disparaissent, `q1` reste.
+      expect(back.matrix, <String, Map<String, int>>{
+        'q1': <String, int>{'a': 1},
+      });
+      // La map interne survit amputée : seule `alpha` était décodable.
+      expect(back.schedule, <String, Map<LedgerZone, DateTime>>{
+        'w1': <LedgerZone, DateTime>{
+          LedgerZone.alpha: DateTime.utc(2026, 8, 29, 10),
+        },
+      });
+    });
+
+    test('valeur entièrement fausse → défaut, pas de levée', () {
+      final back = LedgerEntry.fromMap(<String, dynamic>{
+        'label': 'l',
+        'amount': 1,
+        'rows': 'pas-une-liste',
+        'matrix': 12,
+        'schedule': <dynamic>[],
+      });
+      expect(back.rows, isEmpty);
+      expect(back.matrix, isEmpty);
+      expect(back.schedule, isEmpty);
+    });
+
+    test('`List<Map<…>>` est `multiple`, `Map<…, Map<…>>` ne l\'est pas', () {
+      ZFieldSpec specOf(String name) =>
+          $LedgerEntryFieldSpecs.firstWhere((s) => s.name == name);
+      expect(specOf('rows').multiple, isTrue);
+      expect(specOf('matrix').multiple, isFalse);
+      expect(specOf('schedule').multiple, isFalse);
+      // Aucune valeur d'enum neuve n'est réclamée à `zcrud_core` : l'inférence
+      // reste la valeur NEUTRE déjà retenue pour `Map<K, V>`.
+      for (final name in <String>['rows', 'matrix', 'schedule']) {
+        expect(specOf(name).type, EditionFieldType.dynamicItem, reason: name);
+      }
+    });
+
+    test('les liaisons émises sont DISTINCTES par niveau (aucun masquage)',
+        () async {
+      const src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$_model()
+class Leaf {
+  const Leaf({this.grid = const <String, Map<String, int>>{}});
+  factory Leaf.fromMap(Map<String, dynamic> map) => _\$LeafFromMap(map);
+  $_field()
+  final Map<String, Map<String, int>> grid;
+}
+''';
+      final text = await _emitText(src);
+      // Niveau externe : `e$` / `k$` / `v$` ; niveau interne : `e\$1` / `k\$1` /
+      // `v\$1`. Un `for (final e\$ in (e\$.value …))` serait une liaison qui se
+      // masque elle-même dans son propre initialiseur.
+      expect(text, contains(r'for (final e$ in'));
+      expect(text, contains(r'for (final e$1 in (e$.value as Map).entries)'));
+      expect(text, isNot(contains(r'for (final e$ in (e$.value')));
+      expect(text, contains(r'MapEntry(k$, v$.map((k$1, v$1) => MapEntry('));
+    });
+
+    test('les formes de PROFONDEUR 0 gardent leurs liaisons historiques',
+        () async {
+      const src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$_model()
+class Leaf {
+  const Leaf({this.groups = const <String, List<String>>{}});
+  factory Leaf.fromMap(Map<String, dynamic> map) => _\$LeafFromMap(map);
+  $_field()
+  final Map<String, List<String>> groups;
+}
+''';
+      final text = await _emitText(src);
+      // La numérotation des liaisons ne commence qu'aux niveaux IMBRIQUÉS :
+      // le texte émis pour les formes déjà supportées ne bouge pas d'un octet,
+      // donc aucun `.g.dart` publié ne change de contenu.
+      expect(text, contains(r'.map((e$) =>'));
+      expect(text, isNot(contains(r'e$1')));
+      expect(text, contains(r'.map((k$, v$) => MapEntry(k$,'));
+    });
+
+    test('imbrication à TROIS niveaux : `Map<String, List<Map<…>>>`', () async {
+      const src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$_model()
+class Leaf {
+  const Leaf({this.deep = const <String, List<Map<String, int>>>{}});
+  factory Leaf.fromMap(Map<String, dynamic> map) => _\$LeafFromMap(map);
+  $_field()
+  final Map<String, List<Map<String, int>>> deep;
+}
+''';
+      final text = await _emitText(src);
+      expect(text, contains(r'for (final e$2 in'));
+      expect(text, contains('.whereType<Map<String, int>>().toList()'));
+    });
+
+    test('clé non supportée AU NIVEAU INTERNE → BUILD ROUGE', () async {
+      const src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$_model()
+class Leaf {
+  const Leaf({this.grid = const <String, Map<int, String>>{}});
+  factory Leaf.fromMap(Map<String, dynamic> map) => _\$LeafFromMap(map);
+  $_field()
+  final Map<String, Map<int, String>> grid;
+}
+''';
+      final error = await _emitError(src);
+      expect(error, isA<InvalidGenerationSourceError>());
+      expect('$error', contains('Clé de Map non supportée'));
+    });
+
+    test('valeur non supportée DANS un élément de liste → BUILD ROUGE',
+        () async {
+      const src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+class Opaque {
+  const Opaque();
+}
+
+$_model()
+class Leaf {
+  const Leaf({this.rows = const <Map<String, Opaque>>[]});
+  factory Leaf.fromMap(Map<String, dynamic> map) => _\$LeafFromMap(map);
+  $_field()
+  final List<Map<String, Opaque>> rows;
+}
+''';
+      final error = await _emitError(src);
+      expect(error, isA<InvalidGenerationSourceError>());
+      expect('$error', contains('Valeur de Map non (dé)sérialisable'));
+    });
+
+    test('élément de liste `Map` NULLABLE : refus EXPLICITE conservé', () async {
+      const src = '''
+import 'package:zcrud_annotations/zcrud_annotations.dart';
+
+$_model()
+class Leaf {
+  const Leaf({this.rows = const <Map<String, dynamic>?>[]});
+  factory Leaf.fromMap(Map<String, dynamic> map) => _\$LeafFromMap(map);
+  $_field()
+  final List<Map<String, dynamic>?> rows;
+}
+''';
+      final error = await _emitError(src);
+      expect(error, isA<InvalidGenerationSourceError>());
+      expect('$error', contains('Élément de liste `Map` NULLABLE non supporté'));
+      // Le remède est MONTRÉ, pas seulement nommé.
+      expect('$error', contains('List<Map<String, dynamic>>'));
     });
   });
 }

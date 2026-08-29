@@ -3,6 +3,11 @@
 Toutes les modifications notables de `zcrud_note` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.34.0 — 2026-08-29
+
+### Modifié
+- La justification du canal hors-codegen de `ZSmartNote.content` est réécrite : le générateur sérialise désormais les `Map` et `List<Map<…>>` ; le canal manuel demeure pour ses propriétés propres (vue non modifiable à chaque niveau, slot brut privé exigé par le constructeur `const`, absence délibérée de `ZFieldSpec`).
+
 ## 3.29.0 — 2026-08-28
 
 ### Ajouté

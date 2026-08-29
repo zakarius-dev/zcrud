@@ -294,10 +294,37 @@ void main() {
       expect(text.style!.color, _scheme().onPrimaryContainer);
     });
 
-    testWidgets('K2 — profil `legacy` (défaut) : palette signature EXACTE', (
+    testWidgets('🔴 K1b — DÉFAUT du socle : indiscernable du profil `neutral`',
+        (tester) async {
+      // Aucun profil déclaré : le socle rend son défaut, qui est `neutral`.
+      await _pumpScoped(tester, verdict: _passed);
+      final decoration = tester
+          .widget<Container>(find.byKey(ZSessionSummaryView.verdictKey))
+          .decoration! as BoxDecoration;
+      expect(
+        decoration.gradient,
+        isNull,
+        reason: '🔴 la référence auditée est peinte sans profil déclaré : le '
+            'défaut du socle a dérivé vers `legacy`',
+      );
+      expect(decoration.color, _scheme().primaryContainer);
+      final text = tester.widget<Text>(
+        find.descendant(
+          of: find.byKey(ZSessionSummaryView.verdictKey),
+          matching: find.byType(Text),
+        ),
+      );
+      expect(text.style!.color, _scheme().onPrimaryContainer);
+    });
+
+    testWidgets('K2 — profil `legacy` EXPLICITE : palette signature EXACTE', (
       tester,
     ) async {
-      await _pumpScoped(tester, verdict: _passed);
+      await _pumpScoped(
+        tester,
+        verdict: _passed,
+        theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.legacy),
+      );
 
       // Identité écrite À LA MAIN : jamais lue de la constante du widget.
       final signature = zSignatureGradientFor('zcrud.session.summary.verdict');

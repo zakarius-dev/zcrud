@@ -19,10 +19,14 @@ import 'z_page_shell_reference.dart';
 /// ## D'où vient la teinte de sélection
 ///
 /// Par ordre de priorité **paramètre > jeton `ZcrudTheme.signaturePalette` >
-/// référence auditée**, ce dernier maillon n'étant lu que sous le profil
-/// `ZReferenceProfile.legacy`. Sous `ZReferenceProfile.neutral`, la teinte de
-/// sélection est le rôle `ColorScheme.primary` — donc entièrement gouvernée
-/// par le thème de l'hôte.
+/// référence auditée**. Seul le dernier maillon est arbitré par le profil : il
+/// n'est lu que sous `ZReferenceProfile.legacy`, opt-in de l'hôte. Sous
+/// `ZReferenceProfile.neutral` — **le défaut** —, la teinte de sélection est le
+/// rôle `ColorScheme.primary`, donc entièrement gouvernée par le thème de
+/// l'hôte.
+///
+/// Un jeton `signaturePalette` **posé** est une décision de l'hôte, pas une
+/// référence : il s'applique dans les deux profils.
 ///
 /// La couleur du libellé sélectionné est **mesurée** contre cette teinte
 /// (WCAG 2.2), jamais décrétée : elle change avec la teinte.
@@ -65,20 +69,26 @@ class ZChoiceChipStyle {
     bool? showCheckmark,
   }) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    // Le jeton de l'hôte et la référence auditée ne sont PAS le même maillon :
+    // seul le second est arbitré par le profil. Les confondre effacerait sous
+    // `neutral` une palette que l'hôte a délibérément posée.
+    final List<ZGradientSpec>? jeton = ZcrudTheme.of(context).signaturePalette;
     final List<ZGradientSpec> palette =
-        ZcrudTheme.of(context).signaturePalette ??
-        ZSignaturePaletteReference.gradients;
+        jeton ?? ZSignaturePaletteReference.gradients;
     final ZGradientSpec? spec = (signatureKey == null || signatureKey.isEmpty)
         ? (palette.isEmpty ? null : palette.first)
         : zSignatureGradientFor(signatureKey, palette: palette);
     final List<Color> stops = spec?.gradient.colors ?? const <Color>[];
-    // Dernier maillon: la référence ne joue que sous `legacy`; sous `neutral`
-    // la sélection retombe sur un rôle du ColorScheme de l'hôte.
+    // Dernier maillon: la RÉFÉRENCE ne joue que sous `legacy`; sous `neutral`
+    // la sélection retombe sur un rôle du ColorScheme de l'hôte. Un jeton posé,
+    // lui, s'applique dans les deux profils.
     final Color selected =
         selectedColor ??
         (stops.isEmpty
             ? scheme.primary
-            : zLegacyOr<Color>(context, stops.first, scheme.primary)!);
+            : (jeton != null
+                ? stops.first
+                : zLegacyOr<Color>(context, stops.first, scheme.primary)!));
     return ZChoiceChipStyle(
       shape:
           shape ??

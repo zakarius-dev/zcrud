@@ -43,6 +43,27 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'z_chat_notebook_reference.dart';
 import 'z_chat_tile_shell.dart';
 
+/// Arbitre un membre COULEUR du carnet entre sa référence auditée et le rôle
+/// de l'hôte : [reference] partout, sauf sous un [ZReferenceProfile.neutral]
+/// **déclaré**, où [neutral] l'emporte.
+///
+/// Le carnet de chat possède sa propre référence et la garde comme **défaut** :
+/// il faut déclarer le profil neutre pour l'éteindre, un profil simplement
+/// absent ne suffit pas. C'est la seule différence avec `zLegacyOrIn`, qui rend
+/// la valeur neutre dès que le profil est absent.
+//
+// Le socle a basculé son défaut global sur `neutral`. Le carnet ne suit pas :
+// son apparence de référence EST son rendu, et la faire disparaître chez tous
+// les hôtes non déclarants aurait changé un écran entier sans que personne ne
+// l'ait demandé. L'échappatoire reste entière — `referenceProfile: neutral`
+// éteint la référence ici comme partout ailleurs.
+T? _zChatReferenceUnlessNeutral<T>(
+  ZReferenceProfile? profile,
+  T reference, [
+  T? neutral,
+]) =>
+    profile == ZReferenceProfile.neutral ? neutral : reference;
+
 /// Réglage **partiel** du rendu Notebook : tout champ `null` délègue au niveau
 /// suivant (jeton, puis référence).
 ///
@@ -117,11 +138,11 @@ class ZChatNotebookSkin {
   /// ## Le quatrième maillon : le profil de référence
   ///
   /// Les membres **couleur** — et eux seuls — passent au dernier maillon par
-  /// [ZReferenceProfile]. Sous [ZReferenceProfile.legacy] (le défaut), le
-  /// rendu est **exactement** celui de la référence : rien ne change pour un
-  /// hôte qui n'a rien déclaré. Sous [ZReferenceProfile.neutral], la référence
-  /// s'efface au profit du **rôle Material 3 de l'hôte** : accent d'outils et
-  /// accents de capacité prennent le premier plan du slot
+  /// [ZReferenceProfile]. Un profil **absent** rend la référence : le carnet de
+  /// chat garde son apparence comme défaut, et rien ne change pour un hôte qui
+  /// n'a rien déclaré. Seul un [ZReferenceProfile.neutral] **déclaré** efface
+  /// la référence au profit du **rôle Material 3 de l'hôte** : accent d'outils
+  /// et accents de capacité prennent le premier plan du slot
   /// [ZColorSlot.primary], et [ZChatNotebookStyle.busyPalette] devient vide —
   /// aucune séquence n'est due, l'appelant peint une teinte ambiante unique.
   ///
@@ -169,23 +190,30 @@ class ZChatNotebookSkin {
       toolAccentColor:
           toolAccentColor ??
           theme.chatToolAccentColor ??
-          zLegacyOrIn<Color>(
+          _zChatReferenceUnlessNeutral<Color>(
             profile,
             ZChatNotebookReference.toolAccentColor,
             neutralPair.onColor,
           )!,
-      // Le dernier maillon est ici celui du socle : `zBusyPaletteOf` lit le
-      // jeton `ZcrudTheme.busyPalette` puis arbitre la référence par le
-      // profil. Le rendre atteignable est ce qui branche le chat sur la
-      // référence commune au lieu de sa copie.
+      // Avant-dernier maillon : le jeton `ZcrudTheme.busyPalette` du socle, lu
+      // par `zBusyPaletteOf` — c'est ce qui branche le chat sur le jeton commun
+      // au lieu de sa copie. Le socle ne rend sa RÉFÉRENCE que sous le profil
+      // `legacy`; en dessous, le carnet prend la sienne, qui EST la référence
+      // commune (`ZChatNotebookReference.busyPalette`) — d'où un rendu par
+      // défaut inchangé, et un `neutral` déclaré qui éteint bien la séquence.
       busyPalette:
           busyPalette ??
           theme.chatBusyPalette ??
           zBusyPaletteOf(context) ??
-          const <Color>[],
+          _zChatReferenceUnlessNeutral<List<Color>>(
+            profile,
+            ZChatNotebookReference.busyPalette,
+            const <Color>[],
+          )!,
       capabilityAccents: capabilityAccents,
       themeCapabilityAccents: theme.chatCapabilityAccents,
-      neutralAccent: zLegacyOrIn<Color?>(profile, null, neutralPair.onColor),
+      neutralAccent:
+          _zChatReferenceUnlessNeutral<Color?>(profile, null, neutralPair.onColor),
       tile: tile,
     );
   }
