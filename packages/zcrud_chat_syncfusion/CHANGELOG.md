@@ -3,6 +3,33 @@
 Toutes les modifications notables de `zcrud_chat_syncfusion` sont
 documentées dans ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.32.0 — 2026-08-29
+
+### Renforcé — la garde FR-26 voit désormais les couleurs qu'elle laissait passer
+
+La garde de pureté du paquet interdisait la couleur codée en dur avec deux
+motifs : `Color(0x` et `Colors.[a-z]`. Mesuré par injection dans `lib/` : huit
+formes de couleur parfaitement banales passaient **vertes** — l'entier décimal
+(`Color(4280391411)`, la même couleur écrite en base 10), le `Color.from(` à
+composantes littérales, l'hexadécimal de couleur écrit hors de `Color(`
+(`0x2196F3`, `0x80112233`), le grand entier décimal nu, l'espace après la
+parenthèse (`Color( 0xFF0000FF)`), et les deux formes multi-lignes.
+
+Le scan porte maintenant sur le contenu entier de la source (commentaires
+retirés), donc les formes coupées par un saut de ligne sont atteignables, et
+chaque faute nomme le motif qui a mordu plutôt que le seul fichier.
+
+Deux renoncements sont **documentés** dans la garde plutôt que laissés
+implicites : un hexadécimal de 8 chiffres à octet de tête quelconque n'est pas
+distinguable d'un masque de bits ou d'une graine de hachage, et le
+`Color.from(` à composantes **calculées** reste permis — c'est la voie légitime
+de composition d'une couleur de thème. Six contre-preuves de non-faux-positif
+figent ce périmètre.
+
+Aucune couleur codée en dur n'est exhumée dans `lib/` : le durcissement n'a
+rien à corriger ici, c'est une garde pour l'avenir. **Aucun impact
+consommateur** — rien de `lib/` ne change.
+
 ## 3.0.0 — 2026-08-18
 
 ### 🔴 Corrigé — sous la coquille, le message de REQUÊTE n'était jamais peint

@@ -10,7 +10,7 @@
 # restent à la charge de l'app hôte (cf. README).
 name: zcrud_geo_location
 description: "Ready-made ZGeoLocationResolver for zcrud_geo backed by geolocator: my-position resolution with distinct failure causes, no geolocator type in the public API."
-version: 3.31.0
+version: 3.32.0
 publish_to: none
 resolution: workspace
 
@@ -34,7 +34,7 @@ dependencies:
   # SDK de géolocalisation (parité legacy DODLP `geolocator: ^14.0.2`) —
   # CONFINÉ à `lib/src/geolocator_gateway_impl.dart` (jamais exporté).
   geolocator: ^14.0.2
-  zcrud_geo: ^3.31.0
+  zcrud_geo: ^3.32.0
 
 dev_dependencies:
   flutter_test:

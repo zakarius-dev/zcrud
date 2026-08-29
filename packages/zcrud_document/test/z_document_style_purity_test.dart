@@ -8,7 +8,10 @@
 /// sur `lib/src/presentation/`. Cette garde-ci **élargit la surface à tout
 /// `lib/`** (le domaine compris — il est pur-Dart, un `Color` y serait un
 /// défaut d'un autre ordre, mais un défaut quand même), ajoute les motifs
-/// `Color.fromARGB(`/`Color.fromRGBO(`/`0xFF……` nu, et surtout porte les
+/// `Color.fromARGB(`/`Color.fromRGBO(`/hexadécimal de couleur nu, les formes
+/// INVISIBLES à un scan ligne à ligne (`Color(<décimal>)` même multi-ligne,
+/// `Color.from(red: <littéral>)`, entier décimal dans la plage ARGB opaque),
+/// et surtout porte les
 /// **trois contre-preuves** de l'exemption nominative. Les deux gardes
 /// consomment la MÊME liste d'exemption (`kZColorReferenceFiles`) : il n'y a
 /// pas deux listes à faire dériver.
@@ -32,14 +35,48 @@ import 'package:test/test.dart';
 
 import 'support/z_sources.dart' as z_sources;
 
-/// Motifs de littéral de couleur INTERDITS (regex), appliqués au code
-/// dépouillé de ses commentaires.
+/// Motifs de littéral de couleur INTERDITS (regex), appliqués **ligne à
+/// ligne** au code dépouillé de ses commentaires.
+///
+/// Couvre `Color(0x…)`, `Color.fromARGB(`, `Color.fromRGBO(`, `Colors.<nom>`,
+/// et les constantes hexadécimales de couleur écrites **hors** de `Color(` —
+/// forme `0xRRGGBB` (6 chiffres), `0xFxxxxxxx` (8 chiffres à alpha `F…`) et
+/// `0x80RRGGBB` (alpha 50 %).
+///
+/// ⚠️ Renoncement DOCUMENTÉ sur l'hexadécimal : un entier hexadécimal de 8
+/// chiffres dont l'octet de tête n'est ni `F…` ni `80` n'est PAS distinguable
+/// textuellement d'un masque de bits ou d'une constante de hachage — deux
+/// usages légitimes (`0x00FFFFFF` comme masque RGB, `0x811C9DC5` /
+/// `0x01000193` comme graines FNV). Élargir à `0x[0-9a-fA-F]{8}` produirait
+/// des faux positifs sur du code correct : la garde préfère laisser ce coin
+/// non couvert plutôt que devenir une garde qu'on désactive.
+// Les motifs sont volontairement dupliqués entre familles plutôt que fondus en
+// une regex unique : un offender doit nommer la FORME qui a mordu.
 final List<RegExp> _colorPatterns = <RegExp>[
   RegExp(r'Color\(\s*0x'),
   RegExp(r'Color\.fromARGB\('),
   RegExp(r'Color\.fromRGBO\('),
   RegExp(r'\bColors\.'),
-  RegExp(r'\b0x[fF][0-9a-fA-F]{5,7}\b'),
+  RegExp(r'\b0x(?:[0-9a-fA-F]{6}|[fF][0-9a-fA-F]{7}|80[0-9a-fA-F]{6})\b'),
+];
+
+/// Motifs de littéral de couleur appliqués au **contenu joint** du fichier
+/// (lignes dépouillées de leurs commentaires, jointes), donc capables de
+/// traverser les sauts de ligne.
+///
+/// Trois formes que le scan ligne à ligne laissait passer :
+/// 1. `Color(<entier DÉCIMAL>)` — la même couleur que `Color(0xFF…)`, écrite
+///    en base 10 (`Color(4280391411)`), mono ou multi-ligne ;
+/// 2. `Color.from(` dont **au moins une composante** `red`/`green`/`blue` est
+///    un littéral numérique — la dérivation à composantes CALCULÉES reste
+///    permise (c'est la voie légitime de composition et d'éclaircissement) ;
+/// 3. un entier décimal nu dans la plage ARGB opaque
+///    (`0xFF000000` = 4278190080 … `0xFFFFFFFF` = 4294967295), qui n'a
+///    pratiquement aucun autre usage qu'une couleur codée en dur.
+final List<RegExp> _colorContentPatterns = <RegExp>[
+  RegExp(r'\bColor\(\s*[0-9][0-9_]*\s*[,)]'),
+  RegExp(r'\bColor\.from\([^)]*\b(?:red|green|blue)\s*:\s*[0-9]*\.?[0-9]+\s*[,)]'),
+  RegExp(r'\b42[789][0-9]{7}\b'),
 ];
 
 Directory _libDir() {
@@ -65,12 +102,22 @@ List<String> scanColors(String path, String source) {
       .contains(z_sources.normalizedLibPath(path))) {
     return offenders;
   }
-  final List<String> lines = z_sources.stripComments(source).split('\n');
+  final String stripped = z_sources.stripComments(source);
+  final List<String> lines = stripped.split('\n');
   for (int i = 0; i < lines.length; i++) {
     for (final RegExp pat in _colorPatterns) {
       if (pat.hasMatch(lines[i])) {
         offenders.add('$path:${i + 1}: ${pat.pattern} → ${lines[i].trim()}');
       }
+    }
+  }
+  // Second scan, sur le CODE JOINT : `[^)]*` et `\s*` traversent alors les
+  // sauts de ligne, ce que le scan ligne à ligne ne peut pas faire. Le
+  // dépouillement des commentaires préserve le nombre de lignes, donc aucune
+  // forme ne peut se reconstituer à cheval sur une dartdoc retirée.
+  for (final RegExp pat in _colorContentPatterns) {
+    if (pat.hasMatch(stripped)) {
+      offenders.add('$path: ${pat.pattern} → ${pat.firstMatch(stripped)![0]}');
     }
   }
   return offenders;
@@ -112,6 +159,55 @@ void main() {
       ),
       isEmpty,
     );
+  });
+
+  test(
+      'la garde DÉTECTE les formes INVISIBLES au scan ligne à ligne '
+      '(décimal, Color.from littéral, hex hors Color()', () {
+    // Une forme est « attrapée » si le scan complet (ligne + contenu joint) la
+    // reporte sous un chemin NON exempté — exactement ce que fait la garde sur
+    // un vrai fichier de `lib/`.
+    List<String> scan(String source) =>
+        scanColors('lib/src/presentation/_sonde_forme.dart', source);
+
+    const Map<String, String> mordantes = <String, String>{
+      'décimal': 'const Color c = Color(4280391411);',
+      'décimal multi-ligne': 'const Color c = Color(\n  4280391411,\n);',
+      'Color.from littéral': 'const Color c = '
+          'Color.from(alpha: 1, red: 0.2, green: 0.4, blue: 0.6);',
+      'hex RGB hors Color(': 'const int c = 0x2196F3;',
+      'hex ARGB alpha 50 % hors Color(': 'const int c = 0x80112233;',
+      'grand entier décimal': 'const int c = 4280391411;',
+      // Formes déjà couvertes avant durcissement : elles doivent le RESTER.
+      'Color(0x…)': 'const Color c = Color(0xFF112233);',
+      'Colors.<nom>': 'final Color c = Colors.red;',
+      'fromARGB': 'const Color c = Color.fromARGB(255, 10, 20, 30);',
+      'fromRGBO': 'const Color c = Color.fromRGBO(10, 20, 30, 1.0);',
+    };
+    for (final MapEntry<String, String> e in mordantes.entries) {
+      expect(scan(e.value), isNotEmpty,
+          reason: '🔴 forme NON attrapée (${e.key}) : ${e.value}');
+    }
+
+    // Contre-preuves : des usages LÉGITIMES d'un entier ou d'un `Color.from`
+    // doivent rester silencieux — sinon la garde devient un générateur de faux
+    // positifs, donc une garde qu'on désactive.
+    const Map<String, String> legitimes = <String, String>{
+      'masque RGB': 'final int rgb = argb & 0x00FFFFFF;',
+      'graine FNV': 'int hash = 0x811C9DC5;',
+      'graine FNV (multiplicateur)': 'hash = (hash * 0x01000193).toUnsigned(32);',
+      'Color.from calculé': 'Color f(Color c) => '
+          'Color.from(alpha: c.a, red: c.r, green: c.g, blue: c.b);',
+      'Color.from composé': 'Color f(Color a, Color b) => Color.from(\n'
+          '  alpha: 1,\n  red: a.r * t + b.r * (1 - t),\n'
+          '  green: a.g * t + b.g * (1 - t),\n  blue: a.b * t + b.b * (1 - t),\n);',
+      'décalage alpha': 'return (a << 24) | (rgb.toARGB32() & 0x00FFFFFF);',
+      'octets de signature PDF': 'const List<int> sig = <int>[0x25, 0x50, 0x44];',
+    };
+    for (final MapEntry<String, String> e in legitimes.entries) {
+      expect(scan(e.value), isEmpty,
+          reason: '🔴 FAUX POSITIF (${e.key}) : ${e.value}');
+    }
   });
 
   test('la garde IGNORE une couleur citée en COMMENTAIRE (prose de contrat)',

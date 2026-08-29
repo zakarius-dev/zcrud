@@ -1,8 +1,11 @@
 // AC6/AC7 (FR-26, AD-13) : garde « aucun style codé en dur » + « directionnel
 // uniquement » sur `lib/src/presentation/**`.
 //
-// (a) COULEURS : échoue sur tout littéral de couleur (`Color(0x…)`, `Colors.<x>`,
-//     littéral hexadécimal `0x[fF]{6,8}`) et sur les constantes de style
+// (a) COULEURS : échoue sur tout littéral de couleur — `Color(0x…)`,
+//     `Color(<décimal>)`, `Color.fromARGB(`, `Color.fromRGBO(`,
+//     `Color.from(red: <littéral>)`, `Colors.<x>`, littéral hexadécimal de
+//     couleur hors `Color(`, entier décimal dans la plage ARGB opaque — et sur
+//     les constantes de style
 //     interdites (`kNavyColor`/`kFormInputDecorationTheme`). Le repli
 //     `ZcrudTheme.fallback` est EXEMPTÉ (il ne fait que DÉRIVER `ColorScheme`/
 //     `TextTheme`, sans littéral) — l'exemption est bornée à son corps de
@@ -24,19 +27,50 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-/// Motifs de littéral de couleur / constante de style INTERDITS (regex).
+/// Motifs de littéral de couleur / constante de style INTERDITS, appliqués
+/// **ligne à ligne** (regex).
 ///
-/// L-2 : couvre aussi `Color.fromARGB(`/`Color.fromRGBO(` (littéraux de couleur
-/// construits par composantes) — un futur codage en dur ARGB/RGBO ne doit plus
-/// passer sous la garde.
+/// Couvre `Color(0x…)`, `Color.fromARGB(`, `Color.fromRGBO(`, `Colors.<nom>`,
+/// et les constantes hexadécimales de couleur écrites **hors** de `Color(` —
+/// forme `0xRRGGBB` (6 chiffres), `0xFxxxxxxx` (8 chiffres à alpha `F…`) et
+/// `0x80RRGGBB` (alpha 50 %).
+///
+/// ⚠️ Renoncement DOCUMENTÉ sur l'hexadécimal : un entier hexadécimal de 8
+/// chiffres dont l'octet de tête n'est ni `F…` ni `80` n'est PAS distinguable
+/// textuellement d'un masque de bits ou d'une constante de hachage — deux
+/// usages légitimes qui vivent dans `lib/src/presentation/` (`0x00FFFFFF`
+/// comme masque RGB, `0x811C9DC5`/`0x01000193` comme graines FNV). Élargir à
+/// `0x[0-9a-fA-F]{8}` produirait des faux positifs sur du code correct : la
+/// garde préfère laisser ce coin non couvert plutôt que devenir désactivable.
+// Les motifs sont volontairement dupliqués entre familles plutôt que fondus en
+// une regex unique : un offender doit nommer la FORME qui a mordu.
 final _colorPatterns = <RegExp>[
   RegExp(r'Color\(\s*0x'),
   RegExp(r'Color\.fromARGB\('),
   RegExp(r'Color\.fromRGBO\('),
   RegExp(r'\bColors\.'),
-  RegExp(r'\b0x[fF][0-9a-fA-F]{5,7}\b'),
+  RegExp(r'\b0x(?:[0-9a-fA-F]{6}|[fF][0-9a-fA-F]{7}|80[0-9a-fA-F]{6})\b'),
   RegExp(r'\bkNavyColor\b'),
   RegExp(r'\bkFormInputDecorationTheme\b'),
+];
+
+/// Motifs de littéral de couleur appliqués au **contenu joint** du fichier
+/// (lignes hors commentaires et hors corps exempté), donc capables de
+/// traverser les sauts de ligne.
+///
+/// Trois formes que le scan ligne à ligne laissait passer :
+/// 1. `Color(<entier DÉCIMAL>)` — la même couleur que `Color(0xFF…)`, écrite
+///    en base 10 (`Color(4280391411)`), mono ou multi-ligne ;
+/// 2. `Color.from(` dont **au moins une composante** `red`/`green`/`blue` est
+///    un littéral numérique — la dérivation à composantes CALCULÉES reste
+///    permise (c'est la voie légitime de composition/éclaircissement) ;
+/// 3. un entier décimal nu dans la plage ARGB opaque
+///    (`0xFF000000` = 4278190080 … `0xFFFFFFFF` = 4294967295), qui n'a
+///    pratiquement aucun autre usage qu'une couleur codée en dur.
+final _colorContentPatterns = <RegExp>[
+  RegExp(r'\bColor\(\s*[0-9][0-9_]*\s*[,)]'),
+  RegExp(r'\bColor\.from\([^)]*\b(?:red|green|blue)\s*:\s*[0-9]*\.?[0-9]+\s*[,)]'),
+  RegExp(r'\b42[789][0-9]{7}\b'),
 ];
 
 /// Motifs de variante NON directionnelle INTERDITS (AD-13).
@@ -86,15 +120,26 @@ List<String> _scanColors(String path, List<String> lines) {
   final offenders = <String>[];
   if (_kColorReferenceFiles.contains(_normalized(path))) return offenders;
   final st = _FallbackState();
+  final code = <String>[];
   var lineNo = 0;
   for (final raw in lines) {
     lineNo++;
     final exempt = _inFallback(path, raw, st);
     final line = _stripComment(raw);
+    // Le contenu joint ne retient que le CODE non exempté : une forme
+    // multi-ligne ne peut donc pas se reconstituer à cheval sur le corps
+    // exempté de `ZcrudTheme.fallback`.
+    code.add(exempt ? '' : line);
     for (final pat in _colorPatterns) {
       if (pat.hasMatch(line) && !exempt) {
         offenders.add('$path:$lineNo: ${pat.pattern} → ${line.trim()}');
       }
+    }
+  }
+  final String joined = code.join('\n');
+  for (final pat in _colorContentPatterns) {
+    if (pat.hasMatch(joined)) {
+      offenders.add('$path: ${pat.pattern} → ${pat.firstMatch(joined)![0]}');
     }
   }
   return offenders;
@@ -185,6 +230,56 @@ void main() {
         reason: 'Color.fromARGB( devrait être attrapé');
     expect(_colorPatterns.any((p) => p.hasMatch(rgboSample)), isTrue,
         reason: 'Color.fromRGBO( devrait être attrapé');
+  });
+
+  test('L-4 : la garde couleur détecte les formes INVISIBLES au scan ligne à '
+      'ligne (décimal, Color.from littéral, hex hors Color()', () {
+    // Une forme est « attrapée » si le scan complet (ligne + contenu joint)
+    // la reporte sous un chemin NON exempté — c'est exactement ce que fait la
+    // garde sur un vrai fichier.
+    List<String> scan(String source) => _scanColors(
+          'lib/src/presentation/theme/_sonde_forme.dart',
+          source.split('\n'),
+        );
+
+    const Map<String, String> mordantes = <String, String>{
+      'décimal': 'const Color c = Color(4280391411);',
+      'décimal multi-ligne': 'const Color c = Color(\n  4280391411,\n);',
+      'Color.from littéral': 'const Color c = '
+          'Color.from(alpha: 1, red: 0.2, green: 0.4, blue: 0.6);',
+      'hex RGB hors Color(': 'const int c = 0x2196F3;',
+      'hex ARGB alpha 50 % hors Color(': 'const int c = 0x80112233;',
+      'grand entier décimal': 'const int c = 4280391411;',
+      // Formes déjà couvertes : elles doivent le RESTER.
+      'Color(0x…)': 'const Color c = Color(0xFF112233);',
+      'Colors.<nom>': 'final Color c = Colors.red;',
+      'fromARGB': 'const Color c = Color.fromARGB(255, 10, 20, 30);',
+      'fromRGBO': 'const Color c = Color.fromRGBO(10, 20, 30, 1.0);',
+    };
+    for (final MapEntry<String, String> e in mordantes.entries) {
+      expect(scan(e.value), isNotEmpty,
+          reason: '🔴 forme NON attrapée (${e.key}) : ${e.value}');
+    }
+
+    // Contre-preuves : trois usages LÉGITIMES présents dans
+    // `lib/src/presentation/` doivent rester silencieux — sinon la garde
+    // devient un générateur de faux positifs, donc une garde qu'on désactive.
+    const Map<String, String> legitimes = <String, String>{
+      'masque RGB': 'final int rgb = argb & 0x00FFFFFF;',
+      'graine FNV': 'int hash = 0x811C9DC5;',
+      'graine FNV (multiplicateur)': 'hash = (hash * 0x01000193).toUnsigned(32);',
+      'Color.from calculé': 'Color f(Color c) => '
+          'Color.from(alpha: c.a, red: c.r, green: c.g, blue: c.b);',
+      'Color.from composé': 'Color f(Color a, Color b) => Color.from(\n'
+          '  alpha: 1,\n  red: a.r * t + b.r * (1 - t),\n'
+          '  green: a.g * t + b.g * (1 - t),\n  blue: a.b * t + b.b * (1 - t),\n);',
+      'décalage alpha': 'return (a << 24) | (rgb.toARGB32() & 0x00FFFFFF);',
+      'octets de signature PNG': 'const List<int> sig = <int>[0x89, 0x50, 0x4E];',
+    };
+    for (final MapEntry<String, String> e in legitimes.entries) {
+      expect(scan(e.value), isEmpty,
+          reason: '🔴 FAUX POSITIF (${e.key}) : ${e.value}');
+    }
   });
 
   // ── Contre-preuves de l'EXEMPTION NOMINATIVE ──────────────────────────────

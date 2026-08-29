@@ -3,6 +3,18 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.32.0 — 2026-08-29
+
+### Modifié (gardes — aucun changement de comportement)
+- 🔴 **La garde de pureté anti-couleurs voyait deux formes sur onze.** `z_chat_purity_test.dart` ne portait que `\bColors\.` et `\bColor\(0x` : neuf façons d'écrire une couleur littérale y étaient **inertes**, mesuré par injection dans `lib/` — `Color.fromARGB(`, `Color.fromRGBO(`, `Color( 0xFF…)` (une simple espace après la parenthèse suffisait à passer), `Color(4280391411)` en base 10, la même en **multi-ligne**, `Color.from(red: 0.2, …)` à composantes littérales, un hexadécimal de couleur écrit **hors** de `Color(` (`0x2196F3`, `0x80112233`), et un entier décimal nu de la plage ARGB opaque.
+- La garde applique désormais **deux passes** : ligne à ligne (numéro exact) puis **contenu joint** hors commentaires — c'est cette seconde passe qui traverse les sauts de ligne et attrape les formes multi-lignes. Les motifs sont ceux du patron de `zcrud_core`, adaptés aux exemptions du paquet.
+- L'exemption FR-26 encadrée reste **nominative et de même portée** : `z_chat_notebook_reference.dart` et `z_chat_composer_reference.dart`, exemptés des seules règles de COULEUR, jamais des règles AD-13 ni de `TextStyle(`. Les cardinaux (5 règles couleur ligne à ligne, 3 sur contenu joint, 5 règles hors exemption, 2 fichiers exemptés) sont assertés : une exemption ou une règle ne bouge que délibérément.
+- **Renoncement documenté** : un hexadécimal de 8 chiffres dont l'octet de tête n'est ni `F…` ni `80` n'est pas distinguable textuellement d'un masque de bits, d'une sentinelle ou d'une graine de hachage. Élargir à `0x[0-9a-fA-F]{8}` rougirait sur du code correct — dont le `clamp(1, 0x7fffffff)` réel de `z_chat_tile_shell.dart`. Le coin est laissé non couvert plutôt que la garde rendue désactivable ; huit usages légitimes sont figés en contre-preuves de non-faux-positif.
+- Le durcissement rejoué sur tout `lib/` n'exhume **aucun défaut livré** : le seul site hexadécimal hors fichiers de référence est cette sentinelle de `clamp`, légitime et muette.
+
+### Notes de portage
+- **Aucun impact consommateur** : `lib/` est inchangé à l'octet, aucune API ne bouge. Le lot ne touche que `test/`.
+
 ## 3.30.0 — 2026-08-29
 
 ### Modifié

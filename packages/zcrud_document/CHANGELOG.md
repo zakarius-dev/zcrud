@@ -3,6 +3,15 @@
 Toutes les modifications notables de `zcrud_document` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.32.0 — 2026-08-29
+
+### Garde
+- **Garde de style durcie contre six écritures de couleur invisibles** (`test/z_document_style_purity_test.dart`). Le jeu de motifs du paquet était la copie exacte du jeu d'avant durcissement du patron `zcrud_core` : mesuré par injection dans `lib/`, **six formes y passaient sans un mot** — `Color(4280391411)` (entier décimal), la même en **multi-ligne**, `Color.from(red: 0.2, …)` à composantes littérales, `0x2196F3` (hexadécimal 6 chiffres hors `Color(`), `0x80112233` (alpha 50 % hors `Color(`), et un entier décimal nu dans la plage ARGB opaque. Chacune est désormais prouvée mordante, rouge **par assertion** nommant le fichier fautif.
+- **Second scan sur contenu joint** : le scan ligne à ligne ne peut pas voir une forme répartie sur plusieurs lignes. Les trois motifs neufs (`Color(<décimal>)`, `Color.from(` à composante littérale, entier `42[789]…`) s'appliquent au code entier du fichier, commentaires retirés — la numérotation de ligne restant préservée, aucune forme ne se reconstitue à cheval sur une dartdoc supprimée.
+- **Contre-preuves de non-faux-positif** figées par le test : masque RGB `0x00FFFFFF`, graines FNV `0x811C9DC5` / `0x01000193`, `Color.from` à composantes **calculées** (voie légitime de composition), décalage d'alpha, octets de signature de fichier. Toutes vérifiées silencieuses, avant comme après.
+- **Renoncement documenté** : un hexadécimal de 8 chiffres dont l'octet de tête n'est ni `F…` ni `80` n'est pas distinguable textuellement d'un masque de bits ou d'une graine de hachage. Le coin est laissé non couvert plutôt que de rendre la garde bruyante — donc désactivable.
+- **Aucun défaut exhumé** : les motifs neufs rejoués sur tout `lib/` du paquet ne désignent que `z_annotation_palette_reference.dart`, seul fichier exempté nominativement. Le durcissement est une garde pour l'avenir, sans impact sur le code livré ni sur les hôtes.
+
 ## 3.29.0 — 2026-08-28
 
 ### Ajouté

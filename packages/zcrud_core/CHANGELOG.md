@@ -3,6 +3,14 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.32.0 — 2026-08-29
+
+### Modifié
+- **Garde de source anti-couleurs durcie** (`test/purity/style_purity_test.dart`, FR-26) : elle ne voyait qu'une partie des façons d'écrire une couleur. Six formes y passaient **inertes**, chacune mesurée par injection avant/après dans `lib/src/presentation/` — `Color(4280391411)` (le même `0xFF…` écrit en **base 10**, mono **et** multi-ligne), `Color.from(alpha: 1, red: 0.2, …)` à composantes **littérales**, une constante hexadécimale de couleur écrite **hors** de `Color(` (`0x2196F3` à 6 chiffres, `0x80112233` à alpha 50 %), et un **grand entier décimal** dans la plage ARGB opaque (`4278190080`…`4294967295`). Les quatre formes déjà couvertes (`Color(0x…)`, `Colors.<nom>`, `Color.fromARGB(`, `Color.fromRGBO(`) le restent.
+- Le scan couleur s'applique désormais aussi au **contenu joint** du fichier (lignes hors commentaires, corps exempté de `ZcrudTheme.fallback` retiré) : une construction de couleur **répartie sur plusieurs lignes** n'échappe plus à un scan ligne à ligne. Les exemptions nominatives par chemin et leurs trois contre-preuves sont inchangées.
+- Aucun nouveau **faux positif** : les usages légitimes présents dans `lib/src/presentation/` restent silencieux — masque RGB `0x00FFFFFF`, graines de hachage FNV `0x811C9DC5`/`0x01000193`, et `Color.from(...)` à composantes **calculées** (la voie légitime de composition et d'éclaircissement). Sept contre-preuves les figent dans la garde. Renoncement documenté : un hexadécimal de 8 chiffres dont l'octet de tête n'est ni `F…` ni `80` n'est pas distinguable textuellement d'un masque ou d'une graine — ce coin reste non couvert plutôt que de rendre la garde bruyante.
+- Rejouée sur les **30** couches `presentation` du dépôt, la nouvelle couverture n'attrape **aucun** site existant : le durcissement est une garde pour l'avenir, pas la révélation d'un défaut livré.
+
 ## 3.30.0 — 2026-08-29
 
 ### Ajouté

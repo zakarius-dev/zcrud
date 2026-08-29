@@ -133,6 +133,60 @@ final List<RegExp> kNonDirectional = <RegExp>[
   RegExp(r'TextAlign\.(left|right)\b'),
 ];
 
+/// Motifs de littéral de COULEUR bannis (FR-26), appliqués au **contenu
+/// entier** de la source (commentaires déjà retirés par [stripDartComments]).
+///
+/// Scanner le contenu joint plutôt que ligne à ligne est ce qui rend les
+/// formes **multi-lignes** atteignables : `\s*` et `[^)]*` traversent les
+/// sauts de ligne, donc un `Color(\n  4280391411,\n)` mord au même titre que
+/// sa forme compacte.
+///
+/// Les six familles couvertes :
+/// 1. `Color(0x…)` — avec `\s*`, donc aussi `Color( 0xFF0000FF)` et la forme
+///    coupée après la parenthèse ;
+/// 2. `Color.fromARGB(` et `Color.fromRGBO(` ;
+/// 3. `Colors.<nom>` ;
+/// 4. un littéral hexadécimal de couleur écrit **hors** de `Color(` — formes
+///    `0xRRGGBB` (6 chiffres), `0xFxxxxxxx` (alpha opaque) et `0x80RRGGBB`
+///    (alpha 50 %) ;
+/// 5. `Color(<entier DÉCIMAL>)` — la même couleur écrite en base 10 ;
+/// 6. `Color.from(` dont au moins une composante `red`/`green`/`blue` est un
+///    littéral numérique, et un entier décimal nu dans la plage ARGB opaque
+///    (`0xFF000000` = 4278190080 … `0xFFFFFFFF` = 4294967295).
+///
+/// ⚠️ Deux RENONCEMENTS documentés, préférés à une garde bruyante — une garde
+/// qui crie au loup finit désactivée :
+/// - un hexadécimal de 8 chiffres dont l'octet de tête n'est ni `F…` ni `80`
+///   n'est PAS distinguable textuellement d'un masque de bits (`0x00FFFFFF`)
+///   ni d'une graine de hachage (`0x811C9DC5`, FNV) ; ce coin reste non
+///   couvert ;
+/// - `Color.from(` à composantes **CALCULÉES** reste permis : c'est la voie
+///   légitime de composition et d'éclaircissement d'une couleur de thème.
+///   Seule la composante **littérale** mord.
+///
+/// Les motifs sont volontairement séparés plutôt que fondus en une regex
+/// unique : un offender doit nommer la FORME qui a mordu.
+final List<RegExp> kColorLiterals = <RegExp>[
+  RegExp(r'Color\(\s*0x'),
+  RegExp(r'Color\.fromARGB\('),
+  RegExp(r'Color\.fromRGBO\('),
+  RegExp(r'\bColors\.[a-zA-Z]'),
+  RegExp(r'\b0x(?:[0-9a-fA-F]{6}|[fF][0-9a-fA-F]{7}|80[0-9a-fA-F]{6})\b'),
+  RegExp(r'\bColor\(\s*[0-9][0-9_]*\s*[,)]'),
+  RegExp(
+    r'\bColor\.from\([^)]*\b(?:red|green|blue)\s*:\s*[0-9]*\.?[0-9]+\s*[,)]',
+  ),
+  RegExp(r'\b42[789][0-9]{7}\b'),
+];
+
+/// Fautes de couleur de [source] vue sous [path], chacune nommant le motif qui
+/// a mordu et le fragment attrapé.
+List<String> colorFaults(String path, String source) => <String>[
+      for (final RegExp p in kColorLiterals)
+        if (p.hasMatch(source))
+          '$path: ${p.pattern} → ${p.firstMatch(source)![0]}',
+    ];
+
 /// Littéraux de chaîne d'une ligne, interpolations `${…}` / `$ident` RETIRÉES
 /// (leur contenu est du CODE, pas du texte affiché).
 ///
@@ -274,14 +328,78 @@ void main() {
   });
 
   test('FR-26 · aucune couleur codée en dur', () {
-    final RegExp color = RegExp(r'Color\(0x|Colors\.[a-z]');
-    expect(offenders(sources, color.hasMatch), isEmpty);
-    expect(
-      offenders(<String, String>{
-        'temoin.dart': 'const c = Color(0xFF0000FF);',
-      }, color.hasMatch),
-      isNotEmpty,
-    );
+    final List<String> faults = <String>[
+      for (final MapEntry<String, String> e in sources.entries)
+        ...colorFaults(e.key, e.value),
+    ];
+    expect(faults, isEmpty,
+        reason: '🔴 couleur codée en dur (FR-26). Toute couleur vient du thème '
+            'injecté (`ZcrudScope`/`ThemeExtension`), repli '
+            '`Theme.of(context)`.\n${faults.join('\n')}');
+  });
+
+  // 🔴 GARDE JUMELLE DURCIE — la règle ci-dessus était, mot pour mot,
+  // `Color\(0x|Colors\.[a-z]` : deux motifs pour six familles de formes, la
+  // même paire faible que portaient les gardes jumelles de `zcrud_document` et
+  // `zcrud_chat`. Chacune des huit formes ci-dessous a été mesurée INERTE
+  // contre l'ancienne paire, par injection jetable dans `lib/` (campagne R3
+  // `ZR3-FR26SF-INJECT`, rouge PAR ASSERTION après durcissement) : elles
+  // passaient VERTES alors qu'elles codent bel et bien une couleur en dur.
+  test('FR-26 (DURCI) · les formes INVISIBLES à `Color(0x|Colors.` mordent, '
+      'et les usages légitimes restent SILENCIEUX', () {
+    // La règle FAIBLE d'origine, conservée telle quelle : c'est elle qui
+    // établit que le durcissement n'est pas décoratif.
+    final RegExp faible = RegExp(r'Color\(0x|Colors\.[a-z]');
+
+    const Map<String, String> mordantes = <String, String>{
+      'décimal': 'const Color c = Color(4280391411);',
+      'décimal multi-ligne': 'const Color c = Color(\n  4280391411,\n);',
+      'Color.from littéral': 'final Color c = '
+          'Color.from(alpha: 1, red: 0.2, green: 0.4, blue: 0.6);',
+      'hex RGB hors Color(': 'const int c = 0x2196F3;',
+      'hex ARGB alpha 50 % hors Color(': 'const int c = 0x80112233;',
+      'grand entier décimal': 'const int c = 4280391411;',
+      'espace après Color(': 'const Color c = Color( 0xFF0000FF);',
+      'Color(0x… multi-ligne': 'const Color c = Color(\n  0xFF112233,\n);',
+      'fromARGB': 'const Color c = Color.fromARGB(255, 10, 20, 30);',
+      'fromRGBO': 'const Color c = Color.fromRGBO(10, 20, 30, 1.0);',
+    };
+    for (final MapEntry<String, String> e in mordantes.entries) {
+      expect(colorFaults('temoin.dart', e.value), isNotEmpty,
+          reason: '🔴 forme NON attrapée : ${e.key} → ${e.value}');
+      expect(faible.hasMatch(e.value), isFalse,
+          reason: '🔴 la règle FAIBLE voyait déjà « ${e.key} » : le '
+              'durcissement serait décoratif et ce test mentirait sur son '
+              'utilité');
+    }
+
+    // Formes DÉJÀ couvertes par la règle faible : elles doivent le RESTER.
+    for (final String deja in <String>[
+      'const Color c = Color(0xFF112233);',
+      'final Color c = Colors.red;',
+    ]) {
+      expect(faible.hasMatch(deja), isTrue);
+      expect(colorFaults('temoin.dart', deja), isNotEmpty,
+          reason: '🔴 RÉGRESSION : $deja n\'est plus attrapé');
+    }
+
+    // CONTRE-PREUVES de non-faux-positif : des usages LÉGITIMES observés dans
+    // du code de présentation réel (masque de bits, graines de hachage FNV,
+    // dérivation de couleur à composantes calculées). Ils doivent rester
+    // SILENCIEUX — c'est exactement le prix des deux renoncements documentés.
+    for (final String ok in <String>[
+      'const int kMasqueRgb = 0x00FFFFFF;',
+      'const int kFnvOffset = 0x811C9DC5;',
+      'const int kFnvPrime = 0x01000193;',
+      'final Color c = Color.from('
+          'alpha: b.a, red: b.r, green: b.g, blue: b.b);',
+      'final double t = 0.42;',
+      'final int index = 4;',
+    ]) {
+      expect(colorFaults('temoin.dart', ok), isEmpty,
+          reason: '🔴 FAUX POSITIF sur `$ok` — une garde qui crie au loup '
+              'finit désactivée');
+    }
   });
 
   test('FR-26 · toutes les chaînes affichées passent par `label()`', () {

@@ -89,11 +89,60 @@ bool _isRenderFile(String path) =>
 /// Les règles de [_hardcoded] qui portent sur une **COULEUR**, et elles seules.
 ///
 /// 🔴 C'est la granularité de l'exemption : le fichier de référence audité du
-/// lot γ est exempté de CES DEUX règles, **jamais** des règles AD-13
+/// lot γ est exempté de CES SEULES règles, **jamais** des règles AD-13
 /// (directionnalité) ni de `TextStyle(`. Une exemption « de fichier » en bloc
 /// aurait laissé entrer un `Positioned(left:)` dans le seul fichier que
 /// personne ne relit ligne à ligne.
-const Set<String> _colorRules = <String>{r'\bColors\.', r'\bColor\(0x'};
+const Set<String> _colorRules = <String>{
+  r'\bColors\.',
+  r'\bColor\(\s*0x',
+  r'\bColor\.fromARGB\(',
+  r'\bColor\.fromRGBO\(',
+  r'\b0x(?:[0-9a-fA-F]{6}|[fF][0-9a-fA-F]{7}|80[0-9a-fA-F]{6})\b',
+};
+
+/// Motifs de couleur appliqués au **CONTENU JOINT** du fichier (lignes
+/// dé-commentées, jointes par `\n`), donc capables de traverser les sauts de
+/// ligne — ce qu'un scan ligne à ligne ne peut structurellement pas faire.
+///
+/// Trois formes invisibles au scan ligne à ligne :
+/// 1. `Color(<entier DÉCIMAL>)` — la même couleur que `Color(0xFF…)`, écrite en
+///    base 10 (`Color(4280391411)`), mono **ou** multi-ligne ;
+/// 2. `Color.from(` dont au moins une composante `red`/`green`/`blue` est un
+///    littéral numérique. La dérivation à composantes **calculées** reste
+///    permise : c'est la voie légitime de composition et d'éclaircissement ;
+/// 3. un entier décimal nu dans la plage ARGB opaque (`0xFF000000` =
+///    4278190080 … `0xFFFFFFFF` = 4294967295), qui n'a pratiquement aucun autre
+///    usage qu'une couleur codée en dur.
+const List<String> _colorContentRules = <String>[
+  r'\bColor\(\s*[0-9][0-9_]*\s*[,)]',
+  r'\bColor\.from\([^)]*\b(?:red|green|blue)\s*:\s*[0-9]*\.?[0-9]+\s*[,)]',
+  r'\b42[789][0-9]{7}\b',
+];
+
+/// Rend les littéraux de COULEUR de [lines] comme s'ils vivaient sous [path].
+///
+/// Deux passes complémentaires : ligne à ligne (numéro de ligne exact) puis
+/// contenu joint (formes multi-lignes). La fonction n'exempte **rien** : elle
+/// rend tout ce qu'elle voit. L'exemption nominative est décidée par
+/// l'appelant, sur le CHEMIN — de sorte que le même contenu placé ailleurs
+/// rougit, et qu'une contre-preuve puisse rejouer le scan brut.
+List<String> scanColorLiterals(String path, List<String> lines) {
+  final List<String> hits = <String>[];
+  for (int i = 0; i < lines.length; i++) {
+    for (final String rule in _colorRules) {
+      if (RegExp(rule).hasMatch(lines[i])) {
+        hits.add('$path:${i + 1} ($rule) ${lines[i].trim()}');
+      }
+    }
+  }
+  final String joined = lines.join('\n');
+  for (final String rule in _colorContentRules) {
+    final RegExpMatch? m = RegExp(rule).firstMatch(joined);
+    if (m != null) hits.add('$path ($rule) ${m[0]}');
+  }
+  return hits;
+}
 
 /// Fichiers de RÉFÉRENCE audités, exemptés des seules règles de [_colorRules].
 ///
@@ -125,10 +174,22 @@ const List<String> _kColorExemptFiles = <String>[
 ];
 
 /// Motifs de style / couleur codés en dur (FR-26) et de directionnalité
-/// interdite (AD-13).
+/// interdite (AD-13), appliqués **ligne à ligne**.
+///
+/// ⚠️ **Renoncement DOCUMENTÉ sur l'hexadécimal.** Un entier hexadécimal de 8
+/// chiffres dont l'octet de tête n'est ni `F…` ni `80` n'est PAS distinguable
+/// textuellement d'un masque de bits, d'une sentinelle ou d'une graine de
+/// hachage — trois usages légitimes (`0x00FFFFFF` comme masque RGB,
+/// `0x7fffffff` comme plafond de `clamp`, `0x811C9DC5` comme graine FNV).
+/// Élargir à `0x[0-9a-fA-F]{8}` rougirait sur du code correct : la garde
+/// préfère laisser ce coin non couvert plutôt que devenir désactivable.
 const Map<String, String> _hardcoded = <String, String>{
   r'\bColors\.': 'couleur du catalogue Material codée en dur',
-  r'\bColor\(0x': 'couleur littérale',
+  r'\bColor\(\s*0x': 'couleur littérale hexadécimale',
+  r'\bColor\.fromARGB\(': 'couleur littérale par composantes ARGB',
+  r'\bColor\.fromRGBO\(': 'couleur littérale par composantes RGBO',
+  r'\b0x(?:[0-9a-fA-F]{6}|[fF][0-9a-fA-F]{7}|80[0-9a-fA-F]{6})\b':
+      'constante hexadécimale de couleur écrite hors `Color(`',
   r'\bTextStyle\(': 'style typographique codé en dur',
   r'\bEdgeInsets\.only\(\s*(left|right):': 'marge NON directionnelle (AD-13)',
   r'\bAlignment\.center(Left|Right)\b': 'alignement NON directionnel (AD-13)',
@@ -275,14 +336,18 @@ void main() {
       for (final MapEntry<String, List<String>> e in strippedLib().entries) {
         final bool colorExempt = _kColorExemptFiles
             .any((String f) => _norm(e.key).endsWith(f));
+        // Volet COULEUR (ligne à ligne + contenu joint), seul exemptable.
+        final List<String> colorHits = scanColorLiterals(e.key, e.value);
+        if (colorExempt) {
+          colorScanned += colorHits.length;
+        } else {
+          offenders.addAll(colorHits);
+        }
+        // Volet NON-COULEUR (`TextStyle(`, AD-13) : jamais exempté.
         for (int i = 0; i < e.value.length; i++) {
           for (final MapEntry<String, String> rule in _hardcoded.entries) {
-            final bool isColorRule = _colorRules.contains(rule.key);
+            if (_colorRules.contains(rule.key)) continue;
             if (!RegExp(rule.key).hasMatch(e.value[i])) continue;
-            if (isColorRule && colorExempt) {
-              colorScanned++;
-              continue;
-            }
             offenders.add('${e.key}:${i + 1} (${rule.value}) '
                 '${e.value[i].trim()}');
           }
@@ -310,7 +375,11 @@ void main() {
     test('🔬 contre-preuve — chaque règle SAIT rougir sur son témoin', () {
       const Map<String, String> witnesses = <String, String>{
         r'\bColors\.': '  final c = Colors.red;',
-        r'\bColor\(0x': '  const c = Color(0xFF112233);',
+        r'\bColor\(\s*0x': '  const c = Color( 0xFF112233);',
+        r'\bColor\.fromARGB\(': '  const c = Color.fromARGB(255, 10, 20, 30);',
+        r'\bColor\.fromRGBO\(': '  const c = Color.fromRGBO(10, 20, 30, 1.0);',
+        r'\b0x(?:[0-9a-fA-F]{6}|[fF][0-9a-fA-F]{7}|80[0-9a-fA-F]{6})\b':
+            '  const int c = 0x2196F3;',
         r'\bTextStyle\(': '  const s = TextStyle(fontSize: 12);',
         r'\bEdgeInsets\.only\(\s*(left|right):':
             '  const p = EdgeInsets.only(left: 8);',
@@ -331,12 +400,77 @@ void main() {
         '  const a = AlignmentDirectional.centerStart;',
         '  const t = TextAlign.start;',
         '  final c = theme.colorScheme.primary;',
+        // Usages hexadécimaux LÉGITIMES : masque RGB, sentinelle de `clamp`
+        // (présente dans `z_chat_tile_shell.dart`), graines FNV, octets de
+        // signature. Une garde qui les accuse finit désactivée.
+        '  final int rgb = argb & 0x00FFFFFF;',
+        '  final int n = v.clamp(1, 0x7fffffff);',
+        '  int hash = 0x811C9DC5;',
+        '  hash = (hash * 0x01000193).toUnsigned(32);',
+        '  const List<int> sig = <int>[0x89, 0x50, 0x4E];',
       ]) {
         for (final String rule in _hardcoded.keys) {
           expect(RegExp(rule).hasMatch(ok), isFalse,
               reason: '🔴 FAUX POSITIF : `$rule` accuse `$ok`');
         }
       }
+    });
+
+    test('🔬 contre-preuve — les formes INVISIBLES au scan ligne à ligne sont '
+        'mordantes, et les usages légitimes restent muets', () {
+      // Rejoue EXACTEMENT le scan de la garde, sous un chemin NON exempté.
+      List<String> scan(String source) =>
+          scanColorLiterals('lib/src/presentation/view/_sonde.dart',
+              source.split('\n'));
+
+      const Map<String, String> mordantes = <String, String>{
+        'décimal': 'const Color c = Color(4280391411);',
+        'décimal multi-ligne': 'const Color c = Color(\n  4280391411,\n);',
+        'Color.from littéral': 'const Color c = '
+            'Color.from(alpha: 1, red: 0.2, green: 0.4, blue: 0.6);',
+        'hex RGB hors Color(': 'const int c = 0x2196F3;',
+        'hex ARGB alpha 50 % hors Color(': 'const int c = 0x80112233;',
+        'grand entier décimal': 'const int c = 4280391411;',
+        'espace après Color(': 'const Color c = Color( 0xFF112233);',
+        'fromARGB': 'const Color c = Color.fromARGB(255, 10, 20, 30);',
+        'fromRGBO': 'const Color c = Color.fromRGBO(10, 20, 30, 1.0);',
+        // Formes DÉJÀ couvertes avant durcissement : elles doivent le RESTER.
+        'Color(0x…)': 'const Color c = Color(0xFF112233);',
+        'Colors.<nom>': 'final Color c = Colors.red;',
+      };
+      for (final MapEntry<String, String> e in mordantes.entries) {
+        expect(scan(e.value), isNotEmpty,
+            reason: '🔴 forme NON attrapée (${e.key}) : ${e.value}');
+      }
+
+      const Map<String, String> legitimes = <String, String>{
+        'masque RGB': 'final int rgb = argb & 0x00FFFFFF;',
+        'sentinelle de clamp': 'final int n = v.clamp(1, 0x7fffffff);',
+        'graine FNV': 'int hash = 0x811C9DC5;',
+        'graine FNV (multiplicateur)':
+            'hash = (hash * 0x01000193).toUnsigned(32);',
+        'octets de signature': 'const List<int> s = <int>[0x89, 0x50, 0x4E];',
+        'Color.from calculé': 'Color f(Color c) => '
+            'Color.from(alpha: c.a, red: c.r, green: c.g, blue: c.b);',
+        'décalage alpha': 'return (a << 24) | (rgb.toARGB32() & 0x00FFFFFF);',
+        'petit entier décimal': 'const int ms = 4280;',
+      };
+      for (final MapEntry<String, String> e in legitimes.entries) {
+        expect(scan(e.value), isEmpty,
+            reason: '🔴 FAUX POSITIF (${e.key}) : ${e.value}');
+      }
+
+      // L'exemption est attachée au CHEMIN : le même contenu, sous le nom
+      // exempté, est muet — sous un voisin, il rougit.
+      const String litteral = 'static const Color c = Color(0xFF4CAF50);';
+      expect(
+          scanColorLiterals(
+              'lib/src/presentation/view/z_chat_composer_reference.dart',
+              <String>[litteral]),
+          isNotEmpty,
+          reason: '🔴 `scanColorLiterals` n\'exempte RIEN lui-même — '
+              'l\'exemption est appliquée par l\'appelant, sur le chemin. Si '
+              'elle migrait ici, ce test doit être réécrit délibérément.');
     });
 
     test('🔬 l\'exemption de COULEUR est NOMINATIVE, ÉTROITE et non pendante',
@@ -383,7 +517,17 @@ void main() {
       }
       // 4. Elle ne couvre QUE la couleur : les règles AD-13 restent opposables
       //    au fichier exempté lui-même.
-      expect(_colorRules, hasLength(2));
+      expect(_colorRules, hasLength(5),
+          reason: '🔴 le jeu de règles COULEUR a bougé : cinq motifs ligne à '
+              'ligne (catalogue Material, `Color(0x…)`, `fromARGB`, '
+              '`fromRGBO`, hexadécimal hors `Color(`).');
+      expect(_colorContentRules, hasLength(3),
+          reason: '🔴 le jeu de règles couleur sur CONTENU JOINT a bougé : '
+              'décimal, `Color.from` littéral, entier de la plage ARGB.');
+      expect(_colorRules.difference(_hardcoded.keys.toSet()), isEmpty,
+          reason: '🔴 une règle de `_colorRules` n\'existe plus dans '
+              '`_hardcoded` : elle ne serait jamais NOMMÉE dans un offender, '
+              'et le test des témoins ne la couvrirait plus.');
       expect(_hardcoded.keys.toSet().difference(_colorRules), hasLength(5),
           reason: '🔴 le partage couleur / non-couleur a bougé : cinq règles '
               'AD-13+`TextStyle` doivent rester HORS exemption.');
