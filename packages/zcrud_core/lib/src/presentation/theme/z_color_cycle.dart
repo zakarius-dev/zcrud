@@ -21,6 +21,10 @@
 /// eux-mêmes remplaçables par jeton et par paramètre). Le socle anime ; il ne
 /// décide pas de la couleur.
 ///
+/// Le seul cas où le cycle va chercher ces valeurs lui-même est
+/// [ZColorCycle.busy], qui les **lit** — jeton de thème, puis référence
+/// auditée du socle — sans en écrire aucune ici.
+///
 /// ## AD-13 — « Réduire les animations » : l'état RESTE, seule l'animation
 /// part
 ///
@@ -49,8 +53,9 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
+import 'z_busy_palette_reference.dart';
 import 'z_readable_tint.dart';
 
 /// Rend la teinte courante d'un [ZColorCycle].
@@ -121,6 +126,51 @@ class ZColorCycle extends StatefulWidget {
     this.child,
     super.key,
   });
+
+  /// Le cycle « génération en cours » **du socle**, résolu depuis [context].
+  ///
+  /// Additif : la construction directe de [ZColorCycle] est inchangée, et un
+  /// appelant qui porte déjà sa palette n'a rien à faire. Ce constructeur ne
+  /// fait que **brancher le lecteur** `zBusyPaletteOf` :
+  ///
+  /// * jeton `ZcrudTheme.busyPalette` s'il est posé ;
+  /// * sinon la référence auditée du socle sous le profil de référence par
+  ///   défaut ;
+  /// * sinon — profil neutre — **une seule** teinte, `ColorScheme.primary` :
+  ///   l'état reste visible, sans séquence donc sans animation.
+  ///
+  /// Le tempo est celui d'un **tour complet**, soit
+  /// `ZcrudTheme.busyCycleInterval` (ou la référence) multiplié par le nombre
+  /// de teintes. Un appelant qui veut un autre tempo passe par le
+  /// constructeur ordinaire.
+  ///
+  /// [context] est lu **une fois**, à la construction : le widget se
+  /// reconstruit avec son appelant, comme tout `Theme.of`.
+  factory ZColorCycle.busy(
+    BuildContext context, {
+    required ZColorCycleBuilder builder,
+    bool active = true,
+    Color? idle,
+    Color? surface,
+    double minContrast = kZNonTextMinContrast,
+    Widget? child,
+    Key? key,
+  }) {
+    final List<Color> palette =
+        zBusyPaletteOf(context) ??
+        <Color>[Theme.of(context).colorScheme.primary];
+    return ZColorCycle(
+      palette: palette,
+      period: zBusyCycleIntervalOf(context) * palette.length,
+      builder: builder,
+      active: active,
+      idle: idle,
+      surface: surface,
+      minContrast: minContrast,
+      key: key,
+      child: child,
+    );
+  }
 
   /// Les teintes parcourues, dans l'ordre, **en boucle**.
   ///

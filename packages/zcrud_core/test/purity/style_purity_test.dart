@@ -65,6 +65,10 @@ final _directionalPatterns = <RegExp>[
 /// paramètre, et l'exemption le nomme — jamais son répertoire.
 const Set<String> _kColorReferenceFiles = <String>{
   'lib/src/presentation/theme/z_signature_palette_reference.dart',
+  // Famille « indicateur d'occupation » : les 7 teintes du cycle
+  // « génération en cours », remplaçables par jeton `ZcrudTheme.busyPalette`
+  // et neutralisables par `ZReferenceProfile.neutral`.
+  'lib/src/presentation/theme/z_busy_palette_reference.dart',
 };
 
 /// Chemin normalisé et ancré sur `lib/` — `packages/zcrud_core/lib/x` et

@@ -213,6 +213,18 @@ void main() {
       final sites = <String>[];
       for (final f in files) {
         final relative = f.path.replaceFirst('$root/', '');
+        final source = stripped(f).join('\n');
+        // Le jeton `summarize(` seul est AMBIGU : d'autres surfaces du paquet
+        // ont légitimement une méthode `summarize()` sur LEUR propre contrat
+        // (l'explication IA en a une, branchée sur un tout autre port). La
+        // propriété défendue ici est la voie d'appel du port de RÉSUMÉ DE
+        // NOTE : le scan ne retient donc que les fichiers qui voient ce
+        // contrat-là — un appelant du port le nomme forcément, ne serait-ce
+        // que pour en tenir une référence ou en construire la requête.
+        if (!source.contains('ZNoteSummaryPort') &&
+            !source.contains('ZNoteSummaryRequest')) {
+          continue;
+        }
         for (final line in stripped(f)) {
           if (line.contains('summarize(')) sites.add(relative);
         }

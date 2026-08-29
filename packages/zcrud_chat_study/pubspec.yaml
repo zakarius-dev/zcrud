@@ -23,7 +23,7 @@
 #    `test/z_no_duplicate_seam_test.dart`.
 name: zcrud_chat_study
 description: "Chat-to-SRS bridge for zcrud: maps AI conversations/messages onto the existing ZFlashcardGenerationPort, stamps ZConversationSource provenance, and builds a deduplicated study pool (folder cards union conversation cards) for the existing session engine."
-version: 3.29.0
+version: 3.30.0
 publish_to: none
 resolution: workspace
 
@@ -71,14 +71,25 @@ environment:
 # ⛔ AUCUN gestionnaire d'état, AUCUN SDK IA / client HTTP, AUCUNE dépendance
 #    TIERCE (les impls IA — routeur, prompts, clés, SSE — restent CÔTÉ APP,
 #    AD-11/AD-12).
+# - `zcrud_mindmap`      : arête AJOUTÉE par les adaptateurs de route
+#                          (`lib/src/domain/routing/`) — `ZMindmapNode` est le
+#                          type de retour de `ZMindmapGenerationPort`, qui doit
+#                          être NOMMÉ pour redéclarer la signature dans
+#                          l'adaptateur (`zcrud_study` ne le ré-exporte pas).
+#                          ZÉRO poids nouveau : `zcrud_mindmap` était DÉJÀ
+#                          transitif via `zcrud_study` — l'arête ne fait que
+#                          rendre explicite ce qui était déjà dans la fermeture.
+#                          Arête ACYCLIQUE : `zcrud_mindmap` ne dépend PAS de ce
+#                          paquet (garde `z_acyclicity_proof_test.dart`).
 dependencies:
   flutter:
     sdk: flutter
-  zcrud_core: ^3.29.0
-  zcrud_chat_kernel: ^3.29.0
-  zcrud_flashcard: ^3.29.0
-  zcrud_study_kernel: ^3.29.0
-  zcrud_study: ^3.29.0
+  zcrud_core: ^3.30.0
+  zcrud_mindmap: ^3.30.0
+  zcrud_chat_kernel: ^3.30.0
+  zcrud_flashcard: ^3.30.0
+  zcrud_study_kernel: ^3.30.0
+  zcrud_study: ^3.30.0
 
 # Paquet Flutter (cf. ci-dessus) → `flutter test`. Aucun codegen (aucun
 # `@ZcrudModel` : pas de `*.g.dart`, gate `codegen-distribution` sans objet ;

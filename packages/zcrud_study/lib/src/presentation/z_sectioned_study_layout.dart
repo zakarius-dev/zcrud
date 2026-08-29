@@ -27,12 +27,17 @@ import 'package:zcrud_core/zcrud_core.dart'
         ZStudySectionCollapsePlacement,
         ZStudySectionCountPlacement,
         ZStudySectionCountRole,
-        ZStudySectionCountShape;
+        ZStudySectionCountShape,
+        ZGradientSpec,
+        zReadableTintOn,
+        zResolveGradient,
+        zSignatureKey;
 import 'package:zcrud_responsive/zcrud_responsive.dart'
     show ZAdaptiveGrid, ZDefaultReorderRenderer;
 
 import 'z_content_hub_launcher.dart';
 import 'z_reorder_ids.dart';
+import 'z_study_card_reference.dart';
 import 'z_study_tools_section_spec.dart';
 
 /// Cible de taille interactive minimale (invariant AD-13).
@@ -62,6 +67,14 @@ const String _kMoveBeforeFallbackLabel = 'Déplacer avant';
 
 /// Voir [_kMoveBeforeFallbackLabel].
 const String _kMoveAfterFallbackLabel = 'Déplacer après';
+
+/// Clé de la bande d'accent d'un en-tête de section (testabilité).
+const ValueKey<String> kZStudySectionAccentKey =
+    ValueKey<String>('zStudySection_accent');
+
+/// Clé de la tuile d'icône d'un en-tête de section (testabilité).
+const ValueKey<String> kZStudySectionIconTileKey =
+    ValueKey<String>('zStudySection_iconTile');
 
 /// Rend une liste de sections « study tools » décomposée.
 ///
@@ -666,10 +679,20 @@ class _ZStudySection extends StatelessWidget {
     // leur largeur pleine.
     final bool adjacent = theme.studySectionCountPlacement ==
         ZStudySectionCountPlacement.adjacentToTitle;
-    return Semantics(
-      header: true,
-      child: Row(
-        children: [
+    // Référence d'apparence de l'en-tête : bande d'accent puis, si la section
+    // porte un glyphe, sa tuile lavée du dégradé de signature. Les deux
+    // s'effacent ensemble quand aucun dégradé ne s'applique.
+    final IconData? headerIcon = spec.icon;
+    return _zWithSectionBand(
+      _zSectionSignatureBand(context, spec.title),
+      Semantics(
+        header: true,
+        child: Row(
+          children: [
+            if (headerIcon != null) ...<Widget>[
+              _zSectionHeaderIcon(context, icon: headerIcon, title: spec.title),
+              SizedBox(width: theme.gapS),
+            ],
           if (adjacent)
             Expanded(
               child: Row(
@@ -771,10 +794,107 @@ class _ZStudySection extends StatelessWidget {
             SizedBox(width: theme.gapS),
             trailingCollapse,
           ],
-        ],
+          ],
+        ),
       ),
     );
   }
+}
+
+/// Dégradé de la palette signature portant le titre de section [title], ou
+/// `null` (titre vide, profil neutre, palette vide).
+///
+/// Dernier maillon d'une chaîne inchangée : le résolveur de l'hôte prime, puis
+/// le jeton de palette, puis la référence auditée.
+ZGradientSpec? _zSectionSignature(BuildContext context, String title) {
+  final String identity = title.trim();
+  if (identity.isEmpty) return null;
+  return zResolveGradient(context, zSignatureKey(identity));
+}
+
+/// Bande d'accent de tête d'un en-tête de section, ou `null` quand aucune
+/// couleur de signature ne s'applique — rien n'est alors monté.
+Widget? _zSectionSignatureBand(BuildContext context, String title) {
+  final List<Color>? colors = _zSectionSignature(context, title)?.gradient.colors;
+  if (colors == null || colors.isEmpty) return null;
+  return SizedBox(
+    key: kZStudySectionAccentKey,
+    height: ZcrudTheme.of(context).sectionHeaderAccentHeight ??
+        ZStudyCardReference.sectionAccentHeight,
+    child: ColoredBox(color: colors.first),
+  );
+}
+
+/// Empile [band] au-dessus de [child] en conservant la largeur. `null` ⇒
+/// [child] rendu tel quel, sans nœud intercalaire.
+Widget _zWithSectionBand(Widget? band, Widget child) => band == null
+    ? child
+    : Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[band, child],
+      );
+
+/// Glyphe de tête d'un en-tête de section, posé dans sa tuile de référence.
+///
+/// Sans couleur de signature, le glyphe est rendu NU : aucune tuile, aucune
+/// ombre — la géométrie est celle d'un en-tête sans référence.
+Widget _zSectionHeaderIcon(
+  BuildContext context, {
+  required IconData icon,
+  required String title,
+}) {
+  final List<Color>? colors = _zSectionSignature(context, title)?.gradient.colors;
+  if (colors == null || colors.isEmpty) return Icon(icon);
+  final ZcrudTheme crud = ZcrudTheme.of(context);
+  final ThemeData material = Theme.of(context);
+  // Lavis : un dégradé opaque écraserait le glyphe. L'opacité suit la
+  // luminosité du thème — un lavis clair disparaît sur fond sombre.
+  final double wash =
+      material.brightness == Brightness.dark ? 80 / 255 : 40 / 255;
+  final double size =
+      crud.sectionHeaderIconTileSize ?? ZStudyCardReference.sectionIconTileSize;
+  return SizedBox(
+    key: kZStudySectionIconTileKey,
+    width: size,
+    height: size,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: AlignmentDirectional.centerStart,
+          end: AlignmentDirectional.centerEnd,
+          colors: <Color>[
+            for (final Color c in colors) c.withValues(alpha: wash),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(
+          crud.sectionHeaderIconTileRadius ??
+              ZStudyCardReference.sectionIconTileRadius,
+        ),
+        // Ombre TEINTÉE : la couleur vient du dégradé courant, jamais d'un
+        // littéral. Elle n'existe donc que là où le dégradé existe.
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: colors.first
+                .withValues(alpha: ZStudyCardReference.tintedShadowAlpha),
+            blurRadius: ZStudyCardReference.tintedShadowBlurRadius,
+            offset: ZStudyCardReference.tintedShadowOffset,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Icon(
+          icon,
+          // Le glyphe est MESURÉ contre la surface du thème : le lavis est trop
+          // ténu pour changer la surface réellement perçue sous lui.
+          color: zReadableTintOn(
+            colors.first,
+            surface: material.colorScheme.surface,
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 /// Liste d'items RÉORDONNABLE d'une section — sous-arbre LOCAL isolé.

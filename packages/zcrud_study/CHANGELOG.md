@@ -3,7 +3,167 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
-## 3.29.0 — 2026-08-28
+## 3.30.0 — 2026-08-29
+
+### Ajouté
+- `ZAiExplanationStreamPort` : pendant **progressif** du seam d'explication,
+  contrat SÉPARÉ et optionnel (`Stream<ZResult<ZGenerationProgress>>
+  explainStream(request)` — flux NU, jamais enveloppé dans un `Future`) plus un
+  `isAvailable` qui permet de couper le progressif à chaud sans retirer le port
+  de l'arbre. `ZAiExplanationPort` (one-shot) reste **inchangé** : un hôte qui
+  n'implémente pas le progressif garde exactement le comportement qu'il avait.
+- `ZGenerationProgress {text, isDone}` : avancement immuable dont le `text` est
+  **cumulatif** (jamais un delta) — deux consommateurs ne peuvent pas diverger
+  sur l'accumulation, et un événement rejoué ne décale pas le rendu.
+- `ZInertAiExplanationStreamPort` : port progressif inerte `const`
+  (indisponible, flux vide qui se termine — jamais une exception ni une attente
+  infinie).
+- `ZAiExplanationRequest.style` / `.operation` / `.routeId` (+ `withOperation`,
+  `withRouteId`) : trois champs additifs, tous `null` par défaut. Ce sont des
+  **clés opaques du vocabulaire de l'hôte**, transportées verbatim ; le socle
+  n'en déclare, n'en compare et n'en interprète aucune. `routeId` porte
+  l'intention de route au même rang que l'endpoint unique.
+- `ZExplanationController` : `ChangeNotifier` pur, statut en enum
+  `idle → generating → ready | empty | failed`, **historique de versions en
+  mémoire** (`versions` non modifiable, `currentIndex`, `select`/`undo`/`redo`),
+  jeton de fraîcheur monotone, anti-double-soumission. Choisit le port de FLUX
+  quand il est fourni et disponible, sinon la voie one-shot — le choix est fait
+  à chaque génération, jamais figé à la construction.
+- `ZExplanationController.streamingText` : tranche `ValueListenable<String>` du
+  texte cumulé. Les fragments **ne passent pas** par `notifyListeners` : seule
+  la tranche est notifiée (rendu progressif sans reconstruire la surface,
+  AD-2).
+- `ZExplanationOperationKeys` / `ZExplanationMessages` /
+  `ZExplanationVersion` : clés d'opération et messages **injectés**. Une clé
+  absente rend le traitement indisponible — méthode sans effet, commande
+  absente de l'arbre.
+- `ZExplanationView` : rendu de la version courante par le slot injecté
+  `contentBuilder` (aucun moteur de rich-text tiré ici), barre de traitements,
+  sélecteur de versions sobre, handoff `onPersist` remettant une
+  `ZStudyExplanation` **construite mais jamais enregistrée**. Le choix de style
+  passe par `ZActionMenu` — la couture de menu partagée, jamais un menu
+  reconstruit sur place.
+- `ZExplanationStyleOption` / `ZExplanationLabels` : options de style et
+  libellés injectés, tous requis (FR-26).
+- `ZExplanationStreamScope` : injection Flutter-native d'un port progressif
+  optionnel.
+- `ZStudyToolsSectionSpec.icon` : glyphe de TÊTE d'un en-tête de section
+  (jamais celui d'une action). `null` ⇒ aucun glyphe, aucune tuile.
+- `ZSubfolderAccentPastille.signatureIdentity` : identité de repli alignant la
+  pastille sur la tête du dégradé de signature du dossier correspondant.
+  `null` ⇒ rendu strictement inchangé.
+- `ZStudyEmptyStateReference` / `ZStudyContentNature` /
+  `zStudyEmptyStateSpecFor` : table de référence des états vides d'étude par
+  nature de contenu (six natures, glyphes et tailles de référence, clés de
+  libellé **opaques** résolues par l'hôte). `null` pour une nature inconnue —
+  l'appelant garde alors le rendu qu'il avait. Fichier **sans aucune couleur**,
+  donc hors de l'exemption nominative de la garde anti-couleurs.
+- `ZStudyCardReference.sectionAccentHeight` (3), `.sectionIconTileSize` (36),
+  `.sectionIconTileRadius` (10), `.tintedShadowAlpha` (0.4),
+  `.tintedShadowBlurRadius` (20), `.tintedShadowOffset` (0, 8) — scalaires
+  seuls ; la teinte de l'ombre vient du dégradé courant, jamais d'un littéral.
+- `ZFolderSharingSheet` : feuille de partage d'un dossier montée sur le port
+  `ZStudySharingPort` — qui n'avait, jusqu'ici, **aucun consommateur en
+  présentation**. Elle assemble le lien révocable (création, révocation
+  monotone, remise du jeton à l'hôte pour la copie), les adhésions (flux NU
+  rendu par une liste virtualisée, octroi, révocation remise à l'hôte) et la
+  publication/dépublication en galerie. Chaque geste porte son verrou
+  d'occupation (une seconde pression n'émet pas un second appel) et consomme
+  son `Either` : un `Left` alimente l'aire annoncée (`liveRegion`) et le canal
+  `onFailure`, en laissant l'état INTACT — jamais une exception, jamais un
+  interrupteur qui ment (un mutateur de drapeau en échec revient à son état
+  antérieur).
+- `ZPrincipalResolver` : la saisie d'invitation (identifiant, adresse, alias)
+  n'est **jamais interprétée par le socle** — elle est remise verbatim au
+  résolveur de l'hôte, et `grantMembership` reçoit exactement la valeur
+  RENDUE, jamais ce qui a été tapé. Sans résolveur, la surface d'invitation
+  est absente de l'arbre.
+- `ZPublicGalleryView` : galerie des dossiers publiés, rendue par
+  `ListView.builder` sur les cartes d'item du paquet, avec « rejoindre »,
+  « copier » et — seulement si un `ZStudyModerationPort` est fourni —
+  « signaler ».
+- `zSharingAccessGranted`, `ZStudySharingActions`, `zFeatureKeyFolderSharing`,
+  `zFeatureKeyPublicGallery` : portail **fail-closed** des deux surfaces —
+  disponibilité (`ZFeatureAvailability`) ET autorisation (`ZAcl` lue sur le
+  `ZcrudScope`, **absence de scope ⇒ refus**), sur des clés d'action LIBRES
+  qu'une ACL fermée refuse d'office. Un refus rend un état « accès refusé »
+  ANNONCÉ, jamais une surface vide ni un masquage silencieux.
+- `zFolderSharingItemAction` / `zPublicGalleryItemAction` : entrées de menu
+  rendues `null` — donc rien dans l'arbre — tant qu'il manque un glyphe, un
+  libellé, un geste ou l'accord du portail.
+
+- `ZFolderProgressSummary` + `zSummarizeFolderProgress(cards, infos, now:)` :
+  agrégat **pur** des trois seaux SRS d'un dossier (`learned` / `toReview` /
+  `toLearn` / `total` / `ratio`), immuable et porteur de `==`. Le calcul
+  **délègue** la partition à `zCategorize` (`zcrud_flashcard`) et n'écrit
+  aucune condition SRS de son côté : `toLearn` est `neverLearned.length`,
+  `toReview` est `due.length`, `learned` est le reste. Il n'y a volontairement
+  pas de paramètre de configuration SRS — en ajouter un obligerait à
+  recalculer les seaux autrement, c'est-à-dire à créer la seconde formule que
+  ce contrat exclut. Gardé par une garde de source (grep négatif sur
+  `repetitions` / `nextReviewDate` / `isAfter` dans le corps) et par un
+  vecteur figé de 20 cartes (8 / 5 / 7).
+- `ZFolderProgressBar` : barre segmentée qui consomme la **valeur** agrégée —
+  jamais les cartes, jamais les états SRS, jamais un flux. Le legacy
+  recalculait ces comptes à chaque `build` depuis les flux ; une garde compte
+  désormais les appels du calculateur pendant 25 reconstructions et exige
+  **exactement 1**. Un seau à zéro est **absent** de l'arbre ; sans libellé,
+  aucune légende n'est rendue ; avec libellés, les comptes sont dits en texte
+  (la couleur n'est jamais seul canal). Segment « apprises » en dégradé de
+  signature quand une `gradientIdentity` est fournie — l'arbitrage
+  référence/neutre reste celui du résolveur du cœur.
+- `ZSubjectChip(ref:, resolver:)` : puce de **matière** — premier consommateur
+  de `ZStudySubjectRef`. Le libellé embarqué (snapshot) s'affiche **sans
+  aucune résolution** ; le résolveur est optionnel et, quand il répond `Right`,
+  met le libellé à jour. Un `Left`, une levée du résolveur, une réponse
+  tardive après démontage ou un identifiant vide sont sans effet : la puce
+  reste au snapshot, ou reste absente si le snapshot n'a pas de libellé. La
+  puce n'affiche **jamais** l'identifiant opaque à défaut de libellé.
+- `ZDefaultFolderCard.subjectRef` / `.subjectLabelResolver` : deux paramètres
+  additifs. Sans matière déclarée, l'arbre rendu est **strictement égal** à
+  celui d'avant (garde d'égalité de signature d'arbre, avec contre-preuve).
+- `ZDefaultExamCard.now` / `.pastLabel` + `kZDefaultExamPastOpacity` : variante
+  « passé » de la tuile d'examen. La règle de date est celle de `ZExam.isPast`
+  (aucune seconde règle écrite ici) et l'horloge est un **paramètre** — sans
+  `now`, la variante est hors service et la carte rend l'arbre d'avant, même
+  sur un examen échu. L'atténuation est une **opacité**, jamais une couleur
+  sémantique inventée, et l'état est dit **en texte** par une puce au libellé
+  injecté, reprise dans l'annonce sémantique.
+
+### Modifié — apparence de référence (rupture VOULUE sous profil par défaut)
+- **Carte de dossier par défaut** : quand AUCUNE couleur n'est déclarée (ni
+  `colorKey`, ni réponse du résolveur de couleurs de l'hôte pour cette
+  identité), la bande d'accent peint le **dégradé de signature** de l'identité
+  du dossier au lieu d'une teinte unie, et la matière de la carte (tuile,
+  badges, sous-titre) suit la tête de ce dégradé. Une couleur **déclarée**
+  prime toujours et rend exactement comme avant.
+- **En-têtes de section d'étude** (`ZSectionedStudyLayout`,
+  `ZSectionedStudySliver`) : bande d'accent de 3 dp au-dessus de la ligne
+  d'en-tête, colorée par la palette signature indexée sur le titre ; une
+  section à glyphe gagne une tuile 36 × 36 au rayon 10, lavée du dégradé et
+  portant une ombre teintée. Mêmes défauts que les en-têtes de section de
+  `DynamicEdition`.
+- Échappatoire unique, prouvée par gardes d'inertie à deux largeurs :
+  `ZcrudScope(theme: ZcrudTheme(referenceProfile: ZReferenceProfile.neutral))`
+  — ni bande, ni tuile, ni dégradé ; glyphe rendu nu.
+- Rayon de référence des cartes d'outils **remesuré et conservé à 16** ; celui
+  de la carte de dossier reste 12. Les deux familles ne se confondent pas.
+
+### Garanties
+- **Hôte passif strictement inchangé** : les trois champs neufs de la requête
+  valent `null` par défaut, l'égalité d'une requête construite comme avant est
+  identique, et la voie one-shot est prise à l'identique sans port de flux
+  (garde d'inertie dédiée).
+- **Rien n'est écrit** : aucun dépôt n'est importé. Une explication ne sort que
+  par `onPersist`, sans identité — c'est l'application qui écrit.
+- **`Left` en cours de flux** ⇒ `failed` avec le `ZFailure` typé exposé,
+  historique **intact** et version courante non écrasée ; erreur de flux ou
+  exception ⇒ `failed` **sans** `ZFailure` fabriqué ; texte vide ⇒ `empty`, qui
+  n'est pas un échec.
+- **Annulation** : un flux abandonné (jeton de fraîcheur périmé) n'écrase
+  jamais la version courante, même si ses événements arrivent après coup.
+
+
 
 ### Ajouté
 - `ZMindmapGenerationController` : orchestration du flux de génération de carte
@@ -121,6 +281,72 @@ fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
   une surface de présentation n'est pas un porteur d'`extra` persisté et n'a
   donc ni stockage ni filtre propre (AD-19.1) — elle relaie vers
   `ZNoteSummaryRequest`, qui écarte les clés de synchronisation réservées.
+
+### Ajouté — podcast : la présentation qui manquait
+- `ZPodcastCard` : carte de podcast du socle, au chrome commun de
+  `ZStudyCardReference`. Statut (`ZPodcastStatus`) et fraîcheur
+  (`ZPodcastFreshness`) sont rendus par **libellés injectés** — sans fabrique
+  de libellé, la puce est absente et aucune clé d'enum n'est jamais affichée
+  nue. Action « régénérer » montée seulement si un callback est fourni
+  (`regenerating` la laisse présente mais inerte). Fraîcheur **dérivée**
+  (`podcastFreshness` du kernel), jamais stockée, aucun hachage ni horloge.
+- `ZPodcastAudioPlayer` : mini-lecteur branché sur le `ZAudioPlaybackPort` du
+  cœur. Monté **ssi** un port est fourni, se déclare disponible, et le podcast
+  porte un audio — les quatre combinaisons sont gardées. `load` appelé une
+  seule fois (jamais depuis `build`), `Left` traduit en état d'échec visible
+  sans levée, port **jamais** disposé (il appartient à l'hôte), rebuild
+  granulaire : un événement de position ne reconstruit ni le bouton ni l'arbre
+  autour. `sourceOf` applique une règle unique et totale sur le `resultRef`
+  opaque : vide ⇒ aucune source, schéma `http`/`https` ⇒ URL, sinon chemin.
+- `ZPodcastGenerationController` : `ChangeNotifier` pur, statut en enum
+  `idle → generating → ready | failed`, jeton de fraîcheur monotone,
+  anti-double-soumission, `freshnessFor(currentSourceHash)`. Le podcast produit
+  sort par le handoff `onGenerated` — le contrôleur **n'écrit rien**. Un port
+  qui lève est capté et converti en `failed` (message injecté), aucune
+  exception ne remonte.
+- `zPodcastHubEntry(...)` : construit l'entrée « podcast » du hub de contenu,
+  ou `null` tant que glyphe, libellé et geste ne sont pas tous les trois
+  fournis — une entrée non câblée est **absente** de l'arbre, jamais un bouton
+  mort. Teinte portée par la clé stable `ZContentHubReference.colorKeyPodcast`
+  déjà existante ; aucune apparence propre.
+
+### Ajouté — `routeId` sur les trois requêtes qui ne l'avaient pas
+- `ZNoteSummaryRequest.routeId`, `ZPodcastGenerationRequest.routeId` et
+  `ZFlashcardGenerationRequest.routeId` (+ `withRouteId` sur chacune) : champ
+  `String?` additif, `null` par défaut, transporté **verbatim** — jamais une
+  URL, jamais interprété ici (AD-12). Les adaptateurs routés peuvent désormais
+  estamper ces trois intentions comme ils le faisaient déjà pour la carte
+  mentale et l'explication. `ZFlashcardGenerationRequest.withResolvedSources`
+  reconduit la route au lieu de la perdre.
+
+### Garanties — podcast et routes
+- **Inertie absolue** : une requête construite sans `routeId` reste
+  strictement égale (égalité, `hashCode`, `extra`) à ce qu'elle était ; poser
+  une route la rend non égale (égalité stricte, pas un `contains`). Un hub sans
+  entrée podcast câblée rend exactement le même arbre qu'avant.
+- Round-trip `withRouteId` **verbatim** sur les trois requêtes : route posée,
+  tous les autres champs et l'`extra` inchangés ; `withRouteId(null)` rend la
+  requête d'origine.
+- Gardes de source (`@TestOn('vm')`) : aucune couleur littérale, aucun
+  `Text(<littéral>)`, aucune variante non directionnelle dans les quatre
+  fichiers du lot ; chaque scanner porte sa contre-preuve.
+- Cibles tactiles ≥ 48 dp sur l'action « régénérer » et sur la bascule du
+  lecteur (AD-13).
+
+### Impact hôte — podcast
+- Hôte **passif** : rien à faire. Aucune surface existante ne change ; toute la
+  livraison est additive et opt-in.
+- Hôte ayant **compensé** l'absence de présentation podcast (carte de podcast
+  écrite chez lui) : câbler `zPodcastHubEntry` ou `ZPodcastCard` **sans**
+  retirer sa propre carte donnerait **deux** cartes de podcast. Retirer la
+  compensation avant de câbler.
+
+### Limite connue — podcast
+- La carte ne porte pas de titre propre : `title` est requis et injecté, parce
+  que `ZStudyPodcast` n'en a aucun (il est nommé par sa source, que seul l'hôte
+  connaît).
+- Aucune feuille de génération de podcast n'est fournie : le contrôleur et la
+  carte sont les briques, l'assemblage de saisie reste chez l'hôte.
 
 ## 3.28.0 — 2026-08-28
 

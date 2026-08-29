@@ -20,6 +20,9 @@ class ZAiExplanationRequest {
     required this.content,
     this.context,
     this.languageTag,
+    this.style,
+    this.operation,
+    this.routeId,
     Map<String, dynamic> extra = const <String, dynamic>{},
   }) : _extra = extra;
 
@@ -31,6 +34,32 @@ class ZAiExplanationRequest {
 
   /// Étiquette de langue BCP-47 souhaitée, ou `null`.
   final String? languageTag;
+
+  /// Forme de rendu demandée — **clé opaque du vocabulaire de l'hôte**,
+  /// transmise verbatim au port et jamais interprétée ici.
+  ///
+  /// Ce paquet ne déclare aucune liste de styles : les valeurs admises, leur
+  /// libellé et leur effet appartiennent entièrement à l'application. `null`
+  /// signifie « pas de style demandé », jamais un style par défaut implicite.
+  final String? style;
+
+  /// Traitement demandé (reformulation, condensation, développement…) —
+  /// **clé opaque du vocabulaire de l'hôte**, transmise verbatim et jamais
+  /// interprétée ici.
+  ///
+  /// Une seule signature couvre tous les traitements : l'intention est une
+  /// **donnée**, pas une méthode par variante. `null` signifie « explication
+  /// initiale ».
+  final String? operation;
+
+  /// Identifiant de ROUTE opaque, transporté verbatim.
+  ///
+  /// Un transport « une route par intention de génération » associe une route
+  /// à un modèle par défaut et à ses accès ; ce champ est l'endroit où
+  /// l'intention de route voyage avec la requête. Sa résolution en transport
+  /// réel appartient entièrement à l'implémentation du port. `null` signifie
+  /// que l'application décide.
+  final String? routeId;
 
   /// Slot brut de l'échappatoire (normalisé à la LECTURE via [extra]).
   final Map<String, dynamic> _extra;
@@ -46,6 +75,44 @@ class ZAiExplanationRequest {
   /// Clés réservées écartées de [extra] à la lecture.
   static final Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
+  /// Copie portant [operation], et éventuellement un [style] ou un [content]
+  /// différents ; tout autre champ est **inchangé** (l'`extra` d'origine est
+  /// reconduit tel quel).
+  ///
+  /// Permet d'enchaîner un traitement sur le texte déjà obtenu sans
+  /// reconstruire la requête champ par champ. Un argument omis (ou `null`)
+  /// **préserve** la valeur courante : ce raccourci ne peut donc pas remettre
+  /// un champ à `null` — reconstruire la requête pour cela.
+  ZAiExplanationRequest withOperation(
+    String operation, {
+    String? style,
+    String? content,
+  }) =>
+      ZAiExplanationRequest(
+        content: content ?? this.content,
+        context: context,
+        languageTag: languageTag,
+        style: style ?? this.style,
+        operation: operation,
+        routeId: routeId,
+        extra: _extra,
+      );
+
+  /// Copie de cette requête portant [routeId], tous les autres champs
+  /// **inchangés** (l'`extra` d'origine est reconduit tel quel).
+  ///
+  /// Contrairement à [withOperation], `null` est ici une valeur explicite :
+  /// il remet la route à « l'application décide ».
+  ZAiExplanationRequest withRouteId(String? routeId) => ZAiExplanationRequest(
+        content: content,
+        context: context,
+        languageTag: languageTag,
+        style: style,
+        operation: operation,
+        routeId: routeId,
+        extra: _extra,
+      );
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -53,11 +120,21 @@ class ZAiExplanationRequest {
           content == other.content &&
           context == other.context &&
           languageTag == other.languageTag &&
+          style == other.style &&
+          operation == other.operation &&
+          routeId == other.routeId &&
           zJsonEquals(extra, other.extra);
 
   @override
-  int get hashCode =>
-      Object.hash(content, context, languageTag, zJsonHash(extra));
+  int get hashCode => Object.hash(
+        content,
+        context,
+        languageTag,
+        style,
+        operation,
+        routeId,
+        zJsonHash(extra),
+      );
 }
 
 /// Port neutre d'explication (invariant AD-5 : domaine backend-agnostique).
@@ -68,4 +145,3 @@ abstract interface class ZAiExplanationPort {
   /// Explique [request]. `Left` en cas d'échec, `Right` avec le texte produit.
   Future<ZResult<String>> explain(ZAiExplanationRequest request);
 }
-

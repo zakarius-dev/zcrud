@@ -121,6 +121,18 @@ Map<String, List<String>> _callSites(List<String> members) {
   final List<File> files = packageLibDartFiles();
   expect(files, isNotEmpty, reason: 'aucun fichier scanné : garde VACUELLE');
   for (final File f in files) {
+    // Ancrage : seul un fichier qui VOIT le monde des actions de chat peut
+    // créer une « variante du verbe » (la surface B d'IFFD référence
+    // l'exécuteur ou importe le chat). Un homonyme d'un autre domaine —
+    // `ZExplanationController.regenerate` dans zcrud_study, dont AD-1
+    // garantit qu'il n'importe rien du chat — n'est pas un site d'appel du
+    // verbe gardé. Même resserrage que la garde `summarize` du résumé de
+    // note (zcrud_study), pour la même raison : un jeton nu n'est pas un
+    // récepteur.
+    final String raw = f.readAsStringSync();
+    if (!raw.contains('ZChatAction') && !raw.contains('zcrud_chat')) {
+      continue;
+    }
     final List<String> lines = strippedLines(f);
     for (int i = 0; i < lines.length; i++) {
       if (use.hasMatch(lines[i]) && !namedCtorDecl.hasMatch(lines[i])) {

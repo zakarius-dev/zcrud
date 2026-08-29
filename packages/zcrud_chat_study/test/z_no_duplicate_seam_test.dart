@@ -58,8 +58,17 @@ void main() {
 
   group('négatif — aucun symbole existant n\'est REDÉCLARÉ ici', () {
     final Map<String, RegExp> forbidden = <String, RegExp>{
+      // Ce qui est interdit est un second CONTRAT (`abstract`/`interface`),
+      // pas une implémentation. Un adaptateur concret qui `implements` un
+      // port existant ne double rien — il le câble ; c'est justement ce que
+      // ce paquet est là pour faire. Le fait qu'il implémente réellement
+      // (et ne redéclare pas sous couvert d'être concret) est mesuré par
+      // la garde « tout port concret déclaré ici IMPLÉMENTE » ci-dessous.
       'un second port de génération':
-          RegExp(r'^\s*(abstract\s+)?(interface\s+)?class\s+\w*GenerationPort\b',
+          RegExp(r'^\s*(abstract\s+\w*\s*)?interface\s+class\s+\w*GenerationPort\b',
+              multiLine: true),
+      'un second contrat abstrait de génération':
+          RegExp(r'^\s*abstract\s+class\s+\w*GenerationPort\b',
               multiLine: true),
       'un second DTO de requête de génération':
           RegExp(r'^\s*class\s+\w*GenerationRequest\b', multiLine: true),
@@ -79,6 +88,30 @@ void main() {
         expect(e.value.hasMatch(ownSource), isFalse, reason: e.key);
       });
     }
+
+    test('tout port concret déclaré ici IMPLÉMENTE un port existant', () {
+      // Contrepartie EXACTE de l'assouplissement ci-dessus : un `class
+      // …Port` concret est toléré UNIQUEMENT s'il déclare `implements` d'un
+      // port `Z…Port` — un « adaptateur » sans clause d'implémentation
+      // serait un doublon déguisé en implémentation.
+      final RegExp decl = RegExp(
+        r'^\s*class\s+(\w*Port)\b([^{]*)\{',
+        multiLine: true,
+      );
+      final List<String> matches = decl.allMatches(ownSource).toList().map(
+        (RegExpMatch m) => '${m.group(1)}${m.group(2)}',
+      ).toList();
+      // Contrôle positif : la garde a bien des sujets à mesurer.
+      expect(matches, isNotEmpty,
+          reason: 'aucun port concret trouvé — garde vraie par vacuité');
+      for (final String d in matches) {
+        expect(
+          RegExp(r'implements\s+Z\w*Port\b').hasMatch(d),
+          isTrue,
+          reason: 'port concret sans clause implements : $d',
+        );
+      }
+    });
   });
 
   group('positif DISCRIMINANT — les symboles EXISTANTS sont bien câblés', () {

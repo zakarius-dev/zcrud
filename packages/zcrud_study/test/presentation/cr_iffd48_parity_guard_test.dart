@@ -257,6 +257,8 @@ const List<_ParityPair> _pairs = <_ParityPair>[
       'untitledLabel': 'untitledLabel',
       'dateLabel': 'dateLabelOf',
       'reminderLabel': 'reminderLabel',
+      'now': 'now',
+      'pastLabel': 'pastLabel',
       'palette': 'palette',
       'colorKey': 'colorKeyOf',
       'titleMaxLines': 'titleMaxLines',

@@ -43,6 +43,7 @@ class ZPodcastGenerationRequest {
     this.mode = ZPodcastMode.simple,
     this.sourceHash = '',
     this.languageTag,
+    this.routeId,
     Map<String, dynamic> extra = const <String, dynamic>{},
   }) : _extra = extra;
 
@@ -75,6 +76,38 @@ class ZPodcastGenerationRequest {
   /// Étiquette de langue BCP-47 souhaitée (ex. `"fr"`), ou `null`.
   final String? languageTag;
 
+  /// Identifiant de **route** opaque, transporté tel quel et jamais interprété
+  /// par ce paquet : aucun `enum`, aucun `switch`, aucun catalogue, et
+  /// **jamais une URL** — le contrat reste sans transport (invariant AD-12).
+  ///
+  /// Deux modes de transport coexistent chez les applications hôtes : un
+  /// endpoint unique à corps riche, et **une route par intention de
+  /// génération** — mode qui porte la gouvernance (une route et ses accès
+  /// associés à un plan d'abonnement) et permet de déclarer par tâche le
+  /// modèle par défaut. Ce champ est l'endroit où l'intention de route voyage
+  /// avec la requête ; sa résolution en transport réel appartient entièrement
+  /// à l'implémentation du port. `null` signifie que l'application décide.
+  final String? routeId;
+
+  /// Copie de cette requête portant [routeId], tous les autres champs
+  /// **inchangés** (l'`extra` d'origine est reconduit tel quel).
+  ///
+  /// Permet à une surface d'assemblage d'apposer la route juste avant l'appel
+  /// du port, sans que l'appelant ait à reconstruire la requête champ par
+  /// champ — et sans qu'aucune valeur saisie ne soit réécrite au passage.
+  ZPodcastGenerationRequest withRouteId(String? routeId) =>
+      ZPodcastGenerationRequest(
+        content: content,
+        sourceKind: sourceKind,
+        sourceId: sourceId,
+        folderId: folderId,
+        mode: mode,
+        sourceHash: sourceHash,
+        languageTag: languageTag,
+        routeId: routeId,
+        extra: _extra,
+      );
+
   /// Slot brut de l'échappatoire (normalisé à la LECTURE via [extra]).
   final Map<String, dynamic> _extra;
 
@@ -99,6 +132,7 @@ class ZPodcastGenerationRequest {
           mode == other.mode &&
           sourceHash == other.sourceHash &&
           languageTag == other.languageTag &&
+          routeId == other.routeId &&
           zJsonEquals(extra, other.extra);
 
   @override
@@ -110,6 +144,7 @@ class ZPodcastGenerationRequest {
         mode,
         sourceHash,
         languageTag,
+        routeId,
         zJsonHash(extra),
       );
 }

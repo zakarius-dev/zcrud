@@ -581,6 +581,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.sectionHeaderAccentHeight,
     this.sectionHeaderIconTileSize,
     this.sectionHeaderIconTileRadius,
+    this.busyPalette,
+    this.busyCycleInterval,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -2611,6 +2613,26 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// `null` vaut `10`.
   final double? sectionHeaderIconTileRadius;
 
+  /// Séquence de teintes parcourue en boucle par l'indicateur « génération en
+  /// cours », commune à tous les modules.
+  ///
+  /// `null` délègue à la référence auditée (7 teintes) sous le profil
+  /// `legacy`, et à `null` sous `neutral` — l'appelant peint alors une seule
+  /// couleur ambiante, sans séquence. Posé, ce jeton s'applique dans les
+  /// **deux** profils : c'est une décision de l'hôte, pas une référence.
+  ///
+  /// Lu par `zBusyPaletteOf`. Distinct de [chatBusyPalette], qui ne concerne
+  /// que le notebook de conversation.
+  final List<Color>? busyPalette;
+
+  /// Temps passé sur **une** teinte de [busyPalette] avant la suivante.
+  /// `null` vaut `300 ms`.
+  ///
+  /// Scalaire : remplaçable jeton par jeton dans les **deux** profils. Ce
+  /// n'est pas la durée d'un tour complet — celle-ci vaut l'intervalle
+  /// multiplié par le nombre de teintes.
+  final Duration? busyCycleInterval;
+
   /// Fabrique centrale d'`InputDecoration` : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -3010,6 +3032,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? sectionHeaderAccentHeight,
     double? sectionHeaderIconTileSize,
     double? sectionHeaderIconTileRadius,
+    List<Color>? busyPalette,
+    Duration? busyCycleInterval,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     fieldFillColor: fieldFillColor ?? this.fieldFillColor,
@@ -3375,6 +3399,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         sectionHeaderIconTileSize ?? this.sectionHeaderIconTileSize,
     sectionHeaderIconTileRadius:
         sectionHeaderIconTileRadius ?? this.sectionHeaderIconTileRadius,
+    busyPalette: busyPalette ?? this.busyPalette,
+    busyCycleInterval: busyCycleInterval ?? this.busyCycleInterval,
   );
 
   @override
@@ -4612,6 +4638,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.sectionHeaderIconTileRadius,
         t,
       ),
+      // Une séquence de teintes et une durée de segment n'ont pas d'interpolé
+      // qui garde un sens : bascule discrète à mi-course, comme les autres
+      // jetons non continus du fichier.
+      busyPalette: t < 0.5 ? busyPalette : other.busyPalette,
+      busyCycleInterval: t < 0.5 ? busyCycleInterval : other.busyCycleInterval,
     );
   }
 }

@@ -3,6 +3,19 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.30.0 — 2026-08-29
+
+### Ajouté
+- **`ZBusyPaletteReference`** (`lib/src/presentation/theme/z_busy_palette_reference.dart`) : **unique** fichier de référence couleur de la famille « indicateur d'occupation », exempté **nominativement par chemin exact** dans la garde de source anti-couleurs (FR-26). Il porte les **7 teintes** du cycle « génération en cours » (bleu, rouge, jaune, orange, brun, teal, vert) et son tempo `interval` (300 ms **par teinte**, donc un tour complet de 2 100 ms via `period`). Les valeurs sont recopiées à l'octet près de la table de référence du chat ; une garde fige la table dans le test et exige l'**égalité stricte** des sept teintes, de sorte que les deux listes ne peuvent plus diverger en silence.
+- **`zBusyPaletteOf(context)`** : lecteur de la chaîne **jeton > référence > neutre** — `ZcrudTheme.busyPalette` d'abord, sinon la référence auditée sous le profil `legacy` (le défaut), sinon `null` sous `ZReferenceProfile.neutral`. `null` n'est pas une panne : l'appelant peint alors **une** couleur ambiante, sans séquence donc sans animation.
+- **`zBusyCycleIntervalOf(context)`** : `ZcrudTheme.busyCycleInterval` sinon la référence. Scalaire — il n'est **pas** effacé par le profil neutre.
+- **Deux jetons nullables** câblés aux quatre sites : `ZcrudTheme.busyPalette` (`List<Color>?`) et `ZcrudTheme.busyCycleInterval` (`Duration?`). Aucun des deux ne s'interpole : bascule discrète à mi-course, et deux côtés nuls restent nuls (une référence ne s'impose jamais à un hôte au premier changement de thème).
+- **`ZColorCycle.busy(context, …)`** : constructeur **additif** qui branche ces lecteurs — palette du jeton, sinon la référence, sinon (profil neutre) une seule teinte `ColorScheme.primary` ; tempo du **tour complet** = intervalle × nombre de teintes. Le signal « ça génère » devient ainsi disponible à tout module (feuilles de génération d'étude comprises) sans qu'aucun n'ait à dépendre d'un autre (AD-1).
+
+### Notes d'impact
+- Livraison **strictement additive** : le constructeur ordinaire de `ZColorCycle` est **inerte** — mêmes palette, tempo et teintes peintes qu'avant, y compris sous un thème qui pose les nouveaux jetons (garde dédiée sur la teinte réellement remise au builder, pas seulement sur le champ du widget).
+- Aucun hôte n'avait de compensation à retirer : la palette n'existait jusqu'ici que dans le module de conversation, et elle y reste inchangée.
+
 ## 3.29.0 — 2026-08-28
 
 ### Ajouté

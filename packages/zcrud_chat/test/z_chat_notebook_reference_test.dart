@@ -294,7 +294,24 @@ void main() {
       final int couleurs = _referenceSource()
           .where((String l) => l.contains('Color(0x'))
           .length;
-      expect(couleurs, greaterThanOrEqualTo(12),
+      // 🔴 PLANCHER RE-MESURÉ, et pourquoi il a baissé de 18 à 11.
+      //
+      // Les SEPT littéraux de la palette d'occupation ont quitté ce fichier :
+      // `busyPalette` est désormais un ALIAS de `ZBusyPaletteReference.colors`
+      // (`zcrud_core`), parce que le signal « quelque chose se génère »
+      // n'appartient à aucun module et que deux listes recopiées divergent en
+      // silence. Ce n'est donc PAS la référence qui a été vidée, et ce n'est
+      // pas non plus l'extracteur qui est cassé : les onze littéraux restants
+      // (accent d'outils + dix accents de capacité) sont bien là, et
+      // l'exemption FR-26 de ce fichier reste donc UTILE — la garde
+      // d'exemption non pendante de `z_chat_purity_test.dart` continue de voir
+      // des couleurs exemptées ici.
+      //
+      // Le plancher reste une INÉGALITÉ (non une égalité) : il garde la
+      // propriété « ce fichier porte réellement des couleurs », il ne fige pas
+      // le nombre d'accents de capacité, que la table a vocation à faire
+      // grandir.
+      expect(couleurs, greaterThanOrEqualTo(11),
           reason: '🔴 seulement $couleurs couleur(s) : soit la référence a '
               'été vidée, soit l\'extracteur est cassé — dans les deux cas le '
               'test ci-dessus ne prouve plus rien.');

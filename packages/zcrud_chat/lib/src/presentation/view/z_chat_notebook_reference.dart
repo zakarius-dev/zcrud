@@ -94,6 +94,7 @@
 library;
 
 import 'package:flutter/widgets.dart';
+import 'package:zcrud_core/zcrud_core.dart' show ZBusyPaletteReference;
 
 import 'z_chat_labels.dart';
 
@@ -473,15 +474,18 @@ abstract final class ZChatNotebookReference {
   /// respecter « Réduire les animations » (invariant AD-13) et ne jamais y
   /// faire reposer l'information « occupé » — le canal d'annonce reste la
   /// région live.
-  static const List<Color> busyPalette = <Color>[
-    Color(0xFF2196F3), // Colors.blue
-    Color(0xFFF44336), // Colors.red
-    Color(0xFFFFEB3B), // Colors.yellow
-    Color(0xFFFF9800), // Colors.orange
-    Color(0xFF795548), // Colors.brown
-    Color(0xFF009688), // Colors.teal
-    Color(0xFF4CAF50), // Colors.green
-  ];
+  ///
+  /// La valeur **canonique** de cette séquence vit dans le socle
+  /// ([ZBusyPaletteReference.colors]) : le signal « quelque chose se génère »
+  /// n'appartient à aucun module, et une feuille de génération d'étude le rend
+  /// à l'identique. Ce membre en est un **alias**, gardé pour que la table de
+  /// référence du notebook reste lisible d'un seul tenant.
+  //
+  // Alias, et non une recopie : deux listes identiques à l'octet peuvent
+  // diverger en silence dès la première retouche de l'une des deux. Une garde
+  // de ce paquet exige l'identité (`identical`) des deux constantes — pas
+  // seulement leur égalité.
+  static const List<Color> busyPalette = ZBusyPaletteReference.colors;
 
   /// Code-couleur des capacités du notebook, jamais seul : chaque entrée
   /// porte aussi un canal textuel et un canal de forme

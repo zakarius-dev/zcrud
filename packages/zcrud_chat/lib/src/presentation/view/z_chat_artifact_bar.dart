@@ -77,6 +77,14 @@
 /// [ZColorCycle.idle] qui porte la teinte d'état, rendue dès que l'occupation
 /// retombe.
 ///
+/// **La séquence vient de la chaîne complète.** `ZChatNotebookSkin.busyPalette`
+/// d'abord, puis le jeton `ZcrudTheme.chatBusyPalette`, puis le jeton de socle
+/// `ZcrudTheme.busyPalette`, puis la référence auditée. Sous
+/// `ZReferenceProfile.neutral`, aucune séquence n'est due : le glyphe prend
+/// **une** teinte ambiante (`ColorScheme.primary`), sans cycle donc sans
+/// animation. Un hôte qui déclare sa propre palette la garde dans les deux
+/// profils.
+///
 /// ## « Réduire les animations » (AD-13) — l'état reste
 ///
 /// Sous `MediaQuery.disableAnimations`, [ZColorCycle] n'arme aucun contrôleur
@@ -761,8 +769,25 @@ class _ZChatArtifactButtonState extends State<_ZChatArtifactButton> {
         : widget.style.busyPalette;
     // 🔴 ADDITIF STRICT : sans lecture d'occupation DÉCLARÉE, l'arbre est
     // exactement celui d'avant — pas de cycle, donc pas de contrôleur.
+    // Profil de référence NEUTRE et aucune séquence déclarée : la palette
+    // résolue est vide, et c'est le socle qui dit quoi peindre — une teinte
+    // ambiante unique, donc aucune animation. Le tempo devient celui du socle,
+    // ce qui est sans effet : une palette d'une seule teinte n'arme aucun
+    // contrôleur.
+    final bool neutralBusy = surface != null &&
+        palette.isEmpty &&
+        widget.style.neutralAccent != null;
     final Widget glyph = widget.spec.busy == null
         ? _icon(context, tint)
+        : neutralBusy
+        ? ZColorCycle.busy(
+            context,
+            active: busy,
+            idle: tint,
+            surface: surface,
+            builder: (BuildContext context, Color? color, Widget? _) =>
+                _icon(context, color),
+          )
         : ZColorCycle(
             palette: palette,
             period: ZChatNotebookReference.busyCycleDuration,

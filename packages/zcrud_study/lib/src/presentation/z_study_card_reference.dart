@@ -41,6 +41,12 @@ abstract final class ZStudyCardReference {
   static const Radius iconTileRadius = Radius.circular(12);
 
   /// Rayon de la carte (16).
+  ///
+  /// **Le rayon de la famille « cartes d'outils » est 16, et non 12.** Le 12
+  /// dominant ailleurs appartient à d'autres familles (chips, dialogues,
+  /// badges, carte de dossier — dont le rayon de référence est bien 12, cf.
+  /// `ZFolderCardReference.cardRadius`). Confondre les deux alignerait la
+  /// carte d'outils sur le vécu d'une famille voisine.
   static const Radius cardRadius = Radius.circular(16);
 
   /// Padding interne de la carte (12, directionnel — invariant AD-13).
@@ -105,6 +111,38 @@ abstract final class ZStudyCardReference {
   /// Graisse du badge d'extension (`bold` — mesurée sur le rendu
   /// historique).
   static const FontWeight badgeFontWeight = FontWeight.bold;
+
+  // ── En-tête de section d'étude ────────────────────────────────────────────
+  //
+  // Ces trois valeurs sont les MÊMES que les défauts des jetons
+  // `ZcrudTheme.sectionHeader*` du cœur : un en-tête de section d'étude et un
+  // en-tête de section de formulaire ne doivent pas diverger d'un pixel quand
+  // aucun jeton n'est posé. Elles sont répétées ici comme repli explicite —
+  // le jeton, lui, reste la voie de remplacement.
+
+  /// Hauteur de la bande d'accent d'un en-tête de section (**3**).
+  static const double sectionAccentHeight = 3;
+
+  /// Côté de la tuile d'icône d'un en-tête de section (**36**).
+  static const double sectionIconTileSize = 36;
+
+  /// Rayon de la tuile d'icône d'un en-tête de section (**10**).
+  static const double sectionIconTileRadius = 10;
+
+  // ── Ombre TEINTÉE d'une surface en dégradé ────────────────────────────────
+  //
+  // Aucune couleur ici : seuls l'opacité, le flou et le décalage sont figés.
+  // La TEINTE est celle du dégradé courant, donc nulle sous un profil qui ne
+  // peint aucun dégradé — l'ombre disparaît alors avec lui.
+
+  /// Opacité de l'ombre teintée d'une surface en dégradé (**0.4**).
+  static const double tintedShadowAlpha = 0.4;
+
+  /// Flou de l'ombre teintée (**20**).
+  static const double tintedShadowBlurRadius = 20;
+
+  /// Décalage de l'ombre teintée (**0, 8**).
+  static const Offset tintedShadowOffset = Offset(0, 8);
 }
 
 /// Chrome de référence résolu pour une carte d'étude par défaut : chaque champ

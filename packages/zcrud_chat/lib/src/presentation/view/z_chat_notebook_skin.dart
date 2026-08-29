@@ -113,8 +113,34 @@ class ZChatNotebookSkin {
   ///
   /// Ne lève jamais (invariant AD-10) : un thème absent retombe sur
   /// `ZcrudTheme.fallback`, et une table de jetons vide sur la référence.
+  ///
+  /// ## Le quatrième maillon : le profil de référence
+  ///
+  /// Les membres **couleur** — et eux seuls — passent au dernier maillon par
+  /// [ZReferenceProfile]. Sous [ZReferenceProfile.legacy] (le défaut), le
+  /// rendu est **exactement** celui de la référence : rien ne change pour un
+  /// hôte qui n'a rien déclaré. Sous [ZReferenceProfile.neutral], la référence
+  /// s'efface au profit du **rôle Material 3 de l'hôte** : accent d'outils et
+  /// accents de capacité prennent le premier plan du slot
+  /// [ZColorSlot.primary], et [ZChatNotebookStyle.busyPalette] devient vide —
+  /// aucune séquence n'est due, l'appelant peint une teinte ambiante unique.
+  ///
+  /// Les membres non chromatiques (fractions, rayons, drapeaux, coquille) ne
+  /// sont **jamais** concernés : un profil neutre efface des couleurs, pas une
+  /// géométrie.
   ZChatNotebookStyle resolve(BuildContext context) {
     final ZcrudTheme theme = ZcrudTheme.of(context);
+    final ZReferenceProfile? profile = theme.referenceProfile;
+    // Le rôle M3 de l'hôte, obtenu SANS `package:flutter/material.dart` (banni
+    // dans ce paquet, garde de pureté) : la chaîne de `zcrud_core` rend la
+    // paire du slot `primary` du `ColorScheme` ambiant — ou celle que le
+    // `colorKeyResolver` de l'hôte déclare pour cette clé, ce qui est
+    // précisément le vocabulaire qu'un hôte neutre veut voir gagner.
+    final ZColorPair neutralPair = zResolveColorKeyOrSlot(
+      context,
+      ZColorSlot.primary.name,
+      slotIndex: ZColorSlot.primary.index,
+    );
     return ZChatNotebookStyle(
       bubbleWidthFactor:
           bubbleWidthFactor ??
@@ -143,13 +169,23 @@ class ZChatNotebookSkin {
       toolAccentColor:
           toolAccentColor ??
           theme.chatToolAccentColor ??
-          ZChatNotebookReference.toolAccentColor,
+          zLegacyOrIn<Color>(
+            profile,
+            ZChatNotebookReference.toolAccentColor,
+            neutralPair.onColor,
+          )!,
+      // Le dernier maillon est ici celui du socle : `zBusyPaletteOf` lit le
+      // jeton `ZcrudTheme.busyPalette` puis arbitre la référence par le
+      // profil. Le rendre atteignable est ce qui branche le chat sur la
+      // référence commune au lieu de sa copie.
       busyPalette:
           busyPalette ??
           theme.chatBusyPalette ??
-          ZChatNotebookReference.busyPalette,
+          zBusyPaletteOf(context) ??
+          const <Color>[],
       capabilityAccents: capabilityAccents,
       themeCapabilityAccents: theme.chatCapabilityAccents,
+      neutralAccent: zLegacyOrIn<Color?>(profile, null, neutralPair.onColor),
       tile: tile,
     );
   }
@@ -173,6 +209,7 @@ class ZChatNotebookStyle {
     required this.busyPalette,
     this.capabilityAccents,
     this.themeCapabilityAccents,
+    this.neutralAccent,
     this.tile,
   });
 
@@ -199,6 +236,11 @@ class ZChatNotebookStyle {
   final Color toolAccentColor;
 
   /// Séquence de teintes de l'indicateur d'occupation.
+  ///
+  /// **Vide** signifie « aucune séquence n'est due » — c'est ce que rend un
+  /// profil de référence neutre quand ni paramètre ni jeton n'en déclarent
+  /// une. Ce n'est pas une panne : l'appelant peint alors **une** teinte
+  /// ambiante, sans séquence donc sans animation.
   final List<Color> busyPalette;
 
   /// Accents de capacité fournis en **paramètre** (niveau 1).
@@ -206,6 +248,18 @@ class ZChatNotebookStyle {
 
   /// Accents de capacité fournis en **jeton** (niveau 2).
   final Map<String, Color>? themeCapabilityAccents;
+
+  /// Teinte qui remplace les accents de **référence** des capacités, ou `null`
+  /// quand la référence s'applique (profil de référence par défaut).
+  ///
+  /// Non nulle, elle porte un rôle du `ColorScheme` de l'hôte et se substitue
+  /// à l'accent de référence de **chaque** capacité que ni paramètre ni jeton
+  /// ne déclarent : le code-couleur de référence disparaît alors en bloc, et
+  /// c'est le but. La distinction entre capacités reste portée par les canaux
+  /// non chromatiques ([ZChatNotebookCapabilityStyle.generatedLabelKey] et
+  /// [ZChatNotebookCapabilityStyle.generatedMarkSize]), qu'aucun profil
+  /// n'efface.
+  final Color? neutralAccent;
 
   /// La coquille déclarée, relayée telle quelle — `null` signifie aucune
   /// coquille. Elle n'a pas de niveau « jeton » : c'est une **déclaration**,
@@ -225,7 +279,10 @@ class ZChatNotebookStyle {
         ZChatNotebookReference.capabilities[key];
     if (base == null) return null;
     final Color? accent =
-        capabilityAccents?[key] ?? themeCapabilityAccents?[key];
+        capabilityAccents?[key] ?? themeCapabilityAccents?[key] ??
+        // Dernier maillon : la référence, sauf sous un profil neutre où
+        // l'accent de l'hôte la remplace (`neutralAccent` non nul).
+        neutralAccent;
     if (accent == null) return base;
     return ZChatNotebookCapabilityStyle(
       accent: accent,

@@ -112,6 +112,7 @@ void main() {
   test('les arêtes SORTANTES déclarées sont exactement celles attendues', () {
     expect(graph[kSelf], <String>{
       'zcrud_core',
+      'zcrud_mindmap',
       'zcrud_chat_kernel',
       'zcrud_flashcard',
       'zcrud_study_kernel',

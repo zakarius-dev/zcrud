@@ -3,6 +3,21 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.30.0 — 2026-08-29
+
+### Modifié
+- 🔴 **La palette de l'indicateur d'occupation est désormais un ALIAS de la référence du socle** : `ZChatNotebookReference.busyPalette` pointe sur `ZBusyPaletteReference.colors` (`zcrud_core`) au lieu de recopier les sept teintes. Le signal « quelque chose se génère » n'appartient à aucun module — une feuille de génération d'étude et une conversation le rendent à l'identique. **Aucune valeur ne change** : les sept teintes et le tempo de 2 s du chat sont inchangés à l'octet.
+- **Le jeton de socle `ZcrudTheme.busyPalette` atteint le chat** : la chaîne de `ZChatNotebookSkin.resolve` devient paramètre > `chatBusyPalette` > `busyPalette` (socle) > référence. Un hôte qui posait déjà `chatBusyPalette` garde exactement sa préséance.
+
+### Ajouté (profil de référence)
+- **`ZChatNotebookSkin.resolve` honore `ZcrudTheme.referenceProfile`** au dernier maillon de ses membres **couleur**. Sous `legacy` (le défaut) le rendu est inchangé, valeur par valeur. Sous `neutral` : l'accent d'outils et les accents de capacité prennent le rôle Material 3 de l'hôte (premier plan du slot `primary`), et l'indicateur d'occupation tombe à **une** teinte `ColorScheme.primary` — donc sans animation. Les canaux non chromatiques des capacités (libellé, pastille) et toute la géométrie restent intacts : un profil neutre efface des couleurs, jamais une information.
+- `ZChatNotebookStyle.neutralAccent` — la teinte qui remplace les accents de référence sous un profil neutre, `null` sous le profil par défaut. `ZChatNotebookStyle.busyPalette` peut désormais être **vide** : « aucune séquence n'est due », l'appelant peint une teinte ambiante unique.
+
+### Notes de portage
+- **Hôte passif** : rien à faire — le rendu par défaut est figé par une garde d'inertie (séquence, tempo, accent d'outils, neuf accents de capacité, en toutes lettres).
+- **Hôte qui pose son propre `ZChatNotebookSkin` ou ses jetons `chat*`** : sa déclaration prime toujours, y compris sous un profil neutre. Rien à retirer.
+- **Hôte qui passe à `ZReferenceProfile.neutral`** : il perd volontairement le code-couleur de référence des capacités (elles prennent toutes le rôle `primary`) ; la distinction reste portée par le libellé et la pastille. S'il tient à des accents distincts, il les déclare par `capabilityAccents` ou par jeton.
+
 ## 3.27.0 — 2026-08-28
 
 ### Modifié

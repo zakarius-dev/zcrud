@@ -104,6 +104,7 @@ class ZStudyToolsSectionSpec {
     required this.itemCount,
     required this.itemBuilder,
     required this.emptyState,
+    this.icon,
     this.addAction,
     this.addActionIcon,
     this.addActionSemanticLabel,
@@ -273,6 +274,7 @@ class ZStudyToolsSectionSpec {
     // valeur gouverne les deux axes.
     bool? showAnswerPreview,
     Map<String, String>? answerLabels,
+    this.icon,
     this.addAction,
     this.addActionIcon,
     this.addActionSemanticLabel,
@@ -498,6 +500,7 @@ class ZStudyToolsSectionSpec {
     Widget? Function(BuildContext context, ZMindmap map)? progressOf,
     double progressMaxWidth = 120,
     bool hidesTrailingWhileBusy = true,
+    this.icon,
     this.addAction,
     this.addActionIcon,
     this.addActionSemanticLabel,
@@ -680,6 +683,13 @@ class ZStudyToolsSectionSpec {
     String? untitledLabel,
     String? Function(ZExam exam)? dateLabelOf,
     String? reminderLabel,
+    // Horloge de la variante « passé », relayée VERBATIM à chaque carte.
+    // `null` ⇒ variante hors service, rendu strictement inchangé (AD-4). Le
+    // socle n'appelle jamais `DateTime.now()` : l'instant vient de l'hôte.
+    DateTime? now,
+    // Libellé LOCALISÉ de l'état « passé », relayé verbatim. `null` ⇒ puce
+    // absente ; l'atténuation, elle, reste gouvernée par `now`.
+    String? pastLabel,
     String? Function(ZExam exam)? colorKeyOf,
     String? Function(ZExam exam)? semanticLabelOf,
     void Function(ZExam exam)? onCardTap,
@@ -687,6 +697,7 @@ class ZStudyToolsSectionSpec {
     Widget? Function(BuildContext context, ZExam exam)? cardTrailingBuilder,
     ZColorPalette palette = const ZColorPalette.defaultStudy(),
     int titleMaxLines = 2,
+    this.icon,
     this.addAction,
     this.addActionIcon,
     this.addActionSemanticLabel,
@@ -818,6 +829,8 @@ class ZStudyToolsSectionSpec {
             untitledLabel: untitledLabel,
             dateLabel: dateLabelOf?.call(exam),
             reminderLabel: reminderLabel,
+            now: now,
+            pastLabel: pastLabel,
             palette: palette,
             colorKey: colorKeyOf?.call(exam),
             titleMaxLines: titleMaxLines,
@@ -856,6 +869,16 @@ class ZStudyToolsSectionSpec {
   /// l'appelant — jamais un `SizedBox`
   /// silencieux imposé par le descripteur.
   final Widget emptyState;
+
+  /// Glyphe de TÊTE de l'en-tête de section (jamais celui d'une action).
+  ///
+  /// `null` ⇒ aucun glyphe, aucune tuile : l'en-tête commence par son titre,
+  /// exactement comme sans ce membre. Fourni, le glyphe est posé dans la tuile
+  /// de référence (36 × 36, rayon 10) lavée du dégradé de signature de la
+  /// section — et rendu NU si aucun dégradé ne s'applique.
+  ///
+  /// L'`IconData` vient de l'appelant : le socle n'en choisit aucun (FR-26).
+  final IconData? icon;
 
   /// Action d'ajout de la section (`+`). `null` = action ABSENTE (AD-4).
   final VoidCallback? addAction;

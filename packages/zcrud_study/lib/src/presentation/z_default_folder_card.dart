@@ -66,16 +66,21 @@ import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
     show
         ZColorPair,
+        ZcrudScope,
         ZFolderCardFooterPlacement,
+        ZGradientSpec,
         ZcrudTheme,
         zCompositeOver,
         zReadableTintOn,
-        zResolveColorKeyOrSlot;
+        zResolveColorKeyOrSlot,
+        zResolveGradient,
+        zSignatureKey;
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
-    show ZColorPalette, remapColorKey;
+    show ZColorPalette, ZStudySubjectRef, remapColorKey;
 
 import 'z_folder_card.dart';
 import 'z_folder_card_reference.dart';
+import 'z_subject_chip.dart';
 
 /// Un badge de compteur de la carte de dossier par défaut : un glyphe et un
 /// libellé déjà localisés par l'hôte (« 12 fiches », « 3 sous-dossiers »).
@@ -149,6 +154,8 @@ class ZDefaultFolderCard extends StatelessWidget {
     this.counts = const <ZFolderCardCount>[],
     this.countsSlot,
     this.belowSubtitle,
+    this.subjectRef,
+    this.subjectLabelResolver,
     this.menu,
     this.footer,
     this.footerPlacement,
@@ -202,6 +209,22 @@ class ZDefaultFolderCard extends StatelessWidget {
   /// Contenu additionnel rendu sous le sous-titre, dans la même colonne.
   /// `null` ⇒ absent. Coexiste avec [subtitle] (les deux s'empilent).
   final Widget? belowSubtitle;
+
+  /// Référence de **matière** du dossier. `null` ⇒ aucune puce, et l'arbre
+  /// rendu est celui d'avant l'introduction de cette capacité (invariant
+  /// AD-4) : rien n'est ajouté, pas même une enveloppe.
+  ///
+  /// Le libellé embarqué (`ZStudySubjectRef.label`) est affiché **tel quel**,
+  /// sans aucune résolution : c'est un snapshot, il vaut hors ligne.
+  final ZStudySubjectRef? subjectRef;
+
+  /// Résolveur de matière **optionnel**, consulté avec `subjectRef.id`.
+  ///
+  /// `null` ⇒ capacité **absente** : rien n'est appelé, seul le snapshot est
+  /// rendu. Sans [subjectRef], ce résolveur n'a aucun identifiant à résoudre
+  /// et reste donc lui aussi sans effet. Un `Left` laisse la puce au
+  /// snapshot ; il ne fait jamais échouer le rendu de la carte.
+  final ZSubjectRefResolver? subjectLabelResolver;
 
   /// Slot menu (ex. `IconButton` ⋮), rendu verbatim en tête, aligné en fin
   /// (RTL-safe). Le socle n'en fabrique aucun : la mesure de référence du
@@ -337,11 +360,36 @@ class ZDefaultFolderCard extends StatelessWidget {
       seedTitle: title,
     );
     final int identitySlot = palette.indexOf(identityKey);
-    final ZColorPair pair = zResolveColorKeyOrSlot(
+    final ZColorPair resolvedPair = zResolveColorKeyOrSlot(
       context,
       identityKey,
       slotIndex: identitySlot,
     );
+
+    // ── Repli de signature ───────────────────────────────────────────────────
+    // Une couleur DÉCLARÉE prime toujours, sous ses deux formes : la clé passée
+    // à la carte, et la réponse du résolveur de couleurs de l'hôte pour cette
+    // identité. Le dégradé de signature n'est donc consulté que là où la carte
+    // se replierait sur un créneau de palette déduit du titre — c'est-à-dire là
+    // où personne n'a rien choisi.
+    final bool declared =
+        (colorKey != null && colorKey!.isNotEmpty) ||
+        ZcrudScope.maybeOf(context)?.colorKeyResolver?.call(
+              material.colorScheme,
+              identityKey,
+            ) !=
+            null;
+    final ZGradientSpec? signature = declared
+        ? null
+        : zResolveGradient(context, zSignatureKey(identityKey));
+    final List<Color>? stops = signature?.gradient.colors;
+    final bool hasSignature = stops != null && stops.isNotEmpty;
+
+    // La matière de TOUTE la carte suit la tête du dégradé : bande, tuile,
+    // badges et sous-titre partagent une seule teinte — jamais deux sources.
+    final ZColorPair pair = hasSignature
+        ? ZColorPair(color: stops.first, onColor: signature!.onGradient)
+        : resolvedPair;
 
     final double resolvedTint =
         tintAlpha ??
@@ -389,7 +437,11 @@ class ZDefaultFolderCard extends StatelessWidget {
             : SizedBox(
                 key: accentKey,
                 height: resolvedAccentHeight,
-                child: ColoredBox(color: readable),
+                child: hasSignature
+                    ? DecoratedBox(
+                        decoration: BoxDecoration(gradient: signature!.gradient),
+                      )
+                    : ColoredBox(color: readable),
               ));
 
     return ZFolderCard(
@@ -523,7 +575,9 @@ class ZDefaultFolderCard extends StatelessWidget {
     Color cardSurface,
   ) {
     final String? label = subtitle;
-    final Widget? extra = belowSubtitle;
+    // Sans matière déclarée, `_withSubjectChip` rend son argument à
+    // l'identique : l'arbre d'une carte sans puce est inchangé.
+    final Widget? extra = _withSubjectChip(belowSubtitle, theme);
     if (label == null) return extra;
 
     final TextTheme text = Theme.of(context).textTheme;
@@ -563,6 +617,36 @@ class ZDefaultFolderCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Flexible(child: subtitleText),
+        Flexible(
+          child: Padding(
+            padding: EdgeInsetsDirectional.only(top: theme.gapS),
+            child: extra,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Empile la puce de matière au-dessus du contenu additionnel de l'hôte.
+  ///
+  /// Sans [subjectRef], rend [extra] **inchangé** — aucune enveloppe, aucune
+  /// colonne : une carte sans matière rend exactement l'arbre d'avant.
+  Widget? _withSubjectChip(Widget? extra, ZcrudTheme theme) {
+    final ZStudySubjectRef? ref = subjectRef;
+    if (ref == null) return extra;
+
+    final Widget chip = Align(
+      alignment: AlignmentDirectional.centerStart,
+      // Sans facteur, un `Align` réclame toute la hauteur disponible.
+      heightFactor: 1,
+      child: ZSubjectChip(ref: ref, resolver: subjectLabelResolver),
+    );
+    if (extra == null) return chip;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Flexible(child: chip),
         Flexible(
           child: Padding(
             padding: EdgeInsetsDirectional.only(top: theme.gapS),

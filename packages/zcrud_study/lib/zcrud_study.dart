@@ -16,6 +16,13 @@ library;
 // `ZFlashcardSource`/`ZSourceRegistry` (importés depuis
 // `package:zcrud_flashcard/…`, non ré-exportés ici).
 export 'src/domain/z_ai_explanation_port.dart';
+// Pendant PROGRESSIF du seam d'explication : `ZAiExplanationStreamPort` rend
+// un flux NU d'avancements cumulatifs (`ZGenerationProgress`), avec un
+// `isAvailable` qui permet d'en couper le progressif à chaud sans retirer le
+// port. Contrat SÉPARÉ et optionnel : un hôte qui ne l'implémente pas garde
+// exactement la voie one-shot. `ZInertAiExplanationStreamPort` est le défaut
+// inerte (`const`).
+export 'src/domain/z_ai_explanation_stream_port.dart';
 export 'src/domain/z_education_quota_info.dart';
 export 'src/domain/z_flashcard_generation_port.dart';
 // Défauts purs de génération de flashcards : bornes `[1, 50]`
@@ -24,6 +31,11 @@ export 'src/domain/z_flashcard_generation_port.dart';
 // normalisation défensive (`zNormalizeTypesDistribution`). Source unique,
 // jamais dupliquée dans un widget.
 export 'src/domain/z_flashcard_generation_defaults.dart';
+// Agrégat PUR des trois seaux SRS d'un dossier (apprises / à réviser / à
+// apprendre) : calculé UNE fois par l'hôte quand ses données changent, par
+// délégation à la partition du domaine flashcard — jamais une seconde
+// formule, jamais un recalcul au rendu.
+export 'src/domain/z_folder_progress_summary.dart';
 // Seam IA neutre de génération de carte mentale : port retournant une forêt
 // éphémère de `ZMindmapNode` (jamais un `ZMindmap` persisté) et une requête
 // d'union dont l'identifiant de modèle est opaque. `ZMindmapNode` est
@@ -90,7 +102,17 @@ export 'src/presentation/z_exam_reminders.dart'
         examDailyTasks,
         zExamAsApproaching;
 export 'src/presentation/z_exam_reminders_section.dart';
+// Explication IA : le contrôleur porte le cycle de vie (états, jeton de
+// fraîcheur, anti-double-soumission), la tranche cumulative du rendu
+// progressif et l'HISTORIQUE de versions en mémoire ; la vue rend la version
+// courante par un slot de rendu injecté, la barre de traitements et le
+// sélecteur de versions. Les clés de style et d'opération sont du vocabulaire
+// de l'HÔTE, transmises verbatim. Rien n'est écrit par ce paquet : une
+// explication matérialisée sort par le handoff `onPersist`.
+export 'src/presentation/z_explanation_controller.dart';
+export 'src/presentation/z_explanation_view.dart';
 export 'src/presentation/z_feature_availability.dart';
+
 
 // ── Flashcards : réordonnancement, liste, génération IA, édition en lot ──
 //
@@ -121,6 +143,27 @@ export 'src/presentation/z_flashcard_list_view.dart';
 export 'src/presentation/z_folder_card.dart';
 export 'src/presentation/z_folder_card_chrome.dart';
 export 'src/presentation/z_folder_card_reference.dart';
+// Barre segmentée de progression d'un dossier : elle consomme la VALEUR
+// agrégée (`ZFolderProgressSummary`) — jamais les flux, jamais un recalcul
+// au rendu.
+export 'src/presentation/z_folder_progress_bar.dart';
+// ── Surfaces de partage et galerie publique ──────────────────────────────
+//
+// `ZFolderSharingSheet` monte les gestes de `ZStudySharingPort` (lien
+// révocable, adhésions, publication) ; `ZPublicGalleryView` rend un flux de
+// fiches publiées avec « rejoindre », « copier » et, si un
+// `ZStudyModerationPort` est fourni, « signaler ». Les deux naissent
+// FERMÉES : le portail `zSharingAccessGranted` exige la disponibilité de la
+// fonctionnalité ET l'accord de `ZAcl` — sans `ZcrudScope`, tout est refusé,
+// et un refus rend un état « accès refusé » annoncé, jamais une surface
+// vide. Aucune saisie d'invitation n'est interprétée par le socle : elle
+// passe par le `principalResolver` de l'hôte. Les entrées de menu
+// (`zFolderSharingItemAction`, `zPublicGalleryItemAction`) rendent `null`
+// tant que le câblage ou l'autorisation manque.
+export 'src/presentation/z_folder_sharing_sheet.dart';
+export 'src/presentation/z_public_gallery_view.dart';
+export 'src/presentation/z_study_sharing_entries.dart';
+export 'src/presentation/z_study_sharing_gate.dart';
 export 'src/presentation/z_subfolder_item_chrome.dart'
     show ZCountBadge, ZCountBadgeRow, ZCountBadgeSpec;
 export 'src/presentation/z_flashcard_generation_controller.dart';
@@ -148,6 +191,18 @@ export 'src/presentation/z_multi_flashcard_editor_controller.dart';
 // l'application qui écrit.
 export 'src/presentation/z_note_summary_controller.dart';
 export 'src/presentation/z_note_summary_sheet.dart';
+// Podcast : présentation de l'entité `ZStudyPodcast` du kernel, jusqu'ici sans
+// aucune surface. `ZPodcastCard` rend statut et fraîcheur par libellés injectés
+// (les clés du kernel ne sont jamais affichées nues), propose « régénérer » et
+// monte `ZPodcastAudioPlayer` uniquement si un `ZAudioPlaybackPort` disponible
+// est fourni ET que le podcast porte un audio. `ZPodcastGenerationController`
+// porte le cycle de vie au-dessus de `ZPodcastGenerationPort` et remet son
+// résultat par handoff — il n'écrit rien. `zPodcastHubEntry` construit l'entrée
+// de hub de la famille, ou `null` quand elle n'est pas câblée.
+export 'src/presentation/z_podcast_audio_player.dart';
+export 'src/presentation/z_podcast_card.dart';
+export 'src/presentation/z_podcast_generation_controller.dart';
+export 'src/presentation/z_podcast_hub_entry.dart';
 // Seam de suppression en cascade d'une flashcard : compose la suppression de
 // la carte puis la purge de son état de répétition espacée. Vit dans
 // `lib/src/data/` parce qu'il importe un store, un symbole banni de la
@@ -196,6 +251,9 @@ export 'src/presentation/z_study_mindmap_section.dart';
 // la sémantique métier de l'hôte arrive par les slots.
 export 'src/presentation/z_study_card_reference.dart';
 export 'src/presentation/z_study_document_card.dart';
+// Table de référence des états vides par nature de contenu — glyphes, tailles
+// et clés opaques ; le rendu reste celui de `ZEmptyState`.
+export 'src/presentation/z_study_empty_state_reference.dart';
 export 'src/presentation/z_study_note_card.dart';
 
 // ── Écran de session de révision assemblé ────────────────────────────────
@@ -237,5 +295,6 @@ export 'src/presentation/z_subfolder_ref.dart';
 export 'src/presentation/z_subfolder_selection_controller.dart';
 export 'src/presentation/z_subfolder_selector_bar.dart';
 export 'src/presentation/z_subfolder_sidebar.dart';
+export 'src/presentation/z_subject_chip.dart';
 export 'src/presentation/z_tag_chips.dart';
 export 'src/presentation/z_tag_editor.dart';

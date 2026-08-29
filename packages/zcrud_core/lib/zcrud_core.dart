@@ -250,6 +250,7 @@ export 'src/presentation/reorder/z_reorder_renderer.dart';
 export 'src/presentation/state/z_display_state.dart';
 // Cycle de teintes réutilisable — le signal « tâche en cours » du socle, sans
 // palette ni tempo à lui : les deux lui sont passés par le module appelant.
+export 'src/presentation/theme/z_busy_palette_reference.dart';
 export 'src/presentation/theme/z_color_cycle.dart';
 export 'src/presentation/theme/z_color_key_resolver.dart';
 // Styles RÉSOLUS du dialogue de confirmation et de l'état vide : ils lisent les

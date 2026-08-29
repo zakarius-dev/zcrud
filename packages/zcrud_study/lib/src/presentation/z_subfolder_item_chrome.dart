@@ -18,7 +18,13 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
-    show ZColorPair, ZForegroundOverride, ZcrudTheme, zResolveColorKeyOrSlot;
+    show
+        ZColorPair,
+        ZForegroundOverride,
+        ZcrudTheme,
+        zResolveColorKeyOrSlot,
+        zResolveGradient,
+        zSignatureKey;
 
 /// Diamètre de la pastille d'accent d'un item (dimension de layout — parité
 /// `ZFolderCard`).
@@ -27,10 +33,24 @@ const double kZSubfolderPastilleSize = 12.0;
 /// Pastille d'accent d'un item — couleur DÉRIVÉE de `colorKey` (jamais en dur).
 class ZSubfolderAccentPastille extends StatelessWidget {
   /// Construit la pastille pour la clé de couleur **opaque** [colorKey].
-  const ZSubfolderAccentPastille({required this.colorKey, super.key});
+  const ZSubfolderAccentPastille({
+    required this.colorKey,
+    this.signatureIdentity,
+    super.key,
+  });
 
   /// Clé de couleur opaque résolue par le cœur (seam total — AD-10).
   final String colorKey;
+
+  /// Identité de repli quand l'item ne porte AUCUNE couleur choisie par
+  /// l'utilisateur — la pastille prend alors la tête du dégradé de signature
+  /// portant cette identité, comme la bande de la carte de dossier
+  /// correspondante : une seule teinte pour un même dossier, jamais deux.
+  ///
+  /// `null` ⇒ rendu strictement inchangé (couleur dérivée de [colorKey]). À ne
+  /// renseigner que lorsque la couleur est un repli : une couleur choisie
+  /// PRIME toujours, et passer une identité ici la remplacerait.
+  final String? signatureIdentity;
 
   @override
   Widget build(BuildContext context) {
@@ -39,10 +59,17 @@ class ZSubfolderAccentPastille extends StatelessWidget {
       colorKey,
       slotIndex: 0,
     );
+    final String? identity = signatureIdentity;
+    final List<Color>? signature = identity == null || identity.isEmpty
+        ? null
+        : zResolveGradient(context, zSignatureKey(identity))?.gradient.colors;
+    final Color fill = signature == null || signature.isEmpty
+        ? pair.color
+        : signature.first;
     return Container(
       width: kZSubfolderPastilleSize,
       height: kZSubfolderPastilleSize,
-      decoration: BoxDecoration(color: pair.color, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
     );
   }
 }
