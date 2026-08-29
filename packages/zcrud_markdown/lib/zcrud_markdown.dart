@@ -12,6 +12,9 @@ library;
 
 export 'src/data/z_delta_codec.dart';
 export 'src/data/z_html_codec.dart';
+// Normalisation de sources LaTeX héritées : fonctions PURES sur `String`
+// (aucun type Quill/math), applicables par l'hôte à son propre corpus.
+export 'src/data/z_latex_normalize.dart';
 export 'src/data/z_markdown_codec.dart';
 // COMBLEMENT : couture NEUTRE pur-Dart de construction d'op embed
 // tableau. N'EXPOSE QUE la fabrique `zTableEmbedOp` + le type `kTableEmbedType`
@@ -26,6 +29,10 @@ export 'src/domain/z_markdown_api.dart';
 export 'src/domain/z_markdown_bridge.dart';
 export 'src/domain/z_markdown_copy_format.dart'
     show ZMarkdownCopyFormat, ZMarkdownCopyTransform;
+// Description NEUTRE d'un rendu d'embed déclaré par l'appelant (aucun type
+// Quill : une clé, un `Widget Function`, un booléen). L'adaptation au contrat
+// `EmbedBuilder` vit sous `lib/src/` (isolation AD-1/AD-7).
+export 'src/presentation/z_embed_renderer.dart' show ZEmbedRenderer;
 export 'src/presentation/z_html_registration.dart' show registerZHtmlFields;
 // (CR parité 2026-08-11) : habillage carte OPT-IN du champ rich-text
 // (config PURE Flutter — aucun type Quill) + référence auditée de DIMENSIONS
@@ -67,6 +74,14 @@ export 'src/presentation/z_rich_text_toolbar_config.dart'
 // brut, c'est-à-dire le rendu historique.
 export 'src/presentation/z_table_cell_scope.dart'
     show ZTableCellScope, ZTableCellContent;
+// Réglages de l'ÉDITEUR de tableau, OPT-IN (AD-57) : bornes de dimension et
+// éditeur de cellule fourni par l'appelant. Absent ⇒ dialogue historique.
+export 'src/presentation/z_table_editor_scope.dart'
+    show
+        ZTableEditorScope,
+        ZTableCellEditorBuilder,
+        kZTableDefaultMaxDim,
+        kZTableDefaultCellWidth;
 // Politique de largeur du tableau RENDU, OPT-IN (AD-57) : la charge persistée
 // ne change pas, seule la géométrie du rendu change. Absent ⇒ dimensionnement
 // au contenu, c'est-à-dire le rendu historique.

@@ -25,16 +25,21 @@ import '../data/z_table_markdown.dart';
 // couture NEUTRE, `z_table_embed.dart` ne re-déclare plus `kTableEmbedType`.
 import '../data/z_table_ops.dart';
 import 'z_divider_embed.dart';
+import 'z_embed_renderer.dart';
 import 'z_latex_embed.dart';
 import 'z_media_embed.dart';
 import 'z_rich_text_style_set.dart';
 import 'z_rich_text_toolbar_config.dart';
+import 'z_table_editor_scope.dart';
 import 'z_table_embed.dart';
 
 // Le repli d'embed inconnu (AD-10) est consommé par les TROIS voies rich-text
 // qui importent déjà ce noyau. Re-exporté ici — et NULLE PART ailleurs : le
 // barrel public n'exporte pas ce fichier, la surface publique reste NEUTRE.
 export 'z_divider_embed.dart' show kZUnknownEmbedBuilder;
+// Description NEUTRE d'un rendu d'embed déclaré par l'appelant : re-exportée
+// pour les trois points de montage, qui la citent dans leur signature publique.
+export 'z_embed_renderer.dart';
 
 /// Cible de tap minimale (AD-13) — dimensionne les boutons de la toolbar et sa
 /// hauteur minimale. PARTAGÉE par toutes les voies rich-text.
@@ -69,6 +74,59 @@ const List<EmbedBuilder> kZEmbedBuilders = <EmbedBuilder>[
   ZLegacyFormulaInlineEmbedBuilder(),
   ZLegacyTableEmbedBuilder(),
 ];
+
+/// Adapte un [ZEmbedRenderer] NEUTRE au contrat d'`EmbedBuilder` de l'éditeur.
+///
+/// C'est ici, et nulle part ailleurs, que la description neutre de l'appelant
+/// rencontre la mécanique de l'éditeur : l'appelant, lui, n'en voit rien.
+class _ZEmbedRendererBuilder extends EmbedBuilder {
+  const _ZEmbedRendererBuilder(this.renderer);
+
+  final ZEmbedRenderer renderer;
+
+  @override
+  String get key => renderer.type;
+
+  @override
+  bool get expanded => renderer.block;
+
+  @override
+  Widget build(BuildContext context, EmbedContext embedContext) {
+    try {
+      return renderer.build(
+        context,
+        embedContext.node.value.data,
+        embedContext.textStyle,
+      );
+    } on Object catch (failure, stack) {
+      // AD-10 : un rendu d'appelant qui casse ne casse pas le document.
+      assert(() {
+        debugPrint('ZEmbedRenderer("${renderer.type}") a levé ($failure)\n'
+            '$stack');
+        return true;
+      }());
+      return const SizedBox.shrink();
+    }
+  }
+}
+
+/// Liste d'`EmbedBuilder`s effective, rendus déclarés par l'appelant COMPRIS.
+///
+/// Les rendus de l'appelant sont placés EN TÊTE : l'éditeur retient le premier
+/// builder dont la clé correspond, donc cette place est exactement ce qui les
+/// fait gagner sur les rendus du socle à clé identique. La règle est gardée par
+/// un test, pas seulement écrite ici.
+///
+/// [renderers] vide ⇒ la CONSTANTE [kZEmbedBuilders] elle-même est rendue
+/// (même instance) : aucune allocation, référence stable (AD-2).
+List<EmbedBuilder> zEmbedBuildersWith(List<ZEmbedRenderer> renderers) {
+  if (renderers.isEmpty) return kZEmbedBuilders;
+  return List<EmbedBuilder>.unmodifiable(<EmbedBuilder>[
+    for (final ZEmbedRenderer renderer in renderers)
+      _ZEmbedRendererBuilder(renderer),
+    ...kZEmbedBuilders,
+  ]);
+}
 
 /// Construit des [DefaultStyles] Quill dérivés du **thème** ambiant : titres
 /// H1..H6 alignés sur les rôles typographiques du [TextTheme]
@@ -633,8 +691,17 @@ Future<void> insertZTable(
   required bool Function() isMounted,
 }) async {
   final _TableEmbedHit? existing = _tableEmbedAtSelection(quill);
-  final Map<String, dynamic>? structure =
-      await showZTableDialog(context, initial: existing?.structure);
+  // Les réglages d'éditeur de tableau voyagent par le CONTEXTE : le dialogue
+  // est ouvert par la barre d'outils, pas par l'hôte. Scope absent ⇒ dialogue
+  // historique.
+  final ZTableEditorScope? scope = ZTableEditorScope.maybeOf(context);
+  final Map<String, dynamic>? structure = await showZTableDialog(
+    context,
+    initial: existing?.structure,
+    maxDim: scope?.maxDim,
+    cellWidth: scope?.cellWidth,
+    cellBuilder: scope?.cellBuilder,
+  );
   if (structure == null || !isMounted()) return;
   if (existing != null) {
     quill.replaceText(

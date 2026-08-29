@@ -79,8 +79,16 @@ class ZMarkdownReader extends StatefulWidget {
     this.emptyBuilder,
     this.emptyIcon,
     this.emptySubtitle,
+    this.extraEmbedRenderers = const <ZEmbedRenderer>[],
     super.key,
   });
+
+  /// Rendus d'embed DÉCLARÉS PAR L'APPELANT, en plus de ceux du socle.
+  ///
+  /// Vide (défaut) ⇒ rendu strictement inchangé. Un rendu déclaré ici l'emporte
+  /// sur celui du socle pour le même type d'op — voir [ZEmbedRenderer] pour la
+  /// règle de collision.
+  final List<ZEmbedRenderer> extraEmbedRenderers;
 
   /// Texte du placeholder par défaut de l'état vide.
   static const String defaultPlaceholder = 'Aucun contenu';
@@ -201,6 +209,20 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
 
   /// JSON canonique de la dernière valeur rendue — dédup de la ré-hydratation.
   late String _lastValueJson;
+
+  // Mémoïsation de la liste d'`EmbedBuilder`s : recalculée seulement quand la
+  // liste déclarée par l'appelant CHANGE D'IDENTITÉ, jamais à chaque build
+  // (AD-2 : la référence passée à Quill doit rester stable).
+  List<ZEmbedRenderer>? _renderersSeen;
+  List<EmbedBuilder>? _embedBuildersCache;
+
+  List<EmbedBuilder> get _embedBuilders {
+    if (!identical(_renderersSeen, widget.extraEmbedRenderers)) {
+      _renderersSeen = widget.extraEmbedRenderers;
+      _embedBuildersCache = zEmbedBuildersWith(widget.extraEmbedRenderers);
+    }
+    return _embedBuildersCache!;
+  }
 
   @override
   void initState() {
@@ -429,7 +451,7 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
                 // (enfant) gagnerait sinon l'arène sur le geste de copie.
                 enableInteractiveSelection: !widget.copyOnLongPress,
                 showCursor: false,
-                embedBuilders: kZEmbedBuilders,
+                embedBuilders: _embedBuilders,
                 // (AD-10) : repli TOTAL. Sans lui, un type
                 // d'embed inconnu — d'un hôte, d'une version future, ou né
                 // d'une op corrompue — lève un `UnimplementedError` EN PLEIN

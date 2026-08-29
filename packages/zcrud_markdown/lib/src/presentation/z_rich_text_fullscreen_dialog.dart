@@ -63,6 +63,7 @@ Future<Object?> showZRichTextFullscreenDialog(
   ZRichTextFormulaSpec? formulaSpec,
   ZRichTextToolbarConfig? toolbarConfig,
   bool? fullscreen,
+  List<ZEmbedRenderer> extraEmbedRenderers = const <ZEmbedRenderer>[],
 }) {
   final size = MediaQuery.sizeOf(context);
   // `null` ⇒ arbitrage AUTOMATIQUE sur la largeur, exactement comme avant :
@@ -85,6 +86,7 @@ Future<Object?> showZRichTextFullscreenDialog(
       formulaSpec: formulaSpec,
       toolbarConfig: toolbarConfig,
       fullscreen: isFullscreen,
+      extraEmbedRenderers: extraEmbedRenderers,
     ),
   );
 }
@@ -108,8 +110,16 @@ class ZRichTextFullscreenDialog extends StatefulWidget {
     this.formulaSpec,
     this.toolbarConfig,
     this.fullscreen = false,
+    this.extraEmbedRenderers = const <ZEmbedRenderer>[],
     super.key,
   });
+
+  /// Rendus d'embed DÉCLARÉS PAR L'APPELANT, en plus de ceux du socle.
+  ///
+  /// Vide (défaut) ⇒ rendu strictement inchangé. Un rendu déclaré ici l'emporte
+  /// sur celui du socle pour le même type d'op — voir [ZEmbedRenderer] pour la
+  /// règle de collision.
+  final List<ZEmbedRenderer> extraEmbedRenderers;
 
   /// Valeur NEUTRE (ou format persisté du [codec]) pré-remplissant l'éditeur.
   final Object? initialValue;
@@ -170,6 +180,20 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
   late final ScrollController _scroll;
   late final ZCodec _codec;
   late final QuillSimpleToolbarConfig _toolbarConfig;
+
+  // Mémoïsation de la liste d'`EmbedBuilder`s : recalculée seulement quand la
+  // liste déclarée par l'appelant CHANGE D'IDENTITÉ, jamais à chaque build
+  // (AD-2 : la référence passée à Quill doit rester stable).
+  List<ZEmbedRenderer>? _renderersSeen;
+  List<EmbedBuilder>? _embedBuildersCache;
+
+  List<EmbedBuilder> get _embedBuilders {
+    if (!identical(_renderersSeen, widget.extraEmbedRenderers)) {
+      _renderersSeen = widget.extraEmbedRenderers;
+      _embedBuildersCache = zEmbedBuildersWith(widget.extraEmbedRenderers);
+    }
+    return _embedBuildersCache!;
+  }
 
   @override
   void initState() {
@@ -257,7 +281,7 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
                   scrollController: _scroll,
                   config: QuillEditorConfig(
                     padding: EdgeInsetsDirectional.zero,
-                    embedBuilders: kZEmbedBuilders,
+                    embedBuilders: _embedBuilders,
                     // (AD-10) : repli TOTAL. Sans lui, un type
                     // d'embed inconnu — d'un hôte, d'une version future, ou né
                     // d'une op corrompue — lève un `UnimplementedError` EN PLEIN

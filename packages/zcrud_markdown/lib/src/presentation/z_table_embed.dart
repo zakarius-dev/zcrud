@@ -38,6 +38,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import '../data/z_table_markdown.dart';
 import '../data/z_table_ops.dart';
 import 'z_table_cell.dart';
+import 'z_table_editor_scope.dart';
 import 'z_table_width_scope.dart';
 
 // Alias locaux privés pour préserver le corps inchangé (clés importées).
@@ -247,20 +248,41 @@ Widget _tableErrorPlaceholder(BuildContext context) {
 /// (`{"rows": int, "columns": int, "cells": List<List<String>>}`), ou `null` si
 /// l'utilisateur annule. [initial] pré-remplit la grille (édition d'un embed
 /// existant). Cibles ≥ 48 dp, [Semantics] explicites, insets DIRECTIONNELS.
+///
+/// [maxDim] borne le nombre de lignes ET de colonnes (`null` ⇒
+/// [kZTableDefaultMaxDim]). [cellWidth] fixe la largeur d'une colonne de saisie
+/// (`null` ⇒ [kZTableDefaultCellWidth]). [cellBuilder] remplace le champ de
+/// texte d'une cellule (`null` ⇒ champ de texte, rendu inchangé).
 Future<Map<String, dynamic>?> showZTableDialog(
   BuildContext context, {
   Map<String, dynamic>? initial,
+  int? maxDim,
+  double? cellWidth,
+  ZTableCellEditorBuilder? cellBuilder,
 }) {
   return showDialog<Map<String, dynamic>>(
     context: context,
-    builder: (BuildContext dialogContext) => _ZTableDialog(initial: initial),
+    builder: (BuildContext dialogContext) => _ZTableDialog(
+      initial: initial,
+      maxDim: maxDim,
+      cellWidth: cellWidth,
+      cellBuilder: cellBuilder,
+    ),
   );
 }
 
 class _ZTableDialog extends StatefulWidget {
-  const _ZTableDialog({this.initial});
+  const _ZTableDialog({
+    this.initial,
+    this.maxDim,
+    this.cellWidth,
+    this.cellBuilder,
+  });
 
   final Map<String, dynamic>? initial;
+  final int? maxDim;
+  final double? cellWidth;
+  final ZTableCellEditorBuilder? cellBuilder;
 
   @override
   State<_ZTableDialog> createState() => _ZTableDialogState();
@@ -270,15 +292,21 @@ class _ZTableDialogState extends State<_ZTableDialog> {
   /// Cible de tap minimale (AD-13).
   static const double _kMinTapTarget = 48;
 
-  /// Bornes de dimension du tableau (MVP).
+  /// Borne INFÉRIEURE de dimension du tableau.
   static const int _kMinDim = 1;
-  static const int _kMaxDim = 12;
-
-  /// Largeur d'une colonne de saisie dans la grille du dialogue.
-  static const double _kCellWidth = 96;
 
   /// Largeur de la gouttière de menus LIGNE — cible ≥ 48 dp.
   static const double _kRowMenuWidth = 48;
+
+  /// Borne supérieure effective — paramètre, sinon défaut historique. Toujours
+  /// ≥ [_kMinDim] : une borne absurde ne rend pas la grille inutilisable.
+  int get _maxDim {
+    final int requested = widget.maxDim ?? kZTableDefaultMaxDim;
+    return requested < _kMinDim ? _kMinDim : requested;
+  }
+
+  /// Largeur effective d'une colonne de saisie.
+  double get _cellWidth => widget.cellWidth ?? kZTableDefaultCellWidth;
 
   late int _rows;
   late int _columns;
@@ -344,8 +372,8 @@ class _ZTableDialogState extends State<_ZTableDialog> {
   /// Redimensionne la grille en préservant le texte des cellules conservées et en
   /// disposant les contrôleurs supprimés (anti-fuite).
   void _resize(int rows, int columns) {
-    final int newRows = rows.clamp(_kMinDim, _kMaxDim);
-    final int newColumns = columns.clamp(_kMinDim, _kMaxDim);
+    final int newRows = rows.clamp(_kMinDim, _maxDim);
+    final int newColumns = columns.clamp(_kMinDim, _maxDim);
     if (newRows == _rows && newColumns == _columns) return;
     final List<List<TextEditingController>> next = <List<TextEditingController>>[];
     for (var r = 0; r < newRows; r++) {
@@ -376,7 +404,7 @@ class _ZTableDialogState extends State<_ZTableDialog> {
 
   /// Insère une ligne VIDE à l'index [at] (0.._rows) — (menu ligne).
   void _insertRowAt(int at) {
-    if (_rows >= _kMaxDim) return;
+    if (_rows >= _maxDim) return;
     final int idx = at.clamp(0, _rows);
     final List<TextEditingController> row = <TextEditingController>[
       for (var c = 0; c < _columns; c++) TextEditingController(),
@@ -402,7 +430,7 @@ class _ZTableDialogState extends State<_ZTableDialog> {
 
   /// Insère une colonne VIDE à l'index [at] (0.._columns) — (menu colonne).
   void _insertColumnAt(int at) {
-    if (_columns >= _kMaxDim) return;
+    if (_columns >= _maxDim) return;
     final int idx = at.clamp(0, _columns);
     setState(() {
       for (final List<TextEditingController> row in _cells) {
@@ -461,7 +489,7 @@ class _ZTableDialogState extends State<_ZTableDialog> {
         IconButton(
           key: ValueKey<String>(incKey),
           tooltip: 'Ajouter une $label'.toLowerCase(),
-          onPressed: value < _kMaxDim ? onIncrement : null,
+          onPressed: value < _maxDim ? onIncrement : null,
           icon: const Icon(Icons.add),
         ),
       ],
@@ -548,6 +576,43 @@ class _ZTableDialogState extends State<_ZTableDialog> {
         ),
       );
 
+  /// Éditeur d'UNE cellule.
+  ///
+  /// Sans éditeur fourni, c'est le champ de texte historique, câblé sur le
+  /// contrôleur de la cellule. Avec un éditeur fourni, le contrôleur reste la
+  /// SOURCE DE VÉRITÉ — l'éditeur en lit la valeur et y réécrit par son rappel
+  /// — de sorte que la validation, le redimensionnement et la libération des
+  /// ressources ne changent pas d'un iota.
+  Widget _cell(int r, int c) {
+    final ZTableCellEditorBuilder? builder = widget.cellBuilder;
+    final TextEditingController controller = _cells[r][c];
+    if (builder == null) {
+      return TextField(
+        key: ValueKey<String>('ztable-cell-$r-$c'),
+        controller: controller,
+        textAlign: TextAlign.start,
+        decoration: InputDecoration(
+          isDense: true,
+          border: const OutlineInputBorder(),
+          labelText: 'L${r + 1}C${c + 1}',
+        ),
+      );
+    }
+    return KeyedSubtree(
+      key: ValueKey<String>('ztable-cell-$r-$c'),
+      child: builder(
+        context,
+        r,
+        c,
+        controller.text,
+        // Écriture SANS `setState` : la grille n'a pas à se reconstruire à
+        // chaque frappe dans une cellule (AD-2), et le contrôleur porte déjà
+        // la valeur que la validation relira.
+        (String value) => controller.text = value,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final MaterialLocalizations l10n = MaterialLocalizations.of(context);
@@ -599,7 +664,7 @@ class _ZTableDialogState extends State<_ZTableDialog> {
                         const SizedBox(width: _kRowMenuWidth),
                         for (var c = 0; c < _columns; c++)
                           SizedBox(
-                            width: _kCellWidth,
+                            width: _cellWidth,
                             child: Align(
                               alignment: AlignmentDirectional.centerStart,
                               child: _columnMenu(c),
@@ -623,17 +688,8 @@ class _ZTableDialogState extends State<_ZTableDialog> {
                                 bottom: 8,
                               ),
                               child: SizedBox(
-                                width: _kCellWidth,
-                                child: TextField(
-                                  key: ValueKey<String>('ztable-cell-$r-$c'),
-                                  controller: _cells[r][c],
-                                  textAlign: TextAlign.start,
-                                  decoration: InputDecoration(
-                                    isDense: true,
-                                    border: const OutlineInputBorder(),
-                                    labelText: 'L${r + 1}C${c + 1}',
-                                  ),
-                                ),
+                                width: _cellWidth,
+                                child: _cell(r, c),
                               ),
                             ),
                         ],

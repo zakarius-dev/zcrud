@@ -30,6 +30,7 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
+import '../data/z_latex_normalize.dart';
 import 'z_rich_text_style_set.dart';
 
 /// Clé/type Delta de l'embed LaTeX **inline** — op `{"insert": {"latex": "<src>"}}`.
@@ -133,6 +134,50 @@ class ZFormulaSpecScope extends InheritedWidget {
   bool updateShouldNotify(ZFormulaSpecScope oldWidget) => spec != oldWidget.spec;
 }
 
+/// Rendu de SECOURS d'une formule que le moteur n'a pas su analyser.
+///
+/// Le repli déclaré par la [ZRichTextFormulaSpec] ambiante l'emporte ; en son
+/// absence — ou s'il lève — le placeholder d'erreur du socle reprend la main.
+/// [source] est la source EFFECTIVEMENT soumise au moteur (normalisations
+/// comprises), pas la charge brute de l'op.
+Widget _formulaFallback(
+  BuildContext context,
+  ZRichTextFormulaSpec? spec,
+  String source,
+  Object error,
+) {
+  final Widget Function(BuildContext, String, Object)? builder =
+      spec?.fallbackBuilder;
+  if (builder != null) {
+    try {
+      return builder(context, source, error);
+    } on Object catch (failure, stack) {
+      // AD-10 : un repli d'hôte qui casse ne casse pas l'éditeur.
+      assert(() {
+        debugPrint('ZRichTextFormulaSpec.fallbackBuilder a levé ($failure)\n'
+            '$stack');
+        return true;
+      }());
+    }
+  }
+  return _latexErrorPlaceholder(context);
+}
+
+/// Applique [normalizer] à [source] SANS jamais laisser passer une exception :
+/// une réparation qui casse laisse la source telle quelle.
+String _safeNormalize(String Function(String) normalizer, String source) {
+  try {
+    return normalizer(source);
+  } on Object catch (failure, stack) {
+    assert(() {
+      debugPrint('ZRichTextFormulaSpec.sourceNormalizer a levé ($failure)\n'
+          '$stack');
+      return true;
+    }());
+    return source;
+  }
+}
+
 /// Rendu DÉFENSIF (AD-10) commun d'une formule LaTeX avec un [mathStyle] donné.
 /// Donnée absente / non-`String` / vide → placeholder ; formule malformée →
 /// `onErrorFallback` (jamais de throw).
@@ -145,13 +190,21 @@ class ZFormulaSpecScope extends InheritedWidget {
 Widget _buildMath(
   BuildContext context,
   EmbedContext embedContext,
-  MathStyle mathStyle,
-) {
+  MathStyle mathStyle, {
+  bool legacySource = false,
+}) {
   final Object? data = embedContext.node.value.data;
   if (data is! String || data.trim().isEmpty) {
     return _latexErrorPlaceholder(context);
   }
   final ZRichTextFormulaSpec? spec = ZFormulaSpecScope.maybeOf(context);
+  // Les charges HÉRITÉES sont normalisées AVANT rendu : elles viennent d'un
+  // pipeline d'écriture qui n'est plus le nôtre, et une source malformée
+  // n'affiche rien d'autre qu'une erreur. Nos propres clés traversent nues —
+  // ce que nous écrivons, nous n'avons pas à le réparer.
+  String source = legacySource ? zNormalizeLegacyLatexSource(data) : data;
+  final String Function(String)? normalizer = spec?.sourceNormalizer;
+  if (normalizer != null) source = _safeNormalize(normalizer, source);
   TextStyle style = spec?.textStyle ?? embedContext.textStyle;
   final double? factor = mathStyle == MathStyle.display
       ? spec?.blockScaleFactor
@@ -163,10 +216,11 @@ Widget _buildMath(
     style = style.copyWith(fontSize: size * factor);
   }
   return Math.tex(
-    data,
+    source,
     mathStyle: mathStyle,
     textStyle: style,
-    onErrorFallback: (FlutterMathException _) => _latexErrorPlaceholder(context),
+    onErrorFallback: (FlutterMathException error) =>
+        _formulaFallback(context, spec, source, error),
   );
 }
 
@@ -242,6 +296,10 @@ class ZLatexBlockEmbedBuilder extends EmbedBuilder {
 /// builders. `expanded == false` : parité EXACTE avec le legacy
 /// (`FormulaEmbedBuilder.expanded => false`, la formule vit dans le flux du
 /// paragraphe). LECTURE SEULE : rien dans zcrud n'ÉCRIT jamais cette clé.
+///
+/// La source est NORMALISÉE avant rendu (sauts de ligne, commandes doublement
+/// échappées) : un corpus hérité porte ces malformations, et sans réparation
+/// il ne s'affiche pas. La charge persistée n'est pas touchée.
 class ZLegacyFormulaEmbedBuilder extends EmbedBuilder {
   /// Builder `const` (sans état).
   const ZLegacyFormulaEmbedBuilder();
@@ -255,12 +313,13 @@ class ZLegacyFormulaEmbedBuilder extends EmbedBuilder {
 
   @override
   Widget build(BuildContext context, EmbedContext embedContext) =>
-      _buildMath(context, embedContext, MathStyle.display);
+      _buildMath(context, embedContext, MathStyle.display, legacySource: true);
 }
 
 /// `EmbedBuilder` de LECTURE de l'embed **legacy `formula_inline`** :
 /// rendu DÉFENSIF (AD-10) `MathStyle.text`, `expanded == false` (parité
 /// `FormulaInlineEmbedBuilder`). LECTURE SEULE (cf. [kLegacyFormulaEmbedType]).
+/// Source NORMALISÉE avant rendu, comme [ZLegacyFormulaEmbedBuilder].
 class ZLegacyFormulaInlineEmbedBuilder extends EmbedBuilder {
   /// Builder `const` (sans état).
   const ZLegacyFormulaInlineEmbedBuilder();
@@ -274,7 +333,7 @@ class ZLegacyFormulaInlineEmbedBuilder extends EmbedBuilder {
 
   @override
   Widget build(BuildContext context, EmbedContext embedContext) =>
-      _buildMath(context, embedContext, MathStyle.text);
+      _buildMath(context, embedContext, MathStyle.text, legacySource: true);
 }
 
 /// Saisie validée du dialogue LaTeX : la [source] et le mode [block]

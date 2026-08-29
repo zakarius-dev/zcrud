@@ -16,6 +16,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 import '../domain/z_codec.dart';
 import '../domain/z_markdown_copy_format.dart';
+import 'z_embed_renderer.dart';
 import 'z_markdown_chrome.dart';
 import 'z_markdown_field.dart';
 import 'z_rich_text_style_set.dart';
@@ -46,7 +47,8 @@ import 'z_rich_text_toolbar_config.dart';
 /// pour un hôte, donc tout paramètre par-champ de [ZMarkdownField] DOIT être
 /// posable ici (garde de parité `z_markdown_registration_parity_test.dart`).
 /// [showLabel] : `false` masque le libellé rendu par le champ (hôte posant le
-/// sien).
+/// sien). [extraEmbedRenderers] : rendus d'embed déclarés par l'appelant,
+/// partagés par tous les champs rich-text du sous-arbre (vide ⇒ inchangé).
 ///
 /// Tous OPTIONNELS. **Omis ne veut pas dire « nu »** : un champ
 /// `inlineMarkdown` rend par défaut sa carte (en-tête icône + libellé, bordure
@@ -72,6 +74,7 @@ void registerZMarkdownFields(
   List<ZMarkdownCopyFormat> copyFormats = const <ZMarkdownCopyFormat>[],
   String? copiedFeedbackText,
   String? copySemanticsLabel,
+  List<ZEmbedRenderer> extraEmbedRenderers = const <ZEmbedRenderer>[],
 }) {
   Widget build(ZFieldWidgetContext ctx, ZMarkdownFieldMode mode) =>
       ZMarkdownField.fromContext(
@@ -96,6 +99,7 @@ void registerZMarkdownFields(
         copyFormats: copyFormats,
         copiedFeedbackText: copiedFeedbackText,
         copySemanticsLabel: copySemanticsLabel,
+        extraEmbedRenderers: extraEmbedRenderers,
       );
 
   registry.register(

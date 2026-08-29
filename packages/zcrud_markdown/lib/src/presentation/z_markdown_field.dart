@@ -134,6 +134,7 @@ class ZMarkdownField extends StatefulWidget {
     this.copyFormats = const <ZMarkdownCopyFormat>[],
     this.copiedFeedbackText,
     this.copySemanticsLabel,
+    this.extraEmbedRenderers = const <ZEmbedRenderer>[],
     this.onInit,
     this.onBuild,
     super.key,
@@ -169,12 +170,21 @@ class ZMarkdownField extends StatefulWidget {
     this.copyFormats = const <ZMarkdownCopyFormat>[],
     this.copiedFeedbackText,
     this.copySemanticsLabel,
+    this.extraEmbedRenderers = const <ZEmbedRenderer>[],
     this.onInit,
     this.onBuild,
     super.key,
   })  : controller = null,
         field = ctx.field,
         showToolbar = true;
+
+  /// Rendus d'embed DÉCLARÉS PAR L'APPELANT, en plus de ceux du socle.
+  ///
+  /// Vide (défaut) ⇒ rendu strictement inchangé. Un rendu déclaré ici l'emporte
+  /// sur celui du socle pour le même type d'op — voir [ZEmbedRenderer] pour la
+  /// règle de collision. Relayé au rendu lecteur du champ et au dialogue
+  /// plein-écran : une seule déclaration couvre les trois.
+  final List<ZEmbedRenderer> extraEmbedRenderers;
 
   /// Le libellé du champ est-il RENDU au-dessus de l'éditeur ?
   ///
@@ -385,6 +395,20 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
 
   /// Config de toolbar STABLE (AD-2) — construite UNE FOIS si édition.
   QuillSimpleToolbarConfig? _toolbarConfig;
+
+  // Mémoïsation de la liste d'`EmbedBuilder`s : recalculée seulement quand la
+  // liste déclarée par l'appelant CHANGE D'IDENTITÉ, jamais à chaque build
+  // (AD-2 : la référence passée à Quill doit rester stable).
+  List<ZEmbedRenderer>? _renderersSeen;
+  List<EmbedBuilder>? _embedBuildersCache;
+
+  List<EmbedBuilder> get _embedBuilders {
+    if (!identical(_renderersSeen, widget.extraEmbedRenderers)) {
+      _renderersSeen = widget.extraEmbedRenderers;
+      _embedBuildersCache = zEmbedBuildersWith(widget.extraEmbedRenderers);
+    }
+    return _embedBuildersCache!;
+  }
 
   /// Ce que le champ rend, calculé UNE FOIS en [initState].
   late final _RenderMode _renderMode;
@@ -848,6 +872,8 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       // la config de barre FOURNIE par l'hôte suit en plein-écran
       // (habillage compris). `null` ⇒ défaut historique du dialog (full).
       toolbarConfig: widget.toolbarConfig,
+      // les rendus d'embed déclarés suivent le champ jusqu'au plein-écran.
+      extraEmbedRenderers: widget.extraEmbedRenderers,
     );
     if (result == null || !mounted) return;
     _write(result);
@@ -890,6 +916,8 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         copyFormats: widget.copyFormats,
         copiedFeedbackText: widget.copiedFeedbackText,
         copySemanticsLabel: widget.copySemanticsLabel,
+        // ... et jusqu'au rendu lecteur du champ.
+        extraEmbedRenderers: widget.extraEmbedRenderers,
       );
 
   Widget _buildEditor(
@@ -930,7 +958,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         // Borné ⇒ défilement interne ; sinon hauteur intrinsèque.
         scrollable: bounded,
         padding: EdgeInsetsDirectional.zero,
-        embedBuilders: kZEmbedBuilders,
+        embedBuilders: _embedBuilders,
         // (AD-10) : repli TOTAL. Sans lui, un type
         // d'embed inconnu — d'un hôte, d'une version future, ou né
         // d'une op corrompue — lève un `UnimplementedError` EN PLEIN

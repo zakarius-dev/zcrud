@@ -229,6 +229,8 @@ class ZRichTextFormulaSpec {
     this.textStyle,
     this.blockScaleFactor,
     this.inlineScaleFactor,
+    this.fallbackBuilder,
+    this.sourceNormalizer,
   });
 
   /// Style de texte de base des formules (remplace le style ambiant du point
@@ -240,4 +242,30 @@ class ZRichTextFormulaSpec {
 
   /// Facteur d'échelle des formules **inline** (`latex`/`formula_inline`).
   final double? inlineScaleFactor;
+
+  /// Rendu de SECOURS d'une formule que le moteur de rendu n'a pas su
+  /// analyser — la seule voie pour brancher un second moteur SANS le faire
+  /// entrer dans le paquet.
+  ///
+  /// Reçoit la source LaTeX telle qu'elle a été soumise au moteur et l'erreur
+  /// levée. Appelé AVANT le placeholder d'erreur du socle : le widget rendu
+  /// prend sa place. Un repli qui lève est neutralisé — le placeholder du
+  /// socle reprend la main (jamais de throw au rendu).
+  ///
+  /// `null` (défaut) ⇒ placeholder d'erreur du socle, rendu inchangé.
+  ///
+  /// La spec voyage par champ ; une seule déclaration couvre donc le rendu
+  /// LECTEUR et le rendu ÉDITEUR des formules du champ.
+  final Widget Function(BuildContext context, String source, Object error)?
+      fallbackBuilder;
+
+  /// Réparation de la source LaTeX appliquée JUSTE AVANT le rendu.
+  ///
+  /// Fonction PURE sur la source : elle ne touche ni la valeur du champ, ni le
+  /// format persisté — seul l'affichage change. Appliquée à TOUS les types de
+  /// formule du champ (inline, bloc, et les types hérités), après la
+  /// normalisation que le socle applique déjà aux seuls types hérités.
+  ///
+  /// `null` (défaut) ⇒ aucune réparation supplémentaire.
+  final String Function(String source)? sourceNormalizer;
 }

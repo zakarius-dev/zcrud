@@ -69,13 +69,36 @@ import 'delta_neutral_ops.dart';
 /// jamais silencieuses ni fatales. Pour un round-trip **sans perte**, utiliser
 /// `ZDeltaCodec` (format persisté = Delta).
 ///
-/// NOTE embeds LaTeX HTML : l'éditeur historique mappe des fragments LaTeX HTML ↔ embeds via un
-/// `CustomHtmlPart` (`latex_html_part.dart`). Ce mapping fin est **hors périmètre
-/// ** (non requis pour la migration de base) : un fragment HTML non
-/// convertible dégrade proprement en texte (AD-10), jamais de throw.
+/// ## Règles de conversion supplémentaires ([customBlocks])
+///
+/// Le décodage accepte des **règles de conversion HTML → Delta fournies par
+/// l'appelant**, relayées telles quelles au convertisseur sous-jacent. Elles
+/// permettent de mapper un balisage propre à l'appelant (par exemple des
+/// fragments porteurs de LaTeX — `data-formula`, `$$…$$`, `\[…\]`, spans
+/// `katex`) vers des ops Delta **natives**, plutôt que de le laisser dégrader
+/// en texte.
+///
+/// La liste est **vide par défaut ⇒ décodage strictement inchangé**. Ce sont
+/// des règles de **conversion**, jamais de rendu : le rendu reste celui des
+/// embeds Delta (AD-12 intact — aucune WebView, aucun moteur HTML).
+///
+/// Le type d'une règle appartient à la bibliothèque de conversion
+/// (`flutter_quill_delta_from_html`) ; l'appelant qui en fournit une l'importe
+/// donc lui-même. Un appelant qui n'en fournit pas ne la voit jamais.
 final class ZHtmlCodec implements ZCodec {
-  /// Codec `const` (aucun état mutable).
-  const ZHtmlCodec();
+  /// Codec `const` (aucun état mutable) ; [customBlocks] vide ⇒ inchangé.
+  const ZHtmlCodec({this.customBlocks = const <html_from.CustomHtmlPart>[]});
+
+  // AD-1 : `CustomHtmlPart` est le SEUL type de la lib de conversion qui
+  // apparaisse dans une signature publique de ce paquet, et c'est délibéré —
+  // il n'existe pas d'équivalent neutre : une règle de conversion se DÉFINIT
+  // contre l'arbre DOM de la lib (`dom.Element` → `List<Operation>`). La
+  // ré-envelopper derrière un type maison n'isolerait rien (l'implémenteur
+  // manipulerait les mêmes types dans le corps) et coûterait une couche
+  // d'indirection. Le défaut vide garde l'appelant qui ne s'en sert pas
+  // totalement à l'écart de la dépendance.
+  /// Règles de conversion HTML → Delta supplémentaires (vide ⇒ inchangé).
+  final List<html_from.CustomHtmlPart> customBlocks;
 
   @override
   Object? encode(List<Map<String, dynamic>> deltaOps) {
@@ -112,7 +135,11 @@ final class ZHtmlCodec implements ZCodec {
       // `HtmlToDelta().convert` retourne une `Delta` (dart_quill_delta, le même
       // type que `flutter_quill/quill_delta.dart` re-exporte) → ops NEUTRES via
       // le convertisseur partagé (aucun type de conversion ne fuit).
-      final delta = html_from.HtmlToDelta().convert(html);
+      // Liste vide ⇒ `HtmlToDelta` reçoit `[]`, exactement ce que fait son
+      // repli interne quand le paramètre est omis (`customBlocks ?? []`) :
+      // le décodage est donc IDENTIQUE à l'appel sans paramètre.
+      final delta =
+          html_from.HtmlToDelta(customBlocks: customBlocks).convert(html);
       return DeltaNeutralOps.deltaToNeutralOps(delta);
     } on Object catch (error, stack) {
       // AD-10 : HTML malformé/legacy → `[]`, jamais de throw.
