@@ -4,9 +4,17 @@
 /// Deux invariants gouvernent ce fichier :
 /// * **défaut inchangé** : slots nuls ⇒ l'arbre est STRICTEMENT celui d'avant la
 ///   CR (titre nu, aucun `flexibleSpace`, aucun `foregroundColor`) ;
-/// * **neutralité VIS-1** : le dégradé n'existe QUE si l'hôte a injecté un
-///   `ZcrudScope.gradientResolver` ET que celui-ci rend une spec. Aucun repli
-///   dérivé n'est réintroduit dans la chaîne.
+/// * **neutralité de la clé EXPLICITE** : quand `gradientKey` est déclarée, le
+///   dégradé n'existe QUE si l'hôte a injecté un `ZcrudScope.gradientResolver`
+///   ET que celui-ci rend une spec pour cette clé-là. Aucun repli dérivé n'est
+///   réintroduit sur ce chemin.
+///
+/// ⚠️ Ce second invariant ne vaut PLUS pour une clé **nulle**. Le chrome de
+/// page dérive alors une identité du titre (ou de `signatureKey`) et résout
+/// `zcrud.signature.<identité>`, qui porte une valeur de référence sous le
+/// profil `legacy`. Le seam de l'hôte reste consulté en premier — dans les deux
+/// profils — et `ZReferenceProfile.neutral` ramène le rendu à l'état d'avant.
+/// Les tests de ce groupe distinguent explicitement les deux chemins.
 library;
 
 import 'package:flutter/material.dart';
@@ -131,17 +139,60 @@ void main() {
       expect(bar.foregroundColor, isNull);
     });
 
-    testWidgets('resolver injecté MAIS clé nulle ⇒ jamais appelé', (
-      tester,
-    ) async {
-      await _pump(
-        tester,
-        const Scaffold(appBar: ZSearchableAppBar(title: 'Titre')),
-        resolver: _resolver,
-      );
-      expect(_clesRecues, isEmpty);
-      expect(_appBar(tester).flexibleSpace, isNull);
-    });
+    testWidgets(
+      'clé nulle : le resolver est consulté sur la clé DÉRIVÉE du titre, et '
+      'sur elle seule',
+      (tester) async {
+        await _pump(
+          tester,
+          const Scaffold(appBar: ZSearchableAppBar(title: 'Titre')),
+          resolver: _resolver,
+        );
+        // Le chrome d'identité par défaut consulte le seam AVANT la
+        // référence: l'hôte garde donc la main, y compris sans clé explicite.
+        expect(_clesRecues, <String>['zcrud.signature.Titre']);
+      },
+    );
+
+    testWidgets(
+      'clé nulle + titre WIDGET : aucune identité dérivable ⇒ resolver JAMAIS '
+      'appelé, app-bar strictement inchangée',
+      (tester) async {
+        await _pump(
+          tester,
+          const Scaffold(appBar: ZSearchableAppBar(title: Text('Titre'))),
+          resolver: _resolver,
+        );
+        expect(_clesRecues, isEmpty);
+        expect(_appBar(tester).flexibleSpace, isNull);
+        expect(_appBar(tester).foregroundColor, isNull);
+      },
+    );
+
+    testWidgets(
+      'clé nulle + profil neutre : le seam reste consulté (il prime dans les '
+      'DEUX profils), mais son refus laisse l\'app-bar inchangée',
+      (tester) async {
+        _clesRecues.clear();
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ZcrudScope(
+              gradientResolver: _resolver,
+              theme: const ZcrudTheme(
+                referenceProfile: ZReferenceProfile.neutral,
+              ),
+              child: const Scaffold(
+                appBar: ZSearchableAppBar(title: 'Titre'),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(_clesRecues, <String>['zcrud.signature.Titre']);
+        expect(_appBar(tester).flexibleSpace, isNull);
+        expect(_appBar(tester).foregroundColor, isNull);
+      },
+    );
 
     testWidgets('resolver injecté, clé VIDE ⇒ jamais appelé', (tester) async {
       await _pump(

@@ -6,10 +6,12 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zcrud_core/zcrud_core.dart' show ZDomainFailure, ZFailure, label;
+import 'package:zcrud_core/zcrud_core.dart'
+    show ZDomainFailure, ZFailure, ZReferenceProfile, ZcrudTheme, label;
 
 import '../domain/z_document_ocr_port.dart';
 import '../domain/z_document_text_extraction_port.dart';
+import 'z_document_viewer_reference.dart';
 
 /// État de lecture affiché par [ZDocumentViewerChrome].
 enum ZDocumentViewerLoadState {
@@ -102,6 +104,8 @@ class ZDocumentViewerChrome extends StatefulWidget {
     this.onTextRecognitionFailed,
     this.recognizeTextIcon = Icons.document_scanner_outlined,
     this.recognizeTextLabelKey = kZDocumentRecognizeTextLabelKey,
+    this.navigationBarMinHeight,
+    this.navigationIconSize,
     super.key,
   });
 
@@ -158,6 +162,23 @@ class ZDocumentViewerChrome extends StatefulWidget {
   /// [kZDocumentRecognizeTextLabelKey].
   final String recognizeTextLabelKey;
 
+  /// Hauteur **minimale** de la barre de navigation de pages.
+  ///
+  /// `null` ⇒ la référence auditée
+  /// ([ZDocumentViewerReference.barHeight]) sous profil
+  /// `ZReferenceProfile.legacy`, aucune contrainte sous
+  /// `ZReferenceProfile.neutral`. C'est un plancher : la barre grandit
+  /// librement au-delà, et une cible interactive n'y est jamais comprimée.
+  final double? navigationBarMinHeight;
+
+  /// Taille des glyphes des actions de navigation de pages.
+  ///
+  /// `null` ⇒ la référence auditée
+  /// ([ZDocumentViewerReference.barIconSize]) sous profil
+  /// `ZReferenceProfile.legacy`, la taille par défaut de `Icon` sous
+  /// `ZReferenceProfile.neutral`.
+  final double? navigationIconSize;
+
   @override
   State<ZDocumentViewerChrome> createState() => _ZDocumentViewerChromeState();
 }
@@ -170,6 +191,16 @@ class _ZDocumentViewerChromeState extends State<ZDocumentViewerChrome> {
     final scheme = Theme.of(context).colorScheme;
     final body = _bodyForState();
     final port = widget.ocrPort;
+    final ZReferenceProfile? profile =
+        ZcrudTheme.of(context).referenceProfile;
+    // Épaisseur du filet : la référence sous `legacy`, le défaut du SDK
+    // (`null`) sous `neutral` — la HAUTEUR, elle, valait déjà 1 dp dans les
+    // deux profils, donc elle ne bouge pas.
+    final double? dividerThickness = zDocumentLegacyOrNeutral<double?>(
+      profile,
+      ZDocumentViewerReference.dividerThickness,
+      null,
+    );
     return ColoredBox(
       color: scheme.surface,
       child: Column(
@@ -177,14 +208,21 @@ class _ZDocumentViewerChromeState extends State<ZDocumentViewerChrome> {
         children: <Widget>[
           if (widget.topBar case final topBar?) topBar,
           if (widget.topBar case final _?)
-            Divider(height: 1, color: scheme.outlineVariant),
+            Divider(
+              height: ZDocumentViewerReference.dividerThickness,
+              thickness: dividerThickness,
+              color: scheme.outlineVariant,
+            ),
           // Le geste n'existe QUE si l'hôte a fourni un port disponible : sans
           // port, aucun widget n'est ajouté à la colonne (inertie absolue).
           if (port != null && port.isAvailable)
             Align(
               alignment: AlignmentDirectional.centerEnd,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                constraints: const BoxConstraints(
+                  minWidth: ZDocumentViewerReference.minTouchTarget,
+                  minHeight: ZDocumentViewerReference.minTouchTarget,
+                ),
                 child: IconButton(
                   tooltip: label(context, widget.recognizeTextLabelKey),
                   icon: Icon(widget.recognizeTextIcon),
@@ -194,9 +232,27 @@ class _ZDocumentViewerChromeState extends State<ZDocumentViewerChrome> {
             ),
           if (body != null) Expanded(child: body),
           if (widget.pageNavigation != null)
-            _PageNavigationBar(navigation: widget.pageNavigation!),
+            _PageNavigationBar(
+              navigation: widget.pageNavigation!,
+              minHeight: widget.navigationBarMinHeight ??
+                  zDocumentLegacyOrNeutral<double?>(
+                    profile,
+                    ZDocumentViewerReference.barHeight,
+                    null,
+                  ),
+              iconSize: widget.navigationIconSize ??
+                  zDocumentLegacyOrNeutral<double?>(
+                    profile,
+                    ZDocumentViewerReference.barIconSize,
+                    null,
+                  ),
+            ),
           if (widget.bottomBar case final _?)
-            Divider(height: 1, color: scheme.outlineVariant),
+            Divider(
+              height: ZDocumentViewerReference.dividerThickness,
+              thickness: dividerThickness,
+              color: scheme.outlineVariant,
+            ),
           if (widget.bottomBar case final bottomBar?) bottomBar,
         ],
       ),
@@ -276,33 +332,55 @@ class _ZDocumentViewerChromeState extends State<ZDocumentViewerChrome> {
 }
 
 class _PageNavigationBar extends StatelessWidget {
-  const _PageNavigationBar({required this.navigation});
+  const _PageNavigationBar({
+    required this.navigation,
+    required this.minHeight,
+    required this.iconSize,
+  });
 
   final ZDocumentPageNavigation navigation;
+
+  /// Plancher de hauteur, ou `null` pour n'en poser aucun.
+  final double? minHeight;
+
+  /// Taille de glyphe, ou `null` pour le défaut du SDK.
+  final double? iconSize;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final Widget bar = Padding(
+      padding: const EdgeInsetsDirectional.all(8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          _PageAction(
+            icon: Icons.chevron_left,
+            label: navigation.previousPageLabel,
+            onPressed: navigation.onPreviousPage,
+            iconSize: iconSize,
+          ),
+          _PageAction(
+            icon: Icons.chevron_right,
+            label: navigation.nextPageLabel,
+            onPressed: navigation.onNextPage,
+            iconSize: iconSize,
+          ),
+        ],
+      ),
+    );
     return DecoratedBox(
       decoration: BoxDecoration(color: scheme.surfaceContainerLow),
-      child: Padding(
-        padding: const EdgeInsetsDirectional.all(8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            _PageAction(
-              icon: Icons.chevron_left,
-              label: navigation.previousPageLabel,
-              onPressed: navigation.onPreviousPage,
+      // Plancher, jamais hauteur imposée : une hauteur fixe à la valeur de
+      // référence (56) écraserait deux cibles de 48 dp entourées de 8 dp de
+      // marge, et AD-13 prime sur la fidélité. Sans plancher (`neutral`),
+      // aucun nœud n'est ajouté.
+      child: minHeight == null
+          ? bar
+          : ConstrainedBox(
+              constraints: BoxConstraints(minHeight: minHeight!),
+              child: bar,
             ),
-            _PageAction(
-              icon: Icons.chevron_right,
-              label: navigation.nextPageLabel,
-              onPressed: navigation.onNextPage,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -312,11 +390,13 @@ class _PageAction extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onPressed,
+    required this.iconSize,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback? onPressed;
+  final double? iconSize;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -324,10 +404,13 @@ class _PageAction extends StatelessWidget {
     enabled: onPressed != null,
     label: label,
     child: ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      constraints: const BoxConstraints(
+        minWidth: ZDocumentViewerReference.minTouchTarget,
+        minHeight: ZDocumentViewerReference.minTouchTarget,
+      ),
       child: TextButton.icon(
         onPressed: onPressed,
-        icon: Icon(icon),
+        icon: Icon(icon, size: iconSize),
         label: Text(label, textAlign: TextAlign.start),
       ),
     ),

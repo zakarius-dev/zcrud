@@ -25,10 +25,11 @@
 /// - [ZReviewMode.cramming] — parcours linéaire avec re-boucle des ratés : à
 ///   la réussite (qualité au moins égale au seuil de réussite) la carte est
 ///   consommée ; au lapse (qualité sous le seuil) elle est retirée puis
-///   réinsérée parmi les cartes à venir à l'offset +2 (lapse léger) ou +4
-///   (lapse sévère), clampé en fin de file. Les constantes d'offset
-///   (`kLapseOffsetSoft`/`kLapseOffsetHard`/`kLapseSoftMaxQuality`) sont
-///   réutilisées du moteur SRS, jamais recopiées.
+///   réinsérée parmi les cartes à venir à l'offset +2 (lapse **sévère** :
+///   plus l'échec est franc, plus tôt la carte revient) ou +4 (lapse
+///   **léger**), clampé en fin de file. Les offsets viennent de
+///   `ZLapseRequeuePolicy`, réutilisée du moteur SRS et injectable, jamais
+///   recopiée.
 ///
 /// Le seuil de lapse est le `passThreshold` réutilisé de `ZSrsConfig`,
 /// jamais un littéral en dur. Le lire n'est pas une écriture SRS : c'est un
@@ -44,8 +45,7 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart' show ZReviewMode;
 
 import 'z_session_item.dart';
 import 'z_session_state.dart';
-import 'z_study_session_engine.dart'
-    show kLapseOffsetHard, kLapseOffsetSoft, kLapseSoftMaxQuality;
+import 'z_study_session_engine.dart' show ZLapseRequeuePolicy;
 
 /// Reducer pur du mode [ZReviewMode.list] : fait progresser le curseur d'un
 /// cran et retourne un nouvel état (aucun effet de bord, aucune horloge,
@@ -77,11 +77,16 @@ ZSessionState advanceLinear(ZSessionState state) {
 /// - Lapse (`quality < passThreshold`) : la carte courante est retirée de sa
 ///   position puis réinsérée parmi les cartes à venir à l'index
 ///   `cursor + offset - 1` (0-based dans la file post-retrait), clampé à la
-///   fin de file — la carte réapparaît comme la Nᵉ carte à venir (N = 2 si
-///   `quality ≤ kLapseSoftMaxQuality`, sinon 4). `lapses` est incrémenté (la
-///   carte reste comptée dans `remaining`). Aucune écriture SRS.
+///   fin de file — la carte réapparaît comme la Nᵉ carte à venir, N étant
+///   donné par [ZLapseRequeuePolicy.offsetFor] (par défaut 2 sur un échec
+///   sévère, 4 sur un échec léger). `lapses` est incrémenté (la carte reste
+///   comptée dans `remaining`). Aucune écriture SRS.
 /// - Réussite (`quality ≥ passThreshold`) : la carte est consommée (retirée,
 ///   jamais réinsérée). `reviewed` est incrémenté. Aucune écriture SRS.
+///
+/// [policy] est la politique de réinsertion. Son défaut reproduit exactement
+/// les positions historiques : l'omettre laisse la file inchangée par rapport
+/// au comportement d'avant son existence.
 ///
 /// Une file déjà complète (aucune carte courante) est renvoyée telle quelle
 /// (no-op défensif). L'erreur éventuelle est effacée (transition aboutie).
@@ -89,6 +94,7 @@ ZSessionState requeueCramming(
   ZSessionState state,
   int quality, {
   required int passThreshold,
+  ZLapseRequeuePolicy policy = const ZLapseRequeuePolicy(),
 }) {
   if (state.isComplete || state.current == null) {
     return state; // no-op défensif : aucune carte courante.
@@ -103,8 +109,9 @@ ZSessionState requeueCramming(
   var lapses = state.lapses;
 
   if (isLapse) {
-    final offset =
-        quality <= kLapseSoftMaxQuality ? kLapseOffsetSoft : kLapseOffsetHard;
+    // Voie unique de choix d'offset : la politique décide (mêmes défauts que
+    // le moteur SRS), ce reducer ne recopie plus la comparaison.
+    final offset = policy.offsetFor(quality);
     // Index de réinsertion parmi les cartes à venir (post-retrait), clampé à la
     // fin de file si moins de `offset` cartes restent à venir.
     final insertIndex = math.min(cursor + offset - 1, queue.length);
@@ -134,7 +141,10 @@ class ZLinearSessionState extends ChangeNotifier {
   /// Construit le runtime à partir d'une file déjà sélectionnée [queue] et
   /// d'un [mode] linéaire (défaut [ZReviewMode.list]). Le [config] fournit le
   /// seuil de lapse `passThreshold` (réutilisé, jamais recopié), utilisé
-  /// uniquement en mode cramming.
+  /// uniquement en mode cramming. [lapsePolicy] règle les offsets de
+  /// réinsertion du mode cramming (défaut = comportement historique,
+  /// positions inchangées) ; elle est sans effet en mode list, qui ne
+  /// réinsère jamais.
   ///
   /// Aucun paramètre de review/scheduler : ce runtime ne sait pas écrire du
   /// SRS, par construction. Un [mode] SRS (`spaced`/`learn`) ou examen
@@ -143,6 +153,7 @@ class ZLinearSessionState extends ChangeNotifier {
     required List<ZSessionItem> queue,
     ZReviewMode mode = ZReviewMode.list,
     ZSrsConfig config = const ZSrsConfig(),
+    ZLapseRequeuePolicy lapsePolicy = const ZLapseRequeuePolicy(),
   })  : assert(
           mode == ZReviewMode.list || mode == ZReviewMode.cramming,
           'ZLinearSessionState ne supporte que les modes linéaires '
@@ -156,6 +167,10 @@ class ZLinearSessionState extends ChangeNotifier {
         // Même cas que `z_study_session_engine.dart`.
         // ignore: prefer_initializing_formals
         _config = config,
+        // Même faux positif `prefer_initializing_formals` : champ privé,
+        // paramètre public.
+        // ignore: prefer_initializing_formals
+        _lapsePolicy = lapsePolicy,
         // Amorçage direct via le constructeur public de `ZSessionState` (et
         // non la factory `.initial`) : le runtime linéaire n'emprunte aucun
         // symbole de la famille SRS.
@@ -169,6 +184,7 @@ class ZLinearSessionState extends ChangeNotifier {
         );
 
   final ZSrsConfig _config;
+  final ZLapseRequeuePolicy _lapsePolicy;
   ZSessionState _state;
 
   /// État immuable courant (lecture seule).
@@ -217,7 +233,12 @@ class ZLinearSessionState extends ChangeNotifier {
   /// No-op (aucune notification) sur un parcours complet.
   void answer(int quality) {
     final next = _state.mode == ZReviewMode.cramming
-        ? requeueCramming(_state, quality, passThreshold: _passThreshold)
+        ? requeueCramming(
+            _state,
+            quality,
+            passThreshold: _passThreshold,
+            policy: _lapsePolicy,
+          )
         : advanceLinear(_state);
     _setState(next);
   }

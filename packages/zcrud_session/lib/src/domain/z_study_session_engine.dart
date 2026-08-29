@@ -35,19 +35,105 @@ import 'z_session_item.dart';
 import 'z_session_reviewer.dart';
 import 'z_session_state.dart';
 
-/// Offset de réinsertion d'un lapse léger (`quality` 0 ou 1) : la carte
-/// ratée réapparaît comme la 2ᵉ carte à venir. Propre à la file de session —
-/// jamais une constante SM-2 recopiée.
+/// Offset de réinsertion **court** (+2) : la carte ratée réapparaît comme la
+/// 2ᵉ carte à venir. Propre à la file de session — jamais une constante SM-2
+/// recopiée.
+///
+/// ⚠️ « Soft » qualifie la **longueur de l'offset**, pas la sévérité de
+/// l'échec. Cet offset court sert le lapse le plus **SÉVÈRE**
+/// (`quality ≤ [kLapseSoftMaxQuality]`) : une carte totalement ratée doit
+/// revenir **plus tôt**, pas plus tard. Le nom est conservé pour la
+/// compatibilité de l'API ; la propriété correspondante de
+/// [ZLapseRequeuePolicy] s'appelle, elle, `offsetSevere`.
 const int kLapseOffsetSoft = 2;
 
-/// Offset de réinsertion d'un lapse dur (`quality` 2 ou plus, en-deçà du
-/// seuil) : la carte ratée réapparaît comme la 4ᵉ carte à venir.
+/// Offset de réinsertion **long** (+4) : la carte ratée réapparaît comme la
+/// 4ᵉ carte à venir.
+///
+/// ⚠️ « Hard » qualifie la **longueur de l'offset**, pas la sévérité de
+/// l'échec. Cet offset long sert le lapse le plus **LÉGER**
+/// (`quality > [kLapseSoftMaxQuality]`, mais sous le seuil de réussite) :
+/// une carte presque sue peut attendre davantage. Propriété correspondante
+/// de [ZLapseRequeuePolicy] : `offsetLight`.
 const int kLapseOffsetHard = 4;
 
-/// Frontière léger/dur : un lapse de `quality ≤ kLapseSoftMaxQuality` utilise
-/// [kLapseOffsetSoft], au-delà [kLapseOffsetHard]. Garantit que `q=0` et
+/// Frontière de sévérité : un lapse de `quality ≤ kLapseSoftMaxQuality` est
+/// **sévère** et prend l'offset court [kLapseOffsetSoft] ; au-delà, il est
+/// **léger** et prend l'offset long [kLapseOffsetHard]. Garantit que `q=0` et
 /// `q=1` produisent le même offset (+2) et que `q=2` bascule sur +4.
+///
+/// Propriété correspondante de [ZLapseRequeuePolicy] : `severeMaxQuality`.
 const int kLapseSoftMaxQuality = 1;
+
+/// Politique de réinsertion d'une carte ratée dans la file de session
+/// (value-object pur, `const`).
+///
+/// Deux offsets et une frontière de sévérité, injectables :
+///
+/// | Propriété | Défaut | Rôle |
+/// |---|---|---|
+/// | [offsetSevere] | `2` | offset **court** — lapse **sévère** (`quality ≤ [severeMaxQuality]`) |
+/// | [offsetLight] | `4` | offset **long** — lapse **léger** (`quality > [severeMaxQuality]`, sous le seuil de réussite) |
+/// | [severeMaxQuality] | `1` | dernière qualité considérée comme sévère |
+///
+/// La sémantique est délibérée et ne doit pas être « corrigée » : **plus
+/// l'échec est sévère, plus tôt la carte revient**. Une carte sur laquelle
+/// l'apprenant a fait un blanc complet réapparaît au bout de 2 cartes ; une
+/// carte presque sue attend 4 cartes.
+///
+/// Le défaut reproduit exactement le comportement historique : construire un
+/// moteur sans politique donne les mêmes positions de réinsertion qu'avant
+/// l'existence de ce type.
+///
+/// Pure et totale (invariant AD-10) : [offsetFor] ne lève jamais, quelle que
+/// soit la qualité reçue.
+@immutable
+class ZLapseRequeuePolicy {
+  /// Construit une politique de réinsertion.
+  ///
+  /// Les défauts sont les constantes historiques du paquet
+  /// ([kLapseOffsetSoft] / [kLapseOffsetHard] / [kLapseSoftMaxQuality]) — pas
+  /// des littéraux recopiés : une seule source de vérité.
+  const ZLapseRequeuePolicy({
+    this.offsetSevere = kLapseOffsetSoft,
+    this.offsetLight = kLapseOffsetHard,
+    this.severeMaxQuality = kLapseSoftMaxQuality,
+  });
+
+  /// Offset **court**, appliqué au lapse **sévère** (`quality ≤
+  /// [severeMaxQuality]`). La carte réapparaît comme la `offsetSevere`ᵉ carte
+  /// à venir.
+  final int offsetSevere;
+
+  /// Offset **long**, appliqué au lapse **léger** (`quality >
+  /// [severeMaxQuality]`, mais sous le seuil de réussite).
+  final int offsetLight;
+
+  /// Dernière qualité considérée comme un échec **sévère**.
+  final int severeMaxQuality;
+
+  /// Offset de réinsertion pour une [quality] déjà reconnue comme un lapse.
+  ///
+  /// Ne juge pas de la réussite : le seuil de réussite (`passThreshold`)
+  /// appartient à `ZSrsConfig` et reste évalué par l'appelant.
+  int offsetFor(int quality) =>
+      quality <= severeMaxQuality ? offsetSevere : offsetLight;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZLapseRequeuePolicy &&
+          offsetSevere == other.offsetSevere &&
+          offsetLight == other.offsetLight &&
+          severeMaxQuality == other.severeMaxQuality;
+
+  @override
+  int get hashCode => Object.hash(offsetSevere, offsetLight, severeMaxQuality);
+
+  @override
+  String toString() => 'ZLapseRequeuePolicy(offsetSevere: $offsetSevere, '
+      'offsetLight: $offsetLight, severeMaxQuality: $severeMaxQuality)';
+}
 
 /// Reducer pur de la file de session : applique un grade de [quality] à
 /// [state] et retourne un nouvel état (aucun effet de bord, aucune horloge,
@@ -58,10 +144,15 @@ const int kLapseSoftMaxQuality = 1;
 /// - Lapse (`quality < passThreshold`) : la carte courante est retirée de sa
 ///   position puis réinsérée parmi les cartes à venir à l'index
 ///   `cursor + offset - 1` (0-based dans la file post-retrait), clampé à la
-///   fin de file — la carte réapparaît comme la Nᵉ carte à venir (N = 2 si
-///   `quality ≤ kLapseSoftMaxQuality`, sinon 4). `lapses` est incrémenté.
+///   fin de file — la carte réapparaît comme la Nᵉ carte à venir, N étant
+///   donné par [ZLapseRequeuePolicy.offsetFor] (par défaut 2 sur un échec
+///   sévère, 4 sur un échec léger). `lapses` est incrémenté.
 /// - Réussite (`quality ≥ passThreshold`) : la carte est consommée (retirée,
 ///   jamais réinsérée). `reviewed` est incrémenté.
+///
+/// [policy] est la politique de réinsertion. Son défaut reproduit exactement
+/// les positions historiques : l'omettre laisse la file inchangée par rapport
+/// au comportement d'avant son existence.
 ///
 /// Une file déjà complète (aucune carte courante) est renvoyée telle quelle
 /// (no-op défensif). L'erreur éventuelle de l'état précédent est effacée (la
@@ -70,6 +161,7 @@ ZSessionState reduceGrade(
   ZSessionState state,
   int quality, {
   required int passThreshold,
+  ZLapseRequeuePolicy policy = const ZLapseRequeuePolicy(),
 }) {
   if (state.isComplete || state.current == null) {
     return state; // no-op défensif : aucune carte courante.
@@ -84,8 +176,11 @@ ZSessionState reduceGrade(
   var lapses = state.lapses;
 
   if (isLapse) {
-    final offset =
-        quality <= kLapseSoftMaxQuality ? kLapseOffsetSoft : kLapseOffsetHard;
+    // Voie unique de choix d'offset : la politique décide, ce reducer ne
+    // recopie plus la comparaison. Le défaut de la politique reprend les
+    // constantes historiques, donc l'appelant qui n'injecte rien obtient les
+    // mêmes positions qu'avant.
+    final offset = policy.offsetFor(quality);
     // Index de réinsertion parmi les cartes à venir (post-retrait), clampé à la
     // fin de file si moins de `offset` cartes restent à venir.
     final insertIndex = math.min(cursor + offset - 1, queue.length);
@@ -117,7 +212,9 @@ class ZStudySessionEngine extends ChangeNotifier {
   /// Construit le moteur à partir d'une file déjà sélectionnée [queue] et
   /// d'un seam de review [reviewer] (= `reviewCard` en production). Le
   /// [config] fournit le seuil de lapse `passThreshold` (réutilisé, jamais
-  /// recopié) ; [mode] est le mode de session (défaut `spaced`).
+  /// recopié) ; [mode] est le mode de session (défaut `spaced`) ;
+  /// [lapsePolicy] règle les offsets de réinsertion d'une carte ratée (défaut
+  /// = comportement historique, positions inchangées).
   ///
   /// Le moteur ne détient aucun `ZSrsScheduler`/`ZRepetitionStore` : seul le
   /// [reviewer] écrit du SRS, par construction.
@@ -139,6 +236,7 @@ class ZStudySessionEngine extends ChangeNotifier {
     required ZSessionReviewer reviewer,
     ZSrsConfig config = const ZSrsConfig(),
     ZReviewMode mode = ZReviewMode.spaced,
+    ZLapseRequeuePolicy lapsePolicy = const ZLapseRequeuePolicy(),
   })  : assert(
           mode == ZReviewMode.spaced || mode == ZReviewMode.learn,
           'ZStudySessionEngine ne supporte que les modes SRS (spaced/learn) : '
@@ -154,10 +252,15 @@ class ZStudySessionEngine extends ChangeNotifier {
         // Même cas que `z_flashcard_repository.dart`.
         // ignore: prefer_initializing_formals
         _config = config,
+        // Même faux positif `prefer_initializing_formals` : champ privé,
+        // paramètre public.
+        // ignore: prefer_initializing_formals
+        _lapsePolicy = lapsePolicy,
         _state = ZSessionState.initial(queue, mode: mode);
 
   final ZSessionReviewer _review;
   final ZSrsConfig _config;
+  final ZLapseRequeuePolicy _lapsePolicy;
   ZSessionState _state;
 
   /// État immuable courant (lecture seule).
@@ -233,7 +336,14 @@ class ZStudySessionEngine extends ChangeNotifier {
         // même valeur clampée que celle écrite par le seam : sinon la file
         // pourrait juger « lapse » une note que le SRS a, lui, reçue en
         // réussite.
-        _setState(reduceGrade(_state, clamped, passThreshold: _passThreshold));
+        _setState(
+          reduceGrade(
+            _state,
+            clamped,
+            passThreshold: _passThreshold,
+            policy: _lapsePolicy,
+          ),
+        );
         return Right<ZFailure, ZRepetitionInfo>(info);
       },
     );

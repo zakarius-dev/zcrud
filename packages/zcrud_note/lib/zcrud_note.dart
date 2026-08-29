@@ -103,5 +103,7 @@ export 'src/domain/z_note_content.dart';
 export 'src/domain/z_note_faith_channel.dart';
 export 'src/domain/z_opaque_note_extension.dart';
 export 'src/domain/z_smart_note.dart' hide ZSmartNoteZcrud;
+export 'src/presentation/z_note_audio_labels.dart';
+export 'src/presentation/z_note_audio_player.dart' show ZNoteAudioPlayer;
 export 'src/presentation/z_smart_note_editor.dart' show ZSmartNoteEditor;
 export 'src/presentation/z_smart_note_reader.dart' show ZSmartNoteReader;

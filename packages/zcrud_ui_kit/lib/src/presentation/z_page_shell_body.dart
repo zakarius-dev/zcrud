@@ -41,6 +41,7 @@ class ZPageShellBody extends StatefulWidget {
     required this.title,
     this.subtitle,
     this.gradientKey,
+    this.signatureKey,
     this.leading,
     this.actions = const <ZAppBarAction>[],
     this.search,
@@ -70,6 +71,7 @@ class ZPageShellBody extends StatefulWidget {
     required _ZSearchController this._controller,
     this.subtitle,
     this.gradientKey,
+    this.signatureKey,
     this.leading,
     this.actions = const <ZAppBarAction>[],
     this.search,
@@ -97,10 +99,17 @@ class ZPageShellBody extends StatefulWidget {
   /// `null` ⇒ absent de l'arbre, rendu strictement inchangé.
   final Widget? subtitle;
 
-  /// Clé d'identité du dégradé d'app-bar. Voir
-  /// [ZSearchableAppBar.gradientKey]: sans resolver hôte injecté, rendu
-  /// strictement inchangé.
+  /// Clé d'identité du dégradé d'app-bar, **prioritaire sur tout le reste**.
+  /// Voir [ZSearchableAppBar.gradientKey] : déclarée, elle peint la spec du
+  /// seam à saturation pleine ; vide (`''`), elle éteint tout chrome
+  /// d'identité sur ce site.
   final String? gradientKey;
+
+  /// Identité alimentant le **lavis de palette signature** quand
+  /// [gradientKey] n'est pas déclarée. Voir [ZSearchableAppBar.signatureKey] :
+  /// repli sur le titre s'il est une chaîne, `ZReferenceProfile.neutral` pour
+  /// tout éteindre à la racine.
+  final String? signatureKey;
 
   /// Leading optionnel, rendu si et seulement si fourni.
   final Widget? leading;
@@ -222,15 +231,18 @@ class _ZPageShellBodyState extends State<ZPageShellBody> {
       builder: (context, searching, _) {
         // Resolver hôte appelé UNE seule fois par build (jamais deux fois pour
         // la même clé); `null` ⇒ slots absents ⇒ sliver strictement inchangé.
-        final ZGradientSpec? gradient = _zAppBarGradient(
+        final _ZAppBarChrome chrome = _zAppBarChrome(
           context,
-          widget.gradientKey,
+          gradientKey: widget.gradientKey,
+          signatureKey: widget.signatureKey,
+          title: widget.title,
         );
         return SliverAppBar(
           floating: floating,
           pinned: pinned,
-          flexibleSpace: _zGradientFlexibleSpace(gradient),
-          foregroundColor: gradient?.onGradient,
+          flexibleSpace: chrome.flexibleSpace,
+          foregroundColor: chrome.foregroundColor,
+          elevation: chrome.elevation,
           leading: _zBuildLeading(
             context,
             _controller,

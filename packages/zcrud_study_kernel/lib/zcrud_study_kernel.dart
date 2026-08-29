@@ -40,6 +40,80 @@ export 'src/domain/aggregate_daily_study_tasks.dart';
 export 'src/domain/apply_order.dart';
 export 'src/domain/normalize_tag_title.dart';
 export 'src/domain/remap_color_key.dart';
+// ---------------------------------------------------------------------------
+// Structure d'étude — kernel pédagogique universel
+// ---------------------------------------------------------------------------
+//
+// Les entités ont des noms et des responsabilités DISTINCTS, et partagent un
+// seul protocole : référençables (`ZStudyRef`), scopables, liables
+// (`ZStudyBinding`), filtrables (`ZStudyScopeFilter`), archivables sans
+// cascade, `ZEntity with ZExtensible`, `extra` filtré, `fromMap` défensif,
+// `copyWith` à sentinelle, `$…FieldSpecs` + registrar.
+//
+// Toute clé de vocabulaire (`kind`, `role`, `vocabularyKey`, `valueKey`,
+// `propagation`, `status`) est une chaîne OPAQUE : l'inconnu survit au
+// round-trip. Le noyau n'interprète que les valeurs nommées par
+// `z_study_constants.dart`, et raisonne sur les CAPACITÉS d'une ontologie,
+// jamais sur un type concret.
+//
+// Les extensions générées (`X…Zcrud`) sont masquées partout où le type est
+// `ZExtensible` : leur `copyWith`/`toMap` remettrait `extra`/`extension` et
+// les canaux manuels (`external_refs`…) à leurs défauts — une perte
+// silencieuse. La (dé)sérialisation passe par l'API d'instance.
+export 'src/domain/structure/z_external_ref.dart';
+export 'src/domain/structure/z_study_ancestors.dart';
+export 'src/domain/structure/z_study_artifact.dart';
+export 'src/domain/structure/z_study_binding.dart';
+export 'src/domain/structure/z_study_calendar.dart' hide ZStudyCalendarZcrud;
+export 'src/domain/structure/z_study_classification.dart'
+    hide ZStudyClassificationZcrud;
+export 'src/domain/structure/z_study_competency.dart'
+    hide ZStudyCompetencyZcrud;
+export 'src/domain/structure/z_study_competency_framework.dart'
+    hide ZStudyCompetencyFrameworkZcrud;
+export 'src/domain/structure/z_study_competency_relation.dart';
+export 'src/domain/structure/z_study_constants.dart';
+export 'src/domain/structure/z_study_context.dart';
+export 'src/domain/structure/z_study_context_resolver.dart';
+export 'src/domain/structure/z_study_course.dart' hide ZStudyCourseZcrud;
+export 'src/domain/structure/z_study_curriculum.dart'
+    hide ZStudyCurriculumZcrud;
+export 'src/domain/structure/z_study_explanation.dart'
+    hide ZStudyExplanationZcrud;
+export 'src/domain/structure/z_study_graph.dart';
+export 'src/domain/structure/z_study_group.dart' hide ZStudyGroupZcrud;
+export 'src/domain/structure/z_study_json.dart';
+export 'src/domain/structure/z_study_kind_spec.dart';
+export 'src/domain/structure/z_study_offering.dart' hide ZStudyOfferingZcrud;
+export 'src/domain/structure/z_study_offering_audience.dart'
+    hide ZStudyOfferingAudienceZcrud;
+export 'src/domain/structure/z_study_ontology.dart';
+export 'src/domain/structure/z_study_ontology_presets.dart';
+export 'src/domain/structure/z_study_org_unit.dart' hide ZStudyOrgUnitZcrud;
+export 'src/domain/structure/z_study_organization.dart'
+    hide ZStudyOrganizationZcrud;
+export 'src/domain/structure/z_study_participation.dart'
+    hide ZStudyParticipationZcrud;
+export 'src/domain/structure/z_study_period.dart' hide ZStudyPeriodZcrud;
+export 'src/domain/structure/z_study_principal.dart' hide ZStudyPrincipalZcrud;
+export 'src/domain/structure/z_study_program.dart' hide ZStudyProgramZcrud;
+export 'src/domain/structure/z_study_program_course.dart'
+    hide ZStudyProgramCourseZcrud;
+export 'src/domain/structure/z_study_ref.dart';
+export 'src/domain/structure/z_study_relation.dart';
+export 'src/domain/structure/z_study_role_binding.dart'
+    hide ZStudyRoleBindingZcrud;
+export 'src/domain/structure/z_study_scope_filter.dart';
+export 'src/domain/structure/z_study_session.dart' hide ZStudySessionZcrud;
+export 'src/domain/structure/z_study_share_grant.dart'
+    hide ZStudyShareGrantZcrud;
+export 'src/domain/structure/z_study_structure_port.dart';
+export 'src/domain/structure/z_study_structure_snapshot.dart';
+export 'src/domain/structure/z_study_subject.dart' hide ZStudySubjectZcrud;
+export 'src/domain/structure/z_study_topic.dart' hide ZStudyTopicZcrud;
+export 'src/domain/structure/z_study_topic_competency.dart';
+export 'src/domain/structure/z_study_vocabulary.dart';
+export 'src/domain/structure/z_study_workspace.dart' hide ZStudyWorkspaceZcrud;
 export 'src/domain/tag_referential_integrity.dart';
 // Avancement pur de la flamme d'assiduité : `zAdvanceStreak` (horloge
 // paramétrée, invariant AD-14, reset à 1 jamais 0, jour civil local) +

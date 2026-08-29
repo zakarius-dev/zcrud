@@ -55,6 +55,7 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZReviewMode, ZStudySessionResult;
 
 import 'z_session_item.dart';
+import 'z_white_exam_verdict.dart';
 
 /// Phase de la machine à états d'un examen blanc.
 ///
@@ -280,11 +281,20 @@ class ZWhiteExamSessionEngine extends ChangeNotifier {
   /// `passThreshold` (réutilisé, jamais recopié). [scorer] est le seam de
   /// scoring pur (défaut [scoreWhiteExam]). L'état initial est en phase
   /// [ZWhiteExamPhase.setup] (curseur 0, aucune réponse, aucun résultat).
+  ///
+  /// [successRatio] est le **taux de réussite exigé par l'application**, dans
+  /// `[0, 1]` — la part des réponses correctes à partir de laquelle l'examen
+  /// est réussi. C'est une donnée de l'application : le socle n'en porte
+  /// aucune valeur. Son défaut `null` signifie « aucun verdict » — [verdict]
+  /// reste alors `null` même après [submit], et rien d'autre ne change.
+  /// Une valeur hors bornes est ramenée dans `[0, 1]` et `NaN` vaut `null`
+  /// (invariant AD-10 : jamais d'exception, jamais un échec inventé).
   ZWhiteExamSessionEngine({
     required List<ZSessionItem> queue,
     ZSrsConfig config = const ZSrsConfig(),
     ZExamScoringPort scorer = scoreWhiteExam,
-  })  :
+    double? successRatio,
+  })  : _successRatio = zClampSuccessRatio(successRatio),
         // `prefer_initializing_formals` : faux positif — les champs sont
         // privés (`_config`/`_scorer`) et les paramètres publics ;
         // `this._config` en paramètre nommé est illégal en Dart
@@ -303,6 +313,7 @@ class ZWhiteExamSessionEngine extends ChangeNotifier {
 
   final ZSrsConfig _config;
   final ZExamScoringPort _scorer;
+  final double? _successRatio;
   ZWhiteExamState _state;
 
   /// État immuable courant (lecture seule).
@@ -326,6 +337,19 @@ class ZWhiteExamSessionEngine extends ChangeNotifier {
 
   /// `true` si et seulement si l'examen est soumis et figé.
   bool get isSubmitted => _state.isSubmitted;
+
+  /// Taux de réussite exigé, borné à `[0, 1]`, ou `null` si l'application
+  /// n'en a déclaré aucun (ou en a déclaré un inexploitable).
+  double? get successRatio => _successRatio;
+
+  /// Verdict de réussite, ou `null` tant qu'il n'y a rien à juger.
+  ///
+  /// `null` sans [successRatio] déclaré, et `null` avant [submit] (aucun
+  /// résultat). Le verdict est **dérivé** du résultat par la fonction pure
+  /// [zWhiteExamVerdictFor] : le moteur ne le stocke pas et ne le recalcule
+  /// selon aucune autre règle.
+  ZWhiteExamVerdict? get verdict =>
+      zWhiteExamVerdictFor(_state.result, successRatio: _successRatio);
 
   /// Démarre l'examen : `setup → running`.
   ///

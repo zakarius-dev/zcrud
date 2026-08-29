@@ -72,7 +72,28 @@ const Object _zScopeUndefined = Object();
 /// ligne) n'est offert. Déclarez la vôtre — `ZcrudScope(acl: MonAcl())` — ou,
 /// en développement, déclarez explicitement l'ouverture totale :
 /// `ZcrudScope(acl: const ZAllowAllAcl())`.
-class ZcrudScope extends InheritedWidget {
+///
+/// **Routes poussées.** Un `ZcrudScope` est capturé par les routes poussées
+/// comme un `Theme` : un dialogue, une feuille modale, un menu ou un sélecteur
+/// ouvert depuis un descendant du scope voit les mêmes seams, les mêmes jetons,
+/// les mêmes libellés et la même ACL que le point d'appel — alors même que la
+/// route naît dans une autre branche de l'arbre (l'`Overlay` du `Navigator`).
+/// C'est le contrat d'[InheritedTheme] : les présentateurs du framework
+/// (`showDialog`, `showModalBottomSheet`, `showMenu`, `showDatePicker`…)
+/// capturent les thèmes hérités au point d'appel et les re-posent dans la
+/// route. Un présentateur qui pousse une route **à la main**
+/// (`Navigator.push`) doit faire la même capture explicitement :
+///
+/// ```dart
+/// final captured = InheritedTheme.capture(from: context, to: navigator.context);
+/// navigator.push(MaterialPageRoute(builder: (c) => captured.wrap(monEcran)));
+/// ```
+///
+/// La règle de sécurité est **inchangée** : hors de tout scope capturable,
+/// l'ACL reste **fail-closed**. Une route ouverte depuis un contexte sans
+/// aucun `ZcrudScope` ancêtre garde l'état « accès refusé » — la capture
+/// propage un scope existant, elle n'en fabrique jamais un.
+class ZcrudScope extends InheritedTheme {
   /// Construit le scope. Zéro-config par défaut : [resolver] throwing + [acl]
   /// **refusante** + [labels]/[theme] `null`. Un binding/app fournit des seams
   /// concrets en les passant ici.
@@ -591,6 +612,20 @@ class ZcrudScope extends InheritedWidget {
   /// Retourne le [ZcrudScope] le plus proche, ou `null` s'il n'y en a pas.
   static ZcrudScope? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<ZcrudScope>();
+
+  /// Re-pose ce scope **à l'identique** au-dessus de [child], pour qu'une route
+  /// poussée depuis un descendant continue de le voir.
+  ///
+  /// Appelé par le framework via `InheritedTheme.capture` / `CapturedThemes`.
+  /// Aucune valeur n'est recalculée : le scope reconstruit porte les **mêmes
+  /// instances** de seams, de contrôleurs et de registres que celui capturé —
+  /// une re-pose n'invalide donc rien et ne notifie aucun dépendant existant
+  /// (cf. [updateShouldNotify], qui compare par identité).
+  ///
+  /// La [key] n'est jamais reprise : le scope capturé est encore monté dans son
+  /// arbre d'origine, et réutiliser sa clé serait une erreur d'arbre.
+  @override
+  Widget wrap(BuildContext context, Widget child) => copyWith(child: child);
 
   @override
   bool updateShouldNotify(ZcrudScope oldWidget) =>

@@ -1,24 +1,23 @@
-/// Présets de **teinte par type de champ** — pur-DONNÉES, jamais un défaut.
+/// Présets **copiables** de teinte par type de champ — pur-DONNÉES.
 ///
-/// ## Ce que ce fichier est, et n'est pas
+/// ## Contrat
 ///
-/// La décoration d'un champ peut être teintée **par type de champ** (bordure de
-/// focus, icônes d'ornement) via la couture de dégradé du scope
-/// (`ZcrudScope.gradientResolver`, clé `zFieldTypeTintKey`). Cette teinte est
-/// **strictement opt-in** : une application qui n'injecte aucun résolveur rend
-/// la décoration à l'identique, au pixel près.
+/// Ces présets sont des constantes offertes aux applications ; le socle ne les
+/// lit à AUCUN endroit. Une application qui n'injecte pas de résolveur rend la
+/// décoration de ses champs à l'identique — les présets n'y changent rien.
 ///
-/// Ces présets sont des **constantes copiables** offertes aux applications qui
-/// veulent partir d'une palette : l'application les recopie (ou les référence)
-/// dans SON résolveur, les surcharge à sa guise — le socle, lui, ne les lit
-/// **jamais** (aucun site de `lib/` ne les consomme ; une garde le vérifie).
-/// C'est ce qui les distingue d'un défaut actif, interdit (invariant FR-26).
+/// Pour les appliquer, l'application les recopie (ou les référence) dans SON
+/// résolveur de dégradé, branché par `ZcrudScope.gradientResolver`, et
+/// répondant aux clés `zFieldTypeTintKey` ; elle est libre d'en surcharger
+/// tout ou partie.
 ///
 /// ## Forme
 ///
-/// Couleurs en `int` ARGB 32 bits (**données**, jamais un type Flutter — le
-/// domaine reste pur-Dart, invariant AD-1). Clés = noms des valeurs
-/// d'`EditionFieldType` (`'text'`, `'number'`, `'dateTime'`, …).
+/// Couleurs en `int` ARGB 32 bits — des **données**, jamais un type Flutter :
+/// le domaine reste pur-Dart (invariant AD-1). Les clés sont les noms des
+/// valeurs d'`EditionFieldType` (`'text'`, `'number'`, `'dateTime'`, …) ; une
+/// clé absente signifie « pas de préset pour ce type », et l'appelant décide
+/// alors de son repli.
 ///
 /// ```dart
 /// ZcrudScope(
@@ -36,6 +35,16 @@
 ///   child: …,
 /// )
 /// ```
+///
+/// Toute couleur remise au socle est normalisée pour le contraste avant
+/// d'être peinte (`zReadableTintOn`), en thème clair comme sombre.
+///
+/// ## À ne pas confondre
+///
+/// La **palette signature** (`ZSignaturePaletteReference`) est une famille
+/// distincte : elle indexe une identité libre (titre de section, dossier), et
+/// elle, le socle la lit par défaut. Ces présets-ci restent strictement
+/// opt-in.
 library;
 
 /// Couple de couleurs ARGB d'un préset de teinte (début/fin de dégradé — un
@@ -62,14 +71,12 @@ class ZFieldTintPreset {
   int get hashCode => Object.hash(runtimeType, start, end);
 }
 
-/// Présets **copiables** de teinte par type de champ. Jamais lus par le socle.
+/// Présets **copiables** de teinte par type de champ. Le socle ne les lit pas.
 abstract final class ZFieldTintPresets {
   /// Palette de départ « classique » : une teinte par grande famille de champ.
   ///
-  /// Donnée de référence à copier/surcharger dans le résolveur de l'hôte —
-  /// **aucun** site du socle ne l'applique. Toute couleur passée au socle est
-  /// de toute façon normalisée pour le contraste avant d'être peinte
-  /// (`zReadableTintOn`), thème clair comme sombre.
+  /// À copier ou surcharger dans le résolveur de l'hôte ; aucun site du socle
+  /// ne l'applique.
   static const Map<String, ZFieldTintPreset> classic =
       <String, ZFieldTintPreset>{
     'text': ZFieldTintPreset(start: 0xFF667EEA, end: 0xFF764BA2),

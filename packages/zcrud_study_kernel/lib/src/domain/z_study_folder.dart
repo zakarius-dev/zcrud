@@ -60,6 +60,11 @@ library;
 import 'package:zcrud_annotations/zcrud_annotations.dart';
 import 'package:zcrud_core/domain.dart';
 
+import 'structure/z_study_artifact.dart';
+import 'structure/z_study_binding.dart';
+import 'structure/z_study_json.dart';
+import 'structure/z_study_ref.dart';
+
 part 'z_study_folder.g.dart';
 
 /// Reconstruit une [ZExtension] concrète depuis sa map JSON, ou `null`.
@@ -75,7 +80,7 @@ typedef ZFolderExtensionParser =
 /// Dossier d'organisation canonique immuable (données + `copyWith` ;
 /// invariants au repository).
 @ZcrudModel(kind: 'study_folder', fieldRename: ZFieldRename.snake)
-class ZStudyFolder extends ZEntity with ZExtensible {
+class ZStudyFolder extends ZEntity with ZExtensible, ZStudyArtifact {
   /// Construit un dossier (constructeur nommé — source du `copyWith`).
   const ZStudyFolder({
     this.id,
@@ -92,6 +97,9 @@ class ZStudyFolder extends ZEntity with ZExtensible {
     this.canBeJoinedWithLink = false,
     this.coWorkersCanInviteOthers = false,
     this.shareId,
+    this.ownerRef,
+    this.primaryScopeRef,
+    this.bindings = const <ZStudyBinding>[],
     this.extension,
     Map<String, dynamic> extra = const <String, dynamic>{},
     // Un paramètre nommé ne peut pas être privé en Dart, mais le slot brut
@@ -131,6 +139,9 @@ class ZStudyFolder extends ZEntity with ZExtensible {
       canBeJoinedWithLink: base.canBeJoinedWithLink,
       coWorkersCanInviteOthers: base.coWorkersCanInviteOthers,
       shareId: base.shareId,
+      ownerRef: _refOrNull(map['owner_ref']),
+      primaryScopeRef: _refOrNull(map['primary_scope_ref']),
+      bindings: zStudyDecodeBindings(map['bindings']),
       extension: _decodeExtension(map['extension'], extensionParser),
       extra: _extraFrom(map),
     );
@@ -161,6 +172,14 @@ class ZStudyFolder extends ZEntity with ZExtensible {
   ///
   /// `null` signifie qu'aucune matière n'est associée. Dans ce cas,
   /// [toMap] n'émet pas la clé `subject_id`.
+  ///
+  /// **Raccourci de compatibilité.** La voie générale de rattachement d'un
+  /// dossier à la structure d'étude est [primaryScopeRef] / [bindings], qui
+  /// portent n'importe quelle portée — matière comprise — avec des dates et une
+  /// propagation. Ce champ reste la voie la plus courte pour le cas d'un
+  /// dossier qui n'a qu'une matière et rien d'autre ; il est conservé tel quel,
+  /// il n'est ni déprécié ni dérivé, et le noyau n'impose **aucune** cohérence
+  /// entre lui et les canaux de rattachement.
   @ZcrudField(label: 'Matière')
   final String? subjectId;
 
@@ -214,6 +233,32 @@ class ZStudyFolder extends ZEntity with ZExtensible {
   /// Partage inerte : identifiant de partage, défaut `null`.
   @ZcrudField()
   final String? shareId;
+
+  /// Propriétaire du dossier au sens de la structure d'étude, `null` si non
+  /// déclaré (mode personnel) — canal manuel `owner_ref`, hors codegen.
+  ///
+  /// Distinct de [ownerId], qui reste l'identifiant utilisateur brut attribué
+  /// par l'application. Les deux coexistent sans se contredire : l'un dit
+  /// **qui**, l'autre dit **quoi dans la structure**.
+  @override
+  @ZcrudIgnore()
+  final ZStudyRef? ownerRef;
+
+  /// Portée principale du dossier, `null` si hors portée — canal manuel
+  /// `primary_scope_ref`, hors codegen.
+  ///
+  /// C'est la portée qu'un affichage montre quand il n'en montre qu'une. Elle
+  /// n'a pas à figurer dans [bindings], et [bindings] n'a pas à la contenir :
+  /// le noyau n'impose aucune cohérence entre les deux.
+  @override
+  @ZcrudIgnore()
+  final ZStudyRef? primaryScopeRef;
+
+  /// Rattachements du dossier à la structure d'étude, défaut `const []` —
+  /// canal manuel `bindings`, hors codegen.
+  @override
+  @ZcrudIgnore()
+  final List<ZStudyBinding> bindings;
 
   /// Slot type additif versionné (invariant AD-4), `null` si absent.
   /// Hors-codegen.
@@ -271,6 +316,22 @@ class ZStudyFolder extends ZEntity with ZExtensible {
     if (subjectId == null) {
       map.remove('subject_id');
     }
+    // Canaux de rattachement : une clé n'est émise que si le canal porte
+    // quelque chose. Un dossier sans rattachement produit donc exactement la
+    // map qu'il produisait avant l'existence de ces canaux — c'est ce que
+    // vérifie la garde d'inertie, littéral figé à l'appui.
+    if (ownerRef != null) {
+      map['owner_ref'] = ownerRef!.toMap();
+    }
+    if (primaryScopeRef != null) {
+      map['primary_scope_ref'] = primaryScopeRef!.toMap();
+    }
+    if (bindings.isNotEmpty) {
+      map['bindings'] = zStudyEncodeList(
+        bindings,
+        (ZStudyBinding binding) => binding.toMap(),
+      );
+    }
     if (extension != null) {
       map['extension'] = extension!.toJson();
     }
@@ -297,6 +358,9 @@ class ZStudyFolder extends ZEntity with ZExtensible {
     Object? canBeJoinedWithLink = _$undefined,
     Object? coWorkersCanInviteOthers = _$undefined,
     Object? shareId = _$undefined,
+    Object? ownerRef = _$undefined,
+    Object? primaryScopeRef = _$undefined,
+    Object? bindings = _$undefined,
     Object? extension = _$undefined,
     Object? extra = _$undefined,
   }) => ZStudyFolder(
@@ -336,6 +400,15 @@ class ZStudyFolder extends ZEntity with ZExtensible {
     shareId: identical(shareId, _$undefined)
         ? this.shareId
         : shareId as String?,
+    ownerRef: identical(ownerRef, _$undefined)
+        ? this.ownerRef
+        : ownerRef as ZStudyRef?,
+    primaryScopeRef: identical(primaryScopeRef, _$undefined)
+        ? this.primaryScopeRef
+        : primaryScopeRef as ZStudyRef?,
+    bindings: identical(bindings, _$undefined)
+        ? this.bindings
+        : bindings as List<ZStudyBinding>,
     extension: identical(extension, _$undefined)
         ? this.extension
         : extension as ZExtension?,
@@ -371,6 +444,9 @@ class ZStudyFolder extends ZEntity with ZExtensible {
   /// mémoire et la même relue du store.
   static final Set<String> _reservedKeys = <String>{
     for (final spec in $ZStudyFolderFieldSpecs) spec.name,
+    'owner_ref',
+    'primary_scope_ref',
+    'bindings',
     'extension',
     ...ZSyncMeta.reservedKeys,
   };
@@ -413,6 +489,9 @@ class ZStudyFolder extends ZEntity with ZExtensible {
           canBeJoinedWithLink == other.canBeJoinedWithLink &&
           coWorkersCanInviteOthers == other.coWorkersCanInviteOthers &&
           shareId == other.shareId &&
+          ownerRef == other.ownerRef &&
+          primaryScopeRef == other.primaryScopeRef &&
+          zStudyListEquals(bindings, other.bindings) &&
           extension == other.extension &&
           zJsonEquals(extra, other.extra);
 
@@ -432,9 +511,19 @@ class ZStudyFolder extends ZEntity with ZExtensible {
     canBeJoinedWithLink,
     coWorkersCanInviteOthers,
     shareId,
+    ownerRef,
+    primaryScopeRef,
+    Object.hashAll(bindings),
     extension,
     zJsonHash(extra),
   ]);
+}
+
+/// Décode défensivement une référence, ou `null` si la valeur n'est pas une
+/// map de chaînes (invariant AD-10).
+ZStudyRef? _refOrNull(Object? raw) {
+  final map = zStudyAsJsonMap(raw);
+  return map == null ? null : ZStudyRef.fromMap(map);
 }
 
 String? _asString(Object? value) => value is String ? value : null;

@@ -121,6 +121,7 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart' show zReduceMotionOf;
 
 import '../domain/z_session_item.dart';
 import 'z_session_progress_indicator.dart';
+import 'z_swipe_direction.dart';
 
 /// Construit la carte d'affichage d'un item (typiquement
 /// `ZFlashcardReviewCard`). Jamais une surface de saisie ou de notation :
@@ -147,7 +148,12 @@ class ZSessionCardSwiper extends StatefulWidget {
   /// - [qualityOf] : seam « qualité obtenue à l'index i » (indicateur) ;
   /// - [passThreshold] : frontière réussite/lapse injectée (jamais un
   ///   littéral en dur) ;
-  /// - [swipeDuration] : durée d'animation, ramenée à zéro sous Reduce Motion.
+  /// - [swipeDuration] : durée d'animation, ramenée à zéro sous Reduce Motion ;
+  /// - [preserveIndexOnMutation] : conserve la carte courante quand la file
+  ///   change (défaut `false` = remise à zéro historique) ;
+  /// - [onSwipeDirection] : seam de **direction du geste** — vers où l'a
+  ///   emporté le doigt, et sur quelle carte. Aucune évaluation n'en est
+  ///   dérivée ici.
   ///
   /// Aucun paramètre de notation — c'est un invariant du type, pas un oubli.
   const ZSessionCardSwiper({
@@ -161,6 +167,8 @@ class ZSessionCardSwiper extends StatefulWidget {
     this.qualityOf,
     this.swipeDuration = const Duration(milliseconds: 200),
     this.indexController,
+    this.preserveIndexOnMutation = false,
+    this.onSwipeDirection,
     super.key,
   });
 
@@ -211,6 +219,76 @@ class ZSessionCardSwiper extends StatefulWidget {
   /// d'accessibilité, ou commande de l'hôte) — la notification sortante
   /// n'est pas remplacée par le pilote, elle lui survit.
   final ZIndexController? indexController;
+
+  /// Conserve la carte courante quand [queue] change d'identité.
+  ///
+  /// - `false` (défaut) : tout changement de file ramène la pile à la
+  ///   première carte — comportement historique, strictement inchangé ;
+  /// - `true` : la position courante survit à la mutation, ramenée dans les
+  ///   bornes de la nouvelle file (une file qui rétrécit sous l'index le
+  ///   ramène sur la dernière carte, jamais hors bornes).
+  ///
+  /// Le cas d'usage est la file qui se réordonne ou se raccourcit **sous**
+  /// une carte que l'utilisateur est en train de lire : la réinsertion d'une
+  /// carte ratée, le retrait d'une carte réussie, un filtre appliqué en
+  /// cours de session. Sans ce paramètre, chacun de ces événements renvoie
+  /// l'utilisateur à la première carte de la pile.
+  ///
+  /// Ce que ce paramètre **ne** fait **pas** : il ne conserve pas l'identité
+  /// de la carte, seulement sa **position**. Une file dont l'ordre a changé
+  /// affichera donc une autre carte au même index — c'est le contrat, et il
+  /// est délibéré : ce widget ne connaît aucune identité de carte au-delà de
+  /// ce que l'hôte lui passe, et deviner laquelle « suivre » fabriquerait
+  /// une seconde source de vérité en face du curseur du moteur de l'hôte.
+  /// Un hôte qui veut suivre une carte précise pilote l'index lui-même via
+  /// [indexController].
+  ///
+  /// La remise à zéro n'émet pas [onIndexChanged], et la conservation non
+  /// plus : dans les deux cas, la mutation de file n'est pas une avancée.
+  final bool preserveIndexOnMutation;
+
+  /// Direction du geste de swipe, notifiée à l'hôte.
+  ///
+  /// Appelé **une seule fois par geste**, avec l'index de la carte qui vient
+  /// d'être chassée, et **avant** toute avance : la séquence observable est
+  /// `onSwipeDirection(i, …)` puis `onIndexChanged(i + 1)`. Cet ordre est un
+  /// contrat — il permet d'enregistrer une décision sur la carte sortante
+  /// avant que la pile ne bouge.
+  ///
+  /// N'émet **que sur un geste**. Une avance programmatique — commande de
+  /// l'hôte via [indexController], ou bouton « carte suivante » de la rangée
+  /// accessible — n'exprime aucune direction, et n'appelle donc pas ce
+  /// callback. Lui faire émettre une direction par défaut attribuerait à
+  /// l'utilisateur une intention qu'il n'a pas formulée, et l'utilisateur de
+  /// lecteur d'écran serait le seul à la subir. Conséquence à assumer côté
+  /// hôte (invariant AD-13) : si une décision est dérivée de la direction,
+  /// la même décision doit rester atteignable sans geste — une rangée
+  /// `ZSrsQualityButtons` composée en frère remplit exactement ce rôle.
+  ///
+  /// La direction est **logique** ([ZSwipeDirection], résolue contre la
+  /// [TextDirection] ambiante) : sous `rtl`, le même geste physique donne la
+  /// direction opposée, de sorte que le geste perçu comme « en avant » porte
+  /// la même intention dans les deux sens de lecture.
+  ///
+  /// La sémantique du geste — noter, marquer, passer — appartient à l'hôte :
+  /// le swiper n'attribue jamais de qualité (invariant AD-33). Un hôte qui
+  /// veut le geste « une direction, une intention » l'écrit chez lui :
+  ///
+  /// ```dart
+  /// ZSessionCardSwiper(
+  ///   queue: queue,
+  ///   cardBuilder: buildCard,
+  ///   passThreshold: passThreshold,
+  ///   onSwipeDirection: (int index, ZSwipeDirection direction) =>
+  ///       direction == ZSwipeDirection.start
+  ///           ? gradeAt(index, low)
+  ///           : gradeAt(index, high),
+  /// )
+  /// ```
+  ///
+  /// Seam inerte quand il est omis : sans lui, l'arbre rendu et la suite des
+  /// index émis sont exactement ceux d'avant son existence.
+  final void Function(int index, ZSwipeDirection direction)? onSwipeDirection;
 
   /// Clé du bouton de navigation suivant (alternative accessible).
   ///
@@ -279,6 +357,16 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
   /// gating d'animation du paquet.
   int? _lastEmittedIndex;
 
+  /// Vrai entre une avance programmatique demandée par ce `State`
+  /// ([_advance]) et l'`onSwipe` qu'elle finit par déclencher.
+  ///
+  /// Le paquet tiers n'a qu'un seul `onSwipe` : il ne distingue pas le geste
+  /// de `CardSwiperController.swipe`. Ce drapeau est donc le seul point où
+  /// l'origine est encore connue. Il ne peut pas être posé et lu dans la même
+  /// pile d'appels : `swipe()` lance une animation et `onSwipe` n'arrive
+  /// qu'à sa complétion.
+  bool _programmaticAdvance = false;
+
   /// Verrou one-shot de fin de pile (même portée honnête que
   /// [_lastEmittedIndex] : non atteint avec `isLoop: false`, où l'index
   /// devient `null` après la dernière carte et interdit tout swipe ultérieur).
@@ -321,8 +409,11 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
   ///    une session sans fin ni recours (invariant AD-10).
   ///
   /// En remontant le `CardSwiper`, son état interne est reconstruit et
-  /// revient à son index initial (0) — aligné sur le `_swiperIndex = 0` que
-  /// ce `State` s'impose déjà. Les trois défauts se ferment d'un seul geste.
+  /// repart de l'`initialIndex` qu'on lui passe — aligné sur le `_swiperIndex`
+  /// que ce `State` vient de fixer (0 par défaut, la position conservée sous
+  /// [ZSessionCardSwiper.preserveIndexOnMutation]). Les trois défauts se
+  /// ferment d'un seul geste, dans les deux régimes : l'index remonté est
+  /// toujours borné par la nouvelle file.
   int _queueGeneration = 0;
 
   @override
@@ -365,13 +456,23 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
       _cardCache.clear();
       _lastEmittedIndex = null;
       _stackEnded = false;
-      _swiperIndex = 0;
-      // Écrit À LA SOURCE (donc chez l'hôte quand il pilote) : la file a
-      // changé, l'index 0 est le seul vrai. Suspendre la voie unique le temps
-      // de cette écriture préserve le comportement d'origine — ce reset
-      // n'émettait pas `onIndexChanged`, et ne doit pas se mettre à le faire.
+      // Position visée après la mutation. Le défaut reste `0` : l'index 0 est
+      // le seul vrai quand rien ne demande de préserver la position.
+      //
+      // `_clampIndex` est évalué APRÈS l'affectation de `widget` par le
+      // framework, donc contre la NOUVELLE file : une file qui rétrécit sous
+      // l'index courant le ramène sur sa dernière carte, jamais hors bornes
+      // (l'`initialIndex` du paquet tiers porte un assert de bornes).
+      final int target =
+          widget.preserveIndexOnMutation ? _clampIndex(_current.value) : 0;
+      _swiperIndex = target;
+      // Écrit À LA SOURCE (donc chez l'hôte quand il pilote). Suspendre la
+      // voie unique le temps de cette écriture préserve le comportement
+      // d'origine — ce reset n'émettait pas `onIndexChanged`, et ne doit pas
+      // se mettre à le faire ; la conservation ne le doit pas davantage (une
+      // mutation de file n'est pas une avancée).
       _resettingQueue = true;
-      _current.value = 0;
+      _current.value = target;
       _resettingQueue = false;
       // Remonte le `CardSwiper` : sans cela son index interne survivrait à
       // la file (crash / indicateur menteur / cul-de-sac — voir
@@ -453,9 +554,40 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
   /// concurrence existe réellement, par exemple autour d'un port
   /// d'évaluation attendu (`await`) côté surface de saisie.
   bool _handleSwipe(int previousIndex, int? currentIndex, Object? direction) {
+    // Le drapeau est consommé inconditionnellement : le laisser armé quand
+    // aucun seam n'est branché ferait taire le geste suivant.
+    final bool wasProgrammatic = _programmaticAdvance;
+    _programmaticAdvance = false;
+    final void Function(int, ZSwipeDirection)? notify = widget.onSwipeDirection;
+    // Testé AVANT toute lecture d'`InheritedWidget` : sans seam, ce `State`
+    // ne prend aucune dépendance nouvelle — l'inertie est structurelle, pas
+    // seulement observable en sortie.
+    if (notify != null && !wasProgrammatic) {
+      final ZSwipeDirection? logical = _logicalDirection(direction);
+      // Émis AVANT `_emitIndexChanged` : l'hôte voit d'abord le geste sur la
+      // carte sortante, ensuite seulement l'avance. L'index passé est celui
+      // de la carte chassée, jamais celui de la suivante.
+      if (logical != null) notify(previousIndex, logical);
+    }
     if (currentIndex == null) return true; // fin de pile : `onEnd` s'en charge.
     _emitIndexChanged(currentIndex);
     return true;
+  }
+
+  /// Traduit la direction PHYSIQUE du paquet tiers en direction LOGIQUE.
+  ///
+  /// `null` pour toute direction non horizontale : `allowedSwipeDirection`
+  /// les rejette avant `onSwipe`, mais un repli défini vaut mieux qu'une
+  /// direction inventée (invariant AD-10).
+  ZSwipeDirection? _logicalDirection(Object? direction) {
+    final bool rtl = Directionality.maybeOf(context) == TextDirection.rtl;
+    if (direction == CardSwiperDirection.right) {
+      return rtl ? ZSwipeDirection.start : ZSwipeDirection.end;
+    }
+    if (direction == CardSwiperDirection.left) {
+      return rtl ? ZSwipeDirection.end : ZSwipeDirection.start;
+    }
+    return null;
   }
 
   /// `onEnd` du paquet — n'est appelé que sur la **dernière** carte, **après**
@@ -480,7 +612,15 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
   /// cohérent avec le fait que les deux directions avancent — et c'est
   /// exactement pourquoi il ne peut exister aucun bouton « précédent » ici
   /// (voir la section « Pourquoi aucun retour arrière »).
-  void _advance() => _controller.swipe(CardSwiperDirection.right);
+  ///
+  /// N'émet pas [ZSessionCardSwiper.onSwipeDirection] : cette avance n'est
+  /// pas un geste, et la direction passée au paquet n'est qu'un artefact de
+  /// son API (les deux directions avancent). La rapporter comme une
+  /// intention de l'utilisateur serait la fabriquer.
+  void _advance() {
+    _programmaticAdvance = true;
+    _controller.swipe(CardSwiperDirection.right);
+  }
 
   /// Carte mémoïsée par index.
   Widget _cardAt(BuildContext context, int index) =>

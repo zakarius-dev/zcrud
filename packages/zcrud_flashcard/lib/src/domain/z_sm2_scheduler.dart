@@ -5,11 +5,14 @@
 /// d'échelle) sont lues depuis un [ZSrsConfig] injecté — aucune n'est
 /// recopiée ici.
 ///
-/// Seule exception assumée : le sommet `5` de la formule de facteur de
-/// facilité (`(5 - q)`) est intrinsèque à SM-2, pas un réglage — il est gelé
-/// par un test de contrat dédié. Il n'est pas pour autant une seconde source
-/// de vérité : `ZSrsConfig` épingle `maxQuality == 5` par assertion, si bien
-/// que la configuration ne peut pas diverger de la formule.
+/// La variation du facteur de facilité est elle-même déclarée sur la config
+/// (`ZSrsConfig.easeFactorAdjustment`) : le défaut est la formule SM-2
+/// canonique, gelée par un test de contrat dédié. Le sommet `5` de cette
+/// formule (`(5 - q)`) est intrinsèque à SM-2, pas un réglage, et n'est pas
+/// une seconde source de vérité : `ZSrsConfig` épingle `maxQuality == 5` par
+/// assertion, si bien que la configuration ne peut pas diverger de la
+/// formule. Le bornage du résultat aux deux bornes de facteur de facilité
+/// reste ici, jamais dans la stratégie.
 library;
 
 import 'z_repetition_info.dart';
@@ -72,10 +75,16 @@ class ZSm2Scheduler implements ZSrsScheduler {
     // — une seconde source divergerait en silence.
     final q = config.clampQuality(quality);
 
-    // Mise à jour du facteur de facilité (formule SM-2), appliquée quelle
-    // que soit l'issue, puis bornée aux deux bornes de la config.
-    final rawEase =
-        current.easeFactor + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
+    // Mise à jour du facteur de facilité, déléguée à la stratégie déclarée
+    // par la config (défaut : la formule SM-2 canonique, à l'identique), puis
+    // bornée aux deux bornes de la config. Le clamp reste ICI et pas dans la
+    // stratégie : appliqué des deux côtés, il masquerait une stratégie qui
+    // déborde.
+    final rawEase = config.easeFactorAdjustment.apply(
+      current.easeFactor,
+      q,
+      config,
+    );
     final easeFactor =
         rawEase.clamp(config.minEaseFactor, config.maxEaseFactor).toDouble();
 

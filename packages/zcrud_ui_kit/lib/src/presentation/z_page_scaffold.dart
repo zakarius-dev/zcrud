@@ -53,6 +53,7 @@ class ZPageScaffold extends StatefulWidget {
     required this.title,
     this.subtitle,
     this.gradientKey,
+    this.signatureKey,
     this.leading,
     this.actions = const <ZAppBarAction>[],
     this.search,
@@ -94,10 +95,17 @@ class ZPageScaffold extends StatefulWidget {
   final Widget? subtitle;
 
   /// Identité opaque de l'entité ouverte, alimentant le dégradé d'app-bar
-  /// via la couture `zResolveGradient`. Voir
-  /// [ZSearchableAppBar.gradientKey] : sans `ZcrudScope.gradientResolver`
-  /// injecté par l'hôte, **aucun** dégradé — rendu inchangé.
+  /// via la couture `zResolveGradient`, **prioritaire sur tout le reste**.
+  /// Voir [ZSearchableAppBar.gradientKey] : déclarée, elle peint la spec du
+  /// seam à saturation pleine ; vide (`''`), elle éteint tout chrome
+  /// d'identité sur ce site.
   final String? gradientKey;
+
+  /// Identité alimentant le **lavis de palette signature** de l'app-bar quand
+  /// [gradientKey] n'est pas déclarée. Voir [ZSearchableAppBar.signatureKey] :
+  /// repli sur le titre s'il est une chaîne, `ZReferenceProfile.neutral` pour
+  /// tout éteindre à la racine.
+  final String? signatureKey;
 
   /// Leading optionnel, rendu si et seulement si fourni.
   final Widget? leading;
@@ -301,6 +309,7 @@ class _ZPageScaffoldState extends State<ZPageScaffold> {
         controller: _controller,
         subtitle: widget.subtitle,
         gradientKey: widget.gradientKey,
+        signatureKey: widget.signatureKey,
         leading: widget.leading,
         actions: widget.actions,
         search: widget.search,
@@ -343,6 +352,7 @@ class _ZPageScaffoldState extends State<ZPageScaffold> {
       title: widget.title,
       subtitle: widget.subtitle,
       gradientKey: widget.gradientKey,
+      signatureKey: widget.signatureKey,
       leading: widget.leading,
       actions: widget.actions,
       search: widget.search,

@@ -102,6 +102,13 @@ void main() {
         'lib/src/presentation/', () {
       final coupables = <String>[];
       _sourcesUnder('lib/src/presentation').forEach((path, src) {
+        // Exemption NOMINATIVE par chemin exact (exception FR-26 encadrée) —
+        // source unique partagée avec `z_document_style_purity_test.dart`,
+        // qui en tient les trois contre-preuves.
+        if (z_sources.kZColorReferenceFiles
+            .contains(z_sources.normalizedLibPath(path))) {
+          return;
+        }
         final hits = <String>[
           if (RegExp(r'Color\(0x').hasMatch(src)) 'Color(0x…)',
           if (RegExp(r'\bColors\.[a-zA-Z]').hasMatch(src)) 'Colors.<name>',

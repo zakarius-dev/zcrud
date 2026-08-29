@@ -10,6 +10,8 @@
 /// Injectée dans [ZSm2Scheduler].
 library;
 
+import 'z_ease_factor_adjustment.dart';
+
 /// Paramètres immuables de l'algorithme de répétition espacée (SuperMemo-2
 /// par défaut). Toutes les constantes de [ZSm2Scheduler] sont lues depuis une
 /// instance de cette classe — aucune constante SM-2 n'est codée en dur dans
@@ -26,7 +28,19 @@ class ZSrsConfig {
     this.passThreshold = 3,
     this.minQuality = 0,
     this.maxQuality = 5,
-  })  : assert(
+    int? neutralQuality,
+    this.easeFactorAdjustment = const ZEaseFactorAdjustment.canonical(),
+  })  :
+        // Bornage DÉFENSIF, jamais une levée (invariant AD-10) : une qualité
+        // neutre hors échelle est ramenée sur l'échelle déclarée. Écrit en
+        // ternaire plutôt qu'avec `clamp` parce que le constructeur est
+        // `const` — `clamp` n'est pas évaluable à la compilation.
+        neutralQuality = neutralQuality == null
+            ? null
+            : (neutralQuality < minQuality
+                ? minQuality
+                : (neutralQuality > maxQuality ? maxQuality : neutralQuality)),
+        assert(
           minQuality < maxQuality,
           'minQuality doit être STRICTEMENT inférieur à maxQuality : une échelle '
           'vide ou inversée ne peut porter aucun cran de notation. Reçu : '
@@ -133,6 +147,44 @@ class ZSrsConfig {
   /// tronquer l'échelle, n'utilisez que [minQuality].
   final int maxQuality;
 
+  /// Qualité neutre posée quand **aucune évaluation n'est disponible** —
+  /// `null` (le défaut) signifie « utiliser [passThreshold] ».
+  ///
+  /// Une soumission peut arriver sans note : le type de carte n'est pas
+  /// évalué localement et le port d'évaluation est absent, indisponible ou
+  /// rend `null`. La révision a pourtant eu lieu, et l'état de répétition
+  /// espacée doit avancer. C'est cette qualité-là que le consommateur pose
+  /// alors — ni la meilleure note (qui offrirait une réussite gratuite), ni
+  /// la pire (qui punirait une panne d'infrastructure).
+  ///
+  /// `null` ⇒ [passThreshold], c'est-à-dire la plus petite note qui compte
+  /// comme réussite : la carte progresse au minimum, sans cadeau. Une
+  /// application qui veut faire retomber ces révisions sous le seuil
+  /// (« aucune preuve d'apprentissage ») déclare la valeur explicitement.
+  ///
+  /// La valeur est **bornée** à `[minQuality, maxQuality]` à la construction
+  /// (jamais une exception : une configuration hors échelle est corrigée, pas
+  /// rejetée).
+  ///
+  /// Ce paquet ne consomme pas ce réglage : il ne décrit pas une variante de
+  /// l'algorithme, mais la politique du **flux de session** qui appelle le
+  /// planificateur. Il est déclaré ici parce que l'échelle de qualité est
+  /// possédée ici — une seconde source de bornes divergerait.
+  final int? neutralQuality;
+
+  /// Stratégie d'ajustement du facteur de facilité — défaut
+  /// `ZEaseFactorAdjustment.canonical()`, la formule SuperMemo-2 historique.
+  ///
+  /// Le défaut rend **exactement** les mêmes facteurs de facilité que la
+  /// formule codée en dur dans le planificateur avant l'existence de ce
+  /// point d'extension : une application qui ne déclare rien ne voit aucune
+  /// différence de planification.
+  ///
+  /// Le bornage à [minEaseFactor]/[maxEaseFactor] n'appartient PAS à la
+  /// stratégie : le planificateur borne systématiquement le résultat qu'elle
+  /// rend.
+  final ZEaseFactorAdjustment easeFactorAdjustment;
+
   /// Seuil de maîtrise — dérivé de la borne haute possédée par cette config.
   /// `maxQuality - 1` correspond à q4-5 en échelle canonique — jamais le
   /// littéral `4`.
@@ -146,6 +198,18 @@ class ZSrsConfig {
   /// constructeur, aucun impact sur la sérialisation ou le round-trip
   /// (`ZSrsConfig` n'est pas un modèle du codegen).
   int get masteredThreshold => maxQuality - 1;
+
+  /// Qualité effectivement posée quand aucune évaluation n'est disponible :
+  /// [neutralQuality] s'il est déclaré, sinon [passThreshold].
+  ///
+  /// Source unique de la résolution du défaut : un consommateur lit cet
+  /// accesseur plutôt que d'écrire `neutralQuality ?? passThreshold` chez
+  /// lui — une seconde écriture de la règle divergerait en silence si le
+  /// défaut changeait.
+  ///
+  /// Accesseur dérivé : aucun champ, aucun paramètre de constructeur, aucun
+  /// effet sur l'égalité.
+  int get effectiveNeutralQuality => neutralQuality ?? passThreshold;
 
   /// Ramène [quality] dans l'échelle `[minQuality, maxQuality]`.
   ///
@@ -167,7 +231,9 @@ class ZSrsConfig {
           overdueBonusFactor == other.overdueBonusFactor &&
           passThreshold == other.passThreshold &&
           minQuality == other.minQuality &&
-          maxQuality == other.maxQuality;
+          maxQuality == other.maxQuality &&
+          neutralQuality == other.neutralQuality &&
+          easeFactorAdjustment == other.easeFactorAdjustment;
 
   @override
   int get hashCode => Object.hash(
@@ -179,5 +245,7 @@ class ZSrsConfig {
         passThreshold,
         minQuality,
         maxQuality,
+        neutralQuality,
+        easeFactorAdjustment,
       );
 }

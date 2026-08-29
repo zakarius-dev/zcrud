@@ -39,6 +39,10 @@ export 'src/domain/z_session_state.dart';
 export 'src/domain/z_study_session_engine.dart';
 export 'src/domain/z_white_exam_session_controller.dart';
 export 'src/domain/z_white_exam_session_engine.dart';
+// Verdict de réussite d'un examen blanc : le SEUIL est une donnée de
+// l'application (`successRatio`), jamais une valeur du socle. Sans seuil
+// déclaré, `zWhiteExamVerdictFor` rend `null` — aucun verdict, aucun effet.
+export 'src/domain/z_white_exam_verdict.dart';
 // Widgets de présentation purs : `StatelessWidget`, aucun gestionnaire
 // d'état, callbacks injectés, thème/labels/couleurs injectés.
 // - `ZSrsQualityButtons` (+ `ZQualityScale`) : boutons de notation qualité
@@ -111,6 +115,11 @@ export 'src/presentation/z_session_quality_breakdown.dart';
 // le paquet tiers reste privé à `src/presentation/z_session_summary_view.dart`.
 export 'src/presentation/z_session_summary_view.dart';
 export 'src/presentation/z_srs_quality_buttons.dart';
+// Direction LOGIQUE d'un swipe (`start`/`end`, résolues contre la
+// `TextDirection` — jamais `left`/`right`, invariant AD-13). C'est un fait de
+// geste, pas une évaluation : le seam `ZSessionCardSwiper.onSwipeDirection`
+// dit vers où et sur quelle carte, l'hôte décide seul ce que cela veut dire.
+export 'src/presentation/z_swipe_direction.dart';
 // Badge flamme (statique : aucune animation factice).
 export 'src/presentation/z_streak_badge.dart';
 // Confirmation de flamme via le port `ZToaster` (`zcrud_ui_kit`), jamais un

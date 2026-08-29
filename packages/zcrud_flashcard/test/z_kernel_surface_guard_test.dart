@@ -99,10 +99,14 @@ Set<String> _publicKernelSymbols(Directory kernelRoot) {
   final barrel = File('${kernelRoot.path}/lib/zcrud_study_kernel.dart');
   final symbols = <String>{};
 
-  for (final line in _codeLines(barrel)) {
-    final export = RegExp(r"export\s+'(src/[^']+)'([^;]*);").firstMatch(line);
-    if (export == null) continue;
+  // Le barrel du kernel écrit couramment ses combinateurs sur PLUSIEURS lignes
+  // (`export '...'` puis `    hide ZXZcrud;`). Un balayage ligne à ligne rate
+  // ces directives-là : le scan porte donc sur le texte JOINT, pas sur les
+  // lignes prises isolément.
+  final barrelCode = _codeLines(barrel).join('\n');
 
+  for (final export
+      in RegExp(r"export\s+'(src/[^']+)'([^;]*);").allMatches(barrelCode)) {
     // `hide` propre au barrel kernel (extensions générées masquées à la source).
     final selfHidden = <String>{};
     final selfHide = RegExp(r'hide\s+([^;]+)').firstMatch(export.group(2) ?? '');
@@ -169,6 +173,10 @@ void main() {
       expect(kernelSymbols, contains('ZStudyFolder'));
       expect(kernelSymbols, contains('ZColorPalette'));
       expect(kernelSymbols, contains('applyOrder'));
+      // Directives `export` écrites sur PLUSIEURS lignes : un scan ligne à
+      // ligne les rate en silence (et laisse fuiter toute leur source).
+      expect(kernelSymbols, contains('ZStudyOrganization'));
+      expect(kernelSymbols, contains('ZStudyShareGrant'));
       expect(kernelSymbols.length, greaterThanOrEqualTo(12));
       expect(hidden, isNotEmpty);
     });

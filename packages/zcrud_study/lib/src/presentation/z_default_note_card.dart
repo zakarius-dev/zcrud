@@ -46,6 +46,8 @@ import 'package:zcrud_core/zcrud_core.dart'
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZColorPalette, ZFlashcardTag, remapColorKey;
 
+import '../domain/z_note_summary_port.dart';
+import 'z_note_summary_sheet.dart';
 import 'z_study_card_reference.dart';
 import 'z_study_note_card.dart';
 import 'z_tag_chips.dart';
@@ -57,6 +59,14 @@ const double kZDefaultNoteAccentHeight = 4;
 /// Glyphe du rendu de référence — neutre, surchargable par
 /// [ZDefaultNoteCard.icon].
 const IconData zDefaultNoteReferenceIcon = Icons.note_outlined;
+
+/// Glyphe de repli de l'action « résumer », surchargeable par
+/// [ZDefaultNoteCard.summarizeIcon].
+const IconData zDefaultNoteSummarizeFallbackIcon = Icons.summarize_outlined;
+
+/// Cible de taille interactive minimale de l'action « résumer »
+/// (invariant AD-13).
+const double _kMinTapTarget = 48.0;
 
 /// Carte de note par défaut du socle — autonome, sur primitives, au rendu
 /// de référence.
@@ -96,6 +106,10 @@ class ZDefaultNoteCard extends StatelessWidget {
     this.onTap,
     this.onLongPress,
     this.semanticLabel,
+    this.summaryPort,
+    this.onSummarize,
+    this.summarizeSemanticLabel,
+    this.summarizeIcon,
     super.key,
   })  : assert(
           titleMaxLines == null || titleMaxLines > 0,
@@ -196,6 +210,81 @@ class ZDefaultNoteCard extends StatelessWidget {
   /// [subtitle].
   final String? semanticLabel;
 
+  /// Port de résumé de la note par IA, **prioritaire** sur celui d'un
+  /// [ZNoteSummaryScope] ancêtre. `null` ⇒ le scope est consulté.
+  ///
+  /// Sans port résolu, l'action « résumer » est **ABSENTE de l'arbre** —
+  /// jamais grisée, jamais un no-op : la carte rend alors exactement les mêmes
+  /// actions qu'avant (invariant AD-4).
+  final ZNoteSummaryPort? summaryPort;
+
+  /// Déclenché au tap sur l'action « résumer », avec le port résolu (non
+  /// `null`) : l'application ouvre la surface de son choix — typiquement
+  /// [ZNoteSummarySheet].
+  ///
+  /// [summaryPort]/[ZNoteSummaryScope], [onSummarize] et
+  /// [summarizeSemanticLabel] sont **indissociables** : l'action n'est montée
+  /// que si les trois sont fournis. Une action sans rappel serait un no-op
+  /// (AD-4) ; sans libellé, elle serait muette pour un lecteur d'écran
+  /// (AD-13). Le glyphe, lui, a un repli documenté
+  /// ([zDefaultNoteSummarizeFallbackIcon]).
+  final void Function(ZNoteSummaryPort port)? onSummarize;
+
+  /// Libellé sémantique INJECTÉ de l'action « résumer » (sert aussi de
+  /// `tooltip`). Aucun défaut : un libellé par défaut serait figé dans une
+  /// langue (FR-26).
+  final String? summarizeSemanticLabel;
+
+  /// Glyphe INJECTÉ de l'action « résumer ». `null` ⇒
+  /// [zDefaultNoteSummarizeFallbackIcon].
+  final IconData? summarizeIcon;
+
+  /// Port de résumé EFFECTIF : paramètre prioritaire, sinon le scope ancêtre.
+  /// Exposé pour falsifier la règle « sans port, action ABSENTE ».
+  @visibleForTesting
+  ZNoteSummaryPort? resolvedSummaryPort(BuildContext context) =>
+      summaryPort ?? ZNoteSummaryScope.maybePortOf(context);
+
+  /// Action « résumer », ou `null` quand elle ne doit pas exister.
+  ///
+  /// Retourne `null` — et non un widget vide — dès qu'un des trois maillons
+  /// manque.
+  Widget? _buildSummarizeAction(BuildContext context) {
+    final port = resolvedSummaryPort(context);
+    final onSummarizeAction = onSummarize;
+    final label = summarizeSemanticLabel;
+    if (port == null || onSummarizeAction == null || label == null) return null;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minWidth: _kMinTapTarget,
+        minHeight: _kMinTapTarget,
+      ),
+      child: IconButton(
+        key: summarizeActionKey,
+        onPressed: () => onSummarizeAction(port),
+        tooltip: label,
+        icon: Icon(
+          summarizeIcon ?? zDefaultNoteSummarizeFallbackIcon,
+          semanticLabel: label,
+        ),
+      ),
+    );
+  }
+
+  /// Créneau d'actions EFFECTIF de la carte.
+  ///
+  /// Sans action « résumer », c'est [trailing] **tel quel** : l'identité du
+  /// widget est préservée, aucune rangée n'est interposée — le rendu d'un hôte
+  /// qui ne câble pas le résumé est inchangé au widget près.
+  Widget? _trailingWith(BuildContext context) {
+    final summarize = _buildSummarizeAction(context);
+    if (summarize == null) return trailing;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[?trailing, summarize],
+    );
+  }
+
   ZColorPair _accent(BuildContext context) {
     final String key = remapColorKey(
       palette: palette,
@@ -268,7 +357,7 @@ class ZDefaultNoteCard extends StatelessWidget {
       leadingGap: chrome.leadingGap,
       elevation: chrome.elevation,
       belowSubtitle: _buildBody(context),
-      actions: trailing,
+      actions: _trailingWith(context),
       progress: progress,
       progressMaxWidth: progressMaxWidth,
       hidesTrailingWhileBusy: hidesTrailingWhileBusy,
@@ -305,7 +394,7 @@ class ZDefaultNoteCard extends StatelessWidget {
       borderSide: borderSide,
       borderRadius: borderRadius,
       belowSubtitle: _buildBody(context),
-      actions: trailing,
+      actions: _trailingWith(context),
       progress: progress,
       progressMaxWidth: progressMaxWidth,
       hidesTrailingWhileBusy: hidesTrailingWhileBusy,
@@ -376,4 +465,8 @@ class ZDefaultNoteCard extends StatelessWidget {
   /// Clé de la zone de balises (testabilité).
   static const ValueKey<String> tagsKey =
       ValueKey<String>('zDefaultNoteCard_tags');
+
+  /// Clé de l'action « résumer » (testabilité).
+  static const ValueKey<String> summarizeActionKey =
+      ValueKey<String>('zDefaultNoteCard_summarize');
 }

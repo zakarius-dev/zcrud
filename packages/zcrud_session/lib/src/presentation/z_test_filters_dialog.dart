@@ -8,6 +8,26 @@
 /// réimplémentée ici — les seaux de maîtrise viennent de `ZMasteryLevel`,
 /// jamais d'une liste recopiée.
 ///
+/// ## Les critères rendus, et ceux qui n'y sont pas
+///
+/// Ce dialog compose les quatre critères que porte `ZFlashcardTestFilters` :
+/// nombre de questions, seaux de maîtrise, `kind` de provenance
+/// (`availableSources`) et provenance par identifiant
+/// (`availableSourceIds`). Les deux dernières sections ne sont rendues que
+/// si l'hôte propose des candidats — sans candidats, l'arbre ne porte que le
+/// stepper et les seaux.
+///
+/// Dossier, **tags** et **types de question** n'y figurent pas, et c'est
+/// délibéré : ils appartiennent à `ZStudySessionConfig`, appliqué par
+/// `ZStudySessionSelector` en amont du tirage. Les porter aussi ici créerait
+/// deux sources du même filtre, avec une question sans réponse (« lequel
+/// gagne ? »). Un hôte qui veut les faire régler à l'utilisateur compose sa
+/// propre surface pour la config de session, en frère de ce dialog.
+///
+/// Un critère absent des sections rendues n'est pas pour autant perdu : ce
+/// dialog restitue [ZTestFiltersDialog.initial] verbatim pour tout ce qu'il
+/// ne fait pas régler.
+///
 /// Widget pur (invariants AD-2/AD-15) : `StatefulWidget` sans gestionnaire
 /// d'état, état local au dialog (les cases cochées), aucun moteur, aucune
 /// écriture SRS.
@@ -58,12 +78,15 @@ class ZTestFiltersDialog extends StatefulWidget {
   ///   seau, donc tous) ;
   /// - [availableSources] : `kind` de source proposés (registre ouvert,
   ///   invariant AD-4) — vide, la section n'est pas affichée ;
+  /// - [availableSourceIds] : identifiants de provenance proposés (`noteId`,
+  ///   `documentId`, `messageId`…) — vide, la section n'est pas affichée ;
   /// - [minQuestionCount] / [maxQuestionCount] : bornes du réglage du nombre
   ///   de questions — injectées, jamais des littéraux enfouis dans le
   ///   `build` (un hôte à gros dossiers voudra plus de 100).
   const ZTestFiltersDialog({
     this.initial = const ZFlashcardTestFilters(),
     this.availableSources = const <String>[],
+    this.availableSourceIds = const <String>[],
     this.minQuestionCount = 1,
     this.maxQuestionCount = 100,
     super.key,
@@ -95,11 +118,30 @@ class ZTestFiltersDialog extends StatefulWidget {
   static ValueKey<String> sourceKey(String kind) =>
       ValueKey<String>('zFiltersSource_$kind');
 
+  /// Clé de la bascule d'un identifiant de provenance.
+  static ValueKey<String> sourceIdKey(String id) =>
+      ValueKey<String>('zFiltersSourceId_$id');
+
   /// Filtres initiaux.
   final ZFlashcardTestFilters initial;
 
   /// `kind` de source proposés.
   final List<String> availableSources;
+
+  /// Identifiants de provenance proposés — vide, aucune section n'est rendue.
+  ///
+  /// Ce sont les identifiants canoniques du contenu d'origine (`noteId` pour
+  /// une note, `documentId` pour un document, `messageId` pour une
+  /// conversation), tels que `ZFlashcardTestFilters.sourceIds` les attend.
+  /// Ils se composent en ET avec [availableSources] : cocher le `kind`
+  /// « note » **et** deux identifiants ne retient que ces deux notes.
+  ///
+  /// Le libellé rendu est résolu par
+  /// `label(context, 'zcrud.study.sourceId.' + id)`, avec l'identifiant
+  /// lui-même en repli. Un
+  /// identifiant opaque n'étant pas lisible, un hôte qui veut des titres les
+  /// fournit par `ZcrudScope(labels:)` — ce dialog n'invente aucun libellé.
+  final List<String> availableSourceIds;
 
   /// Borne basse du nombre de questions (défaut 1 — `<= 0` donnerait un
   /// tirage vide).
@@ -115,6 +157,7 @@ class ZTestFiltersDialog extends StatefulWidget {
 class _ZTestFiltersDialogState extends State<ZTestFiltersDialog> {
   late Set<ZMasteryLevel> _levels;
   late Set<String> _sources;
+  late Set<String> _sourceIds;
   late int _questionCount;
 
   @override
@@ -124,6 +167,10 @@ class _ZTestFiltersDialogState extends State<ZTestFiltersDialog> {
     // AD-2).
     _levels = <ZMasteryLevel>{...widget.initial.masteryLevels};
     _sources = <String>{...widget.initial.sources};
+    // Repris de `initial`, comme les autres critères : sans cette reprise ET
+    // sans la restitution au `pop`, un `initial.sourceIds` non vide serait
+    // silencieusement effacé par un simple aller-retour dans le dialog.
+    _sourceIds = <String>{...widget.initial.sourceIds};
     // Borné dès l'entrée : un `initial` hors bornes (données d'hôte
     // corrompues) ne doit ni lever, ni piéger le stepper (invariant AD-10).
     _questionCount = _clampCount(widget.initial.questionCount);
@@ -211,6 +258,31 @@ class _ZTestFiltersDialogState extends State<ZTestFiltersDialog> {
                   }),
                 ),
             ],
+            // Provenance PAR IDENTIFIANT — section rendue seulement si l'hôte
+            // propose des candidats. Sans candidats, l'arbre est identique à
+            // celui d'avant l'existence de ce paramètre.
+            if (widget.availableSourceIds.isNotEmpty) ...<Widget>[
+              SizedBox(height: theme.gapM),
+              for (final id in widget.availableSourceIds)
+                _FilterToggle(
+                  tileKey: ZTestFiltersDialog.sourceIdKey(id),
+                  // Un identifiant est opaque : le repli est l'identifiant
+                  // lui-même, jamais un libellé inventé ici.
+                  text: label(
+                    context,
+                    'zcrud.study.sourceId.$id',
+                    fallback: id,
+                  ),
+                  selected: _sourceIds.contains(id),
+                  onChanged: (value) => setState(() {
+                    if (value) {
+                      _sourceIds.add(id);
+                    } else {
+                      _sourceIds.remove(id);
+                    }
+                  }),
+                ),
+            ],
           ],
         ),
       ),
@@ -234,6 +306,10 @@ class _ZTestFiltersDialogState extends State<ZTestFiltersDialog> {
               questionCount: _questionCount,
               masteryLevels: _levels,
               sources: _sources,
+              // Restitué même quand aucune section n'est rendue : ce dialog
+              // COMPOSE les filtres, il n'a jamais eu vocation à en effacer un
+              // que l'hôte lui avait confié dans `initial`.
+              sourceIds: _sourceIds,
             ),
           ),
           child: Text(

@@ -45,9 +45,9 @@ abstract class ZFeedbackBank {
 
 /// Banque par défaut FR/EN, embarquée dans `zcrud_session`.
 ///
-/// Couvre les quatre seaux de `ZFeedbackTier` (`motivation`/`neutral`/
-/// `encouragement`/`exceptional`) dans les deux langues. Locale inconnue →
-/// repli anglais (jamais une clé brute, jamais une exception).
+/// Couvre **tous** les seaux de `ZFeedbackTier` (`motivation`/`neutral`/
+/// `encouragement`/`exceptional`/`skipped`) dans les deux langues. Locale
+/// inconnue → repli anglais (jamais une clé brute, jamais une exception).
 class ZDefaultFeedbackBank implements ZFeedbackBank {
   /// Construit la banque par défaut (`const` : aucun état).
   const ZDefaultFeedbackBank();
@@ -62,6 +62,10 @@ class ZDefaultFeedbackBank implements ZFeedbackBank {
         'Bravo, cette carte est maîtrisée !',
     'zcrud.session.feedback.exceptional':
         'Exceptionnel — juste, sans indice et en un éclair !',
+    // Ton distinct de `motivation` : la carte n'a pas été ratée, elle n'a pas
+    // été tentée. Reprocher une erreur à qui n'a rien répondu serait faux.
+    'zcrud.session.feedback.skipped':
+        'Carte passée — vous la reverrez bientôt, sans pénalité de plus.',
   };
 
   /// Messages anglais (`languageCode: 'en'`) — aussi le repli de toute
@@ -74,6 +78,8 @@ class ZDefaultFeedbackBank implements ZFeedbackBank {
     'zcrud.session.feedback.encouragement': 'Well done, this card is mastered!',
     'zcrud.session.feedback.exceptional':
         'Outstanding — right, hint-free and in a flash!',
+    'zcrud.session.feedback.skipped':
+        'Card skipped — it will come back soon, no extra penalty.',
   };
 
   /// Tables par `languageCode` (baseline `fr`/`en`, comme le cœur).

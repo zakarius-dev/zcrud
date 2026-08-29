@@ -133,8 +133,21 @@ export 'src/presentation/z_flashcard_tag_confirm_sheet.dart';
 export 'src/presentation/z_flashcard_preview.dart';
 export 'src/presentation/z_flashcard_reorder.dart';
 export 'src/presentation/z_item_actions_menu.dart';
+// Génération de carte mentale par IA : le contrôleur porte le cycle de vie
+// (états, jeton de fraîcheur, matérialisation), la feuille assemble la saisie,
+// la revue dans l'éditeur d'outline et la validation. Rien n'est écrit avant
+// le handoff à l'appelant.
+export 'src/presentation/z_mindmap_generation_controller.dart';
+export 'src/presentation/z_mindmap_generation_sheet.dart';
 export 'src/presentation/z_multi_flashcard_editor.dart';
 export 'src/presentation/z_multi_flashcard_editor_controller.dart';
+// Résumé de note par IA : le contrôleur porte le cycle de vie (états, jeton de
+// fraîcheur, anti-double-soumission), la feuille assemble la saisie, la revue
+// du résumé et ses deux issues. Rien n'est écrit par ce paquet : le résumé
+// sort par les handoffs « insérer en tête » et « nouvelle note », et c'est
+// l'application qui écrit.
+export 'src/presentation/z_note_summary_controller.dart';
+export 'src/presentation/z_note_summary_sheet.dart';
 // Seam de suppression en cascade d'une flashcard : compose la suppression de
 // la carte puis la purge de son état de répétition espacée. Vit dans
 // `lib/src/data/` parce qu'il importe un store, un symbole banni de la

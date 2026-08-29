@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import '../../domain/edition/z_read_field_layout.dart';
 import '../zcrud_scope.dart';
 import 'z_gradient_resolver.dart';
+import 'z_reference_profile.dart';
 
 /// Habillage du **déclencheur** d'une surface de navigation (barre repliée
 /// montrant l'élément courant) — token de LOOK, jamais de structure.
@@ -574,6 +575,12 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.emptyStateTitleStyle,
     this.emptyStateMessageStyle,
     this.emptyStateSpacing,
+    this.referenceProfile,
+    this.signaturePalette,
+    this.signaturePaletteIndexStrategy,
+    this.sectionHeaderAccentHeight,
+    this.sectionHeaderIconTileSize,
+    this.sectionHeaderIconTileRadius,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -2556,6 +2563,54 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// décision interne du composant et n'est pas remplacé par ce jeton.
   final double? emptyStateSpacing;
 
+  /// Ce que le socle peint quand **rien** n'a été déclaré : la référence
+  /// auditée ([ZReferenceProfile.legacy], le défaut quand ce jeton est nul) ou
+  /// rien du tout ([ZReferenceProfile.neutral]).
+  ///
+  /// Le profil n'arbitre que les membres **couleur** non déclarés, au dernier
+  /// maillon de la chaîne **paramètre > jeton > référence** — jamais un
+  /// paramètre d'appel, jamais un autre jeton, jamais un scalaire.
+  ///
+  /// Sous [ZReferenceProfile.neutral] : `zcrud.signature.*` rend `null` sans
+  /// résolveur d'hôte, et les en-têtes de section ne montent ni bande d'accent
+  /// ni tuile d'icône colorée.
+  final ZReferenceProfile? referenceProfile;
+
+  /// Palette interrogée par les clés de dégradé `zcrud.signature.<identité>`.
+  ///
+  /// `null` délègue à la référence auditée (5 dégradés) sous le profil
+  /// `legacy`, et à `null` sous `neutral`. Posé, ce jeton s'applique dans les
+  /// **deux** profils : c'est une décision de l'hôte, pas une référence.
+  ///
+  /// Une palette vide rend `null` pour toute clé (aucune exception).
+  final List<ZGradientSpec>? signaturePalette;
+
+  /// Comment une identité textuelle se change en index dans
+  /// [signaturePalette]. `null` vaut [ZPaletteIndexStrategy.titleHash].
+  ///
+  /// ⚠️ Le défaut repose sur `String.hashCode`, qui **n'est pas stable** d'une
+  /// plateforme ni d'une version de SDK à l'autre : la même section peut
+  /// recevoir une couleur différente sur le web et sur mobile. Poser
+  /// [ZPaletteIndexStrategy.stableFnv] dès que la couleur doit être
+  /// reproductible.
+  final ZPaletteIndexStrategy? signaturePaletteIndexStrategy;
+
+  /// Hauteur de la bande d'accent d'un en-tête de section. `null` vaut `3`.
+  ///
+  /// Scalaire : remplaçable jeton par jeton dans les **deux** profils. Il ne
+  /// décide pas de la PRÉSENCE de la bande — c'est la couleur qui le fait
+  /// (paramètre `ZEditionSectionStyle.topAccent`, sinon palette signature,
+  /// sinon rien sous [ZReferenceProfile.neutral]).
+  final double? sectionHeaderAccentHeight;
+
+  /// Côté de la tuile carrée portant l'icône d'un en-tête de section.
+  /// `null` vaut `36`.
+  final double? sectionHeaderIconTileSize;
+
+  /// Rayon des coins de la tuile d'icône d'un en-tête de section.
+  /// `null` vaut `10`.
+  final double? sectionHeaderIconTileRadius;
+
   /// Fabrique centrale d'`InputDecoration` : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -2949,6 +3004,12 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     TextStyle? emptyStateTitleStyle,
     TextStyle? emptyStateMessageStyle,
     double? emptyStateSpacing,
+    ZReferenceProfile? referenceProfile,
+    List<ZGradientSpec>? signaturePalette,
+    ZPaletteIndexStrategy? signaturePaletteIndexStrategy,
+    double? sectionHeaderAccentHeight,
+    double? sectionHeaderIconTileSize,
+    double? sectionHeaderIconTileRadius,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     fieldFillColor: fieldFillColor ?? this.fieldFillColor,
@@ -3304,6 +3365,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     emptyStateMessageStyle:
         emptyStateMessageStyle ?? this.emptyStateMessageStyle,
     emptyStateSpacing: emptyStateSpacing ?? this.emptyStateSpacing,
+    referenceProfile: referenceProfile ?? this.referenceProfile,
+    signaturePalette: signaturePalette ?? this.signaturePalette,
+    signaturePaletteIndexStrategy:
+        signaturePaletteIndexStrategy ?? this.signaturePaletteIndexStrategy,
+    sectionHeaderAccentHeight:
+        sectionHeaderAccentHeight ?? this.sectionHeaderAccentHeight,
+    sectionHeaderIconTileSize:
+        sectionHeaderIconTileSize ?? this.sectionHeaderIconTileSize,
+    sectionHeaderIconTileRadius:
+        sectionHeaderIconTileRadius ?? this.sectionHeaderIconTileRadius,
   );
 
   @override
@@ -4517,6 +4588,28 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       emptyStateSpacing: _lerpNullableFloor(
         emptyStateSpacing,
         other.emptyStateSpacing,
+        t,
+      ),
+      // Un enum et une liste de dégradés n'ont pas d'interpolé : bascule
+      // discrete a mi-course, comme les autres jetons non continus du fichier.
+      referenceProfile: t < 0.5 ? referenceProfile : other.referenceProfile,
+      signaturePalette: t < 0.5 ? signaturePalette : other.signaturePalette,
+      signaturePaletteIndexStrategy: t < 0.5
+          ? signaturePaletteIndexStrategy
+          : other.signaturePaletteIndexStrategy,
+      sectionHeaderAccentHeight: _lerpNullableFloor(
+        sectionHeaderAccentHeight,
+        other.sectionHeaderAccentHeight,
+        t,
+      ),
+      sectionHeaderIconTileSize: _lerpNullableFloor(
+        sectionHeaderIconTileSize,
+        other.sectionHeaderIconTileSize,
+        t,
+      ),
+      sectionHeaderIconTileRadius: _lerpNullableFloor(
+        sectionHeaderIconTileRadius,
+        other.sectionHeaderIconTileRadius,
         t,
       ),
     );

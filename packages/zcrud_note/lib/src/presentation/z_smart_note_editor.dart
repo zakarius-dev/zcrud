@@ -45,6 +45,13 @@
 /// - **AD-1/AD-7** : entrée/sortie NEUTRES ; **aucun** type Quill dans la surface
 /// publique — [onChanged] reçoit une [ZSmartNote] (`content` en
 ///   `List<Map<String, dynamic>>`).
+/// ## Audio de note : opt-in strict
+///
+/// L'éditeur n'a jamais produit d'audio et n'en produit toujours pas. Il sait
+/// seulement en **rejouer** un déjà présent, et uniquement si l'appelant
+/// fournit un [ZAudioPlaybackPort] disponible **et** que la note porte une
+/// source. Sans port — le défaut — l'arbre rendu est **exactement** l'unique
+/// [ZMarkdownField] d'avant, sans conteneur ajouté.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -53,6 +60,7 @@ import 'package:zcrud_markdown/zcrud_markdown.dart';
 
 import '../domain/z_note_faith_channel.dart';
 import '../domain/z_smart_note.dart';
+import 'z_note_audio_player.dart';
 
 /// Éditeur du corps riche d'une [ZSmartNote] à controller ISOLÉ.
 ///
@@ -69,6 +77,7 @@ class ZSmartNoteEditor extends StatefulWidget {
     required this.note,
     required this.onChanged,
     this.faithChannel,
+    this.audioPort,
     super.key,
   });
 
@@ -90,6 +99,15 @@ class ZSmartNoteEditor extends StatefulWidget {
   /// Son `encode` est appelé **à chaque frappe** — cf.
   /// [ZNoteContentFaithChannel.encode].
   final ZNoteContentFaithChannel? faithChannel;
+
+  /// Moteur de lecture audio apporté par l'appelant, ou `null`.
+  ///
+  /// `null` par défaut : l'éditeur rend alors **exactement** ce qu'il rendait
+  /// sans cette capacité. Renseigné, un mini-lecteur apparaît au-dessus du champ
+  /// **si et seulement si** le port se déclare disponible et que la note porte
+  /// une source audio typée. Le port n'est jamais disposé ici : il appartient à
+  /// l'appelant.
+  final ZAudioPlaybackPort? audioPort;
 
   @override
   State<ZSmartNoteEditor> createState() => _ZSmartNoteEditorState();
@@ -152,11 +170,26 @@ class _ZSmartNoteEditorState extends State<ZSmartNoteEditor> {
   Widget build(BuildContext context) {
     // Place STABLE (AD-2) : `ValueKey(content)` — sans elle un rebuild parent
     // pourrait recréer le `QuillController` (perte de focus). Codec IDENTITÉ.
-    return ZMarkdownField(
+    final Widget field = ZMarkdownField(
       key: const ValueKey<String>(kContentKey),
       controller: _form,
       field: _contentSpec,
       codec: const ZDeltaCodec(),
+    );
+    final ZAudioPlaybackPort? port = widget.audioPort;
+    final ZAudioSource? source =
+        ZNoteAudioPlayer.canPlay(widget.note, port)
+        ? ZNoteAudioPlayer.sourceOf(widget.note)
+        : null;
+    // INERTIE : aucune des trois conditions réunies ⇒ le champ SEUL, sans le
+    // moindre conteneur ajouté (arbre identique à l'existant).
+    if (source == null || port == null) return field;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        ZNoteAudioPlayer(source: source, port: port),
+        Expanded(child: field),
+      ],
     );
   }
 }

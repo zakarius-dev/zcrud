@@ -49,6 +49,7 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart'
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZStudySessionResult;
 
+import '../domain/z_white_exam_verdict.dart';
 import 'z_session_feedback_bank.dart';
 import 'z_session_quality_breakdown.dart';
 import 'z_srs_quality_buttons.dart';
@@ -223,7 +224,9 @@ class ZSessionSummaryView extends StatefulWidget {
   ///   calculée par l'hôte via la fonction pure `zFeedbackTierFor` — ce
   ///   widget ne connaît aucune soumission) ;
   /// - [feedbackBank] : banque de messages — remplace intégralement la
-  ///   banque par défaut.
+  ///   banque par défaut ;
+  /// - [verdict] : verdict de réussite calculé par l'application (défaut
+  ///   `null` : aucun verdict, écran strictement inchangé).
   const ZSessionSummaryView({
     required this.result,
     required this.duration,
@@ -237,6 +240,7 @@ class ZSessionSummaryView extends StatefulWidget {
     this.feedbackKey,
     this.feedbackBank,
     this.breakdownCoverage = ZQualityBreakdownCoverage.presentKeysOnly,
+    this.verdict,
     super.key,
   });
 
@@ -286,6 +290,54 @@ class ZSessionSummaryView extends StatefulWidget {
   /// atteindre une répartition à longueur stable : le breakdown est
   /// construit ici, pas par l'appelant.
   final ZQualityBreakdownCoverage breakdownCoverage;
+
+  /// Verdict de réussite, ou `null` (défaut) : **aucun verdict**.
+  ///
+  /// Le seuil de réussite est une donnée de l'application : cet écran ne le
+  /// connaît pas, ne le calcule pas et n'en porte aucune valeur. L'hôte
+  /// obtient le verdict de `ZWhiteExamSessionEngine.verdict` (ou de la
+  /// fonction pure `zWhiteExamVerdictFor`) et le passe ici.
+  ///
+  /// ## Ce que le verdict change — et rien d'autre
+  ///
+  /// | [verdict] | Célébration | Nœud de verdict |
+  /// |---|---|---|
+  /// | `null` | [celebration] verbatim | absent — l'écran est identique à un écran sans verdict |
+  /// | `passed` | [celebration], promue à [ZSummaryCelebration.confetti] si elle valait [ZSummaryCelebration.none] | rendu, coloré |
+  /// | non `passed` | [ZSummaryCelebration.none] — on ne fête pas un échec | rendu, non coloré |
+  ///
+  /// Un verdict qui réussit **promeut** la célébration par défaut, mais ne
+  /// remplace jamais une variante explicitement demandée : un hôte qui a
+  /// choisi [ZSummaryCelebration.subtle] la garde. Un verdict qui échoue, lui,
+  /// éteint la célébration quelle qu'elle soit — c'est le sens du verdict.
+  ///
+  /// L'échec est dit par le **texte**, jamais par une couleur d'alerte : cet
+  /// écran n'invente aucune couleur sémantique.
+  final ZWhiteExamVerdict? verdict;
+
+  /// [ValueKey] du nœud de verdict — absent sans [verdict].
+  ///
+  /// Sur un verdict réussi, ce nœud est le `Container` coloré ; sur un verdict
+  /// manqué, c'est le `Text` du libellé.
+  static const ValueKey<String> verdictKey = ValueKey<String>(
+    'zSummaryVerdict',
+  );
+
+  /// Identité de la bande de verdict dans la palette signature.
+  ///
+  /// Elle sélectionne — de façon stable et déterministe — le dégradé de
+  /// référence peint derrière un verdict réussi sous le profil
+  /// `ZReferenceProfile.legacy`. Sous `ZReferenceProfile.neutral`, aucune
+  /// référence n'est peinte : les rôles du `ColorScheme` prennent le relais.
+  static const String verdictGradientIdentity = 'zcrud.session.summary.verdict';
+
+  /// Clé l10n du libellé d'un verdict réussi.
+  static const String verdictPassedLabelKey =
+      'zcrud.session.summary.verdict.passed';
+
+  /// Clé l10n du libellé d'un verdict manqué.
+  static const String verdictFailedLabelKey =
+      'zcrud.session.summary.verdict.failed';
 
   /// [ValueKey] du bouton « Terminer », pour la testabilité.
   static const ValueKey<String> finishButtonKey = ValueKey<String>(
@@ -395,10 +447,24 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
     _maybeCelebrate(reduceMotion: zReduceMotionOf(context));
   }
 
+  /// Célébration réellement rendue, verdict pris en compte.
+  ///
+  /// Sans verdict, c'est `widget.celebration` verbatim — l'inertie totale de
+  /// l'écran historique. Le contrat complet est documenté sur
+  /// [ZSessionSummaryView.verdict].
+  ZSummaryCelebration get _effectiveCelebration {
+    final verdict = widget.verdict;
+    if (verdict == null) return widget.celebration;
+    if (!verdict.passed) return ZSummaryCelebration.none;
+    return widget.celebration == ZSummaryCelebration.none
+        ? ZSummaryCelebration.confetti
+        : widget.celebration;
+  }
+
   /// Déclenche le tir — au plus une fois dans la vie du widget.
   void _maybeCelebrate({required bool reduceMotion}) {
     if (_celebrationFired) return; // one-shot.
-    if (widget.celebration != ZSummaryCelebration.confetti) return;
+    if (_effectiveCelebration != ZSummaryCelebration.confetti) return;
     // Sous Reduce Motion, on ne construit jamais le confetti — et surtout
     // pas avec une durée nulle : `ConfettiController` assertionne une durée
     // strictement positive, et `Duration.zero` ferait échouer cet assert.
@@ -468,12 +534,13 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
       scale,
       masteredThreshold,
     );
+    final verdict = widget.verdict;
 
     final content = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-        if (widget.celebration != ZSummaryCelebration.none) ...<Widget>[
+        if (_effectiveCelebration != ZSummaryCelebration.none) ...<Widget>[
           _buildCelebrationHeader(context),
           SizedBox(height: theme.gapL),
         ],
@@ -487,6 +554,12 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         SizedBox(height: theme.gapM),
+        // Aucun verdict : aucun nœud. L'arbre est alors celui d'avant, au
+        // widget près.
+        if (verdict != null) ...<Widget>[
+          _buildVerdict(context, verdict),
+          SizedBox(height: theme.gapM),
+        ],
         // Les anneaux sont alimentés par la fonction pure du DTO : jamais un
         // ratio recalculé ici. `total == 0` donne un ratio de 0 (aucune
         // division par zéro) ; `correct > total` donne un ratio clampé.
@@ -539,6 +612,78 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
         scrollable,
         _ConfettiBurst(controller: confetti, spec: widget.celebrationSpec),
       ],
+    );
+  }
+
+  /// Nœud de verdict — rendu uniquement quand l'application en fournit un.
+  ///
+  /// Un verdict réussi est porté par une bande colorée ; un verdict manqué est
+  /// porté par le seul libellé. Aucune couleur d'alerte n'est inventée pour
+  /// l'échec : le texte est le canal, et il est déjà lisible par tous.
+  Widget _buildVerdict(BuildContext context, ZWhiteExamVerdict verdict) {
+    final theme = ZcrudTheme.of(context);
+    final text = label(
+      context,
+      verdict.passed
+          ? ZSessionSummaryView.verdictPassedLabelKey
+          : ZSessionSummaryView.verdictFailedLabelKey,
+      fallback: verdict.passed ? 'Réussi' : 'Objectif non atteint',
+    );
+
+    if (!verdict.passed) {
+      return Text(
+        text,
+        key: ZSessionSummaryView.verdictKey,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.titleMedium,
+      );
+    }
+
+    // Priorité référence > rôles : sous le profil `legacy` (le défaut), la
+    // bande porte le dégradé de la palette signature auditée du socle ; sous
+    // `neutral`, aucune référence n'est peinte et les rôles du `ColorScheme`
+    // prennent le relais. Aucune couleur n'est écrite ici.
+    final scheme = Theme.of(context).colorScheme;
+    final radius = BorderRadius.all(theme.radiusM);
+    final signature = zSignatureGradientFor(
+      ZSessionSummaryView.verdictGradientIdentity,
+    );
+    final neutralDecoration = BoxDecoration(
+      color: scheme.primaryContainer,
+      borderRadius: radius,
+    );
+    final decoration =
+        zLegacyOrIn<BoxDecoration>(
+          theme.referenceProfile,
+          signature == null
+              ? neutralDecoration
+              : BoxDecoration(
+                  gradient: signature.gradient,
+                  borderRadius: radius,
+                ),
+          neutralDecoration,
+        ) ??
+        neutralDecoration;
+    final foreground =
+        zLegacyOrIn<Color>(
+          theme.referenceProfile,
+          signature?.onGradient ?? scheme.onPrimaryContainer,
+          scheme.onPrimaryContainer,
+        ) ??
+        scheme.onPrimaryContainer;
+
+    return Container(
+      key: ZSessionSummaryView.verdictKey,
+      padding: theme.fieldPadding,
+      decoration: decoration,
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(color: foreground) ??
+            TextStyle(color: foreground),
+      ),
     );
   }
 

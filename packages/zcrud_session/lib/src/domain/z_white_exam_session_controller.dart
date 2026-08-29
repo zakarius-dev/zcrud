@@ -12,6 +12,7 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 
 import 'z_session_item.dart';
 import 'z_white_exam_session_engine.dart';
+import 'z_white_exam_verdict.dart';
 
 /// Phase de vue, projection totale de la phase du moteur : [setup] avant le
 /// démarrage, [running] tant que des questions restent à répondre,
@@ -31,6 +32,7 @@ class ZWhiteExamSessionViewState {
     required this.answered,
     required this.remaining,
     required this.result,
+    this.verdict,
   });
 
   /// Phase projetée du moteur.
@@ -47,6 +49,13 @@ class ZWhiteExamSessionViewState {
 
   /// Résultat produit à la soumission par le moteur.
   final ZStudySessionResult? result;
+
+  /// Verdict de réussite relayé du moteur, ou `null` s'il n'y en a aucun.
+  ///
+  /// `null` tant que l'application n'a déclaré aucun taux de réussite, et
+  /// `null` avant la soumission. Comme le reste de cette projection, il est
+  /// **lu** du moteur : rien n'est recalculé ici.
+  final ZWhiteExamVerdict? verdict;
 }
 
 /// Contrôleur stable consommable par une surface d'examen.
@@ -55,7 +64,7 @@ class ZWhiteExamSessionController {
   ZWhiteExamSessionController({required ZWhiteExamSessionEngine engine})
     : _engine = engine,
       state = ValueNotifier<ZWhiteExamSessionViewState>(
-        _project(engine.state),
+        _project(engine.state, engine.verdict),
       ) {
     _engine.addListener(_syncState);
   }
@@ -74,9 +83,13 @@ class ZWhiteExamSessionController {
   /// Soumet l'examen en déléguant au moteur.
   void submit() => _engine.submit();
 
-  void _syncState() => state.value = _project(_engine.state);
+  void _syncState() =>
+      state.value = _project(_engine.state, _engine.verdict);
 
-  static ZWhiteExamSessionViewState _project(ZWhiteExamState state) =>
+  static ZWhiteExamSessionViewState _project(
+    ZWhiteExamState state,
+    ZWhiteExamVerdict? verdict,
+  ) =>
       ZWhiteExamSessionViewState(
         phase: switch (state.phase) {
           ZWhiteExamPhase.setup => ZWhiteExamSessionViewPhase.setup,
@@ -87,6 +100,7 @@ class ZWhiteExamSessionController {
         answered: state.answered,
         remaining: state.remaining,
         result: state.result,
+        verdict: verdict,
       );
 
   /// Libère l'écoute locale ; le moteur reste la propriété de l'hôte.

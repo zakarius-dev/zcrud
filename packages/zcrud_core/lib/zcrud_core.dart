@@ -266,6 +266,8 @@ export 'src/presentation/theme/z_inverted_surface.dart';
 // contraste finissent toujours par diverger. `zcrud_study` continue de les
 // exposer sous les mêmes noms par ré-export (aucune rupture pour un hôte).
 export 'src/presentation/theme/z_readable_tint.dart';
+export 'src/presentation/theme/z_reference_profile.dart';
+export 'src/presentation/theme/z_signature_palette_reference.dart';
 export 'src/presentation/theme/z_theme.dart';
 export 'src/presentation/z_crud_titles.dart';
 export 'src/presentation/z_dependency_resolver.dart';

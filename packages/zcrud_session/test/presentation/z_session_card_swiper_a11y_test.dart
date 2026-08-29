@@ -222,9 +222,32 @@ void main() {
           reason: 'le scan ne voit pas la construction du CardSwiper');
 
       final joined = code.join('\n');
-      expect(joined.contains('CardSwiperDirection.left'), isFalse,
-          reason: '🔴 D2 : `swipe(left)` AVANCE (mesuré 0→1→2). Un bouton '
-              'câblé dessus et étiqueté « précédent » ment au lecteur d\'écran.');
+      // 🔒 La garde porte sur l'APPEL, pas sur la mention du symbole.
+      //
+      // Le premier jet bannissait le jeton `CardSwiperDirection.left` où qu'il
+      // apparaisse. C'est mal ancré dans les deux sens : trop large (il
+      // interdit de COMPARER la direction reçue en entrée d'`onSwipe`, qui ne
+      // commande rien) et trop étroit (`final d = …left; swipe(d);` passait,
+      // le jeton n'étant plus adjacent à l'appel). On mesure donc ce qui fait
+      // réellement naviguer : l'argument de CHAQUE appel `swipe(` doit être la
+      // direction `right` LITTÉRALE.
+      final List<String> swipeArgs = RegExp(r'\.swipe\(([^)]*)\)')
+          .allMatches(joined)
+          .map((RegExpMatch m) => m.group(1)!.trim())
+          .toList();
+      // Contre-preuve : la garde doit réellement voir un appel.
+      expect(swipeArgs, isNotEmpty,
+          reason: 'aucun appel `.swipe(` scanné — la garde serait verte pour '
+              'de mauvaises raisons');
+      expect(
+        swipeArgs.where((String a) => a != 'CardSwiperDirection.right'),
+        isEmpty,
+        reason: '🔴 D2 : `swipe(left)` AVANCE (mesuré 0→1→2). Un bouton câblé '
+            'dessus et étiqueté « précédent » ment au lecteur d\'écran. Une '
+            'direction passée par VARIABLE est refusée pour la même raison : '
+            'elle rend le sens indécidable à la lecture. Arguments vus : '
+            '$swipeArgs',
+      );
       expect(joined.contains('.undo()'), isFalse,
           reason: '🔴 D2 : `undo()` reculerait l\'index DU WIDGET pendant que le '
               '`cursor` DU MOTEUR resterait sur place — la désynchronisation à '

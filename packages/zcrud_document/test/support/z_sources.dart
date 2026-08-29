@@ -32,6 +32,36 @@ import 'dart:io';
 /// sont sautés pour la même raison (une URL contient `//`).
 String stripComments(String src) => _strippedLines(src).join('\n');
 
+/// Fichiers de RÉFÉRENCE COULEUR audités, exemptés **nominativement** des
+/// gardes anti-couleurs du paquet (exception FR-26 encadrée).
+///
+/// 🔴 SOURCE UNIQUE : `source_policy_test.dart` (AC13(d)) **et**
+/// `z_document_style_purity_test.dart` lisent cette même constante. Deux
+/// listes recopiées dériveraient, et la plus laxiste des deux gagnerait en
+/// silence.
+///
+/// Chemins relatifs à la racine du paquet, comparés après normalisation des
+/// séparateurs et ancrage sur `lib/`. Un fichier n'entre ici qu'à trois
+/// conditions : il est l'UNIQUE fichier de référence de sa famille, ses
+/// valeurs sont remplaçables par paramètre et par profil, et l'exemption le
+/// nomme — jamais son répertoire, jamais son contenu.
+///
+/// Trois contre-preuves tiennent cette liste étroite (cf.
+/// `z_document_style_purity_test.dart`) : un chemin exempté qui n'existe pas
+/// rougit, un chemin exempté SANS littéral de couleur rougit, et le MÊME
+/// CONTENU placé sous un autre chemin rougit.
+const Set<String> kZColorReferenceFiles = <String>{
+  'lib/src/presentation/z_annotation_palette_reference.dart',
+};
+
+/// Chemin normalisé et ancré sur `lib/` — `packages/zcrud_document/lib/x` et
+/// `lib/x` rendent la même chaîne, quel que soit le répertoire de lancement.
+String normalizedLibPath(String path) {
+  final String p = path.replaceAll(r'\', '/');
+  final int i = p.indexOf('lib/');
+  return i < 0 ? p : p.substring(i);
+}
+
 /// Variante `File` de [stripComments].
 String stripCommentsOf(File f) => stripComments(f.readAsStringSync());
 

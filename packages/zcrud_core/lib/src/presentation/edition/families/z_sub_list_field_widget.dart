@@ -1967,12 +1967,6 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     // formulaire naîtra hors de cet arbre et ne l'hériterait pas.
     final formeHeritee = ZReadModeScope.maybeOf(context)?.layout;
     final presentation = _itemFormPresentation;
-    // Même relevé pour le `ZcrudScope` : un scope posé SOUS le `Navigator`
-    // (sous `home`, le cas courant) n'est pas visible d'une route. Sans ce
-    // report, le formulaire d'item perdrait l'ACL, les libellés, le thème et
-    // les registres — et une sous-liste imbriquée dans l'item (niveau 2)
-    // retomberait sur le refus par défaut : aucune action offerte.
-    final scope = ZcrudScope.maybeOf(context);
 
     // La route naît dans une AUTRE branche de l'arbre : le mode de présentation
     // de la surface ne l'atteint pas par héritage. Il est donc REPOSÉ ici, avec
@@ -1980,30 +1974,32 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     // ⇒ champs de saisie, même à l'intérieur d'un formulaire ouvert en lecture
     // — ET avec la forme de la surface, faute de quoi les fiches retomberaient
     // sur la forme par défaut.
-    Widget body(BuildContext routeContext) {
-      final form = ZReadModeScope(
-        readMode: readOnly,
-        layout: formeHeritee,
-        child: _ZSubItemForm(
-          title: _dialogTitle(context, initial),
-          itemFields: _itemFields,
-          initial: initial,
-          readOnly: readOnly,
-          presentation: presentation,
-          itemFieldBuilder: widget.itemFieldBuilder,
-        ),
-      );
-      // Un scope déjà visible de la route (posé au-dessus du `Navigator`) est
-      // simplement re-posé à l'identique : `copyWith` sans argument n'altère
-      // aucun seam.
-      return scope == null ? form : scope.copyWith(child: form);
-    }
+    Widget body(BuildContext routeContext) => ZReadModeScope(
+          readMode: readOnly,
+          layout: formeHeritee,
+          child: _ZSubItemForm(
+            title: _dialogTitle(context, initial),
+            itemFields: _itemFields,
+            initial: initial,
+            readOnly: readOnly,
+            presentation: presentation,
+            itemFieldBuilder: widget.itemFieldBuilder,
+          ),
+        );
 
     final navigator = Navigator.maybeOf(context);
     if (navigator == null) {
       _reportUnmountableForm(presentation, 'aucun Navigator au-dessus du champ');
       return null;
     }
+    // Les thèmes hérités du point d'appel — dont le `ZcrudScope`, qui est un
+    // `InheritedTheme`. `showDialog` et `showModalBottomSheet` font cette
+    // capture eux-mêmes ; la forme `page` pousse sa route à la main et doit
+    // donc la faire ici, faute de quoi le formulaire d'item perdrait l'ACL, les
+    // libellés, les jetons et les registres — et une sous-liste imbriquée
+    // (niveau 2) retomberait sur le refus par défaut, aucune action offerte.
+    final capturedThemes =
+        InheritedTheme.capture(from: context, to: navigator.context);
     try {
       switch (presentation) {
         case ZSubItemFormPresentation.dialog:
@@ -2023,7 +2019,10 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
           );
         case ZSubItemFormPresentation.page:
           return await navigator.push<Map<String, dynamic>>(
-            MaterialPageRoute<Map<String, dynamic>>(builder: body),
+            MaterialPageRoute<Map<String, dynamic>>(
+              builder: (routeContext) =>
+                  capturedThemes.wrap(body(routeContext)),
+            ),
           );
       }
     } catch (error, stack) {

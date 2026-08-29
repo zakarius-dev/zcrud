@@ -20,7 +20,9 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
 import '../domain/z_document_annotation.dart';
 import '../domain/z_document_annotation_kind.dart';
+import 'z_annotation_palette_reference.dart';
 import 'z_annotation_tool_controller.dart';
+import 'z_document_viewer_reference.dart';
 
 /// Panneau listant les [ZDocumentAnnotation] d'un document (présentation).
 class ZAnnotationPanel extends StatelessWidget {
@@ -37,6 +39,8 @@ class ZAnnotationPanel extends StatelessWidget {
     this.onSelect,
     this.palette = const ZColorPalette.defaultStudy(),
     this.emptyState,
+    this.swatchColors,
+    this.entryCornerRadius,
     super.key,
   });
 
@@ -51,6 +55,26 @@ class ZAnnotationPanel extends StatelessWidget {
 
   /// État vide surchargeable (défaut : libellé accessible).
   final Widget? emptyState;
+
+  /// Couleurs des pastilles, indexées par le rang de la `colorKey` dans
+  /// [palette].
+  ///
+  /// Posée, elle l'emporte sur tout le reste — résolveur d'hôte compris — et
+  /// dans les deux profils de référence. Laissée nulle, la couleur suit la
+  /// chaîne du socle : résolveur d'hôte, puis palette d'annotation de
+  /// référence (profil `ZReferenceProfile.legacy`), puis rôle de
+  /// `ColorScheme` indexé (profil `ZReferenceProfile.neutral`).
+  ///
+  /// Une liste plus courte que [palette] est **cyclée**, jamais tronquée.
+  final List<Color>? swatchColors;
+
+  /// Rayon des coins de l'encre d'une entrée.
+  ///
+  /// `null` ⇒ la référence auditée
+  /// ([ZDocumentViewerReference.panelCornerRadius]) sous profil
+  /// `ZReferenceProfile.legacy`, aucun rayon sous
+  /// `ZReferenceProfile.neutral`.
+  final double? entryCornerRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +98,12 @@ class ZAnnotationPanel extends StatelessWidget {
             ),
           );
     }
+    final double? cornerRadius = entryCornerRadius ??
+        zDocumentLegacyOrNeutral<double?>(
+          ZcrudTheme.of(context).referenceProfile,
+          ZDocumentViewerReference.panelCornerRadius,
+          null,
+        );
     return ListView.builder(
       itemCount: annotations.length,
       itemBuilder: (context, index) {
@@ -83,6 +113,8 @@ class ZAnnotationPanel extends StatelessWidget {
               '$kAnnotationPanelEntryKeyPrefix${annotation.id ?? index}'),
           annotation: annotation,
           slotIndex: palette.indexOf(annotation.colorKey),
+          swatchColors: swatchColors,
+          cornerRadius: cornerRadius,
           onTap: onSelect == null ? null : () => onSelect!(annotation),
         );
       },
@@ -96,12 +128,16 @@ class _PanelEntry extends StatelessWidget {
   const _PanelEntry({
     required this.annotation,
     required this.slotIndex,
+    required this.swatchColors,
+    required this.cornerRadius,
     required this.onTap,
     super.key,
   });
 
   final ZDocumentAnnotation annotation;
   final int slotIndex;
+  final List<Color>? swatchColors;
+  final double? cornerRadius;
   final VoidCallback? onTap;
 
   @override
@@ -129,21 +165,30 @@ class _PanelEntry extends StatelessWidget {
       'zcrud.annotation.entry.page',
       fallback: 'page',
     );
-    // Fond injecté, repli total ColorScheme (invariant AD-10) — jamais un
-    // hex en dur.
-    final pair =
-        zResolveColorKeyOrSlot(context, annotation.colorKey, slotIndex: slotIndex);
+    // Fond injecté : paramètre → seam hôte → référence auditée (profil
+    // legacy) → repli total ColorScheme (invariant AD-10) — jamais un hex ici.
+    final pair = zResolveAnnotationColor(
+      context,
+      annotation.colorKey,
+      slotIndex: slotIndex,
+      swatchColors: swatchColors,
+    );
     // Canal texte redondant : kind + page + extrait, jamais la couleur
     // seule.
     final semanticsValue = '$kindText · $pageText ${annotation.page} · $excerpt';
 
     final row = ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 48),
+      constraints: const BoxConstraints(
+        minHeight: ZDocumentViewerReference.minTouchTarget,
+      ),
       child: Padding(
         padding: theme.fieldPadding,
         child: Row(
           children: <Widget>[
-            Icon(_entryIcon(annotation.kind), size: 20),
+            Icon(
+              _entryIcon(annotation.kind),
+              size: ZDocumentViewerReference.barIconSize,
+            ),
             SizedBox(width: theme.gapM),
             // Swatch : fond coloré + libellé `colorKey` redondant (non-coloré).
             ColoredBox(
@@ -181,7 +226,13 @@ class _PanelEntry extends StatelessWidget {
           ? row
           : Material(
               type: MaterialType.transparency,
-              child: InkWell(onTap: onTap, child: row),
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: cornerRadius == null
+                    ? null
+                    : BorderRadius.all(Radius.circular(cornerRadius!)),
+                child: row,
+              ),
             ),
     );
   }
@@ -203,3 +254,4 @@ IconData _entryIcon(ZDocumentAnnotationKind kind) {
       return Icons.waves;
   }
 }
+

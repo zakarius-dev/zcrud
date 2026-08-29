@@ -48,6 +48,8 @@ import '../../domain/edition/z_field_spec.dart';
 import '../../domain/edition/z_read_field_layout.dart';
 import '../../domain/ports/z_acl.dart';
 import '../l10n/z_localizations.dart';
+import '../theme/z_gradient_resolver.dart';
+import '../theme/z_readable_tint.dart';
 import '../theme/z_theme.dart';
 import '../z_form_controller.dart';
 import '../zcrud_scope.dart';
@@ -1398,6 +1400,91 @@ class _EditionRow {
   }
 }
 
+/// Dégradé de la palette signature portant le titre de section [title], ou
+/// `null` (titre vide, profil neutre, ou palette vide).
+///
+/// C'est le dernier maillon : le résolveur de l'hôte a la priorité, puis le
+/// jeton [ZcrudTheme.signaturePalette], puis la référence auditée.
+ZGradientSpec? _sectionSignature(BuildContext context, String title) {
+  final String identity = title.trim();
+  if (identity.isEmpty) return null;
+  return zResolveGradient(context, zSignatureKey(identity));
+}
+
+/// Bande d'accent de référence d'un en-tête de section, ou `null` si aucune
+/// couleur de signature ne s'applique (profil neutre : rien n'est monté).
+Widget? _sectionSignatureBand(BuildContext context, String title) {
+  final ZGradientSpec? spec = _sectionSignature(context, title);
+  final List<Color>? colors = spec?.gradient.colors;
+  if (colors == null || colors.isEmpty) return null;
+  return SizedBox(
+    height: ZcrudTheme.of(context).sectionHeaderAccentHeight ?? 3,
+    child: ColoredBox(color: colors.first),
+  );
+}
+
+/// Empile [band] au-dessus de [child] en conservant la largeur.
+Widget _withBand(Widget? band, Widget child) => band == null
+    ? child
+    : Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[band, child],
+      );
+
+/// Icône d'en-tête, éventuellement posée dans sa tuile de référence.
+///
+/// Sans couleur de signature (profil neutre, aucune palette), l'icône est
+/// rendue NUE : aucune tuile n'est montée, la géométrie est celle d'un en-tête
+/// sans référence.
+Widget _sectionHeaderIcon(
+  BuildContext context, {
+  required IconData icon,
+  required String title,
+  required ZEditionSectionStyle? style,
+}) {
+  final ZGradientSpec? spec = _sectionSignature(context, title);
+  final List<Color>? colors = spec?.gradient.colors;
+  if (colors == null || colors.isEmpty) {
+    return Icon(icon, color: style?.iconColor);
+  }
+  final ZcrudTheme crud = ZcrudTheme.of(context);
+  final ThemeData theme = Theme.of(context);
+  // Le fond de la tuile est un lavis du dégradé : opaque, il écraserait le
+  // glyphe. L'opacité suit la luminosité du thème (un lavis clair disparaît
+  // sur fond sombre).
+  final double wash = theme.brightness == Brightness.dark ? 80 / 255 : 40 / 255;
+  final double size = crud.sectionHeaderIconTileSize ?? 36;
+  return SizedBox(
+    width: size,
+    height: size,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: AlignmentDirectional.centerStart,
+          end: AlignmentDirectional.centerEnd,
+          colors: <Color>[
+            for (final Color c in colors) c.withValues(alpha: wash),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(
+          crud.sectionHeaderIconTileRadius ?? 10,
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          icon,
+          // Le glyphe est mesuré contre la surface du thème, pas décrété :
+          // le lavis de la tuile est trop ténu pour changer la surface
+          // réellement perçue sous le glyphe.
+          color: style?.iconColor ??
+              zReadableTintOn(colors.first, surface: theme.colorScheme.surface),
+        ),
+      ),
+    ),
+  );
+}
+
 /// Chrome d'en-tête de section **déclaré** ([ZEditionSectionStyle]/icône) :
 /// icône de préfixe, titre stylé, chevron éventuel [trailing], fond, filet
 /// supérieur, rayon. N'est monté QUE quand une déclaration existe — les
@@ -1423,7 +1510,12 @@ Widget _sectionHeaderChrome(
         if (icon != null)
           Padding(
             padding: const EdgeInsetsDirectional.only(end: 8),
-            child: Icon(icon, color: style?.iconColor),
+            child: _sectionHeaderIcon(
+              context,
+              icon: icon,
+              title: title,
+              style: style,
+            ),
           ),
         // Un titre vide ne monte AUCUN `Text` : pas de ligne sémantique vide
         // au lecteur d'écran (l'en-tête n'existe alors que par son icône).
@@ -1443,16 +1535,12 @@ Widget _sectionHeaderChrome(
     ),
   );
   final accent = style?.topAccent;
-  if (accent != null) {
-    out = Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SizedBox(height: accent.width, child: ColoredBox(color: accent.color)),
-        out,
-      ],
-    );
-  }
+  // Priorite parametre > jeton > reference : un filet DECLARE l'emporte ; sinon
+  // la bande de reference, absente sous le profil neutre.
+  final Widget? band = accent != null
+      ? SizedBox(height: accent.width, child: ColoredBox(color: accent.color))
+      : _sectionSignatureBand(context, title);
+  out = _withBand(band, out);
   final background = style?.background;
   final radius = style?.radius;
   if (background != null || radius != null) {
@@ -1462,7 +1550,7 @@ Widget _sectionHeaderChrome(
     );
     // Le filet supérieur est un enfant rectangulaire : sans clip, il
     // déborderait des coins arrondis.
-    if (radius != null && accent != null) {
+    if (radius != null && band != null) {
       out = ClipRRect(borderRadius: radius, child: out);
     }
   }
@@ -1484,11 +1572,14 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (icon == null && style == null) {
-      return Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 8),
-        child: Text(
-          title,
-          style: Theme.of(context).textTheme.titleSmall,
+      return _withBand(
+        _sectionSignatureBand(context, title),
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 8),
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
         ),
       );
     }
@@ -1538,18 +1629,21 @@ class _CollapsibleSectionHeader extends StatelessWidget {
     );
     final Widget inner;
     if (icon == null && style == null) {
-      inner = Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.titleSmall,
+      inner = _withBand(
+        _sectionSignatureBand(context, title),
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
               ),
-            ),
-            chevron,
-          ],
+              chevron,
+            ],
+          ),
         ),
       );
     } else {

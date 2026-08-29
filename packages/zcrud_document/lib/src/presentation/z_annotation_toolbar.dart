@@ -28,10 +28,13 @@
 ///
 /// ## Couleur/libellés injectés (invariant AD-13)
 ///
-/// La `Color` d'une swatch vient de `ZcrudScope.colorKeyResolver`
-/// (`zResolveColorKeyOrSlot`, repli total sur le `ColorScheme` courant,
-/// invariant AD-10) — jamais un hex en dur. Les libellés (kind, couleur)
-/// viennent de `ZcrudScope.labels` via `label(context, key, fallback)`.
+/// La `Color` d'une swatch n'est jamais écrite ici : elle suit la chaîne
+/// totale `zResolveAnnotationColor` — [ZAnnotationToolbar.swatchColors], puis
+/// `ZcrudScope.colorKeyResolver` et les rôles Material 3, puis la palette
+/// d'annotation de référence sous profil `ZReferenceProfile.legacy`, puis le
+/// slot de `ColorScheme` indexé (invariant AD-10). Les libellés (kind,
+/// couleur) viennent de `ZcrudScope.labels` via
+/// `label(context, key, fallback)`.
 library;
 
 import 'package:flutter/material.dart';
@@ -39,7 +42,9 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
 import '../domain/z_document_annotation_kind.dart';
+import 'z_annotation_palette_reference.dart';
 import 'z_annotation_tool_controller.dart';
+import 'z_document_viewer_reference.dart';
 
 /// Barre d'outils d'annotation (présentation, owned/injected controller).
 class ZAnnotationToolbar extends StatefulWidget {
@@ -60,6 +65,8 @@ class ZAnnotationToolbar extends StatefulWidget {
     this.kinds = ZDocumentAnnotationKind.values,
     this.onKindSelected,
     this.onColorSelected,
+    this.swatchColors,
+    this.swatchSize,
     this.onDebugBuild,
     this.onDebugKindRowBuild,
     super.key,
@@ -84,6 +91,28 @@ class ZAnnotationToolbar extends StatefulWidget {
 
   /// Remontée de la `colorKey` brute sélectionnée (`null` = non câblé).
   final ValueChanged<String>? onColorSelected;
+
+  /// Couleurs des pastilles, indexées par le rang de la `colorKey` dans
+  /// [palette].
+  ///
+  /// Posée, elle l'emporte sur tout le reste — résolveur d'hôte compris — et
+  /// dans les deux profils de référence. Laissée nulle, la couleur suit la
+  /// chaîne du socle : résolveur d'hôte, puis palette d'annotation de
+  /// référence (profil `ZReferenceProfile.legacy`), puis rôle de
+  /// `ColorScheme` indexé (profil `ZReferenceProfile.neutral`).
+  ///
+  /// Une liste plus courte que [palette] est **cyclée**, jamais tronquée : il
+  /// n'existe pas de pastille sans couleur.
+  final List<Color>? swatchColors;
+
+  /// Côté de la pastille peinte — **pas** celui de la cible tactile, qui
+  /// reste d'au moins 48 dp (AD-13) quelle que soit cette valeur.
+  ///
+  /// `null` ⇒ la référence auditée
+  /// ([ZDocumentViewerReference.swatchSize]) sous profil
+  /// `ZReferenceProfile.legacy`, la pleine cible sous
+  /// `ZReferenceProfile.neutral`.
+  final double? swatchSize;
 
   /// Seam de test (identité du controller au `build`). Reçoit le
   /// controller réellement utilisé à chaque `build` : recréer le
@@ -173,6 +202,13 @@ class _ZAnnotationToolbarState extends State<ZAnnotationToolbar> {
                     colorKey: colorKey,
                     slotIndex: widget.palette.indexOf(colorKey),
                     selected: colorKey == selectedColorKey,
+                    swatchColors: widget.swatchColors,
+                    size: widget.swatchSize ??
+                        zDocumentLegacyOrNeutral<double>(
+                          theme.referenceProfile,
+                          ZDocumentViewerReference.swatchSize,
+                          ZDocumentViewerReference.minTouchTarget,
+                        ),
                     onTap: () {
                       _controller.selectColorKey(colorKey);
                       widget.onColorSelected?.call(colorKey);
@@ -214,7 +250,10 @@ class _KindButton extends StatelessWidget {
       selected: selected,
       label: text,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        constraints: const BoxConstraints(
+          minWidth: ZDocumentViewerReference.minTouchTarget,
+          minHeight: ZDocumentViewerReference.minTouchTarget,
+        ),
         child: Material(
           type: MaterialType.transparency,
           child: InkWell(
@@ -225,7 +264,10 @@ class _KindButton extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Icon(_kindIcon(kind), size: 20),
+                  Icon(
+                    _kindIcon(kind),
+                    size: ZDocumentViewerReference.barIconSize,
+                  ),
                   SizedBox(width: theme.gapS),
                   Text(text, textAlign: TextAlign.start),
                 ],
@@ -245,6 +287,8 @@ class _Swatch extends StatelessWidget {
     required this.colorKey,
     required this.slotIndex,
     required this.selected,
+    required this.swatchColors,
+    required this.size,
     required this.onTap,
     super.key,
   });
@@ -252,15 +296,22 @@ class _Swatch extends StatelessWidget {
   final String colorKey;
   final int slotIndex;
   final bool selected;
+  final List<Color>? swatchColors;
+  final double size;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final theme = ZcrudTheme.of(context);
-    // Couleur injectée : seam hôte → repli ColorScheme (invariant AD-10),
-    // jamais un hex en dur.
-    final pair = zResolveColorKeyOrSlot(context, colorKey, slotIndex: slotIndex);
+    // Couleur injectée : paramètre → seam hôte → référence auditée (profil
+    // legacy) → repli ColorScheme (invariant AD-10), jamais un hex ici.
+    final pair = zResolveAnnotationColor(
+      context,
+      colorKey,
+      slotIndex: slotIndex,
+      swatchColors: swatchColors,
+    );
     // Marqueur dérivé : le rôle du ColorScheme qui contraste le plus avec
     // le fond — jamais fixé (`Colors.white` interdit).
     final markerColor = _contrastingForeground(pair.color, scheme);
@@ -275,7 +326,10 @@ class _Swatch extends StatelessWidget {
       selected: selected,
       label: text,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        constraints: const BoxConstraints(
+          minWidth: ZDocumentViewerReference.minTouchTarget,
+          minHeight: ZDocumentViewerReference.minTouchTarget,
+        ),
         child: Material(
           type: MaterialType.transparency,
           child: InkWell(
@@ -285,11 +339,13 @@ class _Swatch extends StatelessWidget {
               alignment: AlignmentDirectional.center,
               children: <Widget>[
                 // Fond coloré résolu — keyé pour lecture directe par les tests.
+                // La pastille peut être plus petite que la cible : le
+                // `ConstrainedBox` ci-dessus tient les 48 dp, le `Stack` centre.
                 ColoredBox(
                   key: ValueKey<String>(
                       '$kAnnotationSwatchFillKeyPrefix$colorKey'),
                   color: pair.color,
-                  child: const SizedBox(width: 48, height: 48),
+                  child: SizedBox(width: size, height: size),
                 ),
                 if (selected)
                   // Marqueur structurel non-coloré : présent uniquement dans

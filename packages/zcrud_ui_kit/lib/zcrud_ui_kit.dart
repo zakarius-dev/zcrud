@@ -17,7 +17,29 @@
 /// * [ZConfirmDialog] + [showZConfirmDialog] : dialog de confirmation
 ///   dark-mode-aware (couleurs dérivées du `ColorScheme`, labels via
 ///   `MaterialLocalizations`), retournant `Future<bool>`, **sans**
-///   gestionnaire d'état (`showDialog` + `Navigator.pop`).
+///   gestionnaire d'état (`showDialog` + `Navigator.pop`) ;
+/// * [ZEmptyStateSpec] : un état vide **en données**, par clés de libellé —
+///   ce qu'il faut pour qu'un hôte tienne une table par nature de contenu et
+///   la rende par [ZEmptyState.fromSpec]. La table, elle, appartient à
+///   l'hôte : ce paquet est transverse et ne nomme aucune nature ;
+/// * [ZSkeleton] + [ZSkeletonList] : l'attente **en forme du contenu à
+///   venir** (ligne, vignette, tuile, liste virtualisée). Teintes prises sur
+///   les rôles `surfaceContainer*` du thème, animation bornée déléguée à
+///   `ZColorCycle`, muettes pour les lecteurs d'écran, aucune dépendance
+///   tierce.
+///
+/// **La boucle jeton → pixel est fermée pour l'état vide et la
+/// confirmation.** [ZEmptyState] lit `ZEmptyStateStyle`, [ZConfirmDialog] lit
+/// `ZConfirmDialogStyle` — donc les jetons `emptyState*` / `confirmDialog*`
+/// de `ZcrudTheme`. Les deux régimes de nullité diffèrent volontairement : le
+/// dialogue **transporte ses `null`** jusqu'à `AlertDialog` (qui suit le
+/// `DialogTheme` ambiant), l'état vide **résout tout** (rien ne le suit).
+/// Sans jeton posé, ni l'un ni l'autre ne bouge d'un pixel.
+///
+/// ⚠️ Une route de dialogue n'hérite **pas** d'un `InheritedWidget` ordinaire
+/// de l'écran qui l'ouvre : des jetons posés par `ZcrudScope(theme:)` seraient
+/// invisibles depuis le dialogue. [showZConfirmDialog] résout donc le style au
+/// **point d'appel** et le transporte via `ZConfirmDialog.style`.
 ///
 /// La **notification (toast) par port** :
 /// * [ZToastSeverity] : sévérité d'un toast en **enum**
@@ -143,17 +165,22 @@ export 'src/domain/z_app_bar_action.dart';
 export 'src/domain/z_app_bar_search_config.dart';
 export 'src/domain/z_confirm_tone.dart';
 export 'src/domain/z_content_state.dart';
+export 'src/domain/z_empty_state_spec.dart';
 export 'src/domain/z_page_app_bar_mode.dart';
 export 'src/domain/z_page_tab.dart';
 export 'src/domain/z_route_transition.dart';
 export 'src/domain/z_toast_severity.dart';
 export 'src/domain/z_toaster.dart';
 export 'src/presentation/z_alphabet_index_bar.dart';
+export 'src/presentation/z_chip_style.dart';
 export 'src/presentation/z_confirm_dialog.dart';
 export 'src/presentation/z_count_badge.dart';
 export 'src/presentation/z_discard_changes_guard.dart';
+export 'src/presentation/z_gradient_fab.dart';
 export 'src/presentation/z_page_shell.dart';
+export 'src/presentation/z_page_shell_reference.dart';
 export 'src/presentation/z_scaffold_messenger_toaster.dart';
+export 'src/presentation/z_skeleton.dart';
 export 'src/presentation/z_state_widgets.dart';
 export 'src/presentation/z_toaster_scope.dart';
 export 'src/presentation/z_transitions.dart';

@@ -41,6 +41,18 @@ enum ZFeedbackTier {
 
   /// Maîtrisée vite et sans indice — palier « exceptionnel ».
   exceptional,
+
+  /// Carte **passée** : l'apprenant a déclaré ne pas savoir, sans produire de
+  /// réponse à corriger.
+  ///
+  /// Ce seau ne se déduit d'aucune note : il n'est atteint que si l'appelant
+  /// déclare explicitement la soumission passée
+  /// (`zFeedbackTierFor(skipped: true)`, alimenté par
+  /// `ZFlashcardSubmission.skipped`). Une note basse seule reste
+  /// [motivation] — « s'être trompé » et « ne pas avoir essayé » méritent des
+  /// messages différents, et confondre les deux revient à reprocher une
+  /// erreur à qui n'a rien tenté.
+  skipped,
 }
 
 /// Seuils du palier « exceptionnel » — configurables, jamais une durée en
@@ -101,6 +113,19 @@ class ZFeedbackThresholds {
 /// (repli sur [ZFeedbackTier.encouragement] — la carte est maîtrisée, le
 /// message reste juste et positif), jamais une exception, jamais une perte
 /// de fonction.
+///
+/// ## Le seau « passée » ne se déduit pas d'une note
+///
+/// [skipped] (défaut `false`) déclare que la carte a été **passée** —
+/// l'apprenant a dit ne pas savoir, sans réponse à corriger. Ce fait vient de
+/// `ZFlashcardSubmission.skipped` ; aucune note, si basse soit-elle, ne le
+/// produit toute seule. Quand il est vrai, il l'emporte : le seau est
+/// [ZFeedbackTier.skipped], quelles que soient [quality], [timeTaken] et
+/// [hintsUsed]. Une carte passée n'a pas été répondue, donc ni la vitesse ni
+/// les indices n'ont de sens à son sujet.
+///
+/// Laisser [skipped] à son défaut rend exactement le seau qu'une version
+/// antérieure de cette fonction rendait, pour toute entrée.
 ZFeedbackTier zFeedbackTierFor({
   required int quality,
   required Duration timeTaken,
@@ -108,7 +133,13 @@ ZFeedbackTier zFeedbackTierFor({
   required ZSrsConfig config,
   required int masteredThreshold,
   ZFeedbackThresholds thresholds = const ZFeedbackThresholds(),
+  bool skipped = false,
 }) {
+  // Fait déclaré, jamais dérivé : il précède toute lecture de la note, sans
+  // quoi une carte passée recevrait le message de l'apprenant qui s'est
+  // trompé.
+  if (skipped) return ZFeedbackTier.skipped;
+
   // Voie unique de clamp : jamais de bornes réécrites ici, jamais
   // d'exception sur une note aberrante.
   final q = config.clampQuality(quality);

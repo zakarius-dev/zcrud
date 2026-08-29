@@ -88,6 +88,8 @@ class ZMindmapGenerationRequest {
     this.languageTag,
     this.instructions,
     this.modelId,
+    this.summarize = false,
+    this.routeId,
     Map<String, dynamic> extra = const <String, dynamic>{},
   }) : _extra = extra;
 
@@ -137,6 +139,31 @@ class ZMindmapGenerationRequest {
   /// application. `null` signifie que l'application décide.
   final String? modelId;
 
+  /// Demande de **condensation** de la source plutôt que son développement
+  /// (`false` par défaut : comportement inchangé pour tout appelant existant).
+  ///
+  /// Deux intentions distinctes se disputent la même source : *cartographier*
+  /// ce qu'elle contient, ou en *résumer* la substance en un arbre court. Une
+  /// consigne libre ne suffit pas à les distinguer de façon fiable côté
+  /// implémentation ; ce drapeau porte l'intention explicitement. Comme
+  /// [count] et [maxDepth], il peut être **inhonorable** : un générateur est
+  /// fondé à le refuser (`Left`) plutôt qu'à l'ignorer silencieusement.
+  final bool summarize;
+
+  /// Identifiant de **route** opaque, transporté tel quel et jamais interprété
+  /// par ce paquet : aucun `enum`, aucun `switch`, aucun catalogue, et
+  /// **jamais une URL** — le contrat reste sans transport (invariant AD-12).
+  ///
+  /// Deux modes de transport coexistent chez les applications hôtes : un
+  /// endpoint unique à corps riche, et **une route par intention de
+  /// génération** — mode qui porte la gouvernance (une route et ses accès
+  /// associés à un plan d'abonnement) et permet de déclarer par tâche le
+  /// modèle par défaut. Ce champ est l'endroit où l'intention de route voyage
+  /// avec la requête ; sa résolution en transport réel appartient
+  /// entièrement à l'implémentation du port. `null` signifie que
+  /// l'application décide.
+  final String? routeId;
+
   /// Slot brut de l'échappatoire (normalisé à la lecture via [extra]).
   final Map<String, dynamic> _extra;
 
@@ -150,6 +177,26 @@ class ZMindmapGenerationRequest {
   /// Clés réservées écartées de [extra] à la lecture.
   static final Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
+  /// Copie de cette requête portant [routeId], tous les autres champs
+  /// **inchangés** (l'`extra` d'origine est reconduit tel quel).
+  ///
+  /// Permet à une surface d'assemblage d'apposer la route juste avant l'appel
+  /// du port, sans que l'appelant ait à reconstruire la requête champ par
+  /// champ — et sans qu'aucune valeur saisie ne soit réécrite au passage.
+  ZMindmapGenerationRequest withRouteId(String? routeId) =>
+      ZMindmapGenerationRequest(
+        content: content,
+        source: source,
+        count: count,
+        maxDepth: maxDepth,
+        languageTag: languageTag,
+        instructions: instructions,
+        modelId: modelId,
+        summarize: summarize,
+        routeId: routeId,
+        extra: _extra,
+      );
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -161,6 +208,8 @@ class ZMindmapGenerationRequest {
           languageTag == other.languageTag &&
           instructions == other.instructions &&
           modelId == other.modelId &&
+          summarize == other.summarize &&
+          routeId == other.routeId &&
           zJsonEquals(extra, other.extra);
 
   @override
@@ -172,6 +221,8 @@ class ZMindmapGenerationRequest {
         languageTag,
         instructions,
         modelId,
+        summarize,
+        routeId,
         zJsonHash(extra),
       );
 }

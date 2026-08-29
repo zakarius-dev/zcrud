@@ -3,6 +3,125 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.29.0 — 2026-08-28
+
+### Ajouté
+- `ZMindmapGenerationController` : orchestration du flux de génération de carte
+  mentale par IA au-dessus de `ZMindmapGenerationPort`, jusque-là sans aucun
+  consommateur de présentation (le port existait, rien ne l'appelait).
+  `ChangeNotifier` pur, statut en enum `idle → generating → reviewing | empty |
+  failed`, jeton de fraîcheur monotone, anti-double-soumission.
+- `ZMindmapGenerationSheet` : feuille de saisie (sources, contenu, instructions
+  libres, option « résumer »), revue des nœuds générés dans
+  `ZMindmapOutlineEditor` — la surface d'édition d'outline existante, pas un
+  éditeur parallèle — puis validation.
+- `ZMindmapGenerationScope` : injection Flutter-native d'un port optionnel.
+- `ZMindmapGenerationLabels` / `ZMindmapGenerationMessages` /
+  `ZMindmapGenerationSourceOption` : libellés et sources INJECTÉS, tous requis.
+- `ZStudyMindmapSection.generationPort` / `.onGenerate` /
+  `.generateSemanticLabel` / `.generateIcon` (et les mêmes sur `sectionSpec`) :
+  action « générer par IA » dans le chrome de la section.
+- `ZMindmapGenerationRequest.summarize` (défaut `false`) : demande de
+  condensation plutôt que de développement.
+- `ZMindmapGenerationRequest.routeId` + `withRouteId` : identifiant de ROUTE
+  opaque, transporté verbatim. Le mode « une route par intention de
+  génération » est désormais porté par la requête au même rang que
+  l'endpoint unique ; sa résolution en transport reste côté application.
+
+### Garanties
+- **Hôte passif strictement inchangé** : sans port, `ZStudyMindmapSection` rend
+  un arbre IDENTIQUE au widget près (recensement ordonné de 69 entrées capturé
+  AVANT le lot et figé en garde), et le même nombre d'actions. L'action de
+  génération est ABSENTE de l'arbre, jamais grisée ni inerte : port, rappel et
+  libellé sont indissociables.
+- **Rien n'est écrit avant validation** : le seul canal de sortie est le
+  handoff `onGenerated`, et c'est l'application qui écrit. `Left` ⇒ `failed`
+  avec le `ZFailure` typé exposé (`lastFailure`) ; exception du port ⇒ `failed`
+  sans `ZFailure` fabriqué ; forêt vide ⇒ `empty`, qui n'est pas un échec.
+  Dans les trois cas, zéro écriture (mesuré par un dépôt en mémoire à
+  compteur). Aucune exception ne remonte de `generate`.
+- **Les nœuds ÉDITÉS sont ceux qui partent à l'écriture** : la validation émet
+  la forêt mutée dans la revue, jamais la forêt d'origine. La carte remise
+  porte un `id` vide — aucune identité n'est fabriquée par ce paquet.
+- **SM-1** : les `TextEditingController` sont créés une seule fois ; la saisie
+  et le focus survivent aux changements d'état, et un changement d'état ne
+  reconstruit pas la surface hôte.
+- `generateMindmap(` n'est appelé que depuis le contrôleur (garde de source :
+  toute seconde voie d'appel dans `lib/` fait rougir).
+- Aucun libellé ni couleur en dur dans les fichiers du lot ; le libellé de
+  l'action de génération n'a délibérément aucun défaut de constructeur.
+
+### Impact hôte
+- Hôte **passif** : rien à faire, rien ne change.
+- Hôte ayant **assemblé lui-même** la génération autour de
+  `ZMindmapGenerationPort` (contrôleur maison, feuille maison, bouton posé à
+  côté de la section) : sa surface s'ADDITIONNE désormais à celle du socle dès
+  qu'il câble `generationPort`. Deux actions « générer » apparaîtraient dans le
+  chrome de `ZStudyMindmapSection` — retirer la sienne, ou ne pas câbler le
+  paramètre et conserver la sienne.
+- Hôte ayant **assemblé lui-même** le résumé de note autour de
+  `ZNoteSummaryPort` : même règle, à propos de `ZDefaultNoteCard.summaryPort`
+  et de son action « résumer ».
+
+### Ajouté — résumé de note par IA (consommateur de `ZNoteSummaryPort`)
+- `ZNoteSummaryController` : orchestration du flux de résumé au-dessus de
+  `ZNoteSummaryPort`, jusque-là sans aucun consommateur de présentation (le
+  port existait, rien ne l'appelait). `ChangeNotifier` pur, statut en enum
+  `idle → summarizing → reviewing | empty | failed`, jeton de fraîcheur
+  monotone, anti-double-soumission.
+- `ZNoteSummarySheet` : saisie du contenu à résumer, revue du texte produit,
+  puis **deux issues** remises à l'application — `onInsertAtTop` (insérer le
+  résumé en tête de la note) et `onCreateNote` (nouvelle note).
+- `ZNoteSummarySheet.summaryBuilder` : slot de rendu injecté du résumé
+  (`null` ⇒ texte brut thématisé). C'est par là qu'une lecture Markdown entre,
+  **fournie par l'application** : `zcrud_study` ne dépend d'aucun moteur de
+  rich-text, et une garde de source interdit d'en importer un ici (AD-1).
+- `ZNoteSummaryScope` : injection Flutter-native d'un port optionnel.
+- `ZNoteSummaryLabels` / `ZNoteSummaryMessages` : libellés et messages
+  INJECTÉS, tous requis.
+- `ZDefaultNoteCard.summaryPort` / `.onSummarize` / `.summarizeSemanticLabel` /
+  `.summarizeIcon` : action « résumer » dans le créneau d'actions de la carte,
+  qui **s'ajoute** au `trailing` de l'hôte sans le remplacer.
+
+### Garanties — résumé de note
+- **Hôte passif strictement inchangé** : sans port, `ZDefaultNoteCard` rend un
+  arbre IDENTIQUE au widget près (recensement ordonné de 45 entrées capturé
+  AVANT le lot et figé en garde), le même nombre d'actions (aucune), et le
+  `trailing` de l'hôte traverse **tel quel**, sans rangée interposée. L'action
+  est ABSENTE de l'arbre, jamais grisée ni inerte : port, rappel et libellé
+  sont indissociables.
+- **Le socle ne persiste rien** : aucun dépôt n'est importé en présentation.
+  Le résumé sort par les deux handoffs, et c'est l'application qui écrit.
+  `Left` ⇒ `failed` avec le `ZFailure` typé exposé (`lastFailure`) ; exception
+  du port ⇒ `failed` sans `ZFailure` fabriqué ; texte vide ⇒ `empty`, qui n'est
+  pas un échec. Dans les trois cas, zéro handoff (mesuré par un dépôt en
+  mémoire à compteur). Aucune exception ne remonte de `generate`.
+- **Le texte remis est celui du port, à l'octet près** : la revue est en
+  LECTURE, blancs de bord compris. Une issue sans handoff est absente de
+  l'arbre ; un geste appelle au plus un handoff, et le retour à `idle` rend un
+  second appel inopérant.
+- **`summarize` n'est appelé qu'une fois par geste** : anti-double-soumission
+  du contrôleur, doublée du désarmement du bouton pendant la requête.
+- La requête voyage verbatim (contenu, longueur cible, langue, échappatoire).
+  `ZNoteSummaryRequest` **ne porte aucun identifiant de route** : rien n'en est
+  donc transporté de ce côté, et rien n'en est fabriqué.
+- **SM-1** : le `TextEditingController` est créé une seule fois ; la saisie et
+  le focus survivent aux changements d'état, et un changement d'état ne
+  reconstruit pas la surface hôte.
+- `summarize(` n'est appelé que depuis le contrôleur (garde de source : toute
+  seconde voie d'appel dans `lib/` fait rougir).
+- Aucun libellé ni couleur en dur dans les fichiers du lot ; le libellé de
+  l'action « résumer » n'a délibérément aucun défaut de constructeur.
+
+### Limite connue — résumé de note
+- La revue **n'édite pas** le résumé. Une application qui veut le laisser
+  retoucher avant écriture le fait dans sa propre surface, à partir du texte
+  reçu par le handoff.
+- Le slot d'échappatoire de la feuille s'appelle `requestExtra`, pas `extra` :
+  une surface de présentation n'est pas un porteur d'`extra` persisté et n'a
+  donc ni stockage ni filtre propre (AD-19.1) — elle relaie vers
+  `ZNoteSummaryRequest`, qui écarte les clés de synchronisation réservées.
+
 ## 3.28.0 — 2026-08-28
 
 ### Ajouté

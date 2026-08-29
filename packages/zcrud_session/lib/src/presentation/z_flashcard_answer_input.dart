@@ -150,11 +150,15 @@ class _Correction {
     this.isCorrect,
     this.feedback,
     this.answeredTrue,
+    this.skipped = false,
   });
 
   final int quality;
   final bool? isCorrect;
   final String? feedback;
+
+  /// La carte a été passée (« Je ne sais pas »), pas répondue faux.
+  final bool skipped;
 
   /// Réponse donnée par l'utilisateur sur un Vrai/Faux (`null` hors V/F).
   ///
@@ -193,6 +197,7 @@ class ZFlashcardAnswerInput extends StatefulWidget {
     this.onSubmitted,
     this.onQualitySelected,
     this.onAdvance,
+    this.markSkippedSubmissions = false,
     super.key,
   });
 
@@ -286,6 +291,25 @@ class ZFlashcardAnswerInput extends StatefulWidget {
   static const ValueKey<String> skipEvaluationKey = ValueKey<String>(
     'zSkipEvaluation',
   );
+
+  /// Marque `ZFlashcardSubmission.skipped` sur la soumission émise par « Je
+  /// ne sais pas ».
+  ///
+  /// - `false` (défaut) : la soumission est en tout point celle d'avant
+  ///   l'existence de ce drapeau — note à la borne basse, `isCorrect: false`,
+  ///   `skipped: false` ;
+  /// - `true` : la même note et le même verdict sont émis, plus le fait que
+  ///   la carte a été **passée**. Un hôte peut alors séparer « s'est
+  ///   trompé » de « n'a pas essayé » dans ses statistiques et son retour
+  ///   pédagogique (seau `ZFeedbackTier.skipped`).
+  ///
+  /// Ne concerne **que** « Je ne sais pas ». « Évaluer sans IA »
+  /// ([allowSkipEvaluation]) reste une soumission ordinaire : la réponse est
+  /// bien produite, seul le barème distant est esquivé.
+  ///
+  /// Rien d'autre ne change : ni la note, ni le verrou de soumission, ni la
+  /// correction affichée, ni l'auto-passage.
+  final bool markSkippedSubmissions;
 
   /// Port d'indices (`null` : bouton « Indice » absent après épuisement du
   /// stocké — absent si non fourni, jamais grisé).
@@ -725,6 +749,7 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
         hintsUsed: _hintsUsed,
         isCorrect: correction.isCorrect,
         feedback: correction.feedback,
+        skipped: correction.skipped,
       ),
     );
     if (_advanceBehavior == ZCardAdvanceBehavior.auto) {
@@ -864,6 +889,9 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
       _Correction(
         quality: _finalQuality(widget.srsConfig.minQuality),
         isCorrect: false,
+        // Fait déclaré par l'hôte, jamais dérivé de la note : sans le
+        // drapeau, la soumission émise est celle d'avant son existence.
+        skipped: widget.markSkippedSubmissions,
       ),
     );
   }

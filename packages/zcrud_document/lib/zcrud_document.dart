@@ -81,11 +81,16 @@ export 'src/domain/z_study_document.dart' hide ZStudyDocumentZcrud;
 
 // ── Présentation accessible — bascule Flutter ─────────────────────────────
 // UI d'annotation WCAG (invariant AD-13) bâtie au-dessus des modèles déjà
-// livrés. Aucun type Flutter/`Color` n'apparaît en signature publique : la
-// surface exportée n'expose que `String colorKey`, `ZColorPalette`,
-// `ZDocumentAnnotation` et des callbacks neutres.
+// livrés. Le vocabulaire de la surface reste neutre — `String colorKey`,
+// `ZColorPalette`, `ZDocumentAnnotation`, callbacks — à UNE exception près,
+// assumée : la référence de palette et les paramètres qui la remplacent
+// (`swatchColors`) portent des `Color`, parce qu'une palette de couleurs ne
+// peut pas s'exprimer autrement. Le DOMAINE, lui, reste sans aucune `Color`
+// (garde de source `source_policy_test.dart`).
 export 'src/presentation/z_annotation_mark.dart'
     show ZAnnotationMark, kAnnotationMarkKeyPrefix;
+export 'src/presentation/z_annotation_palette_reference.dart'
+    show ZAnnotationPaletteReference, zResolveAnnotationColor;
 export 'src/presentation/z_annotation_panel.dart' show ZAnnotationPanel;
 export 'src/presentation/z_annotation_tool_controller.dart'
     show
@@ -102,3 +107,5 @@ export 'src/presentation/z_document_viewer_chrome.dart'
         ZDocumentViewerChrome,
         ZDocumentViewerLoadState,
         kZDocumentRecognizeTextLabelKey;
+export 'src/presentation/z_document_viewer_reference.dart'
+    show ZDocumentViewerReference, zDocumentLegacyOrNeutral;

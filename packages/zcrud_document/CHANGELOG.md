@@ -3,6 +3,27 @@
 Toutes les modifications notables de `zcrud_document` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.29.0 — 2026-08-28
+
+### Ajouté
+- **Palette d'annotation de référence auditée** `ZAnnotationPaletteReference` — 40 teintes (`colors`) plus une rangée compacte de 7 (`compact`), relevées teinte par teinte sur la palette d'annotation historique, avec leur `fichier:ligne` en commentaire. C'est le **seul** fichier du paquet autorisé à écrire une couleur ; les deux gardes anti-couleurs l'exemptent **nominativement par chemin exact**, et lui seul.
+- **`onColor` mesuré, jamais décrété** : `ZAnnotationPaletteReference.foregroundFor` départage blanc et noir par contraste WCAG (`zContrastRatio`). Le plancher réellement atteint sur les 40 teintes est **4.58:1**, bien au-dessus des 3.0:1 exigés — recalculé par une garde, pas affirmé.
+- **Chaîne de résolution totale** `zResolveAnnotationColor` : paramètre → résolveur d'hôte et rôles Material 3 → référence (profil `legacy`) → slot de `ColorScheme` indexé (profil `neutral`). Jamais nulle, jamais de levée.
+- **Référence scalaire du chrome** `ZDocumentViewerReference` — hauteur de barre, taille de glyphe, côté de pastille, épaisseur de filet, rayon de panneau, plancher tactile — **sans aucune couleur** (elle n'est pas exemptée et n'a pas à l'être). Arbitrage par `zDocumentLegacyOrNeutral` : la référence sous `legacy`, la valeur historique sous `neutral`.
+- **Six paramètres additifs nullables** : `ZAnnotationToolbar.swatchColors` / `.swatchSize`, `ZAnnotationPanel.swatchColors` / `.entryCornerRadius`, `ZDocumentViewerChrome.navigationBarMinHeight` / `.navigationIconSize`. Un paramètre posé l'emporte **dans les deux profils**.
+
+### Attention
+- 🔴 **Rupture voulue pour un hôte passif**, sous le profil par défaut (`legacy`) : une `colorKey` qui n'est **ni** connue du résolveur de l'hôte **ni** un rôle Material 3 (`primary`, `secondary`, `tertiary`, `error`, `neutral`) prend désormais une teinte de la palette de référence au lieu d'un rôle de `ColorScheme` indexé. Avec `ZColorPalette.defaultStudy()`, cela concerne **quatre** clés sur huit : `success`, `warning`, `danger`, `info`. Changent aussi : la pastille de `ZAnnotationToolbar` (48 → 40 dp, **la cible reste à 48**), le glyphe de navigation de `ZDocumentViewerChrome` (24 → 20 dp), le rayon d'encre d'une entrée de `ZAnnotationPanel` (aucun → 12), et l'épaisseur explicite des filets du chrome.
+- **Échappatoire, une ligne** : `ZcrudScope(theme: const ZcrudTheme(referenceProfile: ZReferenceProfile.neutral), …)` restitue **exactement** l'arbre d'avant — prouvé par égalité de chaîne sur l'arbre entier, pas affirmé. Un hôte qui a déjà un `ZcrudScope` ajoute le jeton à **son** `ZcrudTheme` plutôt que d'en empiler un second.
+- **Hôte ayant compensé** — celui qui posait déjà ses couleurs d'annotation à la main, par `ZcrudScope.colorKeyResolver` : **rien à faire**, son résolveur passe avant la référence. S'il veut adopter la référence, il retire son résolveur pour ces clés ; s'il la veut par paramètre, il passe `swatchColors`.
+
+### Garde
+- **Garde de style dédiée** (`z_document_style_purity_test.dart`, `@TestOn('vm')`) : aucun littéral de couleur dans **tout** `lib/` — domaine compris — hors le fichier de référence exempté. Trois contre-preuves tiennent l'exemption étroite : un chemin exempté inexistant rougit, un chemin exempté sans littéral rougit, et le même contenu placé sous un autre chemin rougit.
+- La garde de couleur préexistante (`source_policy_test.dart`, AC13(d)) et la neuve consomment la **même** liste d'exemption : il n'y a pas deux listes à faire dériver.
+- Les deux gardes scannent le **code**, jamais la prose : une couleur citée dans une dartdoc pour **expliquer** l'interdit ne la déclenche pas — un test le fige.
+- **Inertie du profil `neutral`** mesurée par **égalité stricte de l'arbre entier** à une chaîne littérale relevée avant le lot, pour le chrome, le panneau et les huit fonds de pastille de la barre.
+- Tables figées, avec leur `fichier:ligne`, pour les 40 + 7 teintes et pour les six scalaires — relevées à la main, jamais relues depuis la référence qu'elles surveillent.
+
 ## 3.28.0 — 2026-08-28
 
 ### Ajouté

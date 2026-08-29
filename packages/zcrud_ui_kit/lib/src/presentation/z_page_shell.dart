@@ -34,6 +34,7 @@ import '../domain/z_app_bar_action.dart';
 import '../domain/z_app_bar_search_config.dart';
 import '../domain/z_page_app_bar_mode.dart';
 import '../domain/z_page_tab.dart';
+import 'z_page_shell_reference.dart';
 
 part 'z_page_scaffold.dart';
 part 'z_page_shell_body.dart';
@@ -559,6 +560,115 @@ ZGradientSpec? _zAppBarGradient(BuildContext context, String? gradientKey) {
 Widget? _zGradientFlexibleSpace(ZGradientSpec? spec) => spec == null
     ? null
     : Container(decoration: BoxDecoration(gradient: spec.gradient));
+
+/// Premier arrêt d'un dégradé — la **teinte de base** dont le lavis est tiré.
+/// `null` si le dégradé n'expose aucun arrêt (cas impossible avec les dégradés
+/// du socle, mais un resolver d'hôte peut fournir n'importe quel [Gradient]).
+Color? _zBaseStop(Gradient gradient) =>
+    gradient.colors.isEmpty ? null : gradient.colors.first;
+
+/// Chrome d'app-bar résolu : ce qui est **posé** sur l'`AppBar` /
+/// `SliverAppBar`, et rien de plus.
+///
+/// Les trois membres nuls (`_ZAppBarChrome.none`) ⇒ **aucun** slot n'est
+/// renseigné : l'arbre est celui d'avant, au widget près.
+@immutable
+class _ZAppBarChrome {
+  const _ZAppBarChrome({this.flexibleSpace, this.foregroundColor, this.elevation});
+
+  static const _ZAppBarChrome none = _ZAppBarChrome();
+
+  final Widget? flexibleSpace;
+  final Color? foregroundColor;
+  final double? elevation;
+}
+
+/// Identité alimentant la **clé de palette signature** quand aucune clé de
+/// dégradé n'est déclarée : `signatureKey` s'il est fourni, sinon le titre
+/// **quand il est une chaîne**.
+///
+/// Un titre `Widget` n'a pas d'identité textuelle : il ne dérive donc aucune
+/// clé, et la page reste sans teinte tant que `signatureKey` n'est pas donné.
+String? _zDerivedIdentity(Object title, String? signatureKey) {
+  if (signatureKey != null) return signatureKey.isEmpty ? null : signatureKey;
+  if (title is String) return title.isEmpty ? null : title;
+  return null;
+}
+
+/// Premier plan **mesuré** d'une app-bar sous lavis d'identité.
+///
+/// Rend `null` — c'est-à-dire « ne pose rien, garde l'ambiant » — dès que le
+/// premier plan déjà en vigueur (`AppBarTheme.foregroundColor`, repli
+/// `ColorScheme.onSurface`) tient le plancher WCAG 2.2 §1.4.3 AA (4.5:1)
+/// contre la bande la plus dense du lavis. C'est le cas courant : un lavis à
+/// 15 % ne dégrade presque pas le contraste de la barre.
+///
+/// Quand ce plancher n'est **pas** tenu, un premier plan achromatique est
+/// choisi par mesure de contraste contre cette même bande — jamais par
+/// convention.
+Color? _zWashForeground(BuildContext context, Color base, double topAlpha) {
+  final ThemeData theme = Theme.of(context);
+  final AppBarThemeData appBarTheme = AppBarTheme.of(context);
+  final Color surface = appBarTheme.backgroundColor ?? theme.colorScheme.surface;
+  final Color band = Color.alphaBlend(base.withValues(alpha: topAlpha), surface);
+  final Color ambient =
+      appBarTheme.foregroundColor ?? theme.colorScheme.onSurface;
+  if (zContrastRatio(ambient, band) >= kZTextMinContrast) return null;
+  return zSignatureForegroundFor(<Color>[band, band]);
+}
+
+/// Chrome d'app-bar, par ordre de priorité **paramètre > clé dérivée > rien**.
+///
+/// 1. `gradientKey` **déclaré** (même vide) ⇒ chemin historique inchangé : la
+///    spec du seam est peinte **à saturation pleine**, `onGradient` devient le
+///    premier plan, l'élévation n'est pas touchée. Une clé vide ⇒ aucun
+///    chrome — c'est l'échappatoire par site.
+/// 2. Sinon, une identité est dérivée (voir [_zDerivedIdentity]) et résolue
+///    par la clé `zcrud.signature.<identité>`. La teinte obtenue est posée en
+///    **lavis** (voir [ZPageShellReference.appBarWashAlphas]), pas à
+///    saturation pleine.
+/// 3. Aucune identité, ou profil `ZReferenceProfile.neutral`, ou palette vide
+///    ⇒ [_ZAppBarChrome.none], donc arbre strictement inchangé.
+_ZAppBarChrome _zAppBarChrome(
+  BuildContext context, {
+  required String? gradientKey,
+  required String? signatureKey,
+  required Object title,
+}) {
+  if (gradientKey != null) {
+    final ZGradientSpec? spec = _zAppBarGradient(context, gradientKey);
+    if (spec == null) return _ZAppBarChrome.none;
+    return _ZAppBarChrome(
+      flexibleSpace: _zGradientFlexibleSpace(spec),
+      foregroundColor: spec.onGradient,
+    );
+  }
+  final String? identity = _zDerivedIdentity(title, signatureKey);
+  if (identity == null) return _ZAppBarChrome.none;
+  // Dernier maillon: `zResolveGradient` consulte le seam de l'hôte, puis le
+  // jeton `signaturePalette`, puis la référence — et seulement sous le profil
+  // `legacy`. Sous `neutral` il rend `null`, donc `none` ci-dessous.
+  final ZGradientSpec? spec = zResolveGradient(context, zSignatureKey(identity));
+  if (spec == null) return _ZAppBarChrome.none;
+  final Color? base = _zBaseStop(spec.gradient);
+  if (base == null) return _ZAppBarChrome.none;
+  const List<double> alphas = ZPageShellReference.appBarWashAlphas;
+  return _ZAppBarChrome(
+    flexibleSpace: Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: ZPageShellReference.appBarWashBegin,
+          end: ZPageShellReference.appBarWashEnd,
+          colors: <Color>[
+            for (final double a in alphas) base.withValues(alpha: a),
+          ],
+        ),
+      ),
+    ),
+    foregroundColor: _zWashForeground(context, base, alphas.first),
+    elevation: ZPageShellReference.appBarWashElevation,
+  );
+}
 
 /// Tranche **actions** partagée: chaque [ZAppBarAction] non-débordement rend
 /// **un** `IconButton` (cible ≥ 48 dp par défaut, `Semantics` via

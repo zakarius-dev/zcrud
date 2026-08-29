@@ -80,6 +80,34 @@ const List<ZRegistrar> kRegistrars = <ZRegistrar>[
   registerZExam, // exam                  — zcrud_exam (ES-2.6)
   registerZStudyPodcast, // study_podcast   — zcrud_study_kernel (ES-2.8)
   registerZStudyStreak, // study_streak    — zcrud_study_kernel (SU-6, NON ZExtensible)
+  // ── Structure d'étude (zcrud_study_kernel, `lib/src/domain/structure/`) ──
+  // 23 entités d'un même patron : ctor `const` (l'ACCESSEUR `extra` filtre),
+  // `copyWith` à sentinelle (sanitisation EAGER), canal manuel `external_refs`
+  // (sauf `study_explanation`) et, pour certaines, des références manuelles
+  // (`*_ref`, `topic_refs`, `classification_constraints`).
+  registerZStudyWorkspace, // study_workspace
+  registerZStudyPrincipal, // study_principal
+  registerZStudyOrganization, // study_organization
+  registerZStudyOrgUnit, // study_org_unit
+  registerZStudyProgram, // study_program
+  registerZStudyGroup, // study_group
+  registerZStudyClassification, // study_classification
+  registerZStudySubject, // study_subject
+  registerZStudyCourse, // study_course
+  registerZStudyProgramCourse, // study_program_course
+  registerZStudyCalendar, // study_calendar
+  registerZStudyPeriod, // study_period
+  registerZStudySession, // study_session
+  registerZStudyOffering, // study_offering
+  registerZStudyOfferingAudience, // study_offering_audience
+  registerZStudyParticipation, // study_participation
+  registerZStudyCurriculum, // study_curriculum
+  registerZStudyTopic, // study_topic
+  registerZStudyCompetency, // study_competency
+  registerZStudyCompetencyFramework, // study_competency_framework
+  registerZStudyExplanation, // study_explanation
+  registerZStudyRoleBinding, // study_role_binding
+  registerZStudyShareGrant, // study_share_grant
 ];
 
 /// Corps métier **minimal valide** de la sonde de chaque `kind`.
@@ -87,9 +115,30 @@ const List<ZRegistrar> kRegistrars = <ZRegistrar>[
 /// Pas de fallback générique (`{}` implicite) : un kind enregistré **sans**
 /// corps ici fait ROUGIR le gate (le test de cohérence du harnais) — sinon un
 /// oubli produirait une sonde muette, donc un faux vert.
-const Map<String, Map<String, dynamic>> kProbeBodies =
-    <String, Map<String, dynamic>>{
-  'study_folder': <String, dynamic>{'id': 'p', 'title': 'p'},
+const Map<String, Map<String, dynamic>>
+kProbeBodies = <String, Map<String, dynamic>>{
+  // 🔴 `owner_ref`, `primary_scope_ref` et `bindings` sont des CANAUX
+  // HORS-CODEGEN (patron `source`/`learning`) : décodés et réémis À LA MAIN par
+  // `ZStudyFolder.fromMap`/`toMap`, leurs clés étant RÉSERVÉES. Ils sont ici, et
+  // **NON VIDES** — règle (g2) : une sonde sans le canal (ou avec un canal vide)
+  // le rendrait « préservé PAR PROSE », et le retirer de `_reservedKeys`
+  // laisserait le gate VERT.
+  'study_folder': <String, dynamic>{
+    'id': 'p',
+    'title': 'p',
+    'owner_ref': <String, dynamic>{'type': 'study_principal', 'id': 'pr1'},
+    'primary_scope_ref': <String, dynamic>{
+      'type': 'study_organization',
+      'id': 'o1',
+    },
+    'bindings': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'source_ref': <String, dynamic>{'type': 'study_folder', 'id': 'p'},
+        'target_ref': <String, dynamic>{'type': 'study_course', 'id': 'c1'},
+        'propagation': 'exact',
+      },
+    ],
+  },
   'study_session_config': <String, dynamic>{'mode': 'spaced'},
   // ⚠️ H2 (code-review ES-2.0) : la sonde `flashcard` ne portait AUCUNE clé
   // `source` — le canal était donc affirmé « ✅ PRÉSERVÉ » dans la dartdoc
@@ -106,10 +155,7 @@ const Map<String, Map<String, dynamic>> kProbeBodies =
     'id': 'p',
     'folder_id': 'f',
     'question': 'q',
-    'source': <String, dynamic>{
-      'kind': 'zz_source_test',
-      'zz_payload': 'brut',
-    },
+    'source': <String, dynamic>{'kind': 'zz_source_test', 'zz_payload': 'brut'},
   },
   'repetition_info': <String, dynamic>{'flashcard_id': 'p', 'folder_id': 'f'},
   'flashcard_choice': <String, dynamic>{'content': 'c', 'is_correct': true},
@@ -289,7 +335,176 @@ const Map<String, Map<String, dynamic>> kProbeBodies =
     'best': 7,
     'last_graded_day': '2026-07-16',
   },
+  // ── Structure d'étude (zcrud_study_kernel) ───────────────────────────────
+  // 🔴 Chaque corps porte, EN PLUS de son minimum métier, **TOUS** les canaux
+  // hors-codegen que la règle (g) relève sur l'entité — et **NON VIDES**.
+  // `external_refs`, `*_ref`, `topic_refs`, `classification_constraints` et
+  // `bindings` sont décodés/réémis À LA MAIN (le générateur ne supporte aucun
+  // type `Map`), leurs clés étant RÉSERVÉES : une sonde qui ne les transporte
+  // pas les rendrait « préservés PAR PROSE » — l'assertion (f) ne les
+  // observerait JAMAIS, et les retirer de `_reservedKeys` laisserait le gate
+  // VERT (finding H1 d'ES-2.1 / H2 d'ES-2.0, à NE PAS REJOUER).
+  'study_workspace': <String, dynamic>{
+    'id': 'p',
+    'kind': 'tenant',
+    'label': 'espace',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_principal': <String, dynamic>{
+    'id': 'p',
+    'kind': 'person',
+    'label': 'mandant',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_organization': <String, dynamic>{
+    'id': 'p',
+    'kind': 'school',
+    'label': 'organisation',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_org_unit': <String, dynamic>{
+    'id': 'p',
+    'organization_id': 'o1',
+    'kind': 'department',
+    'label': 'unite',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_program': <String, dynamic>{
+    'id': 'p',
+    'kind': 'degree',
+    'label': 'programme',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_group': <String, dynamic>{
+    'id': 'p',
+    'kind': 'class',
+    'label': 'groupe',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_classification': <String, dynamic>{
+    'id': 'p',
+    'vocabulary_key': 'level',
+    'value_key': 'l1',
+    'target_ref': <String, dynamic>{'type': 'study_course', 'id': 'c1'},
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_subject': <String, dynamic>{
+    'id': 'p',
+    'kind': 'discipline',
+    'label': 'matiere',
+    'color_key': 'blue',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_course': <String, dynamic>{
+    'id': 'p',
+    'kind': 'course',
+    'label': 'cours',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_program_course': <String, dynamic>{
+    'id': 'p',
+    'program_id': 'pr1',
+    'course_id': 'c1',
+    'classification_constraints': <Map<String, dynamic>>[
+      <String, dynamic>{'vocabulary_key': 'level', 'value_key': 'l1'},
+    ],
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_calendar': <String, dynamic>{
+    'id': 'p',
+    'timezone': 'Europe/Paris',
+    'kind': 'academic',
+    'label': 'calendrier',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_period': <String, dynamic>{
+    'id': 'p',
+    'calendar_id': 'cal1',
+    'kind': 'semester',
+    'label': 'S1',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_session': <String, dynamic>{
+    'id': 'p',
+    'offering_id': 'of1',
+    'kind': 'lecture',
+    'location_ref': <String, dynamic>{'type': 'study_org_unit', 'id': 'u1'},
+    'topic_refs': <Map<String, dynamic>>[
+      <String, dynamic>{'type': 'study_topic', 'id': 't1'},
+    ],
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_offering': <String, dynamic>{
+    'id': 'p',
+    'course_id': 'c1',
+    'period_id': 'per1',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_offering_audience': <String, dynamic>{
+    'id': 'p',
+    'offering_id': 'of1',
+    'group_id': 'g1',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_participation': <String, dynamic>{
+    'id': 'p',
+    'principal_ref': <String, dynamic>{'type': 'study_principal', 'id': 'pr1'},
+    'target_ref': <String, dynamic>{'type': 'study_offering', 'id': 'of1'},
+    'role': 'student',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_curriculum': <String, dynamic>{
+    'id': 'p',
+    'label': 'cursus',
+    'version': '1',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_topic': <String, dynamic>{
+    'id': 'p',
+    'curriculum_id': 'cur1',
+    'label': 'chapitre',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_competency': <String, dynamic>{
+    'id': 'p',
+    'framework_id': 'fw1',
+    'label': 'competence',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_competency_framework': <String, dynamic>{
+    'id': 'p',
+    'label': 'referentiel',
+    'version': '1',
+    'external_refs': _kProbeExternalRefs,
+  },
+  // `ZStudyExplanation` ne porte AUCUN canal hors-codegen : tous ses champs
+  // sont codegen-ables (`String`, `List<String>`, date ISO-8601). La règle
+  // (g)/(g2) ne relève donc rien sur elle — précédent EXACT `study_podcast`.
+  'study_explanation': <String, dynamic>{
+    'id': 'p',
+    'folder_id': 'f',
+    'content': 'texte',
+  },
+  'study_role_binding': <String, dynamic>{
+    'id': 'p',
+    'principal_ref': <String, dynamic>{'type': 'study_principal', 'id': 'pr1'},
+    'scope_ref': <String, dynamic>{'type': 'study_organization', 'id': 'o1'},
+    'role_key': 'teacher',
+    'external_refs': _kProbeExternalRefs,
+  },
+  'study_share_grant': <String, dynamic>{
+    'id': 'p',
+    'artifact_ref': <String, dynamic>{'type': 'study_document', 'id': 'd1'},
+    'grantee_ref': <String, dynamic>{'type': 'study_principal', 'id': 'pr1'},
+    'external_refs': _kProbeExternalRefs,
+  },
 };
+
+/// Valeur NON VIDE du canal manuel `external_refs`, partagée par les sondes de
+/// la structure d'étude (forme exacte de `ZExternalRef.toMap`).
+const List<Map<String, dynamic>> _kProbeExternalRefs = <Map<String, dynamic>>[
+  <String, dynamic>{'system': 'sis', 'value': 'ext-1'},
+];
 
 /// Kinds enregistrés dont l'entité n'est **PAS** `ZExtensible` (aucun `extra`).
 ///
@@ -388,7 +603,10 @@ const Set<String> kExtensionPayloadPreservers = <String>{
 ///     un attendu FIGÉ ⇒ toute croissance **ou** réduction rend la suite ROUGE ;
 ///   - **anti-inertie** : une entrée dont le kind n'émet plus `updated_at` (ou
 ///     n'existe plus) rend la suite ROUGE.
-const Set<String> kLegacyUpdatedAtMirrors = <String>{'study_folder', 'flashcard'};
+const Set<String> kLegacyUpdatedAtMirrors = <String>{
+  'study_folder',
+  'flashcard',
+};
 
 // ===========================================================================
 // 🔴 ES-2.2b — `kExtraWriters` : LA VOIE D'ÉCRITURE PUBLIQUE DE `extra`.
@@ -396,7 +614,8 @@ const Set<String> kLegacyUpdatedAtMirrors = <String>{'study_folder', 'flashcard'
 
 /// Écrit [extra] dans [entity] **par UNE voie d'écriture PUBLIQUE** et rend
 /// l'entité résultante.
-typedef ZExtraWrite = Object Function(Object entity, Map<String, dynamic> extra);
+typedef ZExtraWrite =
+    Object Function(Object entity, Map<String, dynamic> extra);
 
 /// **UNE** voie d'écriture publique de `extra` (ES-2.2b — remédiation **HIGH-1**,
 /// **HIGH-2**, **MAJEUR-2** de la code-review).
@@ -464,8 +683,8 @@ class ZExtraWriter {
 ///   - **par VOIE** (règle **(j)**, AST, dérivée du DISQUE) : une voie publique de
 ///     l'entité non câblée ici ⇒ **ROUGE**. Le harnais **ne peut plus** se
 ///     contenter de la voie la plus sûre.
-const Map<String, List<ZExtraWriter>> kExtraWriters =
-    <String, List<ZExtraWriter>>{
+const Map<String, List<ZExtraWriter>>
+kExtraWriters = <String, List<ZExtraWriter>>{
   'study_folder': <ZExtraWriter>[
     ZExtraWriter(
       voie: 'ctor',
@@ -491,11 +710,7 @@ const Map<String, List<ZExtraWriter>> kExtraWriters =
     ),
   ],
   'flashcard': <ZExtraWriter>[
-    ZExtraWriter(
-      voie: 'ctor',
-      write: _ctorFlashcard,
-      eagerlyNormalized: false,
-    ),
+    ZExtraWriter(voie: 'ctor', write: _ctorFlashcard, eagerlyNormalized: false),
     ZExtraWriter(
       voie: 'copyWith',
       write: _copyWithFlashcard,
@@ -537,11 +752,7 @@ const Map<String, List<ZExtraWriter>> kExtraWriters =
     ),
   ],
   'smart_note': <ZExtraWriter>[
-    ZExtraWriter(
-      voie: 'ctor',
-      write: _ctorSmartNote,
-      eagerlyNormalized: false,
-    ),
+    ZExtraWriter(voie: 'ctor', write: _ctorSmartNote, eagerlyNormalized: false),
     ZExtraWriter(
       voie: 'copyWith',
       write: _copyWithSmartNote,
@@ -620,7 +831,738 @@ const Map<String, List<ZExtraWriter>> kExtraWriters =
       eagerlyNormalized: true,
     ),
   ],
+  // ── Structure d'étude (zcrud_study_kernel) ───────────────────────────────
+  // Les 23 entités partagent EXACTEMENT deux voies publiques d'écriture de
+  // `extra` (règle AST (j), dérivée du disque) : le constructeur nominal
+  // `const` — qui ne peut RIEN filtrer, c'est l'ACCESSEUR `extra`
+  // (`zNormalizeExtra`) qui porte la garde ⇒ `eagerlyNormalized: false` — et
+  // `copyWith`, qui sanitise EAGER (`_sanitizeExtra`) ⇒ `true`.
+  'study_workspace': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyWorkspace,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyWorkspace,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_principal': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyPrincipal,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyPrincipal,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_organization': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyOrganization,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyOrganization,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_org_unit': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyOrgUnit,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyOrgUnit,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_program': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyProgram,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyProgram,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_group': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyGroup,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyGroup,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_classification': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyClassification,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyClassification,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_subject': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudySubject,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudySubject,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_course': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyCourse,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyCourse,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_program_course': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyProgramCourse,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyProgramCourse,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_calendar': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyCalendar,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyCalendar,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_period': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyPeriod,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyPeriod,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_session': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudySession,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudySession,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_offering': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyOffering,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyOffering,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_offering_audience': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyOfferingAudience,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyOfferingAudience,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_participation': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyParticipation,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyParticipation,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_curriculum': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyCurriculum,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyCurriculum,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_topic': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyTopic,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyTopic,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_competency': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyCompetency,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyCompetency,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_competency_framework': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyCompetencyFramework,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyCompetencyFramework,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_explanation': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyExplanation,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyExplanation,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_role_binding': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyRoleBinding,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyRoleBinding,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_share_grant': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyShareGrant,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyShareGrant,
+      eagerlyNormalized: true,
+    ),
+  ],
 };
+
+// ---------------------------------------------------------------------------
+// Structure d'étude — voies `copyWith` (`x` transmis **VERBATIM**, règle (k)).
+// ---------------------------------------------------------------------------
+
+Object _copyWithStudyWorkspace(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyWorkspace).copyWith(extra: x);
+
+Object _copyWithStudyPrincipal(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyPrincipal).copyWith(extra: x);
+
+Object _copyWithStudyOrganization(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyOrganization).copyWith(extra: x);
+
+Object _copyWithStudyOrgUnit(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyOrgUnit).copyWith(extra: x);
+
+Object _copyWithStudyProgram(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyProgram).copyWith(extra: x);
+
+Object _copyWithStudyGroup(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyGroup).copyWith(extra: x);
+
+Object _copyWithStudyClassification(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyClassification).copyWith(extra: x);
+
+Object _copyWithStudySubject(Object e, Map<String, dynamic> x) =>
+    (e as ZStudySubject).copyWith(extra: x);
+
+Object _copyWithStudyCourse(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyCourse).copyWith(extra: x);
+
+Object _copyWithStudyProgramCourse(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyProgramCourse).copyWith(extra: x);
+
+Object _copyWithStudyCalendar(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyCalendar).copyWith(extra: x);
+
+Object _copyWithStudyPeriod(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyPeriod).copyWith(extra: x);
+
+Object _copyWithStudySession(Object e, Map<String, dynamic> x) =>
+    (e as ZStudySession).copyWith(extra: x);
+
+Object _copyWithStudyOffering(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyOffering).copyWith(extra: x);
+
+Object _copyWithStudyOfferingAudience(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyOfferingAudience).copyWith(extra: x);
+
+Object _copyWithStudyParticipation(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyParticipation).copyWith(extra: x);
+
+Object _copyWithStudyCurriculum(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyCurriculum).copyWith(extra: x);
+
+Object _copyWithStudyTopic(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyTopic).copyWith(extra: x);
+
+Object _copyWithStudyCompetency(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyCompetency).copyWith(extra: x);
+
+Object _copyWithStudyCompetencyFramework(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyCompetencyFramework).copyWith(extra: x);
+
+Object _copyWithStudyExplanation(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyExplanation).copyWith(extra: x);
+
+Object _copyWithStudyRoleBinding(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyRoleBinding).copyWith(extra: x);
+
+Object _copyWithStudyShareGrant(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyShareGrant).copyWith(extra: x);
+
+// ---------------------------------------------------------------------------
+// Structure d'étude — voies `ctor` (constructeur nominal `const` : il stocke
+// `extra` BRUT ; c'est l'accesseur qui filtre — c'est la voie que le harnais ne
+// sondait pas avant ES-2.2b).
+// ---------------------------------------------------------------------------
+
+Object _ctorStudyWorkspace(Object e, Map<String, dynamic> x) {
+  final w = e as ZStudyWorkspace;
+  return ZStudyWorkspace(
+    id: w.id,
+    kind: w.kind,
+    label: w.label,
+    ownerPrincipalId: w.ownerPrincipalId,
+    externalRefs: w.externalRefs,
+    extension: w.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyPrincipal(Object e, Map<String, dynamic> x) {
+  final p = e as ZStudyPrincipal;
+  return ZStudyPrincipal(
+    id: p.id,
+    kind: p.kind,
+    label: p.label,
+    avatarKey: p.avatarKey,
+    externalRefs: p.externalRefs,
+    extension: p.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyOrganization(Object e, Map<String, dynamic> x) {
+  final o = e as ZStudyOrganization;
+  return ZStudyOrganization(
+    id: o.id,
+    workspaceId: o.workspaceId,
+    parentId: o.parentId,
+    kind: o.kind,
+    label: o.label,
+    code: o.code,
+    ancestorIds: o.ancestorIds,
+    externalRefs: o.externalRefs,
+    extension: o.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyOrgUnit(Object e, Map<String, dynamic> x) {
+  final u = e as ZStudyOrgUnit;
+  return ZStudyOrgUnit(
+    id: u.id,
+    organizationId: u.organizationId,
+    parentId: u.parentId,
+    kind: u.kind,
+    label: u.label,
+    code: u.code,
+    ancestorIds: u.ancestorIds,
+    externalRefs: u.externalRefs,
+    extension: u.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyProgram(Object e, Map<String, dynamic> x) {
+  final p = e as ZStudyProgram;
+  return ZStudyProgram(
+    id: p.id,
+    organizationId: p.organizationId,
+    parentId: p.parentId,
+    kind: p.kind,
+    code: p.code,
+    label: p.label,
+    credentialKind: p.credentialKind,
+    duration: p.duration,
+    ancestorIds: p.ancestorIds,
+    externalRefs: p.externalRefs,
+    extension: p.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyGroup(Object e, Map<String, dynamic> x) {
+  final g = e as ZStudyGroup;
+  return ZStudyGroup(
+    id: g.id,
+    organizationId: g.organizationId,
+    parentGroupId: g.parentGroupId,
+    kind: g.kind,
+    label: g.label,
+    code: g.code,
+    status: g.status,
+    ancestorIds: g.ancestorIds,
+    externalRefs: g.externalRefs,
+    extension: g.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyClassification(Object e, Map<String, dynamic> x) {
+  final c = e as ZStudyClassification;
+  return ZStudyClassification(
+    id: c.id,
+    targetRef: c.targetRef,
+    vocabularyKey: c.vocabularyKey,
+    valueKey: c.valueKey,
+    periodId: c.periodId,
+    validFrom: c.validFrom,
+    validTo: c.validTo,
+    externalRefs: c.externalRefs,
+    extension: c.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudySubject(Object e, Map<String, dynamic> x) {
+  final s = e as ZStudySubject;
+  return ZStudySubject(
+    id: s.id,
+    organizationId: s.organizationId,
+    kind: s.kind,
+    code: s.code,
+    label: s.label,
+    colorKey: s.colorKey,
+    externalRefs: s.externalRefs,
+    extension: s.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyCourse(Object e, Map<String, dynamic> x) {
+  final c = e as ZStudyCourse;
+  return ZStudyCourse(
+    id: c.id,
+    organizationId: c.organizationId,
+    subjectId: c.subjectId,
+    kind: c.kind,
+    code: c.code,
+    label: c.label,
+    credits: c.credits,
+    expectedHours: c.expectedHours,
+    externalRefs: c.externalRefs,
+    extension: c.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyProgramCourse(Object e, Map<String, dynamic> x) {
+  final p = e as ZStudyProgramCourse;
+  return ZStudyProgramCourse(
+    id: p.id,
+    programId: p.programId,
+    courseId: p.courseId,
+    periodPattern: p.periodPattern,
+    classificationConstraints: p.classificationConstraints,
+    isRequired: p.isRequired,
+    credits: p.credits,
+    coefficient: p.coefficient,
+    order: p.order,
+    externalRefs: p.externalRefs,
+    extension: p.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyCalendar(Object e, Map<String, dynamic> x) {
+  final c = e as ZStudyCalendar;
+  return ZStudyCalendar(
+    id: c.id,
+    organizationId: c.organizationId,
+    timezone: c.timezone,
+    label: c.label,
+    kind: c.kind,
+    externalRefs: c.externalRefs,
+    extension: c.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyPeriod(Object e, Map<String, dynamic> x) {
+  final p = e as ZStudyPeriod;
+  return ZStudyPeriod(
+    id: p.id,
+    calendarId: p.calendarId,
+    parentId: p.parentId,
+    kind: p.kind,
+    code: p.code,
+    label: p.label,
+    startsAt: p.startsAt,
+    endsAt: p.endsAt,
+    order: p.order,
+    ancestorIds: p.ancestorIds,
+    externalRefs: p.externalRefs,
+    extension: p.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudySession(Object e, Map<String, dynamic> x) {
+  final s = e as ZStudySession;
+  return ZStudySession(
+    id: s.id,
+    offeringId: s.offeringId,
+    startsAt: s.startsAt,
+    endsAt: s.endsAt,
+    kind: s.kind,
+    locationRef: s.locationRef,
+    meetingUrl: s.meetingUrl,
+    topicRefs: s.topicRefs,
+    externalRefs: s.externalRefs,
+    extension: s.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyOffering(Object e, Map<String, dynamic> x) {
+  final o = e as ZStudyOffering;
+  return ZStudyOffering(
+    id: o.id,
+    organizationId: o.organizationId,
+    courseId: o.courseId,
+    periodId: o.periodId,
+    curriculumId: o.curriculumId,
+    label: o.label,
+    code: o.code,
+    status: o.status,
+    externalRefs: o.externalRefs,
+    extension: o.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyOfferingAudience(Object e, Map<String, dynamic> x) {
+  final a = e as ZStudyOfferingAudience;
+  return ZStudyOfferingAudience(
+    id: a.id,
+    offeringId: a.offeringId,
+    groupId: a.groupId,
+    role: a.role,
+    externalRefs: a.externalRefs,
+    extension: a.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyParticipation(Object e, Map<String, dynamic> x) {
+  final p = e as ZStudyParticipation;
+  return ZStudyParticipation(
+    id: p.id,
+    principalRef: p.principalRef,
+    targetRef: p.targetRef,
+    role: p.role,
+    periodId: p.periodId,
+    validFrom: p.validFrom,
+    validTo: p.validTo,
+    externalRefs: p.externalRefs,
+    extension: p.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyCurriculum(Object e, Map<String, dynamic> x) {
+  final c = e as ZStudyCurriculum;
+  return ZStudyCurriculum(
+    id: c.id,
+    organizationId: c.organizationId,
+    subjectId: c.subjectId,
+    courseId: c.courseId,
+    programId: c.programId,
+    code: c.code,
+    label: c.label,
+    version: c.version,
+    status: c.status,
+    effectiveFrom: c.effectiveFrom,
+    effectiveTo: c.effectiveTo,
+    externalRefs: c.externalRefs,
+    extension: c.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyTopic(Object e, Map<String, dynamic> x) {
+  final t = e as ZStudyTopic;
+  return ZStudyTopic(
+    id: t.id,
+    curriculumId: t.curriculumId,
+    parentId: t.parentId,
+    kind: t.kind,
+    code: t.code,
+    label: t.label,
+    order: t.order,
+    expectedDuration: t.expectedDuration,
+    weight: t.weight,
+    ancestorIds: t.ancestorIds,
+    externalRefs: t.externalRefs,
+    extension: t.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyCompetency(Object e, Map<String, dynamic> x) {
+  final c = e as ZStudyCompetency;
+  return ZStudyCompetency(
+    id: c.id,
+    frameworkId: c.frameworkId,
+    code: c.code,
+    label: c.label,
+    description: c.description,
+    externalRefs: c.externalRefs,
+    extension: c.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyCompetencyFramework(Object e, Map<String, dynamic> x) {
+  final f = e as ZStudyCompetencyFramework;
+  return ZStudyCompetencyFramework(
+    id: f.id,
+    organizationId: f.organizationId,
+    code: f.code,
+    label: f.label,
+    version: f.version,
+    status: f.status,
+    externalRefs: f.externalRefs,
+    extension: f.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyExplanation(Object e, Map<String, dynamic> x) {
+  final s = e as ZStudyExplanation;
+  return ZStudyExplanation(
+    id: s.id,
+    folderId: s.folderId,
+    content: s.content,
+    style: s.style,
+    operation: s.operation,
+    relatedTopics: s.relatedTopics,
+    createdAt: s.createdAt,
+    extension: s.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyRoleBinding(Object e, Map<String, dynamic> x) {
+  final b = e as ZStudyRoleBinding;
+  return ZStudyRoleBinding(
+    id: b.id,
+    principalRef: b.principalRef,
+    scopeRef: b.scopeRef,
+    roleKey: b.roleKey,
+    periodId: b.periodId,
+    validFrom: b.validFrom,
+    validTo: b.validTo,
+    inheritance: b.inheritance,
+    externalRefs: b.externalRefs,
+    extension: b.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyShareGrant(Object e, Map<String, dynamic> x) {
+  final g = e as ZStudyShareGrant;
+  return ZStudyShareGrant(
+    id: g.id,
+    artifactRef: g.artifactRef,
+    granteeRef: g.granteeRef,
+    accessKey: g.accessKey,
+    validFrom: g.validFrom,
+    validTo: g.validTo,
+    externalRefs: g.externalRefs,
+    extension: g.extension,
+    extra: x,
+  );
+}
 
 // ---------------------------------------------------------------------------
 // VOIE `copyWith` — `x` est passé **VERBATIM** (règle AST (k) : aucune
@@ -677,6 +1619,7 @@ Object _ctorStudyFolder(Object e, Map<String, dynamic> x) {
     title: f.title,
     colorKey: f.colorKey,
     parentId: f.parentId,
+    subjectId: f.subjectId,
     ownerId: f.ownerId,
     archivedAt: f.archivedAt,
     createdAt: f.createdAt,
@@ -686,6 +1629,11 @@ Object _ctorStudyFolder(Object e, Map<String, dynamic> x) {
     canBeJoinedWithLink: f.canBeJoinedWithLink,
     coWorkersCanInviteOthers: f.coWorkersCanInviteOthers,
     shareId: f.shareId,
+    // Canaux hors-codegen : le writer reconstruit l'entité À L'IDENTIQUE, sans
+    // quoi il perdrait la matière que la sonde transporte pour (f)/(g2).
+    ownerRef: f.ownerRef,
+    primaryScopeRef: f.primaryScopeRef,
+    bindings: f.bindings,
     extension: f.extension,
     extra: x,
   );
@@ -881,10 +1829,7 @@ Object _ctorStudyPodcast(Object e, Map<String, dynamic> x) {
 /// 🔴 **ANTI-INERTIE** : (i.2) **ASSERTE que l'égalité est bien ABSENTE** sur ces
 /// entités. Le jour où quelqu'un leur donne un `==` de valeur, l'entrée devient
 /// **MORTE** et le test **ROUGIT** en exigeant de la retirer. **Jamais silencieux.**
-const Set<String> kNoValueEqualityProbes = <String>{
-  'ZMindmap',
-  'ZMindmapNode',
-};
+const Set<String> kNoValueEqualityProbes = <String>{'ZMindmap', 'ZMindmapNode'};
 
 /// Construit un [ZcrudRegistry] peuplé par **tous** les [kRegistrars].
 ///

@@ -33,6 +33,8 @@ import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
 import 'package:zcrud_mindmap/zcrud_mindmap.dart';
 
+import '../domain/z_mindmap_generation_port.dart';
+import 'z_mindmap_generation_sheet.dart';
 import 'z_study_tools_section_spec.dart';
 
 /// Cible de taille interactive minimale (AD-13/NFR-S6).
@@ -53,6 +55,10 @@ const IconData _kEnterEditFallbackIcon = Icons.edit_outlined;
 
 /// Glyphe de REPLI de la bascule « revenir en lecture » (même patron).
 const IconData _kEnterReadFallbackIcon = Icons.visibility_outlined;
+
+/// Glyphe de REPLI de l'action de génération par IA (même patron : le glyphe a
+/// un défaut documenté, le LIBELLÉ n'en a jamais).
+const IconData _kGenerateFallbackIcon = Icons.auto_awesome;
 
 /// Mode d'affichage de [ZStudyMindmapSection], **local au package** (AD-4). Il ne
 /// se confond PAS avec [ZMindmapViewMode] (graphe ⇄ liste, interne à la lecture) :
@@ -100,6 +106,10 @@ class ZStudyMindmapSection extends StatefulWidget {
     this.enterReadSemanticLabel = 'Afficher la carte mentale',
     this.enterEditIcon,
     this.enterReadIcon,
+    this.generationPort,
+    this.onGenerate,
+    this.generateSemanticLabel,
+    this.generateIcon,
     super.key,
   }) : assert(mindmap != null || roots != null,
             'Fournir `mindmap` ou `roots`.');
@@ -164,6 +174,33 @@ class ZStudyMindmapSection extends StatefulWidget {
   /// Icône INJECTÉE de la bascule « revenir en lecture » (repli neutre documenté).
   final IconData? enterReadIcon;
 
+  /// Port de génération de carte mentale par IA, **prioritaire** sur celui
+  /// d'un [ZMindmapGenerationScope] ancêtre. `null` ⇒ le scope est consulté.
+  ///
+  /// Sans port résolu, l'action de génération est **ABSENTE de l'arbre** —
+  /// jamais grisée, jamais un no-op : la section rend alors exactement les
+  /// mêmes actions qu'avant (invariant AD-4).
+  final ZMindmapGenerationPort? generationPort;
+
+  /// Déclenché au tap sur l'action de génération, avec le port résolu (non
+  /// `null`) : l'application ouvre la surface de son choix — typiquement
+  /// [ZMindmapGenerationSheet].
+  ///
+  /// [generationPort]/[ZMindmapGenerationScope], [onGenerate] et
+  /// [generateSemanticLabel] sont **indissociables** : l'action n'est montée
+  /// que si les trois sont fournis. Une action sans rappel serait un no-op
+  /// (AD-4) ; sans libellé, elle serait muette pour un lecteur d'écran
+  /// (AD-13). Le glyphe, lui, a un repli documenté.
+  final void Function(ZMindmapGenerationPort port)? onGenerate;
+
+  /// Libellé sémantique INJECTÉ de l'action de génération (sert aussi de
+  /// `tooltip`). Aucun défaut : un libellé par défaut serait figé dans une
+  /// langue (FR-26).
+  final String? generateSemanticLabel;
+
+  /// Icône INJECTÉE de l'action de génération (repli neutre documenté).
+  final IconData? generateIcon;
+
   /// Fabrique un [ZStudyToolsSectionSpec] rendant CETTE section comme UNE section
   /// (singleton) de `ZStudyToolsPage` (invariant AD-4) — RÉUTILISE le
   /// vocabulaire de sections existant, jamais une réimplémentation inline du
@@ -195,6 +232,10 @@ class ZStudyMindmapSection extends StatefulWidget {
     String enterReadSemanticLabel = 'Afficher la carte mentale',
     IconData? enterEditIcon,
     IconData? enterReadIcon,
+    ZMindmapGenerationPort? generationPort,
+    void Function(ZMindmapGenerationPort port)? onGenerate,
+    String? generateSemanticLabel,
+    IconData? generateIcon,
     VoidCallback? addAction,
     IconData? addActionIcon,
     String? addActionSemanticLabel,
@@ -226,6 +267,10 @@ class ZStudyMindmapSection extends StatefulWidget {
         enterReadSemanticLabel: enterReadSemanticLabel,
         enterEditIcon: enterEditIcon,
         enterReadIcon: enterReadIcon,
+        generationPort: generationPort,
+        onGenerate: onGenerate,
+        generateSemanticLabel: generateSemanticLabel,
+        generateIcon: generateIcon,
       ),
     );
   }
@@ -353,6 +398,39 @@ class _ZStudyMindmapSectionState extends State<ZStudyMindmapSection> {
     );
   }
 
+  /// Port de génération EFFECTIF : paramètre prioritaire, sinon le scope
+  /// ancêtre. Exposé pour falsifier la règle « sans port, action ABSENTE ».
+  @visibleForTesting
+  ZMindmapGenerationPort? resolvedGenerationPort(BuildContext context) =>
+      widget.generationPort ?? ZMindmapGenerationScope.maybePortOf(context);
+
+  /// Action « générer par IA », ou `null` quand elle ne doit pas exister.
+  ///
+  /// Retourne `null` — et non un widget vide — dès qu'un des trois maillons
+  /// manque : le tableau d'actions reste alors strictement celui d'avant.
+  Widget? _buildGenerateAction(BuildContext context, Color iconColor) {
+    final port = resolvedGenerationPort(context);
+    final onGenerate = widget.onGenerate;
+    final label = widget.generateSemanticLabel;
+    if (port == null || onGenerate == null || label == null) return null;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minWidth: _kMinTapTarget,
+        minHeight: _kMinTapTarget,
+      ),
+      child: IconButton(
+        key: const ValueKey<String>('z-mindmap-section-generate'),
+        onPressed: () => onGenerate(port),
+        tooltip: label,
+        icon: Icon(
+          widget.generateIcon ?? _kGenerateFallbackIcon,
+          color: iconColor,
+          semanticLabel: label,
+        ),
+      ),
+    );
+  }
+
   /// Chrome de bascule lecture ⇄ édition : cible ≥ 48 dp, `Semantics` label
   /// INJECTÉ (= `tooltip`), padding directionnel, icône INJECTÉE (repli neutre),
   /// couleurs du thème injecté (aucune couleur/label codé en dur — AD-13/FR-26).
@@ -370,11 +448,16 @@ class _ZStudyMindmapSectionState extends State<ZStudyMindmapSection> {
         : (widget.enterEditIcon ?? _kEnterEditFallbackIcon);
     final iconColor =
         theme.labelColor ?? Theme.of(context).colorScheme.onSurface;
+    final generate = _buildGenerateAction(context, iconColor);
     return Padding(
       padding: EdgeInsetsDirectional.symmetric(horizontal: theme.gapS),
       child: Row(
         children: <Widget>[
           const Spacer(),
+          // Action ABSENTE (pas même un `SizedBox.shrink()`) tant que la
+          // génération n'est pas complètement câblée : sans elle, la rangée
+          // d'actions est celle d'avant, au widget près.
+          ?generate,
           ConstrainedBox(
             constraints: const BoxConstraints(
               minWidth: _kMinTapTarget,

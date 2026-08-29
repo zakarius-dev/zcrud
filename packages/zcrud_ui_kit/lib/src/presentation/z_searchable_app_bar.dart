@@ -24,6 +24,7 @@ class ZSearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.search,
     this.bottom,
     this.gradientKey,
+    this.signatureKey,
     this.titleTextStyle,
     this.subtitleTextStyle,
     super.key,
@@ -44,6 +45,7 @@ class ZSearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.search,
     this.bottom,
     this.gradientKey,
+    this.signatureKey,
     this.titleTextStyle,
     this.subtitleTextStyle,
   }) : assert(
@@ -115,12 +117,35 @@ class ZSearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
   /// dossier), passée à la couture `zResolveGradient` de `zcrud_core`
   /// — jamais un index de liste, de tri ou de pagination.
   ///
-  /// Le dégradé n'apparaît **que** si l'hôte a injecté un
-  /// `ZcrudScope.gradientResolver` **et** que celui-ci rend une spec pour
-  /// cette clé. Sans injection (ou clé nulle/vide, ou resolver rendant
-  /// `null`) le rendu reste sans dégradé : aucun repli dérivé n'est
-  /// appliqué automatiquement.
+  /// **Déclarer cette clé prend la main sur tout.** La spec rendue par la
+  /// couture est alors peinte **à saturation pleine** dans le `flexibleSpace`,
+  /// et `ZGradientSpec.onGradient` devient le premier plan de la barre. C'est
+  /// le comportement historique, inchangé.
+  ///
+  /// * clé **vide** (`''`) ⇒ aucun chrome d'identité, et [signatureKey] comme
+  ///   le titre sont ignorés : c'est l'échappatoire **par site** ;
+  /// * clé déclarée mais que la couture ne résout pas ⇒ aucun chrome ;
+  /// * clé **nulle** (défaut) ⇒ la barre retombe sur [signatureKey], puis sur
+  ///   le titre : voir [signatureKey].
   final String? gradientKey;
+
+  /// Identité alimentant le **lavis de palette signature** de la barre quand
+  /// [gradientKey] n'est pas déclarée.
+  ///
+  /// La clé effectivement résolue est `zcrud.signature.<identité>`, où
+  /// l'identité vaut `signatureKey` s'il est fourni, sinon **le titre lorsque
+  /// celui-ci est une chaîne**. Un titre `Widget` n'a pas d'identité
+  /// textuelle : sans `signatureKey`, la barre reste alors sans teinte.
+  ///
+  /// La teinte obtenue n'est pas peinte à saturation pleine : elle est posée
+  /// en **lavis** (voir [ZPageShellReference.appBarWashAlphas]), et le premier
+  /// plan de la barre n'est remplacé que si l'ambiant ne tient plus le
+  /// plancher de contraste — mesuré, jamais décrété.
+  ///
+  /// **Deux façons de tout éteindre** : `gradientKey: ''` sur ce site, ou
+  /// `ZcrudTheme(referenceProfile: ZReferenceProfile.neutral)` à la racine de
+  /// l'application, qui ramène la barre exactement à son rendu sans identité.
+  final String? signatureKey;
 
   /// Leading optionnel, rendu **si et seulement si** fourni.
   final Widget? leading;
@@ -187,15 +212,19 @@ class ZSearchableAppBarState extends State<ZSearchableAppBar> {
     return ValueListenableBuilder<bool>(
       valueListenable: _controller.isSearching,
       builder: (context, searching, _) {
-        // Dégradé d'identité: `null` (défaut, aucun resolver hôte) ⇒ ni
-        // `flexibleSpace` ni `foregroundColor` ⇒ AppBar strictement inchangée.
-        final ZGradientSpec? gradient = _zAppBarGradient(
+        // Chrome d'identité: `none` (profil neutre, ou aucune identité
+        // dérivable) ⇒ ni `flexibleSpace` ni `foregroundColor` ni `elevation`
+        // ⇒ AppBar strictement inchangée.
+        final _ZAppBarChrome chrome = _zAppBarChrome(
           context,
-          widget.gradientKey,
+          gradientKey: widget.gradientKey,
+          signatureKey: widget.signatureKey,
+          title: widget.title,
         );
         return AppBar(
-          flexibleSpace: _zGradientFlexibleSpace(gradient),
-          foregroundColor: gradient?.onGradient,
+          flexibleSpace: chrome.flexibleSpace,
+          foregroundColor: chrome.foregroundColor,
+          elevation: chrome.elevation,
           leading: _zBuildLeading(
             context,
             _controller,

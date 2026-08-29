@@ -24,6 +24,7 @@ class ZFlashcardSubmission {
     required this.hintsUsed,
     this.isCorrect,
     this.feedback,
+    this.skipped = false,
   });
 
   /// Qualité finale, déjà clampée et plafonnée.
@@ -49,6 +50,20 @@ class ZFlashcardSubmission {
   /// d'échec du port), ou `null`.
   final String? feedback;
 
+  /// La carte a été **passée** : l'apprenant a déclaré ne pas savoir, sans
+  /// produire de réponse à corriger.
+  ///
+  /// C'est un fait **en plus** de la note, jamais à sa place : [quality] vaut
+  /// alors la borne basse de l'échelle, exactement comme avant, et tous les
+  /// agrégats existants continuent de la compter comme un échec. La
+  /// distinction sert au retour pédagogique et aux statistiques d'un hôte qui
+  /// veut séparer « s'est trompé » de « n'a pas essayé » — deux situations
+  /// que la seule note confond.
+  ///
+  /// Défaut `false` : une soumission construite sans ce paramètre est en tout
+  /// point celle d'avant son existence.
+  final bool skipped;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -57,13 +72,15 @@ class ZFlashcardSubmission {
           timeTaken == other.timeTaken &&
           hintsUsed == other.hintsUsed &&
           isCorrect == other.isCorrect &&
-          feedback == other.feedback;
+          feedback == other.feedback &&
+          skipped == other.skipped;
 
   @override
   int get hashCode =>
-      Object.hash(quality, timeTaken, hintsUsed, isCorrect, feedback);
+      Object.hash(quality, timeTaken, hintsUsed, isCorrect, feedback, skipped);
 
   @override
   String toString() => 'ZFlashcardSubmission(quality: $quality, '
-      'timeTaken: $timeTaken, hintsUsed: $hintsUsed, isCorrect: $isCorrect)';
+      'timeTaken: $timeTaken, hintsUsed: $hintsUsed, isCorrect: $isCorrect, '
+      'skipped: $skipped)';
 }
