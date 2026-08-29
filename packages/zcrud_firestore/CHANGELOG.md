@@ -2,6 +2,22 @@
 
 All notable changes to `zcrud_firestore` are documented in this file.
 
+## 3.31.0 — 2026-08-29
+
+### Ajouté
+
+#### Les 23 entités de structure d'étude, servies sans une ligne d'adaptateur
+
+- **`buildStudyStructureRepositories({firestore, collectionPathOf, …})`** → **`ZStudyStructureRepositories`**, un `ZRepository<T>` par entité de structure du noyau d'étude (workspace, principal, organization, orgUnit, program, group, classification, subject, course, programCourse, calendar, period, session, offering, offeringAudience, participation, curriculum, topic, competency, competencyFramework, explanation, roleBinding, shareGrant). Chaque dépôt = le générique `FirebaseZRepositoryImpl.fromRegistry` + le registrar de codegen du noyau. Options du même patron que le satellite chat : `deletionSemantics`, `legacyDeletedKey`, `decodeContext`, `logger`.
+- **`buildStudyStructureRegistry({decodeContext})`** — le registre des 23 entités, neuf à chaque appel (jamais de collision avec un registre d'app).
+- **Le `kind` est résolu par le registre** (`ZcrudRegistry.kindOf<T>()`), pas écrit dans la fabrique : le fichier de fabrique ne porte **ni un nom de champ, ni une valeur de kind, ni un appel `fromMap`/`toMap`**. Trois gardes de source (`@TestOn('vm')`) le mesurent en lisant les noms de champs dans les `ZFieldSpec` **du noyau** — une garde qui aurait listé elle-même les champs à surveiller aurait hérité de l'angle mort de son auteur.
+- **`zStudyAncestorFilter` / `zStudyAncestorRequest` / `kZStudyAncestorIdsKey`** — requête de portée « descendants à toute profondeur », exprimée en `ZFilter` **neutre** (traduit en `arrayContains` par l'adaptateur). Aucun type `cloud_firestore` n'entre dans une signature publique : exposer une `Query` nue aurait franchi AD-5. La clé visée est vérifiée contre ce que `toMap()` du noyau **émet réellement**.
+
+### Mesuré
+
+- La (dé)sérialisation du noyau étant elle-même défensive, un champ persisté d'un type non conforme **ne lève pas** : il retombe sur le défaut du schéma. La voie « document écarté » du dépôt reste donc en réserve ; ce que la garde AD-10 affirme est le contrat réel — lecture jamais en échec, voisin sain intact, valeur illisible jamais franchie telle quelle.
+- Aucun harnais de conformité « dépôt mémoire ≡ Firestore » n'existe dans ce paquet (aucun dépôt mémoire non plus) : la garde correspondante est sans objet, elle n'a pas été fabriquée pour la forme.
+
 ## 3.22.0 — 2026-08-26
 
 ### Ajouté

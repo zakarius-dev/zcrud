@@ -62,6 +62,10 @@ export 'src/domain/z_share_link.dart';
 export 'src/domain/z_study_folder_report.dart';
 export 'src/domain/z_study_membership.dart';
 export 'src/domain/z_study_moderation_port.dart';
+// `zFilterByScope` applique un `ZStudyScopeFilter` là où une liste d'écran
+// est DÉJÀ filtrée, via une projection item → rattachement fournie par
+// l'hôte ; sans filtre ou sans projection, il rend l'instance reçue.
+export 'src/domain/z_study_scope_filtering.dart';
 export 'src/domain/z_study_sharing_acl.dart';
 export 'src/domain/z_study_sharing_extension.dart';
 export 'src/domain/z_study_sharing_port.dart';
@@ -256,6 +260,20 @@ export 'src/presentation/z_study_document_card.dart';
 export 'src/presentation/z_study_empty_state_reference.dart';
 export 'src/presentation/z_study_note_card.dart';
 
+// ── La structure d'étude dans les écrans ────────────────────────────────
+//
+// 🔴 La structure ACADÉMIQUE (organisations, unités, groupes, programmes)
+// n'est PAS l'arborescence des dossiers : elle dit à quoi un contenu se
+// rattache et dans quelle portée on travaille, jamais où il est rangé.
+//
+// `ZStudyPathBar` déroule le chemin d'un `ZStudyContext` sans aucune
+// résolution (les libellés viennent des instantanés) ; `ZStudyScopeBar`
+// montre la portée courante en puces retirables et propose le filtre
+// réduit. Le troisième membre du trio, `ZStudyUnitPicker`, est exporté plus
+// bas — l'ordre alphabétique des directives le sépare de ses jumeaux.
+export 'src/presentation/z_study_path_bar.dart';
+export 'src/presentation/z_study_scope_bar.dart';
+
 // ── Écran de session de révision assemblé ────────────────────────────────
 //
 // Le moteur de révision est entièrement porté par `zcrud_session` (trois
@@ -278,6 +296,11 @@ export 'src/presentation/z_study_session_view.dart';
 export 'src/presentation/z_study_tools_item_card.dart';
 export 'src/presentation/z_study_tools_page.dart';
 export 'src/presentation/z_study_tools_section_spec.dart';
+// Troisième membre du trio « structure d'étude dans les écrans » (cf. la
+// section plus haut) : `ZStudyUnitPicker` choisit un conteneur dans une
+// forêt IMMUABLE fournie par l'hôte (données, pas port) et rend la
+// `ZStudyRef` exacte, sans jamais modifier la structure.
+export 'src/presentation/z_study_unit_picker.dart';
 
 // ── Navigation de sous-dossiers ───────────────────────────────────────────
 //

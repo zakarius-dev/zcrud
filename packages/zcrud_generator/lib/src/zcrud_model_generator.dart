@@ -27,8 +27,13 @@
 ///
 /// ## Ce que le `toMap()` émis met dans la map — et ce qu'il n'y met pas
 ///
-/// **Champs.** Seuls les champs annotés `@ZcrudField`/`@ZcrudId` sont émis. Un
-/// champ non annoté **de type sérialisable** est ignoré en silence (contrat
+/// **Champs.** Seuls les champs annotés `@ZcrudField`/`@ZcrudId` sont émis —
+/// qu'ils soient déclarés sur la classe annotée ou **hérités** d'une
+/// super-classe ou d'un mixin hors SDK. Les champs hérités viennent en tête, dans
+/// l'ordre de linéarisation Dart (ancêtre le plus lointain d'abord) ; une
+/// redéclaration plus proche masque celle de base. Un champ hérité annoté que le
+/// constructeur non nommé n'expose pas (`super.<champ>`) est un échec de build.
+/// Un champ non annoté **de type sérialisable** est ignoré en silence (contrat
 /// assumé : c'est ainsi qu'un modèle garde des champs d'exécution hors
 /// persistance). Un champ non annoté dont le type n'est **pas** sérialisable est
 /// au contraire un **échec de build** : `@ZcrudIgnore` est la façon d'assumer
@@ -471,7 +476,13 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     // `extension`/`extra` : ils sont exemptés du contrôle de perte silencieuse
     // (cf. [_isSilentlyLost]).
     final extensible = _extensibleChecker.isAssignableFrom(element);
-    for (final field in element.fields) {
+    // Champs annotés HÉRITÉS d'abord (ordre de linéarisation Dart : ancêtre le
+    // plus lointain → classe annotée), champs locaux ensuite. Un champ hérité
+    // n'est collecté que si le constructeur non nommé de la classe l'accepte —
+    // sans quoi le code émis ne compilerait pas ([_requireInheritedInConstructor]).
+    final inherited = _inheritedAnnotatedFields(element);
+    if (inherited.isNotEmpty) _requireInheritedInConstructor(element, inherited);
+    for (final field in <FieldElement>[...inherited, ...element.fields]) {
       // analyzer 12 : `Element.isSynthetic` a été retiré de l'API publique. Le
       // remplaçant sémantique sur `PropertyInducingElement` est
       // `isOriginDeclaration` (le champ vient d'une `FieldDeclaration` /
@@ -521,6 +532,143 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       _rejectSilentlyLostFields(element, silentlyLost);
     }
     return fields;
+  }
+
+  /// Champs concrets **hérités** portant `@ZcrudField`/`@ZcrudId`, dans l'ordre
+  /// de **linéarisation Dart** (ancêtre le plus lointain → mixins → classe
+  /// annotée) — donc STABLE d'un build à l'autre.
+  ///
+  /// ## Ce que ça change pour l'appelant
+  ///
+  /// Un champ déclaré et annoté dans une classe de base entre désormais dans
+  /// `toMap()`, dans le décodeur émis et dans `$XxxFieldSpecs` de la
+  /// sous-classe, **avant** les champs déclarés localement. Sans cette collecte,
+  /// il en était absent alors que son annotation demandait explicitement sa
+  /// persistance : le build restait vert et la donnée disparaissait du document
+  /// à la première écriture, sans aucun signal.
+  ///
+  /// **Masquage** : si un champ du même nom Dart est redéclaré plus près de la
+  /// classe annotée (localement ou dans une base intermédiaire), c'est cette
+  /// déclaration-là qui fait foi ; la plus lointaine est ignorée, jamais
+  /// collectée deux fois. Deux champs de noms Dart différents résolvant vers la
+  /// **même clé persistée** restent une collision — échec de build inchangé.
+  ///
+  /// Les interfaces (`implements`) ne sont pas parcourues : elles n'apportent
+  /// aucun stockage concret. Les bases du SDK non plus. Un champ hérité
+  /// `abstract`, `static` ou synthétique (induit par un accesseur) est exclu :
+  /// il n'a pas de stockage propre à persister.
+  List<FieldElement> _inheritedAnnotatedFields(ClassElement element) {
+    final bases = <InterfaceElement>[];
+    final visited = <InterfaceElement>{};
+    void walk(InterfaceElement e) {
+      final superElement = e.supertype?.element;
+      if (superElement != null) {
+        walk(superElement);
+        if (visited.add(superElement)) bases.add(superElement);
+      }
+      for (final mixin in e.mixins) {
+        if (visited.add(mixin.element)) bases.add(mixin.element);
+      }
+    }
+
+    walk(element);
+    if (bases.isEmpty) return const <FieldElement>[];
+
+    bool eligible(FieldElement field) =>
+        !field.isStatic &&
+        !field.isAbstract &&
+        field.isOriginDeclaration &&
+        (_fieldChecker.hasAnnotationOf(field) ||
+            _idChecker.hasAnnotationOf(field));
+
+    // Résolution du MASQUAGE : la déclaration la plus PROCHE de la classe
+    // annotée gagne. `bases` est ordonné du plus lointain au plus proche, on le
+    // parcourt donc à l'envers pour élire un vainqueur par nom.
+    final winners = <String, FieldElement>{};
+    final masked = <String>{
+      for (final f in element.fields)
+        if (f.name != null) f.name!,
+    };
+    for (final base in bases.reversed) {
+      if (base.library.uri.isScheme('dart')) continue;
+      for (final field in base.fields) {
+        final name = field.name;
+        if (name == null || masked.contains(name)) continue;
+        if (winners.containsKey(name)) continue;
+        // Une redéclaration NON annotée plus proche masque aussi : elle vaut
+        // renoncement explicite à la persistance de ce nom.
+        if (!field.isStatic && field.isOriginDeclaration && !field.isAbstract) {
+          winners[name] = field;
+        }
+      }
+    }
+
+    // Émission dans l'ordre de linéarisation (ancêtre le plus lointain d'abord).
+    final ordered = <FieldElement>[];
+    for (final base in bases) {
+      if (base.library.uri.isScheme('dart')) continue;
+      for (final field in base.fields) {
+        final name = field.name;
+        if (name == null) continue;
+        if (!identical(winners[name], field)) continue;
+        if (eligible(field)) ordered.add(field);
+      }
+    }
+    return ordered;
+  }
+
+  /// Exige que le constructeur NON NOMMÉ de la classe annotée accepte chaque
+  /// champ hérité collecté comme paramètre nommé (typiquement `super.xxx`).
+  ///
+  /// Le décodeur et le `copyWith` émis appellent `Xxx(champ: …)` : un champ
+  /// hérité que le constructeur n'expose pas rendrait le `.g.dart` non
+  /// compilable. Échec de build EXPLICITE et actionnable plutôt qu'une erreur
+  /// d'analyse sur du code généré (invariant AD-3).
+  ///
+  /// Le contrôle ne porte que sur les champs **hérités** : un champ déclaré
+  /// localement est sous l'œil direct de l'auteur de la classe, et le soumettre
+  /// au même contrôle changerait le verdict de build de modèles existants.
+  void _requireInheritedInConstructor(
+    ClassElement element,
+    List<FieldElement> inherited,
+  ) {
+    ConstructorElement? unnamed;
+    for (final ctor in element.constructors) {
+      final name = ctor.name;
+      if (name == null || name.isEmpty || name == 'new') {
+        unnamed = ctor;
+        break;
+      }
+    }
+    // Aucun constructeur non nommé : le code émis serait déjà invalide pour les
+    // champs LOCAUX — ce contrôle-ci n'a rien à ajouter.
+    if (unnamed == null) return;
+    final accepted = <String>{
+      for (final p in unnamed.formalParameters)
+        if (p.isNamed && p.name != null) p.name!,
+    };
+    final missing = inherited
+        .where((f) => f.name != null && !accepted.contains(f.name))
+        .toList();
+    if (missing.isEmpty) return;
+    final inventory = missing
+        .map((f) => '  - ${f.name} : ${f.type.getDisplayString()} '
+            '(déclaré sur ${f.enclosingElement.name})')
+        .join('\n');
+    final plural = missing.length > 1;
+    throw InvalidGenerationSourceError(
+      '${missing.length} champ${plural ? 's' : ''} HÉRITÉ${plural ? 'S' : ''} '
+      'annoté${plural ? 's' : ''} que le constructeur non nommé de '
+      '${element.name} n\'accepte pas :\n$inventory\n'
+      'Le décodeur et le `copyWith` émis appellent `${element.name}(champ: …)` : '
+      'sans paramètre nommé correspondant, le `.g.dart` ne compilerait pas.\n'
+      'DEUX REMÈDES, par champ :\n'
+      '  1. exposer le champ dans le constructeur — `${element.name}({'
+      'super.${missing.first.name}, …})` — c\'est le geste attendu ;\n'
+      '  2. retirer l\'annotation de sérialisation sur la déclaration de base '
+      'si ce champ ne doit pas être persisté par le codegen.',
+      element: element,
+    );
   }
 
   /// L'`EnumElement` du champ si son enum (élément de `List<T>` compris)
@@ -643,10 +791,11 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   /// Applique le contrôle de perte silencieuse aux champs concrets **hérités**
   /// (chaîne des super-classes et mixins appliqués, hors SDK).
   ///
-  /// Un champ déclaré dans une classe de base n'est pas collecté par le
-  /// générateur : non annoté et de type non sérialisable, il serait perdu
-  /// exactement comme un champ local — la garde le couvre donc avec les mêmes
-  /// exemptions ([_isSilentlyLost]). Les interfaces (`implements`) ne sont pas
+  /// Un champ hérité **annoté** est collecté et émis
+  /// ([_inheritedAnnotatedFields]) ; un champ hérité **non annoté** de type non
+  /// sérialisable serait perdu exactement comme un champ local — la garde le
+  /// couvre donc avec les mêmes exemptions ([_isSilentlyLost]). Les interfaces
+  /// (`implements`) ne sont pas
   /// parcourues : elles n'apportent aucun stockage concret. Un champ masqué par
   /// une déclaration locale du même nom n'est pas re-signalé.
   void _collectInheritedSilentlyLost(
@@ -731,12 +880,13 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       'du document persisté à la première écriture, sans aucun signal.\n'
       'TROIS REMÈDES, par champ :\n'
       '  1. donner au champ un type sérialisable (scalaire supporté, enum, '
-      '`List<T>` de ceux-ci) et l\'annoter `@ZcrudField()` ;\n'
+      '`List<T>` ou `Map<K, V>` de ceux-ci) et l\'annoter `@ZcrudField()` ;\n'
       '  2. si le sous-objet doit être persisté : annoter son TYPE avec '
       '`@ZcrudModel` ET annoter le champ `@ZcrudField()` — les DEUX gestes sont '
       'nécessaires, annoter le type seul laisse le champ hors du code émis. '
-      'Impossible pour un type du SDK (`Map`, `Set`, fonction…) : seuls les '
-      'remèdes 1 et 3 s\'appliquent alors ;\n'
+      'Impossible pour un type du SDK (`Set`, fonction… — une `Map<K, V>` est '
+      'en revanche supportée telle quelle) : seuls les remèdes 1 et 3 '
+      's\'appliquent alors ;\n'
       '  3. annoter le champ `@ZcrudIgnore()` s\'il est hors persistance. '
       'ATTENTION : `@ZcrudIgnore` signifie « cette donnée N\'EST PAS écrite par '
       'le codegen ». Si elle doit vivre dans le document, c\'est à l\'auteur de '
@@ -757,7 +907,8 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     final nullable = type.nullabilitySuffix == NullabilitySuffix.question;
     final typeStr = type.getDisplayString();
 
-    final (category, elementTypeName, inferred) = _classify(field, type);
+    final (category, elementTypeName, inferred, mapCodecs) =
+        _classify(field, type);
 
     // Type de champ : explicite (@ZcrudField.type) sinon inféré.
     final explicitType = reader != null && !reader.read('type').isNull
@@ -788,6 +939,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       fieldType: resolvedType,
       multiple: annoMultiple || category.isCollection,
       persistAsTimestamp: persistAsTimestamp,
+      mapCodecs: mapCodecs,
     );
   }
 
@@ -797,6 +949,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     _Cat category,
     String? elementTypeName,
     String inferred,
+    _MapCodecs? mapCodecs,
   ) _classify(FieldElement field, DartType type) {
     // Collections homogènes : List<T>.
     if (type.isDartCoreList && type is InterfaceType) {
@@ -809,42 +962,221 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
           element: field,
         );
       }
-      final (elemCat, _, elemInferred) = _classify(field, arg);
+      final (elemCat, _, elemInferred, _) = _classify(field, arg);
+      if (elemCat == _Cat.mapType) {
+        throw InvalidGenerationSourceError(
+          'Liste de maps non supportée sur ${field.name} '
+          '("${type.getDisplayString()}"). Une `Map` est (dé)sérialisable comme '
+          'type de champ, mais pas encore comme ÉLÉMENT de liste. Remèdes : '
+          'annoter le champ `@ZcrudIgnore()` et le persister par un canal '
+          'manuel, ou donner à l\'élément un type annoté `@ZcrudModel`.',
+          element: field,
+        );
+      }
       final _Cat listCat = switch (elemCat) {
         _Cat.enumType => _Cat.listEnum,
         _Cat.subModel => _Cat.listModel,
         _ => _Cat.listScalar,
       };
-      return (listCat, _typeName(arg), elemInferred);
+      return (listCat, _typeName(arg), elemInferred, null);
     }
-    if (type.isDartCoreString) return (_Cat.stringType, null, 'text');
-    if (type.isDartCoreInt) return (_Cat.intType, null, 'integer');
-    if (type.isDartCoreDouble) return (_Cat.doubleType, null, 'float');
-    if (type.isDartCoreNum) return (_Cat.numType, null, 'number');
-    if (type.isDartCoreBool) return (_Cat.boolType, null, 'boolean');
+    // Dictionnaires homogènes : Map<K, V>.
+    if (type.isDartCoreMap && type is InterfaceType) {
+      return (_Cat.mapType, null, 'dynamicItem', _mapCodecsOf(field, type));
+    }
+    if (type.isDartCoreString) return (_Cat.stringType, null, 'text', null);
+    if (type.isDartCoreInt) return (_Cat.intType, null, 'integer', null);
+    if (type.isDartCoreDouble) return (_Cat.doubleType, null, 'float', null);
+    if (type.isDartCoreNum) return (_Cat.numType, null, 'number', null);
+    if (type.isDartCoreBool) return (_Cat.boolType, null, 'boolean', null);
 
     final el = type.element;
-    if (el is EnumElement) return (_Cat.enumType, _typeName(type), 'select');
+    if (el is EnumElement) {
+      return (_Cat.enumType, _typeName(type), 'select', null);
+    }
     if (_typeName(type) == 'DateTime') {
-      return (_Cat.dateTimeType, null, 'dateTime');
+      return (_Cat.dateTimeType, null, 'dateTime', null);
     }
     // Plage de dates `ZDateRange` : (dé)sérialisation DÉFENSIVE via le
     // helper `_$asDateRange` (bâti sur `ZDateRange.fromJsonSafe` → jamais de
     // throw) ; `toMap` via `.toJson()`. Patron strict de la branche `DateTime`.
     if (_typeName(type) == 'ZDateRange') {
-      return (_Cat.dateRangeType, null, 'dateRange');
+      return (_Cat.dateRangeType, null, 'dateRange', null);
     }
     if (el != null && _modelChecker.hasAnnotationOf(el)) {
-      return (_Cat.subModel, _typeName(type), 'subItems');
+      return (_Cat.subModel, _typeName(type), 'subItems', null);
     }
 
     throw InvalidGenerationSourceError(
       'Type de champ non (dé)sérialisable "${type.getDisplayString()}" sur '
-      '${field.name} : ni scalaire supporté, ni enum, ni @ZcrudModel annoté. '
-      'Annoter le type cible avec @ZcrudModel, ou en changer.',
+      '${field.name} : ni scalaire supporté, ni enum, ni `Map`, ni @ZcrudModel '
+      'annoté. Annoter le type cible avec @ZcrudModel, ou en changer.',
       element: field,
     );
   }
+
+  // --------------------------------------------------------------------------
+  // Map<K, V> — codecs de clé et de valeur.
+  // --------------------------------------------------------------------------
+
+  /// Codecs de clé et de valeur d'un champ `Map<K, V>`.
+  ///
+  /// **Clé** : `String` ou enum (encodée par `.name`, camelCase — même
+  /// convention que tout enum persisté). Une clé d'un autre type est un échec de
+  /// build : la map persistée doit rester à clés `String`.
+  ///
+  /// **Valeur** : `dynamic`/`Object?` (recopiée telle quelle), scalaire supporté,
+  /// `DateTime`, `ZDateRange`, enum, sous-modèle `@ZcrudModel`, ou `List<T>` de
+  /// ceux-ci. Une valeur nullable est admise et son `null` est PRÉSERVÉ.
+  ///
+  /// Le décodage émis est **défensif** (invariant AD-10) : une entrée dont la clé
+  /// ou la valeur est illisible est ignorée, et le reste de la map survit — le
+  /// parent ne lève jamais.
+  _MapCodecs _mapCodecsOf(FieldElement field, InterfaceType type) {
+    final args = type.typeArguments;
+    if (args.length != 2) {
+      throw InvalidGenerationSourceError(
+        'Map sans arguments de type non supportée sur ${field.name}.',
+        element: field,
+      );
+    }
+    return _MapCodecs(
+      key: _mapKeyCodec(field, args[0]),
+      value: _mapValueCodec(field, args[1]),
+    );
+  }
+
+  _Codec _mapKeyCodec(FieldElement field, DartType key) {
+    if (key.isDartCoreString) {
+      return const _Codec(
+        typeStr: 'String',
+        cond: '# is String',
+        decode: '# as String',
+        encode: '#',
+      );
+    }
+    final el = key.element;
+    if (el is EnumElement && key.nullabilitySuffix != NullabilitySuffix.question) {
+      final name = _typeName(key);
+      return _Codec(
+        typeStr: '$name',
+        cond: '_\$enumFromName($name.values, #) != null',
+        decode: '_\$enumFromName($name.values, #)!',
+        encode: '#.name',
+      );
+    }
+    throw InvalidGenerationSourceError(
+      'Clé de Map non supportée "${key.getDisplayString()}" sur ${field.name} : '
+      'la map persistée doit avoir des clés `String`. Seuls `String` et un enum '
+      'NON nullable (encodé par `.name`) conviennent.',
+      element: field,
+    );
+  }
+
+  _Codec _mapValueCodec(FieldElement field, DartType value) {
+    final nullable = value.nullabilitySuffix == NullabilitySuffix.question;
+    final display = value.getDisplayString();
+    // `dynamic` / `Object?` : recopie intégrale, aucune condition — c'est la
+    // forme la plus répandue (`Map<String, dynamic>`) et la seule qui préserve
+    // une structure imbriquée arbitraire.
+    if (value is DynamicType || (value.isDartCoreObject && nullable)) {
+      return _Codec(typeStr: display, cond: null, decode: '#', encode: '#');
+    }
+    final inner = _mapValueCodecNonNull(field, value);
+    if (!nullable) return inner;
+    return _Codec(
+      typeStr: display,
+      cond: '(# == null || ${inner.cond ?? 'true'})',
+      decode: '# == null ? null : ${inner.decode}',
+      // Un encodage IDENTITÉ reste identité sous nullabilité : émettre
+      // `v == null ? null : v` serait du bruit dans le `.g.dart`.
+      encode: inner.encode == '#' ? '#' : '# == null ? null : ${inner.encode}',
+    );
+  }
+
+  _Codec _mapValueCodecNonNull(FieldElement field, DartType value) {
+    final display = value.getDisplayString();
+    if (value.isDartCoreString) {
+      return _Codec(
+        typeStr: display,
+        cond: '# is String',
+        decode: '# as String',
+        encode: '#',
+      );
+    }
+    if (value.isDartCoreBool) {
+      return _Codec(
+        typeStr: display,
+        cond: '# is bool',
+        decode: '# as bool',
+        encode: '#',
+      );
+    }
+    if (value.isDartCoreInt) return _helperCodec(display, '_\$asInt');
+    if (value.isDartCoreDouble) return _helperCodec(display, '_\$asDouble');
+    if (value.isDartCoreNum) return _helperCodec(display, '_\$asNum');
+    if (_typeName(value) == 'DateTime') {
+      return _helperCodec(display, '_\$asDateTime', encode: '#.toIso8601String()');
+    }
+    if (_typeName(value) == 'ZDateRange') {
+      return _helperCodec(display, '_\$asDateRange', encode: '#.toJson()');
+    }
+    final el = value.element;
+    if (el is EnumElement) {
+      final name = _typeName(value);
+      return _Codec(
+        typeStr: display,
+        cond: '_\$enumFromName($name.values, #) != null',
+        decode: '_\$enumFromName($name.values, #)!',
+        encode: '#.name',
+      );
+    }
+    if (el != null && _modelChecker.hasAnnotationOf(el)) {
+      final name = _typeName(value);
+      return _Codec(
+        typeStr: display,
+        cond: '_\$decodeModel(#, $name.fromMap) != null',
+        decode: '_\$decodeModel(#, $name.fromMap)!',
+        encode: '#.toMap()',
+      );
+    }
+    if (value.isDartCoreList && value is InterfaceType) {
+      final arg = value.typeArguments.isEmpty ? null : value.typeArguments.first;
+      if (arg != null && arg.nullabilitySuffix != NullabilitySuffix.question) {
+        final elem = _mapValueCodecNonNull(field, arg);
+        final elemType = arg.getDisplayString();
+        // Élément illisible → `null`, filtré par `whereType` : la liste survit
+        // amputée, jamais la map ni le parent (AD-10).
+        final decodeElem = elem.cond == null
+            ? elem.decodeOf('e\$')
+            : '${elem.condOf('e\$')} ? ${elem.decodeOf('e\$')} : null';
+        return _Codec(
+          typeStr: display,
+          cond: '# is List',
+          decode: '(# as List).map((e\$) => $decodeElem)'
+              '.whereType<$elemType>().toList()',
+          encode: '#.map((e\$) => ${elem.encodeOf('e\$')}).toList()',
+        );
+      }
+    }
+    throw InvalidGenerationSourceError(
+      'Valeur de Map non (dé)sérialisable "$display" sur ${field.name} : ni '
+      '`dynamic`, ni scalaire supporté, ni `DateTime`, ni enum, ni @ZcrudModel '
+      'annoté, ni `List` de ceux-ci. Remède le plus simple : déclarer la valeur '
+      '`dynamic` (`Map<String, dynamic>`), qui recopie la structure telle '
+      'quelle.',
+      element: field,
+    );
+  }
+
+  /// Codec bâti sur un helper émis rendant `T?` (`_$asInt`, `_$asDateTime`…).
+  _Codec _helperCodec(String typeStr, String helper, {String encode = '#'}) =>
+      _Codec(
+        typeStr: typeStr,
+        cond: '$helper(#) != null',
+        decode: '$helper(#)!',
+        encode: encode,
+      );
 
   // --------------------------------------------------------------------------
   // Émission — fromMap défensif (AD-10).
@@ -901,6 +1233,20 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         return '$m is List ? ($m as List)'
             '.map((e) => _\$decodeModel(e, $t.fromMap))'
             '.whereType<$t>().toList() : $def';
+      case _Cat.mapType:
+        final c = f.mapCodecs!;
+        // Entrée dont la clé OU la valeur est illisible : ignorée (AD-10). Le
+        // reste de la map survit, le parent ne lève jamais.
+        final conds = <String>[
+          if (c.key.cond != null) c.key.condOf('e\$.key'),
+          if (c.value.cond != null) c.value.condOf('e\$.value'),
+        ];
+        final guard = conds.isEmpty ? '' : 'if (${conds.join(' && ')}) ';
+        return '$m is Map ? <${c.key.typeStr}, ${c.value.typeStr}>{'
+            'for (final e\$ in ($m as Map).entries) '
+            '$guard${c.key.decodeOf('e\$.key')}: '
+            '${c.value.decodeOf('e\$.value')},'
+            '} : $def';
     }
   }
 
@@ -938,6 +1284,9 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         return 'const <${f.elementTypeName}>[]';
       case _Cat.listModel:
         return 'const <${f.elementTypeName}>[]';
+      case _Cat.mapType:
+        final c = f.mapCodecs!;
+        return 'const <${c.key.typeStr}, ${c.value.typeStr}>{}';
     }
   }
 
@@ -1027,6 +1376,12 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         return '$v$q.map((e) => e.name).toList()';
       case _Cat.listModel:
         return '$v$q.map((e) => e.toMap()).toList()';
+      case _Cat.mapType:
+        final c = f.mapCodecs!;
+        // Clé toujours réencodée en `String` (enum → `.name`) : la map persistée
+        // reste à clés `String`, quelle que soit la clé Dart.
+        return '$v$q.map((k\$, v\$) => MapEntry(${c.key.encodeOf('k\$')}, '
+            '${c.value.encodeOf('v\$')}))';
     }
   }
 
@@ -1580,10 +1935,46 @@ enum _Cat {
   subModel,
   listScalar,
   listEnum,
-  listModel;
+  listModel,
+  mapType;
 
+  /// `true` pour une collection ORDONNÉE de valeurs homogènes — ce que
+  /// `ZFieldSpec.multiple` décrit. Une `Map` en est exclue : elle est un
+  /// dictionnaire, pas une multi-valeur d'un même champ, et la marquer
+  /// `multiple` ferait rendre une saisie de liste par le moteur d'édition.
   bool get isCollection =>
       this == _Cat.listScalar || this == _Cat.listEnum || this == _Cat.listModel;
+}
+
+/// Codec d'un fragment de valeur — un `#` marque l'expression source.
+class _Codec {
+  const _Codec({
+    required this.typeStr,
+    required this.cond,
+    required this.decode,
+    required this.encode,
+  });
+
+  /// Type Dart rendu par [decode] (tel qu'écrit dans le littéral émis).
+  final String typeStr;
+
+  /// Condition de décodabilité, ou `null` si la valeur est toujours décodable.
+  final String? cond;
+
+  final String decode;
+  final String encode;
+
+  String condOf(String expr) => cond!.replaceAll('#', expr);
+  String decodeOf(String expr) => decode.replaceAll('#', expr);
+  String encodeOf(String expr) => encode.replaceAll('#', expr);
+}
+
+/// Codecs de clé et de valeur d'un champ `Map<K, V>`.
+class _MapCodecs {
+  const _MapCodecs({required this.key, required this.value});
+
+  final _Codec key;
+  final _Codec value;
 }
 
 /// Champ résolu (statique) à émettre.
@@ -1600,6 +1991,7 @@ class _Field {
     required this.fieldType,
     required this.multiple,
     required this.persistAsTimestamp,
+    this.mapCodecs,
   });
 
   final String dartName;
@@ -1616,4 +2008,8 @@ class _Field {
   /// Le champ doit être persisté en `Timestamp` natif côté Firestore
   /// (clé collectée dans `$XxxTimestampFields`). Défaut `false` (ISO-8601).
   final bool persistAsTimestamp;
+
+  /// Codecs de clé/valeur — non nul si et seulement si [category] vaut
+  /// `_Cat.mapType`.
+  final _MapCodecs? mapCodecs;
 }

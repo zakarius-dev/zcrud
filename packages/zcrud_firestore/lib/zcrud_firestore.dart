@@ -53,6 +53,11 @@ export 'src/data/z_offline_first_box_repository.dart';
 // merge Last-Write-Wins, soft-delete propagé, lot ≤ 450, `Right(unit)` si
 // offline). Signatures publiques NUES (aucun type hive/cloud_firestore).
 export 'src/data/z_offline_first_repository.dart';
+// Requête de portée sur la chaîne d'ancêtres (`zStudyAncestorFilter` /
+// `zStudyAncestorRequest` / `kZStudyAncestorIdsKey`) — prédicat NEUTRE
+// `ZFilter`, traduit en `arrayContains` par l'adaptateur ; aucun type
+// cloud_firestore exporté (invariant AD-5).
+export 'src/data/z_study_ancestor_query.dart';
 // Codec/normaliseur d'adaptateur `ZStudyLegacyCodec` — camelCase↔snake_case,
 // mapping de statuts legacy, `ZSyncMeta` additif rétro-compatible, interop
 // dates `int` millis. Normaliseur PUR de `Map` DÉFENSIF (jamais throw) ;
@@ -67,6 +72,12 @@ export 'src/data/z_study_codec.dart';
 // cloud_firestore/hive — invariant AD-5) ; générique par `Map` (aucune arête
 // d'entité).
 export 'src/data/z_study_migrator.dart';
+// Fabrique des 23 dépôts Firestore de la structure d'étude
+// (`buildStudyStructureRepositories` → `ZStudyStructureRepositories`). Compose
+// le dépôt générique + les registrars de codegen du noyau : AUCUNE ligne de
+// (dé)sérialisation spécifique, aucun littéral de `kind` ni de champ (le
+// `kind` est résolu par le registre). Retour NU `ZRepository<T>`.
+export 'src/data/z_study_structure_firestore_repositories.dart';
 // Fabrique de câblage `assembleZStudySyncOrchestrator` — liste de dépôts
 // INJECTÉE, aucun import/liste codés en dur. Compose `ZSyncOrchestrator` :
 // best-effort + débounce hérité. Signature NUE (aucun type backend exporté ;

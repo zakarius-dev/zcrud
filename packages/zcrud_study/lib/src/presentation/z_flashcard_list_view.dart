@@ -69,8 +69,14 @@ import 'package:zcrud_core/zcrud_core.dart'
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_responsive/zcrud_responsive.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
-    show ZFlashcardTag, ZFolderContentsOrder, ZStudySessionSelector;
+    show
+        ZFlashcardTag,
+        ZFolderContentsOrder,
+        ZStudyScopeFilter,
+        ZStudySessionSelector,
+        ZStudyStructureSnapshot;
 
+import '../domain/z_study_scope_filtering.dart';
 import 'z_default_flashcard_card.dart';
 import 'z_feature_availability.dart';
 import 'z_flashcard_card_reference.dart';
@@ -195,10 +201,8 @@ enum ZFlashcardListItemStyle {
 ///
 /// `null` ⇒ **texte brut thématisé** (le défaut). L'app injecte son moteur riche
 /// (Markdown/LaTeX) sans que `zcrud_study` ne connaisse Quill.
-typedef ZFlashcardTileContentBuilder = Widget Function(
-  BuildContext context,
-  String text,
-);
+typedef ZFlashcardTileContentBuilder =
+    Widget Function(BuildContext context, String text);
 
 /// Destination d'un **déplacement** de lot (me-3, AC3) — enveloppe la valeur
 /// choisie par le sélecteur INJECTÉ afin de distinguer « annulé » (le futur
@@ -245,7 +249,7 @@ class ZFlashcardListBatchMove {
   /// `null` ⇒ **annulé** (no-op, aucune écriture) ; sinon la destination
   /// choisie. Reçoit le `BuildContext` de la liste (pour ouvrir un dialog).
   final Future<ZFlashcardBatchMoveDestination?> Function(BuildContext context)
-      resolveDestination;
+  resolveDestination;
 
   /// Seam d'écriture INJECTÉ **par racine** (`id`, champ, destination) ⇒
   /// `ZResult<Unit>`. La cascade/borne AD-21 reste sa propriété (jamais me-3).
@@ -253,7 +257,8 @@ class ZFlashcardListBatchMove {
     String rootId,
     String attachmentField,
     Object? destination,
-  ) moveRoot;
+  )
+  moveRoot;
 }
 
 /// Configuration de la **sélection multiple** de la liste (me-3, FR-SU19).
@@ -301,12 +306,12 @@ class ZFlashcardListSelection {
     this.selectAllLabel,
     this.onBatchResult,
   }) : assert(
-          deleteRoot == null || deleteActionLabel != null,
-          'ZFlashcardListSelection: deleteActionLabel (nom accessible a11y, '
-          'AD-13) DOIT être fourni dès que deleteRoot l\'est — jamais un bouton '
-          '« supprimer » actionnable mais MUET pour un lecteur d\'écran '
-          '(récidive su-9). Miroir de l\'assert me-1 de ZBatchActionBar.',
-        );
+         deleteRoot == null || deleteActionLabel != null,
+         'ZFlashcardListSelection: deleteActionLabel (nom accessible a11y, '
+         'AD-13) DOIT être fourni dès que deleteRoot l\'est — jamais un bouton '
+         '« supprimer » actionnable mais MUET pour un lecteur d\'écran '
+         '(récidive su-9). Miroir de l\'assert me-1 de ZBatchActionBar.',
+       );
 
   /// Libellé a11y INJECTÉ de la case d'une carte (mode + état coché — AD-13).
   final String Function(ZFlashcard card, bool selected) checkboxSemanticLabel;
@@ -388,18 +393,45 @@ class ZFlashcardListView extends StatefulWidget {
     this.searchDebounce = _kSearchDebounce,
     this.crossAxisMaxColumns,
     this.crossAxisItemHeight,
+    this.scopeFilter,
+    this.scopeArtifactOf,
+    this.scopeSnapshot = ZStudyStructureSnapshot.empty,
+    this.scopeAt,
     super.key,
   }) : assert(
-          itemStyle != ZFlashcardListItemStyle.card || contentBuilder == null,
-          'ZFlashcardListView : itemStyle: card est INCOMPATIBLE avec '
-          'contentBuilder — la carte par défaut rend l\'énoncé elle-même, le '
-          'slot serait silencieusement INERTE (AD-4). Passe itemStyle: tile '
-          '(ou omets itemStyle : un contentBuilder fourni replie déjà sur la '
-          'tuile — neutralité CR-IFFD-58).',
-        );
+         itemStyle != ZFlashcardListItemStyle.card || contentBuilder == null,
+         'ZFlashcardListView : itemStyle: card est INCOMPATIBLE avec '
+         'contentBuilder — la carte par défaut rend l\'énoncé elle-même, le '
+         'slot serait silencieusement INERTE (AD-4). Passe itemStyle: tile '
+         '(ou omets itemStyle : un contentBuilder fourni replie déjà sur la '
+         'tuile — neutralité CR-IFFD-58).',
+       );
 
   /// Cartes du dossier — **non filtrées** (la vue applique filtres et tri).
   final List<ZFlashcard> cards;
+
+  /// Portée d'étude appliquée **après** les filtres de recherche, avant le
+  /// tri. `null` ou vide ⇒ la liste est celle d'avant, à l'instance près.
+  ///
+  /// Une carte ne porte **aucun rattachement** à la structure d'étude : la
+  /// portée n'est applicable que si [scopeArtifactOf] dit où le lire. Sans
+  /// cette projection, ce paramètre est **inerte** — le socle n'invente pas un
+  /// rattachement que la donnée ne porte pas.
+  final ZStudyScopeFilter? scopeFilter;
+
+  /// Projection d'une carte vers son rattachement, `null` si la carte n'en
+  /// porte pas. Sous un [scopeFilter] non vide, une carte dont la projection
+  /// rend `null` est **écartée** : elle n'est dans aucune portée.
+  final ZStudyArtifactOf<ZFlashcard>? scopeArtifactOf;
+
+  /// Instantané de structure servant l'extension aux descendants
+  /// (`ZStudyScopeFilter.includeDescendants`). Vide ⇒ seule la portée exacte
+  /// est reconnue.
+  final ZStudyStructureSnapshot scopeSnapshot;
+
+  /// Instant auquel les rattachements datés doivent être valides ; `null` ⇒
+  /// aucune restriction temporelle.
+  final DateTime? scopeAt;
 
   /// Libellés **INJECTÉS** (jamais codés en dur).
   final ZFlashcardListLabels labels;
@@ -541,24 +573,29 @@ class ZFlashcardListView extends StatefulWidget {
   final double? crossAxisItemHeight;
 
   /// Clé du champ de recherche (testabilité).
-  static const ValueKey<String> searchFieldKey =
-      ValueKey<String>('zFlashcardListView_search');
+  static const ValueKey<String> searchFieldKey = ValueKey<String>(
+    'zFlashcardListView_search',
+  );
 
   /// Clé de la grille (testabilité).
-  static const ValueKey<String> gridKey =
-      ValueKey<String>('zFlashcardListView_grid');
+  static const ValueKey<String> gridKey = ValueKey<String>(
+    'zFlashcardListView_grid',
+  );
 
   /// Clé de la liste réordonnable (mode manuel).
-  static const ValueKey<String> reorderableKey =
-      ValueKey<String>('zFlashcardListView_reorderable');
+  static const ValueKey<String> reorderableKey = ValueKey<String>(
+    'zFlashcardListView_reorderable',
+  );
 
   /// Clé de l'état vide / sans résultat.
-  static const ValueKey<String> emptyStateKey =
-      ValueKey<String>('zFlashcardListView_empty');
+  static const ValueKey<String> emptyStateKey = ValueKey<String>(
+    'zFlashcardListView_empty',
+  );
 
   /// Clé de la barre d'actions de lot (mode sélection — me-3).
-  static const ValueKey<String> batchBarKey =
-      ValueKey<String>('zFlashcardListView_batchBar');
+  static const ValueKey<String> batchBarKey = ValueKey<String>(
+    'zFlashcardListView_batchBar',
+  );
 
   @override
   State<ZFlashcardListView> createState() => _ZFlashcardListViewState();
@@ -642,7 +679,8 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
     // sinon la sélection courante sauterait à chaque rebuild du parent (AD-2).
     final oldSel = oldWidget.selection;
     final newSel = widget.selection;
-    final changed = (oldSel == null) != (newSel == null) ||
+    final changed =
+        (oldSel == null) != (newSel == null) ||
         oldSel?.controller != newSel?.controller;
     if (changed) {
       if (_ownsSelection) _selection?.dispose();
@@ -704,7 +742,18 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
       tagLabels: widget.tagLabels,
     );
 
-    final sorted = zSortFlashcards(filtered, widget.sortMode);
+    // Portée d'étude : appliquée là où les cartes sont DÉJÀ filtrées, jamais
+    // dans un dépôt. Sans filtre ou sans projection, `zFilterByScope` rend
+    // l'instance reçue — inertie stricte.
+    final scoped = zFilterByScope<ZFlashcard>(
+      filtered,
+      widget.scopeFilter,
+      artifactOf: widget.scopeArtifactOf,
+      snapshot: widget.scopeSnapshot,
+      at: widget.scopeAt,
+    );
+
+    final sorted = zSortFlashcards(scoped, widget.sortMode);
 
     // AD-38 : l'ordre manuel vient EXCLUSIVEMENT de ZFolderContentsOrder +
     // applyOrder (kernel) — jamais d'un champ `position` inline.
@@ -780,10 +829,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _SearchField(
-          controller: _searchController,
-          labels: widget.labels,
-        ),
+        _SearchField(controller: _searchController, labels: widget.labels),
         SizedBox(height: theme.gapM),
         // SM-1 : SEUL ce sous-arbre écoute la requête. Le champ ci-dessus est
         // HORS du builder ⇒ taper ne le reconstruit pas, le focus est conservé.
@@ -859,7 +905,8 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
             kind: ZBatchActionKind.move,
             label: move.label,
             icon: move.icon,
-            onSelected: () => unawaited(_runBatchMove(context, sel, controller, move)),
+            onSelected: () =>
+                unawaited(_runBatchMove(context, sel, controller, move)),
           ),
         ...sel.customActions,
       ],
@@ -951,7 +998,8 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
     // qu'une telle carte est visible — ABSENT, jamais cassé (patron D1/AD-44).
     // En su-8 la duplication sort par `onDuplicate` et n'entre jamais dans
     // `cards` (persistance = me-2) : ce garde est un filet défensif (AD-10/AD-2).
-    final reorderable = _canReorder &&
+    final reorderable =
+        _canReorder &&
         !_contentFilterActive(query) &&
         !visible.any((card) => card.id == null);
 
@@ -960,9 +1008,14 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
         visible: visible,
         onReorder: (oldIndex, newIndex) =>
             _reorder(visible, oldIndex, newIndex),
-        tileBuilder: (context, card, index) =>
-            _buildTile(context, card, visible, index,
-                grid: false, reorderable: true),
+        tileBuilder: (context, card, index) => _buildTile(
+          context,
+          card,
+          visible,
+          index,
+          grid: false,
+          reorderable: true,
+        ),
       );
     }
 
@@ -976,16 +1029,22 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
       // Hauteur d'item INJECTABLE ; `null` ⇒ en mode CARTE la hauteur FIXE
       // de référence (c'est elle qui rend la grille régulière et
       // confortable), en mode TUILE la hauteur historique (non-régression).
-      itemHeight: widget.crossAxisItemHeight ??
+      itemHeight:
+          widget.crossAxisItemHeight ??
           (_effectiveStyle == ZFlashcardListItemStyle.card
               ? ZFlashcardCardReference.cardHeight
               : _kTileHeight),
       // Plafond de colonnes transmis TEL QUEL à la primitive (`null` ⇒
       // illimité, rendu inchangé ; absurde ⇒ plancher, invariant AD-10).
       maxColumns: widget.crossAxisMaxColumns,
-      itemBuilder: (context, i) =>
-          _buildTile(context, visible[i], visible, i,
-              grid: true, reorderable: false),
+      itemBuilder: (context, i) => _buildTile(
+        context,
+        visible[i],
+        visible,
+        i,
+        grid: true,
+        reorderable: false,
+      ),
     );
   }
 
@@ -1006,12 +1065,12 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
     final controller = _selection;
     final Widget? leadingSelection =
         (sel != null && controller != null && card.id != null)
-            ? _SelectionCheckbox(
-                controller: controller,
-                card: card,
-                semanticLabelBuilder: sel.checkboxSemanticLabel,
-              )
-            : null;
+        ? _SelectionCheckbox(
+            controller: controller,
+            card: card,
+            semanticLabelBuilder: sel.checkboxSemanticLabel,
+          )
+        : null;
 
     if (_effectiveStyle == ZFlashcardListItemStyle.card) {
       final onOpen = widget.onOpen;
@@ -1085,8 +1144,8 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
     required bool reorderable,
   }) {
     final labels = widget.labels;
-    final availability = widget.aiAvailability ??
-        ZFeatureAvailabilityScope.of(context);
+    final availability =
+        widget.aiAvailability ?? ZFeatureAvailabilityScope.of(context);
 
     final onOpen = widget.onOpen;
     final onEdit = widget.onEdit;
@@ -1109,8 +1168,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
         kind: ZItemActionKind.rename,
         label: labels.editAction,
         icon: Icons.edit,
-        onSelected:
-            (!editable || onEdit == null) ? null : () => onEdit(card),
+        onSelected: (!editable || onEdit == null) ? null : () => onEdit(card),
       ),
       // FR-SU21 — « dupliquer pour modifier » : disponible MÊME (et surtout) sur
       // une carte en lecture seule. C'est sa raison d'être.
@@ -1131,15 +1189,24 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
         id: ZMenuEntryIds.moveUp,
         label: labels.moveUpAction,
         icon: Icons.arrow_upward,
-        onSelected: _moveCallback(card, visible, reorderable: reorderable, up: true),
+        onSelected: _moveCallback(
+          card,
+          visible,
+          reorderable: reorderable,
+          up: true,
+        ),
       ),
       ZItemAction(
         kind: ZItemActionKind.custom,
         id: ZMenuEntryIds.moveDown,
         label: labels.moveDownAction,
         icon: Icons.arrow_downward,
-        onSelected:
-            _moveCallback(card, visible, reorderable: reorderable, up: false),
+        onSelected: _moveCallback(
+          card,
+          visible,
+          reorderable: reorderable,
+          up: false,
+        ),
       ),
       // AC16 — « Générer avec l'IA » : ABSENTE sans port, par COMPOSITION.
       // `gate` fabrique le `null` que `onSelected` consomme DÉJÀ — jamais un
@@ -1158,8 +1225,9 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
         kind: ZItemActionKind.delete,
         label: labels.deleteAction,
         icon: Icons.delete,
-        onSelected:
-            (!editable || onDelete == null) ? null : () => onDelete(card),
+        onSelected: (!editable || onDelete == null)
+            ? null
+            : () => onDelete(card),
       ),
     ];
   }
@@ -1182,8 +1250,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
       for (final c in visible)
         if (c.id != null) c.id!,
     ];
-    final indices =
-        up ? zMoveUpIndices(ids, id) : zMoveDownIndices(ids, id);
+    final indices = up ? zMoveUpIndices(ids, id) : zMoveDownIndices(ids, id);
     if (indices == null) return null;
 
     // MÊME voie que le drag : `_reorder` → `zReorderFlashcards`.
@@ -1384,8 +1451,11 @@ class _FlashcardTile extends StatelessWidget {
                       padding: EdgeInsetsDirectional.only(start: theme.gapS),
                       child: Semantics(
                         label: labels.readOnlyBadge,
-                        child: Icon(Icons.lock_outline,
-                            size: 16, color: foreground),
+                        child: Icon(
+                          Icons.lock_outline,
+                          size: 16,
+                          color: foreground,
+                        ),
                       ),
                     ),
                   ZItemActionsMenu(
@@ -1451,7 +1521,8 @@ class _FlashcardTile extends StatelessWidget {
                   // l'échelle du texte (a11y) et casse le thème (FR-26/AD-13).
                   // `foreground` reste apposé (repli `const TextStyle()`).
                   style:
-                      (Theme.of(context).textTheme.labelSmall ?? const TextStyle())
+                      (Theme.of(context).textTheme.labelSmall ??
+                              const TextStyle())
                           .copyWith(color: foreground),
                 ),
               ],
@@ -1492,8 +1563,8 @@ class _CardTrailing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    final foreground = theme.labelColor ??
-        Theme.of(context).colorScheme.onSurfaceVariant;
+    final foreground =
+        theme.labelColor ?? Theme.of(context).colorScheme.onSurfaceVariant;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
@@ -1505,10 +1576,7 @@ class _CardTrailing extends StatelessWidget {
               child: Icon(Icons.lock_outline, size: 16, color: foreground),
             ),
           ),
-        ZItemActionsMenu(
-          actions: actions,
-          tooltip: labels.actionsMenuTooltip,
-        ),
+        ZItemActionsMenu(actions: actions, tooltip: labels.actionsMenuTooltip),
       ],
     );
   }
@@ -1547,11 +1615,7 @@ class _TypeBadge extends StatelessWidget {
 
 /// Étiquettes de la carte (AC3).
 class _Tags extends StatelessWidget {
-  const _Tags({
-    required this.tagIds,
-    required this.foreground,
-    this.tagLabels,
-  });
+  const _Tags({required this.tagIds, required this.foreground, this.tagLabels});
 
   final List<String> tagIds;
   final Map<String, String>? tagLabels;

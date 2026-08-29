@@ -3,6 +3,61 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.31.0 — 2026-08-29
+
+### Ajouté
+- `ZStudyUnitPicker` : sélecteur **arborescent** des conteneurs de structure
+  d'étude (organisations, unités, groupes, programmes…). Il reçoit une **valeur
+  immuable** — une forêt de `ZStudyUnitNode` (`ZStudyRef` + enfants) — et rend la
+  `ZStudyRef` **exacte** par `onSelect` : aucun port, aucun dépôt, aucun flux, et
+  donc rien à câbler côté hôte au-delà de la donnée qu'il possède déjà. Rangées
+  **virtualisées** (`ListView.builder`), indentation strictement égale à
+  `depth × indentWidth`, recherche locale sur libellé et code, pastille de la
+  palette signature sous le profil `legacy` (rien sous `neutral`), icône dérivée
+  de `ZStudyKindSpec.iconKey` via le seam d'icônes du socle. Une ontologie
+  fournie décide de **deux** choses seulement : l'icône, et le fait qu'un `kind`
+  déclaré **sans** la capacité `hierarchical` soit rendu **feuille** (ni
+  affordance de dépliage, ni enfant peint).
+- `ZStudyPathBar` : fil d'Ariane d'un `ZStudyContext`, **snapshot-first** — les
+  libellés viennent des instantanés portés par les `ZStudyRef`, sans aucune
+  résolution ni lecture au rendu. Les segments sont exactement
+  `ZStudyContext.refs` (l'ordre déclaré par le noyau, racine d'abord) ; chaque
+  segment est tapable et rend sa référence exacte. Séparateurs **directionnels**
+  (ils basculent en RTL) et débordement en menu par `maxVisibleSegments` — les
+  derniers segments restent peints, les premiers passent dans le menu et y
+  rendent la même référence.
+- `ZStudyScopeBar` : la portée courante en **puces retirables**, une par valeur
+  de chaque axe du `ZStudyScopeFilter` (portées, périodes, offres, matières,
+  cours, thèmes). Retirer une puce appelle `onScopeChanged` avec le filtre
+  **réduit exact** — les autres axes et `includeDescendants` restent inchangés.
+  Un filtre vide ne monte rien du tout.
+- `zFilterByScope` : application d'un `ZStudyScopeFilter` à une liste d'écran,
+  par délégation à `zMatchesScopeFilter` du noyau. Rend **l'instance reçue**
+  (`identical`) quand le filtre est `null`, vide, ou quand aucune projection
+  n'est fournie.
+- `ZFlashcardListView` gagne quatre paramètres **additifs** — `scopeFilter`,
+  `scopeArtifactOf`, `scopeSnapshot`, `scopeAt` — appliqués **après** les filtres
+  de recherche et **avant** le tri, là où les cartes sont déjà filtrées ; aucun
+  dépôt n'est touché.
+
+### Contrat
+- 🔴 **La structure académique n'est pas l'arborescence des dossiers.** Le
+  sélecteur sert au **rattachement** et à la **portée** — jamais à ranger des
+  dossiers. Il ne **modifie** rien : créer, renommer ou déplacer une unité
+  n'est pas de son ressort.
+- Une flashcard ne porte **aucun** rattachement à la structure : `scopeFilter`
+  n'est applicable que si `scopeArtifactOf` dit où le lire. Sans cette
+  projection, le paramètre est **inerte** et la liste est rendue à l'identique —
+  le socle n'invente pas un rattachement que la donnée ne porte pas. Sous un
+  filtre non vide **et** avec projection, une carte dont la projection rend
+  `null` est écartée : elle n'est dans aucune portée.
+- Sans instantané de structure, seule la portée **exacte** est reconnue :
+  `includeDescendants` n'étend une portée que là où l'instantané connaît
+  l'arbre.
+- Un nœud sans libellé ni code affiche son **identifiant** : le socle n'invente
+  aucun libellé et n'en traduit aucun (`labelBuilder` permet de décider
+  autrement).
+
 ## 3.30.0 — 2026-08-29
 
 ### Ajouté

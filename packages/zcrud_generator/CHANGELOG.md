@@ -2,6 +2,52 @@
 
 All notable changes to `zcrud_generator` are documented in this file.
 
+## 3.31.0 — 2026-08-29
+
+### Ajouté — les champs annotés HÉRITÉS entrent dans le code émis
+
+Un champ portant `@ZcrudField`/`@ZcrudId` déclaré sur une **super-classe** ou un
+mixin n'était pas collecté : il était absent de `toMap()`, du décodeur et de
+`$XxxFieldSpecs` de la sous-classe, **sans que le build ne rougisse** — la
+donnée disparaissait du document à la première écriture, sans aucun signal. Ces
+champs sont désormais collectés, dans l'ordre de **linéarisation Dart**
+(ancêtre le plus lointain → mixins → classe annotée), donc **avant** les champs
+locaux et de façon stable d'un build à l'autre.
+
+- Une redéclaration plus **proche** de la classe annotée masque la déclaration
+  de base : le champ n'est jamais collecté deux fois.
+- Un champ hérité annoté que le **constructeur non nommé n'expose pas** est un
+  **échec de build explicite** (le `.g.dart` ne compilerait pas) : le message
+  nomme le champ, sa classe de déclaration et prescrit `super.<champ>`.
+- Aucun modèle existant n'est touché : la seule base commune du dépôt
+  (`ZEntity`) ne porte aucun champ annoté.
+
+### Ajouté — les champs `Map<K, V>` sont (dé)sérialisables
+
+`Map` n'était classifiable ni comme type de champ ni comme type non
+sérialisable exploitable : les trois issues étaient perdantes (build rouge sans
+annotation, build rouge avec `@ZcrudField`, perte de données avec
+`@ZcrudIgnore`).
+
+- **Clé** : `String`, ou un enum non nullable — encodé par `.name`, la map
+  persistée restant à clés `String`.
+- **Valeur** : `dynamic`/`Object?` (recopiée telle quelle), scalaire supporté,
+  `DateTime` (ISO-8601), `ZDateRange`, enum, sous-modèle `@ZcrudModel`, ou
+  `List` de ceux-ci ; une valeur nullable est admise et son `null` **survit** au
+  round-trip.
+- **Décodage défensif** (AD-10) : une entrée dont la clé ou la valeur est
+  illisible est ignorée, le reste de la map survit, le parent ne lève jamais.
+- Type de champ inféré : `EditionFieldType.dynamicItem`, surchargeable par
+  `@ZcrudField(type:)`. Une map n'est **pas** marquée `multiple` — c'est un
+  dictionnaire, pas une multi-valeur.
+- Deux formes restent **refusées explicitement**, jamais approximées : une clé
+  d'un autre type, et une `List` de maps.
+
+Conséquence de contrat : un champ `Map` **non annoté** ne fait plus échouer le
+build. Il est ignoré en silence, comme tout champ non annoté d'un type
+sérialisable — `@ZcrudIgnore` reste la façon d'assumer explicitement
+l'exclusion.
+
 ## 3.3.0 — 2026-08-21
 
 ### Modifié — la dartdoc émise dans le code généré est documentaire
