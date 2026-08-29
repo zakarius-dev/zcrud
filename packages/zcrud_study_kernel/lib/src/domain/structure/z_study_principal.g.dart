@@ -213,6 +213,44 @@ extension ZStudyPrincipalZcrud on ZStudyPrincipal {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyPrincipal` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyPrincipal … with _$ZStudyPrincipalZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyPrincipalZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyPrincipalZcrud {
+  String? get id;
+  String get kind;
+  String? get label;
+  String? get avatarKey;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'kind': this.kind,
+    'label': this.label,
+    'avatar_key': this.avatarKey,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyPrincipal copyWith({
+    Object? id = _$undefined,
+    Object? kind = _$undefined,
+    Object? label = _$undefined,
+    Object? avatarKey = _$undefined,
+  }) => ZStudyPrincipal(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    kind: identical(kind, _$undefined) ? this.kind : kind as String,
+    label: identical(label, _$undefined) ? this.label : label as String?,
+    avatarKey: identical(avatarKey, _$undefined)
+        ? this.avatarKey
+        : avatarKey as String?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyPrincipalFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

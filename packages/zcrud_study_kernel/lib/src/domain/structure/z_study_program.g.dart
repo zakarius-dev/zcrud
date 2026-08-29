@@ -244,6 +244,72 @@ extension ZStudyProgramZcrud on ZStudyProgram {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyProgram` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyProgram … with _$ZStudyProgramZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyProgramZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyProgramZcrud {
+  String? get id;
+  String? get organizationId;
+  String? get parentId;
+  String get kind;
+  String? get code;
+  String get label;
+  String? get credentialKind;
+  String? get duration;
+  List<String> get ancestorIds;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'organization_id': this.organizationId,
+    'parent_id': this.parentId,
+    'kind': this.kind,
+    'code': this.code,
+    'label': this.label,
+    'credential_kind': this.credentialKind,
+    'duration': this.duration,
+    'ancestor_ids': this.ancestorIds,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyProgram copyWith({
+    Object? id = _$undefined,
+    Object? organizationId = _$undefined,
+    Object? parentId = _$undefined,
+    Object? kind = _$undefined,
+    Object? code = _$undefined,
+    Object? label = _$undefined,
+    Object? credentialKind = _$undefined,
+    Object? duration = _$undefined,
+    Object? ancestorIds = _$undefined,
+  }) => ZStudyProgram(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    organizationId: identical(organizationId, _$undefined)
+        ? this.organizationId
+        : organizationId as String?,
+    parentId: identical(parentId, _$undefined)
+        ? this.parentId
+        : parentId as String?,
+    kind: identical(kind, _$undefined) ? this.kind : kind as String,
+    code: identical(code, _$undefined) ? this.code : code as String?,
+    label: identical(label, _$undefined) ? this.label : label as String,
+    credentialKind: identical(credentialKind, _$undefined)
+        ? this.credentialKind
+        : credentialKind as String?,
+    duration: identical(duration, _$undefined)
+        ? this.duration
+        : duration as String?,
+    ancestorIds: identical(ancestorIds, _$undefined)
+        ? this.ancestorIds
+        : ancestorIds as List<String>,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyProgramFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

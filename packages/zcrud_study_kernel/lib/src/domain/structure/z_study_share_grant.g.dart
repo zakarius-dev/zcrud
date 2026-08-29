@@ -215,6 +215,48 @@ extension ZStudyShareGrantZcrud on ZStudyShareGrant {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyShareGrant` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyShareGrant … with _$ZStudyShareGrantZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyShareGrantZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyShareGrantZcrud {
+  String? get id;
+  String get accessKey;
+  DateTime? get validFrom;
+  DateTime? get validTo;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'access_key': this.accessKey,
+    'valid_from': this.validFrom?.toIso8601String(),
+    'valid_to': this.validTo?.toIso8601String(),
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyShareGrant copyWith({
+    Object? id = _$undefined,
+    Object? accessKey = _$undefined,
+    Object? validFrom = _$undefined,
+    Object? validTo = _$undefined,
+  }) => ZStudyShareGrant(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    accessKey: identical(accessKey, _$undefined)
+        ? this.accessKey
+        : accessKey as String,
+    validFrom: identical(validFrom, _$undefined)
+        ? this.validFrom
+        : validFrom as DateTime?,
+    validTo: identical(validTo, _$undefined)
+        ? this.validTo
+        : validTo as DateTime?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyShareGrantFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

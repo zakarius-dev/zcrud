@@ -222,6 +222,54 @@ extension ZStudySubjectZcrud on ZStudySubject {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudySubject` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudySubject … with _$ZStudySubjectZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudySubjectZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudySubjectZcrud {
+  String? get id;
+  String? get organizationId;
+  String get kind;
+  String? get code;
+  String get label;
+  String get colorKey;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'organization_id': this.organizationId,
+    'kind': this.kind,
+    'code': this.code,
+    'label': this.label,
+    'color_key': this.colorKey,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudySubject copyWith({
+    Object? id = _$undefined,
+    Object? organizationId = _$undefined,
+    Object? kind = _$undefined,
+    Object? code = _$undefined,
+    Object? label = _$undefined,
+    Object? colorKey = _$undefined,
+  }) => ZStudySubject(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    organizationId: identical(organizationId, _$undefined)
+        ? this.organizationId
+        : organizationId as String?,
+    kind: identical(kind, _$undefined) ? this.kind : kind as String,
+    code: identical(code, _$undefined) ? this.code : code as String?,
+    label: identical(label, _$undefined) ? this.label : label as String,
+    colorKey: identical(colorKey, _$undefined)
+        ? this.colorKey
+        : colorKey as String,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudySubjectFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

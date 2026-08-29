@@ -231,6 +231,60 @@ extension ZStudyOrganizationZcrud on ZStudyOrganization {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyOrganization` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyOrganization … with _$ZStudyOrganizationZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyOrganizationZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyOrganizationZcrud {
+  String? get id;
+  String? get workspaceId;
+  String? get parentId;
+  String get kind;
+  String get label;
+  String? get code;
+  List<String> get ancestorIds;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'workspace_id': this.workspaceId,
+    'parent_id': this.parentId,
+    'kind': this.kind,
+    'label': this.label,
+    'code': this.code,
+    'ancestor_ids': this.ancestorIds,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyOrganization copyWith({
+    Object? id = _$undefined,
+    Object? workspaceId = _$undefined,
+    Object? parentId = _$undefined,
+    Object? kind = _$undefined,
+    Object? label = _$undefined,
+    Object? code = _$undefined,
+    Object? ancestorIds = _$undefined,
+  }) => ZStudyOrganization(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    workspaceId: identical(workspaceId, _$undefined)
+        ? this.workspaceId
+        : workspaceId as String?,
+    parentId: identical(parentId, _$undefined)
+        ? this.parentId
+        : parentId as String?,
+    kind: identical(kind, _$undefined) ? this.kind : kind as String,
+    label: identical(label, _$undefined) ? this.label : label as String,
+    code: identical(code, _$undefined) ? this.code : code as String?,
+    ancestorIds: identical(ancestorIds, _$undefined)
+        ? this.ancestorIds
+        : ancestorIds as List<String>,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyOrganizationFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

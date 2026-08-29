@@ -222,6 +222,52 @@ extension ZStudyCompetencyFrameworkZcrud on ZStudyCompetencyFramework {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyCompetencyFramework` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyCompetencyFramework … with _$ZStudyCompetencyFrameworkZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyCompetencyFrameworkZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyCompetencyFrameworkZcrud {
+  String? get id;
+  String? get organizationId;
+  String? get code;
+  String get label;
+  String get version;
+  String get status;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'organization_id': this.organizationId,
+    'code': this.code,
+    'label': this.label,
+    'version': this.version,
+    'status': this.status,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyCompetencyFramework copyWith({
+    Object? id = _$undefined,
+    Object? organizationId = _$undefined,
+    Object? code = _$undefined,
+    Object? label = _$undefined,
+    Object? version = _$undefined,
+    Object? status = _$undefined,
+  }) => ZStudyCompetencyFramework(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    organizationId: identical(organizationId, _$undefined)
+        ? this.organizationId
+        : organizationId as String?,
+    code: identical(code, _$undefined) ? this.code : code as String?,
+    label: identical(label, _$undefined) ? this.label : label as String,
+    version: identical(version, _$undefined) ? this.version : version as String,
+    status: identical(status, _$undefined) ? this.status : status as String,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyCompetencyFrameworkFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

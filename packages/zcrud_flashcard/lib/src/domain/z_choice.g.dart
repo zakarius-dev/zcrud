@@ -202,6 +202,36 @@ extension ZChoiceZcrud on ZChoice {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZChoice` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZChoice … with _$ZChoiceZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZChoiceZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZChoiceZcrud {
+  String get content;
+  bool get isCorrect;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'content': this.content,
+    'is_correct': this.isCorrect,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZChoice copyWith({
+    Object? content = _$undefined,
+    Object? isCorrect = _$undefined,
+  }) => ZChoice(
+    content: identical(content, _$undefined) ? this.content : content as String,
+    isCorrect: identical(isCorrect, _$undefined)
+        ? this.isCorrect
+        : isCorrect as bool,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZChoiceFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'content', type: EditionFieldType.text, label: 'Choix'),

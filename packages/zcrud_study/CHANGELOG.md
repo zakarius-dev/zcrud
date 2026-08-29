@@ -3,6 +3,48 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.33.0 — 2026-08-29
+
+### Ajouté
+- `ZStudySharingReadPort` — port **compagnon** de lecture de la galerie
+  publique : `watchPublicFolders({ZDataRequest? request})` (flux **nu**,
+  pagination par le `ZDataRequest` neutre du socle),
+  `publicFolderById(String)` rendant `ZResult<ZPublicStudyFolder?>`
+  (`Right(null)` = non publié, distinct d'un `Left`), et `isAvailable` pour
+  couper la lecture à chaud. Inerte fourni : `ZInertStudySharingReadPort`
+  (`const`).
+- `ZStudySharingAdminPort` — port **compagnon** d'administration :
+  `revokeMembership(String membershipId)`,
+  `setJoinableByLink(String folderId, bool value)`,
+  `setMembersCanInvite(String folderId, bool value)` (tous
+  `Future<ZResult<Unit>>`), plus `isAvailable`. Inerte fourni :
+  `ZInertStudySharingAdminPort` (`const`).
+- `ZPublicGalleryView.readPort` / `.readRequest` : la galerie sait
+  s'alimenter seule. Le flux `folders` devient **optionnel** et reste
+  **prioritaire** quand les deux voies sont fournies ; le flux du port est
+  abonné **une seule fois** (un rebuild ne réabonne pas).
+- `ZFolderSharingSheet.adminPort` : la révocation d'adhésion et les deux
+  interrupteurs de partage existent désormais **par port OU par callback**.
+  Le callback historique (`onRevokeMembership`, `onSetJoinableWithLink`,
+  `onSetMembersCanInvite`) **prime** quand les deux sont présents.
+
+### Modifié
+- Les interrupteurs de partage portent un **verrou d'occupation par
+  interrupteur** : une seconde bascule pendant l'appel en vol n'émet plus un
+  second appel.
+
+### Notes de compatibilité
+- **Aucune méthode n'a été ajoutée à `ZStudySharingPort`** : un implémenteur
+  de ce contrat n'a **rien** à changer. Les capacités neuves vivent dans des
+  ports compagnons **additifs**, consommés seulement s'ils sont fournis et
+  `isAvailable`.
+- Un hôte qui **compensait** un de ces manques (flux de galerie câblé à la
+  main, callbacks de révocation ou de drapeaux) garde son comportement à
+  l'octet : sa voie prime. Il peut migrer vers un compagnon à son rythme —
+  mais **fournir les deux ne double aucun appel**, le callback l'emporte.
+- Portail fail-closed inchangé : une ACL refusante refuse les deux surfaces,
+  compagnons fournis ou non.
+
 ## 3.31.0 — 2026-08-29
 
 ### Ajouté

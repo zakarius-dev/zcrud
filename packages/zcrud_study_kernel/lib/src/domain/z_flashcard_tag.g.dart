@@ -206,6 +206,40 @@ extension ZFlashcardTagZcrud on ZFlashcardTag {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZFlashcardTag` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZFlashcardTag … with _$ZFlashcardTagZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZFlashcardTagZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZFlashcardTagZcrud {
+  String? get id;
+  String get title;
+  String get colorKey;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'title': this.title,
+    'color_key': this.colorKey,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZFlashcardTag copyWith({
+    Object? id = _$undefined,
+    Object? title = _$undefined,
+    Object? colorKey = _$undefined,
+  }) => ZFlashcardTag(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    title: identical(title, _$undefined) ? this.title : title as String,
+    colorKey: identical(colorKey, _$undefined)
+        ? this.colorKey
+        : colorKey as String,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZFlashcardTagFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

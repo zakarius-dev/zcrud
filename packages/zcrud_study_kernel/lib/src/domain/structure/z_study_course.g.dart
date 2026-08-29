@@ -234,6 +234,66 @@ extension ZStudyCourseZcrud on ZStudyCourse {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyCourse` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyCourse … with _$ZStudyCourseZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyCourseZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyCourseZcrud {
+  String? get id;
+  String? get organizationId;
+  String? get subjectId;
+  String get kind;
+  String? get code;
+  String get label;
+  double? get credits;
+  double? get expectedHours;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'organization_id': this.organizationId,
+    'subject_id': this.subjectId,
+    'kind': this.kind,
+    'code': this.code,
+    'label': this.label,
+    'credits': this.credits,
+    'expected_hours': this.expectedHours,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyCourse copyWith({
+    Object? id = _$undefined,
+    Object? organizationId = _$undefined,
+    Object? subjectId = _$undefined,
+    Object? kind = _$undefined,
+    Object? code = _$undefined,
+    Object? label = _$undefined,
+    Object? credits = _$undefined,
+    Object? expectedHours = _$undefined,
+  }) => ZStudyCourse(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    organizationId: identical(organizationId, _$undefined)
+        ? this.organizationId
+        : organizationId as String?,
+    subjectId: identical(subjectId, _$undefined)
+        ? this.subjectId
+        : subjectId as String?,
+    kind: identical(kind, _$undefined) ? this.kind : kind as String,
+    code: identical(code, _$undefined) ? this.code : code as String?,
+    label: identical(label, _$undefined) ? this.label : label as String,
+    credits: identical(credits, _$undefined)
+        ? this.credits
+        : credits as double?,
+    expectedHours: identical(expectedHours, _$undefined)
+        ? this.expectedHours
+        : expectedHours as double?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyCourseFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

@@ -209,6 +209,42 @@ extension ZAnnotationBoundsZcrud on ZAnnotationBounds {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZAnnotationBounds` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZAnnotationBounds … with _$ZAnnotationBoundsZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZAnnotationBoundsZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZAnnotationBoundsZcrud {
+  double get x;
+  double get y;
+  double get width;
+  double get height;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'x': this.x,
+    'y': this.y,
+    'width': this.width,
+    'height': this.height,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZAnnotationBounds copyWith({
+    Object? x = _$undefined,
+    Object? y = _$undefined,
+    Object? width = _$undefined,
+    Object? height = _$undefined,
+  }) => ZAnnotationBounds(
+    x: identical(x, _$undefined) ? this.x : x as double,
+    y: identical(y, _$undefined) ? this.y : y as double,
+    width: identical(width, _$undefined) ? this.width : width as double,
+    height: identical(height, _$undefined) ? this.height : height as double,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZAnnotationBoundsFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'x', type: EditionFieldType.float),

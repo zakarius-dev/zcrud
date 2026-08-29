@@ -196,6 +196,29 @@ extension ZFolderContentsOrderZcrud on ZFolderContentsOrder {
       );
 }
 
+/// `toMap()`/`copyWith()` de `ZFolderContentsOrder` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZFolderContentsOrder … with _$ZFolderContentsOrderZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZFolderContentsOrderZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZFolderContentsOrderZcrud {
+  String get folderId;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{'folder_id': this.folderId};
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZFolderContentsOrder copyWith({Object? folderId = _$undefined}) =>
+      ZFolderContentsOrder(
+        folderId: identical(folderId, _$undefined)
+            ? this.folderId
+            : folderId as String,
+      );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZFolderContentsOrderFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'folder_id', type: EditionFieldType.text),

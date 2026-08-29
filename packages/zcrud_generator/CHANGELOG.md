@@ -2,6 +2,44 @@
 
 All notable changes to `zcrud_generator` are documented in this file.
 
+## 3.33.0 — 2026-08-29
+
+### Ajouté — le code émis est aussi disponible en MEMBRES D'INSTANCE (mixin `_$XxxZcrud`)
+
+`toMap()` et `copyWith()` n'étaient émis que dans l'extension publique
+`XxxZcrud`. Un membre d'extension n'est ni virtuel ni héritable : il **ne
+satisfait jamais** un membre abstrait déclaré par une super-classe, et il reste
+invisible à tout appel fait à travers un type de base
+(`(model as Base).toMap()`). Une hiérarchie dont la racine déclare `toMap()` /
+`copyWith()` abstraits — la forme la plus répandue chez les hôtes portant un
+modèle dynamique — ne pouvait donc pas adopter le codegen du tout.
+
+Le générateur émet désormais, **en plus** de l'extension, un mixin
+`_$XxxZcrud` portant les **mêmes** `toMap()`/`copyWith()` en membres
+d'instance, plus un getter abstrait par champ persisté. Application côté
+modèle, facultative, en une ligne :
+
+```dart
+class Facture extends DynamicModel with _$FactureZcrud { … }
+```
+
+Le mixin ne déclare aucun champ d'instance : les constructeurs `const` du
+modèle restent `const`. Les champs déclarés par la classe qui l'applique
+deviennent des `@override` des getters abstraits (lint `annotate_overrides`).
+
+### Inchangé — la map produite, à l'octet
+
+Les corps des deux émissions proviennent d'**une seule source de texte** : le
+`toMap()` du mixin et celui de l'extension sont identiques caractère par
+caractère, et une garde le vérifie sur le texte émis. Appliquer le mixin ne
+change donc pas d'un octet le document persisté. L'extension `XxxZcrud` est
+conservée telle quelle : un modèle qui n'applique pas le mixin ne voit
+strictement aucun changement de comportement.
+
+Les fichiers `*.g.dart` de tous les paquets sont réécrits (un bloc `mixin` en
+plus) — **diff de forme, pas de fond** : aucun symbole existant n'est renommé,
+déplacé ni supprimé, et la (dé)sérialisation est inchangée.
+
 ## 3.31.0 — 2026-08-29
 
 ### Ajouté — les champs annotés HÉRITÉS entrent dans le code émis

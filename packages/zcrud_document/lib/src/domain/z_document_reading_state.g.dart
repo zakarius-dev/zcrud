@@ -218,6 +218,48 @@ extension ZDocumentReadingStateZcrud on ZDocumentReadingState {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZDocumentReadingState` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZDocumentReadingState … with _$ZDocumentReadingStateZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZDocumentReadingStateZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZDocumentReadingStateZcrud {
+  String get docId;
+  int get currentPage;
+  int? get pageCount;
+  ZDocumentViewerPrefs get prefs;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'doc_id': this.docId,
+    'current_page': this.currentPage,
+    'page_count': this.pageCount,
+    'prefs': this.prefs.toMap(),
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZDocumentReadingState copyWith({
+    Object? docId = _$undefined,
+    Object? currentPage = _$undefined,
+    Object? pageCount = _$undefined,
+    Object? prefs = _$undefined,
+  }) => ZDocumentReadingState(
+    docId: identical(docId, _$undefined) ? this.docId : docId as String,
+    currentPage: identical(currentPage, _$undefined)
+        ? this.currentPage
+        : currentPage as int,
+    pageCount: identical(pageCount, _$undefined)
+        ? this.pageCount
+        : pageCount as int?,
+    prefs: identical(prefs, _$undefined)
+        ? this.prefs
+        : prefs as ZDocumentViewerPrefs,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZDocumentReadingStateFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'doc_id', type: EditionFieldType.text),

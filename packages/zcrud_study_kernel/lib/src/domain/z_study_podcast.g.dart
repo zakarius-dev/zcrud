@@ -248,6 +248,76 @@ extension ZStudyPodcastZcrud on ZStudyPodcast {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyPodcast` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyPodcast … with _$ZStudyPodcastZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyPodcastZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyPodcastZcrud {
+  String? get id;
+  ZPodcastSourceKind get sourceKind;
+  String get sourceId;
+  String get folderId;
+  ZPodcastMode get mode;
+  String get sourceHash;
+  String get resultRef;
+  ZPodcastStatus get status;
+  DateTime? get createdAt;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'source_kind': this.sourceKind.name,
+    'source_id': this.sourceId,
+    'folder_id': this.folderId,
+    'mode': this.mode.name,
+    'source_hash': this.sourceHash,
+    'result_ref': this.resultRef,
+    'status': this.status.name,
+    'created_at': this.createdAt?.toIso8601String(),
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyPodcast copyWith({
+    Object? id = _$undefined,
+    Object? sourceKind = _$undefined,
+    Object? sourceId = _$undefined,
+    Object? folderId = _$undefined,
+    Object? mode = _$undefined,
+    Object? sourceHash = _$undefined,
+    Object? resultRef = _$undefined,
+    Object? status = _$undefined,
+    Object? createdAt = _$undefined,
+  }) => ZStudyPodcast(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    sourceKind: identical(sourceKind, _$undefined)
+        ? this.sourceKind
+        : sourceKind as ZPodcastSourceKind,
+    sourceId: identical(sourceId, _$undefined)
+        ? this.sourceId
+        : sourceId as String,
+    folderId: identical(folderId, _$undefined)
+        ? this.folderId
+        : folderId as String,
+    mode: identical(mode, _$undefined) ? this.mode : mode as ZPodcastMode,
+    sourceHash: identical(sourceHash, _$undefined)
+        ? this.sourceHash
+        : sourceHash as String,
+    resultRef: identical(resultRef, _$undefined)
+        ? this.resultRef
+        : resultRef as String,
+    status: identical(status, _$undefined)
+        ? this.status
+        : status as ZPodcastStatus,
+    createdAt: identical(createdAt, _$undefined)
+        ? this.createdAt
+        : createdAt as DateTime?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyPodcastFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

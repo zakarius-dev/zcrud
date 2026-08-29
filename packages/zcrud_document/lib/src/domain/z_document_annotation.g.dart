@@ -248,6 +248,72 @@ extension ZDocumentAnnotationZcrud on ZDocumentAnnotation {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZDocumentAnnotation` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZDocumentAnnotation … with _$ZDocumentAnnotationZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZDocumentAnnotationZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZDocumentAnnotationZcrud {
+  String? get id;
+  String get docId;
+  int get page;
+  ZDocumentAnnotationKind get kind;
+  String get colorKey;
+  ZAnnotationBounds get bounds;
+  List<ZAnnotationBounds>? get rects;
+  String? get text;
+  DateTime? get createdAt;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'doc_id': this.docId,
+    'page': this.page,
+    'kind': this.kind.name,
+    'color_key': this.colorKey,
+    'bounds': this.bounds.toMap(),
+    'rects': this.rects?.map((e) => e.toMap()).toList(),
+    'text': this.text,
+    'created_at': this.createdAt?.toIso8601String(),
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZDocumentAnnotation copyWith({
+    Object? id = _$undefined,
+    Object? docId = _$undefined,
+    Object? page = _$undefined,
+    Object? kind = _$undefined,
+    Object? colorKey = _$undefined,
+    Object? bounds = _$undefined,
+    Object? rects = _$undefined,
+    Object? text = _$undefined,
+    Object? createdAt = _$undefined,
+  }) => ZDocumentAnnotation(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    docId: identical(docId, _$undefined) ? this.docId : docId as String,
+    page: identical(page, _$undefined) ? this.page : page as int,
+    kind: identical(kind, _$undefined)
+        ? this.kind
+        : kind as ZDocumentAnnotationKind,
+    colorKey: identical(colorKey, _$undefined)
+        ? this.colorKey
+        : colorKey as String,
+    bounds: identical(bounds, _$undefined)
+        ? this.bounds
+        : bounds as ZAnnotationBounds,
+    rects: identical(rects, _$undefined)
+        ? this.rects
+        : rects as List<ZAnnotationBounds>?,
+    text: identical(text, _$undefined) ? this.text : text as String?,
+    createdAt: identical(createdAt, _$undefined)
+        ? this.createdAt
+        : createdAt as DateTime?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZDocumentAnnotationFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

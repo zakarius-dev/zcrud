@@ -243,6 +243,74 @@ extension ZRepetitionInfoZcrud on ZRepetitionInfo {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZRepetitionInfo` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZRepetitionInfo … with _$ZRepetitionInfoZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZRepetitionInfoZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZRepetitionInfoZcrud {
+  String get flashcardId;
+  String get folderId;
+  int get interval;
+  int get repetitions;
+  double get easeFactor;
+  DateTime? get nextReviewDate;
+  DateTime? get learnedAt;
+  int? get lastQuality;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'flashcard_id': this.flashcardId,
+    'folder_id': this.folderId,
+    'interval': this.interval,
+    'repetitions': this.repetitions,
+    'ease_factor': this.easeFactor,
+    'next_review_date': this.nextReviewDate?.toIso8601String(),
+    'learned_at': this.learnedAt?.toIso8601String(),
+    'last_quality': this.lastQuality,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZRepetitionInfo copyWith({
+    Object? flashcardId = _$undefined,
+    Object? folderId = _$undefined,
+    Object? interval = _$undefined,
+    Object? repetitions = _$undefined,
+    Object? easeFactor = _$undefined,
+    Object? nextReviewDate = _$undefined,
+    Object? learnedAt = _$undefined,
+    Object? lastQuality = _$undefined,
+  }) => ZRepetitionInfo(
+    flashcardId: identical(flashcardId, _$undefined)
+        ? this.flashcardId
+        : flashcardId as String,
+    folderId: identical(folderId, _$undefined)
+        ? this.folderId
+        : folderId as String,
+    interval: identical(interval, _$undefined)
+        ? this.interval
+        : interval as int,
+    repetitions: identical(repetitions, _$undefined)
+        ? this.repetitions
+        : repetitions as int,
+    easeFactor: identical(easeFactor, _$undefined)
+        ? this.easeFactor
+        : easeFactor as double,
+    nextReviewDate: identical(nextReviewDate, _$undefined)
+        ? this.nextReviewDate
+        : nextReviewDate as DateTime?,
+    learnedAt: identical(learnedAt, _$undefined)
+        ? this.learnedAt
+        : learnedAt as DateTime?,
+    lastQuality: identical(lastQuality, _$undefined)
+        ? this.lastQuality
+        : lastQuality as int?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZRepetitionInfoFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'flashcard_id', type: EditionFieldType.text),

@@ -229,6 +229,60 @@ extension ZStudyClassificationZcrud on ZStudyClassification {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyClassification` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyClassification … with _$ZStudyClassificationZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyClassificationZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyClassificationZcrud {
+  String? get id;
+  String get vocabularyKey;
+  String get valueKey;
+  String? get periodId;
+  DateTime? get validFrom;
+  DateTime? get validTo;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'vocabulary_key': this.vocabularyKey,
+    'value_key': this.valueKey,
+    'period_id': this.periodId,
+    'valid_from': this.validFrom?.toIso8601String(),
+    'valid_to': this.validTo?.toIso8601String(),
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyClassification copyWith({
+    Object? id = _$undefined,
+    Object? vocabularyKey = _$undefined,
+    Object? valueKey = _$undefined,
+    Object? periodId = _$undefined,
+    Object? validFrom = _$undefined,
+    Object? validTo = _$undefined,
+  }) => ZStudyClassification(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    vocabularyKey: identical(vocabularyKey, _$undefined)
+        ? this.vocabularyKey
+        : vocabularyKey as String,
+    valueKey: identical(valueKey, _$undefined)
+        ? this.valueKey
+        : valueKey as String,
+    periodId: identical(periodId, _$undefined)
+        ? this.periodId
+        : periodId as String?,
+    validFrom: identical(validFrom, _$undefined)
+        ? this.validFrom
+        : validFrom as DateTime?,
+    validTo: identical(validTo, _$undefined)
+        ? this.validTo
+        : validTo as DateTime?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyClassificationFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

@@ -252,6 +252,82 @@ extension ZStudyCurriculumZcrud on ZStudyCurriculum {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyCurriculum` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyCurriculum … with _$ZStudyCurriculumZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyCurriculumZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyCurriculumZcrud {
+  String? get id;
+  String? get organizationId;
+  String? get subjectId;
+  String? get courseId;
+  String? get programId;
+  String? get code;
+  String get label;
+  String get version;
+  String get status;
+  DateTime? get effectiveFrom;
+  DateTime? get effectiveTo;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'organization_id': this.organizationId,
+    'subject_id': this.subjectId,
+    'course_id': this.courseId,
+    'program_id': this.programId,
+    'code': this.code,
+    'label': this.label,
+    'version': this.version,
+    'status': this.status,
+    'effective_from': this.effectiveFrom?.toIso8601String(),
+    'effective_to': this.effectiveTo?.toIso8601String(),
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyCurriculum copyWith({
+    Object? id = _$undefined,
+    Object? organizationId = _$undefined,
+    Object? subjectId = _$undefined,
+    Object? courseId = _$undefined,
+    Object? programId = _$undefined,
+    Object? code = _$undefined,
+    Object? label = _$undefined,
+    Object? version = _$undefined,
+    Object? status = _$undefined,
+    Object? effectiveFrom = _$undefined,
+    Object? effectiveTo = _$undefined,
+  }) => ZStudyCurriculum(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    organizationId: identical(organizationId, _$undefined)
+        ? this.organizationId
+        : organizationId as String?,
+    subjectId: identical(subjectId, _$undefined)
+        ? this.subjectId
+        : subjectId as String?,
+    courseId: identical(courseId, _$undefined)
+        ? this.courseId
+        : courseId as String?,
+    programId: identical(programId, _$undefined)
+        ? this.programId
+        : programId as String?,
+    code: identical(code, _$undefined) ? this.code : code as String?,
+    label: identical(label, _$undefined) ? this.label : label as String,
+    version: identical(version, _$undefined) ? this.version : version as String,
+    status: identical(status, _$undefined) ? this.status : status as String,
+    effectiveFrom: identical(effectiveFrom, _$undefined)
+        ? this.effectiveFrom
+        : effectiveFrom as DateTime?,
+    effectiveTo: identical(effectiveTo, _$undefined)
+        ? this.effectiveTo
+        : effectiveTo as DateTime?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyCurriculumFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

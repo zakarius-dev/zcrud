@@ -11,6 +11,11 @@
 ///   2. l'extension publique `XxxZcrud` — `toMap()` (snake_case, enum `.name`
 ///      camelCase, dates ISO-8601, récursion sous-objets) + `copyWith()` **à
 ///      sentinelle** (reset-`null` distinct de « non fourni ») ;
+///   2 bis. le mixin `_$XxxZcrud` — **les mêmes** `toMap()`/`copyWith()`, mais
+///      en membres d'INSTANCE, à appliquer (`class Xxx … with _$XxxZcrud`)
+///      quand un membre d'extension ne suffit pas : une extension ne satisfait
+///      jamais un membre abstrait hérité et reste invisible à un appel fait à
+///      travers un type de base. Application facultative, corps identiques ;
 ///   3. `$XxxFieldSpecs` — `List<ZFieldSpec>` projeté 1:1 de `@ZcrudField`, avec
 ///      **inférence de type** si `@ZcrudField.type == null` ;
 ///   4. `registerXxx(ZcrudRegistry)` — câblage `kind → (fromMap, toMap,
@@ -184,6 +189,8 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       ..writeln(_emitFromMap(className, fields))
       ..writeln()
       ..writeln(_emitExtension(className, fields))
+      ..writeln()
+      ..writeln(_emitInstanceMixin(className, fields))
       ..writeln()
       ..writeln(_emitFieldSpecs(className, fields))
       ..writeln()
@@ -1294,7 +1301,13 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   // Émission — extension publique : toMap + copyWith sentinelle.
   // --------------------------------------------------------------------------
 
-  String _emitExtension(String className, List<_Field> fields) {
+  /// Corps PARTAGÉ des deux émissions de `toMap()`/`copyWith()` — l'extension
+  /// [_emitExtension] et le mixin [_emitInstanceMixin].
+  ///
+  /// Le texte est produit **une seule fois** : appliquer le mixin ne peut donc
+  /// pas changer d'un octet la map produite par l'extension. C'est la propriété
+  /// que la garde d'identité de sérialisation vérifie.
+  String _emitSerializationMembers(String className, List<_Field> fields) {
     // Un miroir de clé RÉSERVÉE de sync (`updated_at`,
     // `is_deleted` — possédées par la couche de sync) n'est émis que
     // s'il porte RÉELLEMENT une valeur.
@@ -1324,8 +1337,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
             '${f.typeStr},')
         .join('\n');
 
-    return 'extension ${className}Zcrud on $className {\n'
-        '  /// Sérialise vers la map persistée (snake_case, enum camelCase, '
+    return '  /// Sérialise vers la map persistée (snake_case, enum camelCase, '
         'ISO-8601).\n'
         '  Map<String, dynamic> toMap() => <String, dynamic>{\n'
         '$toMapEntries\n'
@@ -1333,7 +1345,64 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         '  /// Copie avec sentinelle : un argument omis préserve la valeur, '
         '`null` explicite la remet à `null`.\n'
         '  $className copyWith({\n$copyParams\n  }) =>\n'
-        '      $className(\n$copyArgs\n      );\n'
+        '      $className(\n$copyArgs\n      );';
+  }
+
+  String _emitExtension(String className, List<_Field> fields) =>
+      'extension ${className}Zcrud on $className {\n'
+      '${_emitSerializationMembers(className, fields)}\n'
+      '}';
+
+  /// Émet le mixin `_\$XxxZcrud` — les MÊMES `toMap()`/`copyWith()`, mais en
+  /// **membres d'instance**.
+  ///
+  /// ## Pourquoi il existe en plus de l'extension
+  ///
+  /// Un membre d'**extension** n'est ni virtuel ni héritable : il ne satisfait
+  /// **jamais** un membre abstrait déclaré par une super-classe, et il est
+  /// invisible à tout appel fait à travers un type de base (`(model as
+  /// Base).toMap()`). Une hiérarchie dont la racine déclare `toMap()` /
+  /// `copyWith()` abstraits ne peut donc PAS adopter le codegen par la seule
+  /// extension. Le mixin, lui, apporte des membres d'instance réels : il
+  /// implémente le membre abstrait hérité et répond en appel polymorphe.
+  ///
+  /// ## Comment on l'applique
+  ///
+  /// ```dart
+  /// class Facture extends DynamicModel with _$FactureZcrud { … }
+  /// ```
+  ///
+  /// L'application est **facultative** : sans elle, rien ne change, l'extension
+  /// reste la voie d'appel. Avec elle, le membre d'instance masque le membre
+  /// d'extension homonyme — les deux corps étant émis depuis la même source de
+  /// texte ([_emitSerializationMembers]), la map produite est identique.
+  ///
+  /// Le mixin déclare un **getter abstrait par champ persisté** : la classe les
+  /// satisfait avec ses propres champs, qu'ils soient déclarés localement ou
+  /// hérités. Il ne déclare **aucun champ d'instance**, ce qui laisse intacts
+  /// les constructeurs `const` du modèle. Contrepartie à connaître : un champ
+  /// déclaré dans la classe qui applique le mixin devient un `@override` du
+  /// getter abstrait — le lint `annotate_overrides` le réclame.
+  String _emitInstanceMixin(String className, List<_Field> fields) {
+    final getters = fields
+        .map((f) => '  ${f.typeStr} get ${f.dartName};')
+        .join('\n');
+    return '/// `toMap()`/`copyWith()` de `$className` en MEMBRES D\'INSTANCE.\n'
+        '///\n'
+        '/// À appliquer (`class $className … with _\$${className}Zcrud`) quand '
+        'un membre\n'
+        '/// d\'extension ne suffit pas : un membre d\'extension ne satisfait '
+        'jamais un\n'
+        '/// membre abstrait hérité et reste invisible à un appel fait à '
+        'travers un type\n'
+        '/// de base. Corps identiques à ceux de l\'extension '
+        '`${className}Zcrud` : la map\n'
+        '/// produite ne change pas. Les champs déclarés par la classe '
+        'deviennent alors\n'
+        '/// des `@override` des getters ci-dessous.\n'
+        'mixin _\$${className}Zcrud {\n'
+        '$getters\n\n'
+        '${_emitSerializationMembers(className, fields)}\n'
         '}';
   }
 

@@ -241,6 +241,70 @@ extension ZStudyProgramCourseZcrud on ZStudyProgramCourse {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyProgramCourse` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyProgramCourse … with _$ZStudyProgramCourseZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyProgramCourseZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyProgramCourseZcrud {
+  String? get id;
+  String get programId;
+  String get courseId;
+  String? get periodPattern;
+  bool get isRequired;
+  double? get credits;
+  double? get coefficient;
+  int? get order;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'program_id': this.programId,
+    'course_id': this.courseId,
+    'period_pattern': this.periodPattern,
+    'is_required': this.isRequired,
+    'credits': this.credits,
+    'coefficient': this.coefficient,
+    'order': this.order,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyProgramCourse copyWith({
+    Object? id = _$undefined,
+    Object? programId = _$undefined,
+    Object? courseId = _$undefined,
+    Object? periodPattern = _$undefined,
+    Object? isRequired = _$undefined,
+    Object? credits = _$undefined,
+    Object? coefficient = _$undefined,
+    Object? order = _$undefined,
+  }) => ZStudyProgramCourse(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    programId: identical(programId, _$undefined)
+        ? this.programId
+        : programId as String,
+    courseId: identical(courseId, _$undefined)
+        ? this.courseId
+        : courseId as String,
+    periodPattern: identical(periodPattern, _$undefined)
+        ? this.periodPattern
+        : periodPattern as String?,
+    isRequired: identical(isRequired, _$undefined)
+        ? this.isRequired
+        : isRequired as bool,
+    credits: identical(credits, _$undefined)
+        ? this.credits
+        : credits as double?,
+    coefficient: identical(coefficient, _$undefined)
+        ? this.coefficient
+        : coefficient as double?,
+    order: identical(order, _$undefined) ? this.order : order as int?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyProgramCourseFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

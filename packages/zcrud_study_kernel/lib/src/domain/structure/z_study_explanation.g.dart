@@ -231,6 +231,62 @@ extension ZStudyExplanationZcrud on ZStudyExplanation {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyExplanation` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyExplanation … with _$ZStudyExplanationZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyExplanationZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyExplanationZcrud {
+  String? get id;
+  String get folderId;
+  String get content;
+  String? get style;
+  String? get operation;
+  List<String> get relatedTopics;
+  DateTime? get createdAt;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'folder_id': this.folderId,
+    'content': this.content,
+    'style': this.style,
+    'operation': this.operation,
+    'related_topics': this.relatedTopics,
+    'created_at': this.createdAt?.toIso8601String(),
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyExplanation copyWith({
+    Object? id = _$undefined,
+    Object? folderId = _$undefined,
+    Object? content = _$undefined,
+    Object? style = _$undefined,
+    Object? operation = _$undefined,
+    Object? relatedTopics = _$undefined,
+    Object? createdAt = _$undefined,
+  }) => ZStudyExplanation(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    folderId: identical(folderId, _$undefined)
+        ? this.folderId
+        : folderId as String,
+    content: identical(content, _$undefined) ? this.content : content as String,
+    style: identical(style, _$undefined) ? this.style : style as String?,
+    operation: identical(operation, _$undefined)
+        ? this.operation
+        : operation as String?,
+    relatedTopics: identical(relatedTopics, _$undefined)
+        ? this.relatedTopics
+        : relatedTopics as List<String>,
+    createdAt: identical(createdAt, _$undefined)
+        ? this.createdAt
+        : createdAt as DateTime?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyExplanationFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

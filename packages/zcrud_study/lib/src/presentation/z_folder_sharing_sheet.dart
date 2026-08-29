@@ -37,19 +37,29 @@
 /// isolé, abonné UNE fois : un événement du flux d'adhésions ne reconstruit
 /// ni l'aire du lien, ni la saisie d'invitation, ni la section galerie.
 ///
-/// ## Ce que le contrat ne permet pas encore
+/// ## Deux voies pour l'administration : callback ou port COMPAGNON
 ///
-/// Le port de partage ne porte aucune voie de mutation des drapeaux du
-/// dossier (« rejoignable par lien », « les membres peuvent inviter ») : ces
-/// champs vivent sur l'entité de dossier du kernel. Les interrupteurs ne
-/// sont donc rendus que si l'application fournit le mutateur correspondant
-/// ([ZFolderSharingSheet.onSetJoinableWithLink] /
-/// [ZFolderSharingSheet.onSetMembersCanInvite]) — sans lui, aucun
-/// interrupteur inerte n'est monté.
+/// `ZStudySharingPort` ne porte ni la révocation d'une adhésion, ni la
+/// mutation des drapeaux du dossier (« rejoignable par lien », « les membres
+/// peuvent inviter ») — et aucune méthode ne lui est ajoutée : un
+/// implémenteur de ce port v1 n'a rien à changer. Ces trois capacités vivent
+/// dans un port **compagnon** additif, [ZStudySharingAdminPort] ; le fournir
+/// débloque les surfaces correspondantes.
 ///
-/// De même, la révocation d'une adhésion n'a pas de méthode dédiée dans le
-/// contrat : elle passe par [ZFolderSharingSheet.onRevokeMembership], remis
-/// à l'application, et l'action est absente sans lui.
+/// Chaque capacité est donc gréée par le **callback** historique **OU** par
+/// le port compagnon, et le **callback prime** quand les deux sont présents :
+///
+/// - révocation d'adhésion : [ZFolderSharingSheet.onRevokeMembership], sinon
+///   [ZStudySharingAdminPort.revokeMembership] ;
+/// - « rejoignable par lien » : [ZFolderSharingSheet.onSetJoinableWithLink],
+///   sinon [ZStudySharingAdminPort.setJoinableByLink] ;
+/// - « les membres peuvent inviter » :
+///   [ZFolderSharingSheet.onSetMembersCanInvite], sinon
+///   [ZStudySharingAdminPort.setMembersCanInvite].
+///
+/// Sans l'une ni l'autre voie — ou avec un port compagnon dont `isAvailable`
+/// est `false` — la surface reste ABSENTE de l'arbre, jamais grisée ni
+/// inerte (invariant AD-4).
 library;
 
 import 'package:flutter/material.dart';
@@ -59,6 +69,7 @@ import 'package:zcrud_core/zcrud_core.dart'
 import '../domain/z_public_study_folder.dart';
 import '../domain/z_share_link.dart';
 import '../domain/z_study_membership.dart';
+import '../domain/z_study_sharing_admin_port.dart';
 import '../domain/z_study_sharing_port.dart';
 import 'z_feature_availability.dart';
 import 'z_study_sharing_gate.dart';
@@ -193,6 +204,7 @@ class ZFolderSharingSheet extends StatefulWidget {
     required this.folderId,
     required this.labels,
     required this.roleLabel,
+    this.adminPort,
     this.principalResolver,
     this.onRevokeMembership,
     this.initialLink,
@@ -229,8 +241,14 @@ class ZFolderSharingSheet extends StatefulWidget {
   /// ABSENTE de l'arbre (invariant AD-4 : capacité absente, jamais inerte).
   final ZPrincipalResolver? principalResolver;
 
-  /// Révocation d'une adhésion. `null` ⇒ action ABSENTE (le contrat de port
-  /// n'en porte aucune).
+  /// Port compagnon d'administration. Consommé pour toute capacité dont le
+  /// callback historique n'est pas fourni, et seulement si `isAvailable` vaut
+  /// `true`. `null` ⇒ seules les capacités gréées par callback existent.
+  final ZStudySharingAdminPort? adminPort;
+
+  /// Révocation d'une adhésion. **Prioritaire** sur
+  /// [ZStudySharingAdminPort.revokeMembership]. `null` ⇒ la voie du port
+  /// compagnon prend le relais ; sans elle non plus, action ABSENTE.
   final ZMembershipRevoker? onRevokeMembership;
 
   /// Lien déjà connu de l'application, ou `null`.
@@ -247,12 +265,14 @@ class ZFolderSharingSheet extends StatefulWidget {
   /// d'aucun service de plateforme.
   final ValueChanged<ZShareLink>? onCopyLink;
 
-  /// Mutateur du drapeau « rejoignable par lien ». `null` ⇒ interrupteur
-  /// ABSENT.
+  /// Mutateur du drapeau « rejoignable par lien ». **Prioritaire** sur
+  /// [ZStudySharingAdminPort.setJoinableByLink]. `null` ⇒ la voie du port
+  /// compagnon prend le relais ; sans elle non plus, interrupteur ABSENT.
   final ZSharingFlagUpdater? onSetJoinableWithLink;
 
-  /// Mutateur du drapeau « les membres peuvent inviter ». `null` ⇒
-  /// interrupteur ABSENT.
+  /// Mutateur du drapeau « les membres peuvent inviter ». **Prioritaire** sur
+  /// [ZStudySharingAdminPort.setMembersCanInvite]. `null` ⇒ la voie du port
+  /// compagnon prend le relais ; sans elle non plus, interrupteur ABSENT.
   final ZSharingFlagUpdater? onSetMembersCanInvite;
 
   /// Valeur initiale du drapeau « rejoignable par lien ».
@@ -330,6 +350,48 @@ class _ZFolderSharingSheetState extends State<ZFolderSharingSheet> {
     super.dispose();
   }
 
+  // Verrou d'occupation PAR interrupteur : une seconde bascule pendant
+  // l'appel en vol n'émet pas un second appel.
+  final Set<ValueNotifier<bool>> _flagsInFlight = <ValueNotifier<bool>>{};
+
+  /// Port compagnon effectivement utilisable, ou `null` (absent, ou coupé à
+  /// chaud par `isAvailable`).
+  ZStudySharingAdminPort? get _admin {
+    final ZStudySharingAdminPort? port = widget.adminPort;
+    return port != null && port.isAvailable ? port : null;
+  }
+
+  /// Voie de révocation retenue. Le callback historique PRIME ; le port
+  /// compagnon ne sert que de relais.
+  ZMembershipRevoker? get _revoker {
+    final ZMembershipRevoker? callback = widget.onRevokeMembership;
+    if (callback != null) return callback;
+    final ZStudySharingAdminPort? port = _admin;
+    if (port == null) return null;
+    // L'identité d'une adhésion non persistée est `null` : le port reçoit
+    // alors la chaîne vide, comme la révocation de lien le fait déjà.
+    return (ZStudyMembership membership) =>
+        port.revokeMembership(membership.id ?? '');
+  }
+
+  /// Mutateur retenu pour « rejoignable par lien ». Le callback PRIME.
+  ZSharingFlagUpdater? get _joinableUpdater {
+    final ZSharingFlagUpdater? callback = widget.onSetJoinableWithLink;
+    if (callback != null) return callback;
+    final ZStudySharingAdminPort? port = _admin;
+    if (port == null) return null;
+    return (bool value) => port.setJoinableByLink(widget.folderId, value);
+  }
+
+  /// Mutateur retenu pour « les membres peuvent inviter ». Le callback PRIME.
+  ZSharingFlagUpdater? get _canInviteUpdater {
+    final ZSharingFlagUpdater? callback = widget.onSetMembersCanInvite;
+    if (callback != null) return callback;
+    final ZStudySharingAdminPort? port = _admin;
+    if (port == null) return null;
+    return (bool value) => port.setMembersCanInvite(widget.folderId, value);
+  }
+
   /// Un `Left` alimente l'aire annoncée ET le canal de l'application, sans
   /// jamais lever ni altérer l'état courant.
   void _fail(ZFailure failure) {
@@ -395,7 +457,7 @@ class _ZFolderSharingSheetState extends State<ZFolderSharingSheet> {
   }
 
   Future<void> _revokeMembership(ZStudyMembership membership) async {
-    final ZMembershipRevoker? revoker = widget.onRevokeMembership;
+    final ZMembershipRevoker? revoker = _revoker;
     if (revoker == null || _memberBusy.value) return;
     _memberBusy.value = true;
     final ZResult<void> result = await revoker(membership);
@@ -436,10 +498,15 @@ class _ZFolderSharingSheetState extends State<ZFolderSharingSheet> {
     ValueNotifier<bool> slot,
     bool value,
   ) async {
+    if (_flagsInFlight.contains(slot)) return;
+    _flagsInFlight.add(slot);
     final bool previous = slot.value;
     slot.value = value;
     final ZResult<void> result = await updater(value);
-    if (!mounted) return;
+    if (!mounted) {
+      _flagsInFlight.remove(slot);
+      return;
+    }
     // Un échec REND l'état antérieur : jamais un interrupteur qui ment.
     result.fold((ZFailure failure) {
       slot.value = previous;
@@ -447,6 +514,7 @@ class _ZFolderSharingSheetState extends State<ZFolderSharingSheet> {
     }, (_) {
       _error.value = null;
     });
+    _flagsInFlight.remove(slot);
   }
 
   @override
@@ -564,11 +632,11 @@ class _ZFolderSharingSheetState extends State<ZFolderSharingSheet> {
         ],
       );
 
-  /// Interrupteurs de partage : rendus SEULEMENT si l'application fournit le
-  /// mutateur — le port de partage n'en porte aucun.
+  /// Interrupteurs de partage : rendus SEULEMENT si une voie de mutation
+  /// existe — le mutateur de l'application, sinon le port compagnon.
   Widget _buildFlagsSection() {
-    final ZSharingFlagUpdater? joinable = widget.onSetJoinableWithLink;
-    final ZSharingFlagUpdater? invite = widget.onSetMembersCanInvite;
+    final ZSharingFlagUpdater? joinable = _joinableUpdater;
+    final ZSharingFlagUpdater? invite = _canInviteUpdater;
     if (joinable == null && invite == null) return const SizedBox.shrink();
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -650,7 +718,7 @@ class _ZFolderSharingSheetState extends State<ZFolderSharingSheet> {
                       widget.roleLabel(member.role),
                       textAlign: TextAlign.start,
                     ),
-                    trailing: widget.onRevokeMembership == null
+                    trailing: _revoker == null
                         ? null
                         : _button(
                             keyValue: 'z-folder-sharing-revoke-member-$index',

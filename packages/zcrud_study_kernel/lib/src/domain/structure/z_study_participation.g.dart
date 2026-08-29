@@ -219,6 +219,52 @@ extension ZStudyParticipationZcrud on ZStudyParticipation {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyParticipation` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyParticipation … with _$ZStudyParticipationZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyParticipationZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyParticipationZcrud {
+  String? get id;
+  String get role;
+  String? get periodId;
+  DateTime? get validFrom;
+  DateTime? get validTo;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'role': this.role,
+    'period_id': this.periodId,
+    'valid_from': this.validFrom?.toIso8601String(),
+    'valid_to': this.validTo?.toIso8601String(),
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyParticipation copyWith({
+    Object? id = _$undefined,
+    Object? role = _$undefined,
+    Object? periodId = _$undefined,
+    Object? validFrom = _$undefined,
+    Object? validTo = _$undefined,
+  }) => ZStudyParticipation(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    role: identical(role, _$undefined) ? this.role : role as String,
+    periodId: identical(periodId, _$undefined)
+        ? this.periodId
+        : periodId as String?,
+    validFrom: identical(validFrom, _$undefined)
+        ? this.validFrom
+        : validFrom as DateTime?,
+    validTo: identical(validTo, _$undefined)
+        ? this.validTo
+        : validTo as DateTime?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyParticipationFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

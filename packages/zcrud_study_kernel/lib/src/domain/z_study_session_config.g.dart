@@ -222,6 +222,50 @@ extension ZStudySessionConfigZcrud on ZStudySessionConfig {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudySessionConfig` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudySessionConfig … with _$ZStudySessionConfigZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudySessionConfigZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudySessionConfigZcrud {
+  ZReviewMode get mode;
+  String? get folderId;
+  List<String>? get tagIds;
+  List<String>? get types;
+  int? get count;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'mode': this.mode.name,
+    'folder_id': this.folderId,
+    'tag_ids': this.tagIds,
+    'types': this.types,
+    'count': this.count,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudySessionConfig copyWith({
+    Object? mode = _$undefined,
+    Object? folderId = _$undefined,
+    Object? tagIds = _$undefined,
+    Object? types = _$undefined,
+    Object? count = _$undefined,
+  }) => ZStudySessionConfig(
+    mode: identical(mode, _$undefined) ? this.mode : mode as ZReviewMode,
+    folderId: identical(folderId, _$undefined)
+        ? this.folderId
+        : folderId as String?,
+    tagIds: identical(tagIds, _$undefined)
+        ? this.tagIds
+        : tagIds as List<String>?,
+    types: identical(types, _$undefined) ? this.types : types as List<String>?,
+    count: identical(count, _$undefined) ? this.count : count as int?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudySessionConfigFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(

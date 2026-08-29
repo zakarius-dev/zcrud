@@ -220,6 +220,52 @@ extension ZSmartNoteZcrud on ZSmartNote {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZSmartNote` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZSmartNote … with _$ZSmartNoteZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZSmartNoteZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZSmartNoteZcrud {
+  String? get id;
+  String get folderId;
+  String? get subFolderId;
+  String get title;
+  DateTime? get createdAt;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'folder_id': this.folderId,
+    'sub_folder_id': this.subFolderId,
+    'title': this.title,
+    'created_at': this.createdAt?.toIso8601String(),
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZSmartNote copyWith({
+    Object? id = _$undefined,
+    Object? folderId = _$undefined,
+    Object? subFolderId = _$undefined,
+    Object? title = _$undefined,
+    Object? createdAt = _$undefined,
+  }) => ZSmartNote(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    folderId: identical(folderId, _$undefined)
+        ? this.folderId
+        : folderId as String,
+    subFolderId: identical(subFolderId, _$undefined)
+        ? this.subFolderId
+        : subFolderId as String?,
+    title: identical(title, _$undefined) ? this.title : title as String,
+    createdAt: identical(createdAt, _$undefined)
+        ? this.createdAt
+        : createdAt as DateTime?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZSmartNoteFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

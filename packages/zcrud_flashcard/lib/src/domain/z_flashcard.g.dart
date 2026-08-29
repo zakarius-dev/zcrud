@@ -279,6 +279,100 @@ extension ZFlashcardZcrud on ZFlashcard {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZFlashcard` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZFlashcard … with _$ZFlashcardZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZFlashcardZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZFlashcardZcrud {
+  String? get id;
+  String? get folderId;
+  String? get subFolderId;
+  ZFlashcardType get type;
+  String get question;
+  String? get answer;
+  bool? get isTrue;
+  List<ZChoice>? get choices;
+  String? get explanation;
+  String? get hint;
+  List<String> get tagIds;
+  bool get isReadOnly;
+  DateTime? get createdAt;
+  DateTime? get updatedAt;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'folder_id': this.folderId,
+    'sub_folder_id': this.subFolderId,
+    'type': this.type.name,
+    'question': this.question,
+    'answer': this.answer,
+    'is_true': this.isTrue,
+    'choices': this.choices?.map((e) => e.toMap()).toList(),
+    'explanation': this.explanation,
+    'hint': this.hint,
+    'tag_ids': this.tagIds,
+    'is_read_only': this.isReadOnly,
+    'created_at': this.createdAt?.toIso8601String(),
+    if (this.updatedAt != null) 'updated_at': this.updatedAt?.toIso8601String(),
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZFlashcard copyWith({
+    Object? id = _$undefined,
+    Object? folderId = _$undefined,
+    Object? subFolderId = _$undefined,
+    Object? type = _$undefined,
+    Object? question = _$undefined,
+    Object? answer = _$undefined,
+    Object? isTrue = _$undefined,
+    Object? choices = _$undefined,
+    Object? explanation = _$undefined,
+    Object? hint = _$undefined,
+    Object? tagIds = _$undefined,
+    Object? isReadOnly = _$undefined,
+    Object? createdAt = _$undefined,
+    Object? updatedAt = _$undefined,
+  }) => ZFlashcard(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    folderId: identical(folderId, _$undefined)
+        ? this.folderId
+        : folderId as String?,
+    subFolderId: identical(subFolderId, _$undefined)
+        ? this.subFolderId
+        : subFolderId as String?,
+    type: identical(type, _$undefined) ? this.type : type as ZFlashcardType,
+    question: identical(question, _$undefined)
+        ? this.question
+        : question as String,
+    answer: identical(answer, _$undefined) ? this.answer : answer as String?,
+    isTrue: identical(isTrue, _$undefined) ? this.isTrue : isTrue as bool?,
+    choices: identical(choices, _$undefined)
+        ? this.choices
+        : choices as List<ZChoice>?,
+    explanation: identical(explanation, _$undefined)
+        ? this.explanation
+        : explanation as String?,
+    hint: identical(hint, _$undefined) ? this.hint : hint as String?,
+    tagIds: identical(tagIds, _$undefined)
+        ? this.tagIds
+        : tagIds as List<String>,
+    isReadOnly: identical(isReadOnly, _$undefined)
+        ? this.isReadOnly
+        : isReadOnly as bool,
+    createdAt: identical(createdAt, _$undefined)
+        ? this.createdAt
+        : createdAt as DateTime?,
+    updatedAt: identical(updatedAt, _$undefined)
+        ? this.updatedAt
+        : updatedAt as DateTime?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZFlashcardFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

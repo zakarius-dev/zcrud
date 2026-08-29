@@ -237,6 +237,66 @@ extension ZStudyOfferingZcrud on ZStudyOffering {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyOffering` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyOffering … with _$ZStudyOfferingZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyOfferingZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyOfferingZcrud {
+  String? get id;
+  String? get organizationId;
+  String get courseId;
+  String get periodId;
+  String? get curriculumId;
+  String? get label;
+  String? get code;
+  String get status;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'organization_id': this.organizationId,
+    'course_id': this.courseId,
+    'period_id': this.periodId,
+    'curriculum_id': this.curriculumId,
+    'label': this.label,
+    'code': this.code,
+    'status': this.status,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyOffering copyWith({
+    Object? id = _$undefined,
+    Object? organizationId = _$undefined,
+    Object? courseId = _$undefined,
+    Object? periodId = _$undefined,
+    Object? curriculumId = _$undefined,
+    Object? label = _$undefined,
+    Object? code = _$undefined,
+    Object? status = _$undefined,
+  }) => ZStudyOffering(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    organizationId: identical(organizationId, _$undefined)
+        ? this.organizationId
+        : organizationId as String?,
+    courseId: identical(courseId, _$undefined)
+        ? this.courseId
+        : courseId as String,
+    periodId: identical(periodId, _$undefined)
+        ? this.periodId
+        : periodId as String,
+    curriculumId: identical(curriculumId, _$undefined)
+        ? this.curriculumId
+        : curriculumId as String?,
+    label: identical(label, _$undefined) ? this.label : label as String?,
+    code: identical(code, _$undefined) ? this.code : code as String?,
+    status: identical(status, _$undefined) ? this.status : status as String,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyOfferingFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

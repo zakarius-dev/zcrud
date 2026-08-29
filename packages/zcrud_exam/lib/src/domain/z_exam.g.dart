@@ -226,6 +226,56 @@ extension ZExamZcrud on ZExam {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZExam` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZExam … with _$ZExamZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZExamZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZExamZcrud {
+  String? get id;
+  String get folderId;
+  String get title;
+  DateTime? get date;
+  bool get reminderEnabled;
+  List<int> get reminderDaysBefore;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'folder_id': this.folderId,
+    'title': this.title,
+    'date': this.date?.toIso8601String(),
+    'reminder_enabled': this.reminderEnabled,
+    'reminder_days_before': this.reminderDaysBefore,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZExam copyWith({
+    Object? id = _$undefined,
+    Object? folderId = _$undefined,
+    Object? title = _$undefined,
+    Object? date = _$undefined,
+    Object? reminderEnabled = _$undefined,
+    Object? reminderDaysBefore = _$undefined,
+  }) => ZExam(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    folderId: identical(folderId, _$undefined)
+        ? this.folderId
+        : folderId as String,
+    title: identical(title, _$undefined) ? this.title : title as String,
+    date: identical(date, _$undefined) ? this.date : date as DateTime?,
+    reminderEnabled: identical(reminderEnabled, _$undefined)
+        ? this.reminderEnabled
+        : reminderEnabled as bool,
+    reminderDaysBefore: identical(reminderDaysBefore, _$undefined)
+        ? this.reminderDaysBefore
+        : reminderDaysBefore as List<int>,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZExamFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

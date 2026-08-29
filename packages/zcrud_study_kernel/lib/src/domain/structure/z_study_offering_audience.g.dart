@@ -212,6 +212,44 @@ extension ZStudyOfferingAudienceZcrud on ZStudyOfferingAudience {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyOfferingAudience` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyOfferingAudience … with _$ZStudyOfferingAudienceZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyOfferingAudienceZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyOfferingAudienceZcrud {
+  String? get id;
+  String get offeringId;
+  String get groupId;
+  String? get role;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'offering_id': this.offeringId,
+    'group_id': this.groupId,
+    'role': this.role,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyOfferingAudience copyWith({
+    Object? id = _$undefined,
+    Object? offeringId = _$undefined,
+    Object? groupId = _$undefined,
+    Object? role = _$undefined,
+  }) => ZStudyOfferingAudience(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    offeringId: identical(offeringId, _$undefined)
+        ? this.offeringId
+        : offeringId as String,
+    groupId: identical(groupId, _$undefined) ? this.groupId : groupId as String,
+    role: identical(role, _$undefined) ? this.role : role as String?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyOfferingAudienceFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

@@ -213,6 +213,44 @@ extension ZStudyWorkspaceZcrud on ZStudyWorkspace {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyWorkspace` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyWorkspace … with _$ZStudyWorkspaceZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyWorkspaceZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyWorkspaceZcrud {
+  String? get id;
+  String get kind;
+  String get label;
+  String? get ownerPrincipalId;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'kind': this.kind,
+    'label': this.label,
+    'owner_principal_id': this.ownerPrincipalId,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyWorkspace copyWith({
+    Object? id = _$undefined,
+    Object? kind = _$undefined,
+    Object? label = _$undefined,
+    Object? ownerPrincipalId = _$undefined,
+  }) => ZStudyWorkspace(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    kind: identical(kind, _$undefined) ? this.kind : kind as String,
+    label: identical(label, _$undefined) ? this.label : label as String,
+    ownerPrincipalId: identical(ownerPrincipalId, _$undefined)
+        ? this.ownerPrincipalId
+        : ownerPrincipalId as String?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyWorkspaceFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

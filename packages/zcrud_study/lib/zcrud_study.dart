@@ -67,8 +67,10 @@ export 'src/domain/z_study_moderation_port.dart';
 // l'hôte ; sans filtre ou sans projection, il rend l'instance reçue.
 export 'src/domain/z_study_scope_filtering.dart';
 export 'src/domain/z_study_sharing_acl.dart';
+export 'src/domain/z_study_sharing_admin_port.dart';
 export 'src/domain/z_study_sharing_extension.dart';
 export 'src/domain/z_study_sharing_port.dart';
+export 'src/domain/z_study_sharing_read_port.dart';
 
 // ── Examens et rappels ───────────────────────────────────────────────────
 //

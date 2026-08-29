@@ -11,13 +11,19 @@
 /// refusé » ANNONCÉ, distinct d'une liste vide. L'absence de `ZcrudScope`
 /// refuse.
 ///
-/// ## Le flux vient de l'application, pas du port
+/// ## Le flux : de l'application, ou d'un port COMPAGNON
 ///
-/// `ZStudySharingPort` publie et dépublie un dossier mais n'expose **aucune
-/// lecture de la galerie** : il n'y a pas de `watchPublicFolders` à
-/// consommer. La vue prend donc son flux en paramètre — l'application le
-/// branche sur la voie de lecture de son choix. Ajouter une méthode au port
-/// casserait toute implémentation existante ; ce n'est pas fait ici.
+/// `ZStudySharingPort` publie et dépublie un dossier mais n'expose aucune
+/// lecture de galerie, et aucune méthode ne lui est ajoutée : un implémenteur
+/// de ce port v1 n'a rien à changer. La lecture vit dans un port
+/// **compagnon** additif, [ZStudySharingReadPort] — le fournir débloque
+/// l'alimentation autonome de cette vue.
+///
+/// Les deux voies coexistent, et la **priorité est au paramètre** :
+/// [ZPublicGalleryView.folders] fourni ⇒ c'est ce flux qui est rendu, même si
+/// un [ZPublicGalleryView.readPort] l'est aussi. Sans paramètre, le flux du
+/// port disponible est consommé (abonné UNE fois). Sans l'un ni l'autre — ou
+/// avec un port dont `isAvailable` est `false` — la vue rend son état vide.
 ///
 /// ## Le signalement est optionnel
 ///
@@ -34,11 +40,12 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
-    show ZAcl, ZFailure, ZResult, ZcrudTheme;
+    show ZAcl, ZDataRequest, ZFailure, ZResult, ZcrudTheme;
 
 import '../domain/z_public_study_folder.dart';
 import '../domain/z_study_folder_report.dart';
 import '../domain/z_study_moderation_port.dart';
+import '../domain/z_study_sharing_read_port.dart';
 import 'z_feature_availability.dart';
 import 'z_folder_sharing_sheet.dart' show ZSharingFailureReporter;
 import 'z_study_sharing_gate.dart';
@@ -85,9 +92,11 @@ class ZPublicGalleryLabels {
 class ZPublicGalleryView extends StatefulWidget {
   /// Construit la galerie autour du flux [folders].
   const ZPublicGalleryView({
-    required this.folders,
     required this.labels,
     required this.titleFallback,
+    this.folders,
+    this.readPort,
+    this.readRequest,
     this.moderationPort,
     this.reporterUid = '',
     this.reportReason = '',
@@ -100,8 +109,19 @@ class ZPublicGalleryView extends StatefulWidget {
     super.key,
   });
 
-  /// Flux NU des fiches publiées (`Stream<List<T>>`, invariant AD-5).
-  final Stream<List<ZPublicStudyFolder>> folders;
+  /// Flux NU des fiches publiées (`Stream<List<T>>`, invariant AD-5), fourni
+  /// par l'application. **Prioritaire** sur [readPort] quand les deux sont
+  /// présents. `null` ⇒ la vue se rabat sur [readPort].
+  final Stream<List<ZPublicStudyFolder>>? folders;
+
+  /// Port compagnon de lecture. Consommé SEULEMENT si [folders] est `null` et
+  /// si `isAvailable` vaut `true` ; son flux est abonné UNE fois.
+  final ZStudySharingReadPort? readPort;
+
+  /// Requête neutre transmise verbatim à
+  /// [ZStudySharingReadPort.watchPublicFolders] (pagination par curseur,
+  /// tris, filtres). Sans effet si le flux vient de [folders].
+  final ZDataRequest? readRequest;
 
   /// Libellés injectés.
   final ZPublicGalleryLabels labels;
@@ -144,11 +164,20 @@ class _ZPublicGalleryViewState extends State<ZPublicGalleryView> {
   late final ValueNotifier<String?> _message;
   late final ValueNotifier<bool> _busy;
 
+  /// Flux du port compagnon, ouvert UNE fois : un rebuild ne réabonne jamais
+  /// le port (invariant AD-2). `null` si le paramètre prime, si aucun port
+  /// n'est fourni, ou si le port se déclare indisponible.
+  Stream<List<ZPublicStudyFolder>>? _portFolders;
+
   @override
   void initState() {
     super.initState();
     _message = ValueNotifier<String?>(null);
     _busy = ValueNotifier<bool>(false);
+    final ZStudySharingReadPort? port = widget.readPort;
+    if (widget.folders == null && port != null && port.isAvailable) {
+      _portFolders = port.watchPublicFolders(request: widget.readRequest);
+    }
   }
 
   @override
@@ -207,7 +236,9 @@ class _ZPublicGalleryViewState extends State<ZPublicGalleryView> {
         Flexible(
           child: StreamBuilder<List<ZPublicStudyFolder>>(
             key: const ValueKey<String>('z-public-gallery-stream'),
-            stream: widget.folders,
+            // Le PARAMÈTRE prime : la voie historique reste inchangée, le
+            // port compagnon ne sert que de repli.
+            stream: widget.folders ?? _portFolders,
             builder: (
               BuildContext context,
               AsyncSnapshot<List<ZPublicStudyFolder>> snapshot,

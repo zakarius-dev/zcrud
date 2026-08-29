@@ -276,6 +276,104 @@ extension ZStudyFolderZcrud on ZStudyFolder {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyFolder` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyFolder … with _$ZStudyFolderZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyFolderZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyFolderZcrud {
+  String? get id;
+  String get title;
+  String get colorKey;
+  String? get parentId;
+  String? get subjectId;
+  String get ownerId;
+  DateTime? get archivedAt;
+  DateTime? get createdAt;
+  DateTime? get updatedAt;
+  bool get isPublic;
+  List<String> get sharedWith;
+  bool get canBeJoinedWithLink;
+  bool get coWorkersCanInviteOthers;
+  String? get shareId;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'title': this.title,
+    'color_key': this.colorKey,
+    'parent_id': this.parentId,
+    'subject_id': this.subjectId,
+    'owner_id': this.ownerId,
+    'archived_at': this.archivedAt?.toIso8601String(),
+    'created_at': this.createdAt?.toIso8601String(),
+    if (this.updatedAt != null) 'updated_at': this.updatedAt?.toIso8601String(),
+    'is_public': this.isPublic,
+    'shared_with': this.sharedWith,
+    'can_be_joined_with_link': this.canBeJoinedWithLink,
+    'co_workers_can_invite_others': this.coWorkersCanInviteOthers,
+    'share_id': this.shareId,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyFolder copyWith({
+    Object? id = _$undefined,
+    Object? title = _$undefined,
+    Object? colorKey = _$undefined,
+    Object? parentId = _$undefined,
+    Object? subjectId = _$undefined,
+    Object? ownerId = _$undefined,
+    Object? archivedAt = _$undefined,
+    Object? createdAt = _$undefined,
+    Object? updatedAt = _$undefined,
+    Object? isPublic = _$undefined,
+    Object? sharedWith = _$undefined,
+    Object? canBeJoinedWithLink = _$undefined,
+    Object? coWorkersCanInviteOthers = _$undefined,
+    Object? shareId = _$undefined,
+  }) => ZStudyFolder(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    title: identical(title, _$undefined) ? this.title : title as String,
+    colorKey: identical(colorKey, _$undefined)
+        ? this.colorKey
+        : colorKey as String,
+    parentId: identical(parentId, _$undefined)
+        ? this.parentId
+        : parentId as String?,
+    subjectId: identical(subjectId, _$undefined)
+        ? this.subjectId
+        : subjectId as String?,
+    ownerId: identical(ownerId, _$undefined) ? this.ownerId : ownerId as String,
+    archivedAt: identical(archivedAt, _$undefined)
+        ? this.archivedAt
+        : archivedAt as DateTime?,
+    createdAt: identical(createdAt, _$undefined)
+        ? this.createdAt
+        : createdAt as DateTime?,
+    updatedAt: identical(updatedAt, _$undefined)
+        ? this.updatedAt
+        : updatedAt as DateTime?,
+    isPublic: identical(isPublic, _$undefined)
+        ? this.isPublic
+        : isPublic as bool,
+    sharedWith: identical(sharedWith, _$undefined)
+        ? this.sharedWith
+        : sharedWith as List<String>,
+    canBeJoinedWithLink: identical(canBeJoinedWithLink, _$undefined)
+        ? this.canBeJoinedWithLink
+        : canBeJoinedWithLink as bool,
+    coWorkersCanInviteOthers: identical(coWorkersCanInviteOthers, _$undefined)
+        ? this.coWorkersCanInviteOthers
+        : coWorkersCanInviteOthers as bool,
+    shareId: identical(shareId, _$undefined)
+        ? this.shareId
+        : shareId as String?,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyFolderFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),

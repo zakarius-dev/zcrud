@@ -219,6 +219,50 @@ extension ZStudyCalendarZcrud on ZStudyCalendar {
   );
 }
 
+/// `toMap()`/`copyWith()` de `ZStudyCalendar` en MEMBRES D'INSTANCE.
+///
+/// À appliquer (`class ZStudyCalendar … with _$ZStudyCalendarZcrud`) quand un membre
+/// d'extension ne suffit pas : un membre d'extension ne satisfait jamais un
+/// membre abstrait hérité et reste invisible à un appel fait à travers un type
+/// de base. Corps identiques à ceux de l'extension `ZStudyCalendarZcrud` : la map
+/// produite ne change pas. Les champs déclarés par la classe deviennent alors
+/// des `@override` des getters ci-dessous.
+mixin _$ZStudyCalendarZcrud {
+  String? get id;
+  String? get organizationId;
+  String get timezone;
+  String get label;
+  String get kind;
+
+  /// Sérialise vers la map persistée (snake_case, enum camelCase, ISO-8601).
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': this.id,
+    'organization_id': this.organizationId,
+    'timezone': this.timezone,
+    'label': this.label,
+    'kind': this.kind,
+  };
+
+  /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
+  ZStudyCalendar copyWith({
+    Object? id = _$undefined,
+    Object? organizationId = _$undefined,
+    Object? timezone = _$undefined,
+    Object? label = _$undefined,
+    Object? kind = _$undefined,
+  }) => ZStudyCalendar(
+    id: identical(id, _$undefined) ? this.id : id as String?,
+    organizationId: identical(organizationId, _$undefined)
+        ? this.organizationId
+        : organizationId as String?,
+    timezone: identical(timezone, _$undefined)
+        ? this.timezone
+        : timezone as String,
+    label: identical(label, _$undefined) ? this.label : label as String,
+    kind: identical(kind, _$undefined) ? this.kind : kind as String,
+  );
+}
+
 /// Schéma déclaratif projeté depuis @ZcrudField.
 const List<ZFieldSpec> $ZStudyCalendarFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'id', type: EditionFieldType.text, isId: true),
