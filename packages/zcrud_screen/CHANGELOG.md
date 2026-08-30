@@ -3,6 +3,29 @@
 Toutes les modifications notables de `zcrud_screen` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.41.0 — 2026-08-30
+
+### Ajouté
+
+- `ZCrudScreen.tabsAlignment` (`TabAlignment?`, défaut `null`) — alignement des
+  onglets, relayé jusqu'au `TabBar` final via `ZTabbedList.tabAlignment`. Nommé
+  d'après `tabsScrollable`, avec lequel il forme le couple à tenir cohérent.
+  `null` conserve la résolution Flutter : rendu par défaut strictement inchangé.
+
+  Motivation : sur une barre défilante, Flutter résout `TabAlignment.startOffset`
+  et réserve 52 dp de décrochage de tête ; dans une fenêtre étroite, cela suffit
+  à pousser le dernier onglet hors du viewport. `tabsScrollable` existait déjà et
+  atteignait la barre, mais l'alignement n'était pas relayé — l'écran ne pouvait
+  pas récupérer ces 52 dp.
+
+  L'écran ne filtre pas la valeur : les combinaisons interdites par le SDK
+  (`fill` + `tabsScrollable: true` ; `start`/`startOffset` + `tabsScrollable:
+  false`) restent assertionnées par Flutter, et documentées côté API.
+
+  Gardes : `test/z_crud_screen_tabs_alignment_test.dart` (inertie par signature
+  du sous-arbre de barre figée avant modification, relais bout en bout lu sur le
+  `TabBar` rendu, `tabsScrollable` non altéré).
+
 ## 3.28.0 — 2026-08-28
 
 ### Ajouté

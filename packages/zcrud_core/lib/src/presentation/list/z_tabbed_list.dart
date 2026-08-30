@@ -38,7 +38,8 @@ import 'z_list_tab.dart';
 class ZTabbedList extends StatefulWidget {
   /// Construit les onglets à partir de [tabs]. [initialIndex] fixe l'onglet actif
   /// initial ; [onTabChanged] est notifié à chaque changement d'onglet ;
-  /// [isScrollable] rend la barre défilante (nombreux onglets) ; [header]
+  /// [isScrollable] rend la barre défilante (nombreux onglets) ;
+  /// [tabAlignment] règle l'alignement des onglets dans la barre ; [header]
   /// pose un widget partagé au-dessus de la barre d'onglets ;
   /// [activeIndexNotifier] suit l'index de l'onglet actif.
   const ZTabbedList({
@@ -46,6 +47,7 @@ class ZTabbedList extends StatefulWidget {
     this.initialIndex = 0,
     this.onTabChanged,
     this.isScrollable = false,
+    this.tabAlignment,
     this.header,
     this.activeIndexNotifier,
     super.key,
@@ -65,6 +67,29 @@ class ZTabbedList extends StatefulWidget {
 
   /// Barre d'onglets défilante (défaut `false`).
   final bool isScrollable;
+
+  /// Alignement des onglets dans la barre, **propagé tel quel** à
+  /// `TabBar.tabAlignment`.
+  ///
+  /// `null` (défaut) ⇒ **rien n'est déclaré** : le `TabBar` conserve la
+  /// résolution Flutter, qui dépend de [isScrollable] — `TabAlignment.fill`
+  /// (onglets répartis sur toute la largeur) sur une barre fixe,
+  /// `TabAlignment.startOffset` sur une barre défilante.
+  ///
+  /// `TabAlignment.startOffset` réserve un décrochage de tête avant le premier
+  /// onglet ; avec des libellés longs dans une fenêtre étroite, il pousse les
+  /// derniers onglets d'autant plus loin hors du viewport.
+  /// `TabAlignment.start` supprime ce décrochage et colle le premier onglet au
+  /// bord de tête : c'est la valeur à déclarer quand la barre doit tenir le
+  /// plus d'onglets possible dans une fenêtre étroite.
+  ///
+  /// **Combinaisons interdites par Flutter** (assertion du SDK, pas du widget) :
+  /// `TabAlignment.fill` avec `isScrollable: true` ; `TabAlignment.start` et
+  /// `TabAlignment.startOffset` avec `isScrollable: false`. `center` est
+  /// valide dans les deux modes. Le widget ne corrige ni ne filtre la valeur —
+  /// le choix, et sa cohérence avec [isScrollable], appartiennent à
+  /// l'appelant.
+  final TabAlignment? tabAlignment;
 
   /// Widget **partagé** optionnel posé **au-dessus de la barre d'onglets**,
   /// dans le même arbre (typiquement une barre de recherche commune aux
@@ -242,6 +267,9 @@ class _ZTabbedListState extends State<ZTabbedList>
         TabBar(
           controller: _tabController,
           isScrollable: widget.isScrollable,
+          // Non déclaré ⇒ `null` transmis tel quel : le `TabBar` garde sa
+          // résolution Flutter (`fill` en fixe, `startOffset` en défilant).
+          tabAlignment: widget.tabAlignment,
           tabs: <Widget>[
             for (final tab in widget.tabs)
               Tab(

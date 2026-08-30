@@ -3,6 +3,31 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.41.0 — 2026-08-30
+
+### Ajouté
+
+- `ZTabbedList.tabAlignment` (`TabAlignment?`, défaut `null`) — alignement des
+  onglets, relayé tel quel à `TabBar.tabAlignment`. `null` conserve la
+  résolution Flutter (`fill` en barre fixe, `startOffset` en barre défilante) :
+  le rendu par défaut est strictement inchangé.
+
+  Motivation mesurée : une barre défilante fait résoudre `TabAlignment.startOffset`,
+  qui réserve **52 dp** de décrochage avant le premier onglet. Sur une fenêtre de
+  600 dp avec trois libellés longs, cela suffit à pousser le troisième onglet
+  **hors du viewport** (débordement mesuré : 39,6 dp) ; sous `TabAlignment.start`
+  les trois onglets rentrent (marge restante : 12,4 dp). C'est le même défaut que
+  celui corrigé en 3.40.0 sur les conteneurs de `zcrud_study`, ici sur la seconde
+  surface d'onglets du dépôt.
+
+  Le widget ne filtre pas la valeur : les combinaisons interdites par le SDK
+  (`fill` + `isScrollable: true` ; `start`/`startOffset` + `isScrollable: false`)
+  restent assertionnées par Flutter, et documentées côté API.
+
+  Gardes : `test/presentation/list/z_tabbed_list_tab_alignment_test.dart`
+  (inertie par signature d'arbre figée avant modification, relais lu sur le
+  `TabBar` rendu, `isScrollable` non altéré, non-débordement à 600 dp).
+
 ## 3.34.0 — 2026-08-29
 
 ### Modifié

@@ -194,6 +194,7 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
     this.itemBuilder,
     this.tabs,
     this.tabsScrollable = false,
+    this.tabsAlignment,
     this.tabsStore,
     this.tabsScopeKey,
     this.query = const ZListQueryPolicy(),
@@ -356,6 +357,27 @@ class ZCrudScreen<T extends ZEntity> extends StatefulWidget {
   /// barre fixe les tronque, une barre défilante les laisse entiers. Sans
   /// [tabs], le réglage est sans effet.
   final bool tabsScrollable;
+
+  /// Alignement des onglets dans la barre, **propagé tel quel** à
+  /// `ZTabbedList.tabAlignment` (donc à `TabBar.tabAlignment`).
+  ///
+  /// `null` (défaut) ⇒ **rien n'est déclaré** : la barre conserve la résolution
+  /// Flutter, qui dépend de [tabsScrollable] — `TabAlignment.fill` en barre
+  /// fixe, `TabAlignment.startOffset` en barre défilante.
+  ///
+  /// `TabAlignment.startOffset` réserve un décrochage de tête avant le premier
+  /// onglet ; avec des libellés longs dans une fenêtre étroite, il pousse les
+  /// derniers onglets d'autant plus loin hors du viewport.
+  /// `TabAlignment.start` supprime ce décrochage et colle le premier onglet au
+  /// bord de tête : c'est la valeur à déclarer quand l'écran doit tenir le plus
+  /// d'onglets possible dans une fenêtre étroite.
+  ///
+  /// **Cohérence avec [tabsScrollable]** : Flutter assertionne `fill` sur une
+  /// barre défilante, et `start`/`startOffset` sur une barre fixe. L'écran ne
+  /// corrige ni ne filtre la valeur — le couple appartient à l'appelant.
+  ///
+  /// Sans [tabs], le réglage est sans effet.
+  final TabAlignment? tabsAlignment;
 
   /// **Persistance de l'onglet actif et du défilement de chaque onglet**, entre
   /// deux ouvertures de l'écran.
@@ -3376,6 +3398,9 @@ class _ZCrudScreenState<T extends ZEntity> extends State<ZCrudScreen<T>>
         // corbeille ne l'a jamais porté (même règle que le listing unique).
         header: _trashView ? null : widget.header,
         isScrollable: widget.tabsScrollable,
+        // Non déclaré ⇒ `null` transmis tel quel : la barre garde sa
+        // résolution Flutter, exactement comme avant l'ajout du seam.
+        tabAlignment: widget.tabsAlignment,
         activeIndexNotifier: _activeTabIndex,
         // Onglet mémorisé (0 sans store, ou hors bornes) — le notifieur porte
         // déjà cette valeur depuis `initState`, donc rien n'est renotifié.
