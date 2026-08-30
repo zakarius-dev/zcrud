@@ -312,6 +312,7 @@ export 'src/presentation/z_study_unit_picker.dart';
 // surface pour un rendu personnalisé.
 export 'src/presentation/z_subfolder_compact_selector.dart';
 export 'src/presentation/z_subfolder_narrow_nav.dart';
+export 'src/presentation/z_subfolder_nav.dart';
 export 'src/presentation/z_subfolder_nav_renderer.dart';
 export 'src/presentation/z_subfolder_nav_spec.dart';
 export 'src/presentation/z_subfolder_ref.dart';

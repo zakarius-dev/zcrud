@@ -3,6 +3,50 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.39.0 — 2026-08-30
+
+### Ajouté
+
+- **`ZSubfolderNav`** — la **bascule responsive** de navigation de sous-dossiers
+  devient un widget autonome, utilisable **hors** de `ZStudyFolderDetail`
+  (CR-LEX-87, `MAJEUR`). Les deux surfaces existaient déjà
+  (`ZSubfolderNarrowNav` sous le seuil, `ZSubfolderSidebar` au-dessus) ; ce qui
+  manquait était **la règle qui choisit entre elles**, jusqu'ici enfermée dans
+  l'ossature. Mesuré chez deux hôtes : chacun l'avait réécrite, au même seuil,
+  le second ayant dû ouvrir le dépôt du premier pour retrouver la valeur.
+  - `LayoutBuilder` sur la largeur **locale** (jamais `MediaQuery`/écran) — bonne
+    disposition en split-view, master-detail ou colonne de `Row`.
+  - Seuil par défaut = `ZWindowSizeThresholds.mediumMinWidth`, exposé en
+    `kZSubfolderSidebarBreakpoint` et surchargeable par `sidebarBreakpoint`.
+  - **Exclusivité structurelle** : les builders sont paresseux, la variante
+    écartée n'est pas construite — jamais deux filtres concurrents sur la même
+    sélection.
+  - `bodyBuilder` fourni ⇒ assemblage `Column`/`Row` rendu par le socle ;
+    `bodyBuilder` absent ⇒ la variante est rendue **seule**, pour un appelant qui
+    tient déjà sa coquille.
+- **`zSubfolderNavPrefersSidebar(width, {breakpoint})`** — la règle sous forme de
+  **fonction pure**, source unique de la comparaison au seuil.
+
+### Modifié
+
+- `ZStudyFolderDetail` **consomme** désormais `ZSubfolderNav` au lieu de porter
+  sa propre bascule (`ZResponsiveLayout` + assemblage). La règle n'existe donc
+  plus qu'à **un** endroit. **Rendu strictement inchangé** : les signatures
+  d'arbre des deux assemblages ont été relevées AVANT l'extraction, figées en
+  dur, et sont vertes après — bornes 599/600/601 comprises.
+
+### Gardes
+
+- Inertie d'arbre de `ZStudyFolderDetail` : signature structurelle figée aux deux
+  côtés du seuil + borne exacte 599/600/601.
+- `ZSubfolderNav` seul : exclusivité aux deux largeurs (une variante montée,
+  l'autre **ni montée ni construite**), seuil personnalisé honoré avec
+  contre-preuve au seuil par défaut, rendu sans corps, neutralité LTR/RTL.
+- Gardes de source (`@TestOn('vm')`) : le seuil n'est **nommé** qu'au site de la
+  règle, la comparaison de largeur n'existe qu'à **un** endroit de la famille
+  nav, aucun littéral `600` dans cette famille (FR-26), plus une contre-preuve
+  que la garde de littéral mord.
+
 ## 3.38.0 — 2026-08-30
 
 ### Ajouté

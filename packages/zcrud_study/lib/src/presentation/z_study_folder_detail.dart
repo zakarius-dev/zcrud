@@ -10,8 +10,8 @@
 /// - onglet **Progression** → `ZStudyProgressRings` (+ DTO PRÉ-CALCULÉ
 ///   `ZProgressRingsData`, `zcrud_session`) + cartes de stats INJECTÉES ;
 /// - navigation de sous-dossiers ADAPTATIVE (sidebar redimensionnable/repliable
-///   grand écran ↔ sélecteur compact petit écran) via `ZResponsiveLayout`
-///   (seuil `ZWindowSizeThresholds.mediumMinWidth` = 600, jamais codé en dur).
+///   grand écran ↔ sélecteur compact petit écran) via `ZSubfolderNav`, qui
+///   porte la règle de bascule et son seuil nommé.
 ///
 /// **AD-2/AD-15/SM-1** — état DÉTENU par ce widget (propriétaire UNIQUE), rendu
 /// par tranche via `ValueListenableBuilder` :
@@ -38,7 +38,6 @@ import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
     show ZColorPair, ZDisplayStateBinding, ZcrudTheme, zResolveColorKeyOrSlot;
-import 'package:zcrud_responsive/zcrud_responsive.dart' show ZResponsiveLayout;
 import 'package:zcrud_session/zcrud_session.dart'
     show ZProgressRingsData, ZStudyProgressRings;
 import 'package:zcrud_ui_kit/zcrud_ui_kit.dart'
@@ -53,6 +52,7 @@ import 'z_content_hub_launcher.dart';
 import 'z_sectioned_study_layout.dart';
 import 'z_study_tools_section_spec.dart';
 import 'z_subfolder_narrow_nav.dart';
+import 'z_subfolder_nav.dart';
 import 'z_subfolder_nav_spec.dart';
 import 'z_subfolder_sidebar.dart';
 
@@ -820,28 +820,18 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
     if (widget.subfolderNavPlacement != ZSubfolderNavPlacement.withinTab) {
       return _materialBody();
     }
-    return ZResponsiveLayout(
-      // < 600 dp : sélecteur compact, AUCUNE sidebar dans l'arbre (AC7).
-      compact: (context) => Column(
-        children: <Widget>[
-          // Aiguillage : coquille de l'hôte (seam de SURFACE) → barre de
-          // sélection (DÉFAUT) → rangée de puces (`narrowMode: compact`,
-          // historique).
-          ZSubfolderNarrowNav(
-            spec: widget.nav,
-            selected: _selected,
-            onSelect: _select,
-          ),
-          Expanded(child: _materialBody()),
-        ],
-      ),
-      // ≥ 600 dp : sidebar, AUCUN sélecteur compact (expanded cascade → medium).
-      medium: (context) => Row(
-        children: <Widget>[
-          _sidebarRegion(context),
-          Expanded(child: _materialBody()),
-        ],
-      ),
+    // La règle de bascule n'est PAS réécrite ici : elle vit dans
+    // `ZSubfolderNav` (source unique, seuil nommé), qui rend aussi
+    // l'assemblage — sous le seuil la surface étroite au-dessus du corps,
+    // au-dessus la barre latérale à son côté, jamais les deux. La barre reste
+    // construite ici parce que sa largeur, son repli et ses bornes sont de
+    // l'état détenu par cette page.
+    return ZSubfolderNav(
+      spec: widget.nav,
+      selected: _selected,
+      onSelect: _select,
+      sidebarBuilder: _sidebarRegion,
+      bodyBuilder: (context) => _materialBody(),
     );
   }
 
