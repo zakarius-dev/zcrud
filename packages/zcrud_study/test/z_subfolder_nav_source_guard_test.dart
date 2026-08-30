@@ -37,8 +37,15 @@ void main() {
         // Le seuil lui-même (`ZWindowSizeThresholds.mediumMinWidth`) et sa
         // constante dérivée ne doivent apparaître dans le CODE que là où la
         // règle vit. Ailleurs, c'est une seconde copie de la décision.
+        //
+        // La garde vise le SEUIL, pas le porte-jetons : `ZWindowSizeThresholds`
+        // porte aussi `expandedMinWidth`, qui est la règle d'UNE AUTRE famille
+        // (la grille de dossiers). Bannir la classe entière obligerait cette
+        // famille-là à réécrire son propre seuil en littéral — exactement le
+        // défaut que cette garde combat, déplacé d'un cran.
         final RegExp re = RegExp(
-          r'\b(ZWindowSizeThresholds|kZSubfolderSidebarBreakpoint)\b',
+          r'\b(ZWindowSizeThresholds\.mediumMinWidth|'
+          r'kZSubfolderSidebarBreakpoint)\b',
         );
         final Map<String, int> hits = <String, int>{};
         for (final File f in libDartFiles()) {

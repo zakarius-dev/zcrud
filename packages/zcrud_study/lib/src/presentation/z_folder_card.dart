@@ -94,6 +94,23 @@ const double _kPastilleSize = 14;
 /// seul, qui peut calibrer le seuil.
 const double kZFolderCardFooterBesideMinWidth = 740;
 
+/// Répartition VERTICALE du contenu d'une [ZFolderCard] quand la hauteur
+/// disponible dépasse la hauteur naturelle du contenu (cellule de grille).
+///
+/// UI-pure, **non sérialisé** ⇒ aucun `@JsonKey`. Si une sérialisation
+/// devenait nécessaire, l'enum devrait alors porter
+/// `@JsonKey(unknownEnumValue:)` (invariant AD-10).
+enum ZFolderCardBodyPlacement {
+  /// Bloc de tête (titre + sous-titre) ancré en **BAS** de la hauteur
+  /// résiduelle : la pastille reste en haut, le vide s'ouvre entre elle et le
+  /// titre. **Défaut** — c'est le rendu de la primitive.
+  bottom,
+
+  /// Pastille, titre et sous-titre **solidaires en HAUT** ; le vide s'ouvre
+  /// entre ce bloc et le pied de carte.
+  top,
+}
+
 /// Carte d'un dossier d'étude dans une grille.
 ///
 /// ```dart
@@ -124,6 +141,7 @@ class ZFolderCard extends StatelessWidget {
     this.counts,
     this.footer,
     this.footerPlacement,
+    this.bodyPlacement,
     this.footerBesideMinWidth,
     this.menu,
     this.archivedLabel,
@@ -233,6 +251,27 @@ class ZFolderCard extends StatelessWidget {
   /// deux fournis : avec un seul créneau il n'y a rien à empiler, et les trois
   /// valeurs rendent alors le même pixel (dont la place du badge « Archivé »).
   final ZFolderCardFooterPlacement? footerPlacement;
+
+  /// Où se place le bloc de tête (titre + sous-titre) quand la hauteur
+  /// DISPONIBLE dépasse la hauteur naturelle du contenu — c'est-à-dire en
+  /// cellule de grille, jamais en usage autonome.
+  ///
+  /// * [ZFolderCardBodyPlacement.bottom] (**défaut**) — le bloc est ancré en
+  ///   BAS de la hauteur résiduelle : la pastille reste en haut, le vide
+  ///   s'ouvre ENTRE la pastille et le titre.
+  /// * [ZFolderCardBodyPlacement.top] — pastille, titre et sous-titre
+  ///   solidaires en HAUT, le vide s'ouvre entre ce bloc et le pied.
+  ///
+  /// `null` ⇒ [ZFolderCardBodyPlacement.bottom], le rendu historique : une
+  /// carte qui ne déclare rien rend **exactement** le pixel d'avant, en
+  /// cellule bornée comme à hauteur libre.
+  ///
+  /// À hauteur NON bornée, les deux valeurs rendent le même pixel : sans
+  /// hauteur résiduelle, il n'y a rien à répartir.
+  ///
+  /// Le patron anti-overflow est tenu dans les deux cas : le titre reste borné
+  /// à la place réellement disponible et le sous-titre absorbe le reliquat.
+  final ZFolderCardBodyPlacement? bodyPlacement;
 
   /// Seuil de largeur (dp) du régime [ZFolderCardFooterPlacement.adaptive],
   /// mesuré sur la largeur RÉELLEMENT offerte au bas de carte (padding interne
@@ -620,7 +659,18 @@ class ZFolderCard extends StatelessWidget {
               if (bounded)
                 Expanded(
                   child: Align(
-                    alignment: AlignmentDirectional.bottomStart,
+                    // La hauteur résiduelle est absorbée par cet `Align` : son
+                    // ancrage décide donc DE QUEL CÔTÉ le vide s'ouvre. Ancré
+                    // en bas (défaut historique), le vide se loge entre la
+                    // pastille et le titre ; ancré en haut, il descend sous le
+                    // bloc de tête. Dans les deux cas le titre est ellipsé,
+                    // jamais débordé — c'est l'`Align` qui prête la place, pas
+                    // un `Spacer` à hauteurs fixes.
+                    alignment:
+                        (bodyPlacement ?? ZFolderCardBodyPlacement.bottom) ==
+                            ZFolderCardBodyPlacement.top
+                        ? AlignmentDirectional.topStart
+                        : AlignmentDirectional.bottomStart,
                     child: titleBlockFor(bounded: true),
                   ),
                 )

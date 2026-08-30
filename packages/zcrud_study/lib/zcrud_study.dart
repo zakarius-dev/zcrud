@@ -149,6 +149,10 @@ export 'src/presentation/z_flashcard_list_view.dart';
 export 'src/presentation/z_folder_card.dart';
 export 'src/presentation/z_folder_card_chrome.dart';
 export 'src/presentation/z_folder_card_reference.dart';
+// Jetons de la GRILLE de dossiers (largeurs d'item par palier, hauteur de
+// cellule, espacement) : ce que `ZFolderCardReference` ne couvre pas, parce
+// que la grille est posée par l'appelant.
+export 'src/presentation/z_folder_grid_reference.dart';
 // Barre segmentée de progression d'un dossier : elle consomme la VALEUR
 // agrégée (`ZFolderProgressSummary`) — jamais les flux, jamais un recalcul
 // au rendu.

@@ -3,6 +3,60 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.44.0 — 2026-08-30
+
+### Ajouté
+
+- **`ZFolderGridReference` — les quatre nombres de la grille de dossiers, au
+  socle** (CR-LEX-93, `MINEUR`). Les deux hôtes réécrivaient à l'identique
+  `minItemWidth` **300** / **350** au-delà du palier, `cellHeight` **250**,
+  `spacing` **8** ; IFFD réécrivait en plus le seuil **840** que
+  `zcrud_responsive` porte déjà (`ZWindowSizeThresholds.expandedMinWidth`).
+  Valeurs relevées sur `main` d'IFFD, `folders_page.dart:450` (largeurs et
+  palier), `:648-649` (espacements), `:652` (hauteur de cellule) — le même
+  triplet 300/350/840 se relit sur six autres pages du même hôte, c'est une
+  convention, pas un réglage d'écran.
+  **Aucun widget de grille n'a été ajouté** : `ZAdaptiveGrid` couvre déjà le
+  besoin, la référence n'expose que des jetons et `minItemWidthFor(width)`,
+  qui applique le palier du socle. La dartdoc du fichier montre l'expression
+  d'usage exacte. Fichier de référence **sans aucune couleur** : comme
+  `ZFolderCardReference`, il n'est **pas** inscrit dans l'exemption nominative
+  de la garde anti-couleurs, et une garde vérifie qu'il ne l'est pas.
+- **`ZFolderCard.bodyPlacement` / `ZDefaultFolderCard.bodyPlacement`** —
+  répartition verticale du contenu en cellule haute (CR-LEX-94, `MINEUR`).
+  `ZFolderCardBodyPlacement.top` rend pastille, titre et sous-titre solidaires
+  en haut et déplace le vide sous ce bloc ; `bottom` reste le **défaut**.
+
+### Note d'impact
+
+- **CR-LEX-94 est OPT-IN, et c'est une décision mesurée.** Le vide entre la
+  pastille et le titre ne venait pas du `const Spacer()` de
+  `z_folder_card.dart:403` (celui-ci est **horizontal**, dans la `Row` du pied,
+  et n'est rendu que sans `counts` ni `footer`) mais du patron anti-overflow
+  `Expanded(Align(bottomStart))` du régime borné. Basculer cet ancrage
+  changerait le rendu de **toute** cellule de grille chez **tout** hôte :
+  mesuré en cellule de 250 dp, l'écart pastille→titre passe de **144 dp** à
+  **0**, et les 148 dp de vide descendent sous le sous-titre. Le paramètre
+  laisse donc le défaut intact — un hôte passif rend le pixel d'avant, en
+  cellule bornée comme à hauteur libre — et l'hôte qui veut la répartition de
+  référence la demande. À hauteur non bornée, les deux valeurs rendent le même
+  pixel : sans hauteur résiduelle, il n'y a rien à répartir.
+- **Hôtes ayant contourné** : IFFD et lex peuvent retirer leurs quatre nombres
+  de grille et, pour IFFD, son `840` littéral, au profit de
+  `ZFolderGridReference`. Retirer un contournement de répartition verticale
+  (pied recomposé à la main pour remonter le titre) suppose en revanche de
+  passer `bodyPlacement: top` — sinon le vide revient.
+
+### Interne
+
+- La garde `z_subfolder_nav_source_guard_test` bannissait `ZWindowSizeThresholds`
+  **en entier** hors de `z_subfolder_nav.dart`, alors qu'elle ne défend que le
+  seuil de bascule des sous-dossiers (`mediumMinWidth`, 600). Le motif vise
+  désormais `ZWindowSizeThresholds.mediumMinWidth` : la famille grille de
+  dossiers peut consommer `expandedMinWidth` sans réécrire son seuil en
+  littéral — ce que la garde elle-même combat. Contre-preuve rejouée : un
+  second site de `mediumMinWidth` la fait toujours rougir.
+
 ## 3.43.0 — 2026-08-30
 
 ### Corrigé

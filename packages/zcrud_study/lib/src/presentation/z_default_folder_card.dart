@@ -160,6 +160,7 @@ class ZDefaultFolderCard extends StatelessWidget {
     this.menu,
     this.footer,
     this.footerPlacement,
+    this.bodyPlacement,
     this.footerBesideMinWidth,
     this.accent,
     this.accentGradient,
@@ -255,6 +256,15 @@ class ZDefaultFolderCard extends StatelessWidget {
   /// contraste que cette carte garantit. Empiler le ferme sans
   /// rien rendre à l'hôte : les badges restent peints ici, par `zReadableTintOn`.
   final ZFolderCardFooterPlacement? footerPlacement;
+
+  /// Répartition verticale du contenu quand la cellule est plus haute que le
+  /// contenu naturel. `null` ⇒ [ZFolderCardBodyPlacement.bottom], le rendu
+  /// historique : la pastille en haut, le vide entre elle et le titre.
+  ///
+  /// [ZFolderCardBodyPlacement.top] rend pastille, titre et sous-titre
+  /// solidaires en haut et déplace le vide au milieu, sous le bloc de tête.
+  /// Sans effet à hauteur non bornée : il n'y a alors rien à répartir.
+  final ZFolderCardBodyPlacement? bodyPlacement;
 
   /// Seuil de largeur du régime [ZFolderCardFooterPlacement.adaptive], mesuré
   /// sur la largeur offerte au bas de carte. `null` ⇒ jeton
@@ -544,6 +554,10 @@ class ZDefaultFolderCard extends StatelessWidget {
           footerPlacement ??
           theme.folderCardFooterPlacement ??
           ZFolderCardReference.footerPlacement,
+      // Transmis TEL QUEL (donc `null` par défaut) : la carte par défaut n'a
+      // pas de répartition de référence propre — la primitive reste sur son
+      // ancrage historique tant que l'hôte n'en demande pas un autre.
+      bodyPlacement: bodyPlacement,
       // Laissé tel quel (donc `null` par défaut) : la primitive applique la
       // MÊME chaîne jeton > constante, et il n'existe qu'un seuil dans le socle.
       footerBesideMinWidth: footerBesideMinWidth,
