@@ -12,6 +12,13 @@ library;
 // Elles référencent la surface `EditionFieldType` + types-valeur via l'unique
 // arête (invariant AD-1) `zcrud_annotations → zcrud_core` (cœur OUT=0). Ordre
 // alphabétique (directives_ordering).
+// `ZFieldRename` TYPE un paramètre de `@ZcrudModel` : sans cette ré-exportation,
+// l'énumération n'est pas nommable depuis ce barrel, et `fieldRename:` est un
+// paramètre qu'on ne peut pas renseigner sans importer AUSSI un barrel de
+// `zcrud_core`. Le générateur lit l'argument STATIQUEMENT : un identifiant non
+// résolu n'y devient pas une erreur d'analyse lisible, il devient une constante
+// nulle — donc un échec de build sur la lecture de l'annotation.
+export 'package:zcrud_core/edition.dart' show ZFieldRename;
 export 'src/domain/annotations/z_persist_as.dart';
 export 'src/domain/annotations/zcrud_field.dart';
 export 'src/domain/annotations/zcrud_id.dart';

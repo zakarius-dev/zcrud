@@ -2,6 +2,37 @@
 
 All notable changes to `zcrud_generator` are documented in this file.
 
+## 3.37.0 — 2026-08-30
+
+### Corrigé — `fieldRename` est enfin déclarable depuis un paquet consommateur
+
+`@ZcrudModel(fieldRename: ZFieldRename.…)` écrit dans une bibliothèque qui
+n'importait que `package:zcrud_annotations/zcrud_annotations.dart` faisait
+échouer le build sur « constante nulle ». Cause mesurée : `ZFieldRename` vit
+dans `zcrud_core` et n'était **pas ré-exporté** par le barrel des annotations ;
+l'identifiant écrit ne se résolvait donc pas, et l'analyzer rendait une
+constante `null` pour `fieldRename` là où `kind` restait lisible. Les entités du
+socle y échappaient parce qu'elles importent aussi un barrel de `zcrud_core` —
+d'où l'asymétrie.
+
+- `zcrud_annotations` ré-exporte `ZFieldRename` : le paramètre est renseignable
+  avec le seul barrel des annotations (voir son propre CHANGELOG).
+- **Lecture de secours par l'AST** : si la constante reste illisible (versions
+  désalignées, import masqué), le générateur relit ce qui est **littéralement
+  écrit** sur l'annotation. Seule la forme `ZFieldRename.<valeur>` (préfixe
+  d'import toléré) est acceptée — un alias `const`, une expression calculée ou un
+  argument absent ne donnent rien à lire.
+- **Aucun repli, jamais.** Quand rien de littéral n'est lisible, le build échoue,
+  désormais avec un message **actionnable** : importer `ZFieldRename`, écrire la
+  valeur littéralement, aligner les versions de `zcrud_annotations` et
+  `zcrud_core`. Un repli sur `snake` renommerait les clés persistées à l'insu de
+  l'auteur.
+
+Gardes ajoutées (`test/field_rename_consumer_test.dart`) : déclaration depuis le
+seul barrel des annotations (les trois stratégies), relecture AST quand la
+constante est illisible, refus par échec de build d'un alias `const`, contenu
+actionnable du message.
+
 ## 3.36.0 — 2026-08-30
 
 ### Corrigé — l'extension générée ne peut plus être SÉMANTIQUEMENT MORTE en silence

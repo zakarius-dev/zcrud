@@ -2,6 +2,20 @@
 
 All notable changes to `zcrud_annotations` are documented in this file.
 
+## 3.37.0 — 2026-08-30
+
+### Corrigé — `ZFieldRename` est nommable depuis le barrel
+
+`@ZcrudModel.fieldRename` est typé par `ZFieldRename`, qui vit dans
+`zcrud_core` : le barrel ne l'exportant pas, le paramètre existait sans être
+renseignable depuis une bibliothèque important ce seul barrel. L'argument écrit
+ne se résolvait pas, et le générateur ne voyait pas une erreur de compilation
+mais une **constante nulle** — donc un échec de build.
+
+Le barrel ré-exporte désormais `ZFieldRename`. Deux gardes : la ré-exportation
+elle-même (`test/barrel_reexports_test.dart`) et son usage depuis un fichier qui
+n'importe QUE ce barrel (`test/barrel_consumer_use_test.dart`).
+
 ## 0.90.0 — 2026-08-12
 
 ### Documentation

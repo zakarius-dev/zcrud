@@ -14,8 +14,9 @@ import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
+// `ZFieldRename` arrive par le barrel des annotations, qui le ré-exporte : un
+// import direct de `zcrud_core` serait redondant ici.
 import 'package:zcrud_annotations/zcrud_annotations.dart';
-import 'package:zcrud_core/edition.dart';
 import 'package:zcrud_generator/src/zcrud_model_generator.dart';
 
 const _modelChecker =

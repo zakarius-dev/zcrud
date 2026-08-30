@@ -171,7 +171,14 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       );
     }
 
-    final rename = _renameOf(annotation.read('fieldRename'), element);
+    final rename = _renameOf(
+      annotation.read('fieldRename'),
+      element,
+      // Lecture de SECOURS, évaluée seulement si la constante est illisible :
+      // le texte réellement écrit sur l'annotation. Coût AST nul sur le chemin
+      // nominal.
+      writtenArgument: () => _writtenRenameArgumentOf(element),
+    );
     final kind = annotation.read('kind').isNull
         ? className
         : annotation.read('kind').stringValue;
@@ -576,6 +583,32 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     if (parsed is! ParsedLibraryResult) return null;
     final node = parsed.getFragmentDeclaration(element.firstFragment)?.node;
     return node is ClassDeclaration ? node : null;
+  }
+
+  /// Source EXACTE de l'argument `fieldRename:` tel qu'il est **écrit** sur
+  /// `@ZcrudModel`, ou `null` si l'annotation ne le mentionne pas — ou si l'AST
+  /// n'est pas atteignable.
+  ///
+  /// Sert uniquement de lecture de secours quand la constante de l'annotation
+  /// est illisible : le texte écrit reste disponible là où la valeur résolue ne
+  /// l'est plus. Rien n'est deviné — l'appelant n'accepte que la forme
+  /// littérale `ZFieldRename.<valeur>`.
+  String? _writtenRenameArgumentOf(Element element) {
+    if (element is! ClassElement) return null;
+    final node = _classAstOf(element);
+    if (node == null) return null;
+    for (final annotation in node.metadata) {
+      // Le nom peut être préfixé par un import (`z.ZcrudModel`) : on compare le
+      // dernier segment, jamais le nom nu.
+      if (annotation.name.name.split('.').last != 'ZcrudModel') continue;
+      for (final argument
+          in annotation.arguments?.arguments ?? const <Expression>[]) {
+        if (argument is! NamedExpression) continue;
+        if (argument.name.label.name != 'fieldRename') continue;
+        return argument.expression.toSource();
+      }
+    }
+    return null;
   }
 
   /// Le membre d'instance nommé [memberName] déclaré par un super-type hors SDK
@@ -2017,24 +2050,59 @@ String? _enumConstantName(ConstantReader r) {
   return accessor.isEmpty ? null : accessor.split('.').last;
 }
 
+/// Forme LITTÉRALE seule acceptée en lecture de secours : `ZFieldRename.valeur`,
+/// éventuellement préfixée par un import (`z.ZFieldRename.valeur`).
+///
+/// Le nom de l'énumération est exigé : sans lui, `x.kebab` d'une TOUTE AUTRE
+/// énumération passerait pour un renommage.
+final RegExp _literalRenamePattern =
+    RegExp(r'^(?:[A-Za-z_$][\w$]*\.)?ZFieldRename\.([A-Za-z_$][\w$]*)$');
+
 /// Stratégie de renommage déclarée par `@ZcrudModel.fieldRename`.
 ///
 /// Une constante inconnue est un **échec de build explicite**, jamais un repli
 /// muet sur `snake` : un repli renommerait toutes les clés persistées d'un modèle
 /// à l'insu de son auteur, rendant illisibles les documents déjà écrits.
-ZFieldRename _renameOf(ConstantReader r, Element element) {
+ZFieldRename _renameOf(
+  ConstantReader r,
+  Element element, {
+  required String? Function() writtenArgument,
+}) {
   if (r.isNull) {
-    // En résolution SAINE cette branche est inatteignable : `fieldRename` porte
-    // un défaut non nul (`ZFieldRename.snake`) que l'analyzer matérialise même
-    // quand l'argument est omis. L'atteindre signifie que la lecture de
-    // l'annotation a échoué — un repli muet reproduirait exactement la
+    // La constante est illisible : la résolution de l'annotation a échoué.
+    // Ultime recours AVANT de refuser — ce que l'auteur a littéralement ÉCRIT,
+    // lu sur l'AST, qui survit à l'échec de résolution. Ce n'est pas un repli :
+    // aucune valeur n'est supposée, seule la forme littérale
+    // `ZFieldRename.<valeur>` (préfixe d'import toléré) est acceptée. Un alias
+    // `const`, une expression calculée ou un argument absent ne donnent RIEN à
+    // lire, et le build échoue — un repli muet reproduirait exactement la
     // corruption de clés que ce point d'échec existe pour interdire.
+    final written = writtenArgument();
+    if (written != null) {
+      final literal = _literalRenamePattern.firstMatch(written.trim());
+      if (literal != null) {
+        for (final value in ZFieldRename.values) {
+          if (value.name == literal.group(1)) return value;
+        }
+      }
+    }
     throw InvalidGenerationSourceError(
-      'Lecture de `@ZcrudModel.fieldRename` impossible : constante nulle alors '
-      'que l\'annotation porte un défaut non nul. La résolution de '
-      'l\'annotation a échoué (imports, versions de `zcrud_annotations`) — '
-      'aucun repli n\'est appliqué, il renommerait les clés persistées à '
-      'l\'insu de l\'auteur.',
+      'Lecture de `@ZcrudModel.fieldRename` impossible : la résolution de '
+      'l\'annotation a échoué (constante nulle). Aucun repli n\'est appliqué — '
+      'il renommerait les clés persistées à l\'insu de l\'auteur.'
+      '${written == null ? ' Aucun argument `fieldRename:` n\'est écrit sur '
+          'l\'annotation.' : ' Argument écrit : `$written`.'}'
+      '\nÀ vérifier, dans la bibliothèque qui porte le modèle :'
+      '\n  1. `ZFieldRename` doit y être IMPORTÉ — '
+      '`package:zcrud_annotations/zcrud_annotations.dart` le ré-exporte ; '
+      'un identifiant non résolu devient une constante nulle, pas une erreur '
+      'de compilation visible du générateur ;'
+      '\n  2. écrire la valeur LITTÉRALEMENT (`fieldRename: '
+      'ZFieldRename.${ZFieldRename.values.first.name}`), jamais via un alias '
+      '`const` ni une expression calculée ;'
+      '\n  3. `zcrud_annotations` et `zcrud_core` doivent provenir de la MÊME '
+      'version : deux copies distinctes rendent l\'énumération non résoluble '
+      'depuis l\'annotation.',
       element: element,
     );
   }

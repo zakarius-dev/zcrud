@@ -139,6 +139,49 @@ class ZMindmap extends ZEntity with ZExtensible {
     );
   }
 
+  /// Remplace **la forêt entière** en préservant **tous les autres champs**.
+  ///
+  /// C'est le dernier maillon de la chaîne d'édition de l'arbre :
+  /// [ZMindmapTreeOps] rend une `List<ZMindmapNode>`, et cette méthode est ce
+  /// qui la repose dans l'entité. Sans elle, un appelant qui vient de produire
+  /// une nouvelle forêt n'aurait que le constructeur nominal, où il devrait
+  /// réénumérer chaque champ à la main — et perdrait `description`,
+  /// `extension` ou `extra` au premier oubli, puis à chaque champ ajouté
+  /// ensuite au cœur.
+  ///
+  /// ## L'invariant de l'arbre tient par la PROVENANCE, pas par l'absence
+  ///
+  /// Le motif « la mutation de l'arbre passe par [ZMindmapTreeOps] » reste la
+  /// règle. [nodes] doit donc être **une sortie de [ZMindmapTreeOps]** — ou une
+  /// forêt que l'appelant a construite lui-même en assumant sa cohérence
+  /// (`level` en cascade depuis 0, identifiants uniques). Ce contrat porte sur
+  /// ce que l'appelant fournit, pas sur ce que la signature interdit.
+  ///
+  /// ## Ce que la méthode garantit
+  ///
+  /// - **Préservation par construction** de `id`, `folderId`, `title`,
+  ///   `description`, `extension` et `extra` — y compris les slots nullables,
+  ///   sans sentinelle nécessaire puisque rien d'autre que l'arbre ne bouge.
+  /// - **Normalisation identique au constructeur nominal** : la liste rendue
+  ///   par [ZMindmap.nodes] est une copie **non-modifiable**. Les `level` ne
+  ///   sont **pas** renormalisés (le constructeur ne le fait pas non plus —
+  ///   seule [ZMindmap.fromJson] renormalise, parce qu'elle lit une donnée
+  ///   dont la cohérence n'est pas garantie).
+  /// - Une liste **vide** est admise : elle vide la carte de ses racines.
+  ///
+  /// Pour changer autre chose que l'arbre, utiliser [copyWithPreservingTree].
+  ZMindmap withNodes(List<ZMindmapNode> nodes) {
+    return ZMindmap(
+      id: id,
+      folderId: folderId,
+      title: title,
+      description: description,
+      nodes: nodes,
+      extension: extension,
+      extra: extra,
+    );
+  }
+
   /// Clés **connues** du cœur (le reste alimente [extra]).
   static const Set<String> _knownKeys = <String>{
     'id',
