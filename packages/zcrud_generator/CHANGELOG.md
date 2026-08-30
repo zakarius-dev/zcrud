@@ -2,6 +2,52 @@
 
 All notable changes to `zcrud_generator` are documented in this file.
 
+## 3.36.0 — 2026-08-30
+
+### Corrigé — l'extension générée ne peut plus être SÉMANTIQUEMENT MORTE en silence
+
+Une classe annotée `@ZcrudModel` dont la **hiérarchie** déclarait déjà `toMap()`
+(ou `copyWith()`) en **membre d'instance** recevait un `toMap()` généré dans une
+**extension** — et un membre d'extension ne surcharge **jamais** un membre
+d'instance hérité. L'extension était syntaxiquement présente et sémantiquement
+morte : c'est le corps hérité qui répondait, y compris pour un appel écrit dans
+la sous-classe elle-même. Les champs **propres** du modèle étaient décodés mais
+**jamais écrits** au document persisté.
+
+Rien ne le signalait. Le build passait, `analyze` passait, et un test de fixture
+passait aussi — l'objet en mémoire étant correct, la perte n'existait qu'au
+document. Le premier symptôme aurait été une donnée utilisateur disparue.
+
+Le remède existait déjà — le mixin `_$XxxZcrud`, qui apporte les **mêmes** corps
+en membres d'instance — mais rien n'avertissait celui qui ne l'appliquait pas.
+Ce cas est désormais un **échec de build** (`InvalidGenerationSourceError`)
+nommant la classe, le membre hérité, le `fichier:ligne` de sa déclaration et le
+geste : `class Xxx extends … with _$XxxZcrud`.
+
+Trois situations restent **acceptées**, et sont gardées par contre-preuve : la
+classe applique le mixin (le remède) ; elle déclare le membre elle-même (choix
+écrit dans sa propre source) ; le membre « hérité » vient d'une **extension**,
+qui ne se transmet pas par héritage et ne masque rien.
+
+Aucun modèle du dépôt n'était concerné : `melos run generate` reste vert, sans
+un octet de diff sur les `.g.dart`.
+
+### Corrigé — un accesseur qui rétrécit un champ hérité ne perd plus sa spec
+
+Un getter portant le nom d'un champ **hérité annoté**
+(`DateTime get createdAt => super.createdAt ?? epoch`) était traité comme un
+masquage de champ. Un accesseur n'étant pas un `FieldElement`, la spec du champ
+hérité **disparaissait** : `$XxxFieldSpecs` rétrécissait sans un mot, et le
+`.g.dart` cessait de compiler — pendant que `analyze` disait « No issues », les
+`*.g.dart` étant exclus de l'analyse. Le silence était le défaut.
+
+Seule une **vraie redéclaration de champ** masque désormais. Un accesseur
+n'apporte aucun stockage : la spec du champ hérité est **conservée**, et le
+`toMap()` émis lit `this.<champ>` — donc l'accesseur. Le rétrécissement est
+honoré sans rien coûter à la persistance, et le champ reste `required` au
+constructeur. Si le constructeur non nommé n'expose pas le champ ainsi conservé,
+l'échec de build existant le **nomme** au lieu de le perdre.
+
 ## 3.34.0 — 2026-08-29
 
 ### Ajouté — les structures IMBRIQUÉES : `List<Map<K, V>>` et `Map<K, Map<K2, V2>>`

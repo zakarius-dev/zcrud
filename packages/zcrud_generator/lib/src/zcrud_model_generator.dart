@@ -28,7 +28,10 @@
 /// sur le même champ, **champ non annoté dont le type n'est pas sérialisable**
 /// (le seul silence qui coûterait des données), **enum redéclarant `name`
 /// comme membre d'instance** (l'encodage `.name` émettrait le membre déclaré —
-/// un libellé d'affichage — au lieu du nom technique attendu par le décodeur).
+/// un libellé d'affichage — au lieu du nom technique attendu par le décodeur),
+/// **`toMap()`/`copyWith()` hérité en membre d'INSTANCE sans application du
+/// mixin `_$XxxZcrud`** (l'extension émise serait alors sémantiquement morte —
+/// un membre d'extension ne surcharge jamais un membre d'instance hérité).
 ///
 /// ## Ce que le `toMap()` émis met dans la map — et ce qu'il n'y met pas
 ///
@@ -172,6 +175,11 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     final kind = annotation.read('kind').isNull
         ? className
         : annotation.read('kind').stringValue;
+
+    // Un membre d'EXTENSION ne surcharge jamais un membre d'INSTANCE hérité :
+    // si la hiérarchie en déclare un, l'extension émise serait sémantiquement
+    // MORTE. Contrôlé AVANT toute émission.
+    _rejectDeadExtensionMembers(element, className);
 
     final fields = _collectFields(element, rename);
 
@@ -471,6 +479,142 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   }
 
   // --------------------------------------------------------------------------
+  // Contrat — l'extension émise doit être ATTEIGNABLE.
+  // --------------------------------------------------------------------------
+
+  /// Membres que le générateur émet **à la fois** dans l'extension publique
+  /// `XxxZcrud` et dans le mixin d'instance `_$XxxZcrud`.
+  static const List<String> _kInstanceEmittedMembers = <String>[
+    'toMap',
+    'copyWith',
+  ];
+
+  /// Refuse une extension générée **sémantiquement morte**.
+  ///
+  /// Un membre d'**extension** n'est ni virtuel ni héritable : il ne surcharge
+  /// **jamais** un membre d'instance homonyme hérité d'une super-classe, d'un
+  /// mixin ou d'une interface. Si la hiérarchie de la classe annotée déclare
+  /// déjà `toMap()` (ou `copyWith()`) comme membre d'instance — abstrait ou
+  /// concret — et que la classe **n'applique pas** le mixin `_$XxxZcrud`, le
+  /// `toMap()` émis dans l'extension n'est **jamais appelé** : c'est
+  /// l'implémentation héritée qui répond, y compris sur `model.toMap()` écrit
+  /// depuis la classe elle-même.
+  ///
+  /// Aucun signal existant ne couvre ce cas : le `.g.dart` compile, `analyze`
+  /// est vert, l'objet en mémoire est correct — et les champs propres du modèle
+  /// ne sont **jamais écrits** au document persisté. D'où un **échec de build**.
+  ///
+  /// **Trois cas hors périmètre**, et pourquoi :
+  ///
+  ///   - la classe annotée **applique** le mixin `_$XxxZcrud` : elle porte alors
+  ///     des membres d'instance réels, qui surchargent l'héritage. C'est le
+  ///     remède ;
+  ///   - la classe annotée **déclare elle-même** le membre : le choix est écrit
+  ///     dans sa propre source, sous l'œil de son auteur — l'extension est
+  ///     inerte, mais délibérément ;
+  ///   - le membre hérité vient d'une **extension** : une extension ne se
+  ///     transmet pas par héritage et ne masque rien. Seuls les membres portés
+  ///     par les `InterfaceElement` des super-types sont examinés, ce qui exclut
+  ///     structurellement ce cas.
+  void _rejectDeadExtensionMembers(ClassElement element, String className) {
+    if (_appliesGeneratedMixin(element, className)) return;
+    for (final memberName in _kInstanceEmittedMembers) {
+      final declaredLocally =
+          element.methods.any((m) => !m.isStatic && m.name == memberName);
+      if (declaredLocally) continue;
+      final inherited = _inheritedInstanceMember(element, memberName);
+      if (inherited == null) continue;
+      throw InvalidGenerationSourceError(
+        '$className hérite un `$memberName()` déclaré comme MEMBRE D\'INSTANCE '
+        'par ${inherited.owner} (${inherited.where}), et n\'applique PAS le '
+        'mixin `_\$${className}Zcrud`.\n'
+        'Un membre d\'EXTENSION ne surcharge JAMAIS un membre d\'instance '
+        'hérité : le `$memberName()` émis dans l\'extension `${className}Zcrud` '
+        'ne serait jamais appelé — c\'est l\'implémentation héritée qui '
+        'répondrait, y compris depuis $className. L\'extension serait '
+        'SYNTAXIQUEMENT PRÉSENTE et SÉMANTIQUEMENT MORTE : build vert, '
+        '`analyze` vert, objet en mémoire correct, et les champs propres de '
+        '$className JAMAIS ÉCRITS au document persisté.\n'
+        'GESTE : appliquer le mixin d\'instance émis —\n'
+        '    class $className extends … with _\$${className}Zcrud { … }\n'
+        'Il porte les MÊMES corps que l\'extension (même map, à l\'octet), mais '
+        'en membres d\'instance : ils surchargent l\'héritage et répondent en '
+        'appel polymorphe.\n'
+        'ALTERNATIVE ASSUMÉE : déclarer `$memberName()` à la main sur '
+        '$className — le codegen cesse alors de l\'écrire, et la composition '
+        'avec la base est à votre charge.',
+        element: element,
+      );
+    }
+  }
+
+  /// `true` si la classe annotée applique le mixin généré `_$XxxZcrud`.
+  ///
+  /// Deux lectures, dans cet ordre : les super-types **résolus**
+  /// (`element.mixins`), puis — parce que le mixin vit dans le `part` généré et
+  /// n'est donc pas résolvable au **premier** build — la clause `with` de l'AST.
+  /// Sans la seconde, tout premier build d'un modèle conforme échouerait.
+  bool _appliesGeneratedMixin(ClassElement element, String className) {
+    final expected = '_\$${className}Zcrud';
+    for (final applied in element.mixins) {
+      if (applied.element.name == expected) return true;
+    }
+    final node = _classAstOf(element);
+    final withClause = node?.withClause;
+    if (withClause == null) return false;
+    // Comparaison sur `toSource()` : le nom du type d'un `with` non résolu
+    // reste lisible sur l'AST, là où l'élément est absent.
+    return withClause.mixinTypes.any((t) => t.toSource().trim() == expected);
+  }
+
+  /// Déclaration AST de la classe annotée, ou `null` si la session d'analyse
+  /// n'est pas atteignable.
+  ClassDeclaration? _classAstOf(ClassElement element) {
+    final session = element.session;
+    if (session == null) return null;
+    final parsed = session.getParsedLibraryByElement(element.library);
+    if (parsed is! ParsedLibraryResult) return null;
+    final node = parsed.getFragmentDeclaration(element.firstFragment)?.node;
+    return node is ClassDeclaration ? node : null;
+  }
+
+  /// Le membre d'instance nommé [memberName] déclaré par un super-type hors SDK
+  /// de [element] (super-classe à quelque niveau, mixin ou interface), ou `null`.
+  ///
+  /// Le mixin généré `_$XxxZcrud` est exclu : c'est le remède, jamais le défaut.
+  ({String owner, String where})? _inheritedInstanceMember(
+    ClassElement element,
+    String memberName,
+  ) {
+    final generated = '_\$${element.name}Zcrud';
+    for (final supertype in element.allSupertypes) {
+      final owner = supertype.element;
+      if (owner.library.uri.isScheme('dart')) continue;
+      if (owner.name == generated) continue;
+      for (final method in owner.methods) {
+        if (method.isStatic || method.name != memberName) continue;
+        return (
+          owner: owner.name ?? '<anonyme>',
+          where: _declarationSite(method),
+        );
+      }
+    }
+    return null;
+  }
+
+  /// `uri:ligne` de la déclaration de [member] — de quoi ouvrir le fichier
+  /// fautif depuis le message d'erreur, sans le chercher. Repli sur l'URI seule
+  /// si la position n'est pas atteignable (déclaration sans nom d'origine).
+  String _declarationSite(ExecutableElement member) {
+    final fragment = member.firstFragment;
+    final unit = fragment.libraryFragment;
+    final uri = unit.source.uri.toString();
+    final offset = fragment.nameOffset;
+    if (offset == null) return uri;
+    return '$uri:${unit.lineInfo.getLocation(offset).lineNumber}';
+  }
+
+  // --------------------------------------------------------------------------
   // Collecte des champs (statique).
   // --------------------------------------------------------------------------
 
@@ -554,11 +698,18 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   /// persistance : le build restait vert et la donnée disparaissait du document
   /// à la première écriture, sans aucun signal.
   ///
-  /// **Masquage** : si un champ du même nom Dart est redéclaré plus près de la
-  /// classe annotée (localement ou dans une base intermédiaire), c'est cette
+  /// **Masquage** : si un **champ** du même nom Dart est redéclaré plus près de
+  /// la classe annotée (localement ou dans une base intermédiaire), c'est cette
   /// déclaration-là qui fait foi ; la plus lointaine est ignorée, jamais
   /// collectée deux fois. Deux champs de noms Dart différents résolvant vers la
   /// **même clé persistée** restent une collision — échec de build inchangé.
+  ///
+  /// Un **accesseur** (`DateTime get createdAt => …`) qui rétrécit un champ
+  /// hérité ne masque **pas** : il n'apporte aucun stockage, et la spec du champ
+  /// hérité reste collectée. Le `toMap()` émis lit `this.<champ>`, donc
+  /// l'accesseur — le rétrécissement est honoré sans perdre la persistance. Si
+  /// le constructeur non nommé n'expose pas le champ ainsi conservé, l'échec de
+  /// build de [_requireInheritedInConstructor] le nomme.
   ///
   /// Les interfaces (`implements`) ne sont pas parcourues : elles n'apportent
   /// aucun stockage concret. Les bases du SDK non plus. Un champ hérité
@@ -592,9 +743,15 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     // annotée gagne. `bases` est ordonné du plus lointain au plus proche, on le
     // parcourt donc à l'envers pour élire un vainqueur par nom.
     final winners = <String, FieldElement>{};
+    // Seule une VRAIE redéclaration de champ masque. Un champ synthétique —
+    // induit par un accesseur (`DateTime get createdAt => …`) — n'apporte aucun
+    // stockage : le traiter comme un masquage ferait DISPARAÎTRE la spec du
+    // champ hérité, en silence, alors que l'accesseur ne fait que rétrécir sa
+    // lecture. `toMap()` lit `this.<champ>` : c'est l'accesseur qui répond,
+    // exactement comme voulu.
     final masked = <String>{
       for (final f in element.fields)
-        if (f.name != null) f.name!,
+        if (f.name != null && f.isOriginDeclaration) f.name!,
     };
     for (final base in bases.reversed) {
       if (base.library.uri.isScheme('dart')) continue;
