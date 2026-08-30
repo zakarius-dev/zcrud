@@ -115,6 +115,29 @@ typedef ZMaterialSectionsBuilder =
 typedef ZMaterialSlotBuilder =
     Widget? Function(BuildContext context, String? selectedSubfolderId);
 
+/// Construit le corps ENTIER d'un onglet pour le sous-dossier
+/// [selectedSubfolderId] (`null` = tous).
+///
+/// C'est le contrat de [ZMaterialSectionsBuilder] porté aux onglets **libres**
+/// (Bloc-notes, Progression) : la sélection de fratrie est détenue par
+/// [ZStudyFolderDetail] et évolue par sa propre navigation ; un onglet qui filtre
+/// son contenu par sous-dossier doit donc la recevoir, sinon il rend le
+/// périmètre du montage pendant que l'onglet Matériel suit la navigation.
+///
+/// **Coexiste avec `WidgetBuilder`, ne le remplace pas** : les paramètres
+/// historiques (`notebookBuilder`, `progressionBuilder`) restent supportés et
+/// rendent à l'identique. Dart n'admettant pas deux signatures sur un même nom,
+/// la forme portant la sélection vit sur un paramètre distinct
+/// ([ZStudyFolderDetail.notebookTabBuilder],
+/// [ZStudyFolderDetail.progressionTabBuilder]) — lequel **prime** quand les deux
+/// sont fournis.
+///
+/// Le builder est invoqué DANS le `ValueListenableBuilder` de la sélection : un
+/// changement de fratrie ne reconstruit que le corps de cet onglet, jamais les
+/// onglets ni la navigation (AD-2/SM-1).
+typedef ZStudyTabBuilder =
+    Widget Function(BuildContext context, String? selectedSubfolderId);
+
 /// Page-détail d'un dossier d'étude (ossature composée).
 class ZStudyFolderDetail extends StatefulWidget {
   /// Construit la page-détail. Les libellés d'onglets et la navigation
@@ -126,8 +149,10 @@ class ZStudyFolderDetail extends StatefulWidget {
     required this.notebookTabLabel,
     required this.progressionTabLabel,
     required this.materialSectionsBuilder,
-    required this.notebookBuilder,
     required this.nav,
+    this.notebookBuilder,
+    this.notebookTabBuilder,
+    this.progressionTabBuilder,
     this.subtitle,
     this.gradientKey,
     this.progressionBuilder,
@@ -170,6 +195,12 @@ class ZStudyFolderDetail extends StatefulWidget {
   }) : assert(
          title is Widget || title is String,
          'title doit être un Widget ou un String',
+       ),
+       assert(
+         notebookBuilder != null || notebookTabBuilder != null,
+         'L\'onglet Bloc-notes exige un corps : fournir notebookTabBuilder '
+         '(qui reçoit le sous-dossier sélectionné) ou, forme historique, '
+         'notebookBuilder.',
        );
 
   /// Clé stable de la pastille d'accent d'en-tête (exposée pour les tests).
@@ -303,8 +334,38 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// (câblé sur `ZSectionedStudyLayout.footer`). `null` ⇒ absent.
   final ZMaterialSlotBuilder? materialFooterBuilder;
 
-  /// Constructeur du corps de l'onglet Notebook (slot).
-  final WidgetBuilder notebookBuilder;
+  /// Constructeur du corps de l'onglet Notebook (slot), **forme historique**
+  /// sans sélection de fratrie.
+  ///
+  /// Un onglet dont le contenu dépend du sous-dossier affiché doit utiliser
+  /// [notebookTabBuilder] : ce builder-ci n'est jamais réinvoqué avec la
+  /// sélection courante, et un écran qui la filtre lui-même resterait figé sur
+  /// le périmètre du montage pendant que l'onglet Matériel suit la navigation.
+  ///
+  /// Peut être `null` **si et seulement si** [notebookTabBuilder] est fourni ;
+  /// quand les deux le sont, [notebookTabBuilder] **prime** (ce builder-ci n'est
+  /// alors jamais invoqué).
+  final WidgetBuilder? notebookBuilder;
+
+  /// Constructeur du corps de l'onglet Notebook **recevant le sous-dossier
+  /// sélectionné** (`null` = tous) — même contrat que
+  /// [materialSectionsBuilder].
+  ///
+  /// `null` (défaut) ⇒ capacité absente et rendu **strictement** celui de
+  /// [notebookBuilder] : aucun nœud ajouté, aucun abonnement de plus.
+  ///
+  /// Fourni ⇒ il **prime** sur [notebookBuilder], et il est invoqué dans la
+  /// tranche réactive de la sélection : changer de fratrie ne reconstruit que ce
+  /// corps (AD-2/SM-1).
+  final ZStudyTabBuilder? notebookTabBuilder;
+
+  /// Symétrique de [notebookTabBuilder] pour l'onglet Progression.
+  ///
+  /// Ordre de précédence, du plus fort au plus faible : ce builder-ci,
+  /// [progressionBuilder], puis le rendu historique ([ZStudyProgressRings] +
+  /// [progressStatCards], ou [progressEmptyState] quand [progressData] est
+  /// `null`). `null` (défaut) ⇒ rendu strictement inchangé.
+  final ZStudyTabBuilder? progressionTabBuilder;
 
   /// Constructeur LIBRE du corps de l'onglet Progression, **au même
   /// contrat que [notebookBuilder]** : un `WidgetBuilder` branché directement
@@ -323,6 +384,10 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// piégerait le prochain lecteur. [progressEmptyState] conserve donc son sens
   /// exact — il n'est rendu que lorsque [progressData] est `null` **et** qu'aucun
   /// [progressionBuilder] n'est fourni.
+  ///
+  /// Comme [notebookBuilder], il ne reçoit PAS la sélection de fratrie :
+  /// [progressionTabBuilder] est la forme à utiliser pour une progression
+  /// filtrée par sous-dossier, et elle **prime** sur celle-ci.
   final WidgetBuilder? progressionBuilder;
 
   /// DTO d'affichage PRÉ-CALCULÉ de progression (`null` ⇒ état vide neutre).
@@ -424,6 +489,16 @@ class ZStudyFolderDetail extends StatefulWidget {
   final ZSubfolderNavPlacement subfolderNavPlacement;
 
   /// Navigation de sous-dossiers (données + labels + bornes, tout injecté).
+  ///
+  /// **`subfolders` vide ⇒ AUCUNE navigation n'est montée**, sous aucun
+  /// [subfolderNavPlacement] et à aucune largeur : ni barre latérale, ni surface
+  /// étroite, ni bande hissée, ni hauteur réservée dans l'app-bar. Le corps
+  /// occupe alors toute la largeur (et toute la hauteur) de sa zone, exactement
+  /// comme si cette page n'avait pas de navigation de fratrie.
+  ///
+  /// La borne est `subfolders`, et rien d'autre — voir
+  /// [zSubfolderNavHasDestinations], y compris pour ce que devient
+  /// `ZSubfolderNavSpec.addAction` dans ce cas.
   final ZSubfolderNavSpec nav;
 
   /// Le hub d'ajout de contenu partagé par tous les `+` de la page.
@@ -605,14 +680,24 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
         ZPageTab(
           label: widget.notebookTabLabel,
           icon: widget.notebookTabIcon,
-          contentBuilder: widget.notebookBuilder,
+          // Sans builder porteur de sélection, le `WidgetBuilder` historique est
+          // câblé TEL QUEL (même fonction, pas d'indirection) : l'arbre rendu
+          // est celui d'avant, à l'identique.
+          // Les deux absents sont interdits par `assert` ; en release, repli
+          // NEUTRE plutôt qu'une exception (AD-10) — un onglet vide se voit,
+          // un écran qui plante n'apprend rien.
+          contentBuilder: widget.notebookTabBuilder == null
+              ? (widget.notebookBuilder ?? _emptyTab)
+              : _notebookTab,
         ),
         ZPageTab(
           label: widget.progressionTabLabel,
           icon: widget.progressionTabIcon,
           // Même câblage que l'onglet Notebook : le builder INJECTÉ possède
           // l'onglet ; absent ⇒ anneau historique (`_progressionTab`).
-          contentBuilder: widget.progressionBuilder ?? _progressionTab,
+          contentBuilder: widget.progressionTabBuilder == null
+              ? (widget.progressionBuilder ?? _progressionTab)
+              : _progressionScopedTab,
         ),
       ],
     );
@@ -714,6 +799,10 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
     if (widget.subfolderNavPlacement != ZSubfolderNavPlacement.aboveTabs) {
       return hostSlot;
     }
+    // Rien à naviguer ⇒ aucune bande. Le créneau retombe alors sur le
+    // pass-through pur du slot de l'hôte : sans slot, il est structurellement
+    // ABSENT (AD-4) et le corps garde toute sa hauteur.
+    if (!zSubfolderNavHasDestinations(widget.nav)) return hostSlot;
     final Widget nav = _navBand();
     // **Aucun étirement explicite** : un `SizedBox(width: double.infinity)`
     // a été écrit, puis MESURÉ INERTE (les deux surfaces du socle rendent déjà
@@ -761,6 +850,9 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
     if (widget.subfolderNavPlacement != ZSubfolderNavPlacement.aboveTabBar) {
       return hostSlot;
     }
+    // Rien à naviguer ⇒ aucune bande, et donc aucune hauteur réservée dans
+    // l'app-bar (cf. `_aboveTabBarHeight`, qui applique la même borne).
+    if (!zSubfolderNavHasDestinations(widget.nav)) return hostSlot;
     final Widget nav = _navBand();
     if (hostSlot == null) return nav;
     // `crossAxisAlignment: stretch` — et c'est LOAD-BEARING, **à l'inverse**
@@ -793,6 +885,13 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
   /// quand il y en a un (le créneau porte alors les deux).
   double? _aboveTabBarHeight(BuildContext context) {
     if (widget.subfolderNavPlacement != ZSubfolderNavPlacement.aboveTabBar) {
+      return widget.aboveTabBarHeight;
+    }
+    // Même borne que `_aboveTabBar` : sans bande rendue, rien à additionner —
+    // la hauteur redevient celle du seul slot de l'hôte (repli du socle inclus,
+    // via `null`). Sans cette symétrie, l'app-bar réserverait 48 dp pour un
+    // contenu absent.
+    if (!zSubfolderNavHasDestinations(widget.nav)) {
       return widget.aboveTabBarHeight;
     }
     final double band = _navBandHeight(context);
@@ -873,6 +972,35 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
       ),
     );
   }
+
+  // --- Onglets LIBRES portant la sélection (Bloc-notes / Progression) -------
+
+  /// Enveloppe un [ZStudyTabBuilder] dans la tranche réactive de sélection.
+  ///
+  /// **Même site d'abonnement que le corps Matériel** (`_materialBody`) : c'est
+  /// ce qui garantit que les trois builders voient la MÊME valeur au même
+  /// instant — il n'y a qu'une source (`_selected`), donc aucun onglet ne peut
+  /// diverger d'un autre.
+  ///
+  /// L'abonnement vit **dans** l'onglet, jamais au-dessus : un changement de
+  /// fratrie ne reconstruit ni la barre d'onglets, ni la navigation, ni les
+  /// autres onglets (AD-2/SM-1).
+  Widget _selectionScoped(ZStudyTabBuilder builder) {
+    return ValueListenableBuilder<String?>(
+      valueListenable: _selected,
+      builder: (context, id, _) => builder(context, id),
+    );
+  }
+
+  Widget _notebookTab(BuildContext context) =>
+      _selectionScoped(widget.notebookTabBuilder!);
+
+  Widget _progressionScopedTab(BuildContext context) =>
+      _selectionScoped(widget.progressionTabBuilder!);
+
+  /// Repli neutre quand aucun corps de Bloc-notes n'est fourni (interdit par
+  /// `assert`, donc inatteignable en debug).
+  Widget _emptyTab(BuildContext context) => const SizedBox.shrink();
 
   /// Région sidebar : le repli (`VLB<bool>`) et la largeur (`VLB<double>`) sont
   /// scopés ICI — replier/redimensionner ne reconstruit QUE la sidebar, jamais

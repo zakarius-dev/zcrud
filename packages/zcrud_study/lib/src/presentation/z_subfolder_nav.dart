@@ -38,6 +38,12 @@
 /// [bodyBuilder] absent ⇒ ce widget rend **la variante seule**, sans `Row` ni
 /// `Column` : un appelant qui tient déjà sa propre coquille place la surface
 /// où il veut et ne récupère que la règle et l'exclusivité.
+///
+/// ## Sans destination
+///
+/// `spec.subfolders` vide ⇒ **aucune surface n'est montée**, à aucune largeur :
+/// ni barre latérale, ni surface étroite, ni enveloppe. Voir
+/// [zSubfolderNavHasDestinations] pour la borne exacte.
 library;
 
 import 'package:flutter/foundation.dart' show ValueListenable;
@@ -68,6 +74,24 @@ const double kZSubfolderSidebarBreakpoint =
 /// RTL à largeur égale (AD-13).
 bool zSubfolderNavPrefersSidebar(double availableWidth, {double? breakpoint}) =>
     availableWidth >= (breakpoint ?? kZSubfolderSidebarBreakpoint);
+
+/// **Unique** source de la règle de présence : `true` ⇒ une navigation peut être
+/// montée, `false` ⇒ **aucune surface** ne l'est.
+///
+/// La mesure porte sur `spec.subfolders`, et sur rien d'autre. Une fratrie vide
+/// n'offre **aucune destination** : l'item racine « tous » ne désigne alors que
+/// ce qui est déjà affiché, et le choisir est un no-op. `allSubfoldersLabel`,
+/// `rootItemLabel`, `rootItemIcon` et `addAction` ne déplacent pas cette borne —
+/// un libellé n'est pas une destination.
+///
+/// Conséquence pour l'appelant : quand ceci vaut `false`, l'affordance d'ajout
+/// portée par la navigation (`ZSubfolderNavSpec.addAction`, quel que soit son
+/// `addPlacement`) est elle aussi absente de l'arbre. Un écran qui doit offrir
+/// la création du **premier** sous-dossier place cette action ailleurs — barre
+/// d'application, hub de contenu, état vide du corps — c'est-à-dire là où elle
+/// ne dépend pas d'une navigation.
+bool zSubfolderNavHasDestinations(ZSubfolderNavSpec spec) =>
+    spec.subfolders.isNotEmpty;
 
 /// Bascule responsive entre surface étroite et barre latérale de sous-dossiers.
 class ZSubfolderNav extends StatelessWidget {
@@ -116,6 +140,14 @@ class ZSubfolderNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Rien à naviguer ⇒ rien de monté. La décision précède le `LayoutBuilder`
+    // parce qu'elle ne dépend d'aucune largeur : les deux côtés du seuil sont
+    // également concernés, et l'absence doit être STRUCTURELLE (AD-4) — pas une
+    // surface rendue vide, pas une boîte de largeur nulle qui consommerait
+    // encore une contrainte.
+    if (!zSubfolderNavHasDestinations(spec)) {
+      return bodyBuilder?.call(context) ?? const SizedBox.shrink();
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         // Une seule branche est parcourue : la variante écartée n'est jamais

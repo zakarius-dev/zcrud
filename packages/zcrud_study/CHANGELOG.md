@@ -3,6 +3,67 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.42.0 — 2026-08-30
+
+### Corrigé
+
+- **Une navigation de fratrie SANS DESTINATION n'occupe plus la place**
+  (CR-LEX-90, `MAJEUR`). `ZSubfolderNavSpec.subfolders` vide ⇒ **aucune surface
+  n'est montée**, sous aucun `ZSubfolderNavPlacement` et à aucune largeur : ni
+  barre latérale, ni surface étroite, ni bande hissée, ni hauteur réservée dans
+  l'app-bar.
+
+  Mesuré sur disque **avant** correction, écran 600 × 800, spec
+  `subfolders: []` :
+
+  | placement | avant | après |
+  |---|---|---|
+  | `withinTab` @600 | corps `LTRB(300, 104, 600, 800)` — 300 dp mangés par une barre latérale à zéro item | `LTRB(0, 104, 600, 800)` |
+  | `withinTab` @400 | corps `LTRB(0, 152, 400, 800)` — 48 dp de bande vide | `LTRB(0, 104, 400, 800)` |
+  | `aboveTabs` @600 | bande `LTRB(0, 104, 600, 152)` | absente |
+  | `aboveTabBar` @600 | app-bar 152 dp | 104 dp |
+
+  Symptôme de l'hôte rejoué en garde : une grille à `maxCrossAxisExtent: 320`
+  tenait **une** colonne sur les 300 dp restants, elle en tient de nouveau
+  **deux** sur 600 dp.
+
+  La borne est publiée : `zSubfolderNavHasDestinations(spec)` — elle mesure
+  `subfolders`, et **rien d'autre**. Un `allSubfoldersLabel` seul ne fait pas une
+  destination : mesuré, l'item racine n'y désigne que ce qui est déjà affiché et
+  le choisir est un no-op. Conséquence assumée et gardée : sans destination,
+  l'affordance d'ajout portée par la navigation (`ZSubfolderNavSpec.addAction`,
+  quel que soit son `addPlacement`) est absente elle aussi — la création du
+  *premier* sous-dossier relève de l'app-bar, du hub de contenu ou de l'état vide
+  du corps.
+
+  Inertie stricte avec des sous-dossiers : géométrie des trois placements figée
+  sur un relevé pris **avant** la correction (400 et 600 dp).
+
+### Ajouté
+
+- **`ZStudyFolderDetail.notebookTabBuilder` / `.progressionTabBuilder`** et le
+  typedef **`ZStudyTabBuilder`** — le contrat de `materialSectionsBuilder`
+  (`(BuildContext, String? selectedSubfolderId)`) porté aux deux autres onglets
+  (CR-LEX-91, `MAJEUR`). Le conteneur détient la sélection et la fait évoluer par
+  sa propre navigation ; jusqu'ici seul l'onglet Matériel la recevait, et un
+  écran dont le Bloc-notes filtre par sous-dossier restait figé sur le périmètre
+  du montage — deux onglets désynchronisés, sans qu'aucun test ne rougisse.
+
+  **Forme retenue : paramètres distincts, pas de changement de signature.** Dart
+  n'admet pas deux signatures sur un même nom ; retoucher `notebookBuilder` /
+  `progressionBuilder` aurait cassé tous les hôtes. Les nouveaux paramètres
+  **priment** quand les deux sont fournis, et les anciens restent supportés — ils
+  rendent à l'identique (goldens de rect relevés avant correction) et **ne
+  reçoivent toujours rien** de la navigation, contrat historique conservé.
+  `notebookBuilder` devient optionnel : un `assert` exige l'une des deux formes,
+  et le chemin release retombe sur un onglet vide plutôt que sur une exception
+  (AD-10).
+
+  Les builders portés sont invoqués **dans la même tranche réactive** que le
+  corps Matériel (`ValueListenableBuilder<String?>` sur l'état unique de
+  sélection) : les trois voient donc toujours la même valeur, et un changement de
+  fratrie ne reconstruit que le corps de l'onglet visible (AD-2/SM-1).
+
 ## 3.40.0 — 2026-08-30
 
 ### Ajouté

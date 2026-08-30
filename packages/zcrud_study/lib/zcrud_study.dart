@@ -246,6 +246,8 @@ export 'src/presentation/z_study_folder_detail.dart'
         ZStudyFolderDetail,
         ZMaterialSectionsBuilder,
         ZMaterialSlotBuilder,
+        // Contrat des onglets libres portant la sélection de fratrie.
+        ZStudyTabBuilder,
         // Hauteur mesurée de la bande de navigation hissée : publique pour
         // que l'hôte puisse composer sa propre déclaration
         // (`subfolderNavBandHeight`) à partir d'elle plutôt que de la

@@ -231,10 +231,17 @@ void main() {
       tester,
     ) async {
       await setScreen(tester, 500, 800);
-      await pumpDetail(tester, nav: navSpec(subfolders: const <ZSubfolderRef>[]));
-
-      // Zéro sous-dossier : cas le plus proche du vide, et pourtant le repli
-      // s'affiche.
+      // 🔁 RECIBLÉE (CR-LEX-90). Cette garde mesurait `subfolders: []` et
+      // affirmait « la barre s'affiche quand même, avec son repli » — elle
+      // DÉFENDAIT le défaut que CR-LEX-90 corrige : une navigation à zéro
+      // destination n'est plus montée du tout, donc la propriété n'y est plus
+      // observable. La propriété elle-même (le déclencheur ne rend jamais une
+      // ligne vide) reste vraie et vaut d'être gardée : elle est désormais
+      // mesurée sur le cas le plus proche du vide où la barre EXISTE encore —
+      // une seule destination, aucune sélection ⇒ repli sur le libellé racine.
+      // L'absence à zéro destination a sa propre garde dédiée
+      // (`cr_lex90_91_*`), qui rougirait si la barre revenait.
+      await pumpDetail(tester, nav: navSpec(subfolders: refs(n: 1)));
       final Iterable<Text> texts = tester.widgetList<Text>(
         find.descendant(
           of: find.byKey(ZSubfolderSelectorBar.triggerKey),

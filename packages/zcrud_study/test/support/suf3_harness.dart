@@ -173,6 +173,12 @@ Future<ZStudyFolderDetail> pumpDetail(
   ZMaterialSlotBuilder? materialHeaderBuilder,
   ZMaterialSlotBuilder? materialFooterBuilder,
   WidgetBuilder? notebookBuilder,
+  // CR-LEX-91 — builders d'onglet PORTANT la sélection de fratrie. `null` ⇒
+  // défaut de production (capacité absente) : le harnais n'en fabrique jamais,
+  // sans quoi les gardes d'inertie mesureraient déjà le chemin porté.
+  ZStudyTabBuilder? notebookTabBuilder,
+  ZStudyTabBuilder? progressionTabBuilder,
+  WidgetBuilder? progressionBuilder,
   ZProgressRingsData? progressData,
   List<Widget> progressStatCards = const <Widget>[],
   Widget? progressEmptyState,
@@ -225,10 +231,19 @@ Future<ZStudyFolderDetail> pumpDetail(
     materialSectionsBuilder: materialSectionsBuilder ?? defaultSections,
     materialHeaderBuilder: materialHeaderBuilder,
     materialFooterBuilder: materialFooterBuilder,
-    notebookBuilder:
-        notebookBuilder ??
-        (context) =>
-            const Text('NOTE_BODY', key: ValueKey<String>('notebook-marker')),
+    // Le corps de repli du harnais n'est posé que si l'appelant n'a fourni
+    // AUCUNE des deux formes : sans cette condition, une garde qui n'injecte que
+    // `notebookTabBuilder` mesurerait la précédence avec les deux présents.
+    notebookBuilder: notebookBuilder ??
+        (notebookTabBuilder != null
+            ? null
+            : (context) => const Text(
+                  'NOTE_BODY',
+                  key: ValueKey<String>('notebook-marker'),
+                )),
+    notebookTabBuilder: notebookTabBuilder,
+    progressionTabBuilder: progressionTabBuilder,
+    progressionBuilder: progressionBuilder,
     progressData: progressData,
     progressStatCards: progressStatCards,
     progressEmptyState: progressEmptyState,
