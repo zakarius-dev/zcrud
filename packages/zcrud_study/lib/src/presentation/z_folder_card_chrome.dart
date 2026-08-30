@@ -4,6 +4,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
+import 'z_gradient_geometry.dart';
+
 /// Barre d'accent optionnelle pour [ZFolderCard.headerDecoration].
 ///
 /// [gradientKey] est l'identité persistante et opaque du dossier (par exemple
@@ -11,6 +13,10 @@ import 'package:zcrud_core/zcrud_core.dart';
 /// filtre : un dossier doit conserver son dégradé quand son ordre d'affichage
 /// change. Sans clé, resolver ou tokens complets, ce widget est
 /// structurellement absent.
+///
+/// Les jetons `ZcrudTheme.gradientBegin` / `gradientEnd` donnent sa géométrie
+/// au dégradé qui n'en déclare pas ; un dégradé qui déclare la sienne la
+/// conserve (invariant AD-13).
 class ZFolderCardGradientAccent extends StatelessWidget {
   /// Construit une barre d'accent résolue par la couture hôte.
   const ZFolderCardGradientAccent({required this.gradientKey, super.key});
@@ -24,24 +30,15 @@ class ZFolderCardGradientAccent extends StatelessWidget {
 
     final ZcrudTheme theme = ZcrudTheme.of(context);
     final double? height = theme.accentBarHeight;
-    final AlignmentGeometry? begin = theme.gradientBegin;
-    final AlignmentGeometry? end = theme.gradientEnd;
     final ZGradientSpec? spec = zResolveGradient(context, gradientKey);
-    if (spec == null || height == null || begin == null || end == null) {
+    if (spec == null || height == null || !zHasGradientGeometryTokens(theme)) {
       return const SizedBox.shrink();
     }
 
-    final Gradient gradient = switch (spec.gradient) {
-      final LinearGradient linear => LinearGradient(
-        colors: linear.colors,
-        stops: linear.stops,
-        begin: begin,
-        end: end,
-        tileMode: linear.tileMode,
-        transform: linear.transform,
-      ),
-      _ => spec.gradient,
-    };
+    final Gradient gradient = zApplyThemedGradientGeometry(
+      spec.gradient,
+      theme,
+    );
 
     return Container(
       width: theme.iconContainerSize ?? theme.gapL,

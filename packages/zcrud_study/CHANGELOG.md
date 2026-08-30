@@ -3,6 +3,42 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.43.0 — 2026-08-30
+
+### Corrigé
+
+- **La bande en dégradé retrouve sa géométrie directionnelle** (CR-LEX-92,
+  `MINEUR`, invariant AD-13). `ZDefaultFolderCard` rendait le `ZGradientSpec`
+  **verbatim** (`BoxDecoration(gradient: signature.gradient)`) pendant que
+  `ZFolderCardGradientAccent` appliquait, lui, `ZcrudTheme.gradientBegin` /
+  `gradientEnd` : deux chemins divergents dans le même paquet. Un
+  `LinearGradient` construit sans `begin`/`end` porte les défauts **non
+  directionnels** de Flutter (`Alignment.centerLeft` / `centerRight`) : le
+  dégradé cessait de se miroiter en RTL et les deux jetons de thème étaient
+  morts sur ce chemin, sans un avertissement. Symptôme mesuré par l'hôte à
+  l'adoption : `Expected AlignmentDirectional.centerStart, Actual
+  Alignment.centerLeft`.
+
+  La composition vit désormais à **un seul endroit**
+  (`z_gradient_geometry.dart`, garde de source) et sert les **cinq** surfaces
+  qui rendaient un `ZGradientSpec` : la bande de `ZDefaultFolderCard`,
+  `ZFolderCardGradientAccent`, le segment « appris » de `ZFolderProgressBar`,
+  la pastille de `ZStudyUnitPicker` et la bande + la puce de type de
+  `ZDefaultFlashcardCard`.
+
+  **Borne de détection assumée** : `ZGradientSpec` ne porte pas de `begin`/`end`
+  propres — « non déclaré » n'est donc distinguable que par égalité aux défauts
+  du constructeur Flutter. Les jetons sont appliqués à cette seule condition ;
+  toute autre géométrie est celle de l'appelant et n'est jamais écrasée
+  (précédence paramètre > jeton). Un appelant qui veut réellement un dégradé
+  figé gauche→droite dans les deux sens de lecture ne pose pas les jetons.
+
+  **Inertie** : sans `gradientBegin`/`gradientEnd`, la décoration rendue est
+  **strictement identique** à la 3.42.0 (garde d'égalité stricte sur le
+  `BoxDecoration`). Seul changement de comportement pour un hôte déjà équipé :
+  `ZFolderCardGradientAccent` écrasait jusqu'ici **toute** géométrie déclarée
+  par le résolveur, y compris explicite ; elle est maintenant respectée.
+
 ## 3.42.0 — 2026-08-30
 
 ### Corrigé

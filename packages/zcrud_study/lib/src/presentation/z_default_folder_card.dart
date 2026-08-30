@@ -80,6 +80,7 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 
 import 'z_folder_card.dart';
 import 'z_folder_card_reference.dart';
+import 'z_gradient_geometry.dart';
 import 'z_subject_chip.dart';
 
 /// Un badge de compteur de la carte de dossier par défaut : un glyphe et un
@@ -288,7 +289,16 @@ class ZDefaultFolderCard extends StatelessWidget {
   /// Sans couleur déclarée, la matière suit la **tête** du dégradé (teinte
   /// unique) — le rendu du repli de signature, à l'identique.
   ///
-  /// Le dégradé est peint **tel quel** : `onGradient` est le premier plan que
+  /// **Géométrie** : un dégradé qui n'en déclare pas — un `LinearGradient`
+  /// construit sans `begin`/`end` porte les défauts **non directionnels** de
+  /// Flutter — reçoit celle des jetons `ZcrudTheme.gradientBegin` /
+  /// `gradientEnd`, qui peuvent être directionnels et donc se miroiter en RTL
+  /// (invariant AD-13). Une géométrie déclarée sur le dégradé n'est **jamais**
+  /// écrasée, et sans ces jetons le dégradé est peint tel quel : c'est à
+  /// l'appelant de choisir, en la déclarant ou non.
+  ///
+  /// Les couleurs, elles, sont peintes **telles quelles** : `onGradient` est
+  /// le premier plan que
   /// l'appelant a choisi pour lui, et le plancher de contraste de la carte ne
   /// s'y applique pas (il ne s'applique jamais à une matière déjà peinte par
   /// l'appelant). Le contraste de la tuile, des badges et du sous-titre, lui,
@@ -305,6 +315,10 @@ class ZDefaultFolderCard extends StatelessWidget {
   /// Consultée seulement si [accentGradient] est `null` ; une clé nulle ou
   /// vide, ou un seam qui répond `null`, laisse la chaîne se poursuivre vers le
   /// repli de signature (chaîne totale, invariant AD-10).
+  ///
+  /// Le dégradé rendu par le seam suit la même règle de géométrie que
+  /// [accentGradient] : les jetons de thème complètent ce que le dégradé ne
+  /// déclare pas, et ne remplacent jamais ce qu'il déclare.
   ///
   /// Précédence complète de la bande : [accent] (rendu verbatim) >
   /// [accentGradient] > [gradientKey] > repli de signature (uniquement sans
@@ -497,7 +511,15 @@ class ZDefaultFolderCard extends StatelessWidget {
                 height: resolvedAccentHeight,
                 child: hasSignature
                     ? DecoratedBox(
-                        decoration: BoxDecoration(gradient: signature!.gradient),
+                        // AD-13 : la bande adopte la géométrie du thème quand
+                        // le dégradé n'en déclare pas — sans jetons, la
+                        // décoration reste identique au champ près.
+                        decoration: BoxDecoration(
+                          gradient: zApplyThemedGradientGeometry(
+                            signature!.gradient,
+                            theme,
+                          ),
+                        ),
                       )
                     : ColoredBox(color: readable),
               ));

@@ -23,6 +23,7 @@ import 'package:zcrud_core/zcrud_core.dart'
         zSignatureKey;
 
 import '../domain/z_folder_progress_summary.dart';
+import 'z_gradient_geometry.dart';
 
 /// Hauteur de référence de la barre (dimension de LAYOUT, jamais une couleur).
 const double kZFolderProgressBarHeight = 8;
@@ -198,7 +199,12 @@ class ZFolderProgressBar extends StatelessWidget {
                           color: learnedGradient == null
                               ? learnedPair.color
                               : null,
-                          gradient: learnedGradient?.gradient,
+                          gradient: learnedGradient == null
+                              ? null
+                              : zApplyThemedGradientGeometry(
+                                  learnedGradient.gradient,
+                                  theme,
+                                ),
                         ),
                       ),
                     ),

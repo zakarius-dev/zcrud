@@ -43,7 +43,12 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
-    show ZGradientSpec, zLegacyOr, zResolveAdornmentIcon, zSignatureGradientFor;
+    show
+        ZcrudTheme,
+        ZGradientSpec,
+        zLegacyOr,
+        zResolveAdornmentIcon,
+        zSignatureGradientFor;
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show
         ZStudyKindSpec,
@@ -51,6 +56,8 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
         ZStudyRef,
         kZStudyCapabilityHierarchical,
         zHasCapability;
+
+import 'z_gradient_geometry.dart';
 
 /// Largeur d'indentation appliquée **par niveau** de profondeur.
 ///
@@ -392,7 +399,12 @@ class _ZStudyUnitPickerState extends State<ZStudyUnitPicker> {
         width: 12,
         height: 12,
         decoration: BoxDecoration(
-          gradient: spec.gradient,
+          // Même geste que la bande de carte : la géométrie du thème complète
+          // celle que le dégradé ne déclare pas (AD-13).
+          gradient: zApplyThemedGradientGeometry(
+            spec.gradient,
+            ZcrudTheme.of(context),
+          ),
           shape: BoxShape.circle,
         ),
       ),

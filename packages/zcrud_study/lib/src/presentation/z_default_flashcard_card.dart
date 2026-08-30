@@ -92,6 +92,7 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 
 import 'z_faded_overflow.dart';
 import 'z_flashcard_card_reference.dart';
+import 'z_gradient_geometry.dart';
 import 'z_study_tools_item_card.dart';
 import 'z_tag_chips.dart';
 
@@ -499,7 +500,15 @@ class ZDefaultFlashcardCard extends StatelessWidget {
         child: DecoratedBox(
           decoration: spec == null
               ? BoxDecoration(color: pair.color)
-              : BoxDecoration(gradient: spec.gradient),
+              : BoxDecoration(
+                  // Même geste que la bande de la carte de dossier : la
+                  // géométrie du thème complète celle que le dégradé ne
+                  // déclare pas (AD-13).
+                  gradient: zApplyThemedGradientGeometry(
+                    spec.gradient,
+                    theme,
+                  ),
+                ),
         ),
       ),
       // ② + ③ Ligne d'EN-TÊTE de référence : tuile d'icône ET zone de
@@ -889,7 +898,10 @@ class ZDefaultFlashcardCard extends StatelessWidget {
                             )
                           : BoxDecoration(
                               shape: BoxShape.circle,
-                              gradient: spec.gradient,
+                              gradient: zApplyThemedGradientGeometry(
+                                spec.gradient,
+                                ZcrudTheme.of(context),
+                              ),
                             ),
                     ),
                   ),
