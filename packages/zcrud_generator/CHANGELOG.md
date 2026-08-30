@@ -2,6 +2,62 @@
 
 All notable changes to `zcrud_generator` are documented in this file.
 
+## 3.40.0 — 2026-08-30
+
+### Corrigé — le mixin `_$XxxZcrud` compile enfin sur une base à canaux hors schéma
+
+Le diagnostic d'extension morte prescrivait `class Xxx extends Base with
+_$XxxZcrud`. Appliqué à une base qui porte des **canaux hors schéma**, le geste
+ne compilait pas : le mixin était émis à la vue du **seul schéma**, la base
+déclarait davantage, et l'analyzer rendait deux `invalid_override` —
+`toMap()` contre `toMap({registry})`, et un `copyWith` amputé des paramètres
+`extension` / `extra` / `source`. Le remède prescrit était donc inapplicable, et
+l'alternative (déclarer `copyWith()` à la main) ne pouvait pas déléguer à
+`super` : la sentinelle de la base est privée à sa bibliothèque, et lui en
+passer une autre ferait prendre chaque argument omis pour une valeur explicite.
+
+Quand la chaîne de super-classes déclare déjà `toMap()` ou `copyWith()` **avec
+des paramètres que le schéma ne couvre pas**, le mixin est désormais émis à la
+**signature de la base** :
+
+- clause `on <Base>` — les champs du schéma que la base porte déjà ne sont plus
+  redéclarés en getter abstrait ;
+- `toMap()` reprend les paramètres nommés de la base et, quand celle-ci en donne
+  une implémentation concrète, **délègue** : sa map est étalée d'abord (canaux
+  hors schéma compris), puis **recouverte** par les champs du schéma — une clé
+  libre ne peut donc pas usurper un champ persisté ;
+- `copyWith()` reprend les paramètres de la base absents du schéma et les passe
+  au constructeur, chacun préservant la valeur courante quand l'argument est
+  omis.
+
+**La sentinelle de la base n'est jamais nommée** : le corps émis utilise celle
+du fichier généré. Une valeur de défaut n'appartient pas à la signature d'une
+méthode — c'est l'implémentation réellement appelée qui applique la sienne —
+donc un argument omis reste un argument omis, y compris sur un appel fait à
+travers le type de base. Aucune sentinelle publique n'est requise.
+
+**Deux échecs de build explicites** remplacent un code émis invalide : une base
+dont `toMap()`/`copyWith()` prend des paramètres **positionnels**, et un
+paramètre de `copyWith()` sans accesseur de même nom sur la base (sa valeur
+courante serait alors inexprimable).
+
+**Inertie** : un modèle dont la base ne déclare ni `toMap()` ni `copyWith()`, ou
+qui les déclare sans paramètre hors schéma, reçoit le mixin **inchangé** — ni
+clause `on`, ni `@override`, ni délégation. Aucune des 65 entités annotées du
+socle n'est concernée (leur seule base, `ZEntity`, ne déclare aucun des deux
+membres) : la régénération ne produit aucun diff.
+
+### Ajouté
+
+- Fixture de preuve `test/models/audit_base.dart` + `audit_entry.dart` : une
+  base à sentinelle **privée**, `toMap({registry})` et `copyWith` à trois canaux
+  hors schéma. Le `.g.dart` réel en est la garde de compilation.
+- Six gardes (`test/aligned_mixin_test.dart`) : signature reprise (tear-off
+  typé), surcharge visible à travers le type de base, délégation des canaux,
+  non-écrasement d'un canal omis par `copyWith` (y compris via le type de base),
+  recouvrement du schéma sur la base, et inertie sur les deux formes de base qui
+  ne l'imposent pas.
+
 ## 3.37.0 — 2026-08-30
 
 ### Corrigé — `fieldRename` est enfin déclarable depuis un paquet consommateur

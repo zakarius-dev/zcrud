@@ -157,6 +157,15 @@ Future<void> setScreen(WidgetTester tester, double w, double h) async {
 Future<ZStudyFolderDetail> pumpDetail(
   WidgetTester tester, {
   Object title = 'Dossier',
+  // Libellés d'onglets : par DÉFAUT les constantes partagées du harnais (aucun
+  // test existant ne change de rendu). Surchargeables pour éprouver des
+  // libellés longs (débordement de la barre d'onglets).
+  String materialTabLabel = kMatTab,
+  String notebookTabLabel = kNoteTab,
+  String progressionTabLabel = kProgTab,
+  // `null` ⇒ DÉFAUT DE PRODUCTION (aucun alignement déclaré) : le harnais ne
+  // recopie jamais un défaut.
+  TabAlignment? tabAlignment,
   String? colorKey,
   int colorSlotIndex = 0,
   ZMaterialSectionsBuilder? materialSectionsBuilder,
@@ -210,9 +219,9 @@ Future<ZStudyFolderDetail> pumpDetail(
     title: title,
     colorKey: colorKey,
     colorSlotIndex: colorSlotIndex,
-    materialTabLabel: kMatTab,
-    notebookTabLabel: kNoteTab,
-    progressionTabLabel: kProgTab,
+    materialTabLabel: materialTabLabel,
+    notebookTabLabel: notebookTabLabel,
+    progressionTabLabel: progressionTabLabel,
     materialSectionsBuilder: materialSectionsBuilder ?? defaultSections,
     materialHeaderBuilder: materialHeaderBuilder,
     materialFooterBuilder: materialFooterBuilder,
@@ -248,6 +257,7 @@ Future<ZStudyFolderDetail> pumpDetail(
     aboveTabBarHeight: aboveTabBarHeight,
     subfolderNavBandHeight: subfolderNavBandHeight,
     mode: mode,
+    tabAlignment: tabAlignment,
   );
   await tester.pumpWidget(
     MaterialApp(

@@ -144,6 +144,7 @@ class ZStudyFolderDetail extends StatefulWidget {
     this.menuActions = const <ZAppBarAction>[],
     this.search,
     this.mode = ZPageAppBarMode.fixed,
+    this.tabAlignment,
     this.floatingActionButton,
     this.floatingActionButtonLocation,
     this.persistentFooterButtons,
@@ -233,6 +234,24 @@ class ZStudyFolderDetail extends StatefulWidget {
 
   /// Mode d'app-bar (fixe vs sliver repliable) — délégué à SUF-1.
   final ZPageAppBarMode mode;
+
+  /// Alignement de la barre d'onglets, **propagé tel quel** à
+  /// `ZPageScaffold.tabAlignment` (donc à `TabBar.tabAlignment`).
+  ///
+  /// `null` (défaut) ⇒ **rien n'est déclaré** : le `TabBar` conserve la
+  /// résolution Flutter, c'est-à-dire `TabAlignment.startOffset` puisque la
+  /// barre est défilante. Cet alignement réserve un décrochage de tête avant
+  /// le premier onglet ; avec des libellés longs, il pousse les derniers
+  /// onglets d'autant plus loin hors du viewport.
+  ///
+  /// `TabAlignment.start` supprime ce décrochage et colle le premier onglet au
+  /// bord de tête : c'est la valeur à déclarer quand la page doit tenir le plus
+  /// d'onglets possible dans une fenêtre étroite.
+  ///
+  /// La barre est **toujours défilante** (`isScrollable: true`, décidé par le
+  /// socle de page) : `TabAlignment.fill` n'est donc pas une valeur valide ici,
+  /// et Flutter l'assertionne.
+  final TabAlignment? tabAlignment;
 
   /// Bouton d'action flottant relayé au `Scaffold` du shell, ou `null`.
   final Widget? floatingActionButton;
@@ -556,6 +575,9 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
       actions: actions,
       search: widget.search,
       mode: widget.mode,
+      // Pass-through pur : `null` ⇒ le shell ne déclare aucun alignement et
+      // le `TabBar` garde la résolution Flutter (arbre strictement inchangé).
+      tabAlignment: widget.tabAlignment,
       floatingActionButton: widget.floatingActionButton,
       floatingActionButtonLocation: widget.floatingActionButtonLocation,
       persistentFooterButtons: widget.persistentFooterButtons,

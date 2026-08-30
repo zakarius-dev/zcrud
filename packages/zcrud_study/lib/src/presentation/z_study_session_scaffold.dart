@@ -101,6 +101,7 @@ class ZStudySessionScaffold extends StatelessWidget {
     this.search,
     this.tabs,
     this.pageMode = ZPageAppBarMode.fixed,
+    this.tabAlignment,
     this.floatingActionButton,
     this.floatingActionButtonLocation,
     this.persistentFooterButtons,
@@ -221,6 +222,15 @@ class ZStudySessionScaffold extends StatelessWidget {
   /// Mode d'app-bar (fixe / sliver) — pass-through.
   final ZPageAppBarMode pageMode;
 
+  /// Alignement de la barre d'onglets — pass-through `ZPageScaffold`.
+  ///
+  /// `null` (défaut) ⇒ rien n'est déclaré : le `TabBar` garde la résolution
+  /// Flutter (`TabAlignment.startOffset`, la barre étant défilante).
+  /// `TabAlignment.start` supprime le décrochage de tête et gagne la place
+  /// correspondante pour les derniers onglets. `TabAlignment.fill` n'est pas
+  /// valide sur une barre défilante et est assertionné par Flutter.
+  final TabAlignment? tabAlignment;
+
   /// FAB — pass-through `Scaffold`.
   final Widget? floatingActionButton;
 
@@ -264,6 +274,8 @@ class ZStudySessionScaffold extends StatelessWidget {
         search: search,
         tabs: tabs,
         mode: pageMode,
+        // Pass-through pur : `null` ⇒ aucun alignement déclaré côté shell.
+        tabAlignment: tabAlignment,
         floatingActionButton: floatingActionButton,
         floatingActionButtonLocation: floatingActionButtonLocation,
         persistentFooterButtons: persistentFooterButtons,

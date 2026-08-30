@@ -15,7 +15,11 @@
 ///      en membres d'INSTANCE, à appliquer (`class Xxx … with _$XxxZcrud`)
 ///      quand un membre d'extension ne suffit pas : une extension ne satisfait
 ///      jamais un membre abstrait hérité et reste invisible à un appel fait à
-///      travers un type de base. Application facultative, corps identiques ;
+///      travers un type de base. Application facultative, corps identiques —
+///      sauf si la super-classe déclare déjà ces membres avec des paramètres
+///      hors schéma (un `toMap({registry})`, un `copyWith` couvrant
+///      `extension`/`extra`/`source`) : le mixin est alors émis **à la
+///      signature de la base**, et lui **délègue** ces canaux ;
 ///   3. `$XxxFieldSpecs` — `List<ZFieldSpec>` projeté 1:1 de `@ZcrudField`, avec
 ///      **inférence de type** si `@ZcrudField.type == null` ;
 ///   4. `registerXxx(ZcrudRegistry)` — câblage `kind → (fromMap, toMap,
@@ -137,6 +141,45 @@ class _ContextShape {
   bool get fromMapAny => fromMapExtensionParser || fromMapSourceRegistry;
 }
 
+/// Contrainte de signature imposée au mixin `_$XxxZcrud` par une super-classe
+/// qui déclare déjà `toMap()` / `copyWith()` avec des paramètres hors schéma.
+class _SuperShape {
+  const _SuperShape({
+    required this.onType,
+    required this.superProvides,
+    required this.toMapParams,
+    required this.delegatesToMap,
+    required this.hasSuperToMap,
+    required this.hasSuperCopyWith,
+    required this.extraCopyParams,
+  });
+
+  /// Type de la clause `on` du mixin — la super-classe déclarée.
+  final String onType;
+
+  /// Champs du schéma pour lesquels la base expose déjà un accesseur : le mixin
+  /// n'en redéclare pas de getter abstrait.
+  final Set<String> superProvides;
+
+  /// Paramètres nommés du `toMap()` de la base : déclaration à reprendre, et
+  /// argument à faire suivre lors de la délégation.
+  final List<({String decl, String forward})> toMapParams;
+
+  /// La base donne une implémentation CONCRÈTE de `toMap()` : le corps émis peut
+  /// l'appeler par `super` au lieu de réimplémenter ses canaux hors schéma.
+  final bool delegatesToMap;
+
+  /// La base déclare `toMap()` — le membre émis est donc une surcharge.
+  final bool hasSuperToMap;
+
+  /// La base déclare `copyWith()` — le membre émis est donc une surcharge.
+  final bool hasSuperCopyWith;
+
+  /// Paramètres du `copyWith()` de la base absents du schéma (canaux hors
+  /// codegen), avec le type de l'accesseur correspondant sur la base.
+  final List<({String name, String typeStr})> extraCopyParams;
+}
+
 /// Générateur du modèle `@ZcrudModel` (émission `part`).
 class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   /// Construit le générateur (`const`, sans état).
@@ -205,7 +248,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       ..writeln()
       ..writeln(_emitExtension(className, fields))
       ..writeln()
-      ..writeln(_emitInstanceMixin(className, fields))
+      ..writeln(_emitInstanceMixin(className, fields, element))
       ..writeln()
       ..writeln(_emitFieldSpecs(className, fields))
       ..writeln()
@@ -544,9 +587,13 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         '$className JAMAIS ÉCRITS au document persisté.\n'
         'GESTE : appliquer le mixin d\'instance émis —\n'
         '    class $className extends … with _\$${className}Zcrud { … }\n'
-        'Il porte les MÊMES corps que l\'extension (même map, à l\'octet), mais '
-        'en membres d\'instance : ils surchargent l\'héritage et répondent en '
-        'appel polymorphe.\n'
+        'Il porte les mêmes corps que l\'extension, mais en membres '
+        'd\'instance : ils surchargent l\'héritage et répondent en appel '
+        'polymorphe. Le mixin est émis À LA SIGNATURE de la base — paramètres '
+        'nommés de son `toMap()` et paramètres de son `copyWith()` hors schéma '
+        '(`extension`, `extra`, `source`…) compris — et DÉLÈGUE ces canaux à '
+        'la base au lieu de les réimplémenter : rien à recopier, et la '
+        'sentinelle de la base, fût-elle privée, n\'a pas à être nommée.\n'
         'ALTERNATIVE ASSUMÉE : déclarer `$memberName()` à la main sur '
         '$className — le codegen cesse alors de l\'écrire, et la composition '
         'avec la base est à votre charge.',
@@ -1617,21 +1664,9 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     //
     // On n'omet PAS la clé non-nulle : le round-trip `fromMap(toMap(x))` doit
     // rester fidèle pour un miroir renseigné.
-    final toMapEntries = fields
-        .map((f) => _kReservedSyncKeys.contains(f.key) && f.nullable
-            ? "      if (this.${f.dartName} != null) '${f.key}': "
-                "${_toMapExpr(f)},"
-            : "      '${f.key}': ${_toMapExpr(f)},")
-        .join('\n');
-
-    final copyParams = fields
-        .map((f) => '    Object? ${f.dartName} = $_undefinedRef,')
-        .join('\n');
-    final copyArgs = fields
-        .map((f) => '      ${f.dartName}: identical(${f.dartName}, '
-            '$_undefinedRef) ? this.${f.dartName} : ${f.dartName} as '
-            '${f.typeStr},')
-        .join('\n');
+    final toMapEntries = _toMapEntries(fields);
+    final copyParams = _copyParams(fields);
+    final copyArgs = _copyArgs(fields);
 
     return '  /// Sérialise vers la map persistée (snake_case, enum camelCase, '
         'ISO-8601).\n'
@@ -1643,6 +1678,28 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         '  $className copyWith({\n$copyParams\n  }) =>\n'
         '      $className(\n$copyArgs\n      );';
   }
+
+  /// Entrées `'clé': expression,` du `toMap()` émis — un fragment par champ
+  /// persisté, indenté pour un littéral de map.
+  String _toMapEntries(List<_Field> fields) => fields
+      .map((f) => _kReservedSyncKeys.contains(f.key) && f.nullable
+          ? "      if (this.${f.dartName} != null) '${f.key}': "
+              "${_toMapExpr(f)},"
+          : "      '${f.key}': ${_toMapExpr(f)},")
+      .join('\n');
+
+  /// Paramètres nommés à sentinelle du `copyWith()` émis — un par champ.
+  String _copyParams(List<_Field> fields) => fields
+      .map((f) => '    Object? ${f.dartName} = $_undefinedRef,')
+      .join('\n');
+
+  /// Arguments du constructeur dans le `copyWith()` émis — un par champ,
+  /// chacun préservant la valeur courante quand l'argument est omis.
+  String _copyArgs(List<_Field> fields) => fields
+      .map((f) => '      ${f.dartName}: identical(${f.dartName}, '
+          '$_undefinedRef) ? this.${f.dartName} : ${f.dartName} as '
+          '${f.typeStr},')
+      .join('\n');
 
   String _emitExtension(String className, List<_Field> fields) =>
       'extension ${className}Zcrud on $className {\n'
@@ -1679,10 +1736,53 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   /// les constructeurs `const` du modèle. Contrepartie à connaître : un champ
   /// déclaré dans la classe qui applique le mixin devient un `@override` du
   /// getter abstrait — le lint `annotate_overrides` le réclame.
-  String _emitInstanceMixin(String className, List<_Field> fields) {
+  ///
+  /// ## Quand la super-classe déclare déjà `toMap()` / `copyWith()`
+  ///
+  /// Un membre d'instance n'a le droit de surcharger que s'il est **compatible**
+  /// avec celui qu'il remplace. Une base qui porte des **canaux hors schéma**
+  /// (un `toMap({registry})`, un `copyWith` couvrant `extension`/`extra`/
+  /// `source`) déclare donc des paramètres que le schéma seul ne connaît pas :
+  /// un mixin émis à la vue du schéma serait refusé (`invalid_override`).
+  ///
+  /// Dans ce cas — et **seulement** dans ce cas — le mixin est émis à la
+  /// **signature de la base** :
+  ///
+  ///   - il porte une clause `on <Base>`, ce qui lui donne accès aux membres de
+  ///     la base et n'exige plus de getter abstrait pour les champs qu'elle
+  ///     fournit déjà ;
+  ///   - `toMap()` reprend les paramètres nommés de la base et, quand celle-ci
+  ///     en donne une implémentation concrète, **délègue** : la map de la base
+  ///     est étalée d'abord (canaux hors schéma compris), puis recouverte par
+  ///     les champs du schéma. Aucun canal n'est réimplémenté ;
+  ///   - `copyWith()` reprend les paramètres de la base absents du schéma et les
+  ///     passe au constructeur, chacun préservant la valeur courante quand
+  ///     l'argument est omis.
+  ///
+  /// La sentinelle reste **celle du fichier généré** : le corps émis ne nomme
+  /// jamais celle de la base, qui peut être privée à sa bibliothèque. Une valeur
+  /// de défaut n'appartient pas à la signature d'une méthode — c'est
+  /// l'implémentation réellement appelée qui applique la sienne, donc un
+  /// argument omis reste un argument omis, quel que soit le type statique du
+  /// receveur.
+  ///
+  /// Un modèle dont la base ne déclare ni `toMap()` ni `copyWith()`, ou qui les
+  /// déclare sans paramètre hors schéma, reçoit le mixin inchangé.
+  String _emitInstanceMixin(
+    String className,
+    List<_Field> fields,
+    ClassElement element,
+  ) {
+    final aligned = _superShapeOf(element, className, fields);
     final getters = fields
+        .where((f) =>
+            aligned == null || !aligned.superProvides.contains(f.dartName))
         .map((f) => '  ${f.typeStr} get ${f.dartName};')
         .join('\n');
+    final onClause = aligned == null ? '' : ' on ${aligned.onType}';
+    final members = aligned == null
+        ? _emitSerializationMembers(className, fields)
+        : _emitAlignedMembers(className, fields, aligned);
     return '/// `toMap()`/`copyWith()` de `$className` en MEMBRES D\'INSTANCE.\n'
         '///\n'
         '/// À appliquer (`class $className … with _\$${className}Zcrud`) quand '
@@ -1696,10 +1796,182 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         '/// produite ne change pas. Les champs déclarés par la classe '
         'deviennent alors\n'
         '/// des `@override` des getters ci-dessous.\n'
-        'mixin _\$${className}Zcrud {\n'
+        'mixin _\$${className}Zcrud$onClause {\n'
         '$getters\n\n'
-        '${_emitSerializationMembers(className, fields)}\n'
+        '$members\n'
         '}';
+  }
+
+  /// Signature imposée par la base quand elle déclare déjà `toMap()` /
+  /// `copyWith()` avec des paramètres que le schéma ne couvre pas — `null`
+  /// quand rien n'oblige à s'aligner (le mixin nominal convient alors).
+  _SuperShape? _superShapeOf(
+    ClassElement element,
+    String className,
+    List<_Field> fields,
+  ) {
+    final superType = element.supertype;
+    if (superType == null) return null;
+    final superToMap = _superChainMethod(element, 'toMap');
+    final superCopyWith = _superChainMethod(element, 'copyWith');
+    if (superToMap == null && superCopyWith == null) return null;
+
+    // Contrôlé AVANT tout raccourci : un paramètre POSITIONNEL de la base doit
+    // être accepté par la surcharge, ce que le mixin ne sait pas exprimer. Le
+    // laisser passer émettrait du code refusé par l'analyzer, sans explication.
+    for (final member in <MethodElement?>[superToMap, superCopyWith]) {
+      if (member == null) continue;
+      if (member.formalParameters.any((p) => p.isPositional)) {
+        throw InvalidGenerationSourceError(
+          '$className hérite un `${member.name}()` à paramètres POSITIONNELS ; '
+          'le mixin `_\$${className}Zcrud` ne sait aligner que des paramètres '
+          'nommés — le membre émis ne serait pas une surcharge valide.\n'
+          'GESTE : passer les paramètres de la base en nommés, ou déclarer le '
+          'membre à la main sur $className.',
+          element: element,
+        );
+      }
+    }
+
+    final schemaNames = <String>{for (final f in fields) f.dartName};
+    final toMapNamed = <FormalParameterElement>[
+      if (superToMap != null)
+        for (final p in superToMap.formalParameters)
+          if (p.isNamed) p,
+    ];
+    final extraNamed = <FormalParameterElement>[
+      if (superCopyWith != null)
+        for (final p in superCopyWith.formalParameters)
+          if (p.isNamed && !schemaNames.contains(p.name)) p,
+    ];
+    // Rien de plus que ce que le schéma exprime déjà : le mixin nominal
+    // surcharge sans conflit, et son texte reste inchangé.
+    if (toMapNamed.isEmpty && extraNamed.isEmpty) return null;
+
+    final extras = <({String name, String typeStr})>[];
+    for (final p in extraNamed) {
+      final name = p.name;
+      final typeStr = name == null ? null : _superGetterType(element, name);
+      if (name == null || typeStr == null) {
+        throw InvalidGenerationSourceError(
+          '$className hérite un `copyWith()` dont le paramètre '
+          '`${p.name ?? '<anonyme>'}` ne correspond à aucun accesseur de la '
+          'base : le mixin `_\$${className}Zcrud` ne peut pas en préserver la '
+          'valeur courante lorsque l\'argument est omis.\n'
+          'GESTE : exposer un accesseur de même nom sur la base, ou déclarer '
+          '`copyWith()` à la main sur $className.',
+          element: element,
+        );
+      }
+      extras.add((name: name, typeStr: typeStr));
+    }
+
+    return _SuperShape(
+      onType: superType.getDisplayString(),
+      superProvides: <String>{
+        for (final f in fields)
+          if (_superGetterType(element, f.dartName) != null) f.dartName,
+      },
+      toMapParams: <({String decl, String forward})>[
+        for (final p in toMapNamed)
+          (
+            decl: '${p.isRequired ? 'required ' : ''}'
+                '${p.type.getDisplayString()} ${p.name}'
+                '${p.defaultValueCode == null ? '' : ' = ${p.defaultValueCode}'}',
+            forward: '${p.name}: ${p.name}',
+          ),
+      ],
+      delegatesToMap: superToMap != null && !superToMap.isAbstract,
+      hasSuperToMap: superToMap != null,
+      hasSuperCopyWith: superCopyWith != null,
+      extraCopyParams: extras,
+    );
+  }
+
+  /// La méthode d'instance [name] déclarée par la CHAÎNE DE SUPER-CLASSES hors
+  /// SDK, la plus proche d'abord — `null` si aucune.
+  ///
+  /// Seule la chaîne `extends` est parcourue : c'est la seule qui puisse fournir
+  /// une implémentation atteignable par `super`.
+  MethodElement? _superChainMethod(ClassElement element, String name) {
+    var cursor = element.supertype?.element;
+    while (cursor != null) {
+      if (cursor.library.uri.isScheme('dart')) return null;
+      for (final method in cursor.methods) {
+        if (!method.isStatic && method.name == name) return method;
+      }
+      cursor = cursor.supertype?.element;
+    }
+    return null;
+  }
+
+  /// Type déclaré de l'accesseur [name] sur la chaîne de super-classes hors SDK
+  /// — `null` si la base n'en expose aucun.
+  String? _superGetterType(ClassElement element, String name) {
+    var cursor = element.supertype?.element;
+    while (cursor != null) {
+      if (cursor.library.uri.isScheme('dart')) return null;
+      for (final getter in cursor.getters) {
+        if (!getter.isStatic && getter.name == name) {
+          return getter.returnType.getDisplayString();
+        }
+      }
+      for (final field in cursor.fields) {
+        if (!field.isStatic && field.name == name) {
+          return field.type.getDisplayString();
+        }
+      }
+      cursor = cursor.supertype?.element;
+    }
+    return null;
+  }
+
+  /// `toMap()`/`copyWith()` émis à la SIGNATURE DE LA BASE (cf.
+  /// [_emitInstanceMixin]) — mêmes entrées de map et mêmes arguments de copie
+  /// que la voie nominale ([_emitSerializationMembers]), plus les paramètres et
+  /// la délégation que la base impose.
+  String _emitAlignedMembers(
+    String className,
+    List<_Field> fields,
+    _SuperShape shape,
+  ) {
+    final toMapParams = shape.toMapParams.isEmpty
+        ? ''
+        : '{${shape.toMapParams.map((p) => p.decl).join(', ')}}';
+    // La map de la base est étalée D'ABORD : ses canaux hors schéma
+    // (`extra`, `source`, `extension`…) sont préservés tels qu'elle les produit,
+    // puis RECOUVERTS par les champs du schéma — un champ persisté ne peut donc
+    // pas être écrasé par une clé homonyme venue d'un canal libre.
+    final superSpread = shape.delegatesToMap
+        ? '      ...super.toMap('
+            '${shape.toMapParams.map((p) => p.forward).join(', ')}),\n'
+        : '';
+    final copyParams = <String>[
+      _copyParams(fields),
+      for (final e in shape.extraCopyParams)
+        '    Object? ${e.name} = $_undefinedRef,',
+    ].where((s) => s.isNotEmpty).join('\n');
+    final copyArgs = <String>[
+      _copyArgs(fields),
+      for (final e in shape.extraCopyParams)
+        '      ${e.name}: identical(${e.name}, $_undefinedRef) '
+            '? this.${e.name} : ${e.name} as ${e.typeStr},',
+    ].where((s) => s.isNotEmpty).join('\n');
+
+    return '  /// Sérialise vers la map persistée (snake_case, enum camelCase, '
+        'ISO-8601),\n'
+        '  /// par-dessus celle de la base — dont les canaux hors schéma sont '
+        'préservés.\n'
+        '${shape.hasSuperToMap ? '  @override\n' : ''}'
+        '  Map<String, dynamic> toMap($toMapParams) => <String, dynamic>{\n'
+        '$superSpread'
+        '${_toMapEntries(fields)}\n'
+        '      };\n\n'
+        '  /// Copie avec sentinelle : un argument omis préserve la valeur, '
+        '`null` explicite la remet à `null`.\n'
+        '${shape.hasSuperCopyWith ? '  @override\n' : ''}'
+        '  $className copyWith({\n$copyParams\n  }) =>\n'
+        '      $className(\n$copyArgs\n      );';
   }
 
   /// Clés possédées par la couche de synchronisation (`ZSyncMeta`) —

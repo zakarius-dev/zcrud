@@ -3,6 +3,30 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.40.0 — 2026-08-30
+
+### Ajouté
+
+- **`ZStudyFolderDetail.tabAlignment`** et **`ZStudySessionScaffold.tabAlignment`**
+  — relais du paramètre homonyme de `ZPageScaffold` (donc de
+  `TabBar.tabAlignment`), jusqu'ici **avalé** par les deux conteneurs
+  (CR-LEX-88, `MINEUR`). `null` (défaut) ⇒ **rien n'est déclaré** : le rendu est
+  strictement inchangé — garde d'inertie par comparaison de la signature
+  structurelle d'app-bar au relevé pris **avant** l'ajout du relais.
+
+  Ce que le relais débloque, mesuré : la barre d'onglets du socle est toujours
+  défilante, donc Flutter y résout `TabAlignment.startOffset`, qui réserve
+  **52 dp** de décrochage avant le premier onglet. Sur un viewport de 600 dp
+  avec trois libellés (« Matériel » / « Carnet de notes » / « Progression
+  détaillée »), le centre du troisième onglet tombe à **604,35 dp** — hors des
+  bornes : un geste qui le vise n'atteint pas sa cible. `TabAlignment.start`
+  ramène ce centre à **552,35 dp** et l'onglet redevient atteignable. Les deux
+  bornes sont figées dans les gardes.
+
+  `isScrollable` n'est **pas** relayé : `ZPageScaffold` ne l'expose pas — le
+  socle de page le fixe à `true` pour toutes ses barres. Un conteneur ne peut
+  pas relayer un paramètre que le shell n'a pas.
+
 ## 3.39.0 — 2026-08-30
 
 ### Ajouté
