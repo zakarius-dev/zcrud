@@ -3,6 +3,53 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.38.0 — 2026-08-30
+
+### Ajouté
+
+- **`ZDefaultFolderCard.accentGradient` et `ZDefaultFolderCard.gradientKey`** —
+  le dégradé de bande devient une décision **indépendante** de la couleur du
+  dossier (CR-LEX-86, `MAJEUR`). Jusqu'ici, déclarer une couleur (`colorKey`,
+  ou un `ZcrudScope.colorKeyResolver` qui répond pour cette identité) mettait
+  le dégradé de signature à `null` : la carte était colorée mais **plate**, et
+  ne rien déclarer donnait le dégradé mais perdait la couleur de l'utilisateur.
+  Les deux ne coexistaient pas — cause pour laquelle **deux hôtes indépendants**
+  avaient abandonné la carte par défaut et recomposé sa bande à la main.
+  - Précédence de la bande : `accent` (widget rendu verbatim) >
+    `accentGradient` > `gradientKey` (résolue au seam de l'hôte) > repli de
+    signature (**uniquement** sans couleur déclarée) > bande unie dérivée de la
+    couleur.
+  - Partage des rôles quand les deux coexistent : la **couleur déclarée** pilote
+    la matière (tuile d'icône, badges, sous-titre, liseré), le **dégradé** pilote
+    la bande. Sans couleur déclarée, la matière suit la **tête** du dégradé —
+    le rendu du repli de signature, inchangé.
+  - Le plancher de contraste reste **mesuré** sur la surface réellement peinte
+    (`zReadableTintOn`) pour la matière ; le dégradé, lui, est peint tel quel
+    avec le `onGradient` choisi par l'appelant.
+
+### Gardes
+
+- Nouveau fichier `test/presentation/cr_lex86_folder_card_gradient_test.dart`
+  (11 gardes, chacune rougie par assertion sous injection R3) : inertie absolue
+  sans les nouveaux paramètres (arbre complet, rects et couleurs peintes figés à
+  l'octet depuis un relevé pris **avant** la modification) ; coexistence
+  dégradé + couleur ; comportement défini d'un dégradé sans couleur ; les quatre
+  niveaux de précédence ; clé vide ou seam muet inertes (AD-10) ; planchers WCAG
+  recalculés (4.5 badges/sous-titre, 3.0 liseré).
+- `test/appearance_c_test.dart` : les deux gardes de préséance de la couleur
+  choisie sont **ré-ancrées** — elles figeaient « couleur déclarée ⇒ jamais de
+  dégradé », propriété devenue fausse dès qu'un dégradé est explicitement
+  demandé. Elles affirment désormais l'absence du **repli de signature**, et
+  seulement sans demande explicite. Aucune n'a été affaiblie.
+
+### Migration
+
+- **Hôte passif** : rien à faire, rien ne bouge — l'inertie est gardée à l'octet.
+- **Hôte qui avait contourné** (bande recomposée à la main par-dessus la
+  primitive, ou app-side) : la composition externe peut être **retirée** et
+  remplacée par `accentGradient`/`gradientKey` sur `ZDefaultFolderCard`. La
+  laisser en place **s'additionnerait** désormais à la bande native.
+
 ## 3.34.0 — 2026-08-29
 
 ### Modifié

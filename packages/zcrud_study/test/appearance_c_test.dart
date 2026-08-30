@@ -314,43 +314,56 @@ void main() {
       );
     });
 
-    testWidgets('dossier AVEC clé de couleur ⇒ SA couleur, aucun dégradé', (
-      WidgetTester tester,
-    ) async {
-      await _pump(
-        tester,
-        const ZDefaultFolderCard(title: 'Douane', colorKey: 'blue'),
-      );
-      final Finder band = find.byKey(ZDefaultFolderCard.accentKey);
-      expect(
-        find.descendant(of: band, matching: find.byType(DecoratedBox)),
-        findsNothing,
-        reason: '🔴 le dégradé de signature a écrasé la couleur choisie',
-      );
-      expect(
-        find.descendant(of: band, matching: find.byType(ColoredBox)),
-        findsOneWidget,
-      );
-    });
+    // Ce qui est figé ici est le REPLI de signature, et lui seul : il ne se
+    // déclenche pas là où une couleur est déclarée. La propriété « une couleur
+    // déclarée interdit tout dégradé » serait, elle, FAUSSE — un dégradé
+    // demandé explicitement coexiste avec la couleur (garde dédiée dans
+    // `presentation/cr_lex86_folder_card_gradient_test.dart`). Les deux gardes
+    // ci-dessous n'affirment donc l'absence de dégradé que SANS demande
+    // explicite.
+    testWidgets(
+      'dossier AVEC clé de couleur, aucun dégradé demandé ⇒ SA couleur, '
+      'aucun repli de signature',
+      (WidgetTester tester) async {
+        await _pump(
+          tester,
+          const ZDefaultFolderCard(title: 'Douane', colorKey: 'blue'),
+        );
+        final Finder band = find.byKey(ZDefaultFolderCard.accentKey);
+        expect(
+          find.descendant(of: band, matching: find.byType(DecoratedBox)),
+          findsNothing,
+          reason:
+              '🔴 le repli de signature a écrasé la couleur choisie, alors '
+              'qu\'aucun dégradé n\'a été demandé',
+        );
+        expect(
+          find.descendant(of: band, matching: find.byType(ColoredBox)),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('couleur DÉCLARÉE par le résolveur de l\'hôte ⇒ elle prime', (
-      WidgetTester tester,
-    ) async {
-      await _pump(
-        tester,
-        const ZDefaultFolderCard(title: 'Douane'),
-        colorResolver: (ColorScheme s, String k) =>
-            const ZColorPair(color: kChosen, onColor: Color(0xFFFFFFFF)),
-      );
-      final Finder band = find.byKey(ZDefaultFolderCard.accentKey);
-      expect(
-        find.descendant(of: band, matching: find.byType(DecoratedBox)),
-        findsNothing,
-        reason:
-            '🔴 le dégradé de signature a écrasé la couleur que l\'hôte '
-            'déclare pour ce dossier',
-      );
-    });
+    testWidgets(
+      'couleur DÉCLARÉE par le résolveur de l\'hôte, aucun dégradé demandé ⇒ '
+      'elle prime',
+      (WidgetTester tester) async {
+        await _pump(
+          tester,
+          const ZDefaultFolderCard(title: 'Douane'),
+          colorResolver: (ColorScheme s, String k) =>
+              const ZColorPair(color: kChosen, onColor: Color(0xFFFFFFFF)),
+        );
+        final Finder band = find.byKey(ZDefaultFolderCard.accentKey);
+        expect(
+          find.descendant(of: band, matching: find.byType(DecoratedBox)),
+          findsNothing,
+          reason:
+              '🔴 le repli de signature a écrasé la couleur que l\'hôte '
+              'déclare pour ce dossier, sans qu\'aucun dégradé soit demandé',
+        );
+      },
+    );
   });
 
   group('en-tête de section — géométrie de référence', () {

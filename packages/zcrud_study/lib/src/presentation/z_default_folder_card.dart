@@ -161,6 +161,8 @@ class ZDefaultFolderCard extends StatelessWidget {
     this.footerPlacement,
     this.footerBesideMinWidth,
     this.accent,
+    this.accentGradient,
+    this.gradientKey,
     this.archivedLabel,
     this.isArchived = false,
     this.onTap,
@@ -267,6 +269,48 @@ class ZDefaultFolderCard extends StatelessWidget {
   /// s'applique alors plus (c'est l'hôte qui l'a peint).
   final Widget? accent;
 
+  /// Dégradé de la bande de tête, **indépendant de la couleur du dossier**.
+  ///
+  /// C'est la façon de demander une carte à la fois **teintée** par la couleur
+  /// du dossier et **portant une bande en dégradé** : les deux décisions sont
+  /// séparées. Déclarer une couleur ([colorKey], ou un résolveur de couleurs
+  /// qui répond pour cette identité) n'interdit pas le dégradé ; c'est
+  /// seulement le **repli** de signature qui reste réservé aux dossiers dont
+  /// personne n'a choisi la couleur.
+  ///
+  /// Partage des rôles quand les deux sont fournis :
+  ///
+  /// | élément                                   | source           |
+  /// |-------------------------------------------|------------------|
+  /// | bande de tête                             | ce dégradé       |
+  /// | tuile d'icône, badges, sous-titre, liseré | couleur déclarée |
+  ///
+  /// Sans couleur déclarée, la matière suit la **tête** du dégradé (teinte
+  /// unique) — le rendu du repli de signature, à l'identique.
+  ///
+  /// Le dégradé est peint **tel quel** : `onGradient` est le premier plan que
+  /// l'appelant a choisi pour lui, et le plancher de contraste de la carte ne
+  /// s'y applique pas (il ne s'applique jamais à une matière déjà peinte par
+  /// l'appelant). Le contraste de la tuile, des badges et du sous-titre, lui,
+  /// reste mesuré contre la surface **réellement** peinte.
+  ///
+  /// `null` ⇒ [gradientKey], puis le repli de signature — soit exactement le
+  /// rendu d'avant l'existence de ce paramètre (invariant AD-4).
+  final ZGradientSpec? accentGradient;
+
+  /// Clé de dégradé de bande (`String` opaque) résolue par le résolveur de
+  /// dégradés de l'hôte, comme [accentGradient] mais sans construire la
+  /// spécification à la main.
+  ///
+  /// Consultée seulement si [accentGradient] est `null` ; une clé nulle ou
+  /// vide, ou un seam qui répond `null`, laisse la chaîne se poursuivre vers le
+  /// repli de signature (chaîne totale, invariant AD-10).
+  ///
+  /// Précédence complète de la bande : [accent] (rendu verbatim) >
+  /// [accentGradient] > [gradientKey] > repli de signature (uniquement sans
+  /// couleur déclarée) > bande unie dérivée de la couleur du dossier.
+  final String? gradientKey;
+
   /// Libellé du badge « Archivé » injecté — jamais un littéral. Le badge
   /// n'apparaît que si [isArchived] et `archivedLabel != null`.
   final String? archivedLabel;
@@ -366,12 +410,23 @@ class ZDefaultFolderCard extends StatelessWidget {
       slotIndex: identitySlot,
     );
 
-    // ── Repli de signature ───────────────────────────────────────────────────
+    // ── Dégradé de bande : demande explicite, puis repli de signature ────────
+    // Le dégradé de bande et la couleur du dossier sont deux décisions
+    // SÉPARÉES. Un dégradé demandé explicitement — par la spécification
+    // [accentGradient], ou par une clé [gradientKey] résolue au seam de l'hôte
+    // — est consulté sans regarder la couleur : c'est ce qui permet d'obtenir
+    // une carte teintée par la couleur du dossier ET portant sa bande.
+    final ZGradientSpec? requested =
+        accentGradient ??
+        ((gradientKey != null && gradientKey!.isNotEmpty)
+            ? zResolveGradient(context, gradientKey!)
+            : null);
+
     // Une couleur DÉCLARÉE prime toujours, sous ses deux formes : la clé passée
     // à la carte, et la réponse du résolveur de couleurs de l'hôte pour cette
-    // identité. Le dégradé de signature n'est donc consulté que là où la carte
+    // identité. Le repli de signature n'est donc consulté que là où la carte
     // se replierait sur un créneau de palette déduit du titre — c'est-à-dire là
-    // où personne n'a rien choisi.
+    // où personne n'a rien choisi, et où rien n'a été demandé non plus.
     final bool declared =
         (colorKey != null && colorKey!.isNotEmpty) ||
         ZcrudScope.maybeOf(context)?.colorKeyResolver?.call(
@@ -379,15 +434,18 @@ class ZDefaultFolderCard extends StatelessWidget {
               identityKey,
             ) !=
             null;
-    final ZGradientSpec? signature = declared
-        ? null
-        : zResolveGradient(context, zSignatureKey(identityKey));
+    final ZGradientSpec? signature =
+        requested ??
+        (declared ? null : zResolveGradient(context, zSignatureKey(identityKey)));
     final List<Color>? stops = signature?.gradient.colors;
     final bool hasSignature = stops != null && stops.isNotEmpty;
 
-    // La matière de TOUTE la carte suit la tête du dégradé : bande, tuile,
-    // badges et sous-titre partagent une seule teinte — jamais deux sources.
-    final ZColorPair pair = hasSignature
+    // Partage des rôles quand les deux coexistent : la couleur déclarée pilote
+    // la MATIÈRE (tuile, badges, sous-titre, liseré) — c'est le sens même de
+    // « déclarer une couleur » — et le dégradé pilote la BANDE. Sans couleur
+    // déclarée, la matière suit la tête du dégradé : bande, tuile, badges et
+    // sous-titre partagent alors une seule teinte, jamais deux sources.
+    final ZColorPair pair = (hasSignature && !declared)
         ? ZColorPair(color: stops.first, onColor: signature!.onGradient)
         : resolvedPair;
 
