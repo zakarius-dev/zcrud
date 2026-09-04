@@ -3,6 +3,47 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.45.0 - 2026-09-04
+
+### Ajouté
+
+- **Créneau de rendu des champs texte du formulaire de carte de
+  `ZMultiFlashcardEditor`** (CR-IFFD-134, `MINEUR`). L'écran legacy IFFD que ce
+  multi-éditeur remplace déclarait question et réponse en `inlineMarkdown`
+  (éditeur riche : formules, tableaux) ; le multi-éditeur ne rendait que des
+  champs de texte simples, via une méthode PRIVÉE (`_field`) sans aucun point
+  d'injection — l'hôte gardait donc son écran legacy allumé.
+  Nouvelle surface publique : `ZFlashcardEditorField` (discriminant),
+  `ZFlashcardFieldSlot` (contexte remis au slot), `ZFlashcardFieldBuilder`
+  (fabrique) et le paramètre `ZMultiFlashcardEditor.fieldBuilders`. **Aucune
+  dépendance d'édition riche n'entre dans `zcrud_study`** : le paquet ne fournit
+  qu'un créneau, l'hôte y branche son propre éditeur.
+  **Écart assumé par rapport au texte de la CR** : la CR proposait la signature
+  `(BuildContext, TextEditingController, String label)`. Elle a été refusée
+  telle quelle — sans discriminant, une application qui partage une fabrique
+  entre plusieurs champs devrait comparer des **libellés LOCALISÉS** pour savoir
+  quel champ elle rend. Le slot porte donc `field`, stable et indépendant de la
+  langue, et il porte aussi `onEditingComplete` (la voie de fin de saisie que le
+  champ par défaut possédait et que l'hôte aurait sinon perdue).
+
+### Corrigé
+
+- **La saisie faite dans un widget injecté n'aurait rien publié** — défaut que
+  la CR ne voyait pas. `_notify()` n'était appelé que par `onChanged` /
+  `onEditingComplete` du `TextField` ; un éditeur riche injecté aurait écrit
+  dans le controller sans que la carte n'en sache rien, et la saisie de
+  l'utilisateur aurait été perdue **silencieusement** au commit groupé.
+  L'état écoute désormais le controller de chaque champ **rendu par un slot**,
+  et lui seul : le chemin par défaut reste non écouté (l'écouter doublerait la
+  notification à chaque frappe). L'écoute est réalignée quand la table de slots
+  change et retirée au `dispose`.
+
+### Inchangé (garde d'inertie)
+
+- Sans aucun slot, le formulaire de carte est rendu **à l'identique** : liste
+  figée des enfants de sa colonne, quatre `TextField` aux mêmes clés, libellés
+  et alignements, et **aucune écoute** posée sur leurs controllers.
+
 ## 3.44.0 — 2026-08-30
 
 ### Ajouté

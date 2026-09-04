@@ -69,6 +69,72 @@ typedef ZFlashcardBatchCommit = Future<ZResult<Unit>> Function(
   List<ZFlashcard> cards,
 );
 
+/// Champ texte du formulaire de carte, adressé par un slot de rendu injecté.
+///
+/// Sert de discriminant à [ZFlashcardFieldBuilder] : une application qui
+/// partage une même fabrique entre plusieurs champs distingue le champ courant
+/// par cette valeur, jamais par son libellé (qui est localisé).
+enum ZFlashcardEditorField {
+  /// Question de la carte (recto) — le seul champ non nullable.
+  question,
+
+  /// Réponse de la carte (verso).
+  answer,
+
+  /// Explication associée à la réponse.
+  explanation,
+
+  /// Indice.
+  hint,
+}
+
+/// Ce qu'un slot de rendu de champ reçoit pour rendre un champ de texte.
+///
+/// [controller] est le controller STABLE du champ (créé une fois, jamais
+/// recréé au rebuild — invariant AD-2). L'éditeur l'ÉCOUTE : tout texte écrit
+/// dedans par le widget injecté est publié dans le brouillon, exactement comme
+/// une frappe dans le champ par défaut. Le widget injecté ne doit donc ni
+/// remplacer ce controller par le sien, ni oublier de l'alimenter — sans quoi
+/// la saisie n'atteint jamais la carte.
+///
+/// [onEditingComplete] est la voie de FIN DE SAISIE : elle publie la valeur
+/// courante et rafraîchit l'aperçu de la carte. Le champ par défaut l'invoque
+/// sur `TextField.onEditingComplete` ; un widget injecté l'invoque quand sa
+/// propre saisie se termine (perte de focus, validation).
+@immutable
+class ZFlashcardFieldSlot {
+  /// Construit le contexte d'un champ remis au slot de rendu.
+  const ZFlashcardFieldSlot({
+    required this.field,
+    required this.controller,
+    required this.label,
+    required this.onEditingComplete,
+  });
+
+  /// Champ adressé (discriminant STABLE, indépendant de la langue).
+  final ZFlashcardEditorField field;
+
+  /// Controller STABLE du champ — à alimenter pour que la saisie soit publiée.
+  final TextEditingController controller;
+
+  /// Libellé LOCALISÉ INJECTÉ du champ (i18n).
+  final String label;
+
+  /// Fin de saisie : publie la valeur et rafraîchit l'aperçu.
+  final VoidCallback onEditingComplete;
+}
+
+/// Slot de rendu d'un champ texte du formulaire de carte.
+///
+/// Permet à l'application hôte de substituer son propre éditeur (rich-text,
+/// Markdown, formules…) au champ de texte simple, sans qu'aucune dépendance
+/// d'édition riche n'entre dans ce package. Absent pour un champ ⇒ le champ de
+/// texte par défaut est rendu, inchangé.
+typedef ZFlashcardFieldBuilder = Widget Function(
+  BuildContext context,
+  ZFlashcardFieldSlot slot,
+);
+
 /// Un champ commun applicable à la sélection — déclaré en données.
 ///
 /// [spec] porte les validateurs (dérivés par `applyCommonField` via
@@ -252,7 +318,9 @@ class ZMultiFlashcardEditor extends StatefulWidget {
   /// - [selection] : contrôleur de sélection injecté (sinon créé et possédé —
   ///   propriétaire unique de son cycle de vie) ;
   /// - [rowContentBuilder] : slot de rendu du RÉSUMÉ de ligne (défaut : la
-  ///   question thématisée) — hissé pour la garde SM-1 (compteur de builds).
+  ///   question thématisée) — hissé pour la garde SM-1 (compteur de builds) ;
+  /// - [fieldBuilders] : slots de rendu des champs texte du formulaire de carte
+  ///   (défaut : le champ de texte simple pour chacun).
   const ZMultiFlashcardEditor({
     required this.onCommit,
     required this.labels,
@@ -262,6 +330,7 @@ class ZMultiFlashcardEditor extends StatefulWidget {
     this.newCardBuilder,
     this.selection,
     this.rowContentBuilder,
+    this.fieldBuilders,
     super.key,
   });
 
@@ -288,6 +357,19 @@ class ZMultiFlashcardEditor extends StatefulWidget {
 
   /// Slot de rendu du résumé de ligne (défaut : question thématisée).
   final Widget Function(BuildContext context, ZFlashcard card)? rowContentBuilder;
+
+  /// Slots de rendu des champs texte du formulaire de carte, par champ.
+  ///
+  /// Une entrée absente (ou la table entière absente) ⇒ le champ de texte
+  /// simple est rendu, inchangé. Une entrée présente remplace ce champ par le
+  /// widget que l'application construit : c'est le point d'injection d'un
+  /// éditeur riche (Markdown, formules, tableaux) sans qu'aucune dépendance
+  /// d'édition riche n'entre dans ce package.
+  ///
+  /// Le widget injecté reçoit le controller STABLE du champ ; l'éditeur
+  /// l'écoute, donc tout texte qu'il y écrit est publié dans le brouillon
+  /// (cf. [ZFlashcardFieldSlot]).
+  final Map<ZFlashcardEditorField, ZFlashcardFieldBuilder>? fieldBuilders;
 
   /// Clé de test du volet liste.
   static const ValueKey<String> listPaneKey =
@@ -749,6 +831,7 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
                 // repartirait de la base périmée et écraserait la valeur appliquée.
                 baseCardOf: () => _draft.cardOf(key) ?? card,
                 labels: labels,
+                fieldBuilders: widget.fieldBuilders,
                 onChanged: (updated) => _draft.updateCard(key, updated),
                 onEditingComplete: () => _previewTick.value++,
               ),
@@ -813,6 +896,7 @@ class _ZCardForm extends StatefulWidget {
     required this.labels,
     required this.onChanged,
     required this.onEditingComplete,
+    this.fieldBuilders,
     super.key,
   });
 
@@ -827,6 +911,10 @@ class _ZCardForm extends StatefulWidget {
   final ZFlashcard Function() baseCardOf;
 
   final ZMultiFlashcardEditorLabels labels;
+
+  /// Slots de rendu des champs (table vide/absente ⇒ champs par défaut).
+  final Map<ZFlashcardEditorField, ZFlashcardFieldBuilder>? fieldBuilders;
+
   final ValueChanged<ZFlashcard> onChanged;
   final VoidCallback onEditingComplete;
 
@@ -841,6 +929,20 @@ class _ZCardFormState extends State<_ZCardForm> {
   late final TextEditingController _hint;
   late final ValueNotifier<ZFlashcardType> _type;
 
+  /// Champs actuellement rendus par un slot injecté — donc ÉCOUTÉS.
+  ///
+  /// Le chemin par défaut n'est JAMAIS écouté : son `TextField.onChanged`
+  /// publie déjà. Écouter les deux doublerait la notification à chaque frappe
+  /// (garde d'inertie : le compteur d'appels doit rester inchangé sans slot).
+  final Set<ZFlashcardEditorField> _listened = <ZFlashcardEditorField>{};
+
+  /// Dernier texte publié par champ écouté — un `TextEditingController` notifie
+  /// aussi sur un simple déplacement du curseur ; sans ce garde-fou, poser le
+  /// curseur publierait une carte identique et ferait travailler le brouillon
+  /// pour rien.
+  final Map<ZFlashcardEditorField, String> _lastText =
+      <ZFlashcardEditorField, String>{};
+
   @override
   void initState() {
     super.initState();
@@ -850,16 +952,74 @@ class _ZCardFormState extends State<_ZCardForm> {
     _explanation = TextEditingController(text: card.explanation ?? '');
     _hint = TextEditingController(text: card.hint ?? '');
     _type = ValueNotifier<ZFlashcardType>(card.type);
+    _syncListeners();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ZCardForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // La table de slots peut changer d'une reconstruction à l'autre (un hôte
+    // qui bascule son éditeur riche). Réaligner l'écoute : sinon un champ
+    // redevenu par défaut resterait écouté ⇒ double notification.
+    _syncListeners();
   }
 
   @override
   void dispose() {
+    for (final field in _listened) {
+      _controllerOf(field).removeListener(_onSlotTextChanged);
+    }
+    _listened.clear();
     _question.dispose();
     _answer.dispose();
     _explanation.dispose();
     _hint.dispose();
     _type.dispose();
     super.dispose();
+  }
+
+  TextEditingController _controllerOf(ZFlashcardEditorField field) {
+    switch (field) {
+      case ZFlashcardEditorField.question:
+        return _question;
+      case ZFlashcardEditorField.answer:
+        return _answer;
+      case ZFlashcardEditorField.explanation:
+        return _explanation;
+      case ZFlashcardEditorField.hint:
+        return _hint;
+    }
+  }
+
+  /// Aligne l'écoute sur la table de slots : un champ rendu par l'hôte est
+  /// écouté (sa seule voie de publication), un champ par défaut ne l'est pas.
+  void _syncListeners() {
+    final builders = widget.fieldBuilders;
+    for (final field in ZFlashcardEditorField.values) {
+      final wanted = builders != null && builders[field] != null;
+      final controller = _controllerOf(field);
+      if (wanted && _listened.add(field)) {
+        _lastText[field] = controller.text;
+        controller.addListener(_onSlotTextChanged);
+      } else if (!wanted && _listened.remove(field)) {
+        _lastText.remove(field);
+        controller.removeListener(_onSlotTextChanged);
+      }
+    }
+  }
+
+  /// Publie la saisie faite par un widget injecté — sans lui, le texte écrit
+  /// dans le controller n'atteindrait jamais la carte (perte silencieuse).
+  void _onSlotTextChanged() {
+    var changed = false;
+    for (final field in _listened) {
+      final text = _controllerOf(field).text;
+      if (_lastText[field] != text) {
+        _lastText[field] = text;
+        changed = true;
+      }
+    }
+    if (changed) _notify();
   }
 
   /// Reconstruit la carte depuis les controllers (édition in memory, `id`
@@ -885,13 +1045,17 @@ class _ZCardFormState extends State<_ZCardForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _field('z-card-question', _question, labels.questionLabel),
+        _field(ZFlashcardEditorField.question, 'z-card-question', _question,
+            labels.questionLabel),
         SizedBox(height: theme.gapS),
-        _field('z-card-answer', _answer, labels.answerLabel),
+        _field(ZFlashcardEditorField.answer, 'z-card-answer', _answer,
+            labels.answerLabel),
         SizedBox(height: theme.gapS),
-        _field('z-card-explanation', _explanation, labels.explanationLabel),
+        _field(ZFlashcardEditorField.explanation, 'z-card-explanation',
+            _explanation, labels.explanationLabel),
         SizedBox(height: theme.gapS),
-        _field('z-card-hint', _hint, labels.hintLabel),
+        _field(
+            ZFlashcardEditorField.hint, 'z-card-hint', _hint, labels.hintLabel),
         SizedBox(height: theme.gapS),
         ValueListenableBuilder<ZFlashcardType>(
           valueListenable: _type,
@@ -924,16 +1088,43 @@ class _ZCardFormState extends State<_ZCardForm> {
     );
   }
 
-  Widget _field(String keyId, TextEditingController controller, String label) {
+  /// Fin de saisie d'un champ : publie la valeur ET rafraîchit l'aperçu.
+  void _endEditing() {
+    _notify();
+    widget.onEditingComplete();
+  }
+
+  Widget _field(
+    ZFlashcardEditorField field,
+    String keyId,
+    TextEditingController controller,
+    String label,
+  ) {
+    final builder = widget.fieldBuilders?[field];
+    if (builder != null) {
+      // `KeyedSubtree` : l'élément du slot garde une identité stable d'une
+      // reconstruction à l'autre (même rôle que la `ValueKey` du champ par
+      // défaut). Le chemin par défaut, lui, reste rendu à l'identique — aucun
+      // widget d'enveloppe n'y est ajouté (garde d'inertie).
+      return KeyedSubtree(
+        key: ValueKey<String>(keyId),
+        child: builder(
+          context,
+          ZFlashcardFieldSlot(
+            field: field,
+            controller: controller,
+            label: label,
+            onEditingComplete: _endEditing,
+          ),
+        ),
+      );
+    }
     return TextField(
       key: ValueKey<String>(keyId),
       controller: controller,
       textAlign: TextAlign.start,
       onChanged: (_) => _notify(),
-      onEditingComplete: () {
-        _notify();
-        widget.onEditingComplete();
-      },
+      onEditingComplete: _endEditing,
       decoration: InputDecoration(labelText: label),
     );
   }
