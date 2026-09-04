@@ -20,6 +20,10 @@
 ///   au [menuBuilder] (le renoncement a11y du slot est levé) ;
 /// * [renderer] / [ZMenuScope] — le déclencheur ET la surface substituables.
 ///
+/// Deux voies d'ouverture, une seule composition : le widget porte son
+/// déclencheur, [showZItemActionsMenu] ouvre la MÊME surface sur un
+/// déclencheur que l'appelant garde dans son arbre (ancrage par `GlobalKey`).
+///
 /// **Seule divergence de rendu assumée** : un menu dont AUCUNE action n'est
 /// visible et qui n'a pas de [menuBuilder] rend un déclencheur **inerte**
 /// (AD-10 : jamais une surface flottante vide).
@@ -279,6 +283,236 @@ typedef ZItemActionsMenuBuilder =
       void Function(ZItemAction action) select,
     );
 
+/// Composition PARTAGÉE d'un menu d'actions d'item.
+///
+/// Regroupe ce dont les DEUX voies d'ouverture ont besoin — le déclencheur
+/// porté par [ZItemActionsMenu] et l'ouverture impérative
+/// [showZItemActionsMenu] : les entrées neutres, la même liste une fois filtrée
+/// et la présentation du contenu.
+@immutable
+class _ZItemActionsComposition {
+  const _ZItemActionsComposition({
+    required this.entries,
+    required this.visible,
+    required this.contentBuilder,
+  });
+
+  /// Entrées traduites, ordre PRÉSERVÉ, règle d'absence NON appliquée.
+  final List<ZMenuEntry> entries;
+
+  /// Les mêmes entrées, filtrées par la règle d'absence.
+  final List<ZMenuEntry> visible;
+
+  /// Présentation du contenu (`null` ⇒ rien à montrer).
+  final ZMenuContentBuilder? contentBuilder;
+}
+
+/// SITE UNIQUE de composition d'un menu d'actions d'item.
+///
+/// Recopier cette composition ailleurs recréerait deux rendus du même menu, qui
+/// divergeraient au premier changement — une garde de source l'interdit.
+_ZItemActionsComposition _composeItemActions({
+  required List<ZItemAction> actions,
+  required ZItemActionsMenuBuilder? menuBuilder,
+  required int crossAxisCount,
+}) {
+  // Traduction 1:1, ordre PRÉSERVÉ.
+  final entries = <ZMenuEntry>[];
+  // Correspondance par IDENTITÉ : deux actions distinctes peuvent être ÉGALES
+  // au sens de `==` (mêmes kind/label/icône/callback). Une `Map` ordinaire les
+  // confondrait ; `Map.identity()` non.
+  final versAction = Map<ZMenuEntry, ZItemAction>.identity();
+  final versEntree = Map<ZItemAction, ZMenuEntry>.identity();
+  for (final action in actions) {
+    final entry = action.toMenuEntry();
+    entries.add(entry);
+    versAction[entry] = action;
+    versEntree[action] = entry;
+  }
+
+  final hote = menuBuilder;
+  // Le filtrage AD-4 a un site UNIQUE (`zVisibleMenuEntries`) et n'est appelé
+  // qu'ICI : la voie du déclencheur laisse `ZActionMenu` le rejouer sur la
+  // liste complète (rendu inchangé), la voie impérative consomme `visible`.
+  final visible = zVisibleMenuEntries(entries);
+  // Un builder par défaut ne doit pas rendre actionnable un déclencheur dont
+  // toutes les entrées seront filtrées.
+  final hasVisibleAction = visible.isNotEmpty;
+  return _ZItemActionsComposition(
+    entries: entries,
+    visible: visible,
+    contentBuilder: hote == null && !hasVisibleAction
+        ? null
+        : (surfaceContext, visibles, select) {
+            if (hote != null) {
+              return hote(
+                surfaceContext,
+                <ZItemAction>[for (final entry in visibles) versAction[entry]!],
+                // MÊME chemin de sortie que le défaut : l'hôte ne peut ni
+                // oublier de fermer, ni invoquer deux fois, ni diverger.
+                (action) {
+                  final entry = versEntree[action];
+                  if (entry != null) select(entry);
+                },
+              );
+            }
+            return _ZDefaultItemActionGrid(
+              actions: <ZItemAction>[
+                for (final entry in visibles) versAction[entry]!,
+              ],
+              entries: visibles,
+              crossAxisCount: crossAxisCount,
+              onSelected: select,
+            );
+          },
+  );
+}
+
+/// Point d'ancrage GLOBAL du menu, dérivé de la boîte de rendu de [anchorKey].
+///
+/// Retourne `null` — jamais une levée — dès qu'aucune géométrie fiable n'existe
+/// (ancre non montée, objet de rendu absent, non attaché ou non mesuré).
+Offset? _zItemActionsAnchorPoint(BuildContext context, GlobalKey anchorKey) {
+  final anchorContext = anchorKey.currentContext;
+  if (anchorContext == null) return null;
+  final renderObject = anchorContext.findRenderObject();
+  if (renderObject is! RenderBox) return null;
+  if (!renderObject.attached || !renderObject.hasSize) return null;
+  final rect = renderObject.localToGlobal(Offset.zero) & renderObject.size;
+  final direction =
+      Directionality.maybeOf(anchorContext) ??
+      Directionality.maybeOf(context) ??
+      TextDirection.ltr;
+  // Un COIN du bord haut de l'ancre, jamais son centre ni son rectangle : la
+  // surface s'ouvre en s'alignant sur ce point et grandit dans la direction
+  // qui lui laisse le plus de place. Le coin retenu est donc celui du côté
+  // vers lequel elle va grandir — le bord de DÉPART tant que l'ancre est du
+  // côté départ de l'écran, le bord de FIN au-delà, la directionnalité
+  // départageant l'ancre exactement centrée.
+  //
+  // Ce choix n'est pas décoratif : il fait coïncider AU PIXEL le rendu de
+  // l'ouverture impérative avec celui du déclencheur porté, qui transmet, lui,
+  // le rectangle complet de son bouton (garde de géométrie sur les quatre
+  // configurations ancre × directionnalité). Aucun `left:`/`right:` n'est
+  // écrit : le côté est dérivé, jamais codé (AD-13).
+  final overlay = Overlay.maybeOf(context)?.context.findRenderObject();
+  if (overlay is! RenderBox || !overlay.hasSize) {
+    return direction == TextDirection.rtl ? rect.topRight : rect.topLeft;
+  }
+  final milieu = overlay.size.width / 2;
+  final centre = rect.center.dx;
+  final versLaFin =
+      centre > milieu || (centre == milieu && direction == TextDirection.rtl);
+  return versLaFin ? rect.topRight : rect.topLeft;
+}
+
+/// Ouvre le menu d'actions d'item **sans déclencheur fourni par le socle**,
+/// ancré sur un widget que l'appelant garde dans son propre arbre.
+///
+/// C'est la voie de l'application qui possède DÉJÀ son bouton (barre d'outils,
+/// en-tête, cellule de liste) et ne veut pas le remplacer par celui de
+/// [ZItemActionsMenu] : elle branche cette fonction sur son `onPressed` et
+/// conserve son bouton, sa position et son style.
+///
+/// ```dart
+/// final GlobalKey _boutonKey = GlobalKey();
+/// // …
+/// IconButton(
+///   key: _boutonKey,
+///   icon: Icon(monGlyphe),
+///   tooltip: l10n.moreOptions,
+///   onPressed: () => showZItemActionsMenu(
+///     context,
+///     actions: mesActions,
+///     anchorKey: _boutonKey,
+///   ),
+/// )
+/// ```
+///
+/// Tout ce que rend [ZItemActionsMenu] est rendu ici À L'IDENTIQUE : mêmes
+/// entrées, même règle d'absence (AD-4), même grille par défaut gouvernée par
+/// [crossAxisCount], même [menuBuilder] injectable, même renderer résolu par la
+/// chaîne `paramètre → ZMenuScope → repli`, et **même voie unique de
+/// sélection** — l'appelant n'a ni à fermer la surface, ni à invoquer
+/// `onSelected` lui-même.
+///
+/// [anchorKey] : clé du widget d'ancrage, déjà monté. La surface se pose sur sa
+/// boîte exactement comme elle se poserait sur le déclencheur du widget : elle
+/// s'aligne sur le bord de **départ** de l'ancre et grandit dans le sens de la
+/// lecture, et bascule sur son bord de **fin** quand l'ancre est plus proche du
+/// bord de fin de l'écran.
+///
+/// [semanticLabel] : nom accessible LOCALISÉ INJECTÉ de la surface ouverte.
+/// `null` ⇒ repli localisé du SDK (`MaterialLocalizations.showMenuTooltip`).
+///
+/// **Ce qui ne produit AUCUNE surface** (jamais une exception, invariant
+/// AD-10) : aucune action à montrer et aucun [menuBuilder] ; ancre non montée,
+/// détachée ou non mesurée ; contexte démonté ; aucun nom accessible
+/// disponible. Le dernier cas — déterministe, jamais une course — est en outre
+/// signalé par un `assert` en debug.
+///
+/// Retourne quand la surface est refermée.
+Future<void> showZItemActionsMenu(
+  BuildContext context, {
+  required List<ZItemAction> actions,
+  required GlobalKey anchorKey,
+  ZItemActionsMenuBuilder? menuBuilder,
+  int crossAxisCount = 3,
+  ZMenuRenderer? renderer,
+  String? semanticLabel,
+}) {
+  assert(
+    crossAxisCount > 0,
+    'showZItemActionsMenu: crossAxisCount doit être strictement positif.',
+  );
+  if (!context.mounted) return Future<void>.value();
+  // Aucun `assert` ici, délibérément : une ancre démontée est une COURSE
+  // normale (l'utilisateur tape, l'écran se démonte), pas une erreur de
+  // programmation. La faire lever en debug serait la levée que l'invariant
+  // AD-10 proscrit. Le cas du nom accessible manquant, lui, est déterministe
+  // et reste asserté ci-dessous.
+  final anchor = _zItemActionsAnchorPoint(context, anchorKey);
+  if (anchor == null) return Future<void>.value();
+  // Lecture NON levante des localisations : `MaterialLocalizations.of` jette
+  // hors Material, ce qu'une fonction asynchrone ne doit pas faire.
+  final label =
+      semanticLabel ??
+      Localizations.of<MaterialLocalizations>(
+        context,
+        MaterialLocalizations,
+      )?.showMenuTooltip;
+  assert(
+    label != null && label.isNotEmpty,
+    'showZItemActionsMenu: aucun nom accessible disponible — ni semanticLabel '
+    'injecté, ni MaterialLocalizations dans le contexte. Une surface muette '
+    'pour un lecteur d\'écran est proscrite (AD-13) : rien ne sera ouvert.',
+  );
+  if (label == null || label.isEmpty) return Future<void>.value();
+  final composition = _composeItemActions(
+    actions: actions,
+    menuBuilder: menuBuilder,
+    crossAxisCount: crossAxisCount,
+  );
+  final contentBuilder = composition.contentBuilder;
+  // Rien à montrer ⇒ AUCUNE surface (invariant AD-10).
+  if (composition.visible.isEmpty && contentBuilder == null) {
+    return Future<void>.value();
+  }
+  return zResolveMenuRenderer(context, override: renderer).openAt(
+    context,
+    ZMenuRequest(
+      // Aucun déclencheur n'est rendu par cette voie : la description ne sert
+      // qu'à NOMMER la surface ouverte.
+      trigger: ZMenuTrigger(icon: _kMenuFallbackIcon, semanticLabel: label),
+      entries: composition.visible,
+      contentBuilder: contentBuilder,
+      // MÊME voie de sélection que le déclencheur porté.
+      select: zMenuSelectFor(composition.visible),
+    ),
+    anchor,
+  );
+}
+
 /// Menu d'actions par item paramétrique — façade sur [ZActionMenu].
 class ZItemActionsMenu extends StatelessWidget {
   /// Construit le menu à partir des actions (ordre préservé).
@@ -353,30 +587,19 @@ class ZItemActionsMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Traduction 1:1, ordre PRÉSERVÉ. Le filtrage AD-4 n'est PAS refait ici :
-    // il a un site UNIQUE, `ZActionMenu` (`zVisibleMenuEntries`). Le refaire
-    // serait la seconde source que ce lot supprime.
-    final entries = <ZMenuEntry>[];
-    // Correspondance par IDENTITÉ : deux actions distinctes peuvent être ÉGALES
-    // au sens de `==` (mêmes kind/label/icône/callback). Une `Map` ordinaire les
-    // confondrait ; `Map.identity()` non.
-    final versAction = Map<ZMenuEntry, ZItemAction>.identity();
-    final versEntree = Map<ZItemAction, ZMenuEntry>.identity();
-    for (final action in actions) {
-      final entry = action.toMenuEntry();
-      entries.add(entry);
-      versAction[entry] = action;
-      versEntree[action] = entry;
-    }
-
-    final hote = menuBuilder;
-    // Un builder par défaut ne doit pas rendre actionnable un déclencheur dont
-    // toutes les entrées seront filtrées par ZActionMenu. Cette lecture ne
-    // produit ni ne transmet une seconde liste filtrée : ZActionMenu reste le
-    // site unique qui applique effectivement la règle d'absence.
-    final hasVisibleAction = zVisibleMenuEntries(entries).isNotEmpty;
+    // Composition par le site UNIQUE, partagé avec [showZItemActionsMenu] :
+    // aucune seconde traduction actions → entrées n'existe dans ce paquet, donc
+    // aucune divergence de rendu entre le déclencheur porté et l'ouverture
+    // impérative ne peut apparaître. Garde de source dédiée.
+    final composition = _composeItemActions(
+      actions: actions,
+      menuBuilder: menuBuilder,
+      crossAxisCount: crossAxisCount,
+    );
     return ZActionMenu(
-      entries: entries,
+      // Liste NON filtrée : `ZActionMenu` applique lui-même la règle d'absence
+      // (site unique du filtrage). Le rendu du déclencheur est inchangé.
+      entries: composition.entries,
       renderer: renderer,
       trigger: ZMenuTrigger(
         icon: icon ?? _kMenuFallbackIcon,
@@ -388,32 +611,7 @@ class ZItemActionsMenu extends StatelessWidget {
         // info-bulle qu'avant : rendu INCHANGÉ pour un appelant sans tooltip.
         tooltip: tooltip,
       ),
-      contentBuilder: hote == null && !hasVisibleAction
-          ? null
-          : (surfaceContext, visibles, select) {
-              if (hote != null) {
-                return hote(
-                  surfaceContext,
-                  <ZItemAction>[
-                    for (final entry in visibles) versAction[entry]!,
-                  ],
-                  // MÊME chemin de sortie que le défaut : l'hôte ne peut ni
-                  // oublier de fermer, ni invoquer deux fois, ni diverger.
-                  (action) {
-                    final entry = versEntree[action];
-                    if (entry != null) select(entry);
-                  },
-                );
-              }
-              return _ZDefaultItemActionGrid(
-                actions: <ZItemAction>[
-                  for (final entry in visibles) versAction[entry]!,
-                ],
-                entries: visibles,
-                crossAxisCount: crossAxisCount,
-                onSelected: select,
-              );
-            },
+      contentBuilder: composition.contentBuilder,
     );
   }
 

@@ -3,6 +3,41 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.46.0 - 2026-09-04
+
+### Ajouté
+
+- **Ouverture IMPÉRATIVE ancrée du menu d'actions d'item** (CR-IFFD-135,
+  `MINEUR`) : `showZItemActionsMenu(context, actions:, anchorKey:, menuBuilder:,
+  crossAxisCount:, renderer:, semanticLabel:)`. `ZItemActionsMenu` portait son
+  propre déclencheur ; un hôte qui a DÉJÀ son bouton monté (et l'ouvrait
+  impérativement par sa `GlobalKey`) devait le retirer de ses écrans pour
+  router vers le socle — une réécriture non réversible qui casse un
+  *strangler fig*. Il garde désormais son bouton et branche cette fonction sur
+  son `onPressed`.
+  ⚠️ La CR situait le widget dans `zcrud_ui_kit` : il vit dans `zcrud_study`.
+
+  * **Composition à site UNIQUE** — la traduction actions → entrées, les cartes
+    d'identité, la règle d'absence et le contenu par défaut sont factorisés
+    (`_composeItemActions`) et partagés par le widget et la fonction. Aucune
+    seconde composition ne peut réapparaître : garde de source dédiée
+    (`cr_iffd135_composition_site_guard_test.dart`), rougie par injection R3.
+  * **Rendu prouvé IDENTIQUE** — la signature de l'arbre rendu (déclencheur et
+    surface) est figée sur le code antérieur à la factorisation et comparée en
+    égalité stricte ; la surface ouverte par la voie impérative rend la MÊME
+    liste de widgets que celle du déclencheur porté.
+  * **Géométrie** — le point d'ancrage est un COIN du bord haut de l'ancre,
+    celui du côté vers lequel la surface grandit (bord de départ, bord de fin
+    quand l'ancre est plus proche du bord de fin de l'écran, la directionnalité
+    départageant l'ancre centrée). Mesuré par `getRect` sur les six
+    configurations *placement × directionnalité* : le rectangle rendu est
+    **égal** à celui du déclencheur porté. Un simple coin haut-gauche divergeait
+    de 40 à 232 dp (mesuré).
+  * **AD-10** — ancre non montée / détachée / non mesurée, contexte démonté,
+    rien à montrer : aucune surface, aucune levée. Aucun `assert` sur l'ancre
+    (une ancre démontée est une course, pas une erreur de programmation) ; le
+    nom accessible manquant, lui, reste asserté en debug.
+
 ## 3.45.0 - 2026-09-04
 
 ### Ajouté
