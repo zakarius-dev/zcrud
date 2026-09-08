@@ -55,7 +55,13 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:zcrud_core/zcrud_core.dart' show ZIndexController, label;
+import 'package:zcrud_core/zcrud_core.dart'
+    show
+        ZDisplayStateBinding,
+        ZDisplayStateOwnerMixin,
+        ZIndexController,
+        ZToggleController,
+        label;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart'
     show
         ZFlashcard,
@@ -67,6 +73,7 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart'
 import 'package:zcrud_session/zcrud_session.dart'
     show
         ZFlashcardAnswerInput,
+        ZSessionCardSlot,
         ZFlashcardSubmission,
         ZLinearSessionState,
         ZSessionItem,
@@ -80,6 +87,12 @@ import 'package:zcrud_session/zcrud_session.dart'
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZReviewMode, ZStudySessionResult;
 
+import 'z_faded_overflow.dart';
+import 'z_study_session_card_slot.dart';
+import 'z_study_session_post_submit.dart';
+import 'z_study_session_recall.dart';
+import 'z_study_session_reference.dart';
+import 'z_study_session_reveal.dart';
 import 'z_study_session_slices.dart';
 import 'z_study_session_view.dart';
 
@@ -130,6 +143,7 @@ class ZStudySessionHost extends StatefulWidget {
     this.reviewer,
     this.config = const ZSrsConfig(),
     this.cardBuilder,
+    this.cardSlotBuilder,
     this.contentBuilder,
     this.evaluationPort,
     this.hintPort,
@@ -144,6 +158,10 @@ class ZStudySessionHost extends StatefulWidget {
     this.onExit,
     this.indexController,
     this.progressStyle = ZSessionProgressStyle.dots,
+    this.revealPolicy = ZStudySessionRevealPolicy.auto,
+    this.postSubmitPolicy = ZStudySessionPostSubmitPolicy.auto,
+    this.questionRecall = ZStudySessionQuestionRecall.auto,
+    this.bottomInset,
     this.fallbackFolderId = '',
     this.stackFlex,
     this.inputFlex,
@@ -154,6 +172,26 @@ class ZStudySessionHost extends StatefulWidget {
     this.counterStyle,
     super.key,
   });
+
+  /// Clé de l'action de révélation (testabilité).
+  static const ValueKey<String> revealActionKey =
+      ValueKey<String>('zStudySessionReveal');
+
+  /// Clé l10n du libellé « afficher la réponse ».
+  ///
+  /// Partagée avec la carte de révision : la même action porte le même mot
+  /// dans tout le dépôt, et un hôte déjà traduit n'a rien à ajouter.
+  static const String revealLabelKey = 'zcrud.flashcard.reveal';
+
+  /// Clé l10n du libellé « masquer la réponse ».
+  static const String hideLabelKey = 'zcrud.flashcard.hide';
+
+  /// Clé de l'action de continuation après notation (testabilité).
+  static const ValueKey<String> continueActionKey =
+      ValueKey<String>('zStudySessionContinue');
+
+  /// Clé l10n du libellé « continuer » (passer à la carte suivante).
+  static const String continueLabelKey = 'zcrud.session.continue';
 
   /// Mode de session — **entrée** de `zSessionRuntimeForMode` (AD-34).
   final ZReviewMode mode;
@@ -171,6 +209,23 @@ class ZStudySessionHost extends StatefulWidget {
 
   /// Slot de carte d'AFFICHAGE. `null` ⇒ `ZFlashcardReviewCard` par défaut.
   final Widget Function(BuildContext context, ZFlashcard card)? cardBuilder;
+
+  /// Slot de carte qui reçoit le **créneau complet** ([ZStudySessionCardSlot] :
+  /// carte, rang, `isFront`, état de révélation, commande de bascule).
+  ///
+  /// Prioritaire sur [cardBuilder] : fourni, il rend **toutes** les cartes de
+  /// la pile. `null` ⇒ l'écran se comporte exactement comme s'il n'existait
+  /// pas.
+  ///
+  /// C'est la voie d'un hôte qui compose sa propre carte sans renoncer à ce que
+  /// l'assemblage sait : il n'a besoin ni d'un contrôleur d'index, ni d'un
+  /// contrôleur de révélation.
+  ///
+  /// L'affordance de révélation **du socle** n'est alors pas rendue : l'hôte a
+  /// reçu la commande ([ZStudySessionCardSlot.toggleReveal]) et la place où il
+  /// veut. Deux boutons pour le même état se superposeraient et se
+  /// contrediraient à l'écran.
+  final ZStudySessionCardSlotBuilder? cardSlotBuilder;
 
   /// Slot AD-40 de rendu du contenu (markdown, LaTeX…) — passé tel quel à la
   /// carte **et** à la surface de saisie.
@@ -225,6 +280,59 @@ class ZStudySessionHost extends StatefulWidget {
   /// Style de l'indicateur de progression de la pile.
   final ZSessionProgressStyle progressStyle;
 
+  /// Politique de l'affordance de **révélation de la réponse**.
+  ///
+  /// Défaut [ZStudySessionRevealPolicy.auto] : l'action n'est offerte que
+  /// dans les modes où voir la réponse est l'objet de la session (cf.
+  /// [zStudySessionRevealsAnswer]). [ZStudySessionRevealPolicy.never] retire
+  /// l'action dans tous les modes.
+  ///
+  /// L'affordance suppose une carte **branchée sur la révélation** : elle est
+  /// retirée dès que [cardBuilder] est fourni seul, parce que la carte de
+  /// l'hôte ne s'y branche pas — un bouton qui ne dévoile rien promettrait plus
+  /// qu'il ne tient. Avec [cardSlotBuilder], la révélation est bien branchée,
+  /// mais c'est l'hôte qui place son propre contrôle.
+  ///
+  /// La révélation n'écrit **rien** : elle ne note pas, ne fait pas avancer la
+  /// pile et n'atteint aucune voie SRS.
+  final ZStudySessionRevealPolicy revealPolicy;
+
+  /// Politique de **retenue après soumission**.
+  ///
+  /// Défaut [ZStudySessionPostSubmitPolicy.auto] : la carte notée est retenue
+  /// dans les modes d'apprentissage (cf. [zStudySessionHoldsAfterSubmit]), le
+  /// temps que la réponse soit lue ; une action de continuation
+  /// ([continueActionKey]) passe alors à la suivante. Les modes notés sont
+  /// inchangés — la carte part au moment même de la notation.
+  ///
+  /// [ZStudySessionPostSubmitPolicy.advance] restaure le passage immédiat dans
+  /// tous les modes.
+  ///
+  /// La retenue ne touche **que** l'instant du passage : la note part au même
+  /// moment, avec la même valeur, par la même et unique voie d'écriture SRS.
+  final ZStudySessionPostSubmitPolicy postSubmitPolicy;
+
+  /// Régime du **rappel de la question** au-dessus de la saisie.
+  ///
+  /// Défaut [ZStudySessionQuestionRecall.auto] : le rappel est rendu en
+  /// entier sur une fenêtre large, **abrégé** sous
+  /// [ZStudySessionReference.narrowWidth]. Poser
+  /// [ZStudySessionQuestionRecall.full] rend le rappel entier quelle que soit
+  /// la largeur.
+  ///
+  /// Le régime ne s'applique qu'à la **surface de saisie par défaut** : un
+  /// [gradingBuilder] fourni compose son propre rappel.
+  final ZStudySessionQuestionRecall questionRecall;
+
+  /// Réserve sous la surface de saisie par défaut (barre de navigation
+  /// système, clavier logiciel…).
+  ///
+  /// `null` ⇒ l'inset système (`MediaQuery.paddingOf(context).bottom`) ;
+  /// `0` ⇒ aucune réserve, l'hôte gouverne. La surface **consomme** la valeur
+  /// pour son sous-arbre : une rangée de notation imbriquée ne rend donc
+  /// jamais une seconde gouttière.
+  final double? bottomInset;
+
   /// Dossier de repli pour une carte dont `folderId` est nul.
   ///
   /// Identité **opaque** (jamais un libellé rendu) : `ZSessionItem.folderId`
@@ -256,7 +364,8 @@ class ZStudySessionHost extends StatefulWidget {
   State<ZStudySessionHost> createState() => _ZStudySessionHostState();
 }
 
-class _ZStudySessionHostState extends State<ZStudySessionHost> {
+class _ZStudySessionHostState extends State<ZStudySessionHost>
+    with ZDisplayStateOwnerMixin<ZStudySessionHost> {
   // ── Tranches POSSÉDÉES (AD-2) ─────────────────────────────────────────────
   final ValueNotifier<ZStudySessionPhase> _phase =
       ValueNotifier<ZStudySessionPhase>(ZStudySessionPhase.empty);
@@ -288,15 +397,106 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {
   /// Latch one-shot de fin de session.
   bool _celebrated = false;
 
+  /// Retenue en cours : la carte est notée, mais pas encore partie.
+  ///
+  /// Tranche possédée et écoutée SEULE par l'action de continuation : la
+  /// bascule de retenue ne reconstruit ni la pile, ni la saisie, ni les
+  /// compteurs (AD-2).
+  final ValueNotifier<bool> _held = ValueNotifier<bool>(false);
+
+  /// Affichage GELÉ : les tranches ne suivent plus le moteur.
+  ///
+  /// 🔒 Posé AVANT `grade`, et non après : le moteur notifie pendant sa
+  /// notation, et cette notification ferait déjà avancer la carte courante —
+  /// la retenue arriverait trop tard, sur une carte déjà remplacée. Champ
+  /// simple, non notifiant : il ne gouverne aucun rendu, seulement la
+  /// propagation.
+  bool _frozen = false;
+
+  /// La file du moteur était-elle épuisée au moment de la retenue ?
+  ///
+  /// La dernière carte est retenue comme les autres — sinon sa réponse serait
+  /// la seule à ne jamais s'afficher. La fin de session est donc différée
+  /// jusqu'à la continuation, et l'information doit survivre à l'intervalle.
+  bool _pendingComplete = false;
+
+  /// Source de vérité UNIQUE de la révélation — possédée, jamais recréée.
+  ///
+  /// Créée à la première carte qui la consomme, et **seulement** si l'écran
+  /// porte l'affordance : un contrôleur déclaré puis jamais branché serait un
+  /// bouton mort, et le patron `ZDisplayStateOwnerMixin` le refuse au
+  /// `dispose`.
+  ZToggleController? _reveal;
+
+  /// Identité de la carte de DEVANT à la dernière synchronisation.
+  ///
+  /// Sert l'invariant porteur : la révélation se referme quand la carte de
+  /// devant change. Sans elle, l'apprenant verrait la réponse de la carte
+  /// suivante avant même sa question — la carte de devant est un `Element`
+  /// NEUF (sa `key` dérive du `flashcardId`), donc le reset interne de la
+  /// carte au changement de `card` ne s'y produit pas.
+  String? _frontId;
+
+  /// Rappel de question ABRÉGÉ, mémoïsé — jamais réalloué par build.
+  ///
+  /// Une closure réallouée à chaque build changerait d'identité et casserait
+  /// la stabilité des rebuilds (AD-2).
+  ZFlashcardContentBuilder? _compactRecall;
+
+  /// Rappel de question SUPPRIMÉ, mémoïsé (même motif).
+  ZFlashcardContentBuilder? _hiddenRecall;
+
   @override
   void initState() {
     super.initState();
     _seed();
   }
 
+  // La création du contrôleur de révélation est TARDIVE par construction : on
+  // ne le crée qu'au premier créneau de carte qui le consomme, pour ne jamais
+  // laisser un contrôleur possédé sans consommateur (file vide, phase
+  // `unavailable`, `cardBuilder` de l'hôte). La borne temporelle du patron est
+  // donc levée ici, et la propriété qu'elle protège — instance STABLE, jamais
+  // remplacée par un rebuild — est tenue par le `??=` de `_revealController`,
+  // pas par le hasard.
+  @override
+  bool get zAllowsLateDisplayState => true;
+
+  /// Vrai si la révélation est réellement **branchée** sur la carte rendue.
+  ///
+  /// Deux cartes s'y branchent : celle du socle, et celle d'un hôte qui passe
+  /// par `cardSlotBuilder` (il reçoit l'état et la commande). Celle d'un
+  /// `cardBuilder` seul ne s'y branche pas — un contrôleur qui ne dévoile rien
+  /// n'est pas monté.
+  bool get _revealAvailable =>
+      (widget.cardSlotBuilder != null || widget.cardBuilder == null) &&
+      zStudySessionRevealsAnswer(widget.mode, widget.revealPolicy);
+
+  /// Vrai si l'écran rend l'action de révélation **du socle**.
+  ///
+  /// Un `cardSlotBuilder` fourni la retire : l'hôte a reçu la commande et pose
+  /// son propre contrôle, là où il veut. Deux boutons sur le même état se
+  /// superposeraient.
+  bool get _nativeRevealAction =>
+      _revealAvailable && widget.cardSlotBuilder == null;
+
+  /// Vrai si la carte notée est retenue avant de partir (table unique).
+  bool get _holdsAfterSubmit =>
+      zStudySessionHoldsAfterSubmit(widget.mode, widget.postSubmitPolicy);
+
+  /// Contrôleur de révélation — créé une fois, STABLE, disposé par le patron.
+  ZToggleController get _revealController =>
+      _reveal ??= ZToggleController(owner: this, initialValue: false);
+
   @override
   void didUpdateWidget(covariant ZStudySessionHost oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.contentBuilder != widget.contentBuilder) {
+      // Les décorateurs mémoïsés enveloppent le builder de l'hôte : ils sont
+      // périmés dès qu'il change.
+      _compactRecall = null;
+      _hiddenRecall = null;
+    }
     // ④ su-8 — RESYNC. Un re-seed n'a lieu que sur un changement RÉEL (mode, ou
     // identité de la file d'entrée). Sans cette garde d'identité, chaque
     // rebuild du parent redémarrerait la session ; avec elle, une file qui
@@ -314,6 +514,7 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {
     _runtime?.dispose();
     _stopwatch.stop();
     _phase.dispose();
+    _held.dispose();
     _queue.dispose();
     _current.dispose();
     _progress.dispose();
@@ -333,6 +534,13 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {
     _submissionsById.clear();
     _celebrated = false;
     _index = 0;
+    // Une session neuve repart FACE QUESTION, quoi qu'ait laissé la
+    // précédente.
+    _frontId = null;
+    _reveal?.value = false;
+    _held.value = false;
+    _frozen = false;
+    _pendingComplete = false;
 
     final List<ZSessionItem> items = <ZSessionItem>[];
     final Map<String, ZFlashcard> byId = <String, ZFlashcard>{};
@@ -419,6 +627,9 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {
   /// notification du runtime qui ne change ni la carte de devant ni les
   /// compteurs ne reconstruit **aucun** slot.
   void _sync() {
+    // Retenue en cours : l'écran reste sur la carte notée, telle quelle. La
+    // notation, elle, est déjà partie.
+    if (_frozen) return;
     final ChangeNotifier? rt = _runtime;
     final List<ZSessionItem> queue = _queue.value;
 
@@ -436,6 +647,17 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {
       item = queue[_index.clamp(0, queue.length - 1)];
     }
     _current.value = item;
+
+    // 🔒 INVARIANT PORTEUR — la révélation se REFERME quand la carte de devant
+    // change. La carte de devant est un `Element` neuf à chaque changement (sa
+    // `key` dérive du `flashcardId`) : son propre reset au changement de
+    // `card` ne s'y produit donc jamais, et sans ce reset l'apprenant verrait
+    // la RÉPONSE de la carte suivante avant sa question.
+    final String? frontId = item?.flashcardId;
+    if (frontId != _frontId) {
+      _frontId = frontId;
+      _reveal?.value = false;
+    }
 
     final int reviewed;
     final int remaining;
@@ -476,6 +698,10 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {
   /// Route une soumission vers le runtime **désigné** — aucun aiguillage
   /// secondaire sur le mode.
   void _onSubmitted(String cardId, ZFlashcardSubmission submission) {
+    // Pendant une retenue, la session est FIGÉE sur la carte déjà notée : une
+    // seconde soumission la noterait une seconde fois. La voie d'écriture reste
+    // unique ET tirée une seule fois par carte (AD-33).
+    if (_frozen) return;
     // Association réponse ↔ carte par `flashcardId` (su-4 D2 / su-7).
     _submissionsById[cardId] = submission;
     final ChangeNotifier? rt = _runtime;
@@ -515,15 +741,32 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {
     ZStudySessionEngine engine,
     int quality,
   ) async {
+    // Le gel précède la notation : le moteur notifie AVANT que ce `Future` ne
+    // retombe, et sans lui la carte serait déjà remplacée quand la retenue
+    // s'appliquerait.
+    _frozen = _holdsAfterSubmit;
     final result = await engine.grade(quality);
     if (!mounted) return;
     result.fold(
       (_) {
         // AD-10 — échec TYPÉ : la file du moteur est inchangée, la saisie est
         // conservée, la carte reste affichée. L'échec vit dans l'état du
-        // moteur ; il n'est ni avalé, ni transformé en exception.
+        // moteur ; il n'est ni avalé, ni transformé en exception. Rien n'a été
+        // noté : il n'y a donc rien à retenir.
+        _frozen = false;
       },
       (_) {
+        // 🔒 La note est DÉJÀ partie ci-dessus, au même moment et avec la même
+        // valeur qu'avant : ce qui suit ne décide que de l'instant du passage.
+        if (_holdsAfterSubmit) {
+          _pendingComplete = engine.isComplete;
+          // La réponse est portée à l'écran par la carte elle-même — celle du
+          // socle via son contrôleur, celle de l'hôte via le créneau.
+          if (_revealAvailable) _revealController.value = true;
+          _held.value = true;
+          return;
+        }
+        _frozen = false;
         if (engine.isComplete) {
           _onStackEnd();
           return;
@@ -533,6 +776,26 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {
         _sync();
       },
     );
+  }
+
+  /// Lève la retenue : la carte notée part enfin, ou la session se termine.
+  ///
+  /// N'écrit **aucun** SRS — la note est partie à la soumission. Ce geste ne
+  /// fait que ce que `_gradeAndAdvance` aurait fait sans retenue.
+  void _continueAfterHold() {
+    if (!_held.value) return;
+    _held.value = false;
+    _frozen = false;
+    if (_pendingComplete) {
+      _pendingComplete = false;
+      _onStackEnd();
+      return;
+    }
+    final ChangeNotifier? rt = _runtime;
+    if (rt is! ZStudySessionEngine) return;
+    _index = 0;
+    _queue.value = rt.state.queue;
+    _sync();
   }
 
   /// Latch **one-shot** : la fin de session est poussée exactement une fois,
@@ -610,6 +873,140 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {
     );
   }
 
+  /// Créneau de carte — même résolution par identité que [_buildCard], plus la
+  /// seule information que la pile détient : **quelle carte est devant**.
+  ///
+  /// Le contrôleur de révélation n'est branché que sur la carte de devant. Le
+  /// partager avec les cartes empilées derrière elle les ouvrirait toutes en
+  /// même temps : la réponse de la carte suivante serait lisible **avant** sa
+  /// question.
+  Widget _buildCardSlot(BuildContext context, ZSessionCardSlot slot) {
+    final ZFlashcard? card = _cardsById[slot.item.flashcardId];
+    if (card == null) return _missingCard(context);
+    final ZStudySessionCardSlotBuilder? host = widget.cardSlotBuilder;
+    if (host != null) return _buildHostCardSlot(context, slot, card, host);
+    return ZFlashcardReviewCard(
+      key: ValueKey<String>('zStudySessionCard_${slot.item.flashcardId}'),
+      card: card,
+      contentBuilder: widget.contentBuilder,
+      revealController: slot.isFront ? _revealController : null,
+    );
+  }
+
+  /// Relais du créneau vers la carte de l'HÔTE.
+  ///
+  /// La révélation n'est écoutée que pour la carte de devant : abonner les
+  /// cartes empilées reconstruirait toute la pile à chaque bascule, et leur
+  /// donnerait un état de révélation qu'elles ne doivent pas avoir.
+  Widget _buildHostCardSlot(
+    BuildContext context,
+    ZSessionCardSlot slot,
+    ZFlashcard card,
+    ZStudySessionCardSlotBuilder host,
+  ) {
+    if (!slot.isFront || !_revealAvailable) {
+      return host(
+        context,
+        ZStudySessionCardSlot(slot: slot, card: card, revealed: false),
+      );
+    }
+    return _HostRevealSlot(
+      // Identité de la carte : un `State` de liaison neuf par carte de devant.
+      key: ValueKey<String>('zStudyHostSlot_${slot.item.flashcardId}'),
+      controller: _revealController,
+      builder: (BuildContext context, bool revealed, VoidCallback toggle) =>
+          host(
+        context,
+        ZStudySessionCardSlot(
+          slot: slot,
+          card: card,
+          revealed: revealed,
+          toggleReveal: toggle,
+        ),
+      ),
+    );
+  }
+
+  /// Zone d'action sous la pile : action de continuation pendant une retenue,
+  /// bascule de révélation sinon.
+  ///
+  /// Les deux ne coexistent jamais : pendant la retenue, la réponse est déjà à
+  /// l'écran et le seul geste attendu est de passer à la suite.
+  Widget _buildRevealSlot(BuildContext context) => ValueListenableBuilder<bool>(
+        valueListenable: _held,
+        builder: (BuildContext context, bool held, Widget? _) {
+          if (held) {
+            return Padding(
+              padding: ZStudySessionReference.revealActionPadding,
+              child: _ContinueAction(
+                onPressed: _continueAfterHold,
+                minTarget: widget.minTarget ?? ZStudySessionReference.minTarget,
+                continueLabel: widget.labels?.continueAction,
+              ),
+            );
+          }
+          if (!_nativeRevealAction) return const SizedBox.shrink();
+          return _buildReveal(context);
+        },
+      );
+
+  /// Action de révélation — bascule la SEULE source de vérité, et rien d'autre.
+  ///
+  /// N'écrit aucun SRS, ne note pas, ne fait pas avancer la pile.
+  Widget _buildReveal(BuildContext context) => Padding(
+        padding: ZStudySessionReference.revealActionPadding,
+        child: _RevealToggle(
+          controller: _revealController,
+          minTarget: widget.minTarget ?? ZStudySessionReference.minTarget,
+          revealLabel: widget.labels?.revealAction,
+          hideLabel: widget.labels?.hideAction,
+        ),
+      );
+
+  /// Builder de rappel de question RÉELLEMENT passé à la surface de saisie.
+  ///
+  /// En régime `full`, c'est **exactement** la référence de l'hôte : aucun
+  /// nœud intercalé, aucune closure allouée.
+  ZFlashcardContentBuilder? _recallBuilder(BuildContext context) {
+    final ZStudySessionQuestionRecall effective = zResolveQuestionRecall(
+      widget.questionRecall,
+      // La largeur de la FENÊTRE, lue sans intercaler de nœud : un
+      // `LayoutBuilder` changerait l'arbre de tout hôte, y compris celui qui
+      // n'a rien demandé.
+      MediaQuery.sizeOf(context).width,
+    );
+    switch (effective) {
+      case ZStudySessionQuestionRecall.auto:
+      case ZStudySessionQuestionRecall.full:
+        return widget.contentBuilder;
+      case ZStudySessionQuestionRecall.compact:
+        return _compactRecall ??= _buildCompactRecall;
+      case ZStudySessionQuestionRecall.hidden:
+        return _hiddenRecall ??= _buildHiddenRecall;
+    }
+  }
+
+  Widget _buildCompactRecall(BuildContext context, String content) {
+    final ZFlashcardContentBuilder? inner = widget.contentBuilder;
+    final Color surface = Theme.of(context).colorScheme.surface;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        maxHeight: ZStudySessionReference.compactRecallMaxHeight,
+      ),
+      child: ZFadedOverflow(
+        fadeExtent: ZStudySessionReference.compactRecallFadeExtent,
+        opaque: surface,
+        clear: surface.withAlpha(0),
+        child: inner == null
+            ? Text(content, textAlign: TextAlign.start)
+            : inner(context, content),
+      ),
+    );
+  }
+
+  Widget _buildHiddenRecall(BuildContext context, String content) =>
+      const SizedBox.shrink();
+
   /// ② Surface de saisie/notation — résolue par **identité**, jamais par index.
   Widget _buildGrading(BuildContext context, ZSessionItem item) {
     // Voie de soumission UNIQUE — la même pour le slot de l'hôte et pour la
@@ -627,7 +1024,8 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {
       card: card,
       mode: widget.mode,
       srsConfig: widget.config,
-      contentBuilder: widget.contentBuilder,
+      contentBuilder: _recallBuilder(context),
+      bottomInset: widget.bottomInset,
       evaluationPort: widget.evaluationPort,
       hintPort: widget.hintPort,
       onSubmitted: submit,
@@ -650,6 +1048,16 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {
           progress: _progress,
         ),
         cardBuilder: _buildCard,
+        // AD-4 — `null` quand l'affordance n'est pas portée : la pile emprunte
+        // alors `cardBuilder`, exactement comme avant.
+        cardSlotBuilder: (widget.cardSlotBuilder != null || _revealAvailable)
+            ? _buildCardSlot
+            : null,
+        // AD-4 — `null` tant qu'aucune des deux actions n'est possible : la
+        // zone n'est alors PAS dans l'arbre, exactement comme avant.
+        revealBuilder: (_nativeRevealAction || _holdsAfterSubmit)
+            ? _buildRevealSlot
+            : null,
         gradingBuilder: _buildGrading,
         passThreshold: widget.config.passThreshold,
         headerBuilder: widget.headerBuilder,
@@ -670,5 +1078,168 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {
         sectionGap: widget.sectionGap,
         minTarget: widget.minTarget,
         counterStyle: widget.counterStyle,
+      );
+}
+
+/// Bascule « afficher / masquer la réponse » de la carte de devant.
+///
+/// N'écoute QUE le contrôleur de révélation : un changement de face ne
+/// reconstruit ni la pile, ni la saisie, ni les compteurs (AD-2). Cible
+/// ≥ 48 dp en géométrie rendue, `Semantics` explicite, libellés injectés
+/// (AD-13 / FR-26).
+class _RevealToggle extends StatelessWidget {
+  const _RevealToggle({
+    required this.controller,
+    required this.minTarget,
+    required this.revealLabel,
+    required this.hideLabel,
+  });
+
+  final ZToggleController controller;
+  final double minTarget;
+  final String? revealLabel;
+  final String? hideLabel;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+        valueListenable: controller,
+        builder: (BuildContext context, bool revealed, Widget? _) {
+          // Le libellé d'une bascule décrit ce que le geste fait MAINTENANT :
+          // face réponse, il masque. Un libellé constant serait faux dans la
+          // moitié des états.
+          final String text = revealed
+              ? hideLabel ??
+                  label(
+                    context,
+                    ZStudySessionHost.hideLabelKey,
+                    fallback: 'Masquer la réponse',
+                  )
+              : revealLabel ??
+                  label(
+                    context,
+                    ZStudySessionHost.revealLabelKey,
+                    fallback: 'Afficher la réponse',
+                  );
+          return Semantics(
+            button: true,
+            label: text,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minWidth: minTarget,
+                minHeight: minTarget,
+              ),
+              child: TextButton(
+                key: ZStudySessionHost.revealActionKey,
+                onPressed: controller.toggle,
+                // Ceinture ET bretelles : le `ButtonStyle` de Material 3 pose
+                // une taille minimale sous la cible AD-13. La contrainte
+                // parente la relèverait déjà, mais elle ne voyagerait pas avec
+                // le bouton chez un hôte qui l'enveloppe autrement.
+                style: TextButton.styleFrom(
+                  minimumSize: Size(minTarget, minTarget),
+                ),
+                child: ExcludeSemantics(child: Text(text)),
+              ),
+            ),
+          );
+        },
+      );
+}
+
+/// Action « continuer » — lève la retenue et rien d'autre.
+///
+/// N'écoute aucun état : elle n'existe que pendant la retenue, et son libellé
+/// ne change pas. Cible ≥ 48 dp en géométrie rendue, `Semantics` explicite,
+/// libellé injecté (AD-13 / FR-26).
+class _ContinueAction extends StatelessWidget {
+  const _ContinueAction({
+    required this.onPressed,
+    required this.minTarget,
+    required this.continueLabel,
+  });
+
+  final VoidCallback onPressed;
+  final double minTarget;
+  final String? continueLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final String text = continueLabel ??
+        label(
+          context,
+          ZStudySessionHost.continueLabelKey,
+          fallback: 'Continuer',
+        );
+    return Semantics(
+      button: true,
+      label: text,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minWidth: minTarget, minHeight: minTarget),
+        child: TextButton(
+          key: ZStudySessionHost.continueActionKey,
+          onPressed: onPressed,
+          // Ceinture ET bretelles : le `ButtonStyle` de Material 3 pose une
+          // taille minimale sous la cible AD-13, et la contrainte parente ne
+          // voyagerait pas avec le bouton chez un hôte qui l'enveloppe.
+          style: TextButton.styleFrom(
+            minimumSize: Size(minTarget, minTarget),
+          ),
+          child: ExcludeSemantics(child: Text(text)),
+        ),
+      ),
+    );
+  }
+}
+
+/// Liaison d'écoute entre le contrôleur de révélation de l'écran et la carte
+/// composée par l'hôte.
+///
+/// Passe par [ZDisplayStateBinding] plutôt que d'écouter le contrôleur
+/// directement : c'est la liaison qui **marque la consommation**, sans laquelle
+/// un contrôleur possédé mais jamais branché est refusé au `dispose`. Le
+/// rebuild reste borné à ce sous-arbre (AD-2).
+class _HostRevealSlot extends StatefulWidget {
+  const _HostRevealSlot({
+    required this.controller,
+    required this.builder,
+    super.key,
+  });
+
+  final ZToggleController controller;
+
+  final Widget Function(BuildContext context, bool revealed, VoidCallback
+      toggle) builder;
+
+  @override
+  State<_HostRevealSlot> createState() => _HostRevealSlotState();
+}
+
+class _HostRevealSlotState extends State<_HostRevealSlot> {
+  late final ZDisplayStateBinding<bool> _binding;
+
+  @override
+  void initState() {
+    super.initState();
+    _binding = ZDisplayStateBinding<bool>(consumer: this, initialValue: false)
+      ..bind(widget.controller);
+  }
+
+  @override
+  void didUpdateWidget(covariant _HostRevealSlot oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _binding.bind(widget.controller); // no-op si identique
+  }
+
+  @override
+  void dispose() {
+    _binding.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+        valueListenable: _binding.listenable,
+        builder: (BuildContext context, bool revealed, Widget? _) =>
+            widget.builder(context, revealed, widget.controller.toggle),
       );
 }

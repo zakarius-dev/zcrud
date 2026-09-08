@@ -59,8 +59,9 @@ void main() {
 
       // « Je ne sais pas » ⇒ lapse : le moteur réinsère c0 en aval, son front
       // devient c1, et le swiper SUIT sa file dynamique.
-      await tester.tap(find.byKey(const ValueKey<String>('zDontKnow')));
-      await tester.pumpAndSettle();
+      // Deux gestes : la carte notée est RETENUE le temps que sa réponse soit
+      // lue, et seule la continuation la fait partir.
+      await dontKnowThenContinue(tester);
 
       expect(reviewer.writes, 1, reason: 'le 1ᵉʳ lapse atteint le seam SRS');
       expect(reviewer.gradedIds, <String>['c0']);
@@ -75,8 +76,7 @@ void main() {
       // CYCLIQUE du moteur), la garde d'identité `engine.current == cardId`
       // sauterait ici — SILENCIEUSEMENT — et toutes les notes suivantes
       // seraient perdues.
-      await tester.tap(find.byKey(const ValueKey<String>('zDontKnow')));
-      await tester.pumpAndSettle();
+      await dontKnowThenContinue(tester);
 
       expect(reviewer.writes, 2,
           reason: '🔴 la 2ᵉ soumission DOIT atteindre le SRS : si le swiper et '
@@ -145,8 +145,7 @@ void main() {
       // Lapse sur c0 ⇒ le front du moteur devient c1, tandis que la file
       // d'ENTRÉE commence toujours par c0. Les deux résolutions divergent
       // désormais : c'est le seul état où la mesure discrimine.
-      await tester.tap(find.byKey(const ValueKey<String>('zDontKnow')));
-      await tester.pumpAndSettle();
+      await dontKnowThenContinue(tester);
 
       final Finder grading =
           find.byKey(const ValueKey<String>('zStudySessionAnswer_c1'));
@@ -228,9 +227,9 @@ void main() {
         const ValueKey<String>('${ZStudySessionView.stackKeyPrefix}c0|c1|c2'),
       );
 
-      // Un lapse permute la file du moteur (c0 réinséré en aval).
-      await tester.tap(find.byKey(const ValueKey<String>('zDontKnow')));
-      await tester.pumpAndSettle();
+      // Un lapse permute la file du moteur (c0 réinséré en aval) — la carte
+      // notée est RETENUE, c'est la continuation qui la fait partir.
+      await dontKnowThenContinue(tester);
 
       final Key after = stackKey();
       expect(after, isNot(before),
@@ -290,9 +289,8 @@ void main() {
       expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c0')),
           findsOneWidget);
 
-      // Lapse : le front du moteur passe à c1.
-      await tester.tap(find.byKey(const ValueKey<String>('zDontKnow')));
-      await tester.pumpAndSettle();
+      // Lapse : le front du moteur passe à c1 (après continuation).
+      await dontKnowThenContinue(tester);
       expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c1')),
           findsOneWidget);
 
@@ -337,8 +335,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey<String>('zDontKnow')));
-      await tester.pumpAndSettle();
+      await dontKnowThenContinue(tester);
       expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c1')),
           findsOneWidget);
 

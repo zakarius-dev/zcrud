@@ -195,7 +195,8 @@ class ZSrsQualityButtons extends StatelessWidget {
   /// - [previewLabelFor] : seam d'intervalle prévisionnel (typiquement une
   ///   projection pure du planificateur) ; `null` : aucun aperçu affiché ;
   /// - [labelKeyFor]/[colorKeyFor] : seams de libellé/couleur (défauts injectés) ;
-  /// - [selectedQuality] : cran pré-sélectionné, ou `null`.
+  /// - [selectedQuality] : cran pré-sélectionné, ou `null` ;
+  /// - [bottomInset] : réserve sous la rangée (`null` : l'inset système).
   const ZSrsQualityButtons({
     required this.scale,
     required this.onQualitySelected,
@@ -205,6 +206,7 @@ class ZSrsQualityButtons extends StatelessWidget {
     this.colorKeyFor,
     this.selectedQuality,
     this.emphasis = ZSrsQualityEmphasis.none,
+    this.bottomInset,
     super.key,
   });
 
@@ -248,6 +250,21 @@ class ZSrsQualityButtons extends StatelessWidget {
   /// rendu historique strictement inchangé.
   final ZSrsQualityEmphasis emphasis;
 
+  /// Réserve d'espace sous la rangée, en dp.
+  ///
+  /// - `null` (défaut) : l'inset système du bas
+  ///   (`MediaQuery.paddingOf(context).bottom`) — la rangée reste donc
+  ///   atteignable au doigt quand elle est posée au bas d'un écran à barre de
+  ///   navigation système. Cette valeur est **déjà à zéro** sous un `SafeArea`
+  ///   ancêtre (qui l'a consommée) : aucune seconde gouttière ne peut
+  ///   apparaître ;
+  /// - une valeur explicite : celle-là, pour un hôte qui gouverne lui-même son
+  ///   inset. `0` retire toute réserve.
+  ///
+  /// Aucune réserve n'est rendue quand la valeur effective est nulle : l'arbre
+  /// est alors exactement celui d'avant l'existence de ce paramètre.
+  final double? bottomInset;
+
   /// Préfixe de [ValueKey] d'un bouton de cran, pour la testabilité.
   static const String buttonKeyPrefix = 'zSrsQuality_';
 
@@ -260,10 +277,19 @@ class ZSrsQualityButtons extends StatelessWidget {
     return quality >= passThreshold ? 'primary' : 'error';
   }
 
+  /// Clé de la réserve d'inset — présente seulement quand elle est non nulle.
+  static const ValueKey<String> bottomInsetKey =
+      ValueKey<String>('zSrsQualityBottomInset');
+
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    return Wrap(
+    // Lu sur `padding`, jamais sur `viewPadding` : `padding` est ce qu'un
+    // `SafeArea` ancêtre a déjà consommé (il le remet à zéro pour son
+    // sous-arbre). Le lire sur `viewPadding` rendrait une seconde gouttière
+    // chez tout hôte qui gère déjà son inset.
+    final double inset = bottomInset ?? MediaQuery.paddingOf(context).bottom;
+    final Widget row = Wrap(
       spacing: theme.gapM,
       runSpacing: theme.gapM,
       alignment: WrapAlignment.start,
@@ -283,6 +309,12 @@ class ZSrsQualityButtons extends StatelessWidget {
             onTap: () => onQualitySelected(quality),
           ),
       ],
+    );
+    if (inset <= 0) return row;
+    return Padding(
+      key: bottomInsetKey,
+      padding: EdgeInsetsDirectional.only(bottom: inset),
+      child: row,
     );
   }
 }

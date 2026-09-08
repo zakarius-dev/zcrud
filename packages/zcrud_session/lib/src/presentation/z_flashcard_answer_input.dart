@@ -130,10 +130,11 @@ class ZFlashcardAnswerDraft {
       setEquals(other.selectedChoiceIndexes, selectedChoiceIndexes);
 
   @override
-  int get hashCode =>
-      Object.hash(text, answeredTrue, Object.hashAllUnordered(
-        selectedChoiceIndexes,
-      ));
+  int get hashCode => Object.hash(
+    text,
+    answeredTrue,
+    Object.hashAllUnordered(selectedChoiceIndexes),
+  );
 
   @override
   String toString() =>
@@ -198,6 +199,7 @@ class ZFlashcardAnswerInput extends StatefulWidget {
     this.onQualitySelected,
     this.onAdvance,
     this.markSkippedSubmissions = false,
+    this.bottomInset,
     super.key,
   });
 
@@ -369,6 +371,33 @@ class ZFlashcardAnswerInput extends StatefulWidget {
   /// Demande d'avance à la carte suivante (cette surface ne navigue pas
   /// elle-même).
   final VoidCallback? onAdvance;
+
+  /// Réserve d'espace sous la surface, en dp.
+  ///
+  /// - `null` (défaut) : l'inset système du bas
+  ///   (`MediaQuery.paddingOf(context).bottom`) — les derniers contrôles de la
+  ///   surface (« valider », « indice », « je ne sais pas », rangée de notation)
+  ///   restent donc atteignables au doigt quand la surface est posée au bas
+  ///   d'un écran à barre de navigation système. Cette valeur est **déjà à
+  ///   zéro** sous un `SafeArea` ancêtre (qui l'a consommée) : aucune seconde
+  ///   gouttière ne peut apparaître ;
+  /// - une valeur explicite : celle-là, pour un hôte qui gouverne lui-même son
+  ///   inset. `0` retire toute réserve.
+  ///
+  /// La surface est **propriétaire de l'inset de tout son sous-arbre** : elle
+  /// le consomme pour ses descendants, si bien que la rangée de notation
+  /// qu'elle contient ne le réserve pas une seconde fois (jamais de gouttière
+  /// double).
+  ///
+  /// Aucune réserve n'est rendue quand la valeur effective est nulle et
+  /// qu'aucun inset système n'est déclaré : l'arbre est alors exactement celui
+  /// d'avant l'existence de ce paramètre.
+  final double? bottomInset;
+
+  /// Clé de la réserve d'inset — présente seulement quand elle est non nulle.
+  static const ValueKey<String> bottomInsetKey = ValueKey<String>(
+    'zAnswerInputBottomInset',
+  );
 
   /// Voie unique de résolution du builder du slot de contenu.
   ///
@@ -965,56 +994,93 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     }
   }
 
+  /// Applique la réserve d'inset et en transfère la PROPRIÉTÉ au sous-arbre.
+  ///
+  /// Deux gestes, jamais un seul :
+  /// 1. la surface réserve l'inset effectif sous elle ;
+  /// 2. elle le CONSOMME pour ses descendants, exactement comme le ferait un
+  ///    `SafeArea` — sans quoi la rangée de notation imbriquée, qui lit le même
+  ///    `MediaQuery`, réserverait une SECONDE fois et rendrait une gouttière
+  ///    double.
+  Widget _withBottomInset(BuildContext context, Widget child) {
+    // Lu sur `padding`, jamais sur `viewPadding` : `padding` est ce qu'un
+    // `SafeArea` ancêtre a déjà consommé (il le remet à zéro pour son
+    // sous-arbre). Le lire sur `viewPadding` rendrait une seconde gouttière
+    // chez tout hôte qui gère déjà son inset.
+    final double systemInset = MediaQuery.paddingOf(context).bottom;
+    final double inset = widget.bottomInset ?? systemInset;
+    // Rien à réserver ET rien à consommer : l'arbre reste STRICTEMENT celui
+    // d'avant l'existence du paramètre (aucun widget intercalé).
+    if (inset <= 0 && systemInset <= 0) return child;
+    final Widget owned = MediaQuery.removePadding(
+      context: context,
+      removeBottom: true,
+      child: child,
+    );
+    // `bottomInset: 0` sous un inset système : l'hôte gouverne. On ne réserve
+    // rien, mais on consomme quand même pour le sous-arbre — sinon la rangée
+    // imbriquée réserverait ce que l'hôte a justement décidé de gouverner.
+    if (inset <= 0) return owned;
+    return Padding(
+      key: ZFlashcardAnswerInput.bottomInsetKey,
+      padding: EdgeInsetsDirectional.only(bottom: inset),
+      child: owned,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        // Slot de contenu sous `IgnorePointer` : le contenu est de
-        // l'affichage, un `QuillEditor` injecté ne peut pas voler le tap
-        // d'une case QCM. Les `Semantics` du sous-arbre restent lisibles :
-        // c'est l'interactivité qui est neutralisée, pas l'accessibilité.
-        IgnorePointer(child: _contentBuilder(context, widget.card.question)),
-        SizedBox(height: theme.gapM),
-        if (_effectiveTimerDisplay != ZTimerDisplay.hidden) ...<Widget>[
-          _TimerSlot(
-            elapsed: _elapsed,
-            display: _effectiveTimerDisplay,
-            timeLimit: widget.timeLimit,
+    return _withBottomInset(
+      context,
+      Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          // Slot de contenu sous `IgnorePointer` : le contenu est de
+          // l'affichage, un `QuillEditor` injecté ne peut pas voler le tap
+          // d'une case QCM. Les `Semantics` du sous-arbre restent lisibles :
+          // c'est l'interactivité qui est neutralisée, pas l'accessibilité.
+          IgnorePointer(child: _contentBuilder(context, widget.card.question)),
+          SizedBox(height: theme.gapM),
+          if (_effectiveTimerDisplay != ZTimerDisplay.hidden) ...<Widget>[
+            _TimerSlot(
+              elapsed: _elapsed,
+              display: _effectiveTimerDisplay,
+              timeLimit: widget.timeLimit,
+            ),
+            SizedBox(height: theme.gapM),
+          ],
+          _buildInput(context),
+          SizedBox(height: theme.gapM),
+          _HintSection(
+            shownHints: _shownHints,
+            hintError: _hintError,
+            hasStoredHint: _hasStoredHint,
+            hasPort: widget.hintPort != null,
+            // Gaté sur la correction, comme les trois autres contrôles :
+            // après soumission, un indice n'a plus d'effet sur la note déjà
+            // émise — et déclencherait un appel IA facturé pour une carte
+            // déjà corrigée.
+            correction: _correction,
+            submittedOverride: widget.isSubmitted,
+            onRequestHint: _requestHint,
           ),
           SizedBox(height: theme.gapM),
+          _DontKnowButton(
+            correction: _correction,
+            submittedOverride: widget.isSubmitted,
+            onPressed: _submitDontKnow,
+          ),
+          SizedBox(height: theme.gapM),
+          _CorrectionSection(
+            correction: _correction,
+            visibility: widget.correctionVisibility,
+            onQualitySelected: widget.onQualitySelected,
+            srsConfig: widget.srsConfig,
+          ),
         ],
-        _buildInput(context),
-        SizedBox(height: theme.gapM),
-        _HintSection(
-          shownHints: _shownHints,
-          hintError: _hintError,
-          hasStoredHint: _hasStoredHint,
-          hasPort: widget.hintPort != null,
-          // Gaté sur la correction, comme les trois autres contrôles :
-          // après soumission, un indice n'a plus d'effet sur la note déjà
-          // émise — et déclencherait un appel IA facturé pour une carte
-          // déjà corrigée.
-          correction: _correction,
-          submittedOverride: widget.isSubmitted,
-          onRequestHint: _requestHint,
-        ),
-        SizedBox(height: theme.gapM),
-        _DontKnowButton(
-          correction: _correction,
-          submittedOverride: widget.isSubmitted,
-          onPressed: _submitDontKnow,
-        ),
-        SizedBox(height: theme.gapM),
-        _CorrectionSection(
-          correction: _correction,
-          visibility: widget.correctionVisibility,
-          onQualitySelected: widget.onQualitySelected,
-          srsConfig: widget.srsConfig,
-        ),
-      ],
+      ),
     );
   }
 
@@ -1559,23 +1625,23 @@ class _WrittenInput extends StatelessWidget {
                 key: fieldKey,
                 controller: controller,
                 focusNode: focusNode,
-              // Verrou one-shot du champ rédigé, sur le même patron que les
-              // autres contrôles (`_ChoiceRow` : `onTap: null` ; `_tfButton` :
-              // `onPressed: null` ; `_DontKnowButton` : disparaît ;
-              // `_HintSection` : gatée). Sans lui, le champ resterait vivant
-              // après soumission : en `immediate` la correction peinte juste
-              // en dessous dit « c'est fini », mais `deferred` retire ce
-              // signal, et le seul indice de soumission deviendrait la
-              // disparition silencieuse du bouton. L'apprenant continuerait
-              // alors de peaufiner sa copie en croyant l'améliorer, alors
-              // que sa qualité est déjà notée sur le texte soumis — et
-              // `ZFlashcardSubmission` ne porte pas le texte : le verdict
-              // de la révélation porterait sur une réponse qui n'existe
-              // plus nulle part.
-              //
-              // `readOnly` (et non `enabled: false`) : le texte noté reste
-              // lisible et sélectionnable — l'apprenant doit pouvoir relire
-              // ce qui a été évalué.
+                // Verrou one-shot du champ rédigé, sur le même patron que les
+                // autres contrôles (`_ChoiceRow` : `onTap: null` ; `_tfButton` :
+                // `onPressed: null` ; `_DontKnowButton` : disparaît ;
+                // `_HintSection` : gatée). Sans lui, le champ resterait vivant
+                // après soumission : en `immediate` la correction peinte juste
+                // en dessous dit « c'est fini », mais `deferred` retire ce
+                // signal, et le seul indice de soumission deviendrait la
+                // disparition silencieuse du bouton. L'apprenant continuerait
+                // alors de peaufiner sa copie en croyant l'améliorer, alors
+                // que sa qualité est déjà notée sur le texte soumis — et
+                // `ZFlashcardSubmission` ne porte pas le texte : le verdict
+                // de la révélation porterait sur une réponse qui n'existe
+                // plus nulle part.
+                //
+                // `readOnly` (et non `enabled: false`) : le texte noté reste
+                // lisible et sélectionnable — l'apprenant doit pouvoir relire
+                // ce qui a été évalué.
                 readOnly: locked,
                 // Par champ.
                 autovalidateMode: AutovalidateMode.onUserInteraction,

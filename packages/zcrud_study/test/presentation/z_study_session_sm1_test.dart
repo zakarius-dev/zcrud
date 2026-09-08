@@ -162,8 +162,9 @@ void main() {
     final Element stackBefore = tester.element(find.byType(ZSessionCardSwiper));
 
     // Un tour RÉEL : « Je ne sais pas » ⇒ lapse ⇒ file du moteur permutée.
-    await tester.tap(find.byKey(const ValueKey<String>('zDontKnow')));
-    await tester.pumpAndSettle();
+    // Deux gestes : la carte notée est RETENUE le temps que sa réponse soit
+    // lue, et c'est la continuation qui la fait partir.
+    await dontKnowThenContinue(tester);
 
     expect(reviewer.writes, 1, reason: 'le tour a bien atteint le seam SRS');
     expect(log.countOf('counter'), greaterThan(baseCounter),
@@ -208,8 +209,7 @@ void main() {
         tester.widget<ZStudySessionView>(find.byType(ZStudySessionView));
 
     for (var turn = 0; turn < 3; turn++) {
-      await tester.tap(find.byKey(const ValueKey<String>('zDontKnow')));
-      await tester.pumpAndSettle();
+      await dontKnowThenContinue(tester);
     }
     expect(reviewer.writes, 3, reason: 'les 3 tours ont bien eu lieu');
 

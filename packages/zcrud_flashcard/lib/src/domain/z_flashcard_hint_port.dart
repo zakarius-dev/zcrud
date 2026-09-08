@@ -12,6 +12,19 @@
 /// dès la première demande coûterait un aller-retour réseau, de la latence
 /// et du quota pour produire un texte qu'on avait déjà.
 ///
+/// ## Ce port est OPTIONNEL : sans lui, seule la GÉNÉRATION est perdue
+///
+/// Une application qui n'en fournit aucun garde l'indice **stocké** sur la
+/// carte (`ZFlashcard.hint`) : il est servi à la première demande,
+/// exactement comme avec un port. Ce qu'elle perd, et rien d'autre, ce sont
+/// les indices **suivants** — ceux que ce port aurait générés ; la commande
+/// d'indice disparaît une fois l'indice stocké épuisé, plutôt que de rester
+/// offerte sans rien à rendre.
+///
+/// Autrement dit : ce port n'est pas la source des indices, il en est la
+/// **suite**. Ne pas l'implémenter est un choix tenable — pas une
+/// dégradation de la carte.
+///
 /// ## Anti-répétition
 ///
 /// [ZFlashcardHintRequest.shownHints] transporte les indices déjà montrés
@@ -123,6 +136,9 @@ abstract interface class ZFlashcardHintPort {
   /// Appelé uniquement après épuisement de l'indice stocké
   /// (`ZFlashcard.hint`). Le résultat est éphémère : jamais persisté sur la
   /// carte.
+  ///
+  /// Sans implémentation de ce port, l'indice stocké reste servi ; seule la
+  /// génération des indices suivants est perdue.
   ///
   /// `Left` en cas d'échec (quota, réseau) : le consommateur affiche un
   /// message localisé, sans exception (invariant AD-10), et n'incrémente

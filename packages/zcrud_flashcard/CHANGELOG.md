@@ -3,6 +3,47 @@
 Toutes les modifications notables de `zcrud_flashcard` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.47.0 — 2026-09-08
+
+### Documenté
+
+- `ZSrsConfig.minQuality` — la dartdoc dit désormais ce que cette borne
+  **écrit**, et pas seulement ce qu'elle clampe. C'est la note réellement
+  posée sur la répétition par le geste le plus bas d'une session (« je ne sais
+  pas »), reportée en persistance dans `ZRepetitionInfo.lastQuality`. Une
+  application dont l'échelle **persistée** ne comporte pas de `0` (énumération
+  démarrant à `1`) doit déclarer `ZSrsConfig(minQuality: 1)` : le `0` par
+  défaut lui est légal — c'est l'échelle qu'elle a elle-même fournie — mais
+  non représentable chez elle, et sa propre conversion le ramène à « aucune
+  note » sans exception ni test rouge. La configuration ne peut pas détecter
+  la situation : elle ne connaît que l'échelle qu'on lui donne. **Aucun
+  changement de contrat** : ni assertion nouvelle, ni valeur par défaut
+  modifiée — un hôte au défaut n'a rien à faire.
+  La dartdoc chiffre aussi le **coût** de la bascule `0 → 1` :
+  `interval`/`repetitions` sont inchangés (deux lapses), mais le facteur de
+  facilité diffère (`-0,80` contre `-0,54`, formule SM-2 en `(5 - q)`), et
+  l'écart se reporte sur toutes les échéances ultérieures.
+- `ZFlashcardHintPort` — la dartdoc dit ce qu'un hôte **sans port** conserve :
+  l'indice **stocké** (`ZFlashcard.hint`) reste servi à la première demande,
+  exactement comme avec un port ; seule la **génération** des indices suivants
+  est perdue. Ne pas implémenter ce port est un choix tenable, pas une
+  dégradation de la carte.
+
+### Tests
+
+- `z_min_quality_written_note_test.dart` — fige, par la mesure, que le socle
+  **reporte** la note dans `ZRepetitionInfo.lastQuality` sur les deux échelles
+  admises (la perte éventuelle n'est donc jamais la sienne), que
+  `ZSrsConfig(minQuality: 1)` reste constructible et clampe `0` vers `1`, et
+  que la bascule `0 → 1` laisse `interval`/`repetitions` identiques tout en
+  déplaçant le facteur de facilité de `1,70` à `1,96`.
+- `z_optional_port_and_low_bound_doc_guard_test.dart` — garde de source : les
+  deux règles ci-dessus doivent rester **écrites** dans le bloc de dartdoc de
+  leur déclaration. Le comportement « sans port, l'indice stocké est servi »
+  est réalisé par la surface de saisie, dans un autre paquet, hors d'atteinte
+  d'un test d'ici (invariant AD-1) ; et la disparition d'un avertissement au
+  consommateur n'est attrapée par aucun test de comportement.
+
 ## 3.29.0 — 2026-08-28
 
 ### Ajouté

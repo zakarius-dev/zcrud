@@ -68,6 +68,7 @@ import 'package:zcrud_core/zcrud_core.dart' show ZIndexController, label;
 import 'package:zcrud_session/zcrud_session.dart'
     show
         ZSessionCardBuilder,
+        ZSessionCardSlotBuilder,
         ZSessionCardSwiper,
         ZSessionItem,
         ZSessionProgressStyle,
@@ -117,6 +118,9 @@ class ZStudySessionLabels {
     this.exitAction,
     this.missingCard,
     this.unavailableMessage,
+    this.revealAction,
+    this.hideAction,
+    this.continueAction,
   });
 
   /// Message du repli « aucune carte à étudier ».
@@ -131,6 +135,20 @@ class ZStudySessionLabels {
 
   /// Message du repli « carte introuvable » (désynchronisation AD-10).
   final String? missingCard;
+
+  /// Libellé **et** étiquette sémantique de l'action qui dévoile la réponse.
+  final String? revealAction;
+
+  /// Libellé **et** étiquette sémantique de l'action qui masque la réponse.
+  ///
+  /// Distinct de [revealAction] : le libellé d'une bascule doit décrire ce que
+  /// le geste fait **maintenant**. Un libellé constant annoncerait « afficher
+  /// la réponse » sur une réponse déjà affichée.
+  final String? hideAction;
+
+  /// Libellé **et** étiquette sémantique de l'action qui passe à la carte
+  /// suivante, une fois la réponse notée et lue.
+  final String? continueAction;
 }
 
 /// Corps composable de l'écran de session de révision.
@@ -151,6 +169,8 @@ class ZStudySessionView extends StatelessWidget {
     required this.passThreshold,
     this.headerBuilder,
     this.counterBuilder,
+    this.cardSlotBuilder,
+    this.revealBuilder,
     this.gradingBuilder,
     this.summaryBuilder,
     this.emptyBuilder,
@@ -212,6 +232,24 @@ class ZStudySessionView extends StatelessWidget {
 
   /// Seuil de réussite — **injecté** depuis `ZSrsConfig` (AD-46).
   final int passThreshold;
+
+  /// Constructeur de carte qui reçoit le **créneau** de pile (item, rang,
+  /// `isFront`). Fourni, il **remplace** [cardBuilder] dans la pile.
+  ///
+  /// C'est la seule voie qui distingue la carte de DEVANT des cartes empilées
+  /// derrière elle. Un état d'affichage partagé (une révélation, par exemple)
+  /// appliqué à toutes les cartes rendrait la réponse visible sur la carte
+  /// suivante **avant** sa question.
+  ///
+  /// `null` ⇒ la pile emprunte [cardBuilder], exactement comme avant
+  /// l'existence de ce slot.
+  final ZSessionCardSlotBuilder? cardSlotBuilder;
+
+  /// Slot d'action de révélation, rendu **entre la pile et le séparateur**.
+  ///
+  /// `null` ⇒ absent de l'arbre (AD-4) — jamais un nœud vide qui prendrait sa
+  /// place dans le `Column`.
+  final WidgetBuilder? revealBuilder;
 
   /// Slot d'en-tête. `null` ⇒ absent de l'arbre.
   final ZStudySessionHeaderBuilder? headerBuilder;
@@ -325,6 +363,7 @@ class ZStudySessionView extends StatelessWidget {
     final ZStudySessionHeaderBuilder? header = headerBuilder;
     final ZStudySessionCounterBuilder? counter = counterBuilder;
     final ZStudySessionGradingBuilder? grading = gradingBuilder;
+    final WidgetBuilder? reveal = revealBuilder;
     return Column(
       children: <Widget>[
         // AD-4 — un slot nul n'est pas un nœud vide : il n'est PAS dans la
@@ -344,6 +383,7 @@ class ZStudySessionView extends StatelessWidget {
           child: _StackSlice(
             queue: slices.queue,
             cardBuilder: cardBuilder,
+            cardSlotBuilder: cardSlotBuilder,
             passThreshold: passThreshold,
             progressStyle: progressStyle,
             qualityOf: qualityOf,
@@ -352,6 +392,10 @@ class ZStudySessionView extends StatelessWidget {
             onStackEnd: onStackEnd,
           ),
         ),
+        // AD-4 — absent de l'arbre quand l'hôte ne l'offre pas. Posé ICI, en
+        // FRÈRE de la pile : sous le `PanGestureRecognizer` du swiper, un
+        // bouton se battrait contre la navigation de pile.
+        if (reveal != null) reveal(context),
         if (grading != null) ...<Widget>[
           Divider(
             height: chrome.dividerThickness,
@@ -463,6 +507,7 @@ class _StackSlice extends StatelessWidget {
   const _StackSlice({
     required this.queue,
     required this.cardBuilder,
+    required this.cardSlotBuilder,
     required this.passThreshold,
     required this.progressStyle,
     required this.qualityOf,
@@ -473,6 +518,7 @@ class _StackSlice extends StatelessWidget {
 
   final ValueListenable<List<ZSessionItem>> queue;
   final ZSessionCardBuilder cardBuilder;
+  final ZSessionCardSlotBuilder? cardSlotBuilder;
   final int passThreshold;
   final ZSessionProgressStyle progressStyle;
   final ZSessionQualityAtIndex? qualityOf;
@@ -496,6 +542,7 @@ class _StackSlice extends StatelessWidget {
           ),
           queue: items,
           cardBuilder: cardBuilder,
+          cardSlotBuilder: cardSlotBuilder,
           passThreshold: passThreshold,
           progressStyle: progressStyle,
           qualityOf: qualityOf,

@@ -65,6 +65,28 @@ abstract final class ZStudySessionReference {
 
   /// Nombre de lignes du compteur de session (référence : UNE ligne).
   static const int counterMaxLines = 1;
+
+  /// Largeur (dp) sous laquelle la surface est tenue pour **étroite**.
+  ///
+  /// Seuil de bascule du rappel de question en mode
+  /// `ZStudySessionQuestionRecall.auto` : au-dessus, le rappel est rendu en
+  /// entier ; en dessous, il est **abrégé** pour laisser la saisie au-dessus
+  /// de la ligne de flottaison. Valeur alignée sur la frontière
+  /// `compact`/`medium` des tailles de fenêtre Material.
+  static const double narrowWidth = 600;
+
+  /// Hauteur maximale (dp) du rappel de question **abrégé**.
+  ///
+  /// Un rappel plus long est tronqué avec un dégradé de fin de zone : la
+  /// question reste identifiable sans manger la hauteur de la saisie.
+  static const double compactRecallMaxHeight = 96;
+
+  /// Longueur (dp) du dégradé de fin du rappel abrégé.
+  static const double compactRecallFadeExtent = 24;
+
+  /// Marge autour de l'action de révélation (directionnelle — AD-13).
+  static const EdgeInsetsGeometry revealActionPadding =
+      EdgeInsetsDirectional.fromSTEB(12, 4, 12, 4);
 }
 
 /// Chrome de référence **RÉSOLU** pour l'écran de session : chaque champ a

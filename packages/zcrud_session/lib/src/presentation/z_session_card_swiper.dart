@@ -78,7 +78,7 @@
 /// | Réglage | Valeur | Pourquoi (invariant AD-10) |
 /// |---|---|---|
 /// | `cardsCount` | `queue.length`, jamais 0 | `cardsCount = 0` ferait lever deux asserts du constructeur ⇒ repli avant construction |
-/// | `numberOfCardsDisplayed` | `min(2, queue.length)` | défaut 2 exigerait `<= cardsCount` ⇒ crash sur une file d'une carte |
+/// | `numberOfCardsDisplayed` | `min(visibleCardCount ?? 2, queue.length)` | défaut 2 exigerait `<= cardsCount` ⇒ crash sur une file d'une carte |
 /// | `isLoop` | `false` | défaut `true` ⇒ la session ne se termine jamais |
 /// | `duration` | `Duration.zero` sous Reduce Motion | sinon une animation réelle de 200 ms persiste |
 /// | `allowedSwipeDirection` | `symmetric(horizontal: true)` | porteur pendant le drag et à la fin — voir ci-dessous |
@@ -131,13 +131,75 @@ typedef ZSessionCardBuilder = Widget Function(
   ZSessionItem item,
 );
 
+/// Créneau de construction d'une carte de la pile.
+///
+/// La pile rend **plusieurs cartes à la fois** (voir
+/// [ZSessionCardSwiper.visibleCardCount]) : le constructeur de carte est donc
+/// invoqué une fois par carte visible, et pas seulement pour celle que
+/// l'utilisateur voit devant. [isFront] est ce qui distingue les deux — sans
+/// lui, un contrôle composé dans le constructeur (un bouton « voir la
+/// réponse », un chronomètre) est rendu **autant de fois qu'il y a de cartes
+/// visibles**.
+@immutable
+class ZSessionCardSlot {
+  /// Construit le créneau (rang [index] dans la file, [isFront] devant).
+  const ZSessionCardSlot({
+    required this.item,
+    required this.index,
+    required this.isFront,
+  });
+
+  /// Item de la file à rendre.
+  final ZSessionItem item;
+
+  /// Rang de [item] dans la file (`ZSessionCardSwiper.queue`).
+  final int index;
+
+  /// Vrai pour la seule carte de devant — celle que le geste emporte.
+  ///
+  /// Un contrôle qui ne doit exister qu'une fois à l'écran se compose sous
+  /// cette condition.
+  final bool isFront;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZSessionCardSlot &&
+          other.item == item &&
+          other.index == index &&
+          other.isFront == isFront;
+
+  @override
+  int get hashCode => Object.hash(item, index, isFront);
+
+  @override
+  String toString() =>
+      'ZSessionCardSlot(index: $index, isFront: $isFront, item: $item)';
+}
+
+/// Construit la carte d'affichage d'un [ZSessionCardSlot].
+///
+/// Variante de [ZSessionCardBuilder] qui reçoit, en plus de l'item, le rang de
+/// la carte et le fait qu'elle soit devant. Fournie à
+/// [ZSessionCardSwiper.cardSlotBuilder], elle **remplace** [ZSessionCardBuilder]
+/// pour toutes les cartes.
+typedef ZSessionCardSlotBuilder = Widget Function(
+  BuildContext context,
+  ZSessionCardSlot slot,
+);
+
 /// Pile de session swipeable — navigation seule.
 class ZSessionCardSwiper extends StatefulWidget {
   /// Construit la pile.
   ///
   /// - [queue] : file déjà sélectionnée — ce widget ne sélectionne jamais,
   ///   il ne connaît ni filtre, ni échéance, ni mode ;
-  /// - [cardBuilder] : carte d'affichage d'un item ;
+  /// - [cardBuilder] : carte d'affichage d'un item — invoqué pour **chaque**
+  ///   carte visible de la pile ;
+  /// - [cardSlotBuilder] : même rôle, mais reçoit le créneau
+  ///   ([ZSessionCardSlot] : item, rang, `isFront`) ; prioritaire sur
+  ///   [cardBuilder] quand il est fourni ;
+  /// - [visibleCardCount] : nombre de cartes empilées (`null` : `min(2, n)`) ;
   /// - [onIndexChanged] : navigation seule — émis à chaque avancée, quelle
   ///   qu'en soit l'origine (geste ou bouton d'accessibilité : une seule
   ///   voie d'émission) ;
@@ -158,8 +220,10 @@ class ZSessionCardSwiper extends StatefulWidget {
   /// Aucun paramètre de notation — c'est un invariant du type, pas un oubli.
   const ZSessionCardSwiper({
     required this.queue,
-    required this.cardBuilder,
     required this.passThreshold,
+    this.cardBuilder,
+    this.cardSlotBuilder,
+    this.visibleCardCount,
     this.onIndexChanged,
     this.onStackEnd,
     this.emptyBuilder,
@@ -170,13 +234,49 @@ class ZSessionCardSwiper extends StatefulWidget {
     this.preserveIndexOnMutation = false,
     this.onSwipeDirection,
     super.key,
-  });
+  })  : assert(
+          cardBuilder != null || cardSlotBuilder != null,
+          'la pile a besoin d\'un constructeur de carte : `cardSlotBuilder` '
+          '(qui reçoit le rang et `isFront`) ou, à défaut, `cardBuilder`',
+        ),
+        assert(
+          visibleCardCount == null || visibleCardCount >= 1,
+          'la pile affiche au moins une carte',
+        );
 
   /// File déjà sélectionnée (invariant AD-1).
   final List<ZSessionItem> queue;
 
   /// Constructeur de la carte d'affichage.
-  final ZSessionCardBuilder cardBuilder;
+  ///
+  /// Invoqué **une fois par carte visible** de la pile, pas une fois par
+  /// écran : il ne reçoit ni le rang, ni le fait d'être devant. Un contrôle
+  /// composé ici apparaît donc autant de fois qu'il y a de cartes visibles.
+  /// [cardSlotBuilder] est la voie qui porte cette information.
+  ///
+  /// `null` est admis, et seulement si [cardSlotBuilder] est fourni.
+  final ZSessionCardBuilder? cardBuilder;
+
+  /// Constructeur de carte qui reçoit le créneau complet ([ZSessionCardSlot] :
+  /// item, rang, `isFront`).
+  ///
+  /// Prioritaire : fourni, il construit **toutes** les cartes et
+  /// [cardBuilder] n'est plus invoqué. `null` (défaut) : [cardBuilder]
+  /// construit les cartes, exactement comme avant.
+  final ZSessionCardSlotBuilder? cardSlotBuilder;
+
+  /// Nombre de cartes empilées à l'écran — `null` (défaut) : `min(2, queue)`.
+  ///
+  /// La pile de deux cartes donne l'affordance de paquet, et suppose des
+  /// cartes **opaques qui remplissent leur boîte** : une carte qui se
+  /// dimensionne sur son contenu laisse voir celle du dessous partout où elle
+  /// ne peint pas — notamment quand la carte de dessous est plus haute que
+  /// celle de devant. Un hôte dont les cartes se dimensionnent sur leur
+  /// contenu pose `1` : la pile ne rend alors que la carte de devant.
+  ///
+  /// Toujours borné par la longueur de la file (le paquet exige
+  /// `<= cardsCount`).
+  final int? visibleCardCount;
 
   /// Frontière réussite/lapse injectée, relayée à l'indicateur.
   final int passThreshold;
@@ -383,6 +483,13 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
   /// sous-arbre de la carte par `Element.updateChild`.
   final Map<int, Widget> _cardCache = <int, Widget>{};
 
+  /// Valeur d'`isFront` avec laquelle chaque entrée de [_cardCache] a été
+  /// construite — vide tant que seul le constructeur historique est fourni.
+  ///
+  /// Sans ce second registre, une carte construite en fond resterait servie
+  /// telle quelle en arrivant devant : le créneau serait rendu, mais menteur.
+  final Map<int, bool> _cardCacheFront = <int, bool>{};
+
   /// Génération de file — incrémentée à chaque changement réel de
   /// [ZSessionCardSwiper.queue], et seulement là. Sert de `key` au
   /// `CardSwiper` (voir [build]).
@@ -454,6 +561,7 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
     // rendrait une carte périmée (et un `identical` mensonger).
     if (!listEquals(oldWidget.queue, widget.queue)) {
       _cardCache.clear();
+      _cardCacheFront.clear();
       _lastEmittedIndex = null;
       _stackEnded = false;
       // Position visée après la mutation. Le défaut reste `0` : l'index 0 est
@@ -623,10 +731,34 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
   }
 
   /// Carte mémoïsée par index.
-  Widget _cardAt(BuildContext context, int index) =>
-      _cardCache.putIfAbsent(index, () {
-        return widget.cardBuilder(context, widget.queue[index]);
-      });
+  Widget _cardAt(BuildContext context, int index) {
+    final ZSessionCardSlotBuilder? slotBuilder = widget.cardSlotBuilder;
+    if (slotBuilder == null) {
+      // Voie historique, inchangée : même cache, même appel, même arbre.
+      return _cardCache.putIfAbsent(
+        index,
+        () => widget.cardBuilder!(context, widget.queue[index]),
+      );
+    }
+    // `_swiperIndex` est déjà la NOUVELLE carte de devant quand le paquet
+    // reconstruit après un swipe : `onSwipe` (donc `_emitIndexChanged`) est
+    // appelé avant le `setState` de `_reset` du paquet. Pendant le drag, il ne
+    // bouge pas — l'instance reste identique, et la granularité SM-1 avec.
+    final bool isFront = index == _swiperIndex;
+    final Widget? cached = _cardCache[index];
+    if (cached != null && _cardCacheFront[index] == isFront) return cached;
+    final Widget built = slotBuilder(
+      context,
+      ZSessionCardSlot(
+        item: widget.queue[index],
+        index: index,
+        isFront: isFront,
+      ),
+    );
+    _cardCache[index] = built;
+    _cardCacheFront[index] = isFront;
+    return built;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -657,7 +789,10 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
             // Défaut du paquet à 2, ce qui exigerait `<= cardsCount` et
             // crasherait sur une file d'une seule carte — une session
             // parfaitement normale.
-            numberOfCardsDisplayed: math.min(2, widget.queue.length),
+            numberOfCardsDisplayed: math.min(
+              widget.visibleCardCount ?? 2,
+              widget.queue.length,
+            ),
             // Défaut du paquet à `true`, ce qui ferait boucler la pile : la
             // session ne se terminerait jamais et `onEnd` ne serait jamais
             // atteint.

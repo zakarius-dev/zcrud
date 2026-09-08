@@ -8,10 +8,12 @@ library;
 
 import 'package:dartz/dartz.dart' show Left, Right;
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart' show WidgetTester, addTearDown;
+import 'package:flutter_test/flutter_test.dart'
+    show WidgetTester, addTearDown, find;
 import 'package:zcrud_core/domain.dart' show ZFailure, ZResult;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart'
     show ZFlashcard, ZFlashcardType, ZRepetitionInfo;
+import 'package:zcrud_study/zcrud_study.dart' show ZStudySessionHost;
 
 /// Dossier de démonstration du harnais (identité **opaque**, jamais rendue).
 const String kHarnessFolderId = 'harnessStudyFolder';
@@ -149,4 +151,18 @@ void useTallSurface(WidgetTester tester, {double height = 6000}) {
     height * tester.view.devicePixelRatio,
   );
   addTearDown(tester.view.resetPhysicalSize);
+}
+
+/// Un tour COMPLET de mode d'apprentissage : « je ne sais pas », puis
+/// continuation.
+///
+/// 🔴 Deux gestes, pas un : depuis que la carte notée est RETENUE le temps que
+/// sa réponse soit lue (`zStudySessionHoldsAfterSubmit`, défaut du mode
+/// `learn`), la soumission seule ne fait plus avancer la pile. Les modes notés
+/// n'ont pas de retenue et n'utilisent donc PAS ce helper.
+Future<void> dontKnowThenContinue(WidgetTester tester) async {
+  await tester.tap(find.byKey(const ValueKey<String>('zDontKnow')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(ZStudySessionHost.continueActionKey));
+  await tester.pumpAndSettle();
 }

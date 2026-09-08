@@ -295,9 +295,13 @@ export 'src/presentation/z_study_scope_bar.dart';
 // présentation reste des widgets purs sans runtime détenu. Les valeurs de
 // rendu sont centralisées dans `ZStudySessionReference`, sans aucune
 // couleur littérale.
+export 'src/presentation/z_study_session_card_slot.dart';
 export 'src/presentation/z_study_session_host.dart';
 export 'src/presentation/z_study_session_mode.dart';
+export 'src/presentation/z_study_session_post_submit.dart';
+export 'src/presentation/z_study_session_recall.dart';
 export 'src/presentation/z_study_session_reference.dart';
+export 'src/presentation/z_study_session_reveal.dart';
 export 'src/presentation/z_study_session_scaffold.dart';
 export 'src/presentation/z_study_session_slices.dart';
 export 'src/presentation/z_study_session_view.dart';

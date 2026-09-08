@@ -86,6 +86,10 @@ void main() {
     // revenir. Une session qui se terminerait ici perdrait la reprise.
     grade(0);
     await tester.pumpAndSettle();
+    // La carte notée est RETENUE (défaut du mode d'apprentissage) : c'est la
+    // continuation qui la fait partir, jamais la notation.
+    await tester.tap(find.byKey(ZStudySessionHost.continueActionKey));
+    await tester.pumpAndSettle();
     expect(ended, 0,
         reason: '🔴 un lapse ne termine PAS une session SRS : le moteur est '
             'CYCLIQUE (il réinsère les ratés en aval)');
@@ -93,6 +97,11 @@ void main() {
     // RÉUSSITE (q=5 ≥ seuil) : la carte est consommée, la file se vide, la fin
     // est poussée — exactement une fois (latch).
     grade(5);
+    await tester.pumpAndSettle();
+    expect(ended, 0,
+        reason: '🔴 la DERNIÈRE carte est retenue comme les autres — sinon sa '
+            'réponse serait la seule à ne jamais s\'afficher');
+    await tester.tap(find.byKey(ZStudySessionHost.continueActionKey));
     await tester.pumpAndSettle();
     expect(ended, 1, reason: 'une réussite consomme la carte ⇒ fin atteinte');
   });

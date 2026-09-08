@@ -3,6 +3,82 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.47.0 — 2026-09-08
+
+### Ajouté
+
+- **Créneau de carte relayé jusqu'à l'hôte** (`MAJEUR`) :
+  `ZStudySessionHost.cardSlotBuilder` reçoit un `ZStudySessionCardSlot` — la
+  carte résolue par identité, le rang, `isFront`, l'état de révélation et la
+  commande qui le bascule. Un hôte qui compose sa propre carte n'a donc plus à
+  posséder ni contrôleur d'index, ni contrôleur de révélation.
+  * Strictement **additif** : `cardBuilder` reste inchangé et pleinement
+    supporté ; un hôte qui ne fournit pas le créneau ne voit aucun changement
+    d'arbre. Le créneau **prime** sur `cardBuilder` quand les deux sont donnés.
+  * `ZStudySessionCardSlot` **compose** le `ZSessionCardSlot` de `zcrud_session`
+    (champ `slot`, plus les accès `item` / `index` / `isFront`) : le rang et la
+    position restent définis à un seul endroit.
+  * `toggleReveal` est `null` — jamais une commande inerte — sur les cartes
+    empilées derrière le front, et sous une politique de révélation qui ne
+    l'offre pas dans ce mode.
+  * L'affordance de révélation **du socle** n'est pas rendue quand le créneau
+    est fourni : l'hôte a reçu la commande et la place où il veut ; deux
+    contrôles sur le même état se contrediraient à l'écran.
+- **Retenue de la carte notée** (`MAJEUR`) :
+  `ZStudySessionHost.postSubmitPolicy` (`ZStudySessionPostSubmitPolicy.auto` par
+  défaut). En mode d'apprentissage, la carte notée ne part plus au moment de la
+  notation : la réponse est dévoilée, et une action « Continuer »
+  (`ZStudySessionHost.continueActionKey`, libellé
+  `ZStudySessionLabels.continueAction` ou clé l10n `zcrud.session.continue`,
+  cible ≥ 48 dp, `Semantics` de bouton) passe à la suivante.
+  * 🔒 La voie d'écriture SRS reste **unique** (AD-9/AD-33) : la note part au
+    même moment, avec la même valeur, à la soumission. Seul l'instant du
+    **passage** change. La continuation n'écrit rien.
+  * **Inertie totale des modes notés** : `spaced`, `list`, `test`, `whiteExam`
+    et `cramming` sont inchangés — arbre identique au widget près et même
+    séquence d'avance.
+  * Échappatoire : `ZStudySessionPostSubmitPolicy.advance` restaure le passage
+    immédiat dans tous les modes ; `hold` retient dans tous les modes.
+  * Un seam SRS en échec (`Left`) ne retient rien : rien n'a été noté.
+  * La **dernière** carte est retenue comme les autres — la fin de session est
+    poussée à la continuation, toujours exactement une fois.
+
+- **Révélation de la réponse portée par l'écran de session assemblé**
+  (`MAJEUR`) : `ZStudySessionHost` possède désormais l'état de révélation et
+  rend une action « afficher / masquer la réponse » en frère de la pile.
+  * Gouvernée par `revealPolicy` (`ZStudySessionRevealPolicy.auto` par défaut) :
+    l'action n'est offerte qu'en mode d'apprentissage, où voir la réponse est
+    l'objet de la session. `never` la retire partout, `always` l'offre partout.
+  * Libellés injectables : `ZStudySessionLabels.revealAction` / `.hideAction`
+    (à défaut, clés l10n `zcrud.flashcard.reveal` / `.hide` — celles que porte
+    déjà la carte de révision). Placement par
+    `ZStudySessionReference.revealActionPadding`, cible ≥ 48 dp rendus.
+  * L'action est **absente** dès qu'un `cardBuilder` d'hôte est fourni : la
+    carte de l'hôte ne se branche pas sur la révélation de l'assemblage, et une
+    commande morte coûte plus cher qu'une commande absente.
+  * La révélation **n'écrit rien** : ni SRS, ni avance de pile.
+  * 🔒 Invariant gardé : la révélation se **referme** au changement de carte de
+    devant, et n'est branchée que sur la carte **de devant** (la pile en rend
+    plusieurs).
+- **Régime du rappel de question** (`MAJEUR`) : `ZStudySessionHost.questionRecall`
+  (`ZStudySessionQuestionRecall.auto` par défaut). La question était rendue deux
+  fois — sur la carte et au-dessus de la saisie ; sur une fenêtre étroite, les
+  deux occupent la hauteur et poussent la saisie hors de l'écran.
+  ⚠️ **Changement de rendu par défaut sous
+  `ZStudySessionReference.narrowWidth` (600 dp)** : le rappel y devient
+  **abrégé** (hauteur bornée à 96 dp, fin en dégradé). Au-dessus du seuil, rien
+  ne change. Échappatoire : `questionRecall: ZStudySessionQuestionRecall.full`
+  restaure exactement le rendu antérieur ; `hidden` retire le rappel.
+- **Transport de l'inset bas** (`MINEUR`) : `ZStudySessionHost.bottomInset`
+  (`null` ⇒ inset système, `0` ⇒ aucune réserve, l'hôte gouverne) est passé à la
+  surface de saisie par défaut. Gardé : une **seule** réserve est rendue —
+  l'inset est consommé pour le sous-arbre, donc aucune gouttière double.
+- **`ZStudySessionView.cardSlotBuilder`** et **`.revealBuilder`** (`MINEUR`) :
+  slots additifs. `cardSlotBuilder` reçoit le créneau de pile (item, rang,
+  `isFront`) et **remplace** `cardBuilder` quand il est fourni ; `revealBuilder`
+  est rendu entre la pile et le séparateur. `null` ⇒ comportement antérieur
+  strictement inchangé.
+
 ## 3.46.0 - 2026-09-04
 
 ### Ajouté

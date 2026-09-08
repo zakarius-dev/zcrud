@@ -3,6 +3,50 @@
 Toutes les modifications notables de `zcrud_session` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.47.0 — 2026-09-08
+
+### Ajouté
+
+- **`ZFlashcardAnswerInput.bottomInset`** et **`ZSrsQualityButtons.bottomInset`**
+  (`double?`) : réserve d'espace sous les surfaces d'actions basses de la
+  session. `null` (défaut) ⇒ l'inset système du bas
+  (`MediaQuery.paddingOf(context).bottom`) ; une valeur explicite ⇒ celle-là ;
+  `0` ⇒ aucune réserve. Corrige le fait que « Valider », « Indice », « Je ne
+  sais pas » et la rangée de notation tombaient **sous la barre de navigation
+  système** en portrait — donc hors d'atteinte du doigt.
+- **`ZFlashcardAnswerInput.bottomInsetKey`** / **`ZSrsQualityButtons.bottomInsetKey`** :
+  clés de repérage de la réserve, présentes **seulement** quand elle est non
+  nulle.
+- **`ZSessionCardSlot` (item, rang, `isFront`)** + slot de construction de carte
+  qui le reçoit, et **`ZSessionCardSwiper.visibleCardCount`**.
+
+### Notes d'intégration
+
+- La réserve se lit sur `MediaQuery.padding`, **jamais** sur `viewPadding` :
+  elle est donc **déjà nulle** sous un `SafeArea` ancêtre, et nulle aussi quand
+  le clavier est ouvert. Aucune gouttière double n'est possible.
+- `ZFlashcardAnswerInput` est **propriétaire de l'inset de tout son sous-arbre** :
+  elle le consomme pour ses descendants, si bien que la rangée de notation
+  qu'elle contient ne le réserve pas une seconde fois.
+- Sans inset système déclaré et sans paramètre, l'arbre rendu est **strictement
+  identique** à celui d'avant ces paramètres (aucun widget intercalé).
+- ⚠️ Un hôte qui **compensait** ce défaut (un `SafeArea` ou un `Padding` maison
+  autour de `ZFlashcardAnswerInput` / `ZSrsQualityButtons` **dans le seul but**
+  de remonter les boutons au-dessus de la barre système) doit **retirer** sa
+  compensation : un `Padding` maison s'additionne désormais à la réserve du
+  socle. Un `SafeArea` hôte, lui, reste sans effet cumulatif (le socle lit
+  `padding`) — le garder ne casse rien. Une déclaration qui **décide** un inset
+  (une valeur de design, pas un contournement) se conserve en la passant par
+  `bottomInset:`.
+
+### Tests
+
+- `test/presentation/z_session_bottom_inset_test.dart` (10 gardes) : égalité
+  **stricte** réserve = inset ; absence de réserve sous `SafeArea` hôte et
+  clavier ouvert (clé **absente**, pas seulement nulle) ; `bottomInset: 0` ;
+  **non-double-application** de la rangée imbriquée (48 dp, jamais 96) ;
+  inertie par égalité stricte de la signature d'arbre contre un dump figé.
+
 ## 3.34.0 — 2026-08-29
 
 ### Modifié

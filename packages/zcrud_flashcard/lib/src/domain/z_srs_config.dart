@@ -130,6 +130,31 @@ class ZSrsConfig {
   /// Source unique de vérité de l'échelle : toute dérivation d'échelle doit
   /// lire ces bornes plutôt que les redéclarer — une seconde source
   /// divergerait silencieusement.
+  ///
+  /// ## Ce n'est pas seulement une borne de clamp : c'est une note ÉCRITE
+  ///
+  /// Cette valeur est la note que le geste le plus bas d'une session — « je
+  /// ne sais pas » — fait réellement poser sur la répétition (voie unique
+  /// décrite par `zApplyHintCeiling`). Elle part donc en persistance, telle
+  /// quelle, sous le nom de `ZRepetitionInfo.lastQuality`.
+  ///
+  /// **Déclarez `minQuality: 1` si votre échelle persistée n'a pas de `0`.**
+  /// Une application dont l'énumération de notes commence à `1` reçoit sinon
+  /// un `0` légal au regard de cette configuration — c'est l'échelle qu'elle
+  /// a elle-même déclarée — mais qu'elle ne sait pas représenter : sa propre
+  /// conversion le ramènera à « aucune note », sans exception, sans test
+  /// rouge, et sans que la donnée écrite paraisse anormale. Cette
+  /// configuration ne peut pas détecter la situation : elle ne connaît que
+  /// l'échelle qu'on lui donne.
+  ///
+  /// ## Le passage de `0` à `1` n'est pas gratuit
+  ///
+  /// `interval` et `repetitions` sont inchangés (les deux valeurs sont sous
+  /// [passThreshold] : même branche de lapse), mais le **facteur de
+  /// facilité** diffère — la formule SM-2 est en `(5 - q)`, donc `-0,80` pour
+  /// `0` contre `-0,54` pour `1`. L'écart se reporte sur **toutes** les
+  /// échéances ultérieures de la carte. C'est un arbitrage de produit, pas
+  /// une correction sans effet.
   final int minQuality;
 
   /// Borne haute de l'échelle de qualité — épinglée à `5` (`assert`).
