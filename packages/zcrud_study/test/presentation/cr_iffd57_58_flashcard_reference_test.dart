@@ -113,6 +113,18 @@ const ZGradientSpec _injected = ZGradientSpec(
 void main() {
   // ==========================================================================
   group('CR-IFFD-57 — la bande est RÉELLEMENT peinte en dégradé, par type', () {
+    // Table figée DANS LE TEST, recopiée de la source du rendu historique :
+    // `flashcard_widgets.dart:144-156`, getter `_typeGradient` de la classe
+    // `FlashcardCard` (l.108) — le widget de carte de grille/liste que
+    // `ZDefaultFlashcardCard` réplique. Jamais relue depuis
+    // `ZFlashcardCardReference` : une garde qui lirait le fichier de référence
+    // ne comparerait qu'un fichier à lui-même et laisserait passer toute
+    // permutation des valeurs.
+    //
+    // ⚠️ Le rendu historique porte une SECONDE table, inversée sur
+    // `openQuestion`/`exercise`, dans la carte de répétition
+    // (`interactive_flashcard_repetition_card.dart:88-93`). Ce n'est PAS la
+    // source de cette carte-ci. Vérifié le 2026-09-08.
     for (final MapEntry<ZFlashcardType, List<int>> expected
         in <ZFlashcardType, List<int>>{
       ZFlashcardType.multipleChoice: <int>[0xFF667EEA, 0xFF764BA2],
@@ -134,7 +146,9 @@ void main() {
           (painted! as LinearGradient).colors,
           <Color>[Color(expected.value[0]), Color(expected.value[1])],
           reason: '🔴 les valeurs de référence (legacy '
-              'flashcard_widgets.dart:143-156) sont EXACTES, par type.',
+              'flashcard_widgets.dart:144-156, FlashcardCard._typeGradient) '
+              'sont EXACTES, par type — et ce ne sont PAS celles de la carte '
+              'de répétition, qui inverse openQuestion et exercise.',
         );
       });
     }

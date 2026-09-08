@@ -53,6 +53,24 @@ import 'package:zcrud_core/zcrud_core.dart'
 abstract final class ZFlashcardCardReference {
   // ── Dégradés par type (exception FR-26 encadrée — cf. dartdoc de tête) ────
 
+  // Provenance des quatre paires : le widget de carte de grille/liste du rendu
+  // historique — `flashcard_widgets.dart:144-156`, getter `_typeGradient` de la
+  // classe `FlashcardCard` (l.108). C'est de CE widget que vient tout le chrome
+  // ci-dessous (hauteur 200, rayon 12, bande 4, ombre 8/(0,2)/0.06|0.2, tuile
+  // 32/8/0.15, pastille 6/0.10) : l'appariement est vérifiable scalaire par
+  // scalaire, pas seulement sur les couleurs.
+  //
+  // ⚠️ PIÈGE MESURÉ — le rendu historique porte une SECONDE table de dégradés
+  // par type, dans un AUTRE widget (la carte de répétition,
+  // `interactive_flashcard_repetition_card.dart:88-93`), et les deux tables sont
+  // MUTUELLEMENT INVERSÉES sur `openQuestion` et `exercise` :
+  //   carte de grille/liste (ICI) : openQuestion cyan,  exercise rose
+  //   carte de répétition         : openQuestion rose,  exercise cyan
+  // Une relecture qui prend la seconde pour source conclut à tort que ce
+  // fichier est inversé. Il ne l'est pas : il réplique la première, et elle
+  // seule. Ne jamais « corriger » ces deux entrées sans avoir rouvert
+  // `FlashcardCard._typeGradient`.
+
   /// `multipleChoice` : `#667eea → #764ba2` (violet). Premier plan blanc
   /// (contraste min mesuré 3.66 contre 3.30 pour le noir).
   static const ZGradientSpec multipleChoiceGradient = ZGradientSpec(

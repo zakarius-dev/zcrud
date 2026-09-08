@@ -3,6 +3,46 @@
 Toutes les modifications notables de `zcrud_session` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.49.0 — 2026-09-08
+
+### Corrigé
+
+- **La bande de verdict de `ZSessionSummaryView` est enfin pilotable par
+  l'application.** Elle appelait directement la fonction pure
+  `zSignatureGradientFor`, qui indexe la palette de référence sans lire ni le
+  scope ni le thème : le résolveur `ZcrudScope.gradientResolver` et le jeton
+  `ZcrudTheme.signaturePalette` ne l'atteignaient jamais, et la stratégie
+  d'index déclarée par le thème (`signaturePaletteIndexStrategy`) était ignorée.
+  La seule prise qui restait à une application était d'**éteindre** la bande en
+  basculant `referenceProfile` sur `neutral`.
+
+  Le site passe désormais par `zResolveGradient(context, zSignatureKey(…))`,
+  la voie commune à tous les dégradés du socle : résolveur de l'application,
+  puis jeton de thème, puis — sous `ZReferenceProfile.legacy` seulement —
+  palette de référence.
+
+  **Rendu par défaut strictement inchangé**, sous les deux profils : sans
+  résolveur et sans jeton, `legacy` peint exactement le même dégradé de
+  référence qu'avant, et `neutral` (le défaut) le même aplat
+  `colorScheme.primaryContainer`. Les gardes d'inertie mesurent la décoration
+  du `RenderDecoratedBox` monté **et** l'appel de peinture réel (couleur du
+  `Paint` enregistré, en égalité stricte).
+
+  ⚠️ Une conséquence de comportement pour qui posait déjà un résolveur : le
+  profil `neutral` n'annule plus une décision explicite de l'application. Un
+  résolveur qui répond à la clé `zcrud.signature.zcrud.session.summary.verdict`
+  teinte la bande sous les deux profils — c'est l'arbitrage de
+  `zResolveGradient`, où le seam est prioritaire et profil-indépendant. Une
+  application qui veut la bande neutre ne doit pas répondre à cette clé.
+
+### Ajouté
+
+- **Garde anti-récidive de source** (`test/z_gradient_chain_guard_test.dart`) :
+  aucun fichier de `lib/` n'appelle `zSignatureGradientFor` ni ne lit
+  `ZSignaturePaletteReference` directement — les deux voies qui court-circuitent
+  la chaîne de résolution. Les commentaires sont retirés avant le scan : c'est
+  l'appel qui est interdit, pas la mention.
+
 ## 3.48.0 — 2026-09-08
 
 ### Ajouté

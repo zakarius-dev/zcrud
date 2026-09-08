@@ -325,11 +325,19 @@ class ZSessionSummaryView extends StatefulWidget {
 
   /// Identité de la bande de verdict dans la palette signature.
   ///
-  /// Elle sélectionne — de façon stable et déterministe — le dégradé de
-  /// référence peint derrière un verdict réussi sous le profil
-  /// `ZReferenceProfile.legacy`, opt-in de l'hôte. Sous
-  /// `ZReferenceProfile.neutral` — **le défaut** —, aucune référence n'est
-  /// peinte : les rôles du `ColorScheme` prennent le relais.
+  /// La bande est résolue par la couture `zResolveGradient` du socle, sous la
+  /// clé `zSignatureKey(verdictGradientIdentity)`. L'ordre est celui de toute
+  /// la famille des dégradés :
+  ///
+  /// 1. le résolveur `ZcrudScope.gradientResolver` de l'application, s'il
+  ///    répond à cette clé — **prioritaire, quel que soit le profil** ;
+  /// 2. le jeton `ZcrudTheme.signaturePalette`, indexé par cette identité ;
+  /// 3. la palette de référence auditée, sous `ZReferenceProfile.legacy`
+  ///    seulement.
+  ///
+  /// Quand rien ne répond — le cas par défaut, profil
+  /// `ZReferenceProfile.neutral` sans résolveur ni jeton —, aucun dégradé
+  /// n'est peint : les rôles du `ColorScheme` prennent le relais.
   static const String verdictGradientIdentity = 'zcrud.session.summary.verdict';
 
   /// Clé l10n du libellé d'un verdict réussi.
@@ -640,38 +648,31 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
       );
     }
 
-    // Priorité référence > rôles : sous le profil `legacy` (le défaut), la
-    // bande porte le dégradé de la palette signature auditée du socle ; sous
-    // `neutral`, aucune référence n'est peinte et les rôles du `ColorScheme`
-    // prennent le relais. Aucune couleur n'est écrite ici.
+    // La bande passe par la couture `zResolveGradient` du socle, comme tout
+    // autre dégradé : elle consulte le seam `gradientResolver` du scope, puis
+    // le jeton `ZcrudTheme.signaturePalette`, puis — sous le profil `legacy`
+    // seulement — la palette de référence auditée. Appeler la fonction pure
+    // `zSignatureGradientFor` ici court-circuiterait le seam ET le jeton :
+    // l'hôte ne pourrait plus teinter cette bande, seulement l'éteindre en
+    // basculant le profil. Le profil est arbitré DANS la couture ; aucun
+    // `zLegacyOrIn` ne doit le rejouer par-dessus, sans quoi une décision
+    // explicite de l'hôte serait annulée par un profil neutre.
+    // `null` reste la valeur fonctionnelle « aucun dégradé » : les rôles du
+    // `ColorScheme` prennent alors le relais. Aucune couleur n'est écrite ici.
     final scheme = Theme.of(context).colorScheme;
     final radius = BorderRadius.all(theme.radiusM);
-    final signature = zSignatureGradientFor(
-      ZSessionSummaryView.verdictGradientIdentity,
+    final signature = zResolveGradient(
+      context,
+      zSignatureKey(ZSessionSummaryView.verdictGradientIdentity),
     );
     final neutralDecoration = BoxDecoration(
       color: scheme.primaryContainer,
       borderRadius: radius,
     );
-    final decoration =
-        zLegacyOrIn<BoxDecoration>(
-          theme.referenceProfile,
-          signature == null
-              ? neutralDecoration
-              : BoxDecoration(
-                  gradient: signature.gradient,
-                  borderRadius: radius,
-                ),
-          neutralDecoration,
-        ) ??
-        neutralDecoration;
-    final foreground =
-        zLegacyOrIn<Color>(
-          theme.referenceProfile,
-          signature?.onGradient ?? scheme.onPrimaryContainer,
-          scheme.onPrimaryContainer,
-        ) ??
-        scheme.onPrimaryContainer;
+    final decoration = signature == null
+        ? neutralDecoration
+        : BoxDecoration(gradient: signature.gradient, borderRadius: radius);
+    final foreground = signature?.onGradient ?? scheme.onPrimaryContainer;
 
     return Container(
       key: ZSessionSummaryView.verdictKey,

@@ -186,6 +186,7 @@ class ZStudySessionView extends StatelessWidget {
     this.inputFlex,
     this.contentPadding,
     this.dividerThickness,
+    this.dividerColor,
     this.sectionGap,
     this.minTarget,
     this.counterStyle,
@@ -308,6 +309,9 @@ class ZStudySessionView extends StatelessWidget {
   /// Surcharge de l'épaisseur du séparateur (défaut : référence).
   final double? dividerThickness;
 
+  /// Surcharge de la couleur du séparateur (défaut : rôle `outlineVariant`).
+  final Color? dividerColor;
+
   /// Surcharge de l'écart vertical entre blocs (défaut : référence).
   final double? sectionGap;
 
@@ -325,6 +329,7 @@ class ZStudySessionView extends StatelessWidget {
       inputFlex: inputFlex,
       contentPadding: contentPadding,
       dividerThickness: dividerThickness,
+      dividerColor: dividerColor,
       sectionGap: sectionGap,
       minTarget: minTarget,
       counterStyle: counterStyle,

@@ -18,12 +18,19 @@ import 'z_page_shell_reference.dart';
 ///
 /// ## D'où vient la teinte de sélection
 ///
-/// Par ordre de priorité **paramètre > jeton `ZcrudTheme.signaturePalette` >
-/// référence auditée**. Seul le dernier maillon est arbitré par le profil : il
-/// n'est lu que sous `ZReferenceProfile.legacy`, opt-in de l'hôte. Sous
+/// Par ordre de priorité **paramètre > résolveur `ZcrudScope.gradientResolver`
+/// > jeton `ZcrudTheme.signaturePalette` > référence auditée** — la chaîne de
+/// `zResolveGradient`, celle de tous les autres dégradés du socle. Seul le
+/// dernier maillon est arbitré par le profil : il n'est lu que sous
+/// `ZReferenceProfile.legacy`, opt-in de l'hôte. Sous
 /// `ZReferenceProfile.neutral` — **le défaut** —, la teinte de sélection est le
 /// rôle `ColorScheme.primary`, donc entièrement gouvernée par le thème de
 /// l'hôte.
+///
+/// Le résolveur est interrogé sous la clé `zcrud.signature.<identité>` ; il n'y
+/// a d'identité que si [ZChoiceChipStyle.resolve] en reçoit une. Sans identité,
+/// la puce prend la teinte de tête de la palette — jeton d'abord, référence
+/// ensuite.
 ///
 /// Un jeton `signaturePalette` **posé** est une décision de l'hôte, pas une
 /// référence : il s'applique dans les deux profils.
@@ -69,26 +76,12 @@ class ZChoiceChipStyle {
     bool? showCheckmark,
   }) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    // Le jeton de l'hôte et la référence auditée ne sont PAS le même maillon :
-    // seul le second est arbitré par le profil. Les confondre effacerait sous
-    // `neutral` une palette que l'hôte a délibérément posée.
-    final List<ZGradientSpec>? jeton = ZcrudTheme.of(context).signaturePalette;
-    final List<ZGradientSpec> palette =
-        jeton ?? ZSignaturePaletteReference.gradients;
-    final ZGradientSpec? spec = (signatureKey == null || signatureKey.isEmpty)
-        ? (palette.isEmpty ? null : palette.first)
-        : zSignatureGradientFor(signatureKey, palette: palette);
+    final ZGradientSpec? spec = _zChipSignature(context, signatureKey);
     final List<Color> stops = spec?.gradient.colors ?? const <Color>[];
-    // Dernier maillon: la RÉFÉRENCE ne joue que sous `legacy`; sous `neutral`
-    // la sélection retombe sur un rôle du ColorScheme de l'hôte. Un jeton posé,
-    // lui, s'applique dans les deux profils.
+    // Rien de résolu ⇒ le rôle `primary` du thème de l'hôte : aucune couleur
+    // n'est écrite ici, et la puce reste celle du SDK habillé par ce thème.
     final Color selected =
-        selectedColor ??
-        (stops.isEmpty
-            ? scheme.primary
-            : (jeton != null
-                ? stops.first
-                : zLegacyOr<Color>(context, stops.first, scheme.primary)!));
+        selectedColor ?? (stops.isEmpty ? scheme.primary : stops.first);
     return ZChoiceChipStyle(
       shape:
           shape ??
@@ -142,6 +135,38 @@ class ZChoiceChipStyle {
   @override
   int get hashCode =>
       Object.hash(shape, selectedColor, selectedLabelColor, showCheckmark);
+}
+
+/// Dégradé de signature d'une puce, par ordre **identité déclarée > tête de
+/// palette**.
+///
+/// Une identité passe par la couture `zResolveGradient` du socle, comme tout
+/// autre dégradé : elle consulte le résolveur `ZcrudScope.gradientResolver`,
+/// puis le jeton `ZcrudTheme.signaturePalette`, puis — sous le profil
+/// `legacy` seulement — la palette de référence auditée, en respectant la
+/// stratégie d'index déclarée par le thème. Indexer la palette à la main
+/// (`zSignatureGradientFor`) court-circuiterait le résolveur : l'application
+/// ne pourrait plus teinter la puce, seulement l'éteindre en basculant le
+/// profil.
+///
+/// Sans identité, il n'existe **aucune clé** à soumettre au résolveur — la
+/// couture rend `null` pour une identité vide. La puce prend alors la teinte
+/// de TÊTE de la palette, dont le levier de l'hôte est le jeton lui-même,
+/// consulté ici avant la référence. Le profil n'arbitre que ce dernier
+/// maillon : le rejouer par-dessus la couture effacerait sous `neutral` une
+/// palette délibérément posée.
+ZGradientSpec? _zChipSignature(BuildContext context, String? signatureKey) {
+  if (signatureKey != null && signatureKey.isNotEmpty) {
+    return zResolveGradient(context, zSignatureKey(signatureKey));
+  }
+  final List<ZGradientSpec>? palette =
+      ZcrudTheme.of(context).signaturePalette ??
+      zLegacyOr<List<ZGradientSpec>>(
+        context,
+        ZSignaturePaletteReference.gradients,
+      );
+  if (palette == null || palette.isEmpty) return null;
+  return palette.first;
 }
 
 /// Premier plan lisible sur [background] : le candidat achromatique qui

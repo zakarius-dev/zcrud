@@ -214,6 +214,7 @@ const List<_ParityPair> _pairs = <_ParityPair>[
       'borderSide': 'cardBorderSide',
       'borderRadius': 'cardBorderRadius',
       'backgroundColor': 'cardBackgroundColor',
+      'shadowColor': 'cardShadowColor',
       'height': 'cardHeight',
     },
   ),

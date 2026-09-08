@@ -3,6 +3,63 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.49.0 — 2026-09-08
+
+### Ajouté
+
+- **Les trois surfaces les plus regardées de la session d'étude deviennent
+  teintables indépendamment du reste** — chaîne `paramètre > jeton > rôle`,
+  `null` partout ⇒ rendu peint strictement inchangé :
+  - fond de `ZDefaultFlashcardCard` : paramètre `backgroundColor` >
+    `ZcrudTheme.flashcardCardBackgroundColor` > rôle `scaffoldBackgroundColor` ;
+  - ombre de `ZDefaultFlashcardCard` : **nouveau** paramètre `shadowColor` >
+    `ZcrudTheme.flashcardCardShadowColor` > rôle `shadowColor` (teinte seule —
+    opacité, flou et décalage restent la référence) ;
+    Relayé par la voie typée sous le nom `ZStudyToolsSectionSpec.flashcards(
+    cardShadowColor:)`, comme l'exige la garde de parité carte ↔ voie typée ;
+  - séparateur de `ZStudySessionView` : **nouveau** paramètre `dividerColor`
+    (relayé à `zStudySessionChromeOf`) > `ZcrudTheme.studySessionDividerColor` >
+    rôle `outlineVariant`.
+
+  Gardes associées : `test/presentation/z_study_chromatic_tokens_test.dart` —
+  elles lisent la couleur RÉELLEMENT PEINTE (le `Material` construit par `Card`,
+  la `BoxDecoration` de l'ombre, la bordure construite par `Divider`), jamais
+  une valeur passée à un constructeur.
+
+### Corrigé
+
+- **La pastille de palette signature de `ZStudyUnitPicker` passe enfin par la
+  chaîne de résolution complète** (`MAJEUR`) : elle appelait la fonction PURE
+  `zSignatureGradientFor`, court-circuitant le seam hôte
+  `ZcrudScope.gradientResolver`, le jeton `ZcrudTheme.signaturePalette` et la
+  stratégie `ZcrudTheme.signaturePaletteIndexStrategy`. Une application n'avait
+  donc **aucune prise** sur cette pastille. Elle passe désormais par
+  `zResolveGradient(context, zSignatureKey(...))`.
+
+  L'arbitrage de profil externe (`zLegacyOr`) a été **retiré** : il vit dans le
+  dernier maillon de `zResolveGradient` et ne gouverne que la référence. Le
+  rejouer par-dessus annulait, sous le profil `neutral`, une palette que l'hôte
+  avait délibérément posée par jeton ou par seam.
+
+  **Inertie prouvée sous les deux profils** : sans seam ni jeton, la couleur
+  peinte est identique à avant — dégradé de référence indexé par `titleHash`
+  sous `legacy`, pastille **absente** sous `neutral` (le défaut).
+  Garde : `test/presentation/z_study_unit_picker_gradient_chain_test.dart`,
+  qui lit la décoration du `RenderDecoratedBox` MONTÉ.
+
+### Supprimé
+
+- `ZStudySessionChrome.accentColor` — champ **inerte** : résolu à chaque build
+  de l'écran de session (rôle `primary`) et lu par aucun site de rendu. Retiré
+  plutôt que doté d'un consommateur inventé. Sa garde locale assertait qu'il
+  suivait bien le rôle du schéma, c'est-à-dire qu'elle défendait le défaut.
+
+  ⚠️ **Rupture pour un appelant qui construisait `ZStudySessionChrome`
+  directement** : le paramètre nommé `accentColor` disparaît du constructeur.
+  Aucun appelant de ce type n'existe dans le dépôt (grep négatif sur
+  `packages/*/lib` et `packages/*/test`). L'écran de session lui-même passe par
+  `zStudySessionChromeOf`, dont la signature est inchangée.
+
 ## 3.48.0 — 2026-09-08
 
 ### Ajouté

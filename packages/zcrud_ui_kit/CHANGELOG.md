@@ -4,6 +4,44 @@ Format « Keep a Changelog » (sections Ajouté / Modifié / Corrigé, versions
 antéchronologiques). Toutes les modifications notables de `zcrud_ui_kit`
 sont documentées ici.
 
+## 3.49.0 — 2026-09-08
+
+### Corrigé
+
+- `ZChoiceChipStyle.resolve` / `zChipThemeFor` : la teinte de sélection d'une
+  puce portant une `signatureKey` **ne consultait pas** le résolveur
+  `ZcrudScope.gradientResolver`. Elle indexait la palette à la main
+  (`zSignatureGradientFor`), donc n'atteignait que le jeton
+  `ZcrudTheme.signaturePalette` puis la référence auditée : une application
+  qui pose un résolveur de dégradés le voyait ignoré **ici seul**, alors qu'il
+  s'applique partout ailleurs. Le site passe désormais par la couture
+  `zResolveGradient` du socle, comme le fait déjà `ZGradientFab`, et respecte
+  donc la chaîne complète **paramètre > résolveur > jeton > référence** ainsi
+  que la stratégie d'index déclarée par le thème
+  (`ZcrudTheme.signaturePaletteIndexStrategy`).
+
+  ⚠️ **Changement de comportement pour un hôte qui posait déjà** un
+  `gradientResolver` **ou** un `signaturePaletteIndexStrategy` : ses puces de
+  choix à `signatureKey` changent de teinte — elles obéissent enfin à ce qu'il
+  avait déclaré. Un hôte qui compensait ce défaut (couleur passée en
+  `selectedColor` sur le site d'appel, ou `ChipTheme` posé à la main
+  par-dessus) doit **retirer sa compensation** : le paramètre explicite
+  continue de primer et masquerait le résolveur. Un hôte **passif** — aucun
+  résolveur, aucune stratégie déclarée — n'a rien à faire : la couleur peinte
+  est strictement identique, sous `legacy` comme sous `neutral`, avec ou sans
+  identité, jeton posé ou non.
+
+  Sans identité (`signatureKey` nul ou vide) il n'existe aucune clé à soumettre
+  au résolveur : la puce prend toujours la teinte de **tête** de la palette —
+  jeton d'abord, référence ensuite et seulement sous `legacy`.
+
+### Ajouté
+
+- Garde de source `z_chip_gradient_chain_guard_test.dart` : aucun appel direct
+  à `zSignatureGradientFor` dans `lib/`, et toute lecture de
+  `ZSignaturePaletteReference` consulte le jeton **et** reste arbitrée par le
+  profil.
+
 ## 3.34.0 — 2026-08-29
 
 ### Modifié

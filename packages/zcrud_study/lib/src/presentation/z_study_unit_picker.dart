@@ -46,9 +46,9 @@ import 'package:zcrud_core/zcrud_core.dart'
     show
         ZcrudTheme,
         ZGradientSpec,
-        zLegacyOr,
         zResolveAdornmentIcon,
-        zSignatureGradientFor;
+        zResolveGradient,
+        zSignatureKey;
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show
         ZStudyKindSpec,
@@ -385,13 +385,21 @@ class _ZStudyUnitPickerState extends State<ZStudyUnitPicker> {
     );
   }
 
-  /// Pastille de la palette signature — montée sous le profil `legacy`, pas
-  /// montée du tout sous `neutral`.
+  /// Pastille de la palette signature.
+  ///
+  /// Le dégradé passe par la chaîne de résolution COMPLÈTE du socle
+  /// (`zResolveGradient`) : seam hôte `ZcrudScope.gradientResolver`, puis
+  /// jeton `ZcrudTheme.signaturePalette` avec sa stratégie d'index, puis —
+  /// et seulement sous le profil `legacy` — la palette de référence.
+  ///
+  /// L'arbitrage de profil n'est **pas** rejoué ici : il vit dans le dernier
+  /// maillon de cette chaîne et ne gouverne que la référence. Une palette
+  /// posée par l'hôte reste donc peinte sous `neutral`. Sans seam ni jeton, la
+  /// pastille est celle d'un profil `legacy` et est **absente** sous
+  /// `neutral` — le défaut.
   List<Widget> _buildBadge(BuildContext context, ZStudyRef ref) {
-    final ZGradientSpec? spec = zLegacyOr<ZGradientSpec?>(
-      context,
-      zSignatureGradientFor(_identity(ref)),
-    );
+    final ZGradientSpec? spec =
+        zResolveGradient(context, zSignatureKey(_identity(ref)));
     if (spec == null) return const <Widget>[];
     return <Widget>[
       Container(

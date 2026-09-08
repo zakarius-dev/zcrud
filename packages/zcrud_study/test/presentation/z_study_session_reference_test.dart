@@ -133,13 +133,11 @@ void main() {
         colorScheme: const ColorScheme.light(
           outlineVariant: Color(0xFF112233),
           onSurfaceVariant: Color(0xFF445566),
-          primary: Color(0xFF778899),
         ),
       );
       final ZStudySessionChrome c = await resolve(tester, theme: clair);
       expect(c.dividerColor, const Color(0xFF112233));
       expect(c.secondaryTextColor, const Color(0xFF445566));
-      expect(c.accentColor, const Color(0xFF778899));
     });
 
     testWidgets(
@@ -149,13 +147,11 @@ void main() {
         colorScheme: const ColorScheme.dark(
           outlineVariant: Color(0xFFAABBCC),
           onSurfaceVariant: Color(0xFFDDEEFF),
-          primary: Color(0xFF010203),
         ),
       );
       final ZStudySessionChrome c = await resolve(tester, theme: sombre);
       expect(c.dividerColor, const Color(0xFFAABBCC));
       expect(c.secondaryTextColor, const Color(0xFFDDEEFF));
-      expect(c.accentColor, const Color(0xFF010203));
     });
 
     test(

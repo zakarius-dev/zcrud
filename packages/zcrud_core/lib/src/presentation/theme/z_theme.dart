@@ -459,6 +459,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.studyCardGlyphSize,
     this.studyCardContentAlignment,
     this.flashcardTypeGradients,
+    this.flashcardCardBackgroundColor,
+    this.flashcardCardShadowColor,
     this.folderCardRadius,
     this.folderCardBorderSide,
     this.folderCardContentPadding,
@@ -475,6 +477,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.studySessionInputFlex,
     this.studySessionContentPadding,
     this.studySessionDividerThickness,
+    this.studySessionDividerColor,
     this.studySessionSectionGap,
     this.studySessionMinTarget,
     this.studySessionCounterStyle,
@@ -1511,6 +1514,37 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// reste REMPLAÇABLE (ce jeton) même quand elle ne peut pas être DÉRIVÉE.
   final Map<String, ZGradientSpec>? flashcardTypeGradients;
 
+  /// Fond de la carte de flashcard par défaut.
+  ///
+  /// `null` ⇒ le consommateur applique son repli : le rôle
+  /// `ThemeData.scaffoldBackgroundColor` de l'hôte. Chaîne de résolution
+  /// TOTALE : paramètre `backgroundColor` de la carte > ce jeton > rôle.
+  ///
+  /// Ce jeton existe parce que la surface de la carte est le plus grand
+  /// aplat de l'écran de révision : sans lui, la teinter obligeait à
+  /// déplacer le `scaffoldBackgroundColor` GLOBAL, donc à repeindre tout
+  /// le reste de l'application avec elle.
+  ///
+  /// `lerp` par [_lerpNullableColor] et **non** `Color.lerp` :
+  /// `Color.lerp(null, c, t)` matérialiserait une surface fantôme dès
+  /// `t > 0`, à la place du rôle de repli.
+  final Color? flashcardCardBackgroundColor;
+
+  /// Couleur de l'ombre portée de la carte de flashcard par défaut.
+  ///
+  /// `null` ⇒ le consommateur applique son repli : le rôle
+  /// `ThemeData.shadowColor` de l'hôte. Chaîne de résolution TOTALE :
+  /// paramètre `shadowColor` de la carte > ce jeton > rôle.
+  ///
+  /// Ce jeton porte la **teinte** seule : l'opacité (par luminosité), le
+  /// flou et le décalage restent ceux de la référence de la carte. Une
+  /// ombre entièrement redéfinie passe par les jetons `cardShadow*`, qui
+  /// PRIMENT l'ombre de référence.
+  ///
+  /// `lerp` par [_lerpNullableColor] et **non** `Color.lerp`, même raison
+  /// que [flashcardCardBackgroundColor].
+  final Color? flashcardCardShadowColor;
+
   // ── Carte de DOSSIER d'étude par défaut ───────────────────────────────────
   // La carte de dossier était la SEULE des six de la famille à n'avoir aucun
   // rendu par défaut, et son liseré n'était atteignable NI par paramètre NI par
@@ -1639,6 +1673,20 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
   /// Épaisseur du séparateur pile ↔ saisie. `null` ⇒ référence (1).
   final double? studySessionDividerThickness;
+
+  /// Couleur du séparateur pile ↔ saisie de l'écran de session.
+  ///
+  /// `null` ⇒ le consommateur applique son repli : le rôle
+  /// `ColorScheme.outlineVariant`. Chaîne de résolution TOTALE :
+  /// paramètre `dividerColor` de `zStudySessionChromeOf` > ce jeton > rôle.
+  ///
+  /// Le séparateur est la seule ligne qui sépare la pile de cartes de la
+  /// zone de notation : le régler indépendamment du reste évite de déplacer
+  /// `outlineVariant`, qui dessine aussi tous les autres traits de l'hôte.
+  ///
+  /// `lerp` par [_lerpNullableColor] et **non** `Color.lerp` : un `null`
+  /// ne se matérialise jamais en trait fantôme pendant une transition.
+  final Color? studySessionDividerColor;
 
   /// Écart vertical entre deux blocs de l'écran de session (repli « session
   /// vide » notamment). `null` ⇒ référence (12).
@@ -2911,6 +2959,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? studyCardGlyphSize,
     ZStudyCardContentAlignment? studyCardContentAlignment,
     Map<String, ZGradientSpec>? flashcardTypeGradients,
+    Color? flashcardCardBackgroundColor,
+    Color? flashcardCardShadowColor,
     Radius? folderCardRadius,
     BorderSide? folderCardBorderSide,
     EdgeInsetsGeometry? folderCardContentPadding,
@@ -2927,6 +2977,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     int? studySessionInputFlex,
     EdgeInsetsGeometry? studySessionContentPadding,
     double? studySessionDividerThickness,
+    Color? studySessionDividerColor,
     double? studySessionSectionGap,
     double? studySessionMinTarget,
     TextStyle? studySessionCounterStyle,
@@ -3200,6 +3251,10 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         studyCardContentAlignment ?? this.studyCardContentAlignment,
     flashcardTypeGradients:
         flashcardTypeGradients ?? this.flashcardTypeGradients,
+    flashcardCardBackgroundColor:
+        flashcardCardBackgroundColor ?? this.flashcardCardBackgroundColor,
+    flashcardCardShadowColor:
+        flashcardCardShadowColor ?? this.flashcardCardShadowColor,
     folderCardRadius: folderCardRadius ?? this.folderCardRadius,
     folderCardBorderSide: folderCardBorderSide ?? this.folderCardBorderSide,
     folderCardContentPadding:
@@ -3226,6 +3281,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         studySessionContentPadding ?? this.studySessionContentPadding,
     studySessionDividerThickness:
         studySessionDividerThickness ?? this.studySessionDividerThickness,
+    studySessionDividerColor:
+        studySessionDividerColor ?? this.studySessionDividerColor,
     studySessionSectionGap:
         studySessionSectionGap ?? this.studySessionSectionGap,
     studySessionMinTarget: studySessionMinTarget ?? this.studySessionMinTarget,
@@ -3921,6 +3978,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
           : other.studyCardContentAlignment,
       flashcardTypeGradients:
           t < 0.5 ? flashcardTypeGradients : other.flashcardTypeGradients,
+      flashcardCardBackgroundColor: _lerpNullableColor(
+        flashcardCardBackgroundColor,
+        other.flashcardCardBackgroundColor,
+        t,
+      ),
+      flashcardCardShadowColor: _lerpNullableColor(
+        flashcardCardShadowColor,
+        other.flashcardCardShadowColor,
+        t,
+      ),
       // Chaque jeton de carte de dossier est null-PRÉSERVANT :
       // `null`↔`null` reste `null`, donc la valeur de RÉFÉRENCE du
       // consommateur n'est JAMAIS matérialisée par une transition de thème
@@ -4028,6 +4095,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       studySessionDividerThickness: _lerpNullableDouble(
         studySessionDividerThickness,
         other.studySessionDividerThickness,
+        t,
+      ),
+      studySessionDividerColor: _lerpNullableColor(
+        studySessionDividerColor,
+        other.studySessionDividerColor,
         t,
       ),
       studySessionSectionGap: _lerpNullableDouble(

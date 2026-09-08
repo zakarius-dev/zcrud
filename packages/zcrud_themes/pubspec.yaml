@@ -1,0 +1,63 @@
+# zcrud_themes — membre du workspace zcrud (resolution: workspace).
+#
+# 🔴 POURQUOI CE PAQUET EXISTE — c'est un porteur de VALEURS, et rien d'autre.
+#
+# Le socle sait déjà habiller ses widgets : `ZcrudTheme` (245 jetons),
+# `ZReferenceProfile`, les arbitres `zLegacyOr`, la chaîne
+# `paramètre > jeton > référence`, et le patron « référence auditée → jeton
+# nullable → seam » qui tourne déjà sur la carte de flashcard. Ce qui manquait
+# n'était pas un mécanisme, c'était un LIEU : un endroit où loger des palettes
+# nommées, complètes et cohérentes, sans les imposer à personne.
+#
+# ⛔ CE PAQUET NE REND AUCUN WIDGET. Il n'exporte que des valeurs de design et
+#    des fabriques de `ZcrudTheme`. Un widget ici créerait un second rendu,
+#    concurrent de `zcrud_study`/`zcrud_session` — exactement le doublon que ce
+#    dépôt a passé des semaines à supprimer chez ses hôtes. Gardé par machine :
+#    `test/z_no_widget_export_test.dart`.
+#
+# ⛔ AUCUN hôte n'est nommé dans `lib/`. Une palette porte un nom de THÈME
+#    (« Classic »), jamais un nom d'application. Gardé par machine.
+#
+# ✅ Les dépendances TIERCES sont autorisées ici — contrairement à
+#    `zcrud_ui_kit`, qui s'interdit tout tiers et doit le rester. Un paquet
+#    opt-in ne pèse que sur qui le prend. Aucune n'est nécessaire aujourd'hui :
+#    ce paquet ne porte que des valeurs.
+name: zcrud_themes
+description: "Named visual themes for zcrud: audited reference palettes and ready-made ZcrudTheme factories that skin the existing widgets of the toolkit. Ships no widgets of its own."
+version: 3.49.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_themes
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - theme
+  - design-tokens
+  - flutter
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes SORTANTES seules (AD-1, graphe ACYCLIQUE, CORE OUT=0). Ce paquet est un
+# PUITS : aucun paquet zcrud ne dépend de lui, et aucun ne le doit — c'est ce qui
+# garantit qu'un hôte qui ne veut pas de thème n'en porte pas le poids.
+#
+# - `zcrud_core`      : `ZcrudTheme` (la cible produite), `ZGradientSpec`,
+#                       `ZColorKeyResolver`/`ZColorPair` (les seams alimentés).
+# - `zcrud_session`   : `ZSrsQualityEmphasis` + `ZQualityColorKeyResolver` — les
+#                       seams de notation, à alimenter par défaut.
+# - `zcrud_flashcard` : `ZFlashcardType` — clé des dégradés par type de carte.
+#
+# Toute arête nouvelle se justifie par un TYPE réellement nommé dans `lib/`,
+# jamais « au cas où » : une arête inutile alourdit la fermeture de tout hôte.
+dependencies:
+  flutter:
+    sdk: flutter
+  zcrud_core: ^3.49.0
+  zcrud_flashcard: ^3.49.0
+  zcrud_session: ^3.49.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

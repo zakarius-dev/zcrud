@@ -3,6 +3,36 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.49.0 — 2026-09-08
+
+### Ajouté
+
+- **Trois jetons CHROMATIQUES pour les surfaces les plus regardées d'une
+  session d'étude** — jusqu'ici teintables seulement en déplaçant un rôle
+  GLOBAL du `ColorScheme`, ce qui repeignait tout le reste de l'application
+  avec elles :
+  - `ZcrudTheme.flashcardCardBackgroundColor` — fond de la carte de flashcard
+    par défaut. `null` ⇒ rôle `scaffoldBackgroundColor` (rendu inchangé).
+  - `ZcrudTheme.flashcardCardShadowColor` — teinte de l'ombre portée de cette
+    carte. `null` ⇒ rôle `shadowColor`. Le jeton porte la TEINTE seule :
+    opacité, flou et décalage restent ceux de la référence.
+  - `ZcrudTheme.studySessionDividerColor` — trait séparant la pile de cartes de
+    la zone de notation. `null` ⇒ rôle `outlineVariant`.
+
+  Les trois sont câblés aux **4 sites** (déclaration, constructeur, `copyWith`,
+  `lerp`) et interpolés par `_lerpNullableColor` : un `null` ne se matérialise
+  jamais en couleur fantôme pendant une transition de thème. Chaîne de
+  résolution **paramètre > jeton > rôle** ; `null` partout ⇒ le rendu peint est
+  strictement celui d'avant.
+
+- **Garde d'inertie des champs de CHROME RÉSOLU** (`packages/zcrud_core/test/
+  purity/z_chrome_field_inertia_guard_test.dart`) : tout champ public d'une
+  classe-porteur `Z…Chrome` de `packages/*/lib` doit être LU (`.<nom>`) par un
+  site de rendu, hors du corps de sa propre classe. La garde d'inertie
+  existante s'arrêtait aux jetons de `ZcrudTheme` ; un champ résolu à chaque
+  build et peint nulle part vivait donc hors de sa portée. Balayage repo-wide,
+  contre-preuve incluse.
+
 ## 3.41.0 — 2026-08-30
 
 ### Ajouté

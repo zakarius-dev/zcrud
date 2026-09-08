@@ -206,6 +206,11 @@ workspace:
   # dépend de lui) → zéro arête entrante, aucun cycle possible par construction.
   # Exécuté par scripts/ci/gate_reserved_keys.dart, PAS par `melos run test`
   # (cf. `melos.ignore` ci-dessous).
+  # Thèmes visuels NOMMÉS (Partie IV, 2026-09-08). PUITS du graphe : dépend de
+  # core/flashcard/session, aucun paquet ne dépend de lui — un hôte qui ne veut
+  # pas de thème n'en porte pas le poids. Ne rend AUCUN widget (garde machine) :
+  # il habille les widgets existants, il ne les double pas.
+  - packages/zcrud_themes
   - tool/reserved_keys_gate
 
 dev_dependencies:

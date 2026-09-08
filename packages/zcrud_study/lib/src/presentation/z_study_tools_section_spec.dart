@@ -256,6 +256,7 @@ class ZStudyToolsSectionSpec {
     BorderSide? cardBorderSide,
     Radius? cardBorderRadius,
     Color? cardBackgroundColor,
+    Color? cardShadowColor,
     // Hauteur FIXE de référence — `null` EXPLICITE ⇒ hauteur intrinsèque,
     // même contrat que `ZDefaultFlashcardCard.height`.
     double? cardHeight = ZFlashcardCardReference.cardHeight,
@@ -428,6 +429,7 @@ class ZStudyToolsSectionSpec {
             borderSide: cardBorderSide,
             borderRadius: cardBorderRadius,
             backgroundColor: cardBackgroundColor,
+            shadowColor: cardShadowColor,
             height: cardHeight,
             questionBuilder: questionBuilder,
             questionMaxHeight: questionMaxHeight,

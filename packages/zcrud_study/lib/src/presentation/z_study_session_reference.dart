@@ -14,7 +14,7 @@
 /// des proportions et des scalaires. Chaque couleur du rendu de référence est
 /// un rôle du `ColorScheme` courant, résolu au rendu par
 /// [zStudySessionChromeOf] : séparateur `outlineVariant`, texte secondaire
-/// `onSurfaceVariant`, accent de progression `primary`.
+/// `onSurfaceVariant`.
 ///
 /// Ce fichier n'est donc **PAS** dans l'exemption nominative
 /// `_colorGuardExemptFiles` de `z_widgets_hardcode_scan_test.dart` — et la
@@ -105,7 +105,6 @@ class ZStudySessionChrome {
     required this.dividerColor,
     required this.counterStyle,
     required this.secondaryTextColor,
-    required this.accentColor,
   });
 
   /// Part verticale effective de la pile.
@@ -134,9 +133,6 @@ class ZStudySessionChrome {
 
   /// Premier plan du texte secondaire — rôle `onSurfaceVariant` (FR-26).
   final Color secondaryTextColor;
-
-  /// Accent de progression — rôle `primary` (FR-26).
-  final Color accentColor;
 }
 
 /// Résout le chrome de l'écran de session depuis le contexte (rôles du
@@ -157,6 +153,7 @@ ZStudySessionChrome zStudySessionChromeOf(
   int? inputFlex,
   EdgeInsetsGeometry? contentPadding,
   double? dividerThickness,
+  Color? dividerColor,
   double? sectionGap,
   double? minTarget,
   TextStyle? counterStyle,
@@ -184,10 +181,11 @@ ZStudySessionChrome zStudySessionChromeOf(
     minTarget: minTarget ??
         theme.studySessionMinTarget ??
         ZStudySessionReference.minTarget,
-    dividerColor: scheme.outlineVariant,
+    dividerColor: dividerColor ??
+        theme.studySessionDividerColor ??
+        scheme.outlineVariant,
     counterStyle:
         counterStyle ?? theme.studySessionCounterStyle ?? text.labelLarge,
     secondaryTextColor: scheme.onSurfaceVariant,
-    accentColor: scheme.primary,
   );
 }

@@ -214,6 +214,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     this.borderSide,
     this.borderRadius,
     this.backgroundColor,
+    this.shadowColor,
     this.height = ZFlashcardCardReference.cardHeight,
     this.contentAlignment,
     super.key,
@@ -359,6 +360,15 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// `scaffoldBackgroundColor` de l'hôte (jamais un hex — FR-26).
   final Color? backgroundColor;
 
+  /// Teinte EXPLICITE de l'ombre portée de la carte. `null` ⇒ référence :
+  /// le rôle `shadowColor` de l'hôte (jamais un hex — FR-26).
+  ///
+  /// Seule la TEINTE est portée ici : l'opacité (par luminosité), le flou et
+  /// le décalage restent ceux de la référence. Une ombre entièrement
+  /// redéfinie passe par les jetons `cardShadow*`, qui PRIMENT l'ombre de
+  /// référence de la carte.
+  final Color? shadowColor;
+
   /// Hauteur FIXE de la carte.
   ///
   /// Défaut : [ZFlashcardCardReference.cardHeight] (200) — c'est la hauteur
@@ -451,7 +461,11 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     // fenêtre HSL seule ne borne pas le contraste (elle rendrait 2.13:1 sur
     // un jaune). Sur les quatre types de référence la correction ne mord pas
     // (contrastes mesurés 5.28 à 13.00) : rendu bit-identique.
-    final Color cardSurface = backgroundColor ?? material.scaffoldBackgroundColor;
+    // Chaîne TOTALE : paramètre > jeton > rôle. `null` partout ⇒ le rôle
+    // `scaffoldBackgroundColor`, c'est-à-dire le rendu historique.
+    final Color cardSurface = backgroundColor ??
+        theme.flashcardCardBackgroundColor ??
+        material.scaffoldBackgroundColor;
     final Color readable = zReadableTypeTint(
       primary,
       isDark: isDark,
@@ -463,7 +477,10 @@ class ZDefaultFlashcardCard extends StatelessWidget {
       borderRadius: BorderRadius.all(corner),
       boxShadow: <BoxShadow>[
         BoxShadow(
-          color: material.shadowColor.withValues(
+          color: (shadowColor ??
+                  theme.flashcardCardShadowColor ??
+                  material.shadowColor)
+              .withValues(
             alpha: isDark
                 ? ZFlashcardCardReference.shadowAlphaDark
                 : ZFlashcardCardReference.shadowAlphaLight,
