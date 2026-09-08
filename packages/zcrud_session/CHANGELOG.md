@@ -3,6 +3,35 @@
 Toutes les modifications notables de `zcrud_session` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.48.0 — 2026-09-08
+
+### Ajouté
+
+- **`ZFlashcardAnswerInput` relaie les quatre seams de présentation de la rangée
+  de notation** — `qualityLabelKeyFor`, `qualityColorKeyFor`,
+  `qualityPreviewLabelFor`, `qualityEmphasis`. Ils sont transmis tels quels à
+  `ZSrsQualityButtons` (`labelKeyFor` / `colorKeyFor` / `previewLabelFor` /
+  `emphasis`). Une application peut donc peindre ses paliers avec sa propre
+  palette, leur donner ses propres libellés et afficher l'aperçu d'intervalle
+  sous chaque cran **sans fournir `gradingBuilder`**, c'est-à-dire sans
+  réimplémenter la saisie entière (champ, choix, correction, indices,
+  évaluation, soumission).
+
+  Strictement **additif** : les défauts (`zDefaultQualityLabelKey`, `null`,
+  `null`, `ZSrsQualityEmphasis.none`) reproduisent l'arbre et les couleurs
+  peintes historiques à l'identique — une garde d'inertie compare le montage
+  par défaut à un montage nu de `ZSrsQualityButtons`, en égalité stricte.
+
+  Le préfixe `quality*` est délibéré : sur une surface qui porte déjà des slots
+  de contenu, d'indice et de minuteur, un `colorKeyFor` nu ne dirait pas de
+  quoi il colore.
+
+  `scale`, `passThreshold`, `selectedQuality` et `onQualitySelected` restent la
+  propriété de l'assemblage (dérivés de `srsConfig` et de la correction) ; le
+  `bottomInset` de la rangée aussi : la surface possède déjà son inset et le
+  **consomme** pour son sous-arbre, un second inset imbriqué rendrait une
+  gouttière double.
+
 ## 3.47.0 — 2026-09-08
 
 ### Ajouté

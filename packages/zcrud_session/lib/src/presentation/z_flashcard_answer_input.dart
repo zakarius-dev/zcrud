@@ -197,6 +197,10 @@ class ZFlashcardAnswerInput extends StatefulWidget {
     this.correctionVisibility = ZCorrectionVisibility.immediate,
     this.onSubmitted,
     this.onQualitySelected,
+    this.qualityLabelKeyFor = zDefaultQualityLabelKey,
+    this.qualityColorKeyFor,
+    this.qualityPreviewLabelFor,
+    this.qualityEmphasis = ZSrsQualityEmphasis.none,
     this.onAdvance,
     this.markSkippedSubmissions = false,
     this.bottomInset,
@@ -367,6 +371,35 @@ class ZFlashcardAnswerInput extends StatefulWidget {
   /// Voie unique de notation — `null` : rangée SRS absente, jamais un
   /// booléen `showQualityButtons`.
   final ValueChanged<int>? onQualitySelected;
+
+  /// Seam de clé de libellé l10n d'un cran de notation.
+  ///
+  /// Relayé tel quel à [ZSrsQualityButtons.labelKeyFor]. Le défaut
+  /// [zDefaultQualityLabelKey] rend le libellé historique (`zcrud.srs.quality.<q>`,
+  /// repli sur le numéro du cran). Retourne une CLÉ l10n, jamais un libellé
+  /// utilisateur littéral.
+  final ZQualityLabelKeyResolver qualityLabelKeyFor;
+
+  /// Seam de clé de couleur d'un cran de notation.
+  ///
+  /// Relayé tel quel à [ZSrsQualityButtons.colorKeyFor]. `null` (défaut) laisse
+  /// la rangée dériver réussite/lapse de `srsConfig.passThreshold`. Retourne une
+  /// clé de couleur neutre résolue par le thème — jamais une valeur chromatique.
+  final ZQualityColorKeyResolver? qualityColorKeyFor;
+
+  /// Seam d'aperçu d'intervalle prévisionnel sous chaque cran.
+  ///
+  /// Relayé tel quel à [ZSrsQualityButtons.previewLabelFor]. `null` (défaut) :
+  /// aucun aperçu. Typiquement une projection PURE du planificateur (`simulate`),
+  /// sans écriture SRS : cette surface n'écrit jamais l'état de répétition.
+  final String Function(int quality)? qualityPreviewLabelFor;
+
+  /// Affordance d'emphase des crans de notation (dimensions seules).
+  ///
+  /// Relayée telle quelle à [ZSrsQualityButtons.emphasis]. Le défaut
+  /// [ZSrsQualityEmphasis.none] rend la rangée historique à l'identique
+  /// (fond plein, aucun bord).
+  final ZSrsQualityEmphasis qualityEmphasis;
 
   /// Demande d'avance à la carte suivante (cette surface ne navigue pas
   /// elle-même).
@@ -1078,6 +1111,10 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
             visibility: widget.correctionVisibility,
             onQualitySelected: widget.onQualitySelected,
             srsConfig: widget.srsConfig,
+            qualityLabelKeyFor: widget.qualityLabelKeyFor,
+            qualityColorKeyFor: widget.qualityColorKeyFor,
+            qualityPreviewLabelFor: widget.qualityPreviewLabelFor,
+            qualityEmphasis: widget.qualityEmphasis,
           ),
         ],
       ),
@@ -1840,6 +1877,10 @@ class _CorrectionSection extends StatelessWidget {
     required this.visibility,
     required this.onQualitySelected,
     required this.srsConfig,
+    required this.qualityLabelKeyFor,
+    required this.qualityColorKeyFor,
+    required this.qualityPreviewLabelFor,
+    required this.qualityEmphasis,
   });
 
   final ValueListenable<_Correction?> correction;
@@ -1848,6 +1889,14 @@ class _CorrectionSection extends StatelessWidget {
   final ZCorrectionVisibility visibility;
   final ValueChanged<int>? onQualitySelected;
   final ZSrsConfig srsConfig;
+
+  // Seams de présentation de la rangée, transportés SANS ÊTRE INTERPRÉTÉS :
+  // cette section n'en dérive aucune valeur par défaut, sans quoi la rangée
+  // aurait deux propriétaires pour la même décision.
+  final ZQualityLabelKeyResolver qualityLabelKeyFor;
+  final ZQualityColorKeyResolver? qualityColorKeyFor;
+  final String Function(int quality)? qualityPreviewLabelFor;
+  final ZSrsQualityEmphasis qualityEmphasis;
 
   /// Clé du bloc de feedback.
   static const ValueKey<String> feedbackKey = ValueKey<String>('zFeedback');
@@ -1901,6 +1950,14 @@ class _CorrectionSection extends StatelessWidget {
                 // le tap de l'utilisateur qui vaut notation.
                 selectedQuality: corrected.quality,
                 onQualitySelected: selectedQuality,
+                // Seams relayés tels quels. Leurs défauts (résolveur de
+                // libellé historique, `null`, `null`, `none`) reproduisent
+                // EXACTEMENT le rendu d'avant leur existence : un hôte qui
+                // n'en pose aucun ne voit aucune différence.
+                labelKeyFor: qualityLabelKeyFor,
+                colorKeyFor: qualityColorKeyFor,
+                previewLabelFor: qualityPreviewLabelFor,
+                emphasis: qualityEmphasis,
               ),
             ],
           ],

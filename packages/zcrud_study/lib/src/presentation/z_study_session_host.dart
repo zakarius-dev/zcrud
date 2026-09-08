@@ -73,6 +73,8 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart'
 import 'package:zcrud_session/zcrud_session.dart'
     show
         ZFlashcardAnswerInput,
+        ZQualityColorKeyResolver,
+        ZQualityLabelKeyResolver,
         ZSessionCardSlot,
         ZFlashcardSubmission,
         ZLinearSessionState,
@@ -80,9 +82,11 @@ import 'package:zcrud_session/zcrud_session.dart'
         ZSessionProgressStyle,
         ZSessionReviewer,
         ZSessionRuntimeKind,
+        ZSrsQualityEmphasis,
         ZStudySessionEngine,
         ZWhiteExamPhase,
         ZWhiteExamSessionEngine,
+        zDefaultQualityLabelKey,
         zSessionRuntimeForMode;
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZReviewMode, ZStudySessionResult;
@@ -147,6 +151,11 @@ class ZStudySessionHost extends StatefulWidget {
     this.contentBuilder,
     this.evaluationPort,
     this.hintPort,
+    this.onQualitySelected,
+    this.qualityLabelKeyFor = zDefaultQualityLabelKey,
+    this.qualityColorKeyFor,
+    this.qualityPreviewLabelFor,
+    this.qualityEmphasis = ZSrsQualityEmphasis.none,
     this.headerBuilder,
     this.counterBuilder,
     this.gradingBuilder,
@@ -236,6 +245,47 @@ class ZStudySessionHost extends StatefulWidget {
 
   /// Port d'indices (`null` ⇒ bouton « Indice » absent, jamais grisé).
   final ZFlashcardHintPort? hintPort;
+
+  /// Voie de **notation manuelle** de la surface de saisie par défaut.
+  ///
+  /// `null` (défaut) : la rangée de crans de notation est **absente de
+  /// l'arbre** (AD-4) — jamais grisée, jamais rendue inerte. C'est le seul
+  /// état qui monte cette rangée : sans elle, [qualityLabelKeyFor],
+  /// [qualityColorKeyFor], [qualityPreviewLabelFor] et [qualityEmphasis]
+  /// n'ont rien à peindre.
+  ///
+  /// 🔒 Cette voie **n'écrit rien** dans le SRS. L'écriture de révision reste
+  /// la soumission de la carte, et elle seule (invariant AD-33) : la rangée
+  /// notifie l'appelant du cran tapé, elle ne double pas la note.
+  final ValueChanged<int>? onQualitySelected;
+
+  /// Seam de clé de libellé l10n d'un cran de notation.
+  ///
+  /// Relayé tel quel à la surface de saisie. Le défaut
+  /// [zDefaultQualityLabelKey] rend le libellé historique
+  /// (`zcrud.srs.quality.<q>`, repli sur le numéro du cran). Retourne une
+  /// **clé** l10n, jamais un libellé utilisateur littéral (FR-26).
+  final ZQualityLabelKeyResolver qualityLabelKeyFor;
+
+  /// Seam de clé de couleur d'un cran de notation.
+  ///
+  /// `null` (défaut) laisse la rangée dériver réussite/lapse de
+  /// `config.passThreshold`. Retourne une **clé** de couleur résolue par le
+  /// thème — jamais une valeur chromatique (FR-26).
+  final ZQualityColorKeyResolver? qualityColorKeyFor;
+
+  /// Seam d'aperçu d'intervalle prévisionnel sous chaque cran.
+  ///
+  /// `null` (défaut) : aucun aperçu. Typiquement une projection **pure** du
+  /// planificateur (`simulate`) : la construire n'écrit aucun état de
+  /// répétition.
+  final String Function(int quality)? qualityPreviewLabelFor;
+
+  /// Affordance d'emphase des crans de notation (dimensions seules).
+  ///
+  /// Le défaut [ZSrsQualityEmphasis.none] rend la rangée historique à
+  /// l'identique (fond plein, aucun bord).
+  final ZSrsQualityEmphasis qualityEmphasis;
 
   /// Slot d'en-tête. `null` ⇒ absent de l'arbre (AD-4).
   final ZStudySessionHeaderBuilder? headerBuilder;
@@ -1029,6 +1079,16 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
       evaluationPort: widget.evaluationPort,
       hintPort: widget.hintPort,
       onSubmitted: submit,
+      // Seams de présentation de la rangée de notation, relayés TELS QUELS.
+      // Leurs défauts (`zDefaultQualityLabelKey`, `null`, `null`, `none`)
+      // reproduisent exactement le rendu d'avant leur existence ; et sans
+      // `onQualitySelected`, la rangée n'est pas montée du tout : les quatre
+      // seams ne peuvent alors rien changer, ni ici ni en aval.
+      onQualitySelected: widget.onQualitySelected,
+      qualityLabelKeyFor: widget.qualityLabelKeyFor,
+      qualityColorKeyFor: widget.qualityColorKeyFor,
+      qualityPreviewLabelFor: widget.qualityPreviewLabelFor,
+      qualityEmphasis: widget.qualityEmphasis,
     );
   }
 

@@ -297,6 +297,14 @@ export 'src/presentation/z_study_scope_bar.dart';
 // couleur littérale.
 export 'src/presentation/z_study_session_card_slot.dart';
 export 'src/presentation/z_study_session_host.dart';
+// Types des seams de présentation de la rangée de notation, ré-exportés pour
+// qu'un appelant de `ZStudySessionHost` puisse les nommer sans second import.
+export 'package:zcrud_session/zcrud_session.dart'
+    show
+        ZQualityColorKeyResolver,
+        ZQualityLabelKeyResolver,
+        ZSrsQualityEmphasis,
+        zDefaultQualityLabelKey;
 export 'src/presentation/z_study_session_mode.dart';
 export 'src/presentation/z_study_session_post_submit.dart';
 export 'src/presentation/z_study_session_recall.dart';

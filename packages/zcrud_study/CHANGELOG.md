@@ -3,6 +3,41 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.48.0 — 2026-09-08
+
+### Ajouté
+
+- **Seams de présentation de la rangée de notation, relayés de bout en bout**
+  (`MAJEUR`) : `ZStudySessionHost` expose `qualityLabelKeyFor`,
+  `qualityColorKeyFor`, `qualityPreviewLabelFor` et `qualityEmphasis`, relayés
+  tels quels à la surface de saisie par défaut, puis à `ZSrsQualityButtons`.
+  Une application qui veut cinq paliers colorés avec aperçu d'intervalle n'a
+  donc plus à fournir un `gradingBuilder` complet — c'est-à-dire à
+  réimplémenter toute la saisie — pour changer une couleur.
+  * **Précondition de montage** : `ZStudySessionHost.onQualitySelected`, neuf
+    lui aussi. Mesuré avant ce lot : `grep -rn "onQualitySelected"
+    packages/zcrud_study/lib` rendait **zéro** occurrence — l'assemblage
+    montait une surface de saisie sans voie de notation manuelle, et la rangée
+    de crans (le seul objet que les quatre seams peignent) n'entrait jamais
+    dans l'arbre. Relayer les quatre seams sans cette précondition aurait
+    livré quatre commandes mortes.
+  * Cette voie **n'écrit rien** dans le SRS : l'écriture de révision reste la
+    soumission de la carte, et elle seule (AD-33). La garde le vérifie par le
+    compteur du faux `ZSessionReviewer`, avant et après le tap d'un cran.
+  * `gradingBuilder` **prime** : quand l'hôte fournit son propre constructeur
+    de notation, la surface par défaut n'est pas montée et les cinq paramètres
+    n'ont aucun point d'application. Figé par une garde.
+  * Strictement **additif**, défauts neutres : un hôte qui ne pose aucun des
+    cinq paramètres obtient le sous-arbre de saisie **strictement identique**
+    au montage nu de `ZFlashcardAnswerInput` (égalité de séquence, jamais
+    `contains`), et la rangée de crans reste **absente** de l'arbre (AD-4).
+  * Aucune valeur chromatique introduite (FR-26) : le seam relaie une **clé**
+    de couleur résolue par le thème.
+  * `zcrud_study` ré-exporte `ZQualityLabelKeyResolver`,
+    `ZQualityColorKeyResolver`, `ZSrsQualityEmphasis` et
+    `zDefaultQualityLabelKey` — un appelant de `ZStudySessionHost` les nomme
+    sans second import.
+
 ## 3.47.0 — 2026-09-08
 
 ### Ajouté
