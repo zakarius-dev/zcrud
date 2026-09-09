@@ -90,6 +90,28 @@ typedef CtorParam = ({String name, bool isRequired, bool hasDefault});
 /// L'admission reste NOMINATIVE, pour la même raison qu'au-dessus : un futur
 /// `…Policy` qui porterait un callback ou une décision de rendu doit retomber
 /// du côté « seam » tant que personne ne l'a examiné.
+///
+/// ## Troisième famille admise : les FORMES de la surface de saisie
+///
+/// `ZAnswerChoiceLayout`, `ZAnswerActionsLayout`, `ZAnswerSubmitWidth` et
+/// `ZAnswerGradingVisibility` disent comment la surface de saisie est BÂTIE :
+/// une ligne de choix nue ou en tuile, deux contrôles d'aide empilés ou côte à
+/// côte, une soumission au contenu ou pleine largeur, une rangée de paliers
+/// montée après la réponse ou d'emblée. Aucun ne câble quoi que ce soit — ni
+/// port, ni callback, ni constructeur de rendu, ni contrôleur. Les oublier
+/// coûte une FORME (l'écran reste celui qu'on voulait, autrement proportionné),
+/// jamais une CAPACITÉ : la voie de notation, l'évaluation, les indices et le
+/// verrou one-shot sont exactement les mêmes dans les deux dispositions.
+///
+/// 🔴 `ZAnswerGradingVisibility.always` déplace l'ordre des gestes ; cela ne
+/// change pas son classement. Ce qu'il déplace est le MOMENT d'une affordance
+/// déjà branchée : sans `onQualitySelected` — le seam, lui — aucune rangée
+/// n'est montée, ni avant ni après, et le réglage n'a aucun effet. Un réglage
+/// dont l'effet est nul quand le seam manque n'est pas un seam.
+///
+/// L'admission reste NOMINATIVE, pour la raison qui vaut au-dessus : une règle
+/// de suffixe ferait entrer sans examen tout futur `…Layout`, `…Width` ou
+/// `…Visibility`, y compris celui qui porterait un callback.
 const Set<String> kCosmeticTypes = <String>{
   'double',
   'int',
@@ -108,6 +130,10 @@ const Set<String> kCosmeticTypes = <String>{
   'Curve',
   'ZSessionDotsGeometry',
   'ZStudySeamAuditPolicy',
+  'ZAnswerChoiceLayout',
+  'ZAnswerActionsLayout',
+  'ZAnswerSubmitWidth',
+  'ZAnswerGradingVisibility',
 };
 
 /// Applique la règle de type : `true` ⇒ **cosmétique**, `false` ⇒ **seam**.
@@ -669,6 +695,10 @@ void main() {
         'counterStyle',
         'contentPadding',
         'seamAudit',
+        'answerChoiceLayout',
+        'answerActionsLayout',
+        'answerSubmitWidth',
+        'answerGradingVisibility',
       ]) {
         expect(p.cosmetics, contains(cosmetic));
       }
@@ -746,7 +776,42 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {}
               'nommé `…Policy` entrerait désormais sans examen');
     });
 
-    test('🔴 un PORT inédit reste un SEAM malgré les deux admissions', () {
+    test('🔴 l\'admission des FORMES de saisie ne vaut QUE pour elles', () {
+      const Map<String, String> admises = <String, String>{
+        'choiceLayout': 'ZAnswerChoiceLayout',
+        'actionsLayout': 'ZAnswerActionsLayout',
+        'submitWidth': 'ZAnswerSubmitWidth',
+        'gradingVisibility': 'ZAnswerGradingVisibility',
+      };
+      admises.forEach((String champ, String type) {
+        final Partition p = partitionOf(synthetic(
+          param: 'this.$champ,',
+          field: 'final $type? $champ;',
+        ));
+        expect(p.cosmetics, contains(champ),
+            reason: 'le type admis NOMMÉMENT n\'est pas retranché : $type');
+      });
+
+      // Contre-preuve : les trois SUFFIXES employés par ces admissions restent
+      // sans pouvoir. Un type inédit qui les porterait entrerait sans examen si
+      // l'admission avait fui en règle de suffixe.
+      const Map<String, String> voisines = <String, String>{
+        'futureLayout': 'ZFutureLayout',
+        'futureWidth': 'ZFutureWidth',
+        'futureVisibility': 'ZFutureVisibility',
+      };
+      voisines.forEach((String champ, String type) {
+        final Partition p = partitionOf(synthetic(
+          param: 'this.$champ,',
+          field: 'final $type? $champ;',
+        ));
+        expect(p.seams, contains(champ),
+            reason: '🔴 l\'admission a fui en règle de SUFFIXE : tout type '
+                'nommé « $type » entrerait désormais sans examen');
+      });
+    });
+
+    test('🔴 un PORT inédit reste un SEAM malgré les trois admissions', () {
       final Partition p = partitionOf(synthetic(
         param: 'this.otherPort,',
         field: 'final ZSomeOtherPort? otherPort;',

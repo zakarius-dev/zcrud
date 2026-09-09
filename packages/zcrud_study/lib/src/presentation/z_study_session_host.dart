@@ -57,6 +57,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
     show
+        ZAnswerActionsLayout,
+        ZAnswerChoiceLayout,
+        ZAnswerGradingVisibility,
+        ZAnswerSubmitWidth,
         ZDisplayStateBinding,
         ZDisplayStateOwnerMixin,
         ZIndexController,
@@ -312,6 +316,10 @@ class ZStudySessionHost extends StatefulWidget {
     this.qualityColorKeyFor,
     this.qualityPreviewLabelFor,
     this.qualityEmphasis = ZSrsQualityEmphasis.none,
+    this.answerChoiceLayout,
+    this.answerActionsLayout,
+    this.answerSubmitWidth,
+    this.answerGradingVisibility,
     this.headerBuilder,
     this.counterBuilder,
     this.gradingBuilder,
@@ -379,6 +387,10 @@ class ZStudySessionHost extends StatefulWidget {
     this.cardBackgroundColor,
     this.qualityLabelKeyFor = zDefaultQualityLabelKey,
     this.qualityEmphasis = ZSrsQualityEmphasis.none,
+    this.answerChoiceLayout,
+    this.answerActionsLayout,
+    this.answerSubmitWidth,
+    this.answerGradingVisibility,
     this.progressStyle,
     this.progressDotsGeometry,
     this.progressLinearThickness,
@@ -590,6 +602,42 @@ class ZStudySessionHost extends StatefulWidget {
   /// Le défaut [ZSrsQualityEmphasis.none] rend la rangée historique à
   /// l'identique (fond plein, aucun bord).
   final ZSrsQualityEmphasis qualityEmphasis;
+
+  /// Disposition d'une ligne de choix de la surface de saisie (QCM,
+  /// Vrai/Faux).
+  ///
+  /// `null` ⇒ la disposition du [preset] s'il en décrit une, sinon le jeton de
+  /// thème, sinon la ligne nue de référence.
+  final ZAnswerChoiceLayout? answerChoiceLayout;
+
+  /// Disposition des deux contrôles d'aide de la surface de saisie
+  /// (« indice », « je ne sais pas »).
+  ///
+  /// `null` ⇒ la disposition du [preset] s'il en décrit une, sinon le jeton de
+  /// thème, sinon la colonne de référence.
+  final ZAnswerActionsLayout? answerActionsLayout;
+
+  /// Largeur du contrôle de soumission de la surface de saisie.
+  ///
+  /// `null` ⇒ la largeur du [preset] s'il en décrit une, sinon le jeton de
+  /// thème, sinon la largeur du contenu.
+  final ZAnswerSubmitWidth? answerSubmitWidth;
+
+  /// Moment d'apparition de la rangée de paliers de notation.
+  ///
+  /// `null` ⇒ le moment du [preset] s'il en décrit un, sinon le jeton de
+  /// thème, sinon l'apparition après soumission.
+  ///
+  /// 🔴 [ZAnswerGradingVisibility.always] change l'**ordre des gestes** : la
+  /// rangée est montée et active avant toute réponse, et un palier tapé alors
+  /// est une notation manuelle — elle part par [onQualitySelected], la voie de
+  /// notation habituelle, et verrouille la surface. Une carte notée à la main
+  /// produit exactement une notation, jamais deux.
+  ///
+  /// Sans [onQualitySelected], aucune rangée n'est montée avant la réponse :
+  /// il n'existerait aucune voie par où la notation pourrait partir. Ce
+  /// réglage n'a aucun effet quand [gradingBuilder] remplace la surface.
+  final ZAnswerGradingVisibility? answerGradingVisibility;
 
   /// Slot d'en-tête. `null` ⇒ absent de l'arbre (AD-4).
   final ZStudySessionHeaderBuilder? headerBuilder;
@@ -1284,9 +1332,9 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
   /// l'assemblage passent par ici, sinon la moitié des habillages manquerait
   /// sur l'un des deux sans qu'aucune assertion ne bouge.
   ///
-  /// Priorité **paramètre explicite > preset** sur chacun des cinq maillons,
-  /// jamais en bloc : un hôte qui ne pose qu'une hauteur de liseré garde le
-  /// reste du chrome décrit par son preset.
+  /// Priorité **paramètre explicite > preset** sur chacun des maillons, jamais
+  /// en bloc : un hôte qui ne pose qu'une hauteur de liseré garde le reste du
+  /// chrome décrit par son preset.
   Widget _defaultCard(
     BuildContext context,
     ZFlashcard card,
@@ -1305,6 +1353,11 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
       accentHeight: widget.cardAccentHeight ?? chrome?.accentHeight,
       backgroundColor:
           widget.cardBackgroundColor ?? _presetCardBackground(context),
+      // `null` est transmis TEL QUEL, jamais remplacé par une teinte de repli :
+      // la carte résout `paramètre ?? jeton`, donc un `null` laisse le jeton de
+      // thème peindre. Une teinte fabriquée ici rendrait ce jeton inexprimable
+      // pour tout hôte qui pose un preset.
+      shadowColor: chrome?.resolveShadowColor(context, card),
       revealController: revealController,
     );
   }
@@ -1487,6 +1540,18 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
       qualityColorKeyFor: widget.qualityColorKeyFor,
       qualityPreviewLabelFor: widget.qualityPreviewLabelFor,
       qualityEmphasis: widget.qualityEmphasis,
+      // Formes de la surface — un seul maillon est résolu ici (paramètre de
+      // l'écran, puis forme décrite par le preset) ; les deux nuls laissent
+      // passer `null`, et la surface reprend sa chaîne habituelle (jeton de
+      // thème, puis référence). L'arbre est alors celui d'avant ce chemin.
+      choiceLayout:
+          widget.answerChoiceLayout ?? widget.preset?.answerChoiceLayout,
+      actionsLayout:
+          widget.answerActionsLayout ?? widget.preset?.answerActionsLayout,
+      submitWidth:
+          widget.answerSubmitWidth ?? widget.preset?.answerSubmitWidth,
+      gradingVisibility: widget.answerGradingVisibility ??
+          widget.preset?.answerGradingVisibility,
     );
   }
 

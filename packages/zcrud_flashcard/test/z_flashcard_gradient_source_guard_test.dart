@@ -57,9 +57,11 @@ void main() {
           .map((f) => f.path.replaceAll(r'\', '/').split('/lib/').last)
           .toList();
 
+      // Le porteur est le FOYER de la chaîne, pas la carte : la carte
+      // l'appelle. Une carte qui reparaîtrait ici aurait recopié un maillon.
       expect(
         porteurs,
-        <String>['src/presentation/z_flashcard_review_card.dart'],
+        <String>['src/presentation/z_flashcard_type_gradient.dart'],
         reason: 'une seule voie package doit atteindre le resolver hôte',
       );
     },

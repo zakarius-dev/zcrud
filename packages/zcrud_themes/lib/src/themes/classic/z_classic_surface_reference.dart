@@ -52,6 +52,19 @@ abstract final class ZClassicSurfaceReference {
   /// Rayon d'une tuile ou d'une pastille (12).
   static const Radius tileRadius = Radius.circular(12);
 
+  // Relevé : `…/widgets/interactive_flashcard_repetition_card.dart:411, :421,
+  // :425` — la carte de révision porte le MÊME rayon à ses trois sites de coin
+  // (silhouette de l'ombre, découpe, corps).
+
+  /// Rayon d'une carte de flashcard (20).
+  ///
+  /// Distinct de [cardRadius] : une carte de révision est plus arrondie que
+  /// les cartes et les champs de l'écran, et les deux valeurs se règlent
+  /// indépendamment. Alimente le jeton `ZcrudTheme.flashcardCardRadius`, dont
+  /// la carte de révision est le seul consommateur — un rayon qui vaudrait
+  /// aussi pour les champs de saisie devrait passer par `radiusM`.
+  static const Radius flashcardCardRadius = Radius.circular(20);
+
   /// Cible tactile minimale, en dp (invariant AD-13). Plancher : le thème ne
   /// descend jamais en dessous.
   static const double minTapTarget = 48;

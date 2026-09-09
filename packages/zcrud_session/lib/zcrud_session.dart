@@ -56,6 +56,10 @@ export 'src/domain/z_white_exam_verdict.dart';
 //   par zéro).
 // `ZCardAdvanceBehavior` + table unique des défauts par mode
 // (`zDefaultAdvanceBehavior`) : jamais redécidée par un widget.
+// Géométries de RÉFÉRENCE des formes de la surface de saisie notée — la
+// dernière marche de la chaîne `paramètre > jeton > référence`. Aucune
+// couleur : une couleur de référence serait une couleur en dur (FR-26).
+export 'src/presentation/z_answer_input_reference.dart';
 export 'src/presentation/z_card_advance_behavior.dart';
 // Régime d'apparition de la correction. Gate de rendu seul (défaut
 // `immediate`, comportement historique inchangé) : en `deferred`, la

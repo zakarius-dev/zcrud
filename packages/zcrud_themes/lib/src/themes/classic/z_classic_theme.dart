@@ -47,6 +47,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
     show
+        ZAnswerActionsLayout,
+        ZAnswerChoiceLayout,
+        ZAnswerSubmitWidth,
         ZColorKeyResolver,
         ZColorPair,
         ZGradientResolver,
@@ -73,6 +76,24 @@ import 'z_classic_surface_reference.dart';
 const String _kFlashcardTypeGradientKeyPrefix = 'flashcard.type.';
 
 /// Le thème Classic : fabriques de `ZcrudTheme` et résolveurs prêts à brancher.
+///
+/// ## Ce thème pose des FORMES, jamais un ordre de gestes
+///
+/// Une forme déplace des pixels : un rayon de coin, une ligne de choix en
+/// tuile, deux contrôles d'aide côte à côte, une soumission pleine largeur.
+/// Poser une forme ne change ni ce qu'un écran fait, ni l'ordre dans lequel
+/// l'utilisateur le fait.
+///
+/// `ZAnswerGradingVisibility.always` n'est pas une forme : il rend la rangée
+/// de paliers de notation **active avant toute réponse**, et un palier tapé y
+/// vaut alors **notation manuelle** — la saisie devient inerte et le contrôle
+/// de soumission disparaît. C'est un changement de **contrat de session**.
+///
+/// **Ce thème ne le pose donc jamais**, et `ZcrudTheme.answerInputGradingVisibility`
+/// reste `null` sous lui. Deux voies existent pour l'obtenir, toutes deux
+/// explicites : le paramètre `gradingVisibility` de la surface de saisie, ou
+/// l'assemblage d'écran de session que l'application choisit. Le choix
+/// appartient à l'écran, jamais à sa peinture.
 abstract final class ZClassicTheme {
   /// Identité de ce thème dans le registre ouvert.
   static const ZThemeSpec spec = ZThemeCatalog.classic;
@@ -120,6 +141,41 @@ abstract final class ZClassicTheme {
       badgeRadius: ZClassicSurfaceReference.tileRadius,
       studyCardRadius: ZClassicSurfaceReference.cardRadius,
       folderCardRadius: ZClassicSurfaceReference.cardRadius,
+      // Rayon de la carte de flashcard. Mesuré à 20 là où les cartes et les
+      // champs valent 14 — sans ce jeton, la carte suivrait `radiusM`, c'est-
+      // à-dire le rayon des CHAMPS de saisie, et la relever obligerait à
+      // arrondir aussi toutes les zones de texte. Portée mesurée : la carte de
+      // révision est le SEUL consommateur du jeton dans tout le dépôt (garde
+      // `z_classic_review_card_radius_test.dart`, qui balaie les `lib/`) ; le
+      // poser n'atteint donc aucune autre surface.
+      flashcardCardRadius: ZClassicSurfaceReference.flashcardCardRadius,
+      // ⚠️ Le TRIO de géométrie d'ombre (`cardShadowBlurRadius`,
+      // `cardShadowOffset`, `cardShadowAlpha`) est DÉLIBÉRÉMENT NON POSÉ, et
+      // pas seulement parce qu'il est global (il gouverne aussi les cartes de
+      // dossier et les cartes d'outils d'étude, via
+      // `zResolveCardShadowDecoration`). La raison décisive est mesurée dans
+      // `z_flashcard_review_card.dart` : la branche du trio est testée AVANT
+      // celle de la teinte et rend immédiatement, sa couleur venant du rôle
+      // `CardThemeData.shadowColor`. Poser le trio rendrait donc le paramètre
+      // `shadowColor` de la carte INERTE — c'est-à-dire supprimerait la seule
+      // voie par laquelle un assemblage peut donner à chaque carte l'ombre
+      // teintée de son type.
+      // Formes de la surface de SAISIE notée. Ce sont des formes, et une forme
+      // est ce qu'un thème pose : la matière (fonds, liserés) reste résolue
+      // par les rôles du `ColorScheme` et par les clés du seam, jamais par une
+      // valeur écrite ici.
+      answerInputChoiceLayout: ZAnswerChoiceLayout.tile,
+      answerInputActionsLayout: ZAnswerActionsLayout.sideBySide,
+      answerInputSubmitWidth: ZAnswerSubmitWidth.full,
+      // ⚠️ `answerInputGradingVisibility` est DÉLIBÉRÉMENT NON POSÉ.
+      // Les trois réglages ci-dessus déplacent des pixels ; celui-là déplace
+      // un GESTE. En `always`, la rangée de paliers est active avant toute
+      // réponse, et un palier tapé y vaut notation manuelle : la saisie
+      // devient inerte et la soumission disparaît. Un thème qui le poserait
+      // changerait l'ordre des gestes de toutes les sessions de l'application
+      // sans que personne l'ait demandé. La voie précise existe : le paramètre
+      // `gradingVisibility` de la surface, ou l'assemblage d'écran de session
+      // que l'hôte choisit explicitement.
       // Dégradés par type de carte : le maillon JETON, qui est un REPLI et non
       // une décision. Les deux cartes consultent d'abord le seam
       // (`z_flashcard_review_card.dart:912-928`,

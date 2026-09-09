@@ -825,8 +825,31 @@ void main() {
       final ZStudySessionPreset preset = ZStudySessionPreset.classic();
       expect(preset.header, isNull,
           reason: '🔴 un constructeur d\'en-tête fabriqué pour rien');
-      expect(preset.cardChrome, isNull,
-          reason: '🔴 un chrome de carte fabriqué pour rien');
+
+      // Le chrome, lui, est TOUJOURS décrit — parce que `classic` y pose sa
+      // direction d'ombre par type, qu'aucun jeton de thème ne peut porter.
+      // Ce n'est donc pas un descripteur vide, et l'assertion mesure qu'il ne
+      // porte QUE cette direction : un champ d'habillage qui s'y glisserait
+      // sans valeur demandée serait un objet fabriqué pour rien.
+      final ZCardChromeSpecBuilder? chrome = preset.cardChrome;
+      expect(chrome, isNotNull,
+          reason: '🔴 la direction d\'ombre par type de `classic` a disparu');
+      final ZCardChromeSpec spec = chrome!(
+        ZFlashcard(
+          id: 'ad4',
+          folderId: kHarnessFolderId,
+          type: ZFlashcardType.openQuestion,
+          question: 'q',
+          answer: 'r',
+        ),
+      );
+      expect(spec.shadowColorResolver, isNotNull);
+      expect(spec.shadowColor, isNull,
+          reason: '🔴 une teinte d\'ombre fabriquée pour rien');
+      expect(spec.typeGradientKey, isNull);
+      expect(spec.instructionBanner, isNull);
+      expect(spec.questionTypeBadgeBuilder, isNull);
+      expect(spec.accentHeight, isNull);
     });
   });
 }

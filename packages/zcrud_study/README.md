@@ -186,6 +186,26 @@ Trois règles tiennent tout le contrat :
   composé par vous : en régime SRS `remaining + reviewed != total` (une carte
   ratée est réinsérée dans la file), et aucune formule ne convient à tous.
 
+L'**ombre de la carte suit son type** sous `classic` : sa teinte est la première
+couleur du dégradé qui identifie ce type, résolue carte par carte, par la même
+chaîne que le liseré et la pastille (`flashcard.type.<type>` soumis à votre
+résolveur, puis le nom de type nu, puis le jeton `flashcardTypeGradients`). Un
+thème ne peut pas décrire cette forme : il n'a qu'une teinte d'ombre, quand un
+écran montre plusieurs types côte à côte.
+
+```dart
+preset: ZStudySessionPreset.classic(
+  cardShadowColor: theme.shadowColor,   // …ou une teinte UNIQUE, qui gagne
+),
+```
+
+Un type dont aucun dégradé n'est résoluble ne reçoit **pas** de teinte : le jeton
+de thème `flashcardCardShadowColor` garde alors la main, et sans lui la carte ne
+porte aucune ombre. Sans preset, aucune ombre n'entre dans l'arbre. La fonction
+qui résout la teinte, `zFlashcardTypeShadowColor`, est publique : elle se pose
+telle quelle sur `ZCardChromeSpec.shadowColorResolver`, ou s'enrobe pour n'agir
+que sur certains types.
+
 La **forme** de la progression se décrit au même endroit : `classic` pose la
 géométrie de sa direction de design — pastilles `14 × 10`, point courant allongé
 `2,4 ×`, écart `12`, file centrée sur une seule rangée — et l'épaisseur `8` de la
@@ -211,11 +231,49 @@ Aucune de ces valeurs n'est imposée : laissées nulles, l'indicateur garde le
 rendu qu'il avait — point carré de `gapM`, point courant à `1,5 ×`, écart
 `gapS`, file alignée au bord de lecture qui passe à la ligne.
 
+La **forme de la surface de saisie** se décrit au même endroit — quatre réglages,
+tous nullables, résolus par la chaîne `paramètre de l'écran > preset > jeton
+`ZcrudTheme.answerInput*` > référence` :
+
+| Réglage | Valeur de référence | Ce que `classic` pose |
+|---|---|---|
+| `answerChoiceLayout` | `compact` — ligne de choix nue | `tile` — fond, liseré, coins arrondis |
+| `answerActionsLayout` | `stacked` — « indice » et « je ne sais pas » empilés | `sideBySide` — même ligne, pourtour tracé |
+| `answerSubmitWidth` | `content` — soumission à la largeur du contenu | `full` — largeur entière |
+| `answerGradingVisibility` | `afterSubmit` — rangée de paliers après la réponse | `always` — rangée montée d'emblée |
+
+```dart
+ZStudySessionScaffold(
+  title: l10n.sessionTitle,
+  mode: ZReviewMode.spaced,
+  queue: cards,
+  reviewer: reviewer,
+  onQualitySelected: onQuality,          // sans lui, aucune rangée de paliers
+  preset: ZStudySessionPreset.classic(),
+  // …et le paramètre de l'écran bat le preset, forme par forme :
+  answerGradingVisibility: ZAnswerGradingVisibility.afterSubmit,
+)
+```
+
+> ⚠️ **`always` change l'ORDRE DES GESTES.** La rangée de paliers est montée et
+> **active avant la réponse**, et un palier tapé alors **est une notation
+> manuelle** : elle part par `onQualitySelected` — la voie de notation
+> habituelle, aucune autre — et **verrouille** la surface (saisie inerte,
+> soumission et contrôles d'aide retirés). Une carte notée à la main produit
+> **exactement une** notation, jamais deux, et aucune `ZFlashcardSubmission`
+> n'est fabriquée. Sans `onQualitySelected`, aucune rangée n'est montée et le
+> réglage n'a aucun effet. Pour garder l'ordre habituel — répondre, puis noter —
+> posez `answerGradingVisibility: ZAnswerGradingVisibility.afterSubmit`.
+
+Ces quatre réglages n'ont d'effet que sur la surface **du socle** : un écran qui
+remplace la saisie entière par `gradingBuilder` en devient responsable.
+
 Pour un besoin plus fin, `ZStudySessionPreset` se construit champ par champ
 (`header`, `cardChrome`, `progressStyle`, `progressDotsGeometry`,
 `progressLinearThickness`, `progressSegmentedMarkerThickness`,
-`cardBackgroundColorKey`) — et `ZSessionHeaderSpec.buildRow` rend la rangée
-d'en-tête seule, réutilisable dans un en-tête à vous.
+`cardBackgroundColorKey`, `answerChoiceLayout`, `answerActionsLayout`,
+`answerSubmitWidth`, `answerGradingVisibility`) — et `ZSessionHeaderSpec
+.buildRow` rend la rangée d'en-tête seule, réutilisable dans un en-tête à vous.
 
 ### Trois façons de monter une session {#trois-facons}
 

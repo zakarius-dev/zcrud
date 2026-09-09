@@ -68,6 +68,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 
 import '../domain/z_flashcard_submission.dart';
+import 'z_answer_input_reference.dart';
 import 'z_card_advance_behavior.dart';
 import 'z_correction_visibility.dart';
 import 'z_srs_quality_buttons.dart';
@@ -204,6 +205,10 @@ class ZFlashcardAnswerInput extends StatefulWidget {
     this.onAdvance,
     this.markSkippedSubmissions = false,
     this.bottomInset,
+    this.choiceLayout,
+    this.actionsLayout,
+    this.submitWidth,
+    this.gradingVisibility,
     super.key,
   });
 
@@ -432,6 +437,66 @@ class ZFlashcardAnswerInput extends StatefulWidget {
     'zAnswerInputBottomInset',
   );
 
+  /// Disposition d'une ligne de choix (QCM et Vrai/Faux).
+  ///
+  /// `null` (défaut) ⇒ le jeton [ZcrudTheme.answerInputChoiceLayout], puis la
+  /// référence ([ZAnswerChoiceLayout.compact]). Nullable **par contrat** :
+  /// sans cela, « posé au défaut » et « non posé » seraient indistinguables et
+  /// la chaîne à trois maillons deviendrait inexprimable.
+  final ZAnswerChoiceLayout? choiceLayout;
+
+  /// Disposition des deux contrôles d'aide (« indice », « je ne sais pas »).
+  ///
+  /// `null` (défaut) ⇒ le jeton [ZcrudTheme.answerInputActionsLayout], puis la
+  /// référence ([ZAnswerActionsLayout.stacked]).
+  final ZAnswerActionsLayout? actionsLayout;
+
+  /// Largeur du contrôle de soumission.
+  ///
+  /// `null` (défaut) ⇒ le jeton [ZcrudTheme.answerInputSubmitWidth], puis la
+  /// référence ([ZAnswerSubmitWidth.content]).
+  final ZAnswerSubmitWidth? submitWidth;
+
+  /// Moment d'apparition de la rangée de paliers de notation.
+  ///
+  /// `null` (défaut) ⇒ le jeton [ZcrudTheme.answerInputGradingVisibility],
+  /// puis la référence ([ZAnswerGradingVisibility.afterSubmit]).
+  ///
+  /// 🔴 En [ZAnswerGradingVisibility.always], la rangée est montée et active
+  /// AVANT toute réponse, et **un palier tapé avant d'avoir répondu EST une
+  /// notation manuelle** : elle part par [onQualitySelected] — la voie de
+  /// notation habituelle, aucune autre — et **verrouille** la surface (saisie
+  /// inerte, contrôle de soumission retiré, contrôles d'aide retirés). Une
+  /// carte notée à la main produit donc **exactement une** notation, jamais
+  /// deux.
+  ///
+  /// Sans [onQualitySelected], aucune rangée n'est montée avant la réponse :
+  /// il n'y aurait aucune voie par où la notation pourrait partir.
+  ///
+  /// En régime de correction reportée, rien n'est peint — ni avant, ni après
+  /// la soumission : c'est l'hôte qui révèle en fin d'examen.
+  final ZAnswerGradingVisibility? gradingVisibility;
+
+  /// Clé de la ligne des deux contrôles d'aide — présente seulement en
+  /// [ZAnswerActionsLayout.sideBySide].
+  static const ValueKey<String> actionsRowKey = ValueKey<String>(
+    'zAnswerActionsRow',
+  );
+
+  /// Clé de l'étirement du contrôle de soumission — présente seulement en
+  /// [ZAnswerSubmitWidth.full] **et** sous une largeur bornée.
+  static const ValueKey<String> submitFullWidthKey = ValueKey<String>(
+    'zAnswerSubmitFullWidth',
+  );
+
+  /// Clé de couleur du pourtour du contrôle « indice » en disposition côte à
+  /// côte — résolue par le seam de clés du cœur, jamais par une valeur.
+  static const String hintOutlineColorKey = 'zcrud.answerInput.hint';
+
+  /// Clé de couleur du pourtour du contrôle « je ne sais pas » en disposition
+  /// côte à côte — résolue par le seam de clés du cœur, jamais par une valeur.
+  static const String dontKnowOutlineColorKey = 'zcrud.answerInput.dontKnow';
+
   /// Voie unique de résolution du builder du slot de contenu.
   ///
   /// Tear-off statique, jamais `?? (c, s) => …` : une closure serait
@@ -548,6 +613,14 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
   /// pas » après une bonne réponse ré-émettrait une note basse par-dessus,
   /// fabriquant un lapse sur une réponse exacte.
   bool _submitLocked = false;
+
+  /// Palier tapé À LA MAIN avant toute réponse (`null` : aucun).
+  ///
+  /// Ne vaut QUE pour le régime où la rangée de paliers est montée avant la
+  /// soumission. Dans le régime de référence, ce champ reste `null` pour
+  /// toujours : rien de ce qui le lit ne s'exécute, et la surface rend
+  /// strictement ce qu'elle rendait avant son existence.
+  int? _manualQuality;
 
   /// Verrou d'indice one-shot (même discipline) — une demande en vol
   /// interdit la suivante.
@@ -677,6 +750,7 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     // Périme tout appel de port en vol (voir [_generation]).
     _generation++;
     _submitLocked = false;
+    _manualQuality = null;
     _hintInFlight = false;
     _selected.value = <int>{};
     _shownHints.value = const <String>[];
@@ -1027,6 +1101,40 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     }
   }
 
+  /// Verrou effectif de la surface.
+  ///
+  /// Le verrou imposé par l'hôte prime ; à défaut, une notation manuelle
+  /// (palier tapé avant d'avoir répondu) verrouille elle aussi ; sinon la
+  /// correction locale décide seule, comme toujours.
+  ///
+  /// Sans notation manuelle — donc TOUJOURS dans le régime de référence —
+  /// cette valeur est LITTÉRALEMENT `widget.isSubmitted` : la surface reçoit
+  /// exactement ce qu'elle recevait avant l'existence de ce chemin.
+  bool? get _effectiveSubmitted =>
+      _manualQuality != null ? true : widget.isSubmitted;
+
+  /// Notation MANUELLE — palier tapé avant toute réponse.
+  ///
+  /// Une seule écriture, jamais deux : le verrou de soumission one-shot est
+  /// posé ICI, sur le même champ que les trois chemins de soumission, si bien
+  /// qu'aucune soumission ultérieure ne peut plus partir au barème. Et il est
+  /// LU en entrée, si bien qu'un second tap n'émet rien non plus.
+  ///
+  /// La notation part par la voie habituelle (`onQualitySelected`) : aucune
+  /// seconde voie n'est ouverte.
+  void _handleManualGrade(int quality) {
+    if (_submitLocked) return;
+    _submitLocked = true;
+    // Un `setState` ici, et nulle part ailleurs : la notation manuelle est un
+    // évènement TERMINAL (elle retire la saisie, les contrôles d'aide et la
+    // soumission d'un coup), pas une frappe. La granularité SM-1 vise la
+    // frappe — reconstruire la surface une fois, au moment où elle cesse
+    // d'être saisissable, ne la met pas en cause. Ce chemin est de surcroît
+    // inatteignable dans le régime de référence.
+    setState(() => _manualQuality = quality);
+    widget.onQualitySelected?.call(quality);
+  }
+
   /// Applique la réserve d'inset et en transfère la PROPRIÉTÉ au sous-arbre.
   ///
   /// Deux gestes, jamais un seul :
@@ -1064,6 +1172,18 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
+    // Chaîne de résolution, identique pour les quatre : paramètre de la
+    // surface > jeton de thème > référence. Les deux premiers maillons sont
+    // nullables, donc « posé au défaut » reste distinguable de « non posé ».
+    final ZAnswerActionsLayout actionsLayout =
+        widget.actionsLayout ??
+        theme.answerInputActionsLayout ??
+        ZAnswerActionsLayout.stacked;
+    final bool sideBySide = actionsLayout == ZAnswerActionsLayout.sideBySide;
+    final ZAnswerGradingVisibility gradingVisibility =
+        widget.gradingVisibility ??
+        theme.answerInputGradingVisibility ??
+        ZAnswerGradingVisibility.afterSubmit;
     return _withBottomInset(
       context,
       Column(
@@ -1096,15 +1216,31 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
             // émise — et déclencherait un appel IA facturé pour une carte
             // déjà corrigée.
             correction: _correction,
-            submittedOverride: widget.isSubmitted,
+            submittedOverride: _effectiveSubmitted,
             onRequestHint: _requestHint,
+            outlined: sideBySide,
+            // En disposition côte à côte, le second contrôle rejoint le
+            // premier DANS la ligne : il n'est donc plus monté ici. En
+            // disposition de référence, ce créneau reste `null` et la colonne
+            // est EXACTEMENT celle d'avant l'existence de ce chemin.
+            trailingAction: sideBySide
+                ? _DontKnowButton(
+                    correction: _correction,
+                    submittedOverride: _effectiveSubmitted,
+                    onPressed: _submitDontKnow,
+                    outlined: true,
+                  )
+                : null,
           ),
-          SizedBox(height: theme.gapM),
-          _DontKnowButton(
-            correction: _correction,
-            submittedOverride: widget.isSubmitted,
-            onPressed: _submitDontKnow,
-          ),
+          if (!sideBySide) ...<Widget>[
+            SizedBox(height: theme.gapM),
+            _DontKnowButton(
+              correction: _correction,
+              submittedOverride: _effectiveSubmitted,
+              onPressed: _submitDontKnow,
+              outlined: false,
+            ),
+          ],
           SizedBox(height: theme.gapM),
           _CorrectionSection(
             correction: _correction,
@@ -1115,6 +1251,9 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
             qualityColorKeyFor: widget.qualityColorKeyFor,
             qualityPreviewLabelFor: widget.qualityPreviewLabelFor,
             qualityEmphasis: widget.qualityEmphasis,
+            gradingVisibility: gradingVisibility,
+            manualQuality: _manualQuality,
+            onManualGrade: _handleManualGrade,
           ),
         ],
       ),
@@ -1127,46 +1266,61 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
   ///
   /// Un propriétaire chacun : cette table ne redécide pas la table
   /// d'affichage de `ZFlashcardReviewCard`. Deux tables, deux objets.
-  Widget _buildInput(BuildContext context) => switch (widget.card.type) {
-    ZFlashcardType.multipleChoice => _ChoicesInput(
-      card: widget.card,
-      selected: _selected,
-      correction: _correction,
-      visibility: widget.correctionVisibility,
-      choiceContentBuilder: widget.choiceContentBuilder,
-      submittedOverride: widget.isSubmitted,
-      onSubmit: _submitLocal,
-    ),
-    ZFlashcardType.trueOrFalse => _TrueFalseInput(
-      card: widget.card,
-      correction: _correction,
-      visibility: widget.correctionVisibility,
-      submittedOverride: widget.isSubmitted,
-      // Le tap vaut la soumission (auto-soumission, aucun second geste).
-      // L'observation précède la soumission : l'hôte apprend ce qui a été
-      // répondu avant d'apprendre que c'est parti au barème.
-      onAnswer: (value) {
-        _notifyAnswerChanged(answeredTrue: value);
-        _submitLocal(answeredTrue: value);
-      },
-    ),
-    ZFlashcardType.openQuestion ||
-    ZFlashcardType.exercise ||
-    ZFlashcardType.fillBlank ||
-    ZFlashcardType.shortAnswer => _WrittenInput(
-      controller: _answerController,
-      focusNode: _answerFocus,
-      correction: _correction,
-      validator: _requiredValidator(context),
-      fieldBuilder: widget.writtenAnswerFieldBuilder,
-      submittedOverride: widget.isSubmitted,
-      onSubmit: _submitWritten,
-      onSubmitWithoutEvaluation:
-          (widget.allowSkipEvaluation && widget.evaluationPort != null)
-          ? () => _submitWritten(skipEvaluation: true)
-          : null,
-    ),
-  };
+  Widget _buildInput(BuildContext context) {
+    final ZcrudTheme theme = ZcrudTheme.of(context);
+    final ZAnswerChoiceLayout choiceLayout =
+        widget.choiceLayout ??
+        theme.answerInputChoiceLayout ??
+        ZAnswerChoiceLayout.compact;
+    final ZAnswerSubmitWidth submitWidth =
+        widget.submitWidth ??
+        theme.answerInputSubmitWidth ??
+        ZAnswerSubmitWidth.content;
+    return switch (widget.card.type) {
+      ZFlashcardType.multipleChoice => _ChoicesInput(
+        card: widget.card,
+        selected: _selected,
+        correction: _correction,
+        visibility: widget.correctionVisibility,
+        choiceContentBuilder: widget.choiceContentBuilder,
+        submittedOverride: _effectiveSubmitted,
+        onSubmit: _submitLocal,
+        choiceLayout: choiceLayout,
+        submitWidth: submitWidth,
+      ),
+      ZFlashcardType.trueOrFalse => _TrueFalseInput(
+        card: widget.card,
+        correction: _correction,
+        visibility: widget.correctionVisibility,
+        submittedOverride: _effectiveSubmitted,
+        choiceLayout: choiceLayout,
+        // Le tap vaut la soumission (auto-soumission, aucun second geste).
+        // L'observation précède la soumission : l'hôte apprend ce qui a été
+        // répondu avant d'apprendre que c'est parti au barème.
+        onAnswer: (value) {
+          _notifyAnswerChanged(answeredTrue: value);
+          _submitLocal(answeredTrue: value);
+        },
+      ),
+      ZFlashcardType.openQuestion ||
+      ZFlashcardType.exercise ||
+      ZFlashcardType.fillBlank ||
+      ZFlashcardType.shortAnswer => _WrittenInput(
+        controller: _answerController,
+        focusNode: _answerFocus,
+        correction: _correction,
+        validator: _requiredValidator(context),
+        fieldBuilder: widget.writtenAnswerFieldBuilder,
+        submittedOverride: _effectiveSubmitted,
+        onSubmit: _submitWritten,
+        onSubmitWithoutEvaluation:
+            (widget.allowSkipEvaluation && widget.evaluationPort != null)
+            ? () => _submitWritten(skipEvaluation: true)
+            : null,
+        submitWidth: submitWidth,
+      ),
+    };
+  }
 
   /// Validateur mémoïsé du champ de rédaction (identité stable entre
   /// builds — une closure recréée à chaque build ferait retravailler le
@@ -1277,6 +1431,8 @@ class _ChoicesInput extends StatelessWidget {
     required this.choiceContentBuilder,
     required this.submittedOverride,
     required this.onSubmit,
+    required this.choiceLayout,
+    required this.submitWidth,
   });
 
   final ZFlashcard card;
@@ -1290,6 +1446,12 @@ class _ChoicesInput extends StatelessWidget {
   /// Verrou imposé par l'hôte (`null` : la correction décide seule).
   final bool? submittedOverride;
   final VoidCallback onSubmit;
+
+  /// Disposition résolue d'une ligne de choix.
+  final ZAnswerChoiceLayout choiceLayout;
+
+  /// Largeur résolue du contrôle de soumission.
+  final ZAnswerSubmitWidth submitWidth;
 
   /// Préfixe de clé d'un choix, pour la testabilité.
   static const String choiceKeyPrefix = 'zAnswerChoice_';
@@ -1341,6 +1503,7 @@ class _ChoicesInput extends StatelessWidget {
                       corrected != null && visibility.paintsCorrection,
                   single: single,
                   choiceContentBuilder: choiceContentBuilder,
+                  layout: choiceLayout,
                   // Ne jamais mêler `visibility` à ce gate : il porte le
                   // verrou d'interaction, pas l'affichage. Le rendre sensible
                   // au report ferait re-taper un choix après soumission,
@@ -1360,7 +1523,8 @@ class _ChoicesInput extends StatelessWidget {
                         },
                 ),
               SizedBox(height: theme.gapM),
-              if (!locked) _SubmitButton(onPressed: onSubmit),
+              if (!locked)
+                _SubmitButton(onPressed: onSubmit, width: submitWidth),
             ],
           );
         },
@@ -1381,6 +1545,7 @@ class _ChoiceRow extends StatelessWidget {
     required this.single,
     required this.choiceContentBuilder,
     required this.onTap,
+    required this.layout,
     super.key,
   });
 
@@ -1391,6 +1556,9 @@ class _ChoiceRow extends StatelessWidget {
   final bool single;
   final ZFlashcardChoiceContentBuilder? choiceContentBuilder;
   final VoidCallback? onTap;
+
+  /// Disposition résolue de la ligne.
+  final ZAnswerChoiceLayout layout;
 
   /// Cible tap minimale (invariant AD-13).
   static const double minTarget = 48;
@@ -1430,6 +1598,34 @@ class _ChoiceRow extends StatelessWidget {
                 ))
         : null;
 
+    final bool tile = layout == ZAnswerChoiceLayout.tile;
+    // Sous-arbre STRICTEMENT identique dans les deux dispositions : le glyphe
+    // d'état, le contenu, la cible tactile et les `Semantics` ne bougent pas.
+    // Seul un CADRE s'insère en disposition tuile — la parité des canaux
+    // (sélection, correction) est donc structurelle, pas promise.
+    final Widget body = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: minTarget),
+      child: InkWell(
+        onTap: onTap,
+        // `null` hors tuile : l'arbre et l'encre sont alors exactement ceux
+        // d'avant l'existence de ce paramètre.
+        borderRadius: tile ? _ChoiceTileFrame.radius : null,
+        child: Padding(
+          padding: theme.fieldPadding,
+          child: Row(
+            children: <Widget>[
+              Icon(icon, color: theme.labelColor),
+              SizedBox(width: theme.gapM),
+              Expanded(
+                child:
+                    choiceContentBuilder?.call(context, choice) ??
+                    Text(choice.content, textAlign: TextAlign.start),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
     return MergeSemantics(
       child: Semantics(
         inMutuallyExclusiveGroup: single,
@@ -1437,26 +1633,61 @@ class _ChoiceRow extends StatelessWidget {
         // Le statut de correction est porté par la MÊME node que le libellé du
         // choix ⇒ impossible de l'attacher au voisin.
         value: statusText,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: minTarget),
-          child: InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: theme.fieldPadding,
-              child: Row(
-                children: <Widget>[
-                  Icon(icon, color: theme.labelColor),
-                  SizedBox(width: theme.gapM),
-                  Expanded(
-                    child:
-                        choiceContentBuilder?.call(context, choice) ??
-                        Text(choice.content, textAlign: TextAlign.start),
-                  ),
-                ],
-              ),
-            ),
+        // Le cadre s'insère SOUS les `Semantics`, jamais au-dessus : au-dessus,
+        // le premier objet de rendu de la ligne cesserait de porter la node du
+        // choix, et toute lecture partant de la clé du choix remonterait
+        // jusqu'au défilement — les gardes d'accessibilité de la puce
+        // deviendraient inapplicables à la tuile, c'est-à-dire que la parité
+        // annoncée serait invérifiable.
+        child: tile
+            ? _ChoiceTileFrame(selected: isSelected, child: body)
+            : body,
+      ),
+    );
+  }
+}
+
+/// Cadre de TUILE d'une ligne de choix — monté seulement en
+/// [ZAnswerChoiceLayout.tile].
+///
+/// Aucune couleur en dur : fond et liseré sont des RÔLES du `ColorScheme`
+/// (repli du thème injecté), la géométrie vient de la référence auditée.
+/// La sélection épaissit le trait — une FORME, jamais la seule couleur
+/// (invariant AD-13).
+class _ChoiceTileFrame extends StatelessWidget {
+  const _ChoiceTileFrame({required this.selected, required this.child});
+
+  final bool selected;
+  final Widget child;
+
+  /// Rayon des coins de la tuile — source unique, lue par l'encre de
+  /// l'`InkWell` qu'elle encadre (sans quoi l'éclaboussure déborderait des
+  /// coins).
+  static const BorderRadius radius = BorderRadius.all(
+    ZAnswerInputReference.choiceTileRadius,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final ZcrudTheme theme = ZcrudTheme.of(context);
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsetsDirectional.symmetric(
+        vertical: ZAnswerInputReference.choiceTileGap,
+      ),
+      child: Material(
+        color: theme.surfaceColor ?? scheme.surfaceContainerHighest,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(
+            color: selected ? scheme.primary : scheme.outlineVariant,
+            width: selected
+                ? ZAnswerInputReference.choiceTileSelectedBorderWidth
+                : ZAnswerInputReference.choiceTileBorderWidth,
           ),
         ),
+        child: child,
       ),
     );
   }
@@ -1471,6 +1702,7 @@ class _TrueFalseInput extends StatelessWidget {
     required this.visibility,
     required this.submittedOverride,
     required this.onAnswer,
+    required this.choiceLayout,
   });
 
   final ZFlashcard card;
@@ -1482,6 +1714,9 @@ class _TrueFalseInput extends StatelessWidget {
   /// Verrou imposé par l'hôte (`null` : la correction décide seule).
   final bool? submittedOverride;
   final ValueChanged<bool> onAnswer;
+
+  /// Disposition résolue des deux affordances.
+  final ZAnswerChoiceLayout choiceLayout;
 
   /// Clé du bouton « Vrai ».
   static const ValueKey<String> trueKey = ValueKey<String>('zAnswerTrue');
@@ -1500,6 +1735,32 @@ class _TrueFalseInput extends StatelessWidget {
       );
     }
     final expected = card.isTrue!;
+    if (choiceLayout == ZAnswerChoiceLayout.tile) {
+      // Même affordance qu'un QCM à un seul correct : deux tuiles pleine
+      // largeur, empilées, glyphe radio. L'auto-soumission est INCHANGÉE —
+      // seule la forme change, jamais le geste.
+      return ValueListenableBuilder<_Correction?>(
+        valueListenable: correction,
+        builder: (context, corrected, _) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            _tfTile(
+              context,
+              corrected: corrected,
+              value: true,
+              expected: expected,
+            ),
+            _tfTile(
+              context,
+              corrected: corrected,
+              value: false,
+              expected: expected,
+            ),
+          ],
+        ),
+      );
+    }
     return ValueListenableBuilder<_Correction?>(
       valueListenable: correction,
       builder: (context, corrected, _) => Row(
@@ -1518,6 +1779,87 @@ class _TrueFalseInput extends StatelessWidget {
             expected: expected,
           ),
         ],
+      ),
+    );
+  }
+
+  /// Une tuile V/F — disposition [ZAnswerChoiceLayout.tile].
+  ///
+  /// Canaux à PARITÉ avec la puce : le glyphe radio dit ce que vous avez
+  /// répondu, le marqueur ✓/✗ dit la vérité, et les deux sont annoncés
+  /// (`checked` et `value`) — jamais une couleur seule (invariant AD-13).
+  Widget _tfTile(
+    BuildContext context, {
+    required _Correction? corrected,
+    required bool value,
+    required bool expected,
+  }) {
+    final theme = ZcrudTheme.of(context);
+    final answered = corrected?.answeredTrue;
+    final isCorrect = value == expected;
+    final picked = answered == value;
+    final locked = submittedOverride ?? corrected != null;
+    // Même gate que la puce : les deux canaux de correction (glyphe et
+    // `Semantics.value`) apparaissent ensemble, ou pas du tout.
+    final reveal = corrected != null && visibility.paintsCorrection;
+    final IconData? statusIcon = !reveal
+        ? null
+        : (isCorrect
+              ? (picked ? Icons.check_circle : Icons.check_circle_outline)
+              : (picked ? Icons.cancel : Icons.cancel_outlined));
+    final String? statusValue = !reveal
+        ? null
+        : (isCorrect
+              ? label(context, 'zcrud.flashcard.correct', fallback: 'correct')
+              : label(
+                  context,
+                  'zcrud.flashcard.incorrect',
+                  fallback: 'incorrect',
+                ));
+    final String text = label(
+      context,
+      value ? 'zcrud.flashcard.true' : 'zcrud.flashcard.false',
+      fallback: value ? 'Vrai' : 'Faux',
+    );
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        enabled: !locked,
+        inMutuallyExclusiveGroup: true,
+        checked: picked,
+        label: text,
+        value: statusValue,
+        // Cadre SOUS les `Semantics` — même raison que la ligne de choix.
+        child: _ChoiceTileFrame(
+          selected: picked,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: _ChoiceRow.minTarget),
+            child: InkWell(
+              key: value ? trueKey : falseKey,
+              onTap: locked ? null : () => onAnswer(value),
+              borderRadius: _ChoiceTileFrame.radius,
+              child: Padding(
+                padding: theme.fieldPadding,
+                child: Row(
+                  children: <Widget>[
+                    Icon(
+                      picked
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                      color: theme.labelColor,
+                    ),
+                    SizedBox(width: theme.gapM),
+                    Expanded(child: Text(text, textAlign: TextAlign.start)),
+                    if (statusIcon != null) ...<Widget>[
+                      SizedBox(width: theme.gapS),
+                      Icon(statusIcon, color: theme.labelColor),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1602,6 +1944,7 @@ class _WrittenInput extends StatelessWidget {
     required this.fieldBuilder,
     required this.submittedOverride,
     required this.onSubmit,
+    required this.submitWidth,
     this.onSubmitWithoutEvaluation,
   });
 
@@ -1623,6 +1966,9 @@ class _WrittenInput extends StatelessWidget {
   /// Soumission qui n'appelle pas le port d'évaluation. `null` : bouton
   /// absent (patron d'absence structurelle du dépôt).
   final VoidCallback? onSubmitWithoutEvaluation;
+
+  /// Largeur résolue du contrôle de soumission.
+  final ZAnswerSubmitWidth submitWidth;
 
   /// Clé du champ de rédaction.
   static const ValueKey<String> fieldKey = ValueKey<String>('zAnswerField');
@@ -1700,24 +2046,72 @@ class _WrittenInput extends StatelessWidget {
           builder: (context, corrected, _) =>
               (submittedOverride ?? corrected != null)
               ? const SizedBox.shrink()
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    _SubmitButton(onPressed: onSubmit),
-                    // Voie « évaluer sans IA », offerte à chaque soumission
-                    // et non figée à la construction.
-                    if (onSubmitWithoutEvaluation != null) ...<Widget>[
-                      const SizedBox(width: 8),
-                      _ControlButton(
-                        buttonKey: ZFlashcardAnswerInput.skipEvaluationKey,
-                        labelKey: 'zcrud.flashcard.selfEvaluate',
-                        fallback: 'Évaluer sans IA',
-                        onPressed: onSubmitWithoutEvaluation!,
-                      ),
-                    ],
-                  ],
-                ),
+              : _actions(context),
         ),
+      ],
+    );
+  }
+
+  /// Ligne d'action de la saisie rédigée.
+  ///
+  /// En largeur de RÉFÉRENCE, l'arbre est celui d'avant l'existence du
+  /// réglage : une ligne au plus juste, boutons à la largeur de leur contenu.
+  ///
+  /// En largeur entière, la ligne occupe toute la largeur offerte et ses
+  /// boutons s'en partagent la place à parts égales — la voie « évaluer sans
+  /// IA », quand elle existe, ne peut donc pas être poussée hors du cadre par
+  /// un bouton de soumission étiré.
+  Widget _actions(BuildContext context) {
+    if (submitWidth == ZAnswerSubmitWidth.content) return _contentActions();
+    return LayoutBuilder(
+      // Largeur NON BORNÉE : « toute la largeur » n'existe pas, et un enfant
+      // à flex y lèverait une contrainte infinie. Repli sur la ligne de
+      // référence (AD-10) — jamais une exception.
+      builder: (BuildContext context, BoxConstraints constraints) =>
+          constraints.hasBoundedWidth ? _fullWidthActions() : _contentActions(),
+    );
+  }
+
+  /// Ligne d'action à la largeur du contenu — expression HISTORIQUE.
+  Widget _contentActions() {
+    final VoidCallback? skip = onSubmitWithoutEvaluation;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        _SubmitButton(onPressed: onSubmit),
+        // Voie « évaluer sans IA », offerte à chaque soumission
+        // et non figée à la construction.
+        if (skip != null) ...<Widget>[
+          const SizedBox(width: 8),
+          _ControlButton(
+            buttonKey: ZFlashcardAnswerInput.skipEvaluationKey,
+            labelKey: 'zcrud.flashcard.selfEvaluate',
+            fallback: 'Évaluer sans IA',
+            onPressed: skip,
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Ligne d'action occupant la largeur entière, ses boutons à parts égales.
+  Widget _fullWidthActions() {
+    final VoidCallback? skip = onSubmitWithoutEvaluation;
+    return Row(
+      key: ZFlashcardAnswerInput.submitFullWidthKey,
+      children: <Widget>[
+        Expanded(child: _SubmitButton(onPressed: onSubmit)),
+        if (skip != null) ...<Widget>[
+          const SizedBox(width: 8),
+          Expanded(
+            child: _ControlButton(
+              buttonKey: ZFlashcardAnswerInput.skipEvaluationKey,
+              labelKey: 'zcrud.flashcard.selfEvaluate',
+              fallback: 'Évaluer sans IA',
+              onPressed: skip,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -1733,6 +2127,8 @@ class _HintSection extends StatelessWidget {
     required this.correction,
     required this.submittedOverride,
     required this.onRequestHint,
+    required this.outlined,
+    required this.trailingAction,
   });
 
   final ValueListenable<List<String>> shownHints;
@@ -1750,6 +2146,13 @@ class _HintSection extends StatelessWidget {
   /// Verrou imposé par l'hôte (`null` : la correction décide seule).
   final bool? submittedOverride;
   final VoidCallback onRequestHint;
+
+  /// Le pourtour du contrôle est-il tracé ?
+  final bool outlined;
+
+  /// Second contrôle d'aide, à poser SUR LA MÊME LIGNE que celui-ci
+  /// (`null` : il vit ailleurs dans la colonne, disposition de référence).
+  final Widget? trailingAction;
 
   /// Le bouton « Indice » est-il offert ?
   ///
@@ -1800,16 +2203,57 @@ class _HintSection extends StatelessWidget {
               // rien).
               ValueListenableBuilder<_Correction?>(
                 valueListenable: correction,
-                builder: (context, corrected, _) =>
-                    !(submittedOverride ?? corrected != null) &&
-                        _available(hints)
-                    ? _ControlButton(
-                        buttonKey: hintButtonKey,
-                        labelKey: 'zcrud.flashcard.hint',
-                        fallback: 'Indice',
-                        onPressed: onRequestHint,
-                      )
-                    : const SizedBox.shrink(),
+                builder: (context, corrected, _) {
+                  final Widget? hintButton =
+                      !(submittedOverride ?? corrected != null) &&
+                          _available(hints)
+                      ? _ControlButton(
+                          buttonKey: hintButtonKey,
+                          labelKey: 'zcrud.flashcard.hint',
+                          fallback: 'Indice',
+                          onPressed: onRequestHint,
+                          outlineColorKey: outlined
+                              ? ZFlashcardAnswerInput.hintOutlineColorKey
+                              : null,
+                          outlineSlotIndex: ZColorSlot.tertiary.index,
+                        )
+                      : null;
+                  final Widget? trailing = trailingAction;
+                  // Disposition de référence : EXACTEMENT l'expression
+                  // d'avant l'existence de ce créneau.
+                  if (trailing == null) {
+                    return hintButton ?? const SizedBox.shrink();
+                  }
+                  // Plus rien à servir en indice : le second contrôle occupe
+                  // seul la place, plutôt qu'une moitié de ligne vide.
+                  if (hintButton == null) return trailing;
+                  return LayoutBuilder(
+                    // Largeur NON BORNÉE : aucune ligne à partager, et un
+                    // enfant à flex y lèverait une contrainte infinie. Repli
+                    // sur la colonne de référence (AD-10) — les deux
+                    // contrôles restent atteignables, empilés.
+                    builder:
+                        (BuildContext context, BoxConstraints constraints) =>
+                            constraints.hasBoundedWidth
+                            ? Row(
+                                key: ZFlashcardAnswerInput.actionsRowKey,
+                                children: <Widget>[
+                                  Expanded(child: hintButton),
+                                  SizedBox(width: theme.gapM),
+                                  Expanded(child: trailing),
+                                ],
+                              )
+                            : Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  hintButton,
+                                  SizedBox(height: theme.gapM),
+                                  trailing,
+                                ],
+                              ),
+                  );
+                },
               ),
             ],
           ),
@@ -1839,6 +2283,7 @@ class _DontKnowButton extends StatelessWidget {
     required this.correction,
     required this.submittedOverride,
     required this.onPressed,
+    required this.outlined,
   });
 
   final ValueListenable<_Correction?> correction;
@@ -1846,6 +2291,9 @@ class _DontKnowButton extends StatelessWidget {
   /// Verrou imposé par l'hôte (`null` : la correction décide seule).
   final bool? submittedOverride;
   final VoidCallback onPressed;
+
+  /// Le pourtour du contrôle est-il tracé ?
+  final bool outlined;
 
   /// Clé du bouton.
   static const ValueKey<String> dontKnowKey = ValueKey<String>('zDontKnow');
@@ -1866,6 +2314,10 @@ class _DontKnowButton extends StatelessWidget {
             labelKey: 'zcrud.flashcard.dontKnow',
             fallback: 'Je ne sais pas',
             onPressed: onPressed,
+            outlineColorKey: outlined
+                ? ZFlashcardAnswerInput.dontKnowOutlineColorKey
+                : null,
+            outlineSlotIndex: ZColorSlot.error.index,
           ),
   );
 }
@@ -1881,6 +2333,9 @@ class _CorrectionSection extends StatelessWidget {
     required this.qualityColorKeyFor,
     required this.qualityPreviewLabelFor,
     required this.qualityEmphasis,
+    required this.gradingVisibility,
+    required this.manualQuality,
+    required this.onManualGrade,
   });
 
   final ValueListenable<_Correction?> correction;
@@ -1898,6 +2353,16 @@ class _CorrectionSection extends StatelessWidget {
   final String Function(int quality)? qualityPreviewLabelFor;
   final ZSrsQualityEmphasis qualityEmphasis;
 
+  /// Moment résolu d'apparition de la rangée de paliers.
+  final ZAnswerGradingVisibility gradingVisibility;
+
+  /// Palier déjà tapé À LA MAIN avant toute réponse (`null` : aucun).
+  final int? manualQuality;
+
+  /// Notation manuelle — voie d'émission de la rangée montée avant la
+  /// soumission.
+  final ValueChanged<int> onManualGrade;
+
   /// Clé du bloc de feedback.
   static const ValueKey<String> feedbackKey = ValueKey<String>('zFeedback');
 
@@ -1907,7 +2372,7 @@ class _CorrectionSection extends StatelessWidget {
     return ValueListenableBuilder<_Correction?>(
       valueListenable: correction,
       builder: (context, corrected, _) {
-        if (corrected == null) return const SizedBox.shrink();
+        if (corrected == null) return _beforeSubmission(context);
         // En `deferred` (examen blanc), la correction est posée (verrous
         // intacts) mais rien n'est peint : ni feedback, ni rangée SRS.
         // L'hôte révèle en fin d'examen, depuis les `ZFlashcardSubmission`
@@ -1965,6 +2430,41 @@ class _CorrectionSection extends StatelessWidget {
       },
     );
   }
+
+  /// Rangée de paliers montée AVANT la soumission.
+  ///
+  /// Absente dans le régime de référence — c'est la soumission qui la fait
+  /// apparaître. Absente aussi sans voie de notation (`onQualitySelected`
+  /// nul) : il n'existerait alors aucun chemin par où la note pourrait
+  /// partir, et une rangée qui n'écrit nulle part serait un mensonge. Absente
+  /// enfin quand le régime de correction ne peint rien : en examen blanc, la
+  /// révélation appartient à l'hôte, en fin d'examen.
+  ///
+  /// 🔴 Ce qui est monté ici n'est PAS une pré-sélection : c'est une voie de
+  /// notation ACTIVE. Un palier tapé ici vaut notation manuelle, part par
+  /// `onQualitySelected` — la voie habituelle, aucune autre — et verrouille
+  /// la surface. Une seule écriture, jamais deux.
+  Widget _beforeSubmission(BuildContext context) {
+    final ValueChanged<int>? emit = onQualitySelected;
+    if (gradingVisibility != ZAnswerGradingVisibility.always ||
+        emit == null ||
+        !visibility.paintsCorrection) {
+      return const SizedBox.shrink();
+    }
+    return ZSrsQualityButtons(
+      scale: ZQualityScale.fromConfig(srsConfig),
+      passThreshold: srsConfig.passThreshold,
+      // Aucun palier n'est marqué tant que rien n'a été tapé : marquer une
+      // suggestion ici la ferait passer pour une note acquise alors qu'aucune
+      // réponse n'a été donnée.
+      selectedQuality: manualQuality,
+      onQualitySelected: onManualGrade,
+      labelKeyFor: qualityLabelKeyFor,
+      colorKeyFor: qualityColorKeyFor,
+      previewLabelFor: qualityPreviewLabelFor,
+      emphasis: qualityEmphasis,
+    );
+  }
 }
 
 /// Repli l10n d'une saisie indisponible (invariant AD-10) — jamais un écran
@@ -1984,20 +2484,44 @@ class _UnavailableInput extends StatelessWidget {
 
 /// Bouton de soumission d'une saisie (QCM / rédigée).
 class _SubmitButton extends StatelessWidget {
-  const _SubmitButton({required this.onPressed});
+  const _SubmitButton({
+    required this.onPressed,
+    this.width = ZAnswerSubmitWidth.content,
+  });
 
   final VoidCallback onPressed;
+
+  /// Largeur résolue du contrôle.
+  final ZAnswerSubmitWidth width;
 
   /// Clé du bouton de soumission.
   static const ValueKey<String> submitKey = ValueKey<String>('zSubmit');
 
   @override
-  Widget build(BuildContext context) => _ControlButton(
-    buttonKey: submitKey,
-    labelKey: 'zcrud.flashcard.submit',
-    fallback: 'Valider',
-    onPressed: onPressed,
-  );
+  Widget build(BuildContext context) {
+    final Widget button = _ControlButton(
+      buttonKey: submitKey,
+      labelKey: 'zcrud.flashcard.submit',
+      fallback: 'Valider',
+      onPressed: onPressed,
+    );
+    // Largeur de RÉFÉRENCE : l'arbre est exactement celui d'avant l'existence
+    // de ce réglage — aucun nœud intercalé.
+    if (width == ZAnswerSubmitWidth.content) return button;
+    return LayoutBuilder(
+      // Largeur NON BORNÉE (surface dans une ligne défilante horizontale) :
+      // il n'existe aucune « largeur entière » à occuper, et l'étirement
+      // lèverait une contrainte infinie. Repli sur la référence (AD-10).
+      builder: (BuildContext context, BoxConstraints constraints) =>
+          constraints.hasBoundedWidth
+          ? SizedBox(
+              key: ZFlashcardAnswerInput.submitFullWidthKey,
+              width: double.infinity,
+              child: button,
+            )
+          : button,
+    );
+  }
 }
 
 /// Bouton de contrôle générique — `Semantics` explicites et cible ≥ 48 dp
@@ -2010,12 +2534,25 @@ class _ControlButton extends StatelessWidget {
     required this.onPressed,
     this.statusIcon,
     this.statusValue,
+    this.outlineColorKey,
+    this.outlineSlotIndex = 0,
   });
 
   final ValueKey<String> buttonKey;
   final String labelKey;
   final String fallback;
   final VoidCallback? onPressed;
+
+  /// Clé de couleur du pourtour tracé (`null` : aucun pourtour, rendu de
+  /// référence).
+  ///
+  /// La teinte est RÉSOLUE par le seam de clés du cœur — jamais une valeur
+  /// posée ici. Sans résolveur déclaré par l'hôte, la clé retombe sur un rôle
+  /// du `ColorScheme` ([outlineSlotIndex]), donc sur une couleur dérivée.
+  final String? outlineColorKey;
+
+  /// Rôle du `ColorScheme` servant de repli à [outlineColorKey].
+  final int outlineSlotIndex;
 
   /// Marqueur de correction **non-coloré** (✓/✗), `null` hors correction.
   final IconData? statusIcon;
@@ -2031,6 +2568,20 @@ class _ControlButton extends StatelessWidget {
     final theme = ZcrudTheme.of(context);
     final text = label(context, labelKey, fallback: fallback);
     final icon = statusIcon;
+    final String? key = outlineColorKey;
+    // Le TRAIT seul est teinté : le fond et le libellé gardent leurs rôles,
+    // donc le contraste du texte reste celui que garantit le thème — un
+    // pourtour ne porte aucun texte.
+    final BorderSide? outline = key == null
+        ? null
+        : BorderSide(
+            color: zResolveColorKeyOrSlot(
+              context,
+              key,
+              slotIndex: outlineSlotIndex,
+            ).color,
+            width: ZAnswerInputReference.actionOutlineWidth,
+          );
     return Semantics(
       button: true,
       enabled: onPressed != null,
@@ -2045,7 +2596,17 @@ class _ControlButton extends StatelessWidget {
         ),
         child: Material(
           color: theme.surfaceColor ?? Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.all(theme.radiusM),
+          // Un seul des deux est posé (`Material` l'exige) : sans pourtour,
+          // c'est LITTÉRALEMENT l'expression d'avant l'existence du réglage.
+          borderRadius: outline == null
+              ? BorderRadius.all(theme.radiusM)
+              : null,
+          shape: outline == null
+              ? null
+              : RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(theme.radiusM),
+                  side: outline,
+                ),
           child: InkWell(
             key: buttonKey,
             onTap: onPressed,

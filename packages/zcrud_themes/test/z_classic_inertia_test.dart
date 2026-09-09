@@ -129,6 +129,12 @@ void main() {
       'zcrud.signature.Analyse',
       'zcrud.fieldType.text',
       'success',
+      // Les deux clés de pourtour des contrôles d'aide. Le thème pose la
+      // FORME côte à côte, qui rend ces pourtours ; il ne prétend pas pour
+      // autant en connaître la teinte, faute de valeur mesurable. Elles
+      // retombent donc sur des rôles de l'hôte, comme avant.
+      ZFlashcardAnswerInput.hintOutlineColorKey,
+      ZFlashcardAnswerInput.dontKnowOutlineColorKey,
     ]) {
       expect(ZClassicTheme.colorKeys(scheme, key), isNull, reason: key);
       expect(ZClassicTheme.gradients(scheme, key), isNull, reason: key);

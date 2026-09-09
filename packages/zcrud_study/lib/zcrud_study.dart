@@ -300,10 +300,24 @@ export 'src/presentation/z_study_scope_bar.dart';
 // l'écran lui-même. Un paramètre explicite gagne toujours sur le preset, et un
 // preset absent laisse l'arbre strictement inchangé.
 export 'src/presentation/preset/z_card_chrome_spec.dart';
+// Teinte d'ombre dérivée du dégradé de type : la forme qu'un jeton de thème,
+// valeur unique, ne peut pas porter. Publiée pour être composable — un hôte
+// peut la réutiliser telle quelle ou l'enrober.
+export 'src/presentation/preset/z_card_type_shadow.dart';
 export 'src/presentation/preset/z_session_header_spec.dart';
 export 'src/presentation/preset/z_study_session_preset.dart';
 export 'src/presentation/z_study_session_card_slot.dart';
 export 'src/presentation/z_study_session_host.dart';
+// Types des FORMES de la surface de saisie (disposition des choix et des
+// contrôles d'aide, largeur de soumission, moment d'apparition de la rangée de
+// paliers), ré-exportés pour qu'un appelant de `ZStudySessionHost` puisse les
+// nommer sans second import.
+export 'package:zcrud_core/zcrud_core.dart'
+    show
+        ZAnswerActionsLayout,
+        ZAnswerChoiceLayout,
+        ZAnswerGradingVisibility,
+        ZAnswerSubmitWidth;
 // Types des seams de présentation de la rangée de notation, ré-exportés pour
 // qu'un appelant de `ZStudySessionHost` puisse les nommer sans second import.
 export 'package:zcrud_session/zcrud_session.dart'

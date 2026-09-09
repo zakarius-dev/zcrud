@@ -3,6 +3,59 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.51.0 — 2026-09-09
+
+### Ajouté
+
+- **`ZcrudTheme.flashcardCardRadius`** (`Radius?`) — canal de FORME propre aux
+  cartes de flashcard. Sans lui, leurs coins n'avaient aucun jeton : la carte
+  de révision suivait `radiusM` (le rayon des **champs de formulaire**), et la
+  carte de liste une constante de référence. Arrondir les cartes obligeait
+  donc à déplacer `radiusM` global, donc à arrondir aussi toutes les zones de
+  saisie. Câblé aux quatre sites (déclaration, constructeur, `copyWith`,
+  `lerp` par `_lerpNullableRadius` — jamais `Radius.lerp`, qui matérialiserait
+  un rayon fantôme dès `t > 0` à la place du repli du consommateur).
+  `null` par défaut ⇒ rendu strictement inchangé.
+
+- **Quatre jetons de FORME de la surface de saisie notée dans `ZcrudTheme`**,
+  avec les quatre énumérations qui les typent. La surface
+  (`ZFlashcardAnswerInput`) avait déjà des seams de COULEUR — résolveurs de
+  clés de la rangée de paliers — et **aucun seam de forme** : changer la forme
+  de trois boutons exigeait de réimplémenter par `gradingBuilder` le champ de
+  réponse, les choix, la correction, les indices, l'évaluation et la
+  soumission.
+  - `answerInputChoiceLayout` (`ZAnswerChoiceLayout?` : `compact` | `tile`) —
+    une ligne de choix reste une zone tappable nue, ou devient une tuile
+    (fond, liseré, coins, marge verticale ; liseré épaissi à la sélection).
+  - `answerInputActionsLayout` (`ZAnswerActionsLayout?` : `stacked` |
+    `sideBySide`) — les deux contrôles d'aide restent empilés, ou partagent
+    une ligne à parts égales, pourtour tracé.
+  - `answerInputSubmitWidth` (`ZAnswerSubmitWidth?` : `content` | `full`) —
+    largeur du contrôle de soumission. Largeur non bornée ⇒ repli sur
+    `content` (AD-10).
+  - `answerInputGradingVisibility` (`ZAnswerGradingVisibility?` :
+    `afterSubmit` | `always`) — moment d'apparition de la rangée de paliers.
+
+  Les quatre sont **`null` par défaut**, et `null` signifie « la surface
+  applique sa référence » : un thème qui n'en déclare aucun rend STRICTEMENT
+  ce que la surface rendait avant leur existence. `lerp` DISCRET et
+  null-préservant sur les quatre (une disposition, une largeur et un régime de
+  gestes basculent, ils ne s'interpolent pas).
+
+### ⚠️ Avertissement de COMPORTEMENT — `ZAnswerGradingVisibility.always`
+
+Poser `always` (par jeton ou par paramètre) **change l'ordre des gestes** :
+la rangée de paliers est montée **et active AVANT** la soumission, et un
+palier tapé avant d'avoir répondu **EST une notation manuelle**. Elle part par
+la voie de notation habituelle (`onQualitySelected`) et **verrouille** la
+surface : la saisie devient inerte, le contrôle de soumission disparaît, et
+aucune seconde notation ne peut être émise pour la même carte. Une carte notée
+à la main produit donc **exactement une** écriture, jamais deux (AD-9/AD-33).
+
+Posé par **jeton**, cet effet porte sur **toutes** les surfaces de saisie de
+l'application, pas seulement celle qu'on visait. Sans `always`, l'ordre des
+gestes est strictement inchangé.
+
 ## 3.50.0 — 2026-09-09
 
 ### Ajouté

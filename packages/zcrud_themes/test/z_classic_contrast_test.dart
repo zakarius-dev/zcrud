@@ -19,6 +19,7 @@ import 'package:zcrud_core/zcrud_core.dart'
         zContrastRatio,
         zSignatureForegroundFor,
         zSignatureMidBand;
+import 'package:zcrud_session/zcrud_session.dart' show ZAnswerInputReference;
 import 'package:zcrud_themes/zcrud_themes.dart';
 
 const Color _white = Color(0xFFFFFFFF);
@@ -182,6 +183,98 @@ void main() {
         ),
         lessThan(kZNonTextMinContrast),
       );
+    });
+  });
+
+  group('surface de saisie — les formes posées par le thème', () {
+    // La disposition en tuile et les contrôles à contour introduisent un fond
+    // et des traits. Le fond est celui que le thème pose (`surfaceColor`) ; les
+    // traits sont des RÔLES de l'hôte, qu'aucun jeton de ce thème n'atteint.
+    // La garde mesure les six combinaisons réelles, sépare celles qui portent
+    // de l'INFORMATION de celles qui ne font que grouper, et fige l'arbitrage
+    // des secondes plutôt que de le laisser tacite.
+
+    /// Le fond réellement lu par la tuile et par les contrôles à contour :
+    /// `theme.surfaceColor`, que le thème pose.
+    Color fillFor(Brightness b) {
+      final Color? posed = ZClassicTheme
+          .forTheme(ThemeData(brightness: b))
+          .surfaceColor;
+      expect(posed, isNotNull,
+          reason: '$b : le thème ne pose plus le fond que la tuile lit — la '
+              'mesure porterait sur une couleur qui n\'est plus peinte.');
+      return posed!;
+    }
+
+    for (final Brightness brightness in Brightness.values) {
+      test('le TEXTE d\'une tuile tient 4.5:1 en ${brightness.name}', () {
+        final ColorScheme scheme = ThemeData(brightness: brightness).colorScheme;
+        final Color fill = fillFor(brightness);
+        for (final MapEntry<String, Color> fg in <String, Color>{
+          'onSurface': scheme.onSurface,
+          'onSurfaceVariant': scheme.onSurfaceVariant,
+        }.entries) {
+          final double ratio = zContrastRatio(fg.value, fill);
+          expect(
+            ratio,
+            greaterThanOrEqualTo(kZTextMinContrast),
+            reason: '${fg.key} sur $fill : ${ratio.toStringAsFixed(2)}:1.',
+          );
+        }
+      });
+
+      test('le liseré SÉLECTIONNÉ tient 3.0:1 en ${brightness.name}', () {
+        // C'est LUI qui porte l'information : il désigne la ligne choisie.
+        final ColorScheme scheme = ThemeData(brightness: brightness).colorScheme;
+        final Color fill = fillFor(brightness);
+        final double ratio = zContrastRatio(scheme.primary, fill);
+        expect(
+          ratio,
+          greaterThanOrEqualTo(kZNonTextMinContrast),
+          reason: 'primary sur $fill : ${ratio.toStringAsFixed(2)}:1 — la '
+              'sélection ne se voit plus.',
+        );
+      });
+    }
+
+    test('la sélection reste portée par une FORME, pas par la seule teinte', () {
+      // Non-vacuité de l'arbitrage ci-dessous : si l'épaisseur ne changeait
+      // pas, la teinte serait le seul canal, et un liseré sous le plancher
+      // deviendrait un défaut d'accessibilité au lieu d'un choix de rendu.
+      expect(
+        ZAnswerInputReference.choiceTileSelectedBorderWidth,
+        greaterThan(ZAnswerInputReference.choiceTileBorderWidth),
+      );
+    });
+
+    test('les traits de GROUPEMENT restent sous 3.0:1 — arbitrage figé', () {
+      // Trois traits ne portent aucune information : le pourtour d'une tuile
+      // non sélectionnée et les deux pourtours des contrôles d'aide. Ce qui
+      // identifie ces éléments est ailleurs — le libellé du contrôle (≥ 9:1
+      // mesuré ci-dessus) et, pour la sélection, l'épaisseur du trait.
+      //
+      // Aucun jeton de ce thème ne les atteint : la tuile lit
+      // `scheme.outlineVariant` NU, et les deux contrôles retombent sur des
+      // rôles CONTENEUR (pastel par construction, faits pour être des fonds).
+      // Le rendu de référence est d'ailleurs plus faible encore sur ce même
+      // trait (~1.1:1). Le jour où ces rôles passent le plancher, ce test
+      // rougit et l'arbitrage est à refaire — plutôt que de rester tacite.
+      for (final Brightness b in Brightness.values) {
+        final ColorScheme scheme = ThemeData(brightness: b).colorScheme;
+        final Color fill = fillFor(b);
+        for (final MapEntry<String, Color> trait in <String, Color>{
+          'outlineVariant': scheme.outlineVariant,
+          'tertiaryContainer': scheme.tertiaryContainer,
+          'errorContainer': scheme.errorContainer,
+        }.entries) {
+          expect(
+            zContrastRatio(trait.value, fill),
+            lessThan(kZNonTextMinContrast),
+            reason: '$b ${trait.key} : le trait tient désormais le plancher — '
+                'ré-arbitrer, la note ci-dessus ne décrit plus le rendu.',
+          );
+        }
+      }
     });
   });
 

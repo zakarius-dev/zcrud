@@ -403,5 +403,10 @@ export 'src/presentation/z_flashcard_markdown_content.dart';
 export 'src/presentation/z_flashcard_review_card.dart';
 export 'src/presentation/z_flashcard_true_false_field_widget.dart';
 export 'src/presentation/z_flashcard_type_field_widget.dart';
+// Foyer UNIQUE de la chaîne de résolution du dégradé de type
+// (`zResolveFlashcardTypeGradient` + le préfixe de clé). Publié parce que
+// d'autres surfaces peignent la même identité de type : elles l'appellent au
+// lieu de recomposer les maillons — une recopie dériverait en silence.
+export 'src/presentation/z_flashcard_type_gradient.dart';
 // Primitive unique de « réduire les animations » (accessibilité).
 export 'src/presentation/z_reduce_motion.dart';

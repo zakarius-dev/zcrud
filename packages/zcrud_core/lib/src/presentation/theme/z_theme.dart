@@ -318,6 +318,101 @@ enum ZContentHubDensity {
   compact,
 }
 
+/// DISPOSITION d'une ligne de choix de la surface de saisie notée
+/// (`ZFlashcardAnswerInput`) — token de FORME : il dit comment la ligne est
+/// bâtie, jamais de quelle couleur elle est peinte.
+///
+/// **Aucune couleur ici** : les deux dispositions se peignent des mêmes rôles
+/// et des mêmes clés que le reste de la surface. Priorité, partout :
+/// paramètre `choiceLayout` > [ZcrudTheme.answerInputChoiceLayout] >
+/// défaut-référence.
+enum ZAnswerChoiceLayout {
+  /// **Rendu de référence** (défaut) : la ligne est une zone tappable NUE —
+  /// un glyphe d'état suivi du contenu du choix, sans fond, sans liseré, sans
+  /// coins. C'est ce que rend une surface qui ne déclare rien.
+  compact,
+
+  /// La ligne devient une **tuile** : fond de surface, liseré de pourtour,
+  /// coins arrondis, marge verticale entre tuiles. Le glyphe d'état et le
+  /// contenu sont INCHANGÉS — donc les canaux non colorés (sélection,
+  /// correction) et la sémantique restent à parité stricte avec [compact].
+  ///
+  /// Le liseré s'ÉPAISSIT sur la ligne sélectionnée : la sélection reste
+  /// portée par une FORME, jamais par la seule couleur.
+  tile,
+}
+
+/// DISPOSITION des deux contrôles d'aide (« indice » et « je ne sais pas »)
+/// de la surface de saisie notée — token de FORME.
+///
+/// Priorité : paramètre `actionsLayout` >
+/// [ZcrudTheme.answerInputActionsLayout] > défaut-référence.
+enum ZAnswerActionsLayout {
+  /// **Rendu de référence** (défaut) : les deux contrôles sont EMPILÉS, chacun
+  /// à la largeur de son contenu, séparés par la gouttière moyenne. C'est ce
+  /// que rend une surface qui ne déclare rien.
+  stacked,
+
+  /// Les deux contrôles partagent une **même ligne**, à parts égales, séparés
+  /// par la gouttière moyenne, et leur pourtour est **tracé** (bouton à
+  /// contour). Chacun garde son plancher de cible.
+  ///
+  /// Le trait du pourtour se résout par **clé de couleur** (jamais par une
+  /// valeur en dur) : sans résolveur de clé déclaré, il retombe sur le
+  /// liseré de pourtour du thème — le contour existe toujours, sa teinte
+  /// reste au thème.
+  sideBySide,
+}
+
+/// LARGEUR du contrôle de soumission de la surface de saisie notée —
+/// token de FORME.
+///
+/// Priorité : paramètre `submitWidth` > [ZcrudTheme.answerInputSubmitWidth] >
+/// défaut-référence.
+enum ZAnswerSubmitWidth {
+  /// **Rendu de référence** (défaut) : le contrôle est à la largeur de son
+  /// contenu (plancher de cible compris). C'est ce que rend une surface qui
+  /// ne déclare rien.
+  content,
+
+  /// Le contrôle occupe la **largeur entière** offerte à la surface.
+  ///
+  /// Largeur NON BORNÉE (surface dans une ligne défilante horizontale) ⇒
+  /// repli sur [content] : sans largeur finie il n'y a aucune « largeur
+  /// entière » à occuper, et l'étirement lèverait une contrainte non bornée.
+  full,
+}
+
+/// MOMENT d'apparition de la rangée de paliers de notation de la surface de
+/// saisie notée — token de FORME **et de contrat**.
+///
+/// À ne pas confondre avec `ZCorrectionVisibility`, qui gouverne si la
+/// correction est PEINTE (immédiate ou reportée en fin d'examen) : celui-ci
+/// gouverne QUAND la rangée de paliers est MONTÉE.
+///
+/// Priorité : paramètre `gradingVisibility` >
+/// [ZcrudTheme.answerInputGradingVisibility] > défaut-référence.
+enum ZAnswerGradingVisibility {
+  /// **Rendu de référence** (défaut) : la rangée n'est montée qu'APRÈS la
+  /// soumission, avec le palier suggéré pré-sélectionné. L'ordre des gestes
+  /// est strictement celui d'une surface qui ne déclare rien.
+  afterSubmit,
+
+  /// La rangée est montée **et active dès le premier build**, avant toute
+  /// réponse.
+  ///
+  /// 🔴 **Règle de contrat** : un palier tapé avant d'avoir répondu **EST une
+  /// notation manuelle**. Elle part par la voie de notation habituelle
+  /// (`onQualitySelected`), et elle **VERROUILLE la surface** : la saisie
+  /// devient inerte, le contrôle de soumission disparaît, et aucune seconde
+  /// notation ne peut être émise pour la même carte. Une carte notée à la
+  /// main produit donc **exactement une** écriture, jamais deux.
+  ///
+  /// Le sens inverse est déjà celui de [afterSubmit] : répondre d'abord, puis
+  /// taper un palier, reste une notation unique.
+  always,
+}
+
 /// Extension de thème du chrome CRUD (FR-26). Couleurs sémantiques dérivées au
 /// repli ; espacements/rayons/insets directionnels comme tokens injectables.
 @immutable
@@ -461,6 +556,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.flashcardTypeGradients,
     this.flashcardCardBackgroundColor,
     this.flashcardCardShadowColor,
+    this.flashcardCardRadius,
+    this.answerInputChoiceLayout,
+    this.answerInputActionsLayout,
+    this.answerInputSubmitWidth,
+    this.answerInputGradingVisibility,
     this.folderCardRadius,
     this.folderCardBorderSide,
     this.folderCardContentPadding,
@@ -1552,6 +1652,82 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// `lerp` par [_lerpNullableColor] et **non** `Color.lerp`, même raison
   /// que [flashcardCardBackgroundColor].
   final Color? flashcardCardShadowColor;
+
+  /// Rayon des coins des cartes de flashcard.
+  ///
+  /// `null` ⇒ le consommateur applique son repli. Chaîne de résolution
+  /// TOTALE : paramètre de rayon de la carte > ce jeton > repli du
+  /// consommateur.
+  ///
+  /// Ce jeton existe parce que les cartes de flashcard n'avaient aucun canal
+  /// de forme propre : leurs coins suivaient [radiusM], le rayon des
+  /// **champs de formulaire**. Les relever obligeait à déplacer [radiusM]
+  /// GLOBAL, donc à arrondir aussi toutes les zones de saisie.
+  ///
+  /// Un rayon de carte n'est ni celui des champs ([radiusM]), ni celui des
+  /// cartes d'étude ([studyCardRadius]) : les trois se règlent
+  /// indépendamment.
+  ///
+  /// `lerp` par [_lerpNullableRadius] et **non** `Radius.lerp` : ce dernier
+  /// matérialiserait un rayon fantôme dès `t > 0`, à la place du repli du
+  /// consommateur.
+  final Radius? flashcardCardRadius;
+
+  // ── Surface de SAISIE notée (`ZFlashcardAnswerInput`) ─────────────────────
+  // Quatre jetons de FORME, et rien d'autre : aucune couleur, aucune
+  // dimension. La surface avait déjà des seams de COULEUR (résolveurs de clés
+  // de la rangée de paliers) ; elle n'en avait AUCUN de forme, et la seule
+  // voie pour changer la forme de trois boutons était de réimplémenter la
+  // surface entière par `gradingBuilder`.
+  //
+  // Chacun est `null` par DÉFAUT, et `null` signifie « la surface applique sa
+  // valeur de RÉFÉRENCE » (`ZAnswerInputReference`) — jamais « rien ne se
+  // rend ». Priorité, partout : paramètre de la surface > ce jeton >
+  // défaut-référence.
+
+  /// Disposition d'une ligne de choix de la surface de saisie notée.
+  ///
+  /// `null` ⇒ la surface applique sa référence
+  /// ([ZAnswerChoiceLayout.compact] : ligne nue, sans fond ni liseré).
+  ///
+  /// `lerp` DISCRET (une disposition ne s'interpole pas) et null-préservant
+  /// par construction : `null` ↔ `null` reste `null`, donc une transition de
+  /// thème ne matérialise jamais la référence de la surface.
+  final ZAnswerChoiceLayout? answerInputChoiceLayout;
+
+  /// Disposition des deux contrôles d'aide de la surface de saisie notée.
+  ///
+  /// `null` ⇒ la surface applique sa référence
+  /// ([ZAnswerActionsLayout.stacked] : contrôles empilés, largeur du contenu).
+  ///
+  /// `lerp` DISCRET, null-préservant — même raison que
+  /// [answerInputChoiceLayout].
+  final ZAnswerActionsLayout? answerInputActionsLayout;
+
+  /// Largeur du contrôle de soumission de la surface de saisie notée.
+  ///
+  /// `null` ⇒ la surface applique sa référence
+  /// ([ZAnswerSubmitWidth.content] : largeur du contenu).
+  ///
+  /// `lerp` DISCRET, null-préservant — même raison que
+  /// [answerInputChoiceLayout].
+  final ZAnswerSubmitWidth? answerInputSubmitWidth;
+
+  /// Moment d'apparition de la rangée de paliers de notation de la surface de
+  /// saisie notée.
+  ///
+  /// `null` ⇒ la surface applique sa référence
+  /// ([ZAnswerGradingVisibility.afterSubmit] : rangée montée après la
+  /// soumission).
+  ///
+  /// 🔴 Poser [ZAnswerGradingVisibility.always] par ce jeton CHANGE l'ordre
+  /// des gestes de TOUTES les surfaces de saisie de l'application : un palier
+  /// tapé avant d'avoir répondu vaut notation manuelle et verrouille la
+  /// soumission. La règle complète est documentée sur l'énumération.
+  ///
+  /// `lerp` DISCRET, null-préservant — un régime de gestes qui s'interpolerait
+  /// rendrait, à mi-transition, une surface ni notable ni soumissible.
+  final ZAnswerGradingVisibility? answerInputGradingVisibility;
 
   // ── Carte de DOSSIER d'étude par défaut ───────────────────────────────────
   // La carte de dossier était la SEULE des six de la famille à n'avoir aucun
@@ -3090,6 +3266,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Map<String, ZGradientSpec>? flashcardTypeGradients,
     Color? flashcardCardBackgroundColor,
     Color? flashcardCardShadowColor,
+    Radius? flashcardCardRadius,
+    ZAnswerChoiceLayout? answerInputChoiceLayout,
+    ZAnswerActionsLayout? answerInputActionsLayout,
+    ZAnswerSubmitWidth? answerInputSubmitWidth,
+    ZAnswerGradingVisibility? answerInputGradingVisibility,
     Radius? folderCardRadius,
     BorderSide? folderCardBorderSide,
     EdgeInsetsGeometry? folderCardContentPadding,
@@ -3392,6 +3573,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         flashcardCardBackgroundColor ?? this.flashcardCardBackgroundColor,
     flashcardCardShadowColor:
         flashcardCardShadowColor ?? this.flashcardCardShadowColor,
+    flashcardCardRadius: flashcardCardRadius ?? this.flashcardCardRadius,
+    answerInputChoiceLayout:
+        answerInputChoiceLayout ?? this.answerInputChoiceLayout,
+    answerInputActionsLayout:
+        answerInputActionsLayout ?? this.answerInputActionsLayout,
+    answerInputSubmitWidth:
+        answerInputSubmitWidth ?? this.answerInputSubmitWidth,
+    answerInputGradingVisibility:
+        answerInputGradingVisibility ?? this.answerInputGradingVisibility,
     folderCardRadius: folderCardRadius ?? this.folderCardRadius,
     folderCardBorderSide: folderCardBorderSide ?? this.folderCardBorderSide,
     folderCardContentPadding:
@@ -4134,6 +4324,28 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.flashcardCardShadowColor,
         t,
       ),
+      flashcardCardRadius: _lerpNullableRadius(
+        flashcardCardRadius,
+        other.flashcardCardRadius,
+        t,
+      ),
+      // Jetons DISCRETS de la surface de saisie : une disposition, une largeur
+      // et un régime de gestes ne s'interpolent pas — ils BASCULENT. Et ils
+      // sont null-préservants par construction (`null`↔`null` reste `null`),
+      // donc une transition de thème ne matérialise jamais la référence de la
+      // surface.
+      answerInputChoiceLayout: t < 0.5
+          ? answerInputChoiceLayout
+          : other.answerInputChoiceLayout,
+      answerInputActionsLayout: t < 0.5
+          ? answerInputActionsLayout
+          : other.answerInputActionsLayout,
+      answerInputSubmitWidth: t < 0.5
+          ? answerInputSubmitWidth
+          : other.answerInputSubmitWidth,
+      answerInputGradingVisibility: t < 0.5
+          ? answerInputGradingVisibility
+          : other.answerInputGradingVisibility,
       // Chaque jeton de carte de dossier est null-PRÉSERVANT :
       // `null`↔`null` reste `null`, donc la valeur de RÉFÉRENCE du
       // consommateur n'est JAMAIS matérialisée par une transition de thème

@@ -3,6 +3,79 @@
 Toutes les modifications notables de `zcrud_session` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.51.0 — 2026-09-09
+
+### Ajouté
+
+- **Quatre réglages de FORME sur `ZFlashcardAnswerInput`**, tous **nullables**
+  et tous branchés sur la chaîne `paramètre > jeton `ZcrudTheme` > référence`.
+  Avant ce lot la surface n'avait **aucun** seam de forme : changer la forme de
+  trois boutons imposait de réimplémenter par `gradingBuilder` le champ de
+  réponse, les choix, la correction, les indices, l'évaluation et la
+  soumission.
+  - `choiceLayout` (`ZAnswerChoiceLayout?`) — `tile` transforme une ligne de
+    choix en **tuile pleine largeur** (fond, liseré, coins arrondis, marge
+    verticale), glyphe radio/case inchangé. Vaut aussi pour le **Vrai/Faux**,
+    dont les deux affordances deviennent alors deux tuiles empilées. La
+    sélection **épaissit le trait** (une forme, jamais la seule couleur) et la
+    sémantique reste **strictement** celle de la puce.
+  - `actionsLayout` (`ZAnswerActionsLayout?`) — `sideBySide` pose « Indice » et
+    « Je ne sais pas » sur une **même ligne, à parts égales**, pourtour
+    **tracé**. La teinte du trait est résolue par **clé**
+    (`ZFlashcardAnswerInput.hintOutlineColorKey` /
+    `dontKnowOutlineColorKey`) via le seam `ZcrudScope.colorKeyResolver` ;
+    sans résolveur, elle retombe sur un **rôle** du `ColorScheme`.
+  - `submitWidth` (`ZAnswerSubmitWidth?`) — `full` étire la soumission sur la
+    **largeur entière** ; dans la saisie rédigée, la ligne d'action occupe
+    toute la largeur et ses boutons s'en partagent la place.
+  - `gradingVisibility` (`ZAnswerGradingVisibility?`) — `always` monte la
+    rangée de paliers **avant** la soumission (voir l'avertissement ci-dessous).
+- **`ZAnswerInputReference`** — les géométries de référence des formes (rayon
+  et marge de tuile, épaisseurs de liseré et de pourtour), centralisées et
+  auditées, exportées par le barrel. Aucune couleur : une couleur de référence
+  serait une couleur en dur (FR-26).
+
+Repli défini partout où la contrainte manque (AD-10) : sous une **largeur non
+bornée**, `full` retombe sur la largeur du contenu et `sideBySide` sur la
+colonne — jamais une exception.
+
+**Inertie** : sans aucun réglage ni aucun jeton, l'arbre rendu et la matière
+peinte sont **identiques** à ceux d'avant ce lot (dumps figés, égalité stricte).
+
+### ⚠️ Avertissement de COMPORTEMENT — `ZAnswerGradingVisibility.always`
+
+Sous `always`, la rangée de paliers est montée **et active AVANT** la
+soumission, et **un palier tapé avant d'avoir répondu EST une notation
+manuelle** : elle part par `onQualitySelected` — la voie de notation
+habituelle, aucune autre — et **verrouille** la surface (saisie inerte,
+soumission et contrôles d'aide retirés). Une carte notée à la main produit
+**exactement une** notation, jamais deux (AD-9/AD-33), et **aucune**
+`ZFlashcardSubmission` n'est fabriquée. Aucune rangée n'est montée sans
+`onQualitySelected`, ni en correction reportée.
+
+Sans `always`, l'ordre des gestes est **strictement** celui d'avant.
+
+### Corrigé
+
+- **La pile de session laissait voir la carte suivante dans la cellule de la
+  carte de devant.** `CardSwiper` impose à chaque carte la hauteur exacte de sa
+  cellule ; le `Stack` que `ZSessionCardSwiper` bâtit autour de chaque carte
+  **desserrait** cette contrainte (`StackFit.loose` par défaut). Une carte qui
+  se dimensionne sur son contenu restait donc collée en haut, et la carte
+  suivante — décalée et mise à l'échelle par le paquet — se voyait dans tout
+  l'espace laissé libre. **Mesuré** : carte de devant haute de 100 dp dans une
+  cellule de 528, et **416 dp** de la carte suivante peints dessous ; après
+  correction, **13,6 dp** — le liseré de profondeur attendu.
+
+  ⚠️ **Impact selon l'hôte.** Un hôte **passif** voit ses cartes courtes
+  remplir désormais leur cellule (le contenu se répartit sur toute la hauteur,
+  comme le fait déjà `ZcrudTheme.studyCardContentAlignment`). Un hôte qui
+  **compensait** — hauteur imposée à la carte, `SizedBox`/`Expanded` ajouté
+  dans son `cardBuilder` pour combler le vide — doit **retirer sa
+  compensation** : elle s'additionnerait au correctif. Les cartes qui
+  remplissaient déjà leur cellule ne bougent **pas d'un dp** (inertie mesurée
+  au rectangle).
+
 ## 3.50.0 — 2026-09-09
 
 ### Ajouté

@@ -61,8 +61,9 @@ d'intervalle est une phrase : le paquet fournit la clé, l'hôte fournit le text
 ## Le thème « Classic »
 
 Cinq paliers de notation (teinte, premier plan, glyphe), quatre dégradés par type
-de carte, deux fonds de page et deux fonds de carte, trois rayons, deux bandeaux
-de tête, six confettis et une médaille de fin de session.
+de carte, deux fonds de page et deux fonds de carte, quatre rayons, trois formes
+de la surface de saisie, deux bandeaux de tête, six confettis et une médaille de
+fin de session.
 
 Toutes les valeurs sont **mesurées** sur un rendu réel et recopiées avec leur
 `fichier:ligne` d'origine ; une table figée dans les tests les compare une à une.
@@ -80,16 +81,74 @@ Le contraste est vérifié contre le texte que l'hôte y peint réellement
 (`onSurface` et `onSurfaceVariant` du `ColorScheme` de la luminosité), au
 plancher texte 4,5:1 — jamais contre un candidat théorique.
 
-### Deux jetons délibérément laissés vides
+### Le rayon de la carte de flashcard
+
+Le thème pose `ZcrudTheme.flashcardCardRadius` à **20**, là où les cartes et les
+champs valent 14. Sans ce jeton, la carte de révision suivait `radiusM`,
+c'est-à-dire le rayon des **champs de saisie** : la relever aurait obligé à
+arrondir aussi toutes les zones de texte de l'application.
+
+Ce jeton n'est **pas** global, et c'est mesuré : une garde balaie les `lib/` de
+tous les paquets et vérifie que la carte de révision en est le **seul** lecteur.
+Le poser n'atteint donc aucune autre surface — ni les cartes de liste, ni les
+cartes de dossier, ni les champs. Le jour où une seconde surface se met à le
+lire, la garde rougit et l'arbitrage est à refaire.
+
+### Les formes de la surface de saisie notée
+
+Trois réglages de **forme** sont posés, tous mesurés sur le rendu de référence en
+largeur mobile :
+
+| Jeton | Valeur | Rendu |
+|---|---|---|
+| `answerInputChoiceLayout` | `tile` | la ligne de choix devient une tuile : fond, liseré, coins ; le liseré s'épaissit sur la ligne sélectionnée |
+| `answerInputActionsLayout` | `sideBySide` | « indice » et « je ne sais pas » partagent une ligne, à parts égales, pourtour tracé |
+| `answerInputSubmitWidth` | `full` | le contrôle de soumission occupe la largeur entière |
+
+**Aucune couleur n'est posée avec elles.** Le fond de la tuile est le
+`surfaceColor` que le thème pose déjà ; le liseré et les pourtours restent des
+rôles du `ColorScheme` de l'hôte et des clés du seam de couleur. Le contraste des
+combinaisons réelles est recalculé par une garde, aux deux luminosités : le texte
+d'une tuile tient 4,5:1 (9,3:1 au pire mesuré) et le liseré **sélectionné** —
+celui qui porte l'information — tient 3,0:1 (6,4:1 au pire).
+
+Les traits qui ne font que **grouper** (pourtour d'une tuile non sélectionnée,
+pourtours des deux contrôles d'aide) restent sous 3,0:1 : ils retombent sur
+`outlineVariant` et sur des rôles conteneur, qu'aucun jeton de ce thème
+n'atteint. Ce n'est pas un défaut d'accessibilité — ce qui identifie ces éléments
+est leur libellé, et la sélection est portée par l'**épaisseur** du trait, jamais
+par sa seule teinte. L'arbitrage est figé par une garde qui rougira si ces rôles
+changent.
+
+### Trois jetons délibérément laissés vides
 
 | Jeton | Pourquoi il reste `null` |
 |---|---|
 | `flashcardCardShadowColor` | Le rendu de référence dérive la teinte de l'ombre du dégradé du **type** de carte : elle vaut quatre couleurs, là où le jeton n'en porte qu'une. En figer une repeindrait les trois autres. |
 | `studySessionDividerColor` | L'écran de référence ne trace **aucun** trait entre la pile et la zone de notation : la notation y vit dans la carte. Il n'y a rien à relever. |
+| `answerInputGradingVisibility` | Ce n'est pas une forme : `always` rend la rangée de paliers active **avant** toute réponse, et un palier tapé y vaut notation manuelle — la saisie devient inerte et la soumission disparaît. Un thème ne change pas l'ordre des gestes d'une session. |
 
-Dans les deux cas, le rôle de l'hôte (`shadowColor`, `outlineVariant`) reste le
-repli, et une garde vérifie que ces jetons ne se remplissent pas en silence. Un
-jeton vide est une valeur non mesurée ; ce n'est pas un oubli.
+Dans les trois cas, le repli (`shadowColor`, `outlineVariant`, la référence de la
+surface) reste en place, et une garde vérifie que ces jetons ne se remplissent
+pas en silence. Un jeton vide est une valeur non mesurée, ou une décision qui
+n'appartient pas à un thème ; ce n'est pas un oubli.
+
+La géométrie d'ombre (`cardShadowBlurRadius`, `cardShadowOffset`,
+`cardShadowAlpha`) reste vide elle aussi, et pour une raison plus forte que sa
+portée globale : la carte de révision teste ce trio **avant** la teinte et rend
+immédiatement, en prenant sa couleur du rôle `CardThemeData.shadowColor`. Le
+poser rendrait donc le paramètre `shadowColor` de la carte **inerte** — c'est la
+seule voie par laquelle un écran peut donner à chaque carte l'ombre teintée de
+son type.
+
+L'ordre des gestes se règle là où il se décide, jamais dans la peinture :
+
+```dart
+ZFlashcardAnswerInput(
+  gradingVisibility: ZAnswerGradingVisibility.always,
+  // …
+)
+```
 
 ### Le liseré de carte : une valeur mesurée, passée en paramètre
 

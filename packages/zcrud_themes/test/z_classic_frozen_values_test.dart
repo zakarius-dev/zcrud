@@ -144,6 +144,15 @@ void main() {
           const Radius.circular(14)); // :1097
       expect(ZClassicSurfaceReference.tileRadius,
           const Radius.circular(12)); // :1056
+      // interactive_flashcard_repetition_card.dart:411, :421, :425 — la carte
+      // de révision porte le même rayon à ses trois sites de coin.
+      expect(ZClassicSurfaceReference.flashcardCardRadius,
+          const Radius.circular(20));
+      // Le rayon de la carte de révision et celui des autres cartes sont deux
+      // valeurs distinctes du relevé : les confondre reviendrait à n'en avoir
+      // relevé qu'une.
+      expect(ZClassicSurfaceReference.flashcardCardRadius,
+          isNot(ZClassicSurfaceReference.cardRadius));
     });
 
     test('bandeaux de tête figés', () {

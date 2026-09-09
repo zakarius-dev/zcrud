@@ -44,7 +44,13 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zcrud_core/zcrud_core.dart' show ZIndexController;
+import 'package:zcrud_core/zcrud_core.dart'
+    show
+        ZAnswerActionsLayout,
+        ZAnswerChoiceLayout,
+        ZAnswerGradingVisibility,
+        ZAnswerSubmitWidth,
+        ZIndexController;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart'
     show
         ZFlashcard,
@@ -108,6 +114,10 @@ class ZStudySessionScaffold extends StatelessWidget {
     this.qualityColorKeyFor,
     this.qualityPreviewLabelFor,
     this.qualityEmphasis = ZSrsQualityEmphasis.none,
+    this.answerChoiceLayout,
+    this.answerActionsLayout,
+    this.answerSubmitWidth,
+    this.answerGradingVisibility,
     this.headerBuilder,
     this.counterBuilder,
     this.gradingBuilder,
@@ -193,6 +203,10 @@ class ZStudySessionScaffold extends StatelessWidget {
     this.cardBackgroundColor,
     this.qualityLabelKeyFor = zDefaultQualityLabelKey,
     this.qualityEmphasis = ZSrsQualityEmphasis.none,
+    this.answerChoiceLayout,
+    this.answerActionsLayout,
+    this.answerSubmitWidth,
+    this.answerGradingVisibility,
     this.progressStyle,
     this.progressDotsGeometry,
     this.progressLinearThickness,
@@ -341,6 +355,23 @@ class ZStudySessionScaffold extends StatelessWidget {
 
   /// Affordance d'emphase des crans de notation.
   final ZSrsQualityEmphasis qualityEmphasis;
+
+  /// Disposition d'une ligne de choix de la surface de saisie — cf.
+  /// [ZStudySessionHost.answerChoiceLayout].
+  final ZAnswerChoiceLayout? answerChoiceLayout;
+
+  /// Disposition des deux contrôles d'aide — cf.
+  /// [ZStudySessionHost.answerActionsLayout].
+  final ZAnswerActionsLayout? answerActionsLayout;
+
+  /// Largeur du contrôle de soumission — cf.
+  /// [ZStudySessionHost.answerSubmitWidth].
+  final ZAnswerSubmitWidth? answerSubmitWidth;
+
+  /// Moment d'apparition de la rangée de paliers — cf.
+  /// [ZStudySessionHost.answerGradingVisibility], dont l'avertissement sur
+  /// l'ordre des gestes vaut ici à l'identique.
+  final ZAnswerGradingVisibility? answerGradingVisibility;
 
   /// Slot d'en-tête de session.
   final ZStudySessionHeaderBuilder? headerBuilder;
@@ -543,6 +574,10 @@ class ZStudySessionScaffold extends StatelessWidget {
         cardBackgroundColor: cardBackgroundColor,
         qualityLabelKeyFor: qualityLabelKeyFor,
         qualityEmphasis: qualityEmphasis,
+        answerChoiceLayout: answerChoiceLayout,
+        answerActionsLayout: answerActionsLayout,
+        answerSubmitWidth: answerSubmitWidth,
+        answerGradingVisibility: answerGradingVisibility,
         progressStyle: progressStyle,
         progressDotsGeometry: progressDotsGeometry,
         progressLinearThickness: progressLinearThickness,
@@ -581,6 +616,10 @@ class ZStudySessionScaffold extends StatelessWidget {
       qualityColorKeyFor: qualityColorKeyFor,
       qualityPreviewLabelFor: qualityPreviewLabelFor,
       qualityEmphasis: qualityEmphasis,
+      answerChoiceLayout: answerChoiceLayout,
+      answerActionsLayout: answerActionsLayout,
+      answerSubmitWidth: answerSubmitWidth,
+      answerGradingVisibility: answerGradingVisibility,
       headerBuilder: headerBuilder,
       counterBuilder: counterBuilder,
       gradingBuilder: gradingBuilder,

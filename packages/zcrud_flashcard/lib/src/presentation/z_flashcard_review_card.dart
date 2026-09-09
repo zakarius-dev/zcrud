@@ -60,6 +60,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import '../domain/z_flashcard.dart';
 import '../domain/z_reveal_transition.dart';
 import 'z_flashcard_content_slot.dart';
+import 'z_flashcard_type_gradient.dart';
 import 'z_reduce_motion.dart';
 
 /// Profondeur de perspective du flip 3D (`Matrix4.setEntry(3, 2, …)`).
@@ -75,20 +76,35 @@ const double ZFlashcardReviewCardHalfTurn = 0.5;
 /// Cible tap minimale, en dp (invariant AD-13).
 const double ZFlashcardReviewCardMinTarget = 48;
 
-/// Préfixe de la clé de dégradé par type soumise au seam
-/// `ZcrudScope.gradientResolver` par [ZFlashcardReviewCard] : la clé complète
-/// est `'$kZFlashcardReviewTypeGradientKeyPrefix<type.name>'`.
-///
-/// C'est le format à implémenter dans un résolveur d'hôte. La carte interroge
-/// ensuite le seam avec le nom de type **nu** : un résolveur qui ne connaît
-/// que ce format-là reste servi, mais un résolveur qui répond aux **deux**
-/// voit le format préfixé l'emporter. Les deux clés sont soumises **avant**
-/// que le jeton `ZcrudTheme.flashcardTypeGradients` ne soit lu.
-///
-/// La valeur est identique à celle qu'emploie la carte de flashcard de liste,
-/// et une garde de source en tient l'égalité : les deux surfaces se pilotent
-/// avec un seul résolveur.
-const String kZFlashcardReviewTypeGradientKeyPrefix = 'flashcard.type.';
+// ── Scalaires d'ombre (jamais des couleurs — invariant FR-26) ─────────────
+//
+// Deux jeux, un par canal de la chaîne d'ombre, tous PRIVÉS : ils ne sont
+// pas une API, seulement le repli qu'ouvre un canal déjà ouvert.
+//
+// ① Replis du canal `ZcrudTheme.cardShadow*`. Volontairement NON neutres :
+//    un flou nul rendrait `cardShadowAlpha` inerte, c'est-à-dire exactement
+//    le défaut qu'un jeton non lu produit. Mêmes valeurs que le socle de
+//    cartes, pour que les deux surfaces répondent identiquement aux mêmes
+//    jetons — cf. `zcrud_study/lib/src/presentation/z_folder_card.dart:55-64`.
+const double _kCardShadowBlurRadius = 8;
+const Offset _kCardShadowOffset = Offset(0, 2);
+const double _kCardShadowAlpha = 0.12;
+
+// ② Ombre douce de référence, portée par la TEINTE seule. Mêmes valeurs que
+//    la carte de flashcard en liste — cf.
+//    `zcrud_study/lib/src/presentation/z_flashcard_card_reference.dart:146-155`.
+//
+//    Valeurs de la carte de révision de la référence visuelle, POUR MÉMOIRE
+//    (elles ne sont pas des défauts ici : elles se posent par le thème) —
+//    `iffd:lib/src/presentation/features/flashcards/widgets/
+//    interactive_flashcard_repetition_card.dart:418-424` : flou 20, décalage
+//    (0, 8), opacité 50/255 en clair et 30/255 en sombre, teinte dérivée du
+//    dégradé de type. Ce triplet-là passe par les jetons `cardShadow*` et
+//    `CardThemeData.shadowColor`, jamais par les replis ci-dessous.
+const double _kReferenceShadowBlurRadius = 8;
+const Offset _kReferenceShadowOffset = Offset(0, 2);
+const double _kReferenceShadowAlphaLight = 0.06;
+const double _kReferenceShadowAlphaDark = 0.2;
 
 /// Construit le contenu déjà localisé du badge de type de question.
 ///
@@ -120,7 +136,13 @@ class ZFlashcardReviewCard extends StatefulWidget {
   /// - [typeGradientKey] : clé de dégradé explicite, soumise **telle quelle**
   ///   au seam — elle court-circuite toute la chaîne par type ;
   /// - [backgroundColor] : fond de la carte. Priorité paramètre, puis
-  ///   [ZcrudTheme.surfaceColor], puis le rôle `ColorScheme.surface`.
+  ///   [ZcrudTheme.flashcardCardBackgroundColor], puis
+  ///   [ZcrudTheme.surfaceColor], puis le rôle `ColorScheme.surface` ;
+  /// - [shadowColor] : teinte de l'ombre portée. Priorité paramètre, puis
+  ///   [ZcrudTheme.flashcardCardShadowColor] ; les deux nuls ⇒ **aucune
+  ///   ombre** ;
+  /// - [radius] : rayon des coins. Priorité paramètre, puis
+  ///   [ZcrudTheme.flashcardCardRadius], puis [ZcrudTheme.radiusM].
   const ZFlashcardReviewCard({
     required this.card,
     this.revealTransition = ZRevealTransition.flip3d,
@@ -136,6 +158,8 @@ class ZFlashcardReviewCard extends StatefulWidget {
     this.accentHeight,
     this.typeGradientKey,
     this.backgroundColor,
+    this.shadowColor,
+    this.radius,
     super.key,
   });
 
@@ -257,6 +281,25 @@ class ZFlashcardReviewCard extends StatefulWidget {
   /// pour toutes les surfaces de l'application.
   final Color? backgroundColor;
 
+  /// Teinte de l'ombre portée de la carte.
+  ///
+  /// `null` ⇒ [ZcrudTheme.flashcardCardShadowColor] ; les deux nuls ⇒ la
+  /// carte ne porte **aucune** ombre.
+  ///
+  /// Ce paramètre porte la **teinte seule** : l'opacité (par luminosité), le
+  /// flou et le décalage restent ceux de la référence. Une ombre entièrement
+  /// redéfinie passe par les jetons `ZcrudTheme.cardShadow*`, qui priment.
+  final Color? shadowColor;
+
+  /// Rayon des coins de la carte.
+  ///
+  /// `null` ⇒ [ZcrudTheme.flashcardCardRadius], puis [ZcrudTheme.radiusM].
+  ///
+  /// Le rayon des **contrôles** que la carte porte (le pourtour de l'onde
+  /// des boutons d'action) suit [ZcrudTheme.radiusM] et n'est pas déplacé
+  /// par ce paramètre : arrondir une carte n'arrondit pas ses boutons.
+  final Radius? radius;
+
   /// Clé de la rangée d'actions (testabilité).
   static const ValueKey<String> actionsKey = ValueKey<String>(
     'zFlashcardReviewCard_actions',
@@ -290,6 +333,12 @@ class ZFlashcardReviewCard extends StatefulWidget {
   /// Clé du slot de bandeau de consigne (testabilité des slots).
   static const ValueKey<String> instructionBannerKey = ValueKey<String>(
     'zFlashcardReviewCard_instructionBanner',
+  );
+
+  /// Clé de la boîte qui porte l'ombre portée — absente de l'arbre tant
+  /// qu'aucun canal d'ombre n'est ouvert (testabilité du chrome).
+  static const ValueKey<String> shadowKey = ValueKey<String>(
+    'zFlashcardReviewCard_shadow',
   );
 
   /// Builder de contenu **réellement** utilisé par `build` — tear-off
@@ -888,44 +937,15 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
 
   /// La spécification de dégradé qui identifie le type de cette carte.
   ///
-  /// Chaîne de résolution — **seam > jeton**, l'ordre de priorité du socle :
-  /// 1. [ZFlashcardReviewCard.typeGradientKey], s'il est posé : cette clé est
-  ///    soumise **telle quelle** au seam, et rien d'autre n'est consulté ;
-  /// 2. le seam `ZcrudScope.gradientResolver`, interrogé avec
-  ///    `'$kZFlashcardReviewTypeGradientKeyPrefix<type.name>'` ;
-  /// 3. le **même seam**, interrogé avec le nom de type **nu** — le format
-  ///    historique, pour les résolveurs qui ne connaissent que lui ;
-  /// 4. le jeton [ZcrudTheme.flashcardTypeGradients], indexé par le nom de
-  ///    type : le repli quand le seam se tait sur les **deux** clés.
-  ///
-  /// Autrement dit : **un résolveur d'hôte qui répond l'emporte toujours sur
-  /// le jeton du thème**, quel que soit celui des deux formats de clé auquel
-  /// il répond. Un hôte qui veut au contraire que son jeton gagne ne pose pas
-  /// de résolveur pour ces clés — ou pose [typeGradientKey], qui court-circuite
-  /// tout.
-  ///
-  /// Entre les deux clés du seam, la clé préfixée l'emporte : un résolveur qui
-  /// répond aux deux voit le maillon 2 gagner.
-  ///
-  /// L'identité est le nom stable du type, jamais une position de liste.
-  /// Chaque maillon est nullable : leur silence commun garde l'arbre
-  /// strictement inchangé.
-  ZGradientSpec? _typeGradientSpec(BuildContext context, ZcrudTheme theme) {
-    final explicitKey = widget.typeGradientKey;
-    if (explicitKey != null) return zResolveGradient(context, explicitKey);
-    final typeName = widget.card.type.name;
-    // Le seam est interrogé sur ses DEUX formats de clé avant que le jeton ne
-    // soit lu, et non « préfixe, jeton, nu » : couper le seam en deux ferait
-    // dépendre la règle de priorité du FORMAT de clé auquel l'hôte répond.
-    // Un hôte au format nu verrait alors son résolveur battu par une table que
-    // le thème du socle pose à sa place — exactement le défaut corrigé ici.
-    return zResolveGradient(
-          context,
-          '$kZFlashcardReviewTypeGradientKeyPrefix$typeName',
-        ) ??
-        zResolveGradient(context, typeName) ??
-        theme.flashcardTypeGradients?[typeName];
-  }
+  /// La chaîne n'est pas écrite ici : elle appartient à
+  /// [zResolveFlashcardTypeGradient], foyer unique partagé avec toute autre
+  /// surface qui peint la même identité de type.
+  ZGradientSpec? _typeGradientSpec(BuildContext context) =>
+      zResolveFlashcardTypeGradient(
+        context,
+        widget.card,
+        typeGradientKey: widget.typeGradientKey,
+      );
 
   /// Le dégradé peint, une fois la géométrie du thème appliquée.
   ///
@@ -1032,10 +1052,17 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
+    // Chaîne TOTALE du fond : paramètre > jeton DÉDIÉ > jeton de surface >
+    // rôle. Le jeton dédié s'intercale AVANT `surfaceColor` : teinter les
+    // cartes de flashcard ne doit pas obliger à déplacer la surface de
+    // toutes les autres zones de l'application. `null` partout ⇒ le rôle
+    // `ColorScheme.surface`, c'est-à-dire le rendu historique.
     final surface =
         widget.backgroundColor ??
+        theme.flashcardCardBackgroundColor ??
         theme.surfaceColor ??
         Theme.of(context).colorScheme.surface;
+    final Radius corner = _resolvedCorner(theme);
 
     // Construit UNE FOIS par build de la carte, et rendu en sibling du
     // `ValueListenableBuilder` — une révélation ne re-rentre pas dans
@@ -1045,7 +1072,7 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     final actions = _actions(context);
     // Résolution UNIQUE : la barre et le badge lisent exactement le même
     // gradient, indexé par l'identité stable du type.
-    final gradientSpec = _typeGradientSpec(context, theme);
+    final gradientSpec = _typeGradientSpec(context);
     final gradientAccent = _gradientAccent(context, gradientSpec);
     final questionTypeBadge = _questionTypeBadge(context, gradientSpec);
     final instructionBanner = _instructionBanner();
@@ -1092,9 +1119,9 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
       ),
     );
 
-    return Material(
+    final Widget card = Material(
       color: surface,
-      borderRadius: BorderRadius.all(theme.radiusM),
+      borderRadius: BorderRadius.all(corner),
       child: InkWell(
         onTap: _toggle,
         // La révélation est déjà exposée, nommée, par le `Semantics` de la
@@ -1103,7 +1130,7 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
         // carte : un lecteur d'écran annoncerait un contrôle sans nom qui
         // duplique le premier.
         excludeFromSemantics: true,
-        borderRadius: BorderRadius.all(theme.radiusM),
+        borderRadius: BorderRadius.all(corner),
         child: ConstrainedBox(
           constraints: const BoxConstraints(
             minWidth: ZFlashcardReviewCardMinTarget,
@@ -1148,6 +1175,93 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
           ),
         ),
       ),
+    );
+
+    // L'ombre portée est peinte SOUS la carte, par une décoration, et non par
+    // l'élévation du `Material` : Material DÉRIVE le flou et le décalage de
+    // l'élévation sans permettre de les fixer, alors que la référence en
+    // demande des valeurs précises. `null` ⇒ pas de boîte du tout, donc un
+    // arbre STRICTEMENT identique à l'historique.
+    final BoxDecoration? shadow = _cardShadow(context, theme, corner);
+    if (shadow == null) return card;
+    return DecoratedBox(
+      key: ZFlashcardReviewCard.shadowKey,
+      decoration: shadow,
+      child: card,
+    );
+  }
+
+  /// Rayon des coins de la carte : paramètre > jeton > [ZcrudTheme.radiusM].
+  ///
+  /// Les deux sites de coin de la carte (la surface `Material` et l'onde de
+  /// son `InkWell`) lisent CETTE valeur, et elle seule : un coin resté sur un
+  /// autre jeton se verrait à l'écran. Le pourtour des boutons d'action,
+  /// lui, reste sur [ZcrudTheme.radiusM] — c'est un contrôle, pas un coin de
+  /// carte.
+  Radius _resolvedCorner(ZcrudTheme theme) =>
+      widget.radius ?? theme.flashcardCardRadius ?? theme.radiusM;
+
+  /// Ombre portée de la carte, ou `null` quand aucun canal n'est ouvert.
+  ///
+  /// Chaîne de résolution, identique à celle des cartes de flashcard en
+  /// liste :
+  /// 1. les jetons `ZcrudTheme.cardShadow*` (flou, décalage, opacité)
+  ///    PRIMENT dès qu'**un seul** d'entre eux est posé — les deux autres
+  ///    retombent alors sur les scalaires de référence, pour que chacun ait
+  ///    un effet observable seul. La teinte vient du rôle
+  ///    (`CardThemeData.shadowColor`, sinon `ThemeData.shadowColor`) : ce
+  ///    canal redéfinit l'ombre ENTIÈREMENT ;
+  /// 2. sinon, la teinte seule — paramètre `shadowColor`, puis
+  ///    [ZcrudTheme.flashcardCardShadowColor] — portée par l'ombre douce de
+  ///    référence (opacité par luminosité, flou et décalage fixes) ;
+  /// 3. sinon, `null` : la carte ne porte aucune ombre.
+  ///
+  /// La silhouette suit le rayon résolu de la carte, sinon l'ombre
+  /// déborderait des coins.
+  BoxDecoration? _cardShadow(
+    BuildContext context,
+    ZcrudTheme theme,
+    Radius corner,
+  ) {
+    final ThemeData material = Theme.of(context);
+    final double? blur = theme.cardShadowBlurRadius;
+    final Offset? offset = theme.cardShadowOffset;
+    final double? alpha = theme.cardShadowAlpha;
+    if (blur != null || offset != null || alpha != null) {
+      // Même lecture que le socle de cartes : la teinte de ce canal vient du
+      // rôle, jamais du jeton de teinte — un hôte qui redéfinit l'ombre
+      // entière la décrit par son thème Material, en un seul endroit.
+      final Color base =
+          CardTheme.of(context).shadowColor ?? material.shadowColor;
+      return BoxDecoration(
+        borderRadius: BorderRadius.all(corner),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: base.withValues(
+              alpha: (alpha ?? _kCardShadowAlpha).clamp(0.0, 1.0),
+            ),
+            blurRadius: math.max(0, blur ?? _kCardShadowBlurRadius),
+            offset: offset ?? _kCardShadowOffset,
+          ),
+        ],
+      );
+    }
+
+    final Color? tint = widget.shadowColor ?? theme.flashcardCardShadowColor;
+    if (tint == null) return null;
+    return BoxDecoration(
+      borderRadius: BorderRadius.all(corner),
+      boxShadow: <BoxShadow>[
+        BoxShadow(
+          color: tint.withValues(
+            alpha: material.brightness == Brightness.dark
+                ? _kReferenceShadowAlphaDark
+                : _kReferenceShadowAlphaLight,
+          ),
+          blurRadius: _kReferenceShadowBlurRadius,
+          offset: _kReferenceShadowOffset,
+        ),
+      ],
     );
   }
 }

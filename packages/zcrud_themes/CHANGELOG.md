@@ -1,5 +1,81 @@
 # Changelog — zcrud_themes
 
+## 3.51.0 — 2026-09-09
+
+### Ajouté — le rayon de la carte de flashcard, et trois formes de la saisie
+
+- **`ZClassicSurfaceReference.flashcardCardRadius`** (20) — le rayon mesuré de la
+  carte de révision, relevé aux trois sites de coin qu'elle porte
+  (`interactive_flashcard_repetition_card.dart:411, :421, :425`). Distinct de
+  `cardRadius` (14, les cartes et les champs) : les deux se règlent
+  indépendamment.
+- Le thème pose désormais **`ZcrudTheme.flashcardCardRadius`**. Sans ce jeton, la
+  carte de révision suivait `radiusM`, c'est-à-dire le rayon des **champs de
+  saisie** — la relever aurait arrondi toutes les zones de texte.
+- Le thème pose les trois jetons de **forme** de la surface de saisie notée :
+  `answerInputChoiceLayout: tile`, `answerInputActionsLayout: sideBySide`,
+  `answerInputSubmitWidth: full`. Les trois sont relevés du rendu de référence en
+  largeur mobile (`interactive_flashcard_repetition_card.dart`, branche
+  `isCompact` : les deux contrôles d'aide en `Expanded` sur une ligne, la
+  soumission en `crossAxisAlignment: stretch` ; tuiles de choix à rayon 12, marge
+  verticale 6, liseré 1 → 2 à la sélection). Aucune couleur n'accompagne ces
+  formes : fonds et traits restent des rôles et des clés.
+
+### Non posé, et mesuré
+
+- **`answerInputGradingVisibility`** reste `null`. `always` n'est pas une forme :
+  la rangée de paliers devient active avant toute réponse, et un palier tapé y
+  vaut **notation manuelle** — la saisie devient inerte, la soumission
+  disparaît. Un thème ne change pas l'ordre des gestes d'une session ; le réglage
+  appartient au paramètre `gradingVisibility` de la surface ou à l'assemblage
+  d'écran que l'hôte choisit. Gardé au jeton **et au rendu**.
+- **`flashcardCardShadowColor`** reste `null`, inchangé, et le **trio de
+  géométrie d'ombre** (`cardShadowBlurRadius`, `cardShadowOffset`,
+  `cardShadowAlpha`) n'est pas posé non plus. La raison n'est pas seulement qu'il
+  est global (`zResolveCardShadowDecoration` sert aussi les cartes de dossier et
+  les cartes d'outils d'étude) : dans `z_flashcard_review_card.dart:1273-1291`,
+  la branche du trio est testée **avant** celle de la teinte et rend
+  immédiatement, sa couleur venant du rôle `CardThemeData.shadowColor`. Le poser
+  rendrait le paramètre `shadowColor` de la carte **inerte**, donc supprimerait
+  la seule voie par laquelle un écran peut donner à chaque carte l'ombre teintée
+  de son type — le rendu de référence en dérive quatre teintes, une par type.
+
+### Contraste — mesuré aux deux luminosités
+
+Sur le fond réellement lu par la tuile et par les contrôles à contour
+(`surfaceColor`, que le thème pose) :
+
+| Combinaison | Clair | Sombre | Plancher |
+|---|---|---|---|
+| texte `onSurface` | 17,07:1 | 12,67:1 | 4,5 ✅ |
+| texte `onSurfaceVariant` | 9,34:1 | 9,63:1 | 4,5 ✅ |
+| liseré **sélectionné** (`primary`) | 6,44:1 | 9,63:1 | 3,0 ✅ |
+| liseré non sélectionné (`outlineVariant`) | 1,70:1 | 1,76:1 | 3,0 ❌ |
+| pourtour « indice » (`tertiaryContainer`) | 1,30:1 | 1,76:1 | 3,0 ❌ |
+| pourtour « je ne sais pas » (`errorContainer`) | 1,27:1 | 1,80:1 | 3,0 ❌ |
+
+Les trois derniers sont des traits de **groupement** : ce qui identifie ces
+éléments est leur libellé (≥ 9:1 mesuré), et la sélection est portée par
+l'**épaisseur** du trait (1 → 2), jamais par sa seule teinte. Aucun jeton de ce
+thème ne les atteint — la tuile lit `scheme.outlineVariant` nu, et les deux
+pourtours retombent sur des rôles **conteneur**, pastel par construction. Le
+rendu de référence est plus faible encore sur ce même trait (~1,1:1). L'arbitrage
+est figé par une garde qui rougit si ces rôles passent le plancher.
+
+### Gardes
+
+Deux fichiers neufs (`z_classic_review_card_radius_test.dart`,
+`z_classic_answer_shape_test.dart`) et trois fichiers étendus. Tout est mesuré au
+**rendu** : rayon monté aux deux sites de coin de la carte, `shape` réelle de la
+tuile, rectangles occupés par les contrôles, présence de la rangée de paliers —
+jamais le passage d'un jeton. Chaque forme est mesurée deux fois, sous le thème
+et sous le repli du socle, sans quoi la garde ne distinguerait pas « le thème
+pose la forme » de « la forme était déjà là ».
+
+Une garde de portée balaie les `lib/` de **tous** les paquets et établit que la
+carte de révision est le seul lecteur de `flashcardCardRadius` : c'est la mesure
+qui autorise à poser le jeton, et elle rougira si une seconde surface s'y met.
+
 ## 3.50.0 — 2026-09-09
 
 ### Corrigé — la documentation disait le contraire de la chaîne réelle

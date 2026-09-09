@@ -3,6 +3,129 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.51.0 — 2026-09-09
+
+### Modifié
+
+- **`zFlashcardTypeShadowColor` n'écrit plus la chaîne de résolution : elle
+  l'APPELLE.** Le relais recomposait les trois maillons (seam préfixé, seam
+  nu, jeton `flashcardTypeGradients`) parce que la chaîne était privée en
+  amont ; `zcrud_flashcard` la publie désormais
+  (`zResolveFlashcardTypeGradient`), et le relais s'y branche. Un seul ordre à
+  maintenir, dans le paquet qui le possède. **Aucun changement de rendu** :
+  mêmes clés, même ordre, même `null` fonctionnel — les gardes de teinte
+  d'ombre par type sont inchangées et vertes.
+
+  La garde d'ordre inter-paquets, qui lisait la source de la carte amont pour
+  y comparer les maillons recopiés, est **remplacée** (elle n'a plus d'objet)
+  par une garde de source « aucune réécriture de la chaîne dans `preset/` » :
+  les trois motifs de maillon doivent être absents de tout fichier du
+  répertoire, et le détecteur porte sa contre-preuve (un fichier synthétique
+  qui les porte est détecté ; l'appel au foyer unique, lui, ne l'est pas).
+
+### Ajouté
+
+- **Les quatre réglages de FORME de la surface de saisie traversent enfin
+  l'assemblage.** `ZStudySessionHost` et `ZStudySessionScaffold` portent
+  `answerChoiceLayout`, `answerActionsLayout`, `answerSubmitWidth` et
+  `answerGradingVisibility` — tous **nullables**, relayés tels quels à la
+  surface montée par l'écran. Avant ce lot, changer la forme de trois boutons
+  imposait de réimplémenter la surface entière par `gradingBuilder`,
+  c'est-à-dire de reperdre l'évaluation, les indices, la correction, la
+  notation et le verrou one-shot pour gagner trois formes.
+
+  Chaîne de résolution complète, maillon par maillon : **paramètre de l'écran >
+  forme décrite par le preset > jeton `ZcrudTheme.answerInput*` > référence**.
+  Les quatre restent nullables à chaque étage — sans cela, « posé au défaut » et
+  « non posé » seraient indistinguables et la chaîne deviendrait inexprimable.
+
+  Les quatre types (`ZAnswerChoiceLayout`, `ZAnswerActionsLayout`,
+  `ZAnswerSubmitWidth`, `ZAnswerGradingVisibility`) sont **ré-exportés** par le
+  barrel : un appelant de l'écran les nomme sans second import.
+
+- **`ZStudySessionPreset` gagne les quatre formes**, et `ZStudySessionPreset
+  .classic` les pose : `tile`, `sideBySide`, `full`, `always`. Un paramètre
+  explicite de l'écran bat le preset, **forme par forme**.
+
+- **L'ombre de la carte de session suit son TYPE.** `ZCardChromeSpec` porte
+  désormais `shadowColor` (une teinte, en valeur) et `shadowColorResolver` (une
+  teinte résolue **au site de montage**, donc dépendante du thème courant et de
+  la carte rendue) ; l'écran les relaie au `shadowColor` de la carte, au site
+  unique où il la monte. Priorité **valeur > résolveur > rien**.
+
+  `ZStudySessionPreset.classic` pose la direction : la teinte est la **première
+  couleur du dégradé qui identifie le type** de la carte, obtenue par la même
+  chaîne que le liseré et la pastille — clé préfixée soumise au résolveur de
+  l'hôte, puis nom de type nu, puis jeton `ZcrudTheme.flashcardTypeGradients`.
+  C'est une forme qu'un thème ne peut **pas** décrire : il n'a qu'un jeton de
+  teinte d'ombre, donc une valeur, quand un écran montre plusieurs types côte à
+  côte. `classic(cardShadowColor:)` impose au contraire une teinte unique.
+
+  La fonction de résolution, `zFlashcardTypeShadowColor`, est **publiée** : elle
+  se pose telle quelle sur `shadowColorResolver`, ou s'enrobe pour n'agir que sur
+  certains types.
+
+  Chaîne **totale** : un type dont aucun dégradé n'est résoluble ne reçoit pas de
+  teinte, et le jeton `flashcardCardShadowColor` garde la main — un chrome qui ne
+  décrit aucune ombre transmet `null`, jamais une teinte fabriquée. Sans preset,
+  aucune boîte d'ombre n'entre dans l'arbre.
+
+### Modifié
+
+- 🔴 **`ZStudySessionPreset.classic()` décrit désormais TOUJOURS un chrome de
+  carte** (`cardChrome != null`), là où il ne le faisait qu'en présence d'une
+  valeur de carte : la direction d'ombre par type en fait partie, au même titre
+  que la pilule de progression. Le descripteur n'est donc jamais vide (AD-4
+  tient), et il reste **strictement inerte** partout où la chaîne par type ne
+  résout rien. Effet observable pour un hôte : sous `classic`, une carte dont le
+  type porte un dégradé gagne une ombre teintée qu'elle n'avait pas. Un hôte qui
+  **compensait** cette absence par sa propre ombre (un `Container` décoré autour
+  de la carte, ou un jeton `flashcardCardShadowColor` posé pour tous les types)
+  doit **retirer sa compensation** : les deux ombres s'additionneraient.
+
+### ⚠️ Avertissement de COMPORTEMENT — `ZStudySessionPreset.classic`
+
+`.classic` pose `answerGradingVisibility: ZAnswerGradingVisibility.always`, qui
+**change l'ORDRE DES GESTES** : la rangée de paliers est montée et active
+**avant** la réponse, et un palier tapé alors **est** une notation manuelle —
+elle part par `onQualitySelected`, la voie de notation habituelle, aucune autre,
+et elle **verrouille** la surface (saisie inerte, soumission et contrôles d'aide
+retirés). Une carte notée à la main produit **exactement une** notation, jamais
+deux (AD-33), et aucune `ZFlashcardSubmission` n'est fabriquée. Sans
+`onQualitySelected`, aucune rangée n'est montée : le réglage n'a alors aucun
+effet.
+
+Un hôte qui adopte `.classic` et veut garder l'ordre habituel — répondre, puis
+noter — pose `answerGradingVisibility: ZAnswerGradingVisibility.afterSubmit` sur
+l'écran, ou `ZStudySessionPreset.classic(answerGradingVisibility: …)`. Les trois
+autres formes de `.classic` sont purement visuelles.
+
+Un hôte qui **ne pose pas** `.classic` ne voit **aucun** changement : sans preset
+et sans aucun des quatre paramètres, l'arbre monté est identique à l'octet à
+celui d'avant ce lot (quatre dumps figés avant écriture, égalité stricte —
+porteur/rédigé, porteur/choix, porteur/voie de notation, page).
+
+### Interne
+
+- La partition seam/cosmétique du montage énuméré (`ZStudySessionWiring`) admet
+  les quatre types **nominativement**, jamais par suffixe : ils ne câblent rien
+  (ni port, ni callback, ni constructeur de rendu, ni contrôleur), les oublier
+  coûte une forme et jamais une capacité. `ZAnswerGradingVisibility.always`
+  déplace le moment d'une affordance **déjà branchée** : sans le seam
+  `onQualitySelected`, il n'a aucun effet. Contre-preuve permanente : un
+  `ZFutureLayout?`/`ZFutureWidth?`/`ZFutureVisibility?` inédit retombe du côté
+  « seam » et fait rougir la comparaison tant qu'il n'est pas câblé.
+
+- Les deux dumps d'inertie de la scène `socle` du montage énuméré
+  (`z_session_tree_before_lotw1_socle.txt`,
+  `z_page_tree_before_lotw2_socle.txt`) sont **re-gelés** : leur scène monte
+  `ZStudySessionPreset.classic`, dont l'arbre change désormais par conception.
+  Diff **audité avant re-gel** — que des ajouts imputables aux trois formes
+  applicables (rangée de six paliers, ligne d'aide côte à côte, action de
+  soumission étirée) et un unique déplacement de la paire
+  `ValueListenableBuilder<String?>`/`SizedBox` du bloc d'indices ; **aucun
+  retrait**, aucun nœud de carte touché.
+
 ## 3.50.0 — 2026-09-09
 
 ### Ajouté

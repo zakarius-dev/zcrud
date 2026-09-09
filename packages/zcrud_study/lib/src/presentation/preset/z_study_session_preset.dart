@@ -23,6 +23,12 @@
 library;
 
 import 'package:flutter/widgets.dart';
+import 'package:zcrud_core/zcrud_core.dart'
+    show
+        ZAnswerActionsLayout,
+        ZAnswerChoiceLayout,
+        ZAnswerGradingVisibility,
+        ZAnswerSubmitWidth;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart'
     show ZFlashcardQuestionTypeBadgeBuilder;
 import 'package:zcrud_session/zcrud_session.dart'
@@ -31,6 +37,7 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart' show ZStudyStreak;
 
 import '../z_study_session_slices.dart';
 import 'z_card_chrome_spec.dart';
+import 'z_card_type_shadow.dart';
 import 'z_session_header_spec.dart';
 
 /// Formes de référence d'un écran de session, décrites une fois.
@@ -57,6 +64,10 @@ class ZStudySessionPreset {
     this.progressLinearThickness,
     this.progressSegmentedMarkerThickness,
     this.cardBackgroundColorKey,
+    this.answerChoiceLayout,
+    this.answerActionsLayout,
+    this.answerSubmitWidth,
+    this.answerGradingVisibility,
   });
 
   /// Session complète — en-tête, chrome de carte et progression compacte.
@@ -79,10 +90,30 @@ class ZStudySessionPreset {
   /// du style choisi par [progressStyle] : décrire une forme ne la montre pas,
   /// elle attend le style qui la peint.
   ///
+  /// Quatre **formes de la surface de saisie** y sont posées : ligne de choix
+  /// en tuile, contrôles d'aide côte à côte, soumission pleine largeur, et
+  /// rangée de paliers montée d'emblée. Chacune se remplace par son paramètre.
+  ///
+  /// 🔴 [answerGradingVisibility] par défaut ([ZAnswerGradingVisibility.always])
+  /// change l'**ordre des gestes** : la rangée de paliers est montée et active
+  /// avant toute réponse, et un palier tapé alors est une notation manuelle qui
+  /// verrouille la surface — une notation, jamais deux. Poser
+  /// [ZAnswerGradingVisibility.afterSubmit] garde l'ordre habituel (répondre,
+  /// puis noter).
+  ///
+  /// L'**ombre de la carte suit son TYPE** : sa teinte est la première couleur
+  /// du dégradé qui identifie ce type, résolue carte par carte. C'est une forme
+  /// qu'un thème ne peut pas décrire — il n'a qu'une teinte d'ombre, quand un
+  /// écran montre plusieurs types côte à côte. Un type dont aucun dégradé n'est
+  /// résoluble ne reçoit pas de teinte : le jeton de thème garde alors la main.
+  /// [cardShadowColor] impose au contraire une teinte unique à toutes les
+  /// cartes.
+  ///
   /// Rien n'est fabriqué pour rien : sans aucune valeur d'en-tête, aucun
-  /// en-tête n'est décrit ; sans aucune valeur de carte, aucun chrome ne l'est ;
-  /// et aucune épaisseur de barre continue n'est posée — la référence n'en
-  /// décrit pas.
+  /// en-tête n'est décrit ; et aucune épaisseur de barre continue n'est posée —
+  /// la référence n'en décrit pas. Le chrome de carte, lui, est toujours décrit
+  /// **parce que la direction d'ombre en fait partie** : ce n'est pas un
+  /// descripteur vide.
   factory ZStudySessionPreset.classic({
     String? title,
     String Function(ZStudySessionProgress progress)? counter,
@@ -92,11 +123,17 @@ class ZStudySessionPreset {
     Widget? instructionBanner,
     ZFlashcardQuestionTypeBadgeBuilder? questionTypeBadgeBuilder,
     double? accentHeight,
+    Color? cardShadowColor,
     ZSessionProgressStyle progressStyle = ZSessionProgressStyle.pill,
     ZSessionDotsGeometry? progressDotsGeometry,
     double? progressLinearThickness,
     double? progressSegmentedMarkerThickness,
     String? cardBackgroundColorKey,
+    ZAnswerChoiceLayout answerChoiceLayout = ZAnswerChoiceLayout.tile,
+    ZAnswerActionsLayout answerActionsLayout = ZAnswerActionsLayout.sideBySide,
+    ZAnswerSubmitWidth answerSubmitWidth = ZAnswerSubmitWidth.full,
+    ZAnswerGradingVisibility answerGradingVisibility =
+        ZAnswerGradingVisibility.always,
   }) {
     // AD-4 — un descripteur n'est décrit que si quelque chose le remplit :
     // une closure qui rendrait une spécification vide monterait un slot que
@@ -105,11 +142,11 @@ class ZStudySessionPreset {
         counter != null ||
         streak != null ||
         headerTrailing != null;
-    final bool describesChrome = cardTypeGradientKey != null ||
-        instructionBanner != null ||
-        questionTypeBadgeBuilder != null ||
-        accentHeight != null;
-
+    // Le chrome, lui, n'est PAS conditionnel : la direction d'ombre par type
+    // est une forme de `classic` à part entière, au même titre que la pilule
+    // de progression ou la tuile de choix. Le descripteur n'est donc jamais
+    // vide (AD-4 tient : quelque chose le remplit toujours), et il reste
+    // strictement inerte là où la chaîne par type ne résout rien.
     return ZStudySessionPreset(
       header: describesHeader
           ? (ZStudySessionProgress progress) => ZSessionHeaderSpec(
@@ -119,20 +156,24 @@ class ZStudySessionPreset {
                 trailing: headerTrailing,
               )
           : null,
-      cardChrome: describesChrome
-          ? (_) => ZCardChromeSpec(
-                typeGradientKey: cardTypeGradientKey,
-                instructionBanner: instructionBanner,
-                questionTypeBadgeBuilder: questionTypeBadgeBuilder,
-                accentHeight: accentHeight,
-              )
-          : null,
+      cardChrome: (_) => ZCardChromeSpec(
+            typeGradientKey: cardTypeGradientKey,
+            instructionBanner: instructionBanner,
+            questionTypeBadgeBuilder: questionTypeBadgeBuilder,
+            accentHeight: accentHeight,
+            shadowColor: cardShadowColor,
+            shadowColorResolver: zFlashcardTypeShadowColor,
+          ),
       progressStyle: progressStyle,
       progressDotsGeometry: progressDotsGeometry ?? classicDotsGeometry,
       progressLinearThickness: progressLinearThickness,
       progressSegmentedMarkerThickness:
           progressSegmentedMarkerThickness ?? classicSegmentedMarkerThickness,
       cardBackgroundColorKey: cardBackgroundColorKey,
+      answerChoiceLayout: answerChoiceLayout,
+      answerActionsLayout: answerActionsLayout,
+      answerSubmitWidth: answerSubmitWidth,
+      answerGradingVisibility: answerGradingVisibility,
     );
   }
 
@@ -198,6 +239,37 @@ class ZStudySessionPreset {
   /// carte sans fond. Battue par la couleur de fond explicite de l'écran.
   final String? cardBackgroundColorKey;
 
+  /// Disposition d'une ligne de choix de la surface de saisie.
+  ///
+  /// `null` ⇒ la disposition demandée à l'écran, sinon le jeton de thème,
+  /// sinon la ligne nue de référence. Battue par la disposition explicite de
+  /// l'écran.
+  final ZAnswerChoiceLayout? answerChoiceLayout;
+
+  /// Disposition des deux contrôles d'aide de la surface de saisie.
+  ///
+  /// `null` ⇒ la disposition demandée à l'écran, sinon le jeton de thème,
+  /// sinon la colonne de référence. Battue par la disposition explicite de
+  /// l'écran.
+  final ZAnswerActionsLayout? answerActionsLayout;
+
+  /// Largeur du contrôle de soumission de la surface de saisie.
+  ///
+  /// `null` ⇒ la largeur demandée à l'écran, sinon le jeton de thème, sinon la
+  /// largeur du contenu. Battue par la largeur explicite de l'écran.
+  final ZAnswerSubmitWidth? answerSubmitWidth;
+
+  /// Moment d'apparition de la rangée de paliers de notation.
+  ///
+  /// `null` ⇒ le moment demandé à l'écran, sinon le jeton de thème, sinon
+  /// l'apparition après soumission. Battu par le moment explicite de l'écran.
+  ///
+  /// 🔴 [ZAnswerGradingVisibility.always] change l'**ordre des gestes** : la
+  /// rangée est montée et active avant toute réponse, et un palier tapé alors
+  /// est une notation manuelle qui verrouille la surface. Une carte notée à la
+  /// main produit exactement une notation, jamais deux.
+  final ZAnswerGradingVisibility? answerGradingVisibility;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -210,7 +282,11 @@ class ZStudySessionPreset {
           progressLinearThickness == other.progressLinearThickness &&
           progressSegmentedMarkerThickness ==
               other.progressSegmentedMarkerThickness &&
-          cardBackgroundColorKey == other.cardBackgroundColorKey;
+          cardBackgroundColorKey == other.cardBackgroundColorKey &&
+          answerChoiceLayout == other.answerChoiceLayout &&
+          answerActionsLayout == other.answerActionsLayout &&
+          answerSubmitWidth == other.answerSubmitWidth &&
+          answerGradingVisibility == other.answerGradingVisibility;
 
   @override
   int get hashCode => Object.hash(
@@ -222,6 +298,10 @@ class ZStudySessionPreset {
         progressLinearThickness,
         progressSegmentedMarkerThickness,
         cardBackgroundColorKey,
+        answerChoiceLayout,
+        answerActionsLayout,
+        answerSubmitWidth,
+        answerGradingVisibility,
       );
 
   @override
@@ -229,5 +309,9 @@ class ZStudySessionPreset {
       'progressDotsGeometry: $progressDotsGeometry, '
       'progressLinearThickness: $progressLinearThickness, '
       'progressSegmentedMarkerThickness: $progressSegmentedMarkerThickness, '
-      'cardBackgroundColorKey: $cardBackgroundColorKey)';
+      'cardBackgroundColorKey: $cardBackgroundColorKey, '
+      'answerChoiceLayout: $answerChoiceLayout, '
+      'answerActionsLayout: $answerActionsLayout, '
+      'answerSubmitWidth: $answerSubmitWidth, '
+      'answerGradingVisibility: $answerGradingVisibility)';
 }

@@ -3,6 +3,61 @@
 Toutes les modifications notables de `zcrud_flashcard` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.51.0 — 2026-09-09
+
+### Ajouté
+
+- **`zResolveFlashcardTypeGradient(context, card, {typeGradientKey})` —
+  foyer unique de la chaîne de résolution du dégradé de type**, publié par le
+  barrel (`src/presentation/z_flashcard_type_gradient.dart`), qui porte
+  désormais aussi `kZFlashcardReviewTypeGradientKeyPrefix`. La chaîne était
+  jusqu'ici une méthode **privée** de `ZFlashcardReviewCard` : toute autre
+  surface voulant peindre la même identité de type devait la **réécrire**
+  (c'est ce qu'a fait la teinte d'ombre par type de `zcrud_study`, sous
+  garde d'ordre inter-paquets). L'ordre publié — clé explicite, puis seam
+  préfixé, puis seam nu, puis jeton `flashcardTypeGradients` — est inchangé,
+  et `ZFlashcardReviewCard` l'**appelle** au lieu d'en garder une copie.
+  Aucun changement de rendu : mêmes clés, même ordre, même `null`
+  fonctionnel quand toute la chaîne se tait.
+
+### Corrigé
+
+- **`ZFlashcardReviewCard` ne lisait AUCUN des jetons `flashcardCard*`.** Ils
+  ne gouvernaient que la carte de flashcard en **liste** : un hôte qui posait
+  `flashcardCardBackgroundColor` croyait teinter ses cartes de session et ne
+  teintait rien (grep : zéro occurrence de `flashcardCard` dans
+  `zcrud_flashcard/lib`). La carte lit désormais :
+  - `flashcardCardBackgroundColor` — chaîne totale `backgroundColor` >
+    ce jeton > `surfaceColor` > rôle `ColorScheme.surface` ; le jeton dédié
+    s'intercale AVANT le jeton générique, pour que teinter les cartes
+    n'oblige pas à déplacer la surface de toutes les autres zones ;
+  - `flashcardCardShadowColor` — chaîne totale, **identique à celle de la
+    carte de liste** : les jetons `cardShadow{BlurRadius,Offset,Alpha}`
+    priment dès qu'un SEUL d'entre eux est posé (teinte prise au rôle
+    `CardThemeData.shadowColor`, sinon `ThemeData.shadowColor`), sinon la
+    teinte seule — paramètre `shadowColor` puis ce jeton — porte l'ombre
+    douce de référence (opacité par luminosité, flou et décalage fixes).
+    Rien de posé ⇒ **aucune ombre**, comme avant.
+
+- **Les coins de la carte lisaient `radiusM`**, le rayon des **champs de
+  formulaire** : la carte n'avait aucun canal de forme propre, et l'arrondir
+  obligeait à arrondir aussi toutes les zones de saisie. Ses deux sites de
+  coin (la surface `Material` et l'onde de son `InkWell`) suivent désormais
+  `radius` > `ZcrudTheme.flashcardCardRadius` > `radiusM`. Le pourtour de
+  l'onde des **boutons d'action** reste sur `radiusM` — c'est un contrôle,
+  pas un coin de carte — et une garde l'affirme.
+
+### Ajouté
+
+- **`ZFlashcardReviewCard.shadowColor`** (`Color?`) et
+  **`ZFlashcardReviewCard.radius`** (`Radius?`) — échappatoires par instance
+  de la teinte d'ombre et du rayon, premiers maillons de leurs chaînes.
+- **`ZFlashcardReviewCard.shadowKey`** — clé de la boîte qui porte l'ombre,
+  **absente de l'arbre** tant qu'aucun canal d'ombre n'est ouvert.
+
+Rendu **strictement inchangé** pour un hôte qui ne pose rien : l'arbre nu
+reste identique au dump figé (`test/support/z_review_card_tree_before_lotd1.txt`).
+
 ## 3.50.0 — 2026-09-09
 
 ### Corrigé

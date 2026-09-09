@@ -127,10 +127,8 @@ import 'z_swipe_direction.dart';
 /// Construit la carte d'affichage d'un item (typiquement
 /// `ZFlashcardReviewCard`). Jamais une surface de saisie ou de notation :
 /// celles-ci vivent en frères, hors de la pile.
-typedef ZSessionCardBuilder = Widget Function(
-  BuildContext context,
-  ZSessionItem item,
-);
+typedef ZSessionCardBuilder =
+    Widget Function(BuildContext context, ZSessionItem item);
 
 /// Créneau de construction d'une carte de la pile.
 ///
@@ -184,10 +182,8 @@ class ZSessionCardSlot {
 /// la carte et le fait qu'elle soit devant. Fournie à
 /// [ZSessionCardSwiper.cardSlotBuilder], elle **remplace** [ZSessionCardBuilder]
 /// pour toutes les cartes.
-typedef ZSessionCardSlotBuilder = Widget Function(
-  BuildContext context,
-  ZSessionCardSlot slot,
-);
+typedef ZSessionCardSlotBuilder =
+    Widget Function(BuildContext context, ZSessionCardSlot slot);
 
 /// Pile de session swipeable — navigation seule.
 class ZSessionCardSwiper extends StatefulWidget {
@@ -241,15 +237,15 @@ class ZSessionCardSwiper extends StatefulWidget {
     this.preserveIndexOnMutation = false,
     this.onSwipeDirection,
     super.key,
-  })  : assert(
-          cardBuilder != null || cardSlotBuilder != null,
-          'la pile a besoin d\'un constructeur de carte : `cardSlotBuilder` '
-          '(qui reçoit le rang et `isFront`) ou, à défaut, `cardBuilder`',
-        ),
-        assert(
-          visibleCardCount == null || visibleCardCount >= 1,
-          'la pile affiche au moins une carte',
-        );
+  }) : assert(
+         cardBuilder != null || cardSlotBuilder != null,
+         'la pile a besoin d\'un constructeur de carte : `cardSlotBuilder` '
+         '(qui reçoit le rang et `isFront`) ou, à défaut, `cardBuilder`',
+       ),
+       assert(
+         visibleCardCount == null || visibleCardCount >= 1,
+         'la pile affiche au moins une carte',
+       );
 
   /// File déjà sélectionnée (invariant AD-1).
   final List<ZSessionItem> queue;
@@ -417,8 +413,7 @@ class ZSessionCardSwiper extends StatefulWidget {
   ///
   /// Il n'existe délibérément aucun bouton « précédent » — voir la dartdoc
   /// de librairie, section « Pourquoi aucun retour arrière ».
-  static const ValueKey<String> nextButtonKey =
-      ValueKey<String>('zSwiperNext');
+  static const ValueKey<String> nextButtonKey = ValueKey<String>('zSwiperNext');
 
   /// Clé du repli file vide par défaut, pour qu'un test puisse observer le
   /// repli plutôt que constater seulement l'absence d'exception.
@@ -594,8 +589,9 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
       // framework, donc contre la NOUVELLE file : une file qui rétrécit sous
       // l'index courant le ramène sur sa dernière carte, jamais hors bornes
       // (l'`initialIndex` du paquet tiers porte un assert de bornes).
-      final int target =
-          widget.preserveIndexOnMutation ? _clampIndex(_current.value) : 0;
+      final int target = widget.preserveIndexOnMutation
+          ? _clampIndex(_current.value)
+          : 0;
       _swiperIndex = target;
       // Écrit À LA SOURCE (donc chez l'hôte quand il pilote). Suspendre la
       // voie unique le temps de cette écriture préserve le comportement
@@ -825,13 +821,31 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
             duration: reduceMotion ? Duration.zero : widget.swipeDuration,
             // Ne filtre que la fin de geste : n'empêche pas le pan de
             // revendiquer le vertical (voir la dartdoc de librairie).
-            allowedSwipeDirection:
-                const AllowedSwipeDirection.symmetric(horizontal: true),
+            allowedSwipeDirection: const AllowedSwipeDirection.symmetric(
+              horizontal: true,
+            ),
             onSwipe: _handleSwipe,
             onEnd: _handleEnd,
             padding: EdgeInsets.all(theme.gapM),
             cardBuilder: (context, index, horizontalOffset, verticalOffset) {
               return Stack(
+                // 🔴 Le paquet impose à chaque carte la hauteur EXACTE de sa
+                // cellule (`ConstrainedBox` du `_frontItem`/`_backItem`). Un
+                // `Stack` par défaut (`StackFit.loose`) DESSERRE cette
+                // contrainte pour ses enfants non positionnés : une carte qui
+                // se dimensionne sur son contenu reste alors collée en haut et
+                // laisse le reste de la cellule VIDE — par où la carte
+                // suivante, elle, se voit en entier. Mesuré : carte de devant
+                // haute de 100 dans une cellule de 528, et 416 dp de la carte
+                // suivante peints dessous.
+                //
+                // `passthrough` rend la contrainte telle que le paquet l'a
+                // posée : la carte remplit sa cellule, et il ne reste de la
+                // suivante que le liseré de profondeur que son décalage
+                // produit. `expand` la forcerait AUSSI en largeur, ce qui
+                // n'est pas le défaut mesuré et étirerait des cartes qui se
+                // dimensionnent volontairement sur leur contenu.
+                fit: StackFit.passthrough,
                 children: <Widget>[
                   // Instance identique d'une frame à l'autre : le
                   // `cardBuilder` est ré-invoqué à chaque frame de drag,
@@ -864,15 +878,15 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
   /// qu'exige l'invariant AD-13, et non un contrôle supplémentaire qui
   /// mentirait.
   Widget _navigationRow(BuildContext context, ZcrudTheme theme) => Row(
-        children: <Widget>[
-          Expanded(
-            // L'avancée ne reconstruit que l'indicateur (invariant AD-2) :
-            // la valeur est lue à la source (interne ou contrôleur de
-            // l'hôte), jamais dans une copie locale rafraîchie par `setState`.
-            child: ValueListenableBuilder<int>(
-              valueListenable: _current.listenable,
-              builder: (BuildContext context, int currentIndex, Widget? _) =>
-                  ZSessionProgressIndicator(
+    children: <Widget>[
+      Expanded(
+        // L'avancée ne reconstruit que l'indicateur (invariant AD-2) :
+        // la valeur est lue à la source (interne ou contrôleur de
+        // l'hôte), jamais dans une copie locale rafraîchie par `setState`.
+        child: ValueListenableBuilder<int>(
+          valueListenable: _current.listenable,
+          builder: (BuildContext context, int currentIndex, Widget? _) =>
+              ZSessionProgressIndicator(
                 total: widget.queue.length,
                 currentIndex: currentIndex,
                 passThreshold: widget.passThreshold,
@@ -883,30 +897,30 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
                     widget.progressSegmentedMarkerThickness,
                 qualityOf: widget.qualityOf,
               ),
-            ),
-          ),
-          _NavButton(
-            key: ZSessionCardSwiper.nextButtonKey,
-            labelKey: ZSessionCardSwiper.nextLabelKey,
-            fallback: 'carte suivante',
-            icon: Icons.chevron_right,
-            onPressed: _advance,
-          ),
-        ],
-      );
+        ),
+      ),
+      _NavButton(
+        key: ZSessionCardSwiper.nextButtonKey,
+        labelKey: ZSessionCardSwiper.nextLabelKey,
+        fallback: 'carte suivante',
+        icon: Icons.chevron_right,
+        onPressed: _advance,
+      ),
+    ],
+  );
 
   /// Repli file vide par défaut — localisé, observable.
   Widget _defaultEmpty(BuildContext context) => Center(
-        key: ZSessionCardSwiper.emptyKey,
-        child: Text(
-          label(
-            context,
-            ZSessionCardSwiper.emptyLabelKey,
-            fallback: 'Aucune carte',
-          ),
-          textAlign: TextAlign.center,
-        ),
-      );
+    key: ZSessionCardSwiper.emptyKey,
+    child: Text(
+      label(
+        context,
+        ZSessionCardSwiper.emptyLabelKey,
+        fallback: 'Aucune carte',
+      ),
+      textAlign: TextAlign.center,
+    ),
+  );
 }
 
 /// Bouton de navigation accessible (privé) — cible ≥ 48 dp, `Semantics`, label
