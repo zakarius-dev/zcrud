@@ -112,6 +112,26 @@ typedef CtorParam = ({String name, bool isRequired, bool hasDefault});
 /// L'admission reste NOMINATIVE, pour la raison qui vaut au-dessus : une règle
 /// de suffixe ferait entrer sans examen tout futur `…Layout`, `…Width` ou
 /// `…Visibility`, y compris celui qui porterait un callback.
+///
+/// ## Quatrième famille admise : les COMPOSITIONS DE FACE de la carte
+///
+/// `ZFlashcardQuestionFaceChoices` et `ZFlashcardFaceContent` disent ce que la
+/// carte du socle rend : ses choix de QCM sur la face question, et son contenu
+/// selon son rang dans la pile. Aucun des deux ne câble quoi que ce soit — ni
+/// port, ni callback, ni constructeur de rendu, ni contrôleur. Les oublier ne
+/// coûte aucune CAPACITÉ : les choix restent saisissables dans la surface de
+/// saisie, la carte de devant reste pleine, et la voie de notation est
+/// identique dans les quatre combinaisons.
+///
+/// 🔴 Leur défaut `null` n'est pas « rien » : il vaut *la décision de
+/// l'assemblage* (la carte ne rend pas les choix que la saisie rend déjà ; les
+/// cartes de rang > 0 sont muettes). Cela ne change pas leur classement — un
+/// montage énuméré qui devrait les nommer obligerait chaque écran à réécrire
+/// une décision que l'assemblage prend justement pour lui, et un `null` y
+/// signifierait la même chose qu'ici.
+///
+/// L'admission reste NOMINATIVE : un futur `ZFlashcard…Content` porteur d'un
+/// builder retomberait du côté « seam » tant que personne ne l'a examiné.
 const Set<String> kCosmeticTypes = <String>{
   'double',
   'int',
@@ -134,6 +154,8 @@ const Set<String> kCosmeticTypes = <String>{
   'ZAnswerActionsLayout',
   'ZAnswerSubmitWidth',
   'ZAnswerGradingVisibility',
+  'ZFlashcardQuestionFaceChoices',
+  'ZFlashcardFaceContent',
 };
 
 /// Applique la règle de type : `true` ⇒ **cosmétique**, `false` ⇒ **seam**.
@@ -699,6 +721,8 @@ void main() {
         'answerActionsLayout',
         'answerSubmitWidth',
         'answerGradingVisibility',
+        'questionFaceChoices',
+        'backCardsContent',
       ]) {
         expect(p.cosmetics, contains(cosmetic));
       }

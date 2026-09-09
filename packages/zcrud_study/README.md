@@ -465,6 +465,19 @@ Un écran qui ne veut pas d'indices n'en reçoit donc jamais : ne rien poser
 
 ## Cas limites et invariants {#cas-limites}
 
+- **La carte de session ne rend jamais ce que la saisie rend déjà** — sur un
+  QCM, l'écran monte une surface de saisie qui rend les choix, interactifs :
+  la carte se réduit alors à l'énoncé sur sa face question (sa face réponse
+  garde ses choix marqués, qui sont la correction). La décision se retire dès
+  que l'hôte pose son propre `gradingBuilder` — l'écran ne sait pas ce que
+  rend une surface qui n'est pas la sienne. `questionFaceChoices`, posé, bat
+  la décision dans les deux sens.
+- **Les cartes empilées derrière la carte de devant sont muettes** — seule une
+  bande de leur bord dépasse, et y laisser du texte donnait à lire la question
+  suivante. Elles gardent leur chrome (fond, rayon, ombre, liseré), perdent
+  tout contenu, tout geste et tout nœud d'accessibilité, et redeviennent
+  pleines dès qu'elles passent devant. `backCardsContent: full` restitue leur
+  contenu.
 - **Un champ absent reste absent, jamais un espace réservé** — un slot,
   une action ou une capacité IA sans port fourni est retirée de l'arbre par
   composition, jamais rendue grisée ni remplacée par un espace vide

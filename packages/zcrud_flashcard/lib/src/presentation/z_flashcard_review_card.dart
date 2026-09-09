@@ -60,6 +60,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import '../domain/z_flashcard.dart';
 import '../domain/z_reveal_transition.dart';
 import 'z_flashcard_content_slot.dart';
+import 'z_flashcard_face_mode.dart';
 import 'z_flashcard_type_gradient.dart';
 import 'z_reduce_motion.dart';
 
@@ -142,7 +143,10 @@ class ZFlashcardReviewCard extends StatefulWidget {
   ///   [ZcrudTheme.flashcardCardShadowColor] ; les deux nuls ⇒ **aucune
   ///   ombre** ;
   /// - [radius] : rayon des coins. Priorité paramètre, puis
-  ///   [ZcrudTheme.flashcardCardRadius], puis [ZcrudTheme.radiusM].
+  ///   [ZcrudTheme.flashcardCardRadius], puis [ZcrudTheme.radiusM] ;
+  /// - [questionFaceChoices] : sort des choix d'un QCM sur la face question
+  ///   (la face réponse n'est jamais concernée) ;
+  /// - [faceContent] : contenu rendu, ou carte muette réduite à son chrome.
   const ZFlashcardReviewCard({
     required this.card,
     this.revealTransition = ZRevealTransition.flip3d,
@@ -160,6 +164,8 @@ class ZFlashcardReviewCard extends StatefulWidget {
     this.backgroundColor,
     this.shadowColor,
     this.radius,
+    this.questionFaceChoices = ZFlashcardQuestionFaceChoices.shown,
+    this.faceContent = ZFlashcardFaceContent.full,
     super.key,
   });
 
@@ -299,6 +305,37 @@ class ZFlashcardReviewCard extends StatefulWidget {
   /// des boutons d'action) suit [ZcrudTheme.radiusM] et n'est pas déplacé
   /// par ce paramètre : arrondir une carte n'arrondit pas ses boutons.
   final Radius? radius;
+
+  /// Sort des choix d'un QCM **sur la face question**.
+  ///
+  /// Assemblée avec une surface de saisie qui rend les mêmes choix,
+  /// interactifs, la carte ne doit pas les rendre une seconde fois :
+  /// [ZFlashcardQuestionFaceChoices.hidden] réduit alors la face question à
+  /// son **énoncé**. La face **réponse** est inchangée dans les deux cas —
+  /// ses choix marqués sont la correction.
+  ///
+  /// Réglage d'assemblage, donc paramètre d'instance et non jeton de thème :
+  /// la même application affiche la carte seule (consultation) et accompagnée
+  /// d'une saisie (session), et la réponse diffère d'un site à l'autre.
+  ///
+  /// Sans effet hors QCM. Défaut [ZFlashcardQuestionFaceChoices.shown] : le
+  /// rendu d'une carte posée seule.
+  final ZFlashcardQuestionFaceChoices questionFaceChoices;
+
+  /// Contenu rendu, ou carte **muette** réduite à son chrome.
+  ///
+  /// [ZFlashcardFaceContent.blank] conserve le fond, le rayon, l'ombre portée
+  /// et le liseré de tête, et retire tout le reste : énoncé, réponse, choix,
+  /// badge de type, consigne et actions. La carte cesse alors d'être tapable
+  /// et n'expose plus le nœud d'accessibilité qui annonce la révélation — une
+  /// carte muette n'est ni un contrôle ni une question.
+  ///
+  /// C'est ce que réclame une carte empilée **derrière** celle qu'on consulte,
+  /// dont seule une bande de débord est visible : l'utilisateur y lirait sinon
+  /// des fragments de la carte suivante.
+  ///
+  /// Défaut [ZFlashcardFaceContent.full] : le rendu historique.
+  final ZFlashcardFaceContent faceContent;
 
   /// Clé de la rangée d'actions (testabilité).
   static const ValueKey<String> actionsKey = ValueKey<String>(
@@ -596,10 +633,13 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
                   ..._choices(context, marked: true),
                   ..._explanation(context),
                 ]
-              // Face question : l'énoncé + les choix, non interactifs.
+              // Face question : l'énoncé, puis les choix non interactifs —
+              // sauf quand l'assemblage les rend déjà ailleurs.
               : <Widget>[
                   _content(context, card.question),
-                  ..._choices(context, marked: false),
+                  if (widget.questionFaceChoices ==
+                      ZFlashcardQuestionFaceChoices.shown)
+                    ..._choices(context, marked: false),
                 ],
         );
       case ZFlashcardType.trueOrFalse:
@@ -1049,6 +1089,67 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     );
   }
 
+  /// Carte **muette** : le chrome seul (fond, rayon, ombre, liseré).
+  ///
+  /// Aucun slot de l'hôte n'est invoqué — ni le badge de type, ni le rendu de
+  /// contenu : ce qu'on ne rend pas, on ne le construit pas non plus.
+  ///
+  /// Ni `InkWell` ni nœud `Semantics` de révélation : la carte ne capte aucun
+  /// geste et n'est pas annoncée. Le `ConstrainedBox` reste — il tient
+  /// l'empreinte de la carte, pas une cible de tap : une carte muette occupe
+  /// la même place que la carte pleine qu'elle remplace.
+  Widget _blankCard(
+    BuildContext context,
+    ZcrudTheme theme,
+    Color surface,
+    Radius corner,
+    Widget? gradientAccent,
+  ) => _withShadow(
+    context,
+    theme,
+    corner,
+    Material(
+      color: surface,
+      borderRadius: BorderRadius.all(corner),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: ZFlashcardReviewCardMinTarget,
+          minHeight: ZFlashcardReviewCardMinTarget,
+        ),
+        child: Padding(
+          padding: theme.fieldPadding,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[?gradientAccent],
+          ),
+        ),
+      ),
+    ),
+  );
+
+  /// Pose l'ombre portée SOUS [card], ou rend [card] telle quelle.
+  ///
+  /// L'ombre est peinte par une décoration, et non par l'élévation du
+  /// `Material` : Material DÉRIVE le flou et le décalage de l'élévation sans
+  /// permettre de les fixer, alors que la référence en demande des valeurs
+  /// précises. `null` ⇒ pas de boîte du tout, donc un arbre STRICTEMENT
+  /// identique à l'historique.
+  Widget _withShadow(
+    BuildContext context,
+    ZcrudTheme theme,
+    Radius corner,
+    Widget card,
+  ) {
+    final BoxDecoration? shadow = _cardShadow(context, theme, corner);
+    if (shadow == null) return card;
+    return DecoratedBox(
+      key: ZFlashcardReviewCard.shadowKey,
+      decoration: shadow,
+      child: card,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
@@ -1064,16 +1165,25 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
         Theme.of(context).colorScheme.surface;
     final Radius corner = _resolvedCorner(theme);
 
+    // Résolution UNIQUE : la barre et le badge lisent exactement le même
+    // gradient, indexé par l'identité stable du type.
+    final gradientSpec = _typeGradientSpec(context);
+    final gradientAccent = _gradientAccent(context, gradientSpec);
+
+    // Carte muette : on sort AVANT de construire quoi que ce soit du contenu.
+    // Le badge et la rangée d'actions ne sont donc pas seulement absents de
+    // l'arbre — ils ne sont pas construits, et les slots de l'hôte ne sont
+    // pas appelés.
+    if (widget.faceContent == ZFlashcardFaceContent.blank) {
+      return _blankCard(context, theme, surface, corner, gradientAccent);
+    }
+
     // Construit UNE FOIS par build de la carte, et rendu en sibling du
     // `ValueListenableBuilder` — une révélation ne re-rentre pas dans
     // `build`, donc cette instance est **préservée** telle quelle (identité
     // stable). Un `setState` de carte la reconstruirait — c'est précisément
     // ce que la réactivité granulaire interdit.
     final actions = _actions(context);
-    // Résolution UNIQUE : la barre et le badge lisent exactement le même
-    // gradient, indexé par l'identité stable du type.
-    final gradientSpec = _typeGradientSpec(context);
-    final gradientAccent = _gradientAccent(context, gradientSpec);
     final questionTypeBadge = _questionTypeBadge(context, gradientSpec);
     final instructionBanner = _instructionBanner();
 
@@ -1177,18 +1287,7 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
       ),
     );
 
-    // L'ombre portée est peinte SOUS la carte, par une décoration, et non par
-    // l'élévation du `Material` : Material DÉRIVE le flou et le décalage de
-    // l'élévation sans permettre de les fixer, alors que la référence en
-    // demande des valeurs précises. `null` ⇒ pas de boîte du tout, donc un
-    // arbre STRICTEMENT identique à l'historique.
-    final BoxDecoration? shadow = _cardShadow(context, theme, corner);
-    if (shadow == null) return card;
-    return DecoratedBox(
-      key: ZFlashcardReviewCard.shadowKey,
-      decoration: shadow,
-      child: card,
-    );
+    return _withShadow(context, theme, corner, card);
   }
 
   /// Rayon des coins de la carte : paramètre > jeton > [ZcrudTheme.radiusM].

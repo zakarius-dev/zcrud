@@ -3,6 +3,38 @@
 Toutes les modifications notables de `zcrud_flashcard` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.52.0 — 2026-09-09
+
+### Ajouté
+
+- **`ZFlashcardReviewCard.questionFaceChoices`
+  (`ZFlashcardQuestionFaceChoices { shown, hidden }`, défaut `shown`).** Sur un
+  QCM, la face **question** rendait toujours les choix sous l'énoncé, en radios
+  non interactives, sans aucun moyen de ne rendre que l'énoncé
+  (`grep questionFaceChoices` ⇒ 0 avant ce lot). Assemblée avec une surface de
+  saisie qui rend les **mêmes** choix, interactifs, la carte les affichait donc
+  **deux fois**. `hidden` réduit la face question à l'énoncé ; la face
+  **réponse** est strictement inchangée dans les deux cas — ses choix marqués
+  sont la correction. Réglage **inerte hors QCM** (prouvé, pas supposé : les
+  autres types ne rendent aucun choix sur leur face question).
+
+- **`ZFlashcardReviewCard.faceContent`
+  (`ZFlashcardFaceContent { full, blank }`, défaut `full`).** `blank` rend le
+  **chrome seul** — fond, rayon, ombre portée, liseré de tête — sans énoncé,
+  choix, badge de type, consigne ni actions. La carte muette ne construit
+  **aucun slot de l'hôte**, ne porte **aucune surface tapable** (pas d'`InkWell`,
+  donc pas de bascule de révélation) et n'émet **aucun nœud `Semantics`** de
+  révélation : elle n'est ni un contrôle ni une question pour un lecteur
+  d'écran. Destiné aux cartes de rang > 0 d'une pile, dont seule une bande de
+  débord est visible : `flutter_card_swiper` construit ses cartes arrière sans
+  `IgnorePointer` ni `ExcludeSemantics` (`card_swiper_state.dart:175-199`),
+  elles ne sont donc **pas** inertes par construction.
+
+Les deux enums sont publiés par le barrel
+(`src/presentation/z_flashcard_face_mode.dart`). Défauts = rendu d'hier, à
+l'octet : quatre dumps d'arbre figés (QCM et question ouverte × face question et
+face réponse) gardent l'inertie.
+
 ## 3.51.0 — 2026-09-09
 
 ### Ajouté

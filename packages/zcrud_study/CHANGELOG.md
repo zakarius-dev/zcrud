@@ -3,6 +3,77 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.52.0 — 2026-09-09
+
+### Modifié
+
+🔴 **Deux ruptures VISIBLES pour un hôte qui monte l'écran de session assemblé
+(`ZStudySessionHost` / `ZStudySessionScaffold`) sans avoir rien contourné.**
+Elles ne touchent que la **carte par défaut** : un hôte qui pose son propre
+`cardBuilder` ou `cardSlotBuilder` rend sa carte, et rien ne change pour lui.
+
+- **Sur un QCM, les choix disparaissent de la CARTE.** L'écran monte une
+  surface de saisie (`ZFlashcardAnswerInput`) qui rend les mêmes choix,
+  interactifs ; la carte les rendait aussi, en radios inertes, sur sa face
+  question. Le même QCM s'affichait donc **deux fois**, une fois tapable et une
+  fois non. La règle appliquée désormais : *la carte ne rend pas ses choix
+  quand la saisie du socle les rend*. La face **réponse** est inchangée — ses
+  choix y portent le marquage de la bonne réponse, c'est-à-dire la correction.
+  La décision se retire d'elle-même quand l'hôte pose un `gradingBuilder` :
+  l'écran ne sait pas ce que rend une surface qui n'est pas la sienne, et la
+  carte y garde ses choix.
+- **Les cartes empilées derrière celle qu'on consulte perdent leur contenu.**
+  La pile laisse dépasser une bande d'environ 18 dp de la carte suivante ; le
+  texte qui s'y lisait était celui de la question d'après. Les cartes de rang
+  > 0 sont désormais **muettes** : le chrome seul — fond, rayon, ombre portée,
+  liseré de tête —, sans énoncé, choix, badge de type, consigne ni actions, et
+  **sans nœud d'accessibilité** (elles ne sont plus annoncées comme des
+  questions par un lecteur d'écran). La carte de **devant** est toujours pleine,
+  et le redevient dès qu'elle passe devant.
+
+  ⚠️ **Hôte ayant COMPENSÉ** : un écran qui masquait lui-même le débord de la
+  pile (rognage, superposition opaque, `ExcludeSemantics` sur les cartes
+  arrière) doit **retirer sa compensation** — elle s'additionne au correctif.
+
+**Échappatoire, dans les deux sens.** `ZStudySessionHost` et
+`ZStudySessionScaffold` portent deux réglages **nullables** ; `null` (défaut)
+laisse l'assemblage décider, une valeur posée le bat :
+
+- `questionFaceChoices` (`ZFlashcardQuestionFaceChoices?`) — `shown` ramène les
+  choix sur la carte même quand la saisie les rend ; `hidden` les retire même
+  sans saisie du socle ;
+- `backCardsContent` (`ZFlashcardFaceContent?`) — `full` restitue le contenu
+  des cartes empilées.
+
+Les deux sont **cosmétiques** au sens de la partition seams/cosmétiques : ils
+ne câblent ni port, ni callback, ni constructeur de rendu, ni contrôleur. Ils
+restent donc **à plat** sur les deux constructeurs, y compris `.wired`, et ne
+sont **pas** des champs de `ZStudySessionWiring` — un montage énuméré n'a pas à
+réécrire une décision que l'assemblage prend pour lui. Ils ne sont pas non plus
+portés par `ZStudySessionPreset` : un preset décrit une identité visuelle
+partagée entre écrans, alors que ces deux décisions dépendent de ce que CET
+écran monte à côté de la carte (une saisie de l'hôte, une pile) — le même
+preset posé sur un écran à `gradingBuilder` y rétablirait le doublon qu'il
+supprime ailleurs.
+
+- **Le créneau de carte de la pile est désormais posé SANS condition.** L'écran
+  ne passait `cardSlotBuilder` à la vue que lorsque l'affordance de révélation
+  était portée (mode `learn`, ou `revealPolicy: always`) ; ailleurs, la pile
+  empruntait `cardBuilder` et **aucune carte ne connaissait son rang**. Le rang
+  n'est pas une affordance que l'hôte offre ou non : c'est une information que
+  seule la pile détient. La voie `cardBuilder` reste servie **à l'identique**
+  par le créneau — une carte d'hôte est rendue telle quelle, sans habillage ni
+  décision de composition —, et l'arbre d'une session à **une seule carte** est
+  inchangé nœud pour nœud (garde d'inertie à dump figé).
+
+### Ajouté
+
+- **`ZStudySessionHost.questionFaceChoices` et
+  `ZStudySessionHost.backCardsContent`**, relayés par
+  `ZStudySessionScaffold` (les deux constructeurs) — cf. « Modifié » ci-dessus
+  pour leur contrat. Les deux enums (`ZFlashcardQuestionFaceChoices`,
+  `ZFlashcardFaceContent`) viennent de `zcrud_flashcard`.
+
 ## 3.51.0 — 2026-09-09
 
 ### Modifié

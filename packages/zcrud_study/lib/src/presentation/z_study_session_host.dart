@@ -72,7 +72,9 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart'
         ZFlashcard,
         ZFlashcardAnswerEvaluationPort,
         ZFlashcardContentBuilder,
+        ZFlashcardFaceContent,
         ZFlashcardHintPort,
+        ZFlashcardQuestionFaceChoices,
         ZFlashcardQuestionTypeBadgeBuilder,
         ZFlashcardReviewCard,
         ZSrsConfig;
@@ -309,6 +311,8 @@ class ZStudySessionHost extends StatefulWidget {
     this.cardTypeGradientKey,
     this.cardAccentHeight,
     this.cardBackgroundColor,
+    this.questionFaceChoices,
+    this.backCardsContent,
     this.evaluationPort,
     this.hintPort,
     this.onQualitySelected,
@@ -385,6 +389,8 @@ class ZStudySessionHost extends StatefulWidget {
     this.cardTypeGradientKey,
     this.cardAccentHeight,
     this.cardBackgroundColor,
+    this.questionFaceChoices,
+    this.backCardsContent,
     this.qualityLabelKeyFor = zDefaultQualityLabelKey,
     this.qualityEmphasis = ZSrsQualityEmphasis.none,
     this.answerChoiceLayout,
@@ -555,6 +561,40 @@ class ZStudySessionHost extends StatefulWidget {
   ///
   /// N'a d'effet que sur la carte par défaut (cf. [questionTypeBadgeBuilder]).
   final Color? cardBackgroundColor;
+
+  /// Sort des choix d'un QCM sur la **face question** de la carte par défaut.
+  ///
+  /// `null` (défaut) laisse l'assemblage décider, et sa règle est unique : *la
+  /// carte ne rend pas ses choix quand la saisie du socle les rend déjà*. Le
+  /// socle monte `ZFlashcardAnswerInput` dès qu'aucun [gradingBuilder] n'est
+  /// posé, et cette surface rend les choix d'un QCM dans **tous** les modes —
+  /// la carte se réduit alors à l'énoncé. Un [gradingBuilder] fourni remplace
+  /// la surface du socle par celle de l'hôte, dont l'assemblage ne sait rien :
+  /// la carte garde ses choix, comme une carte consultée seule.
+  ///
+  /// Une valeur posée **bat** cette décision, dans les deux sens :
+  /// `ZFlashcardQuestionFaceChoices.shown` ramène les choix sur la carte même
+  /// quand la saisie les rend, `hidden` les retire même sans saisie du socle.
+  ///
+  /// Sans effet hors QCM, et sans effet sur la face **réponse** : les choix y
+  /// portent le marquage de la bonne réponse, c'est-à-dire la correction.
+  ///
+  /// N'a d'effet que sur la carte par défaut (cf. [questionTypeBadgeBuilder]).
+  final ZFlashcardQuestionFaceChoices? questionFaceChoices;
+
+  /// Contenu des cartes de **rang > 0** dans la pile.
+  ///
+  /// `null` (défaut) laisse l'assemblage décider : les cartes empilées
+  /// derrière celle qu'on consulte sont rendues **muettes** — le chrome seul,
+  /// sans énoncé, choix, badge, consigne ni actions. Seule une bande de leur
+  /// bord dépasse : y laisser du contenu donne à lire des fragments de la
+  /// carte suivante.
+  ///
+  /// `ZFlashcardFaceContent.full` restitue le contenu des cartes empilées.
+  /// La carte de **devant** n'est jamais concernée : elle est toujours pleine.
+  ///
+  /// N'a d'effet que sur la carte par défaut (cf. [questionTypeBadgeBuilder]).
+  final ZFlashcardFaceContent? backCardsContent;
 
   /// Port d'évaluation ADVISORY (`null` ⇒ repli qualité neutre côté saisie).
   final ZFlashcardAnswerEvaluationPort? evaluationPort;
@@ -1326,6 +1366,38 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     return _defaultCard(context, card, item.flashcardId);
   }
 
+  /// Sort des choix d'un QCM sur la face question de la carte du socle.
+  ///
+  /// Règle unique de l'assemblage : **la carte ne rend pas ses choix quand la
+  /// saisie du socle les rend déjà**. Le paramètre de l'hôte, posé, bat la
+  /// décision — dans les deux sens.
+  ZFlashcardQuestionFaceChoices get _resolvedQuestionFaceChoices =>
+      widget.questionFaceChoices ??
+      (_mountsDefaultAnswerInput
+          ? ZFlashcardQuestionFaceChoices.hidden
+          : ZFlashcardQuestionFaceChoices.shown);
+
+  /// Vrai quand la surface de saisie montée est celle du SOCLE.
+  ///
+  /// La condition est exactement celle de [_buildGrading] : le créneau de
+  /// saisie est toujours dans l'arbre en phase d'étude, et il rend
+  /// `ZFlashcardAnswerInput` — dont la table d'affordance monte les choix d'un
+  /// QCM sans aiguillage sur le mode — sauf si l'hôte a posé son propre
+  /// [gradingBuilder]. Ce qu'une surface d'hôte rend est hors de portée de
+  /// l'assemblage : la carte y garde ses choix.
+  ///
+  /// 🔴 Décidé ICI et nulle part ailleurs : deux lectures de cette condition
+  /// divergeraient en silence le jour où la surface par défaut change.
+  bool get _mountsDefaultAnswerInput => widget.gradingBuilder == null;
+
+  /// Contenu rendu par la carte de rang [isFront] dans la pile.
+  ///
+  /// La carte de devant est toujours pleine ; celles de derrière suivent la
+  /// décision de l'hôte, à défaut celle de l'assemblage (muettes).
+  ZFlashcardFaceContent _resolvedFaceContent({required bool isFront}) => isFront
+      ? ZFlashcardFaceContent.full
+      : widget.backCardsContent ?? ZFlashcardFaceContent.blank;
+
   /// La carte du socle, habillée.
   ///
   /// Site UNIQUE de composition du chrome : les deux constructeurs de carte de
@@ -1340,6 +1412,7 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     ZFlashcard card,
     String flashcardId, {
     ZToggleController? revealController,
+    ZFlashcardFaceContent faceContent = ZFlashcardFaceContent.full,
   }) {
     final ZCardChromeSpec? chrome = widget.preset?.cardChrome?.call(card);
     return ZFlashcardReviewCard(
@@ -1359,6 +1432,11 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
       // pour tout hôte qui pose un preset.
       shadowColor: chrome?.resolveShadowColor(context, card),
       revealController: revealController,
+      // Les deux décisions que SEUL l'assemblage peut prendre : ce que rend la
+      // surface posée à côté de la carte, et le rang de la carte dans la pile.
+      // Une carte consultée seule ne peut savoir ni l'un ni l'autre.
+      questionFaceChoices: _resolvedQuestionFaceChoices,
+      faceContent: faceContent,
     );
   }
 
@@ -1386,11 +1464,30 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     if (card == null) return _missingCard(context);
     final ZStudySessionCardSlotBuilder? host = widget.cardSlotBuilder;
     if (host != null) return _buildHostCardSlot(context, slot, card, host);
+    // La carte de l'hôte reste la sienne, à son rang comme ailleurs : elle est
+    // rendue TELLE QUELLE, sans habillage ni décision de composition. Sans ce
+    // relais, poser `cardBuilder` perdrait la carte de l'hôte dès que la pile
+    // passe par le créneau.
+    final Widget Function(BuildContext, ZFlashcard)? custom =
+        widget.cardBuilder;
+    if (custom != null) return custom(context, card);
     return _defaultCard(
       context,
       card,
       slot.item.flashcardId,
+      // Le contrôleur part à la carte de DEVANT, sans condition de mode.
+      //
+      // 🔴 Le conditionner à `_revealAvailable` casse le passage d'un mode sans
+      // révélation à un mode qui en offre une : la pile mémoïse ses cartes par
+      // `(index, isFront)` et n'invalide son cache que sur un changement RÉEL
+      // de file, donc la carte de devant construite sans contrôleur SURVIT au
+      // changement de mode — l'action de révélation apparaît alors branchée sur
+      // un contrôleur que plus rien ne consomme (le patron
+      // `ZDisplayStateOwnerMixin` le refuse au `dispose`, et le bouton serait
+      // mort). La carte de devant le reçoit donc toujours : c'est justement ce
+      // qui garantit qu'il est consommé.
       revealController: slot.isFront ? _revealController : null,
+      faceContent: _resolvedFaceContent(isFront: slot.isFront),
     );
   }
 
@@ -1570,12 +1667,16 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
           current: _current,
           progress: _progress,
         ),
+        // Exigé par la vue, qui reste montable sans créneau par un appelant
+        // direct. La pile de CET écran, elle, passe toujours par le créneau
+        // ci-dessous — qui relaie `cardBuilder` à l'identique.
         cardBuilder: _buildCard,
-        // AD-4 — `null` quand l'affordance n'est pas portée : la pile emprunte
-        // alors `cardBuilder`, exactement comme avant.
-        cardSlotBuilder: (widget.cardSlotBuilder != null || _revealAvailable)
-            ? _buildCardSlot
-            : null,
+        // Le créneau est posé SANS condition : le rang d'une carte dans la
+        // pile n'est pas une affordance que l'hôte offre ou non, c'est une
+        // information que seule la pile détient — et sans elle, les cartes
+        // empilées derrière laisseraient lire la question suivante. La voie
+        // `cardBuilder` reste servie par le créneau lui-même, à l'identique.
+        cardSlotBuilder: _buildCardSlot,
         // AD-4 — `null` tant qu'aucune des deux actions n'est possible : la
         // zone n'est alors PAS dans l'arbre, exactement comme avant.
         revealBuilder: (_nativeRevealAction || _holdsAfterSubmit)

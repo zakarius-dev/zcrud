@@ -56,7 +56,9 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart'
         ZFlashcard,
         ZFlashcardAnswerEvaluationPort,
         ZFlashcardContentBuilder,
+        ZFlashcardFaceContent,
         ZFlashcardHintPort,
+        ZFlashcardQuestionFaceChoices,
         ZFlashcardQuestionTypeBadgeBuilder,
         ZSrsConfig;
 import 'package:zcrud_session/zcrud_session.dart'
@@ -107,6 +109,8 @@ class ZStudySessionScaffold extends StatelessWidget {
     this.cardTypeGradientKey,
     this.cardAccentHeight,
     this.cardBackgroundColor,
+    this.questionFaceChoices,
+    this.backCardsContent,
     this.evaluationPort,
     this.hintPort,
     this.onQualitySelected,
@@ -201,6 +205,8 @@ class ZStudySessionScaffold extends StatelessWidget {
     this.cardTypeGradientKey,
     this.cardAccentHeight,
     this.cardBackgroundColor,
+    this.questionFaceChoices,
+    this.backCardsContent,
     this.qualityLabelKeyFor = zDefaultQualityLabelKey,
     this.qualityEmphasis = ZSrsQualityEmphasis.none,
     this.answerChoiceLayout,
@@ -330,6 +336,16 @@ class ZStudySessionScaffold extends StatelessWidget {
   /// À ne pas confondre avec [backgroundColor], qui peint le `Scaffold` de la
   /// page : celui-ci gouverne la **carte**.
   final Color? cardBackgroundColor;
+
+  /// Sort des choix d'un QCM sur la face question de la carte par défaut.
+  ///
+  /// Cf. [ZStudySessionHost.questionFaceChoices].
+  final ZFlashcardQuestionFaceChoices? questionFaceChoices;
+
+  /// Contenu des cartes de rang > 0 dans la pile.
+  ///
+  /// Cf. [ZStudySessionHost.backCardsContent].
+  final ZFlashcardFaceContent? backCardsContent;
 
   /// Port d'évaluation advisory.
   final ZFlashcardAnswerEvaluationPort? evaluationPort;
@@ -572,6 +588,8 @@ class ZStudySessionScaffold extends StatelessWidget {
         cardTypeGradientKey: cardTypeGradientKey,
         cardAccentHeight: cardAccentHeight,
         cardBackgroundColor: cardBackgroundColor,
+        questionFaceChoices: questionFaceChoices,
+        backCardsContent: backCardsContent,
         qualityLabelKeyFor: qualityLabelKeyFor,
         qualityEmphasis: qualityEmphasis,
         answerChoiceLayout: answerChoiceLayout,
@@ -609,6 +627,8 @@ class ZStudySessionScaffold extends StatelessWidget {
       cardTypeGradientKey: cardTypeGradientKey,
       cardAccentHeight: cardAccentHeight,
       cardBackgroundColor: cardBackgroundColor,
+      questionFaceChoices: questionFaceChoices,
+      backCardsContent: backCardsContent,
       evaluationPort: evaluationPort,
       hintPort: hintPort,
       onQualitySelected: onQualitySelected,

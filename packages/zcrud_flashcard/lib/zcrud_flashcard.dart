@@ -399,6 +399,9 @@ export 'src/presentation/z_flashcard_editors.dart';
 // `zcrud_markdown` : ce serait un cycle, invariant AD-1). Le défaut de
 // `ZFlashcardReviewCard` reste le texte brut du slot de contenu ci-dessus.
 export 'src/presentation/z_flashcard_markdown_content.dart';
+// Réglages de composition de face de la carte de révision (choix sur la face
+// question, carte muette) — réglages d'assemblage, jamais des jetons de thème.
+export 'src/presentation/z_flashcard_face_mode.dart';
 // Carte de révision adaptative (six types plus la révélation).
 export 'src/presentation/z_flashcard_review_card.dart';
 export 'src/presentation/z_flashcard_true_false_field_widget.dart';
