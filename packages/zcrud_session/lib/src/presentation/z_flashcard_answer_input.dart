@@ -201,6 +201,7 @@ class ZFlashcardAnswerInput extends StatefulWidget {
     this.qualityLabelKeyFor = zDefaultQualityLabelKey,
     this.qualityColorKeyFor,
     this.qualityPreviewLabelFor,
+    this.qualityPreviewLabelForCard,
     this.qualityEmphasis = ZSrsQualityEmphasis.none,
     this.onAdvance,
     this.markSkippedSubmissions = false,
@@ -392,12 +393,37 @@ class ZFlashcardAnswerInput extends StatefulWidget {
   /// clé de couleur neutre résolue par le thème — jamais une valeur chromatique.
   final ZQualityColorKeyResolver? qualityColorKeyFor;
 
-  /// Seam d'aperçu d'intervalle prévisionnel sous chaque cran.
+  /// Seam d'aperçu d'intervalle prévisionnel sous chaque cran, SANS la carte.
   ///
-  /// Relayé tel quel à [ZSrsQualityButtons.previewLabelFor]. `null` (défaut) :
-  /// aucun aperçu. Typiquement une projection PURE du planificateur (`simulate`),
-  /// sans écriture SRS : cette surface n'écrit jamais l'état de répétition.
+  /// `null` (défaut) : aucun aperçu. Typiquement une projection PURE du
+  /// planificateur (`simulate`), sans écriture SRS : cette surface n'écrit
+  /// jamais l'état de répétition.
+  ///
+  /// Ne convient qu'à un aperçu indépendant de la carte affichée. Un
+  /// intervalle SM-2 dépend de l'état de répétition de la carte : passer par
+  /// [qualityPreviewLabelForCard] évite alors à l'appelant de tenir en
+  /// parallèle un miroir de la file pour retrouver la carte de devant.
+  ///
+  /// Ordre de résolution de l'aperçu effectivement rendu :
+  /// 1. [qualityPreviewLabelForCard] s'il est fourni ;
+  /// 2. sinon [qualityPreviewLabelFor] ;
+  /// 3. sinon aucun aperçu.
   final String Function(int quality)? qualityPreviewLabelFor;
+
+  /// Seam d'aperçu d'intervalle prévisionnel recevant la CARTE affichée.
+  ///
+  /// Même contrat que [qualityPreviewLabelFor] — une projection pure, jamais
+  /// une écriture SRS — mais la carte de devant est fournie à l'appel, si
+  /// bien qu'un aperçu SM-2 peut être calculé depuis l'état de répétition
+  /// réel sans que l'appelant ait à le retrouver lui-même.
+  ///
+  /// La carte passée est celle rendue AU MOMENT DE L'APPEL : après un
+  /// changement de carte, l'aperçu porte sur la nouvelle.
+  ///
+  /// Prioritaire sur [qualityPreviewLabelFor] quand les deux sont fournis
+  /// (voir l'ordre de résolution documenté sur ce dernier).
+  final String Function(ZFlashcard card, int quality)?
+  qualityPreviewLabelForCard;
 
   /// Affordance d'emphase des crans de notation (dimensions seules).
   ///
@@ -580,6 +606,16 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     null,
   );
 
+  /// Une soumission rédigée a-t-elle été REFUSÉE faute de saisie ?
+  ///
+  /// Refuser n'est pas soumettre : ce drapeau n'entre ni dans
+  /// [_submitLocked] ni dans [_correction] — la carte reste ouverte, le champ
+  /// reste éditable, rien n'est émis. Il ne sert qu'à faire APPARAÎTRE le
+  /// message du validateur sur un champ que l'utilisateur n'a jamais touché :
+  /// `AutovalidateMode.onUserInteraction` n'affiche rien tant qu'aucune
+  /// frappe n'a eu lieu — ce qui est exactement le cas d'une copie blanche.
+  final ValueNotifier<bool> _emptyAnswerRefused = ValueNotifier<bool>(false);
+
   /// Controller stable (invariant AD-2) : créé une fois ici, disposé
   /// ci-dessous. Jamais recréé dans `build()` — ce serait le bug historique
   /// que zcrud existe pour corriger (perte de focus et de curseur à chaque
@@ -758,6 +794,9 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     _maybeRevealStoredHint();
     _hintError.value = null;
     _correction.value = null;
+    // La carte suivante repart sans le refus de la précédente : sinon son
+    // champ vierge afficherait « réponse requise » avant tout geste.
+    _emptyAnswerRefused.value = false;
     _answerController.clear();
     // L'auto-passage de la carte précédente ne doit pas faire avancer la
     // nouvelle.
@@ -820,6 +859,7 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     _shownHints.dispose();
     _hintError.dispose();
     _correction.dispose();
+    _emptyAnswerRefused.dispose();
     _answerController.dispose();
     _answerFocus.dispose();
     super.dispose();
@@ -843,6 +883,21 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
       widget.advanceBehavior ?? zDefaultAdvanceBehavior(widget.mode);
 
   int get _hintsUsed => _shownHints.value.length;
+
+  /// Seam d'aperçu effectivement relayé à la rangée de notation.
+  ///
+  /// Le seam qui reçoit la carte prime sur celui qui ne la reçoit pas ; à
+  /// défaut des deux, aucun aperçu n'est rendu — la rangée en décide seule
+  /// avec `null`.
+  String Function(int quality)? get _previewLabelFor {
+    final withCard = widget.qualityPreviewLabelForCard;
+    if (withCard == null) return widget.qualityPreviewLabelFor;
+    // `widget.card` est lu à l'APPEL, jamais capturé à la construction de la
+    // closure : le `State` survit au changement de carte, et un aperçu figé
+    // sur la carte précédente afficherait un intervalle qui n'est celui de
+    // personne.
+    return (int quality) => withCard(widget.card, quality);
+  }
 
   /// La carte porte-t-elle un indice stocké exploitable ?
   bool get _hasStoredHint {
@@ -936,6 +991,25 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     // n'arrive qu'après la réponse du port, et le bouton n'a aucun
     // indicateur de charge).
     if (_submitLocked) return;
+    // Une copie blanche n'est pas une réponse : la soumission est REFUSÉE
+    // avant que quoi que ce soit ne parte — ni appel au port d'évaluation,
+    // ni `onSubmitted`. Le refus est un NON-ÉVÈNEMENT (AD-10 : on refuse, on
+    // ne lève pas) : aucun verrou posé, aucune correction, aucune note.
+    // L'apprenant corrige et resoumet.
+    //
+    // La voie délibérée « je passe » existe et reste DISTINCTE : c'est
+    // « Je ne sais pas » ([_submitDontKnow]), qui note à la borne basse et
+    // marque la soumission. Refuser la copie blanche ne la ferme donc pas.
+    //
+    // Le refus vaut pour les DEUX voies de soumission rédigée, y compris
+    // celle qui n'appelle pas le port (`skipEvaluation`) : la vacuité est une
+    // propriété de la SAISIE, pas du barème — sans quoi la voie sans IA
+    // noterait une copie blanche au seuil de passage.
+    if (_answerController.text.trim().isEmpty) {
+      _emptyAnswerRefused.value = true;
+      return;
+    }
+    _emptyAnswerRefused.value = false;
     _submitLocked = true;
     // Jeton de fraîcheur capturé avant l'`await` (voir [_generation]).
     final generation = _generation;
@@ -1249,7 +1323,7 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
             srsConfig: widget.srsConfig,
             qualityLabelKeyFor: widget.qualityLabelKeyFor,
             qualityColorKeyFor: widget.qualityColorKeyFor,
-            qualityPreviewLabelFor: widget.qualityPreviewLabelFor,
+            qualityPreviewLabelFor: _previewLabelFor,
             qualityEmphasis: widget.qualityEmphasis,
             gradingVisibility: gradingVisibility,
             manualQuality: _manualQuality,
@@ -1309,6 +1383,7 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
         controller: _answerController,
         focusNode: _answerFocus,
         correction: _correction,
+        emptyRefused: _emptyAnswerRefused,
         validator: _requiredValidator(context),
         fieldBuilder: widget.writtenAnswerFieldBuilder,
         submittedOverride: _effectiveSubmitted,
@@ -1935,11 +2010,12 @@ class _TrueFalseInput extends StatelessWidget {
 /// controller pendant la frappe — ce serait écraser la sélection ou le
 /// curseur. Aucun `setState` ici : la frappe ne notifie que l'`EditableText`
 /// interne, donc rien d'autre ne se reconstruit (ni la carte, ni le slot).
-class _WrittenInput extends StatelessWidget {
+class _WrittenInput extends StatefulWidget {
   const _WrittenInput({
     required this.controller,
     required this.focusNode,
     required this.correction,
+    required this.emptyRefused,
     required this.validator,
     required this.fieldBuilder,
     required this.submittedOverride,
@@ -1951,6 +2027,13 @@ class _WrittenInput extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final ValueListenable<_Correction?> correction;
+
+  /// Une soumission a-t-elle été refusée faute de saisie ?
+  ///
+  /// Ne verrouille rien : la seule conséquence est de faire afficher au champ
+  /// le message de [validator], que `AutovalidateMode.onUserInteraction`
+  /// retient tant que l'utilisateur n'a rien tapé.
+  final ValueListenable<bool> emptyRefused;
 
   /// Validateur résolu et mémoïsé par l'hôte (`_requiredValidator`) : son
   /// message est localisé et son identité est stable entre builds.
@@ -1974,6 +2057,46 @@ class _WrittenInput extends StatelessWidget {
   static const ValueKey<String> fieldKey = ValueKey<String>('zAnswerField');
 
   @override
+  State<_WrittenInput> createState() => _WrittenInputState();
+}
+
+/// L'abonnement à [_WrittenInput.emptyRefused] vit ICI, et non dans un
+/// `ValueListenableBuilder` de plus : un nœud supplémentaire dans le
+/// sous-arbre romprait l'inertie d'arbre du régime de référence, où aucun
+/// refus n'a jamais lieu. L'`Element` reconstruit est le même que celui
+/// qu'aurait reconstruit un builder — la granularité est identique, la frappe
+/// n'y passe pas (le refus naît d'un tap, jamais d'un caractère).
+class _WrittenInputState extends State<_WrittenInput> {
+  @override
+  void initState() {
+    super.initState();
+    widget.emptyRefused.addListener(_onRefusalChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _WrittenInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Le drapeau appartient au `State` de la surface, qui survit au
+    // changement de carte : l'identité ne change en pratique jamais. On la
+    // suit tout de même — un abonnement laissé sur l'ancien notifieur
+    // rendrait le refus muet, sans rien casser d'autre (donc invisible).
+    if (!identical(oldWidget.emptyRefused, widget.emptyRefused)) {
+      oldWidget.emptyRefused.removeListener(_onRefusalChanged);
+      widget.emptyRefused.addListener(_onRefusalChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.emptyRefused.removeListener(_onRefusalChanged);
+    super.dispose();
+  }
+
+  void _onRefusalChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     return Column(
@@ -1988,26 +2111,26 @@ class _WrittenInput extends StatelessWidget {
             fallback: 'Votre réponse',
           ),
           child: ValueListenableBuilder<_Correction?>(
-            valueListenable: correction,
+            valueListenable: widget.correction,
             builder: (context, corrected, _) {
-              final locked = submittedOverride ?? corrected != null;
-              final injected = fieldBuilder;
+              final locked = widget.submittedOverride ?? corrected != null;
+              final injected = widget.fieldBuilder;
               // Le champ injecté remplace le champ, et rien d'autre : il
               // reçoit le controller et le focus de la surface (la
               // soumission lit ce controller-là), et le verrou déjà résolu.
               if (injected != null) {
                 return injected(
                   context,
-                  controller: controller,
-                  focusNode: focusNode,
-                  validator: validator,
+                  controller: widget.controller,
+                  focusNode: widget.focusNode,
+                  validator: widget.validator,
                   isSubmitted: locked,
                 );
               }
               return TextFormField(
-                key: fieldKey,
-                controller: controller,
-                focusNode: focusNode,
+                key: _WrittenInput.fieldKey,
+                controller: widget.controller,
+                focusNode: widget.focusNode,
                 // Verrou one-shot du champ rédigé, sur le même patron que les
                 // autres contrôles (`_ChoiceRow` : `onTap: null` ; `_tfButton` :
                 // `onPressed: null` ; `_DontKnowButton` : disparaît ;
@@ -2026,9 +2149,15 @@ class _WrittenInput extends StatelessWidget {
                 // lisible et sélectionnable — l'apprenant doit pouvoir relire
                 // ce qui a été évalué.
                 readOnly: locked,
-                // Par champ.
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                validator: validator,
+                // Par champ. `onUserInteraction` ne montre le message qu'une
+                // fois l'utilisateur passé par le champ ; une COPIE BLANCHE
+                // n'y est jamais passée, et son refus resterait donc muet.
+                // `always` est posé pour ce seul cas, et le message repart de
+                // lui-même dès que la saisie redevient valide.
+                autovalidateMode: widget.emptyRefused.value
+                    ? AutovalidateMode.always
+                    : AutovalidateMode.onUserInteraction,
+                validator: widget.validator,
                 textAlign: TextAlign.start,
                 maxLines: null,
               );
@@ -2042,9 +2171,9 @@ class _WrittenInput extends StatelessWidget {
         // correction, le bouton est encore là et n'a aucun indicateur de
         // charge).
         ValueListenableBuilder<_Correction?>(
-          valueListenable: correction,
+          valueListenable: widget.correction,
           builder: (context, corrected, _) =>
-              (submittedOverride ?? corrected != null)
+              (widget.submittedOverride ?? corrected != null)
               ? const SizedBox.shrink()
               : _actions(context),
         ),
@@ -2062,7 +2191,9 @@ class _WrittenInput extends StatelessWidget {
   /// IA », quand elle existe, ne peut donc pas être poussée hors du cadre par
   /// un bouton de soumission étiré.
   Widget _actions(BuildContext context) {
-    if (submitWidth == ZAnswerSubmitWidth.content) return _contentActions();
+    if (widget.submitWidth == ZAnswerSubmitWidth.content) {
+      return _contentActions();
+    }
     return LayoutBuilder(
       // Largeur NON BORNÉE : « toute la largeur » n'existe pas, et un enfant
       // à flex y lèverait une contrainte infinie. Repli sur la ligne de
@@ -2074,11 +2205,11 @@ class _WrittenInput extends StatelessWidget {
 
   /// Ligne d'action à la largeur du contenu — expression HISTORIQUE.
   Widget _contentActions() {
-    final VoidCallback? skip = onSubmitWithoutEvaluation;
+    final VoidCallback? skip = widget.onSubmitWithoutEvaluation;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        _SubmitButton(onPressed: onSubmit),
+        _SubmitButton(onPressed: widget.onSubmit),
         // Voie « évaluer sans IA », offerte à chaque soumission
         // et non figée à la construction.
         if (skip != null) ...<Widget>[
@@ -2096,11 +2227,11 @@ class _WrittenInput extends StatelessWidget {
 
   /// Ligne d'action occupant la largeur entière, ses boutons à parts égales.
   Widget _fullWidthActions() {
-    final VoidCallback? skip = onSubmitWithoutEvaluation;
+    final VoidCallback? skip = widget.onSubmitWithoutEvaluation;
     return Row(
       key: ZFlashcardAnswerInput.submitFullWidthKey,
       children: <Widget>[
-        Expanded(child: _SubmitButton(onPressed: onSubmit)),
+        Expanded(child: _SubmitButton(onPressed: widget.onSubmit)),
         if (skip != null) ...<Widget>[
           const SizedBox(width: 8),
           Expanded(

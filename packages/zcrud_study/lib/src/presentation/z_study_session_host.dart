@@ -180,6 +180,8 @@ class ZStudySessionWiring {
     required this.onQualitySelected,
     required this.qualityColorKeyFor,
     required this.qualityPreviewLabelFor,
+    required this.qualityPreviewLabelForCard,
+    required this.onSource,
     required this.headerBuilder,
     required this.counterBuilder,
     required this.gradingBuilder,
@@ -206,6 +208,8 @@ class ZStudySessionWiring {
         onQualitySelected = null,
         qualityColorKeyFor = null,
         qualityPreviewLabelFor = null,
+        qualityPreviewLabelForCard = null,
+        onSource = null,
         headerBuilder = null,
         counterBuilder = null,
         gradingBuilder = null,
@@ -251,6 +255,14 @@ class ZStudySessionWiring {
 
   /// Aperçu d'intervalle — cf. [ZStudySessionHost.qualityPreviewLabelFor].
   final String Function(int quality)? qualityPreviewLabelFor;
+
+  /// Aperçu d'intervalle recevant la carte — cf.
+  /// [ZStudySessionHost.qualityPreviewLabelForCard].
+  final String Function(ZFlashcard card, int quality)?
+      qualityPreviewLabelForCard;
+
+  /// Action « voir la source » — cf. [ZStudySessionHost.onSource].
+  final void Function(ZFlashcard card)? onSource;
 
   /// En-tête — cf. [ZStudySessionHost.headerBuilder].
   final ZStudySessionHeaderBuilder? headerBuilder;
@@ -319,11 +331,15 @@ class ZStudySessionHost extends StatefulWidget {
     this.qualityLabelKeyFor = zDefaultQualityLabelKey,
     this.qualityColorKeyFor,
     this.qualityPreviewLabelFor,
+    this.qualityPreviewLabelForCard,
+    this.onSource,
     this.qualityEmphasis = ZSrsQualityEmphasis.none,
     this.answerChoiceLayout,
     this.answerActionsLayout,
     this.answerSubmitWidth,
     this.answerGradingVisibility,
+    this.answerAllowSkipEvaluation,
+    this.answerRevealStoredHint,
     this.headerBuilder,
     this.counterBuilder,
     this.gradingBuilder,
@@ -397,6 +413,8 @@ class ZStudySessionHost extends StatefulWidget {
     this.answerActionsLayout,
     this.answerSubmitWidth,
     this.answerGradingVisibility,
+    this.answerAllowSkipEvaluation,
+    this.answerRevealStoredHint,
     this.progressStyle,
     this.progressDotsGeometry,
     this.progressLinearThickness,
@@ -425,6 +443,8 @@ class ZStudySessionHost extends StatefulWidget {
         onQualitySelected = wiring.onQualitySelected,
         qualityColorKeyFor = wiring.qualityColorKeyFor,
         qualityPreviewLabelFor = wiring.qualityPreviewLabelFor,
+        qualityPreviewLabelForCard = wiring.qualityPreviewLabelForCard,
+        onSource = wiring.onSource,
         headerBuilder = wiring.headerBuilder,
         counterBuilder = wiring.counterBuilder,
         gradingBuilder = wiring.gradingBuilder,
@@ -610,9 +630,24 @@ class ZStudySessionHost extends StatefulWidget {
   /// [qualityColorKeyFor], [qualityPreviewLabelFor] et [qualityEmphasis]
   /// n'ont rien à peindre.
   ///
-  /// 🔒 Cette voie **n'écrit rien** dans le SRS. L'écriture de révision reste
-  /// la soumission de la carte, et elle seule (invariant AD-33) : la rangée
-  /// notifie l'appelant du cran tapé, elle ne double pas la note.
+  /// ## Ce que taper un palier fait — le contrat de notation
+  ///
+  /// | Moment du geste | Qui note | Ce que fait ce rappel |
+  /// |---|---|---|
+  /// | **avant** la réponse (rangée montée d'emblée, cf. [answerGradingVisibility]) | le palier tapé | il notifie, **et** la carte est notée puis quitte le devant |
+  /// | **après** la réponse | la soumission | il ne fait que notifier — la note est déjà partie |
+  ///
+  /// Une présentation de carte produit donc **exactement une** écriture de
+  /// révision (invariant AD-33), quel que soit le geste qui l'a déclenchée :
+  /// taper un second palier n'en écrit pas une deuxième, et soumettre après
+  /// avoir tapé non plus.
+  ///
+  /// Ce rappel est appelé à **chaque** cran tapé, avant toute décision
+  /// d'écriture : il rapporte le geste, jamais la note retenue.
+  ///
+  /// La retenue après notation ([postSubmitPolicy]) s'applique à l'identique :
+  /// en mode d'apprentissage, la carte notée à la main reste affichée le temps
+  /// que sa réponse soit lue, et part à la continuation.
   final ValueChanged<int>? onQualitySelected;
 
   /// Seam de clé de libellé l10n d'un cran de notation.
@@ -636,6 +671,47 @@ class ZStudySessionHost extends StatefulWidget {
   /// planificateur (`simulate`) : la construire n'écrit aucun état de
   /// répétition.
   final String Function(int quality)? qualityPreviewLabelFor;
+
+  /// Aperçu d'intervalle prévisionnel recevant la **carte de devant**.
+  ///
+  /// Même contrat que [qualityPreviewLabelFor] — une projection pure, jamais
+  /// une écriture — mais la carte est fournie à l'appel : un intervalle SM-2
+  /// dépend de l'état de répétition de la carte, et l'appelant n'a donc pas à
+  /// tenir en parallèle un miroir de la file pour retrouver de quelle carte il
+  /// projette l'échéance.
+  ///
+  /// Prioritaire sur [qualityPreviewLabelFor] quand les deux sont posés.
+  final String Function(ZFlashcard card, int quality)?
+      qualityPreviewLabelForCard;
+
+  /// Action « voir la source » de la carte de **devant**.
+  ///
+  /// `null` (défaut) : l'action est **absente** de la carte (AD-4), jamais
+  /// grisée. Posée, elle reçoit la carte consultée — remonter vers ce dont
+  /// elle est tirée (article, note, document, conversation…) demande de
+  /// résoudre `ZFlashcard.source`, un slot ouvert que l'application seule sait
+  /// interpréter.
+  ///
+  /// N'atteint que la carte du socle : une carte fournie par
+  /// [cardBuilder]/[cardSlotBuilder] reste celle de l'appelant, avec ses
+  /// propres actions.
+  final void Function(ZFlashcard card)? onSource;
+
+  /// Offre à la surface de saisie une voie « évaluer sans IA », qui n'appelle
+  /// pas [evaluationPort].
+  ///
+  /// `null` (défaut) ⇒ le défaut de la surface : aucune voie de contournement.
+  /// Sans [evaluationPort], le drapeau n'a rien à esquiver et reste sans
+  /// effet.
+  final bool? answerAllowSkipEvaluation;
+
+  /// Sert l'indice **stocké** de la carte d'emblée, sans geste.
+  ///
+  /// `null` (défaut) ⇒ le défaut de la surface : l'indice reste derrière son
+  /// bouton. L'indice révélé d'emblée est compté et plafonne la qualité
+  /// exactement comme un indice demandé — visibilité et pénalité restent deux
+  /// décisions distinctes.
+  final bool? answerRevealStoredHint;
 
   /// Affordance d'emphase des crans de notation (dimensions seules).
   ///
@@ -856,17 +932,37 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
       ValueNotifier<ZStudySessionPhase>(ZStudySessionPhase.empty);
   final ValueNotifier<List<ZSessionItem>> _queue =
       ValueNotifier<List<ZSessionItem>>(const <ZSessionItem>[]);
-  final ValueNotifier<ZSessionItem?> _current =
-      ValueNotifier<ZSessionItem?>(null);
+  final _FrontCardNotifier _current = _FrontCardNotifier();
   final ValueNotifier<ZStudySessionProgress> _progress =
       ValueNotifier<ZStudySessionProgress>(const ZStudySessionProgress());
 
   /// Cartes indexées par IDENTITÉ (2ᵉ liste parallèle — su-7).
   Map<String, ZFlashcard> _cardsById = const <String, ZFlashcard>{};
 
-  /// Soumissions enregistrées par **identité de carte**, jamais par index.
-  final Map<String, ZFlashcardSubmission> _submissionsById =
-      <String, ZFlashcardSubmission>{};
+  /// Notes enregistrées par **identité de carte**, jamais par index.
+  ///
+  /// Alimentée par les DEUX gestes qui notent — la soumission d'une réponse et
+  /// le palier tapé avant elle — parce que le résultat agrégé compte des
+  /// cartes notées, pas des réponses rédigées.
+  // Une carte notée à la main n'a ni temps de réponse ni compte d'indices :
+  // ces deux mesures appartiennent à la surface de saisie, qui n'a rien émis.
+  // Enregistrer une `ZFlashcardSubmission` fabriquée les inventerait à zéro.
+  final Map<String, int> _gradedQualityById = <String, int>{};
+
+  /// Nombre de présentations DÉJÀ consommées de chaque carte.
+  ///
+  /// Une carte réinsérée au lapse revient sous la même identité : sans ce
+  /// compteur, la surface de saisie de sa présentation précédente survivrait —
+  /// même `key`, donc même `State`, donc la réponse déjà tapée et sa
+  /// correction.
+  final Map<String, int> _presentationsById = <String, int>{};
+
+  /// Carte notée dont la présentation n'est pas encore consommée.
+  ///
+  /// Sert de verrou one-shot : tant qu'elle est posée, la présentation en
+  /// cours a déjà produit sa notation et aucun second geste ne peut en écrire
+  /// une deuxième (invariant AD-33).
+  String? _gradingId;
 
   /// Runtime POSSÉDÉ (libéré au remplacement et au `dispose`).
   ChangeNotifier? _runtime;
@@ -1028,7 +1124,9 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     _runtime?.removeListener(_onRuntimeChanged);
     _runtime?.dispose();
     _runtime = null;
-    _submissionsById.clear();
+    _gradedQualityById.clear();
+    _presentationsById.clear();
+    _gradingId = null;
     _celebrated = false;
     _index = 0;
     // Une session neuve repart FACE QUESTION, quoi qu'ait laissé la
@@ -1154,6 +1252,12 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     if (frontId != _frontId) {
       _frontId = frontId;
       _reveal?.value = false;
+      // La carte notée a quitté le devant : sa présentation est consommée.
+      // Ce site couvre les runtimes à file FIXE, dont l'avance ne passe pas
+      // par `_gradeAndAdvance` ; le régime SRS, lui, consomme la sienne
+      // explicitement — une carte réinsertée sous la même identité ne change
+      // pas de front, et ce test-ci ne la verrait pas.
+      _consumePresentation();
     }
 
     final int reviewed;
@@ -1192,15 +1296,68 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
 
   // ── Notation ──────────────────────────────────────────────────────────────
 
+  /// Numéro de la présentation en cours de [cardId] — `0` la première fois.
+  int _presentationOf(String cardId) => _presentationsById[cardId] ?? 0;
+
+  /// Consomme la présentation de la carte notée : la suivante repartira
+  /// vierge.
+  ///
+  /// Sans effet tant qu'aucune notation n'attend son départ — un `_sync` de
+  /// routine ne consomme rien.
+  void _consumePresentation() {
+    final String? id = _gradingId;
+    if (id == null) return;
+    _gradingId = null;
+    _presentationsById[id] = _presentationOf(id) + 1;
+    // 🔒 MÊME INVARIANT que sur un changement de carte de devant : la
+    // révélation se referme. Une carte réinsertée sous la même identité ne
+    // change pas de front — sans ce reset, elle reviendrait FACE RÉPONSE, et
+    // la question qu'on redemande serait déjà corrigée à l'écran.
+    _reveal?.value = false;
+    // La tranche de carte de devant est un `ValueNotifier` à égalité de
+    // VALEUR : une carte réinsérée seule y est la MÊME valeur, et la surface
+    // de saisie ne serait jamais reconstruite — sa `key` aurait beau porter le
+    // numéro de présentation, personne ne la relirait. On redit donc la carte.
+    _current.republish();
+  }
+
   /// Route une soumission vers le runtime **désigné** — aucun aiguillage
   /// secondaire sur le mode.
-  void _onSubmitted(String cardId, ZFlashcardSubmission submission) {
-    // Pendant une retenue, la session est FIGÉE sur la carte déjà notée : une
-    // seconde soumission la noterait une seconde fois. La voie d'écriture reste
-    // unique ET tirée une seule fois par carte (AD-33).
-    if (_frozen) return;
-    // Association réponse ↔ carte par `flashcardId` (su-4 D2 / su-7).
-    _submissionsById[cardId] = submission;
+  void _onSubmitted(String cardId, ZFlashcardSubmission submission) =>
+      _grade(cardId, submission.quality);
+
+  /// Cran tapé sur la rangée de paliers de la carte de devant.
+  ///
+  /// Le rappel de l'hôte part **toujours**, et d'abord : il notifie le geste,
+  /// pas l'écriture. La notation, elle, n'a lieu que si la présentation n'a pas
+  /// déjà été notée — c'est `_grade` qui en décide, à un seul endroit.
+  void _onManualQuality(String cardId, int quality) {
+    widget.onQualitySelected?.call(quality);
+    _grade(cardId, quality);
+  }
+
+  /// Note la carte de devant — geste unique des DEUX voies de notation.
+  ///
+  /// La soumission d'une réponse et le palier tapé avant elle passent par ici,
+  /// et par rien d'autre : deux routages parallèles divergeraient au premier
+  /// mode qui change de runtime.
+  void _grade(String cardId, int quality) {
+    // Verrou one-shot par PRÉSENTATION — RÈGLE UNIQUE, et le seul aiguillage
+    // d'écriture de l'écran : la carte affichée a déjà été notée et n'a pas
+    // encore quitté le devant (invariant AD-33).
+    //
+    // Il couvre la retenue par construction : `_frozen` n'est posé que dans
+    // `_gradeAndAdvance`, c'est-à-dire APRÈS ce verrou, et les deux se
+    // relèvent ensemble. Un second test sur `_frozen` ici serait une seconde
+    // lecture de la même règle — inatteignable, donc invérifiable.
+    //
+    // Il couvre aussi une surface de saisie fournie par l'hôte, qui n'a pas le
+    // verrou one-shot de celle du socle : deux appels de `submit` pour la même
+    // carte n'écrivent qu'une fois.
+    if (_gradingId != null) return;
+    _gradingId = cardId;
+    // Association note ↔ carte par `flashcardId` (su-4 D2 / su-7).
+    _gradedQualityById[cardId] = quality;
     final ChangeNotifier? rt = _runtime;
     switch (zSessionRuntimeForMode(widget.mode)) {
       case ZSessionRuntimeKind.srsEngine:
@@ -1210,19 +1367,19 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
         // front du moteur) ; elle protège encore contre une note sur la
         // mauvaise carte, sans jamais diverger du swiper.
         if (engine != null && engine.current?.flashcardId == cardId) {
-          unawaited(_gradeAndAdvance(engine, submission.quality));
+          unawaited(_gradeAndAdvance(engine, quality));
         }
       case ZSessionRuntimeKind.linear:
         // `answer` sert `list` ET `cramming` : en `list` la qualité est
         // ignorée et l'appel délègue à `advanceLinear` — identique à
         // `advance()`. AUCUNE écriture SRS n'est atteignable (ce runtime n'a
         // pas de seam).
-        (rt is ZLinearSessionState ? rt : null)?.answer(submission.quality);
+        (rt is ZLinearSessionState ? rt : null)?.answer(quality);
       case ZSessionRuntimeKind.whiteExam:
         final ZWhiteExamSessionEngine? engine =
             rt is ZWhiteExamSessionEngine ? rt : null;
         if (engine != null && engine.state.phase == ZWhiteExamPhase.running) {
-          engine.answer(submission.quality);
+          engine.answer(quality);
         }
     }
   }
@@ -1251,6 +1408,10 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
         // moteur ; il n'est ni avalé, ni transformé en exception. Rien n'a été
         // noté : il n'y a donc rien à retenir.
         _frozen = false;
+        // …ni de présentation à consommer : rien n'ayant été écrit, le verrou
+        // one-shot se relève, sans quoi la carte resterait ineffaçablement
+        // « déjà notée » alors qu'elle ne l'est pas.
+        _gradingId = null;
       },
       (_) {
         // 🔒 La note est DÉJÀ partie ci-dessus, au même moment et avec la même
@@ -1264,6 +1425,10 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
           return;
         }
         _frozen = false;
+        // La carte notée part : sa présentation est consommée ICI et non dans
+        // `_sync`, qui ne verrait rien d'une carte réinsérée sous la même
+        // identité — c'est justement le cas où la saisie précédente fuirait.
+        _consumePresentation();
         if (engine.isComplete) {
           _onStackEnd();
           return;
@@ -1283,6 +1448,9 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     if (!_held.value) return;
     _held.value = false;
     _frozen = false;
+    // Même geste qu'au passage sans retenue : la carte notée part, sa
+    // présentation est consommée.
+    _consumePresentation();
     if (_pendingComplete) {
       _pendingComplete = false;
       _onStackEnd();
@@ -1321,14 +1489,14 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     }
     final Map<String, int> byQuality = <String, int>{};
     var correct = 0;
-    for (final ZFlashcardSubmission sub in _submissionsById.values) {
-      final String key = '${sub.quality}';
+    for (final int quality in _gradedQualityById.values) {
+      final String key = '$quality';
       byQuality[key] = (byQuality[key] ?? 0) + 1;
-      if (sub.quality >= widget.config.passThreshold) correct += 1;
+      if (quality >= widget.config.passThreshold) correct += 1;
     }
     return ZStudySessionResult(
       mode: widget.mode,
-      total: _submissionsById.length,
+      total: _gradedQualityById.length,
       correct: correct,
       byQuality: byQuality,
     );
@@ -1413,8 +1581,10 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     String flashcardId, {
     ZToggleController? revealController,
     ZFlashcardFaceContent faceContent = ZFlashcardFaceContent.full,
+    bool isFront = true,
   }) {
     final ZCardChromeSpec? chrome = widget.preset?.cardChrome?.call(card);
+    final void Function(ZFlashcard card)? source = widget.onSource;
     return ZFlashcardReviewCard(
       key: ValueKey<String>('zStudySessionCard_$flashcardId'),
       card: card,
@@ -1432,6 +1602,11 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
       // pour tout hôte qui pose un preset.
       shadowColor: chrome?.resolveShadowColor(context, card),
       revealController: revealController,
+      // L'action de source ne va qu'à la carte CONSULTÉE : la porter sur les
+      // cartes empilées offrirait de naviguer vers la source d'une question
+      // qu'on n'a pas encore lue — et ces cartes sont muettes par défaut.
+      onSource:
+          (isFront && source != null) ? () => source(card) : null,
       // Les deux décisions que SEUL l'assemblage peut prendre : ce que rend la
       // surface posée à côté de la carte, et le rang de la carte dans la pile.
       // Une carte consultée seule ne peut savoir ni l'un ni l'autre.
@@ -1488,6 +1663,7 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
       // qui garantit qu'il est consommé.
       revealController: slot.isFront ? _revealController : null,
       faceContent: _resolvedFaceContent(isFront: slot.isFront),
+      isFront: slot.isFront,
     );
   }
 
@@ -1611,14 +1787,23 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     // surface par défaut : association par `flashcardId`, jamais par index.
     void submit(ZFlashcardSubmission sub) =>
         _onSubmitted(item.flashcardId, sub);
+    // Voie de notation MANUELLE — le palier tapé sur la carte de devant.
+    void gradeManually(int quality) =>
+        _onManualQuality(item.flashcardId, quality);
     final custom = widget.gradingBuilder;
     if (custom != null) return custom(context, item, submit);
     final ZFlashcard? card = _cardsById[item.flashcardId];
     if (card == null) return _missingCard(context);
     return ZFlashcardAnswerInput(
-      // Clé d'IDENTITÉ : un `State` neuf par carte courante — jamais une saisie
-      // qui fuit d'une carte à l'autre.
-      key: ValueKey<String>('zStudySessionAnswer_${item.flashcardId}'),
+      // Clé d'IDENTITÉ **de la présentation** : un `State` neuf par carte
+      // courante — et un neuf de plus chaque fois qu'une carte revient. Sans
+      // le numéro de présentation, une carte réinsérée au lapse **seule**
+      // garderait la même clé, donc le même `State` : sa réponse déjà tapée et
+      // sa correction survivraient à sa propre notation.
+      key: ValueKey<String>(
+        'zStudySessionAnswer_${item.flashcardId}'
+        '#${_presentationOf(item.flashcardId)}',
+      ),
       card: card,
       mode: widget.mode,
       srsConfig: widget.config,
@@ -1627,15 +1812,25 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
       evaluationPort: widget.evaluationPort,
       hintPort: widget.hintPort,
       onSubmitted: submit,
+      allowSkipEvaluation: widget.answerAllowSkipEvaluation ?? false,
+      revealStoredHint: widget.answerRevealStoredHint ?? false,
+      // La rangée reste gouvernée par le seam de l'hôte : sans lui, aucune
+      // rangée n'est montée, ni avant ni après la réponse. Posé, c'est
+      // l'assemblage qui reçoit le cran — il note, PUIS relaie.
+      onQualitySelected:
+          widget.onQualitySelected == null ? null : gradeManually,
       // Seams de présentation de la rangée de notation, relayés TELS QUELS.
       // Leurs défauts (`zDefaultQualityLabelKey`, `null`, `null`, `none`)
       // reproduisent exactement le rendu d'avant leur existence ; et sans
       // `onQualitySelected`, la rangée n'est pas montée du tout : les quatre
       // seams ne peuvent alors rien changer, ni ici ni en aval.
-      onQualitySelected: widget.onQualitySelected,
       qualityLabelKeyFor: widget.qualityLabelKeyFor,
       qualityColorKeyFor: widget.qualityColorKeyFor,
       qualityPreviewLabelFor: widget.qualityPreviewLabelFor,
+      // L'aperçu qui reçoit la carte est construit ICI, avec la carte de
+      // devant : sans ce relais, l'hôte devrait tenir un miroir de la file
+      // pour retrouver la carte dont il projette l'intervalle.
+      qualityPreviewLabelForCard: widget.qualityPreviewLabelForCard,
       qualityEmphasis: widget.qualityEmphasis,
       // Formes de la surface — un seul maillon est résolu ici (paramètre de
       // l'écran, puis forme décrite par le preset) ; les deux nuls laissent
@@ -1898,6 +2093,8 @@ extension ZStudySessionSeamAudit on ZStudySessionHost {
         ZStudySeam.onQualitySelected => onQualitySelected,
         ZStudySeam.qualityColorKeyFor => qualityColorKeyFor,
         ZStudySeam.qualityPreviewLabelFor => qualityPreviewLabelFor,
+        ZStudySeam.qualityPreviewLabelForCard => qualityPreviewLabelForCard,
+        ZStudySeam.onSource => onSource,
         ZStudySeam.headerBuilder => headerBuilder,
         ZStudySeam.counterBuilder => counterBuilder,
         ZStudySeam.gradingBuilder => gradingBuilder,
@@ -1960,4 +2157,18 @@ extension ZStudySessionSeamAudit on ZStudySessionHost {
       invalidWaivers: invalid,
     );
   }
+}
+
+/// Tranche de **carte de devant** capable de redire la même carte.
+///
+/// `ValueNotifier` se tait quand la valeur posée est `==` à la précédente —
+/// et c'est ce qu'on veut partout, sauf sur un point : une carte réinsérée
+/// après sa notation est la même valeur, et pourtant une **présentation
+/// neuve**. Sans un moyen de le dire, la surface de saisie de la présentation
+/// précédente survivrait avec sa réponse et sa correction.
+class _FrontCardNotifier extends ValueNotifier<ZSessionItem?> {
+  _FrontCardNotifier() : super(null);
+
+  /// Redit la carte de devant, à valeur inchangée.
+  void republish() => notifyListeners();
 }

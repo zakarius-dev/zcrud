@@ -137,7 +137,7 @@ class ZDemoMountSeams {
   void end(ZStudySessionResult result, Duration duration) => ends.add(result);
 }
 
-/// Le montage, énuméré : **les vingt-deux seams**, `null` compris.
+/// Le montage, énuméré : **les vingt-quatre seams**, `null` compris.
 ///
 /// Chaque champ étant `required`, un seam ajouté demain casse la compilation
 /// **ici** — cette démonstration ne peut pas dériver en silence de l'ensemble
@@ -161,6 +161,8 @@ ZStudySessionWiring zDemoMountWiring(ZDemoMountSeams seams) =>
       onQualitySelected: null,
       qualityColorKeyFor: null,
       qualityPreviewLabelFor: null,
+      qualityPreviewLabelForCard: null,
+      onSource: null,
       headerBuilder: null,
       counterBuilder: null,
       gradingBuilder: null,

@@ -115,7 +115,7 @@ void main() {
           reason: '🔴 la voie d\'écriture SRS est UNIQUE : dévoiler n\'est pas '
               'noter');
       expect(
-        find.byKey(const ValueKey<String>('zStudySessionAnswer_c0')),
+        find.byKey(const ValueKey<String>('zStudySessionAnswer_c0#0')),
         findsOneWidget,
         reason: 'la pile n\'a pas avancé',
       );
@@ -137,7 +137,7 @@ void main() {
       // (la carte notée est retenue le temps que sa réponse soit lue).
       await dontKnowThenContinue(tester);
       expect(
-        find.byKey(const ValueKey<String>('zStudySessionAnswer_c1')),
+        find.byKey(const ValueKey<String>('zStudySessionAnswer_c1#0')),
         findsOneWidget,
         reason: 'sonde : le front est bien passé à c1',
       );

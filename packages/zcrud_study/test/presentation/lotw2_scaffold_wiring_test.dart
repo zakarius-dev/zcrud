@@ -252,9 +252,11 @@ void main() {
       WidgetTester tester,
       SeamProbe probe, {
       required Set<String> omit,
+      required Set<String> optIn,
     }) async {
       useTallSurface(tester);
-      final LotW1Seams s = LotW1Seams(scene: probe.scene, omit: omit);
+      final LotW1Seams s =
+          LotW1Seams(scene: probe.scene, omit: omit, optIn: optIn);
       await tester.pumpWidget(
         _wrap(lotW2WiredPage(s, mode: probe.mode, cards: probe.cards)),
       );
@@ -266,14 +268,16 @@ void main() {
     kProbes.forEach((String seam, SeamProbe probe) {
       testWidgets('`$seam` — posé sur la page : son effet est là',
           (tester) async {
-        final LotW1Seams s = await mount(tester, probe, omit: probe.baseOmit);
+        // Le seam SONDÉ est demandé nommément (cf. `LotW1Seams.optional`).
+        final LotW1Seams s = await mount(tester, probe,
+            omit: probe.baseOmit, optIn: <String>{seam});
         await probe.present(tester, s);
       });
 
       testWidgets('`$seam` — retiré : son effet DISPARAÎT (non-vacuité)',
           (tester) async {
         final LotW1Seams s = await mount(tester, probe,
-            omit: <String>{...probe.baseOmit, seam});
+            omit: <String>{...probe.baseOmit, seam}, optIn: const <String>{});
         await probe.absent(tester, s);
       });
     });

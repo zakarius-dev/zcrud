@@ -52,7 +52,7 @@ void main() {
 
       // Départ : le front du moteur est c0.
       expect(
-        find.byKey(const ValueKey<String>('zStudySessionAnswer_c0')),
+        find.byKey(const ValueKey<String>('zStudySessionAnswer_c0#0')),
         findsOneWidget,
         reason: 'la session démarre sur le front du moteur',
       );
@@ -66,7 +66,7 @@ void main() {
       expect(reviewer.writes, 1, reason: 'le 1ᵉʳ lapse atteint le seam SRS');
       expect(reviewer.gradedIds, <String>['c0']);
       expect(
-        find.byKey(const ValueKey<String>('zStudySessionAnswer_c1')),
+        find.byKey(const ValueKey<String>('zStudySessionAnswer_c1#0')),
         findsOneWidget,
         reason: 'après un lapse, le front du moteur avance à c1',
       );
@@ -112,13 +112,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.byKey(const ValueKey<String>('zStudySessionAnswer_c2')),
+        find.byKey(const ValueKey<String>('zStudySessionAnswer_c2#0')),
         findsOneWidget,
         reason: '🔴 le front de la file permutée est c2 : une résolution par '
             'INDEX rendrait c0 et cette clé serait absente',
       );
       expect(
-        find.byKey(const ValueKey<String>('zStudySessionAnswer_c0')),
+        find.byKey(const ValueKey<String>('zStudySessionAnswer_c0#0')),
         findsNothing,
       );
 
@@ -148,7 +148,7 @@ void main() {
       await dontKnowThenContinue(tester);
 
       final Finder grading =
-          find.byKey(const ValueKey<String>('zStudySessionAnswer_c1'));
+          find.byKey(const ValueKey<String>('zStudySessionAnswer_c1#0'));
       expect(grading, findsOneWidget);
       expect(
         find.descendant(of: grading, matching: find.text('Question c1.')),
@@ -286,12 +286,12 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c0')),
+      expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c0#0')),
           findsOneWidget);
 
       // Lapse : le front du moteur passe à c1 (après continuation).
       await dontKnowThenContinue(tester);
-      expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c1')),
+      expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c1#0')),
           findsOneWidget);
 
       // La file d'entrée change : 2 cartes FRAÎCHES (c0, c1).
@@ -302,10 +302,10 @@ void main() {
           reason: 'un index survivant à la file provoquerait un RangeError');
       // 🔴 FALSIFIABLE : sans resync, le moteur garderait sa file post-lapse
       // ([c1, c2, c0]) et son front resterait c1 ⇒ `answer_c0` serait ABSENT.
-      expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c0')),
+      expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c0#0')),
           findsOneWidget,
           reason: 're-seed : le moteur repart sur le front de la NOUVELLE file');
-      expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c1')),
+      expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c1#0')),
           findsNothing,
           reason: 'le front périmé de l\'ANCIENNE session ne survit pas');
     });
@@ -336,13 +336,13 @@ void main() {
       );
       await tester.pumpAndSettle();
       await dontKnowThenContinue(tester);
-      expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c1')),
+      expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c1#0')),
           findsOneWidget);
 
       setOuter(() {}); // rebuild pur, file inchangée
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c1')),
+      expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_c1#0')),
           findsOneWidget,
           reason: '🔴 un rebuild du parent NE DOIT PAS redémarrer la session : '
               'la progression de l\'apprenant serait effacée à chaque frame');

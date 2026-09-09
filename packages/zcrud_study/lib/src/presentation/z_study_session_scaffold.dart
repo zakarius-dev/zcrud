@@ -117,11 +117,15 @@ class ZStudySessionScaffold extends StatelessWidget {
     this.qualityLabelKeyFor = zDefaultQualityLabelKey,
     this.qualityColorKeyFor,
     this.qualityPreviewLabelFor,
+    this.qualityPreviewLabelForCard,
+    this.onSource,
     this.qualityEmphasis = ZSrsQualityEmphasis.none,
     this.answerChoiceLayout,
     this.answerActionsLayout,
     this.answerSubmitWidth,
     this.answerGradingVisibility,
+    this.answerAllowSkipEvaluation,
+    this.answerRevealStoredHint,
     this.headerBuilder,
     this.counterBuilder,
     this.gradingBuilder,
@@ -213,6 +217,8 @@ class ZStudySessionScaffold extends StatelessWidget {
     this.answerActionsLayout,
     this.answerSubmitWidth,
     this.answerGradingVisibility,
+    this.answerAllowSkipEvaluation,
+    this.answerRevealStoredHint,
     this.progressStyle,
     this.progressDotsGeometry,
     this.progressLinearThickness,
@@ -270,6 +276,8 @@ class ZStudySessionScaffold extends StatelessWidget {
         onQualitySelected = null,
         qualityColorKeyFor = null,
         qualityPreviewLabelFor = null,
+        qualityPreviewLabelForCard = null,
+        onSource = null,
         headerBuilder = null,
         counterBuilder = null,
         gradingBuilder = null,
@@ -369,6 +377,15 @@ class ZStudySessionScaffold extends StatelessWidget {
   /// Seam d'aperçu d'intervalle prévisionnel sous chaque cran.
   final String Function(int quality)? qualityPreviewLabelFor;
 
+  /// Seam d'aperçu d'intervalle recevant la carte — cf.
+  /// [ZStudySessionHost.qualityPreviewLabelForCard].
+  final String Function(ZFlashcard card, int quality)?
+      qualityPreviewLabelForCard;
+
+  /// Action « voir la source » de la carte de devant — cf.
+  /// [ZStudySessionHost.onSource].
+  final void Function(ZFlashcard card)? onSource;
+
   /// Affordance d'emphase des crans de notation.
   final ZSrsQualityEmphasis qualityEmphasis;
 
@@ -388,6 +405,14 @@ class ZStudySessionScaffold extends StatelessWidget {
   /// [ZStudySessionHost.answerGradingVisibility], dont l'avertissement sur
   /// l'ordre des gestes vaut ici à l'identique.
   final ZAnswerGradingVisibility? answerGradingVisibility;
+
+  /// Voie « évaluer sans IA » de la surface de saisie — cf.
+  /// [ZStudySessionHost.answerAllowSkipEvaluation].
+  final bool? answerAllowSkipEvaluation;
+
+  /// Indice stocké servi d'emblée — cf.
+  /// [ZStudySessionHost.answerRevealStoredHint].
+  final bool? answerRevealStoredHint;
 
   /// Slot d'en-tête de session.
   final ZStudySessionHeaderBuilder? headerBuilder;
@@ -596,6 +621,8 @@ class ZStudySessionScaffold extends StatelessWidget {
         answerActionsLayout: answerActionsLayout,
         answerSubmitWidth: answerSubmitWidth,
         answerGradingVisibility: answerGradingVisibility,
+        answerAllowSkipEvaluation: answerAllowSkipEvaluation,
+        answerRevealStoredHint: answerRevealStoredHint,
         progressStyle: progressStyle,
         progressDotsGeometry: progressDotsGeometry,
         progressLinearThickness: progressLinearThickness,
@@ -635,11 +662,15 @@ class ZStudySessionScaffold extends StatelessWidget {
       qualityLabelKeyFor: qualityLabelKeyFor,
       qualityColorKeyFor: qualityColorKeyFor,
       qualityPreviewLabelFor: qualityPreviewLabelFor,
+      qualityPreviewLabelForCard: qualityPreviewLabelForCard,
+      onSource: onSource,
       qualityEmphasis: qualityEmphasis,
       answerChoiceLayout: answerChoiceLayout,
       answerActionsLayout: answerActionsLayout,
       answerSubmitWidth: answerSubmitWidth,
       answerGradingVisibility: answerGradingVisibility,
+      answerAllowSkipEvaluation: answerAllowSkipEvaluation,
+      answerRevealStoredHint: answerRevealStoredHint,
       headerBuilder: headerBuilder,
       counterBuilder: counterBuilder,
       gradingBuilder: gradingBuilder,

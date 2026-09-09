@@ -21,7 +21,7 @@
 ///    constructeur par défaut ; chacune existe, et chacune monte réellement une
 ///    session (une liste ne peut pas se vider ni se peupler de fantômes).
 /// 2. **Inertie** — la démonstration énumérée rend, nœud pour nœud, l'écran du
-///    montage à plat de mêmes valeurs. Écrire un montage de vingt-deux seams à
+///    montage à plat de mêmes valeurs. Écrire un montage de vingt-quatre seams à
 ///    la main est faillible ; cette égalité stricte est ce qui l'atteste.
 @TestOn('vm')
 library;

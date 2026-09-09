@@ -36,6 +36,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart' show ZcrudScope;
+import 'package:zcrud_flashcard/zcrud_flashcard.dart'
+    show ZFlashcardReviewCard;
 import 'package:zcrud_session/zcrud_session.dart' show ZSrsQualityButtons;
 import 'package:zcrud_study/zcrud_study.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart' show ZReviewMode;
@@ -292,6 +294,8 @@ ZStudySessionWiring lotW1Wiring(LotW1Seams s) => ZStudySessionWiring(
       onQualitySelected: s.onQualitySelected,
       qualityColorKeyFor: s.qualityColorKeyFor,
       qualityPreviewLabelFor: s.qualityPreviewLabelFor,
+      qualityPreviewLabelForCard: s.qualityPreviewLabelForCard,
+      onSource: s.onSource,
       headerBuilder: s.headerBuilder,
       counterBuilder: s.counterBuilder,
       gradingBuilder: s.gradingBuilder,
@@ -534,14 +538,58 @@ final Map<String, SeamProbe> kProbes = <String, SeamProbe>{
               'sans quoi l\'observation ne prouverait rien',
         ),
   ),
+  // 🔴 `qualityPreviewLabelForCard` est retiré d'office : il PRIME sur ce
+  // seam-ci, et le laisser posé rendrait son libellé à lui — l'observation
+  // mesurerait alors la priorité, jamais le transfert de ce seam.
   'qualityPreviewLabelFor': (
+    scene: W1Scene.socle,
+    mode: ZReviewMode.learn,
+    baseOmit: const <String>{'qualityPreviewLabelForCard'},
+    cards: 2,
+    drive: _submit,
+    present: _text('$kW1:J+5', expected: true),
+    absent: _text('$kW1:J+5', expected: false),
+  ),
+  'qualityPreviewLabelForCard': (
     scene: W1Scene.socle,
     mode: ZReviewMode.learn,
     baseOmit: const <String>{},
     cards: 2,
     drive: _submit,
-    present: _text('$kW1:J+5', expected: true),
-    absent: _text('$kW1:J+5', expected: false),
+    // Posé, il bat l'aperçu sans carte : c'est SON libellé qui est rendu, et
+    // celui de l'autre seam disparaît — les deux moitiés de la priorité.
+    present: (WidgetTester tester, LotW1Seams s) async {
+      expect(find.text('$kW1:c0:J+5'), findsWidgets,
+          reason: '🔴 l\'aperçu par carte n\'atteint pas la rangée');
+      expect(find.text('$kW1:J+5'), findsNothing,
+          reason: '🔴 l\'aperçu par carte ne prime pas sur celui sans carte');
+    },
+    absent: (WidgetTester tester, LotW1Seams s) async {
+      expect(find.text('$kW1:c0:J+5'), findsNothing);
+      expect(find.text('$kW1:J+5'), findsWidgets,
+          reason: 'retiré, l\'aperçu sans carte reprend la main');
+    },
+  ),
+  'onSource': (
+    scene: W1Scene.socle,
+    mode: ZReviewMode.learn,
+    baseOmit: const <String>{},
+    cards: 2,
+    drive: _idle,
+    present: (WidgetTester tester, LotW1Seams s) async {
+      final Finder action = find.byKey(ZFlashcardReviewCard.sourceActionKey);
+      expect(action, findsOneWidget,
+          reason: '🔴 le seam de source ne monte aucune action sur la carte');
+      await tester.tap(action.first);
+      await tester.pumpAndSettle();
+      expect(s.sourcesOpened, <String>['c0'],
+          reason: '🔴 commande morte : l\'action ne rend pas la carte de '
+              'devant');
+    },
+    absent: (WidgetTester tester, LotW1Seams s) async => expect(
+          find.byKey(ZFlashcardReviewCard.sourceActionKey),
+          findsNothing,
+        ),
   ),
   'headerBuilder': (
     scene: W1Scene.socle,
@@ -1009,9 +1057,11 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {}
       WidgetTester tester,
       SeamProbe probe, {
       required Set<String> omit,
+      required Set<String> optIn,
     }) async {
       useTallSurface(tester);
-      final LotW1Seams s = LotW1Seams(scene: probe.scene, omit: omit);
+      final LotW1Seams s =
+          LotW1Seams(scene: probe.scene, omit: omit, optIn: optIn);
       await tester.pumpWidget(
         _wrap(lotW1WiredHost(s, mode: probe.mode, cards: probe.cards)),
       );
@@ -1022,14 +1072,17 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {}
 
     kProbes.forEach((String seam, SeamProbe probe) {
       testWidgets('`$seam` — posé : son effet est là', (tester) async {
-        final LotW1Seams s = await mount(tester, probe, omit: probe.baseOmit);
+        // Le seam SONDÉ est demandé nommément : c'est le seul moyen de poser
+        // un seam de `LotW1Seams.optional` sans le poser partout ailleurs.
+        final LotW1Seams s = await mount(tester, probe,
+            omit: probe.baseOmit, optIn: <String>{seam});
         await probe.present(tester, s);
       });
 
       testWidgets('`$seam` — retiré : son effet DISPARAÎT (non-vacuité)',
           (tester) async {
         final LotW1Seams s = await mount(tester, probe,
-            omit: <String>{...probe.baseOmit, seam});
+            omit: <String>{...probe.baseOmit, seam}, optIn: const <String>{});
         await probe.absent(tester, s);
       });
     });

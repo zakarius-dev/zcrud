@@ -85,16 +85,33 @@ enum W1Scene {
   hote,
 }
 
-/// Les 22 seams du montage, chacun à une valeur sentinelle observable.
+/// Les 24 seams du montage, chacun à une valeur sentinelle observable.
 class LotW1Seams {
-  /// Construit le jeu de sentinelles de [scene], moins les seams de [omit].
-  LotW1Seams({this.scene = W1Scene.socle, this.omit = const <String>{}});
+  /// Construit le jeu de sentinelles de [scene], moins les seams de [omit],
+  /// plus ceux de [optIn].
+  LotW1Seams({
+    this.scene = W1Scene.socle,
+    this.omit = const <String>{},
+    this.optIn = const <String>{},
+  });
+
+  /// Seams dont la valeur sentinelle AJOUTE un nœud à l'arbre.
+  ///
+  /// 🔴 Ils restent NON POSÉS tant qu'on ne les demande pas : les dumps
+  /// d'inertie mesurent qu'aucun nœud n'a bougé, et un seam qui monte une
+  /// action de plus les ferait diverger — non parce que l'écran aurait
+  /// régressé, mais parce que le harnais aurait décidé de poser une capacité
+  /// que le montage de référence n'avait pas.
+  static const Set<String> optional = <String>{'onSource'};
 
   /// Scène de montage.
   final W1Scene scene;
 
   /// Seams retirés NOMMÉMENT (contre-preuve de non-vacuité).
   final Set<String> omit;
+
+  /// Seams de [optional] demandés NOMMÉMENT.
+  final Set<String> optIn;
 
   /// Faux relecteur SRS — compte les écritures.
   final FakeSessionReviewer reviewerSpy = FakeSessionReviewer();
@@ -118,8 +135,12 @@ class LotW1Seams {
   final ZIndexController indexSpy =
       ZIndexController(owner: W1Owner(), debugLabel: 'lotw1.index');
 
+  /// Sources consultées, dans l'ordre.
+  final List<String> sourcesOpened = <String>[];
+
   bool _on(String name) {
     if (omit.contains(name)) return false;
+    if (optional.contains(name)) return optIn.contains(name);
     if (scene == W1Scene.socle) {
       return name != 'cardBuilder' &&
           name != 'cardSlotBuilder' &&
@@ -179,6 +200,18 @@ class LotW1Seams {
   /// Aperçu d'intervalle sous un cran.
   String Function(int)? get qualityPreviewLabelFor =>
       _on('qualityPreviewLabelFor') ? (int q) => '$kW1:J+$q' : null;
+
+  /// Aperçu d'intervalle recevant la CARTE — l'identité de la carte est dans
+  /// le libellé rendu, sans quoi la sonde ne distinguerait pas les deux seams.
+  String Function(ZFlashcard, int)? get qualityPreviewLabelForCard =>
+      _on('qualityPreviewLabelForCard')
+          ? (ZFlashcard card, int q) => '$kW1:${card.id}:J+$q'
+          : null;
+
+  /// Action « voir la source » de la carte de devant.
+  void Function(ZFlashcard)? get onSource => _on('onSource')
+      ? (ZFlashcard card) => sourcesOpened.add(card.id ?? '')
+      : null;
 
   /// En-tête de session.
   ZStudySessionHeaderBuilder? get headerBuilder => _on('headerBuilder')
@@ -269,6 +302,8 @@ ZStudySessionHost lotW1FlatHost(
       onQualitySelected: s.onQualitySelected,
       qualityColorKeyFor: s.qualityColorKeyFor,
       qualityPreviewLabelFor: s.qualityPreviewLabelFor,
+      qualityPreviewLabelForCard: s.qualityPreviewLabelForCard,
+      onSource: s.onSource,
       headerBuilder: s.headerBuilder,
       counterBuilder: s.counterBuilder,
       gradingBuilder: s.gradingBuilder,

@@ -3,6 +3,78 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.53.0 — 2026-09-09
+
+### Modifié
+
+🔴 **Cassant pour `ZStudySessionHost.wired` / `ZStudySessionScaffold.wired`.**
+`ZStudySessionWiring` passe de 22 à **24 champs `required`** : tout montage
+énuméré doit nommer les deux seams neufs (`qualityPreviewLabelForCard`,
+`onSource`), `null` compris. C'est le prix annoncé du mécanisme — un champ
+ajouté avec une valeur par défaut rouvrirait le trou que ce type ferme.
+Correctif : ajouter les deux lignes au `ZStudySessionWiring(...)` existant.
+Un montage **à plat** (`ZStudySessionHost(...)`) n'est pas concerné.
+
+🔴 **Un palier de notation tapé AVANT la réponse NOTE désormais la carte.**
+En `answerGradingVisibility: always` — le régime que pose
+`ZStudySessionPreset.classic` — la rangée de paliers est montée et active avant
+toute réponse. Taper un cran verrouillait la surface (saisie inerte, soumission
+retirée) et se contentait de **notifier** `onQualitySelected` : rien n'était
+écrit, la carte restait figée, et la session n'avait plus d'issue.
+
+Le contrat est désormais écrit et garanti :
+
+| Moment du geste | Qui note | Ce que fait `onQualitySelected` |
+|---|---|---|
+| **avant** la réponse | le palier tapé | il notifie, **et** la carte est notée puis part |
+| **après** la réponse | la soumission | il ne fait que notifier |
+
+Une présentation de carte produit **exactement une** écriture de révision
+(invariant AD-33), par la voie unique de l'assemblage — retenue après notation
+(`postSubmitPolicy`) comprise : en mode d'apprentissage, la carte notée à la
+main reste affichée jusqu'à « Continuer », son écriture étant déjà partie. Le
+rappel de l'hôte, lui, part **toujours**, avant toute décision d'écriture.
+
+⚠️ **Hôte ayant COMPENSÉ** : un écran qui branchait `onQualitySelected` sur sa
+propre écriture SRS pour rattraper ce défaut **doit retirer sa compensation** —
+elle s'ajouterait à celle de l'assemblage et noterait la carte deux fois.
+Un hôte qui n'utilise pas `always` (défaut `afterSubmit`) n'a rien à faire :
+la rangée n'y apparaît qu'après la réponse, et le rappel y reste un rappel.
+
+🔴 **Une carte réinsérée au lapse repart sur une saisie vierge.** La clé de la
+surface de saisie porte désormais le **numéro de présentation** de la carte
+(`zStudySessionAnswer_<id>#<n>`). Une carte réinsérée **seule** revenait sous
+la même identité, donc sous la même clé : son `State` survivait, avec la
+réponse déjà tapée, sa correction et son verrou de soumission. La tranche de
+carte de devant est redite à chaque présentation neuve — sans quoi la clé
+n'aurait jamais été relue. Dans le même geste, la **révélation se referme** :
+la carte redemandée revient face question, plus face réponse.
+
+Les tests qui cherchent cette clé par son littéral doivent ajouter le suffixe
+de présentation (`#0` pour une première présentation).
+
+### Ajouté
+
+- `ZStudySessionHost.onSource` / `ZStudySessionScaffold.onSource` —
+  `void Function(ZFlashcard card)?`, relayé à l'action « voir la source » de la
+  carte de **devant** (jamais aux cartes empilées). `null` ⇒ action absente de
+  l'arbre. Également 23ᵉ champ de `ZStudySessionWiring`.
+- `ZStudySessionHost.qualityPreviewLabelForCard` /
+  `ZStudySessionScaffold.qualityPreviewLabelForCard` —
+  `String Function(ZFlashcard card, int quality)?`, aperçu d'intervalle
+  prévisionnel recevant la carte affichée : un intervalle SM-2 se calcule sans
+  tenir en parallèle un miroir de la file. Prioritaire sur
+  `qualityPreviewLabelFor`, qui reste inchangé. 24ᵉ champ du wiring.
+- `ZStudySessionHost.answerAllowSkipEvaluation` /
+  `answerRevealStoredHint` (et leurs jumeaux sur `ZStudySessionScaffold`) —
+  `bool?` relayés à la surface de saisie ; `null` (défaut) laisse le défaut de
+  la surface. Ils restent **à plat** sur les deux constructeurs : la partition
+  du montage les classe cosmétiques — ils ne câblent ni port, ni callback, ni
+  constructeur de rendu, et leur effet est nul sans le seam qui les porte
+  (`evaluationPort` pour l'un, l'indice de la carte pour l'autre).
+- `ZStudySeam.onSource` et `ZStudySeam.qualityPreviewLabelForCard` — l'audit de
+  montage couvre les 24 seams.
+
 ## 3.52.0 — 2026-09-09
 
 ### Modifié

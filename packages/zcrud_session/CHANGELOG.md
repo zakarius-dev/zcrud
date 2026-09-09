@@ -3,6 +3,51 @@
 Toutes les modifications notables de `zcrud_session` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.53.0 — 2026-09-09
+
+### Corrigé
+
+- **`ZFlashcardAnswerInput` : une soumission rédigée VIDE n'atteint plus le
+  port d'évaluation.** « Valider » sur un champ resté blanc appelait le port
+  d'évaluation (une requête IA facturée sur une copie vide), puis émettait une
+  `ZFlashcardSubmission` au **seuil de passage** — la carte était notée sur
+  rien. Le validateur `zcrud.flashcard.answerRequired` existait déjà mais
+  n'était consulté par **aucun** chemin de soumission, et son message restait
+  invisible : `AutovalidateMode.onUserInteraction` n'affiche rien tant que
+  l'utilisateur n'a pas tapé — exactement le cas d'une copie blanche.
+  La soumission est désormais **refusée** avant tout appel : aucun appel au
+  port, aucune `ZFlashcardSubmission`, **aucune exception** (AD-10), le message
+  de validation existant s'affiche et la saisie **reste éditable** (aucun
+  verrou posé, l'apprenant corrige et resoumet).
+  - Le refus couvre aussi la voie « évaluer sans IA » (`allowSkipEvaluation`) :
+    la vacuité est une propriété de la **saisie**, pas du barème — sans quoi
+    cette voie notait la copie blanche au seuil de passage.
+  - Une saisie de **blancs seuls** est vide (`trim()`).
+  - Les chemins **volontaires** sont inchangés : « Je ne sais pas » soumet
+    toujours, sans le port, à la borne basse ; les QCM / Vrai-Faux (voie
+    d'évaluation locale) ne sont pas concernés.
+  - ⚠️ **Hôtes qui compensaient** : ceux qui désactivaient eux-mêmes le bouton
+    « Valider » tant que le champ était vide peuvent **retirer** cette
+    compensation ; ceux qui s'appuyaient sur une soumission vide pour « passer »
+    une carte doivent basculer sur « Je ne sais pas ».
+
+### Ajouté
+
+- **`ZFlashcardAnswerInput.qualityPreviewLabelForCard`**
+  (`String Function(ZFlashcard card, int quality)?`) — seam d'aperçu
+  d'intervalle prévisionnel recevant la **carte affichée**. Un aperçu SM-2
+  dépend de l'état de répétition de la carte de devant ; l'ancien seam
+  `qualityPreviewLabelFor` ne la fournissait pas, obligeant l'appelant à tenir
+  en parallèle un miroir de la file pour la retrouver.
+  Ajout **strictement additif** : `qualityPreviewLabelFor` conserve son type et
+  son comportement. Ordre de résolution de l'aperçu rendu —
+  **1.** `qualityPreviewLabelForCard` s'il est fourni ; **2.** sinon
+  `qualityPreviewLabelFor` ; **3.** sinon aucun aperçu. La carte passée est
+  celle rendue **au moment de l'appel** : après un changement de carte,
+  l'aperçu porte sur la nouvelle.
+  `ZSrsQualityButtons` reste **inchangé** et sans carte : la surface compose la
+  closure et lui relaie le seam historique.
+
 ## 3.51.0 — 2026-09-09
 
 ### Ajouté

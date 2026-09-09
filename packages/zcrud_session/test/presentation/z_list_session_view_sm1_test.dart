@@ -134,12 +134,22 @@ void main() {
       // fait notifier le moteur ⇒ l'hôte reconstruit) et on exige que le
       // compteur de Q2 **bouge**. S'il ne bouge pas ici, aucune des assertions
       // d'immobilité ci-dessus ne prouve quoi que ce soit.
+      final q2 = find.ancestor(
+        of: find.text('Q2'),
+        matching: find.byType(ZFlashcardAnswerInput),
+      );
+      // La saisie est FOURNIE : une soumission rédigée vide est refusée par la
+      // surface (rien n'est émis, le moteur ne notifie pas, et la sonde
+      // resterait immobile pour une raison qui n'a rien à voir avec ce que
+      // cette contre-preuve mesure).
+      await tester.enterText(
+        find.descendant(of: q2, matching: find.byKey(fieldKey)),
+        'réponse de Q2',
+      );
+      await tester.pump();
       await tester.tap(
         find.descendant(
-          of: find.ancestor(
-            of: find.text('Q2'),
-            matching: find.byType(ZFlashcardAnswerInput),
-          ),
+          of: q2,
           matching: find.byKey(const ValueKey<String>('zSubmit')),
         ),
       );

@@ -139,7 +139,7 @@ ZStudyToolsSectionSpec buildEmptySection() {
 | `ZContentHubSheet` | Rendu de la feuille du hub. |
 | **Session de révision** | |
 | `ZStudySessionView` / `ZStudySessionHost` / `ZStudySessionScaffold` | Corps composable, détenteur du runtime, enveloppe de page de la session de révision. |
-| `ZStudySessionWiring` | Montage énuméré de la session : les 22 seams en champs `required` de type nullable, consommé par `ZStudySessionHost.wired`. |
+| `ZStudySessionWiring` | Montage énuméré de la session : les 24 seams en champs `required` de type nullable, consommé par `ZStudySessionHost.wired`. |
 | `ZStudySessionPreset` | Formes de référence de la session — en-tête, chrome de carte, style de progression — interprétées par l'écran lui-même. |
 | `ZSessionHeaderSpec` / `ZCardChromeSpec` | Descripteurs de l'en-tête et de l'habillage de carte que le preset pose. |
 | **Examens et tâches du jour** | |
@@ -355,6 +355,9 @@ ZStudySessionHost.wired(
     onQualitySelected: null,
     qualityColorKeyFor: null,
     qualityPreviewLabelFor: null,
+    qualityPreviewLabelForCard: (card, quality) =>   // aperçu SM-2 par carte
+        l10n.inDays(scheduler.simulate(card, quality).intervalDays),
+    onSource: (card) => _openSource(card),     // « voir la source » sur la carte
     headerBuilder: null,
     counterBuilder: null,
     gradingBuilder: null,
@@ -465,6 +468,22 @@ Un écran qui ne veut pas d'indices n'en reçoit donc jamais : ne rien poser
 
 ## Cas limites et invariants {#cas-limites}
 
+- **Une présentation de carte ne produit qu'UNE notation** — la session écrit
+  la révision une fois par carte affichée, quel que soit le geste qui la
+  déclenche : soumettre une réponse, ou taper un palier de notation sur une
+  rangée montée d'emblée. Une seconde soumission de la même présentation —
+  y compris depuis une surface de saisie que vous fournissez — n'écrit rien de
+  plus.
+- **Quand un palier est actif AVANT la réponse, le taper note la carte** —
+  c'est le régime `answerGradingVisibility: always`. La carte est notée avec le
+  cran tapé, puis part comme après une soumission (retenue comprise, en mode
+  d'apprentissage). **Après** la réponse, c'est la soumission qui a noté : le
+  palier n'est plus qu'un rappel, et `onQualitySelected` vous le rapporte sans
+  rien réécrire. Ce rappel part dans les deux cas, avant toute décision
+  d'écriture.
+- **Une carte réinsérée au lapse repart vierge** — même identité, présentation
+  neuve : la surface de saisie est reconstruite (réponse effacée, correction
+  retirée, verrou levé) et la carte revient face question.
 - **La carte de session ne rend jamais ce que la saisie rend déjà** — sur un
   QCM, l'écran monte une surface de saisie qui rend les choix, interactifs :
   la carte se réduit alors à l'énoncé sur sa face question (sa face réponse

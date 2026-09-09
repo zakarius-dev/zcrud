@@ -362,7 +362,7 @@ void main() {
       });
 
       testWidgets('`always` : la rangée est montée AVANT la réponse, et un '
-          'cran tapé vaut UNE notation, une seule (AD-33)',
+          'cran tapé NOTE la carte — une fois, une seule (AD-33)',
           (WidgetTester tester) async {
         final List<int> taps = <int>[];
         final FakeSessionReviewer reviewer = FakeSessionReviewer();
@@ -384,8 +384,12 @@ void main() {
         await tester.pumpAndSettle();
         expect(taps, <int>[5],
             reason: '🔴 le cran tapé avant la réponse n\'atteint pas l\'hôte');
-        expect(reviewer.writes, 0,
-            reason: '🔒 AD-33 — la rangée NOTIFIE, elle n\'écrit pas de SRS');
+        // 🔴 On compte les ÉCRITURES du seam de révision, jamais les rappels :
+        // une rangée qui notifie sans noter laisse une carte figée et une
+        // saisie verrouillée, et un compteur de rappels ne le voit pas.
+        expect(reviewer.writes, 1,
+            reason: '🔴 le palier tapé avant la réponse doit NOTER la carte');
+        expect(reviewer.qualities, <int>[5]);
         expect(find.byKey(kSubmit), findsNothing,
             reason: '🔴 la notation manuelle n\'a pas verrouillé la surface');
 
@@ -394,6 +398,8 @@ void main() {
         await tester.pumpAndSettle();
         expect(taps, <int>[5],
             reason: '🔴 deux notations pour une carte notée à la main');
+        expect(reviewer.writes, 1,
+            reason: '🔒 AD-33 — une seule écriture par présentation de carte');
       });
     });
 

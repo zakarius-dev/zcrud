@@ -10,14 +10,14 @@
 ///
 /// ## Ce que ces gardes mesurent
 ///
-/// * **G6** — l'audit ne ment pas : montage vide ⇒ 22 manquants ; chaque seam
-///   posé **individuellement** (22 cas, pas un échantillon) apparaît dans
+/// * **G6** — l'audit ne ment pas : montage vide ⇒ 24 manquants ; chaque seam
+///   posé **individuellement** (24 cas, pas un échantillon) apparaît dans
 ///   `provided` et disparaît de `missing` ; une renonciation qui nomme un seam
 ///   POSÉ est une erreur du rapport (`invalidWaivers`).
 /// * **G6b** — sous `.wired`, `missing` est vide **par construction**, y
 ///   compris avec `ZStudySessionWiring.none()` : un `null` énuméré est une
 ///   décision écrite.
-/// * **G6c** — cohérence enum ↔ wiring, mesurée sur la SOURCE : un 23ᵉ seam
+/// * **G6c** — cohérence enum ↔ wiring, mesurée sur la SOURCE : un 25ᵉ seam
 ///   sans valeur d'enum fait rougir.
 /// * **G7** — AD-10 : sans politique, zéro `FlutterError.reportError` ; avec
 ///   politique et montage incomplet, **exactement un** rapport nommant les
@@ -69,7 +69,10 @@ ZStudySessionHost hostWithOnly(
   ZStudySeam seam, {
   ZStudySeamAuditPolicy? seamAudit,
 }) {
-  final LotW1Seams s = LotW1Seams(scene: W1Scene.hote);
+  // `optIn` porte les seams retombés par défaut dans le harnais : « posé
+  // SEUL » ne peut pas signifier « posé, sauf ceux-là ».
+  final LotW1Seams s =
+      LotW1Seams(scene: W1Scene.hote, optIn: LotW1Seams.optional);
   return ZStudySessionHost(
     mode: ZReviewMode.list,
     queue: writtenCards(2),
@@ -94,6 +97,11 @@ ZStudySessionHost hostWithOnly(
     qualityPreviewLabelFor: seam == ZStudySeam.qualityPreviewLabelFor
         ? s.qualityPreviewLabelFor
         : null,
+    qualityPreviewLabelForCard:
+        seam == ZStudySeam.qualityPreviewLabelForCard
+            ? s.qualityPreviewLabelForCard
+            : null,
+    onSource: seam == ZStudySeam.onSource ? s.onSource : null,
     headerBuilder: seam == ZStudySeam.headerBuilder ? s.headerBuilder : null,
     counterBuilder: seam == ZStudySeam.counterBuilder ? s.counterBuilder : null,
     gradingBuilder: seam == ZStudySeam.gradingBuilder ? s.gradingBuilder : null,
@@ -130,14 +138,14 @@ void main() {
   // G6 — l'audit ne ment pas
   // ═════════════════════════════════════════════════════════════════════════
   group('🧾 G6 — l\'audit dit EXACTEMENT ce que le montage porte', () {
-    test('l\'énumération porte les 22 seams du montage', () {
-      expect(ZStudySeam.values, hasLength(22));
+    test('l\'énumération porte les 24 seams du montage', () {
+      expect(ZStudySeam.values, hasLength(24));
     });
 
-    test('🔴 montage VIDE : les 22 seams manquent, aucun n\'est fourni', () {
+    test('🔴 montage VIDE : les 24 seams manquent, aucun n\'est fourni', () {
       final ZStudySeamReport r = emptyHost().auditSeams();
-      expect(r.missing, hasLength(22),
-          reason: '🔴 un audit qui ne voit pas les 22 trous ne mesure rien');
+      expect(r.missing, hasLength(24),
+          reason: '🔴 un audit qui ne voit pas les 24 trous ne mesure rien');
       expect(r.missing, ZStudySeam.values.toSet());
       expect(r.provided, isEmpty);
       expect(r.waived, isEmpty);
@@ -150,7 +158,7 @@ void main() {
           emptyHost().auditSeams(waived: const <ZStudySeam>{
         ZStudySeam.hintPort,
       });
-      expect(r.missing, hasLength(21));
+      expect(r.missing, hasLength(23));
       expect(r.missing, isNot(contains(ZStudySeam.hintPort)));
       expect(r.waived, contains(ZStudySeam.hintPort));
       expect(r.isComplete, isFalse,
@@ -165,7 +173,7 @@ void main() {
         expect(r.provided, hasLength(1),
             reason: '🔴 un seam NON posé est compté comme fourni');
         expect(r.missing, isNot(contains(seam)));
-        expect(r.missing, hasLength(21));
+        expect(r.missing, hasLength(23));
       });
     }
 
@@ -235,7 +243,11 @@ void main() {
 
     test('🔴 wiring COMPLET : tout est fourni, rien n\'est renoncé', () {
       final ZStudySeamReport r = ZStudySessionHost.wired(
-        wiring: lotW1Wiring(LotW1Seams(scene: W1Scene.hote)),
+        // `optIn` porte les seams que le harnais laisse retombés par défaut :
+        // « COMPLET » veut dire les 24, sans exception.
+        wiring: lotW1Wiring(
+          LotW1Seams(scene: W1Scene.hote, optIn: LotW1Seams.optional),
+        ),
         mode: ZReviewMode.list,
         queue: writtenCards(2),
       ).auditSeams();
@@ -249,7 +261,11 @@ void main() {
     test('wiring PARTIEL : les seams nuls sont renoncés, aucun ne manque', () {
       final ZStudySeamReport r = ZStudySessionHost.wired(
         wiring: lotW1Wiring(
-          LotW1Seams(scene: W1Scene.hote, omit: <String>{'hintPort', 'labels'}),
+          LotW1Seams(
+            scene: W1Scene.hote,
+            omit: <String>{'hintPort', 'labels'},
+            optIn: LotW1Seams.optional,
+          ),
         ),
         mode: ZReviewMode.list,
         queue: writtenCards(2),
@@ -257,11 +273,11 @@ void main() {
       expect(r.missing, isEmpty);
       expect(r.waived,
           <ZStudySeam>{ZStudySeam.hintPort, ZStudySeam.labels});
-      expect(r.provided, hasLength(20));
+      expect(r.provided, hasLength(22));
     });
 
     test('🔴 le montage À PLAT, lui, N\'est PAS exempté (non-vacuité)', () {
-      expect(emptyHost().auditSeams().missing, hasLength(22),
+      expect(emptyHost().auditSeams().missing, hasLength(24),
           reason: '🔴 si le régime à plat était traité comme énuméré, G6b '
               'serait vert sans rien mesurer');
     });
@@ -282,7 +298,7 @@ void main() {
   // ═════════════════════════════════════════════════════════════════════════
   group('🧮 G6c — une valeur d\'enum par champ du wiring, mêmes noms', () {
     test('l\'extraction aboutit', () {
-      expect(wiringFields(hostSource()), hasLength(22));
+      expect(wiringFields(hostSource()), hasLength(24));
     });
 
     test('🔴 l\'ensemble des valeurs EST l\'ensemble des champs', () {
@@ -297,7 +313,7 @@ void main() {
               'audité, et son oubli restera invisible');
     });
 
-    test('🔴 le scanner MORD : un 23ᵉ champ de wiring est signalé', () {
+    test('🔴 le scanner MORD : un 25ᵉ champ de wiring est signalé', () {
       final Set<String> fields = wiringFields(
         hostSource().replaceFirst(
           'final ZSessionReviewer? reviewer;',
@@ -478,7 +494,7 @@ void main() {
       // son widget, il audite, il n'a ni `WidgetTester` ni `BuildContext`.
       final ZStudySeamReport r = emptyHost().auditSeams();
       expect(r.isComplete, isFalse);
-      expect(r.missing, hasLength(22));
+      expect(r.missing, hasLength(24));
     });
 
     test('deux audits du même montage rendent le même rapport', () {

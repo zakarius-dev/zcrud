@@ -53,6 +53,14 @@ enum ZStudySeam {
   /// Aperçu d'intervalle sous un cran.
   qualityPreviewLabelFor('aucun aperçu d\'intervalle sous les crans'),
 
+  /// Aperçu d'intervalle recevant la carte affichée.
+  qualityPreviewLabelForCard(
+    'aucun aperçu par carte : l\'aperçu sans carte gouverne, à défaut aucun',
+  ),
+
+  /// Action « voir la source » de la carte de devant.
+  onSource('aucune action « voir la source » dans l\'arbre'),
+
   /// En-tête de session.
   headerBuilder('aucun en-tête dans l\'arbre'),
 

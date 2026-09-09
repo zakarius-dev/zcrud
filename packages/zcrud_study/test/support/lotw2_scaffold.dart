@@ -31,6 +31,8 @@ ZStudySessionWiring lotW2Wiring(LotW1Seams s) => ZStudySessionWiring(
       onQualitySelected: s.onQualitySelected,
       qualityColorKeyFor: s.qualityColorKeyFor,
       qualityPreviewLabelFor: s.qualityPreviewLabelFor,
+      qualityPreviewLabelForCard: s.qualityPreviewLabelForCard,
+      onSource: s.onSource,
       headerBuilder: s.headerBuilder,
       counterBuilder: s.counterBuilder,
       gradingBuilder: s.gradingBuilder,

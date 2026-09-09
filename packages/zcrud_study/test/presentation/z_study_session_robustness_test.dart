@@ -241,7 +241,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_k0')),
+    expect(find.byKey(const ValueKey<String>('zStudySessionAnswer_k0#0')),
         findsOneWidget);
   });
 }

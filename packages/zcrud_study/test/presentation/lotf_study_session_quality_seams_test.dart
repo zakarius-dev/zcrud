@@ -392,7 +392,7 @@ void main() {
       await tester.pumpWidget(
         _wrap(
           ZFlashcardAnswerInput(
-            key: const ValueKey<String>('zStudySessionAnswer_c0'),
+            key: const ValueKey<String>('zStudySessionAnswer_c0#0'),
             card: writtenCard('c0', answer: 'r0'),
             mode: ZReviewMode.learn,
             srsConfig: _config,
