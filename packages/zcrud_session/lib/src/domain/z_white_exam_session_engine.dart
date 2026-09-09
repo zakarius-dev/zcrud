@@ -11,12 +11,25 @@
 /// garanti par la structure du type, pas par une garde runtime.
 ///
 /// Machine à états — trois phases, transitions autorisées uniquement :
-/// [start] (`setup → running`), [answer] (reste `running`, parcours
-/// strictement linéaire, aucune ré-insertion), [submit] (`running →
-/// submitted`, fige l'examen et calcule le score). Toute transition illégale
-/// (double soumission, `answer` hors `running`, `start` hors `setup`, retour
-/// arrière `submitted → running`…) lève `StateError` — elle ne se tait
-/// jamais silencieusement.
+/// [start] (`setup → running`), l'enregistrement d'une réponse (reste
+/// `running`), [submit] (`running → submitted`, fige l'examen et calcule le
+/// score). Toute transition illégale (double soumission, réponse hors
+/// `running`, `start` hors `setup`, retour arrière `submitted → running`…)
+/// lève `StateError` — elle ne se tait jamais silencieusement.
+///
+/// Deux voies d'écriture, **exclusives** sur un même examen :
+///
+/// - le **parcours linéaire** (`answer`), pour une surface qui présente une
+///   question à la fois : la note est enregistrée sous le curseur, qui
+///   avance d'un cran. Aucune ré-insertion, aucun ré-ordonnancement ;
+/// - la **saisie par index** (`answerAt`/`dontKnowAt`), pour une surface qui
+///   présente toutes les questions à la fois : la note est rangée sous sa
+///   question, dans n'importe quel ordre, et peut être remplacée tant que
+///   l'examen n'est pas soumis. Le curseur n'y sert pas.
+///
+/// Les mêler sur un même examen ferait compter deux fois la même question :
+/// `answer` le refuse et lève. Les deux voies alimentent en revanche **le
+/// même** scoring — il n'existe qu'un producteur de résultat.
 ///
 /// Classe pure, zéro gestionnaire d'état (invariant AD-2) : le runtime
 /// `extends ChangeNotifier` (`package:flutter/foundation.dart` seule, aucun
@@ -54,6 +67,7 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZSrsConfig;
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZReviewMode, ZStudySessionResult;
 
+import 'z_exam_answer.dart';
 import 'z_session_item.dart';
 import 'z_white_exam_verdict.dart';
 
@@ -96,6 +110,8 @@ class ZWhiteExamState {
     required this.cursor,
     required this.answers,
     this.result,
+    this.answersByIndex = const <int, ZExamAnswer>{},
+    this.marked = const <int>{},
   });
 
   /// Phase courante de la machine à états.
@@ -128,12 +144,61 @@ class ZWhiteExamState {
   /// byQuality}`, jamais une écriture SRS).
   final ZStudySessionResult? result;
 
+  /// Réponses rangées sous l'index de leur question dans [queue].
+  ///
+  /// C'est la lecture **positionnellement interprétable** de l'examen :
+  /// contrairement à [answers], `answersByIndex[i]` désigne bien `queue[i]`,
+  /// quel que soit l'ordre dans lequel le candidat a répondu.
+  ///
+  /// Invariant tenu par les reducers : [answers] et cette table portent
+  /// toujours le **même multi-ensemble de notes**, et donc la même longueur.
+  /// C'est ce qui garantit qu'il n'existe pas deux comptages possibles — le
+  /// scoring, commutatif, rend le même résultat quelle que soit la vue par
+  /// laquelle les notes ont été enregistrées. Seul l'**ordre** diffère :
+  /// [answers] est en ordre d'arrivée tant que le parcours est linéaire, et
+  /// en ordre d'index dès qu'une réponse est rangée par index.
+  final Map<int, ZExamAnswer> answersByIndex;
+
+  /// Index des questions marquées par le candidat pour y revenir.
+  ///
+  /// Le marquage est une note de parcours : il n'entre dans aucun calcul de
+  /// score et ne change aucune réponse.
+  final Set<int> marked;
+
   /// Carte courante, ou `null` si le curseur a dépassé la fin de file.
   ZSessionItem? get current =>
       cursor >= 0 && cursor < queue.length ? queue[cursor] : null;
 
   /// Nombre de cartes déjà répondues (= longueur de [answers]).
   int get answered => answers.length;
+
+  /// Nombre de questions **de la file** portant une réponse — donnée ou
+  /// « je ne sais pas », jamais « sans réponse ».
+  ///
+  /// Ne compte que les index de `[0, queue.length)` : une clé hors bornes,
+  /// qu'un appelant aurait laissée dans [answersByIndex], ne peut pas faire
+  /// avancer la progression affichée au candidat.
+  int get answeredCount {
+    var count = 0;
+    for (var i = 0; i < queue.length; i++) {
+      if (answersByIndex[i]?.isAnswered ?? false) count += 1;
+    }
+    return count;
+  }
+
+  /// Nombre de questions de la file **sans réponse**
+  /// (`queue.length - answeredCount`, donc jamais négatif).
+  int get unansweredCount => queue.length - answeredCount;
+
+  /// Réponse rangée sous [index], ou « sans réponse » s'il n'y en a aucune.
+  ///
+  /// Fonction totale : elle ne rend jamais `null` et ne lève jamais, y
+  /// compris hors des bornes de la file.
+  ZExamAnswer answerFor(int index) =>
+      answersByIndex[index] ?? const ZExamAnswer.unanswered();
+
+  /// La question [index] est-elle marquée ?
+  bool isMarkedAt(int index) => marked.contains(index);
 
   /// Nombre de cartes restant à présenter (`N − cursor`, borné à `≥ 0`).
   int get remaining => math.max(0, queue.length - cursor);
@@ -151,6 +216,8 @@ class ZWhiteExamState {
     int? cursor,
     List<int>? answers,
     ZStudySessionResult? result,
+    Map<int, ZExamAnswer>? answersByIndex,
+    Set<int>? marked,
   }) =>
       ZWhiteExamState(
         phase: phase ?? this.phase,
@@ -158,6 +225,8 @@ class ZWhiteExamState {
         cursor: cursor ?? this.cursor,
         answers: answers ?? this.answers,
         result: result ?? this.result,
+        answersByIndex: answersByIndex ?? this.answersByIndex,
+        marked: marked ?? this.marked,
       );
 
   @override
@@ -169,6 +238,8 @@ class ZWhiteExamState {
           cursor == other.cursor &&
           listEquals(queue, other.queue) &&
           listEquals(answers, other.answers) &&
+          mapEquals(answersByIndex, other.answersByIndex) &&
+          setEquals(marked, other.marked) &&
           result == other.result;
 
   @override
@@ -177,13 +248,18 @@ class ZWhiteExamState {
         cursor,
         Object.hashAll(queue),
         Object.hashAll(answers),
+        Object.hashAllUnordered(<Object>[
+          for (final entry in answersByIndex.entries)
+            Object.hash(entry.key, entry.value),
+        ]),
+        Object.hashAllUnordered(marked),
         result,
       );
 
   @override
   String toString() =>
       'ZWhiteExamState(phase: $phase, cursor: $cursor, answered: $answered, '
-      'remaining: $remaining, result: $result)';
+      'remaining: $remaining, marked: ${marked.length}, result: $result)';
 }
 
 /// Seam de scoring pur d'un examen blanc.
@@ -209,13 +285,18 @@ class ZWhiteExamState {
 /// exception. Ce seam est public : la contrainte doit être lue comme une
 /// précondition d'implémentation, pas comme un détail.
 ///
-/// Seule une fonction commutative de [qualities] est admissible (un
-/// comptage ou un agrégat insensible à la permutation), tant que le moteur
-/// reste strictement linéaire. [scoreWhiteExam] l'est.
+/// Seule une fonction commutative de [qualities] est admissible : un
+/// comptage, ou un agrégat insensible à la permutation. [scoreWhiteExam]
+/// l'est.
 ///
-/// Rendre `qualities[i]` interprétable positionnellement exigerait de faire
-/// porter l'index de la carte au moteur (`answer({index, quality})`) : ce
-/// serait un changement de contrat du domaine, hors périmètre de ce port.
+/// La saisie par index ([ZWhiteExamSessionEngine.answerAt]) ne lève **pas**
+/// cette contrainte. Elle ordonne bien [qualities] par index — mais une
+/// question sans réponse n'y occupe aucune place : sur une file de quatre
+/// questions dont la troisième est restée blanche, `qualities[2]` est la note
+/// de la **quatrième** question. Un scorer positionnel noterait encore la
+/// mauvaise. C'est l'état par index
+/// ([ZWhiteExamState.answersByIndex]) qui porte la correspondance
+/// question ↔ réponse, jamais cette liste.
 typedef ZExamScoringPort = ZStudySessionResult Function(
   List<int> qualities, {
   required int passThreshold,
@@ -233,8 +314,85 @@ ZWhiteExamState startExam(ZWhiteExamState state) =>
 ZWhiteExamState recordAnswer(ZWhiteExamState state, int quality) =>
     state.copyWith(
       answers: <int>[...state.answers, quality],
+      answersByIndex: <int, ZExamAnswer>{
+        ...state.answersByIndex,
+        state.cursor: ZExamAnswer.answered(quality),
+      },
       cursor: state.cursor + 1,
     );
+
+/// Notes d'une table de réponses, lues par **index croissant**.
+///
+/// C'est la projection unique de `{index → réponse}` vers la liste de notes
+/// que consomme le scoring : « je ne sais pas » et « sans réponse » y entrent
+/// à [incorrectQuality] (voir [ZExamAnswer.scoredQuality]).
+List<int> zWhiteExamRecordedQualities(
+  Map<int, ZExamAnswer> answersByIndex, {
+  required int incorrectQuality,
+}) {
+  final entries = answersByIndex.entries.toList()
+    ..sort((a, b) => a.key.compareTo(b.key));
+  return <int>[
+    for (final entry in entries)
+      entry.value.scoredQuality(incorrectQuality: incorrectQuality),
+  ];
+}
+
+/// Reducer pur : range [answer] sous la question [index], en **remplaçant**
+/// toute réponse déjà enregistrée à cet index. Le curseur linéaire n'avance
+/// pas — cette écriture n'est pas un parcours.
+///
+/// La liste `answers` est **reconstruite** depuis la table, par index
+/// croissant : les deux vues de l'état restent donc le même multi-ensemble de
+/// notes, et le scoring n'a jamais deux entrées possibles. Aucun effet de
+/// bord, aucune horloge, aucun symbole SRS.
+ZWhiteExamState recordAnswerAt(
+  ZWhiteExamState state,
+  int index,
+  ZExamAnswer answer, {
+  required int incorrectQuality,
+}) {
+  final byIndex = <int, ZExamAnswer>{...state.answersByIndex, index: answer};
+  return state.copyWith(
+    answers: zWhiteExamRecordedQualities(
+      byIndex,
+      incorrectQuality: incorrectQuality,
+    ),
+    answersByIndex: byIndex,
+  );
+}
+
+/// Reducer pur : bascule le marquage de la question [index], sans toucher à
+/// sa réponse. Aucun effet de bord, aucune horloge, aucun symbole SRS.
+ZWhiteExamState toggleExamMark(ZWhiteExamState state, int index) {
+  final marked = <int>{...state.marked};
+  if (!marked.remove(index)) marked.add(index);
+  return state.copyWith(marked: marked);
+}
+
+/// Notes portées au scoring d'un [state] au moment de la soumission.
+///
+/// - `includeUnanswered: false` — les notes enregistrées, telles quelles : une
+///   question sans réponse ne pèse ni sur `total` ni sur `correct` ;
+/// - `includeUnanswered: true` — chaque question de la file sans réponse entre
+///   au scoring à [incorrectQuality], donc **comptée fausse** : `total` vaut
+///   alors le nombre de questions de la file.
+List<int> whiteExamQualities(
+  ZWhiteExamState state, {
+  required int incorrectQuality,
+  required bool includeUnanswered,
+}) {
+  if (!includeUnanswered) return state.answers;
+  final byIndex = <int, ZExamAnswer>{
+    for (var i = 0; i < state.queue.length; i++)
+      i: const ZExamAnswer.unanswered(),
+    ...state.answersByIndex,
+  };
+  return zWhiteExamRecordedQualities(
+    byIndex,
+    incorrectQuality: incorrectQuality,
+  );
+}
 
 /// Reducer pur de scoring, calculé à la soumission — défaut de
 /// [ZExamScoringPort].
@@ -289,11 +447,19 @@ class ZWhiteExamSessionEngine extends ChangeNotifier {
   /// reste alors `null` même après [submit], et rien d'autre ne change.
   /// Une valeur hors bornes est ramenée dans `[0, 1]` et `NaN` vaut `null`
   /// (invariant AD-10 : jamais d'exception, jamais un échec inventé).
+  ///
+  /// [startImmediately] fait naître l'examen en phase
+  /// [ZWhiteExamPhase.running] : il n'y a alors **pas de phase de réglage**,
+  /// l'épreuve commence à l'ouverture de la surface. C'est le régime d'une
+  /// épreuve à chronomètre libre, sans écran de démarrage. La phase [setup]
+  /// n'existant plus, [start] devient une transition illégale et lève —
+  /// exactement comme un second [start] sur un examen déjà commencé.
   ZWhiteExamSessionEngine({
     required List<ZSessionItem> queue,
     ZSrsConfig config = const ZSrsConfig(),
     ZExamScoringPort scorer = scoreWhiteExam,
     double? successRatio,
+    bool startImmediately = false,
   })  : _successRatio = zClampSuccessRatio(successRatio),
         // `prefer_initializing_formals` : faux positif — les champs sont
         // privés (`_config`/`_scorer`) et les paramètres publics ;
@@ -304,7 +470,9 @@ class ZWhiteExamSessionEngine extends ChangeNotifier {
         // ignore: prefer_initializing_formals
         _scorer = scorer,
         _state = ZWhiteExamState(
-          phase: ZWhiteExamPhase.setup,
+          phase: startImmediately
+              ? ZWhiteExamPhase.running
+              : ZWhiteExamPhase.setup,
           queue: List<ZSessionItem>.unmodifiable(queue),
           cursor: 0,
           answers: const <int>[],
@@ -327,6 +495,19 @@ class ZWhiteExamSessionEngine extends ChangeNotifier {
 
   /// Nombre de cartes déjà répondues.
   int get answered => _state.answered;
+
+  /// Réponses rangées sous l'index de leur question (lecture seule).
+  Map<int, ZExamAnswer> get answersByIndex => _state.answersByIndex;
+
+  /// Index des questions marquées par le candidat (lecture seule).
+  Set<int> get marked => _state.marked;
+
+  /// Nombre de questions de la file portant une réponse — donnée ou « je ne
+  /// sais pas ».
+  int get answeredCount => _state.answeredCount;
+
+  /// Nombre de questions de la file sans réponse.
+  int get unansweredCount => _state.unansweredCount;
 
   /// Nombre de cartes restant à présenter.
   int get remaining => _state.remaining;
@@ -396,13 +577,11 @@ class ZWhiteExamSessionEngine extends ChangeNotifier {
   /// 2. [current]/[remaining]/[cursor] ne sont fiables que sous un hôte
   ///    strictement linéaire.
   ///
-  /// `ZListSessionView` rend les cartes simultanément et toutes
-  /// saisissables : son hôte est donc non linéaire par conception. Il
-  /// n'exploite en conséquence que l'agrégat commutatif ([result]) et sa
-  /// propre correspondance indexée par position — jamais
-  /// `answers`/`current`/`cursor`. Aligner ces derniers exigerait
-  /// `answer({index, quality})`, un changement de contrat du domaine hors
-  /// périmètre de ce port.
+  /// Une surface qui présente les questions simultanément est non linéaire
+  /// par conception : elle n'emprunte pas cette voie. Elle enregistre par
+  /// [answerAt]/[dontKnowAt], qui rangent la note sous sa question et
+  /// rendent [ZWhiteExamState.answersByIndex] positionnellement lisible.
+  /// `current`/`cursor` n'ont alors pas de sens et ne sont pas consultés.
   void answer(int quality) {
     if (_state.phase != ZWhiteExamPhase.running) {
       throw StateError(
@@ -410,7 +589,85 @@ class ZWhiteExamSessionEngine extends ChangeNotifier {
         'pendant ZWhiteExamPhase.running (après start(), avant submit()).',
       );
     }
+    // Les deux voies d'écriture sont EXCLUSIVES sur un même examen : le
+    // parcours linéaire enregistre sous le curseur, la saisie par index
+    // enregistre sous l'index désigné. Les mêler ferait compter deux fois la
+    // question déjà répondue par l'autre voie — une note fausse, sans
+    // exception. On refuse, plutôt que de la produire.
+    if (_state.answersByIndex.containsKey(_state.cursor)) {
+      throw StateError(
+        'answer() illégal : la question ${_state.cursor} porte déjà une '
+        'réponse rangée par index (answerAt/dontKnowAt). Un même examen '
+        'emprunte une seule voie d\'écriture — le parcours linéaire OU la '
+        'saisie par index.',
+      );
+    }
     _setState(recordAnswer(_state, quality));
+  }
+
+  /// Enregistre une réponse de [quality] pour la question [index], quel que
+  /// soit l'ordre de saisie.
+  ///
+  /// C'est la voie d'écriture d'une surface qui présente **toutes** les
+  /// questions à la fois : la réponse est rangée sous sa question, jamais
+  /// sous un rang d'arrivée, donc aucune note ne peut glisser d'une question
+  /// à l'autre. Le curseur linéaire n'avance pas.
+  ///
+  /// Une question déjà répondue est **remplacée** : tant que l'examen n'est
+  /// pas soumis, le candidat peut revenir sur sa réponse, et c'est la
+  /// dernière enregistrée qui est notée.
+  ///
+  /// Lève `StateError` hors [ZWhiteExamPhase.running] et `RangeError` si
+  /// [index] ne désigne aucune question de la file — jamais un enregistrement
+  /// silencieusement perdu.
+  void answerAt(int index, int quality) =>
+      _recordAt(index, ZExamAnswer.answered(quality), 'answerAt');
+
+  /// Enregistre « je ne sais pas » pour la question [index].
+  ///
+  /// La question compte **répondue** et **fausse** : elle entre au scoring à
+  /// la borne basse de l'échelle déclarée (`ZSrsConfig.minQuality`), qui est
+  /// par construction strictement inférieure au seuil de réussite. Mêmes
+  /// levées que [answerAt].
+  void dontKnowAt(int index) =>
+      _recordAt(index, const ZExamAnswer.dontKnow(), 'dontKnowAt');
+
+  /// Bascule le marquage de la question [index] — sans toucher à sa réponse.
+  ///
+  /// Le marquage est une note de parcours (« y revenir ») : il n'entre dans
+  /// aucun calcul de score. Mêmes levées que [answerAt].
+  void toggleMarkAt(int index) {
+    _requireRunning('toggleMarkAt');
+    _requireIndex(index, 'toggleMarkAt');
+    _setState(toggleExamMark(_state, index));
+  }
+
+  void _recordAt(int index, ZExamAnswer answer, String caller) {
+    _requireRunning(caller);
+    _requireIndex(index, caller);
+    _setState(
+      recordAnswerAt(
+        _state,
+        index,
+        answer,
+        incorrectQuality: _config.minQuality,
+      ),
+    );
+  }
+
+  void _requireRunning(String caller) {
+    if (_state.phase != ZWhiteExamPhase.running) {
+      throw StateError(
+        '$caller() illégal en phase ${_state.phase} : on ne peut saisir que '
+        'pendant ZWhiteExamPhase.running (après start(), avant submit()).',
+      );
+    }
+  }
+
+  void _requireIndex(int index, String caller) {
+    if (index < 0 || index >= _state.queue.length) {
+      throw RangeError.index(index, _state.queue, '$caller.index');
+    }
   }
 
   /// Soumet l'examen : `running → submitted`, fige l'état et calcule le
@@ -420,7 +677,24 @@ class ZWhiteExamSessionEngine extends ChangeNotifier {
   /// double soumission) : lève `StateError`, jamais un no-op silencieux.
   /// Le seuil correct/incorrect est le `passThreshold` réutilisé de la
   /// config (jamais un littéral en dur).
-  void submit() {
+  ///
+  /// ## Ce que compte la soumission
+  ///
+  /// Par défaut ([countUnansweredAsIncorrect] à `false`), seules les réponses
+  /// enregistrées sont notées : une question sans réponse ne pèse ni sur
+  /// `total` ni sur `correct`.
+  ///
+  /// Avec [countUnansweredAsIncorrect], **toute question de la file sans
+  /// réponse compte fausse** — elle entre au scoring à la borne basse de
+  /// l'échelle, exactement comme « je ne sais pas » — et `total` vaut alors
+  /// le nombre de questions de la file. C'est le régime d'une soumission
+  /// incomplète assumée : une copie rendue blanche sur trois questions est
+  /// notée sur toutes.
+  ///
+  /// Le scoring lui-même est le même dans les deux cas : une seule fonction,
+  /// une seule frontière correct/incorrect. Seule change la liste de notes
+  /// qu'on lui présente.
+  void submit({bool countUnansweredAsIncorrect = false}) {
     if (_state.phase != ZWhiteExamPhase.running) {
       throw StateError(
         'submit() illégal en phase ${_state.phase} : on ne peut soumettre '
@@ -428,7 +702,12 @@ class ZWhiteExamSessionEngine extends ChangeNotifier {
         'soumission avant start() sont interdites.',
       );
     }
-    final result = _scorer(_state.answers, passThreshold: _config.passThreshold);
+    final qualities = whiteExamQualities(
+      _state,
+      incorrectQuality: _config.minQuality,
+      includeUnanswered: countUnansweredAsIncorrect,
+    );
+    final result = _scorer(qualities, passThreshold: _config.passThreshold);
     _setState(
       _state.copyWith(phase: ZWhiteExamPhase.submitted, result: result),
     );

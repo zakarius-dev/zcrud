@@ -131,6 +131,9 @@ Widget page() => const ZPageScaffold(
 | `ZDiscardChangesGuard` | `PopScope` interceptant la sortie tant qu'un `ValueListenable<bool>` *dirty* est vrai. |
 | **Comptage** | |
 | `ZCountBadge` | Pastille de comptage : seule ou posée sur un contenu, nombre **annoncé**, cible ≥ 48 dp si cliquable, couleurs dérivées du `ColorScheme`, placement directionnel. |
+| **Section repliable** | |
+| `ZCollapsibleSection` | Section repliable à en-tête : titre, compte, chevron, corps **démonté** quand replié. En-tête annoncé `button` + état déplié/replié, cible ≥ 48 dp, chevron figé sous Reduce Motion, `trailing` gardant son propre nœud sémantique. État détenu, ou piloté par un `ZToggleController` de l'hôte. |
+| `ZCollapsibleSectionSpec` / `ZCollapsibleSectionReference` | Les dix métriques réglables par instance, et les scalaires audités sans aucune couleur — chaîne `paramètre > jeton ZcrudTheme.collapsibleSection* > référence`. |
 | **Index et transitions** | |
 | `ZAlphabetIndexBar` / `kZDefaultAlphabet` | Index vertical A→Z cliquable, jeu de lettres injectable. |
 | `ZRouteTransition` / `zSlideBeginOffset` / `zPageRoute` / `ZPageTransitionsBuilder` | Transitions de route RTL-aware, découplées de tout routeur. |

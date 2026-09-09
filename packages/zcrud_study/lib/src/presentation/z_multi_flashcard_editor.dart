@@ -32,6 +32,9 @@
 /// dirty (aucun vidage optimiste).
 library;
 
+// `ValueListenable` n'est pas ré-exporté par `material.dart` : les tranches
+// exposées au slot de formulaire le nomment explicitement.
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 // `Unit` est RÉ-EXPORTÉ par `zcrud_core` (via `domain.dart` → dartz) : aucune
 // dépendance directe à `dartz` (arête pubspec unique = `zcrud_ui_kit`).
@@ -42,13 +45,24 @@ import 'package:zcrud_core/zcrud_core.dart'
         ZBatchActionBar,
         ZBatchReport,
         ZFieldSpec,
+        ZFieldWidgetContext,
         ZListSelectionController,
         ZListSelectionMode,
         ZResult,
+        ZTagsFieldWidget,
         ZcrudTheme,
         Unit;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart'
-    show ZFlashcard, ZFlashcardReviewCard, ZFlashcardType;
+    show
+        ZChoice,
+        ZChoicesFieldWidget,
+        ZFlashcard,
+        ZFlashcardEditionFields,
+        ZFlashcardEditionMessages,
+        ZFlashcardEditionValidator,
+        ZFlashcardReviewCard,
+        ZFlashcardType,
+        ZTrueFalseFieldWidget;
 import 'package:zcrud_responsive/zcrud_responsive.dart' show ZResponsiveLayout;
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZFlashcardTag, ZSuggestedTag;
@@ -134,6 +148,126 @@ typedef ZFlashcardFieldBuilder = Widget Function(
   BuildContext context,
   ZFlashcardFieldSlot slot,
 );
+
+/// Ce qu'un slot de formulaire COMPLET reçoit pour éditer une carte du lot.
+///
+/// Là où [ZFlashcardFieldSlot] substitue **un champ de texte**, ce contexte
+/// remet **toute** la carte : l'application monte son propre formulaire dans
+/// l'ossature de lot (liste, sélection, suppression groupée, aperçu, commit
+/// unique) sans rien réécrire de cette ossature.
+///
+/// ## Écrire dans le brouillon
+///
+/// Chaque `onXxxChanged` publie **dans la carte du brouillon** : la validation
+/// bloquante et le commit unique voient donc l'écriture, exactement comme une
+/// frappe dans le formulaire par défaut. Écrire ailleurs (un état local au
+/// widget de l'application) laisserait le brouillon inchangé et la saisie
+/// serait perdue au commit.
+///
+/// [controllerOf] rend le controller **STABLE** du champ de texte demandé
+/// (créé une fois, jamais recréé au rebuild). Il est ÉCOUTÉ tant que ce slot
+/// est monté : le texte qu'un widget y écrit est publié sans autre appel. Le
+/// remplacer par un controller local coupe cette voie.
+///
+/// [type], [choices], [isTrue] et [tagIds] sont les tranches courantes de la
+/// carte : chacune s'observe séparément (`ValueListenableBuilder`), de sorte
+/// qu'un champ ne se reconstruit pas quand un autre change.
+@immutable
+class ZFlashcardCardFormSlot {
+  /// Construit le contexte remis au slot de formulaire complet.
+  const ZFlashcardCardFormSlot({
+    required this.card,
+    required this.controllerOf,
+    required this.type,
+    required this.choices,
+    required this.isTrue,
+    required this.tagIds,
+    required this.labels,
+    required this.onQuestionChanged,
+    required this.onAnswerChanged,
+    required this.onExplanationChanged,
+    required this.onHintChanged,
+    required this.onTypeChanged,
+    required this.onChoicesChanged,
+    required this.onIsTrueChanged,
+    required this.onTagIdsChanged,
+    required this.onEditingComplete,
+    required this.validate,
+  });
+
+  /// Carte VIVANTE du brouillon (relue à chaque reconstruction) — jamais un
+  /// instantané figé au montage.
+  final ZFlashcard card;
+
+  /// Controller STABLE du champ de texte demandé — à alimenter (ou à laisser
+  /// alimenter par un `TextField`) pour que la saisie soit publiée.
+  final TextEditingController Function(ZFlashcardEditorField field) controllerOf;
+
+  /// Tranche du type de carte.
+  final ValueListenable<ZFlashcardType> type;
+
+  /// Tranche des choix (QCM) — `null` tant qu'aucun choix n'existe.
+  final ValueListenable<List<ZChoice>?> choices;
+
+  /// Tranche de la valeur vrai/faux — `null` tant qu'aucune valeur n'est posée.
+  final ValueListenable<bool?> isTrue;
+
+  /// Tranche des identifiants de balises.
+  final ValueListenable<List<String>> tagIds;
+
+  /// Libellés LOCALISÉS injectés du multi-éditeur.
+  final ZMultiFlashcardEditorLabels labels;
+
+  /// Publie l'énoncé (recto).
+  final ValueChanged<String> onQuestionChanged;
+
+  /// Publie la réponse (`null` ou vide ⇒ aucune réponse).
+  final ValueChanged<String?> onAnswerChanged;
+
+  /// Publie l'explication (`null` ou vide ⇒ aucune explication).
+  final ValueChanged<String?> onExplanationChanged;
+
+  /// Publie l'indice (`null` ou vide ⇒ aucun indice).
+  final ValueChanged<String?> onHintChanged;
+
+  /// Publie le type de carte.
+  final ValueChanged<ZFlashcardType> onTypeChanged;
+
+  /// Publie les choix du QCM (`null` ⇒ aucun choix).
+  final ValueChanged<List<ZChoice>?> onChoicesChanged;
+
+  /// Publie la valeur vrai/faux (`null` ⇒ aucune sélection).
+  final ValueChanged<bool?> onIsTrueChanged;
+
+  /// Publie les identifiants de balises.
+  final ValueChanged<List<String>> onTagIdsChanged;
+
+  /// Fin de saisie : publie la valeur courante et rafraîchit l'aperçu.
+  final VoidCallback onEditingComplete;
+
+  /// Message d'invalidité de la carte telle qu'elle est actuellement saisie,
+  /// ou `null` si elle est valide. C'est **la même règle** que celle qui
+  /// bloque le commit : l'afficher au fil de la saisie n'introduit aucune
+  /// divergence.
+  final String? Function() validate;
+}
+
+/// Slot de rendu du formulaire COMPLET d'une carte du lot.
+///
+/// Absent ⇒ le formulaire du multi-éditeur est rendu. Présent ⇒ il remplace
+/// **entièrement** ce formulaire : aucun champ n'est alors rendu deux fois.
+typedef ZFlashcardCardFormBuilder = Widget Function(
+  BuildContext context,
+  ZFlashcardCardFormSlot slot,
+);
+
+/// Règle de validité d'une carte du lot : message d'invalidité, ou `null` si
+/// la carte est valide.
+///
+/// Une carte invalide **bloque le commit** du lot entier et le message est
+/// rapporté à l'écran. Absente, la règle du socle s'applique (énoncé requis ;
+/// un QCM exige au moins deux choix dont au moins un correct).
+typedef ZFlashcardCardValidator = String? Function(ZFlashcard card);
 
 /// Un champ commun applicable à la sélection — déclaré en données.
 ///
@@ -235,6 +369,17 @@ class ZMultiFlashcardEditorLabels {
     required this.countLabelBuilder,
     required this.applyReportBuilder,
     this.typeLabels = const <ZFlashcardType, String>{},
+    this.choicesLabel,
+    this.addChoiceLabel,
+    this.trueFalseLabel,
+    this.trueLabel,
+    this.falseLabel,
+    this.tagsLabel,
+    this.editionMessages,
+    this.discardTitle,
+    this.discardMessage,
+    this.discardConfirmLabel,
+    this.discardCancelLabel,
   });
 
   /// Bouton « ajouter une carte vierge ».
@@ -302,6 +447,45 @@ class ZMultiFlashcardEditorLabels {
 
   /// Libellés par type de carte (repli `type.name` si absent).
   final Map<ZFlashcardType, String> typeLabels;
+
+  // Libellés des champs que le formulaire de carte monte selon le type. Ils
+  // sont NULLABLES et non défaillis ici à dessein : omettre un libellé laisse
+  // s'appliquer le défaut du widget d'édition correspondant — un libellé de
+  // repli écrit ici serait un libellé en dur de plus (invariant FR-26).
+
+  /// Libellé du champ d'édition des choix (QCM).
+  final String? choicesLabel;
+
+  /// Libellé de l'action « ajouter un choix » (QCM).
+  final String? addChoiceLabel;
+
+  /// Libellé du champ vrai/faux.
+  final String? trueFalseLabel;
+
+  /// Libellé de l'option « vrai ».
+  final String? trueLabel;
+
+  /// Libellé de l'option « faux ».
+  final String? falseLabel;
+
+  /// Libellé du champ des balises.
+  final String? tagsLabel;
+
+  /// Messages d'invalidité de carte (énoncé requis, règles du QCM) rapportés
+  /// quand le commit est refusé.
+  final ZFlashcardEditionMessages? editionMessages;
+
+  /// Titre du dialogue d'abandon de la saisie.
+  final String? discardTitle;
+
+  /// Message du dialogue d'abandon de la saisie.
+  final String? discardMessage;
+
+  /// Libellé de confirmation du dialogue d'abandon.
+  final String? discardConfirmLabel;
+
+  /// Libellé d'annulation du dialogue d'abandon.
+  final String? discardCancelLabel;
 }
 
 /// Éditeur d'un lot de flashcards en régime brouillon.
@@ -320,7 +504,11 @@ class ZMultiFlashcardEditor extends StatefulWidget {
   /// - [rowContentBuilder] : slot de rendu du RÉSUMÉ de ligne (défaut : la
   ///   question thématisée) — hissé pour la garde SM-1 (compteur de builds) ;
   /// - [fieldBuilders] : slots de rendu des champs texte du formulaire de carte
-  ///   (défaut : le champ de texte simple pour chacun).
+  ///   (défaut : le champ de texte simple pour chacun) ;
+  /// - [cardFormBuilder] : slot de rendu du formulaire de carte ENTIER (défaut :
+  ///   le formulaire du multi-éditeur) ;
+  /// - [cardValidator] : règle de validité d'une carte, qui conditionne le
+  ///   commit (défaut : la règle du socle).
   const ZMultiFlashcardEditor({
     required this.onCommit,
     required this.labels,
@@ -331,6 +519,8 @@ class ZMultiFlashcardEditor extends StatefulWidget {
     this.selection,
     this.rowContentBuilder,
     this.fieldBuilders,
+    this.cardFormBuilder,
+    this.cardValidator,
     super.key,
   });
 
@@ -370,6 +560,26 @@ class ZMultiFlashcardEditor extends StatefulWidget {
   /// l'écoute, donc tout texte qu'il y écrit est publié dans le brouillon
   /// (cf. [ZFlashcardFieldSlot]).
   final Map<ZFlashcardEditorField, ZFlashcardFieldBuilder>? fieldBuilders;
+
+  /// Slot de rendu du formulaire de carte ENTIER.
+  ///
+  /// Absent ⇒ le formulaire du multi-éditeur est rendu. Présent ⇒ il le
+  /// **remplace** : l'application monte son propre formulaire dans l'ossature
+  /// de lot (liste, sélection, suppression groupée, aperçu, commit unique),
+  /// et le socle ne rend alors aucun champ lui-même — jamais de doublon.
+  ///
+  /// Ce slot l'emporte sur [fieldBuilders] : rendre un formulaire entier rend
+  /// sans objet la substitution champ par champ.
+  final ZFlashcardCardFormBuilder? cardFormBuilder;
+
+  /// Règle de validité d'une carte, appliquée à **toutes** les cartes du lot
+  /// avant le commit. Une carte invalide bloque le commit, focalise la carte
+  /// fautive et rapporte le message à l'écran.
+  ///
+  /// Absente ⇒ la règle du socle (énoncé requis ; un QCM exige au moins deux
+  /// choix dont au moins un correct). Une application qui porte ses propres
+  /// règles la remplace ; `(card) => null` désactive tout blocage.
+  final ZFlashcardCardValidator? cardValidator;
 
   /// Clé de test du volet liste.
   static const ValueKey<String> listPaneKey =
@@ -473,11 +683,43 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
     _selection.clearSelection();
   }
 
+  /// Message d'invalidité de [card] selon la règle effective (celle injectée
+  /// par l'application, à défaut celle du socle).
+  String? _cardError(ZFlashcard card) {
+    final injected = widget.cardValidator;
+    if (injected != null) return injected(card);
+    // Règle du socle : source unique partagée avec le formulaire unitaire —
+    // aucune règle réécrite ici.
+    final errors = ZFlashcardEditionValidator.validate(
+      <String, Object?>{
+        'question': card.question,
+        'type': card.type,
+        'choices': card.choices,
+      },
+      messages: widget.labels.editionMessages ??
+          ZFlashcardEditionValidator.defaultMessages,
+    );
+    return errors.isEmpty ? null : errors.values.first;
+  }
+
   Future<void> _commit() async {
     // Garde de ré-entrance — un double-tap ne déclenche qu'une salve.
     if (_isCommitting) return;
     _isCommitting = true;
     try {
+      // Une carte invalide ne franchit jamais la frontière de persistance : le
+      // lot entier est retenu, la carte fautive est focalisée et la cause est
+      // rapportée. Le brouillon reste intact (aucune perte).
+      for (final key in _draft.keys) {
+        final card = _draft.cardOf(key);
+        if (card == null) continue;
+        final error = _cardError(card);
+        if (error != null) {
+          _focusedKey.value = key;
+          _statusMessage.value = error;
+          return;
+        }
+      }
       final result = await _draft.commit(widget.onCommit);
       if (!mounted) return;
       // Message d'échec localisé seul — on n'accole pas la
@@ -548,6 +790,13 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
     return ZDiscardChangesGuard(
       isDirty: _draft.isDirty,
       onDiscard: _draft.discardToSnapshot,
+      // Libellés du dialogue d'abandon : relayés tels quels. Un libellé absent
+      // reste `null` et laisse s'appliquer le repli neutre de la garde — aucun
+      // libellé de repli n'est écrit ici (invariant FR-26).
+      title: widget.labels.discardTitle,
+      message: widget.labels.discardMessage,
+      confirmLabel: widget.labels.discardConfirmLabel,
+      cancelLabel: widget.labels.discardCancelLabel,
       // Split-view responsive via `ZResponsiveLayout` (aucun breakpoint
       // réécrit). Compact (< 600) : navigation liste ↔ formulaire ; medium/
       // expanded (≥ 600) : les deux volets simultanés.
@@ -832,6 +1081,10 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
                 baseCardOf: () => _draft.cardOf(key) ?? card,
                 labels: labels,
                 fieldBuilders: widget.fieldBuilders,
+                cardFormBuilder: widget.cardFormBuilder,
+                // Même règle que celle qui conditionne le commit : le
+                // formulaire ne peut pas diverger de la porte de sortie.
+                validateCard: _cardError,
                 onChanged: (updated) => _draft.updateCard(key, updated),
                 onEditingComplete: () => _previewTick.value++,
               ),
@@ -889,6 +1142,14 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
 /// est une tranche `ValueListenable` isolée (enum, pas un booléen). Aucune frappe
 /// ne reconstruit la liste (l'édition passe par `updateCard`, hors tranche
 /// structurelle).
+/// Tranches non textuelles du formulaire de carte, pour distinguer celles que
+/// la saisie a réellement touchées de celles laissées à la base vivante.
+enum _ZCardSlice {
+  choices,
+  isTrue,
+  tagIds,
+}
+
 class _ZCardForm extends StatefulWidget {
   const _ZCardForm({
     required this.initialCard,
@@ -896,7 +1157,9 @@ class _ZCardForm extends StatefulWidget {
     required this.labels,
     required this.onChanged,
     required this.onEditingComplete,
+    required this.validateCard,
     this.fieldBuilders,
+    this.cardFormBuilder,
     super.key,
   });
 
@@ -915,6 +1178,12 @@ class _ZCardForm extends StatefulWidget {
   /// Slots de rendu des champs (table vide/absente ⇒ champs par défaut).
   final Map<ZFlashcardEditorField, ZFlashcardFieldBuilder>? fieldBuilders;
 
+  /// Slot de rendu du formulaire ENTIER (absent ⇒ formulaire du socle).
+  final ZFlashcardCardFormBuilder? cardFormBuilder;
+
+  /// Règle de validité effective (identique à celle qui garde le commit).
+  final ZFlashcardCardValidator validateCard;
+
   final ValueChanged<ZFlashcard> onChanged;
   final VoidCallback onEditingComplete;
 
@@ -928,6 +1197,19 @@ class _ZCardFormState extends State<_ZCardForm> {
   late final TextEditingController _explanation;
   late final TextEditingController _hint;
   late final ValueNotifier<ZFlashcardType> _type;
+
+  /// Tranches des champs non textuels de la carte — une par champ (invariant
+  /// AD-2 : un champ = une tranche, jamais un rebuild de tout le formulaire).
+  late final ValueNotifier<List<ZChoice>?> _choices;
+  late final ValueNotifier<bool?> _isTrue;
+  late final ValueNotifier<List<String>> _tagIds;
+
+  /// Champs non textuels effectivement TOUCHÉS dans ce formulaire.
+  ///
+  /// `_rebuild` ne réécrit un tel champ que s'il a été touché : sans cela, une
+  /// valeur posée hors formulaire (champ commun appliqué à la sélection)
+  /// serait écrasée par la tranche seedée au montage, dès la frappe suivante.
+  final Set<_ZCardSlice> _touched = <_ZCardSlice>{};
 
   /// Champs actuellement rendus par un slot injecté — donc ÉCOUTÉS.
   ///
@@ -952,6 +1234,9 @@ class _ZCardFormState extends State<_ZCardForm> {
     _explanation = TextEditingController(text: card.explanation ?? '');
     _hint = TextEditingController(text: card.hint ?? '');
     _type = ValueNotifier<ZFlashcardType>(card.type);
+    _choices = ValueNotifier<List<ZChoice>?>(card.choices);
+    _isTrue = ValueNotifier<bool?>(card.isTrue);
+    _tagIds = ValueNotifier<List<String>>(List<String>.of(card.tagIds));
     _syncListeners();
   }
 
@@ -975,6 +1260,9 @@ class _ZCardFormState extends State<_ZCardForm> {
     _explanation.dispose();
     _hint.dispose();
     _type.dispose();
+    _choices.dispose();
+    _isTrue.dispose();
+    _tagIds.dispose();
     super.dispose();
   }
 
@@ -995,8 +1283,12 @@ class _ZCardFormState extends State<_ZCardForm> {
   /// écouté (sa seule voie de publication), un champ par défaut ne l'est pas.
   void _syncListeners() {
     final builders = widget.fieldBuilders;
+    // Un formulaire ENTIER fourni par l'application rend les quatre champs :
+    // les quatre controllers sont alors sa seule voie de publication, donc
+    // tous écoutés. Le chemin par défaut, lui, publie par `onChanged`.
+    final wholeForm = widget.cardFormBuilder != null;
     for (final field in ZFlashcardEditorField.values) {
-      final wanted = builders != null && builders[field] != null;
+      final wanted = wholeForm || (builders != null && builders[field] != null);
       final controller = _controllerOf(field);
       if (wanted && _listened.add(field)) {
         _lastText[field] = controller.text;
@@ -1028,18 +1320,101 @@ class _ZCardFormState extends State<_ZCardForm> {
   /// La base est la carte vivante ([ZMultiFlashcardEditor] la relit via
   /// `baseCardOf`), pas le snapshot figé — sinon un champ commun appliqué hors
   /// formulaire serait écrasé à la frappe suivante.
-  ZFlashcard _rebuild() => widget.baseCardOf().copyWith(
-        question: _question.text,
-        answer: _answer.text.isEmpty ? null : _answer.text,
-        explanation: _explanation.text.isEmpty ? null : _explanation.text,
-        hint: _hint.text.isEmpty ? null : _hint.text,
-        type: _type.value,
-      );
+  ZFlashcard _rebuild() {
+    var card = widget.baseCardOf().copyWith(
+          question: _question.text,
+          answer: _answer.text.isEmpty ? null : _answer.text,
+          explanation: _explanation.text.isEmpty ? null : _explanation.text,
+          hint: _hint.text.isEmpty ? null : _hint.text,
+          type: _type.value,
+        );
+    // Champs non textuels : réécrits SEULEMENT s'ils ont été touchés ici,
+    // sinon la base vivante l'emporte (cf. `_touched`).
+    if (_touched.contains(_ZCardSlice.choices)) {
+      card = card.copyWith(choices: _choices.value);
+    }
+    if (_touched.contains(_ZCardSlice.isTrue)) {
+      card = card.copyWith(isTrue: _isTrue.value);
+    }
+    if (_touched.contains(_ZCardSlice.tagIds)) {
+      card = card.copyWith(tagIds: _tagIds.value);
+    }
+    return card;
+  }
 
   void _notify() => widget.onChanged(_rebuild());
 
+  /// Publie le texte [value] dans le champ [field] puis republie la carte.
+  ///
+  /// L'écriture passe par le controller STABLE (source unique du texte) : un
+  /// widget d'application qui l'affiche voit donc la valeur, et l'écoute
+  /// publie. Le `_notify()` final rend l'appel sûr même si le texte n'a pas
+  /// changé (republier une carte identique est inoffensif).
+  void _setText(ZFlashcardEditorField field, String value) {
+    final controller = _controllerOf(field);
+    if (controller.text != value) controller.text = value;
+    _notify();
+  }
+
+  void _setChoices(List<ZChoice>? value) {
+    _touched.add(_ZCardSlice.choices);
+    _choices.value = value;
+    _notify();
+  }
+
+  void _setIsTrue(bool? value) {
+    _touched.add(_ZCardSlice.isTrue);
+    _isTrue.value = value;
+    _notify();
+  }
+
+  void _setTagIds(List<String> value) {
+    _touched.add(_ZCardSlice.tagIds);
+    _tagIds.value = value;
+    _notify();
+  }
+
+  void _setType(ZFlashcardType value) {
+    _type.value = value;
+    _notify();
+    widget.onEditingComplete();
+  }
+
+  /// Contexte remis au slot de formulaire ENTIER.
+  ZFlashcardCardFormSlot _formSlot() => ZFlashcardCardFormSlot(
+        card: widget.baseCardOf(),
+        controllerOf: _controllerOf,
+        type: _type,
+        choices: _choices,
+        isTrue: _isTrue,
+        tagIds: _tagIds,
+        labels: widget.labels,
+        onQuestionChanged: (v) => _setText(ZFlashcardEditorField.question, v),
+        onAnswerChanged: (v) =>
+            _setText(ZFlashcardEditorField.answer, v ?? ''),
+        onExplanationChanged: (v) =>
+            _setText(ZFlashcardEditorField.explanation, v ?? ''),
+        onHintChanged: (v) => _setText(ZFlashcardEditorField.hint, v ?? ''),
+        onTypeChanged: _setType,
+        onChoicesChanged: _setChoices,
+        onIsTrueChanged: _setIsTrue,
+        onTagIdsChanged: _setTagIds,
+        onEditingComplete: _endEditing,
+        validate: () => widget.validateCard(_rebuild()),
+      );
+
   @override
   Widget build(BuildContext context) {
+    final wholeForm = widget.cardFormBuilder;
+    if (wholeForm != null) {
+      // Le formulaire de l'application REMPLACE celui du socle : aucun champ
+      // n'est rendu deux fois. `KeyedSubtree` donne au sous-arbre injecté une
+      // identité stable d'une reconstruction à l'autre.
+      return KeyedSubtree(
+        key: const ValueKey<String>('z-card-form-slot'),
+        child: wholeForm(context, _formSlot()),
+      );
+    }
     final theme = ZcrudTheme.of(context);
     final labels = widget.labels;
     return Column(
@@ -1068,9 +1443,7 @@ class _ZCardFormState extends State<_ZCardForm> {
                 value: type,
                 onChanged: (v) {
                   if (v == null) return;
-                  _type.value = v;
-                  _notify();
-                  widget.onEditingComplete();
+                  _setType(v);
                 },
                 items: <DropdownMenuItem<ZFlashcardType>>[
                   for (final t in ZFlashcardType.values)
@@ -1084,8 +1457,103 @@ class _ZCardFormState extends State<_ZCardForm> {
             ],
           ),
         ),
+        SizedBox(height: theme.gapS),
+        // Place STABLE du champ conditionné par le type (invariant AD-2) : le
+        // champ apparaît et disparaît toujours au même endroit du formulaire.
+        ValueListenableBuilder<ZFlashcardType>(
+          valueListenable: _type,
+          builder: (context, type, _) => _typedField(type),
+        ),
+        SizedBox(height: theme.gapS),
+        ValueListenableBuilder<List<String>>(
+          valueListenable: _tagIds,
+          builder: (context, tags, _) => ZTagsFieldWidget(
+            key: const ValueKey<String>('z-card-tags'),
+            field: ZFlashcardEditionFields.tags(label: labels.tagsLabel),
+            value: tags,
+            onChanged: _setTagIds,
+          ),
+        ),
       ],
     );
+  }
+
+  /// Champ d'édition propre au type courant — les widgets d'édition du socle
+  /// (jamais un éditeur réécrit ici). Un type sans champ dédié rend un espace
+  /// vide : la place reste occupée, l'ordre du formulaire ne bouge pas.
+  Widget _typedField(ZFlashcardType type) {
+    switch (type) {
+      case ZFlashcardType.multipleChoice:
+        return ValueListenableBuilder<List<ZChoice>?>(
+          valueListenable: _choices,
+          builder: (context, choices, _) => _choicesEditor(choices),
+        );
+      case ZFlashcardType.trueOrFalse:
+        return ValueListenableBuilder<bool?>(
+          valueListenable: _isTrue,
+          builder: (context, value, _) => _trueFalseEditor(value),
+        );
+      case ZFlashcardType.openQuestion:
+      case ZFlashcardType.exercise:
+      case ZFlashcardType.fillBlank:
+      case ZFlashcardType.shortAnswer:
+        return const SizedBox.shrink();
+    }
+  }
+
+  // Les libellés absents ne sont PAS remplacés par une chaîne écrite ici
+  // (invariant FR-26) : on omet le paramètre, et le défaut audité du widget
+  // d'édition s'applique. D'où les branches ci-dessous, plutôt qu'un `??`.
+
+  Widget _choicesEditor(List<ZChoice>? choices) {
+    final ctx = ZFieldWidgetContext(
+      field: ZFlashcardEditionFields.choices(label: widget.labels.choicesLabel),
+      value: choices,
+      // Défensif (invariant AD-10) : une valeur d'un autre type ne fait pas
+      // échouer le formulaire, elle vaut « aucun choix ».
+      onChanged: (value) =>
+          _setChoices(value is List<ZChoice> ? value : null),
+    );
+    final messages = widget.labels.editionMessages ??
+        ZFlashcardEditionValidator.defaultMessages;
+    final addLabel = widget.labels.addChoiceLabel;
+    const key = ValueKey<String>('z-card-choices');
+    return addLabel == null
+        ? ZChoicesFieldWidget(key: key, ctx: ctx, messages: messages)
+        : ZChoicesFieldWidget(
+            key: key,
+            ctx: ctx,
+            messages: messages,
+            addChoiceLabel: addLabel,
+          );
+  }
+
+  Widget _trueFalseEditor(bool? value) {
+    final ctx = ZFieldWidgetContext(
+      field: ZFlashcardEditionFields.trueFalse(
+        label: widget.labels.trueFalseLabel,
+      ),
+      value: value,
+      onChanged: (v) => _setIsTrue(v is bool ? v : null),
+    );
+    final trueLabel = widget.labels.trueLabel;
+    final falseLabel = widget.labels.falseLabel;
+    const key = ValueKey<String>('z-card-true-false');
+    if (trueLabel != null && falseLabel != null) {
+      return ZTrueFalseFieldWidget(
+        key: key,
+        ctx: ctx,
+        trueLabel: trueLabel,
+        falseLabel: falseLabel,
+      );
+    }
+    if (trueLabel != null) {
+      return ZTrueFalseFieldWidget(key: key, ctx: ctx, trueLabel: trueLabel);
+    }
+    if (falseLabel != null) {
+      return ZTrueFalseFieldWidget(key: key, ctx: ctx, falseLabel: falseLabel);
+    }
+    return ZTrueFalseFieldWidget(key: key, ctx: ctx);
   }
 
   /// Fin de saisie d'un champ : publie la valeur ET rafraîchit l'aperçu.

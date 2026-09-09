@@ -23,6 +23,7 @@ library;
 // Soumission advisory émise à l'hôte : cette surface de saisie n'écrit rien
 // elle-même, c'est l'hôte qui branche l'écriture SRS sur le seam
 // `ZSessionReviewer` (voie unique). Pur-Dart, aucun import Flutter.
+export 'src/domain/z_exam_answer.dart';
 export 'src/domain/z_flashcard_submission.dart';
 export 'src/domain/z_linear_session_state.dart';
 // Sélection pure du feedback pédagogique : `(quality, timeTaken, hintsUsed)`
@@ -141,4 +142,22 @@ export 'src/presentation/z_study_progress_rings.dart';
 // l'hôte ; le filtrage est la fonction pure `zApplyTestFilters`.
 export 'src/presentation/z_test_filters_dialog.dart';
 export 'src/presentation/z_timer_display.dart';
+// Format d'affichage partagé des surfaces d'examen blanc (durée en chiffres
+// seuls). Aucune valeur de règle : le taux de réussite exigé est une donnée
+// de l'application, ce paquet n'en écrit aucun.
+export 'src/presentation/z_white_exam_format.dart';
+// Examen blanc en LISTE : toutes les questions posées à la fois, réponses
+// rangées SOUS LEUR INDEX (jamais sous un rang d'arrivée), marquage,
+// « je ne sais pas », soumission incomplète assumée. Consomme le MÊME
+// contrôleur — donc le même moteur et le même scoring — que la coquille
+// « une question à la fois » : deux examens répondus à l'identique par les
+// deux surfaces produisent le même résultat.
+export 'src/presentation/z_white_exam_list_view.dart';
+// Bandeau de résultat : lit l'agrégat de soumission et le verdict dérivé par
+// la fonction pure du domaine — aucun score recalculé, aucune couleur posée
+// (deux clés résolues contre le thème).
+export 'src/presentation/z_white_exam_score_banner.dart';
 export 'src/presentation/z_white_exam_session_view.dart';
+// Politique de soumission : quand confirmer, et ce que compte une copie
+// rendue incomplète (par défaut, une question sans réponse compte fausse).
+export 'src/presentation/z_white_exam_submit_policy.dart';

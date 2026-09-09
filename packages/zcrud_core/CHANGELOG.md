@@ -3,6 +3,29 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.54.0 — 2026-09-09
+
+### Ajouté
+
+- **Dix jetons `ZcrudTheme.collapsibleSection*`** — le niveau 2 de la chaîne
+  `paramètre > jeton > référence` d'une **section repliable à en-tête**
+  (`ZCollapsibleSection`, `zcrud_ui_kit`). Deux applications réécrivaient la
+  même anatomie sans qu'aucun canal de thème ne l'atteigne : élévations
+  (`collapsibleSectionExpandedElevation`,
+  `collapsibleSectionCollapsedElevation`), rayons
+  (`collapsibleSectionCornerRadius`, `collapsibleSectionBodyCornerRadius`,
+  `collapsibleSectionCountCornerRadius`), opacités de filet
+  (`collapsibleSectionBorderAlpha`, `collapsibleSectionBodyBorderAlpha`),
+  disque de tête (`collapsibleSectionLeadingIconSize`,
+  `collapsibleSectionLeadingBackgroundAlpha`) et durée de rotation du chevron
+  (`collapsibleSectionChevronDuration`). Câblés aux quatre sites
+  (déclaration, constructeur, `copyWith`, `lerp` par `_lerpNullableDouble` /
+  `_lerpNullableDuration`, null-préservants : `null`↔`null` reste `null`, donc
+  la valeur de référence du consommateur n'est jamais matérialisée par une
+  transition de thème). `null` par défaut ⇒ rendu strictement inchangé.
+  Aucune teinte n'entre ici : seules des **métriques** et des **opacités**
+  sont réglables, les couleurs restent celles du `ColorScheme` de l'hôte.
+
 ## 3.51.0 — 2026-09-09
 
 ### Ajouté

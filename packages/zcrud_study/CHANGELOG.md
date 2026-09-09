@@ -3,6 +3,76 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.54.0 — 2026-09-09
+
+### Modifié
+
+🔴 **Le formulaire de carte du multi-éditeur édite désormais la carte ENTIÈRE.**
+Le sélecteur de type proposait `multipleChoice` et `trueOrFalse`, mais le
+formulaire ne montait que l'énoncé, la réponse, l'explication et l'indice : une
+carte QCM créée dans `ZMultiFlashcardEditor` sortait **sans choix** et une carte
+vrai/faux **sans valeur** — invalides pour la révision. Les balises n'étaient
+pas éditables du tout.
+
+Le formulaire par défaut monte maintenant, **en réutilisant les widgets
+d'édition du socle** (aucun second éditeur écrit) :
+
+| Champ | Widget | Quand |
+|---|---|---|
+| choix du QCM | `ZChoicesFieldWidget` (`zcrud_flashcard`) | type `multipleChoice` |
+| valeur vrai/faux | `ZTrueFalseFieldWidget` (`zcrud_flashcard`) | type `trueOrFalse` |
+| balises | `ZTagsFieldWidget` (`zcrud_core`) | toujours |
+
+Les deux premiers occupent une **place stable** dans le formulaire : le champ
+apparaît et disparaît au même endroit, l'ordre ne bouge pas.
+
+**Ce qui change pour une application déjà montée** : le volet détail du
+multi-éditeur rend deux champs de plus (un seul si le type n'est ni QCM ni
+vrai/faux). Une application qui avait posé `fieldBuilders` pour l'énoncé ou la
+réponse continue de les voir honorés — ces créneaux sont inchangés. Une
+application qui rendait **déjà** ces champs à côté du multi-éditeur les rendrait
+désormais en double : elle passe à `cardFormBuilder` (ci-dessous), qui remplace
+le formulaire du socle entièrement.
+
+🔴 **Une carte invalide bloque le commit du lot.** Le commit ne validait rien :
+le lot partait tel quel. Il applique désormais, à **toutes** les cartes, la
+règle du socle (`ZFlashcardEditionValidator` — énoncé requis ; un QCM exige au
+moins deux choix dont au moins un correct). La première carte fautive est
+focalisée, la cause est affichée, et **aucune** salve n'est émise ; le brouillon
+reste intact.
+
+**Ce qui change pour une application déjà montée** : un lot qui contenait déjà
+une carte sans énoncé, ou un QCM incomplet, n'est plus committé en silence.
+Une application qui porte ses propres règles injecte `cardValidator` ;
+`cardValidator: (card) => null` restitue exactement le comportement antérieur.
+
+### Ajouté
+
+- **`cardFormBuilder`** sur `ZMultiFlashcardEditor` : créneau de formulaire de
+  carte **entier**. L'application monte son propre formulaire **dans**
+  l'ossature de lot (liste, sélection, suppression groupée, aperçu, commit
+  unique) sans rien en réécrire. Le créneau reçoit un
+  **`ZFlashcardCardFormSlot`** : la carte vivante du brouillon, les controllers
+  **stables** des quatre champs de texte (`controllerOf`, écoutés — le texte
+  qu'on y écrit est publié), les tranches `type`/`choices`/`isTrue`/`tagIds`,
+  un `onChanged` typé par champ écrivant **dans le même brouillon**, la fin de
+  saisie, et `validate()` (la règle même qui garde le commit). Fourni, il
+  remplace le formulaire du socle : aucun champ n'est rendu deux fois.
+- **`cardValidator`** (`ZFlashcardCardValidator`) : règle de validité d'une
+  carte, appliquée avant le commit du lot.
+- **Libellés de la garde de sortie** dans `ZMultiFlashcardEditorLabels` :
+  `discardTitle`, `discardMessage`, `discardConfirmLabel`, `discardCancelLabel`,
+  relayés à `ZDiscardChangesGuard`. Le dialogue d'abandon de saisie affichait un
+  repli non surchargeable. Absents, ce repli s'applique inchangé.
+- **Libellés des champs neufs** dans `ZMultiFlashcardEditorLabels` :
+  `choicesLabel`, `addChoiceLabel`, `trueFalseLabel`, `trueLabel`, `falseLabel`,
+  `tagsLabel`, et `editionMessages` (messages d'invalidité rapportés au refus
+  de commit). Tous **nullables** : un libellé omis laisse s'appliquer le défaut
+  du widget d'édition correspondant, jamais un libellé écrit dans ce paquet.
+
+Aucun champ `required` n'a été ajouté : les montages existants de
+`ZMultiFlashcardEditorLabels` et de `ZMultiFlashcardEditor` compilent inchangés.
+
 ## 3.53.0 — 2026-09-09
 
 ### Modifié

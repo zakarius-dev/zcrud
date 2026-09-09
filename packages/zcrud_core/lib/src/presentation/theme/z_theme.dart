@@ -606,6 +606,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.pageHeaderSubtitleStyle,
     this.pageHeaderTabSelectedLabelStyle,
     this.pageHeaderTabUnselectedLabelStyle,
+    this.collapsibleSectionExpandedElevation,
+    this.collapsibleSectionCollapsedElevation,
+    this.collapsibleSectionCornerRadius,
+    this.collapsibleSectionBorderAlpha,
+    this.collapsibleSectionBodyBorderAlpha,
+    this.collapsibleSectionBodyCornerRadius,
+    this.collapsibleSectionChevronDuration,
+    this.collapsibleSectionLeadingIconSize,
+    this.collapsibleSectionLeadingBackgroundAlpha,
+    this.collapsibleSectionCountCornerRadius,
     this.chatBubbleWidthFactor,
     this.chatRequestBubbleRadius,
     this.chatResponseBubbleRadius,
@@ -2092,6 +2102,82 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// inchangé**.
   final TextStyle? pageHeaderTabUnselectedLabelStyle;
 
+  // ── Section repliable à en-tête (ZCollapsibleSection) ─────────────────────
+  //
+  // NIVEAU 2 de la chaîne `paramètre > jeton > référence`. `null` des deux
+  // côtés reste `null` à travers `lerp` : la valeur de RÉFÉRENCE du
+  // consommateur n'est jamais matérialisée par une transition de thème.
+
+  /// Élévation de l'en-tête d'une section repliable **dépliée**.
+  ///
+  /// `null` ⇒ la valeur de référence du consommateur. L'ombre porte la
+  /// séparation entre l'en-tête et le corps déplié ; la remettre à `0`
+  /// aplatit la section sans changer sa géométrie.
+  final double? collapsibleSectionExpandedElevation;
+
+  /// Élévation de l'en-tête d'une section repliable **repliée**.
+  ///
+  /// `null` ⇒ la valeur de référence du consommateur. Repliée, c'est le
+  /// conteneur (et non l'en-tête) qui porte l'ombre : les deux élévations
+  /// s'échangent d'un état à l'autre.
+  final double? collapsibleSectionCollapsedElevation;
+
+  /// Rayon des coins de la section repliable (conteneur et en-tête).
+  ///
+  /// `null` ⇒ la valeur de référence du consommateur.
+  final double? collapsibleSectionCornerRadius;
+
+  /// Opacité appliquée à `dividerColor` pour le **filet de contour** de la
+  /// section repliable.
+  ///
+  /// `null` ⇒ la valeur de référence du consommateur. Aucune teinte n'est
+  /// nommée ici : seule l'opacité est réglable, la couleur reste celle du
+  /// thème de l'hôte.
+  final double? collapsibleSectionBorderAlpha;
+
+  /// Opacité appliquée à `dividerColor` pour le **filet supérieur du corps**
+  /// d'une section repliable dépliée.
+  ///
+  /// `null` ⇒ la valeur de référence du consommateur. Plus discret que le
+  /// contour : ce filet sépare, il n'encadre pas.
+  final double? collapsibleSectionBodyBorderAlpha;
+
+  /// Rayon des **coins bas** du corps d'une section repliable dépliée.
+  ///
+  /// `null` ⇒ la valeur de référence du consommateur. Délibérément
+  /// indépendant de [collapsibleSectionCornerRadius] : le corps est posé
+  /// *dans* le conteneur, son arrondi est donc légèrement plus serré.
+  final double? collapsibleSectionBodyCornerRadius;
+
+  /// Durée de la rotation du chevron d'une section repliable.
+  ///
+  /// `null` ⇒ la valeur de référence du consommateur. Sans effet quand
+  /// l'usager a demandé la réduction des animations
+  /// (`MediaQuery.disableAnimations`) : la rotation est alors instantanée
+  /// quelle que soit cette valeur.
+  final Duration? collapsibleSectionChevronDuration;
+
+  /// Taille du glyphe posé dans le **disque de tête** d'une section repliable.
+  ///
+  /// `null` ⇒ la valeur de référence du consommateur. Sans objet quand la
+  /// section ne déclare pas de glyphe de tête (le disque est alors absent de
+  /// l'arbre).
+  final double? collapsibleSectionLeadingIconSize;
+
+  /// Opacité du **fond du disque de tête** d'une section repliable, appliquée
+  /// à la teinte du disque.
+  ///
+  /// `null` ⇒ la valeur de référence du consommateur. La teinte, elle, vient
+  /// du rôle `primary` du `ColorScheme` ou de la clé de couleur déclarée par
+  /// l'hôte — jamais d'ici.
+  final double? collapsibleSectionLeadingBackgroundAlpha;
+
+  /// Rayon des coins de la **pastille de compte** d'une section repliable.
+  ///
+  /// `null` ⇒ la valeur de référence du consommateur. Sans objet quand
+  /// aucun compte n'est déclaré (la pastille est alors absente de l'arbre).
+  final double? collapsibleSectionCountCornerRadius;
+
   // ── Rendu du CHAT — surface « notebook » ──────────────────────────────────
   //
   // Ces jetons sont le NIVEAU 2 de la chaîne `paramètre > jeton >
@@ -3316,6 +3402,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     TextStyle? pageHeaderSubtitleStyle,
     TextStyle? pageHeaderTabSelectedLabelStyle,
     TextStyle? pageHeaderTabUnselectedLabelStyle,
+    double? collapsibleSectionExpandedElevation,
+    double? collapsibleSectionCollapsedElevation,
+    double? collapsibleSectionCornerRadius,
+    double? collapsibleSectionBorderAlpha,
+    double? collapsibleSectionBodyBorderAlpha,
+    double? collapsibleSectionBodyCornerRadius,
+    Duration? collapsibleSectionChevronDuration,
+    double? collapsibleSectionLeadingIconSize,
+    double? collapsibleSectionLeadingBackgroundAlpha,
+    double? collapsibleSectionCountCornerRadius,
     double? chatBubbleWidthFactor,
     Radius? chatRequestBubbleRadius,
     Radius? chatResponseBubbleRadius,
@@ -3655,6 +3751,36 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     pageHeaderTabUnselectedLabelStyle:
         pageHeaderTabUnselectedLabelStyle ??
         this.pageHeaderTabUnselectedLabelStyle,
+    collapsibleSectionExpandedElevation:
+        collapsibleSectionExpandedElevation ??
+        this.collapsibleSectionExpandedElevation,
+    collapsibleSectionCollapsedElevation:
+        collapsibleSectionCollapsedElevation ??
+        this.collapsibleSectionCollapsedElevation,
+    collapsibleSectionCornerRadius:
+        collapsibleSectionCornerRadius ??
+        this.collapsibleSectionCornerRadius,
+    collapsibleSectionBorderAlpha:
+        collapsibleSectionBorderAlpha ??
+        this.collapsibleSectionBorderAlpha,
+    collapsibleSectionBodyBorderAlpha:
+        collapsibleSectionBodyBorderAlpha ??
+        this.collapsibleSectionBodyBorderAlpha,
+    collapsibleSectionBodyCornerRadius:
+        collapsibleSectionBodyCornerRadius ??
+        this.collapsibleSectionBodyCornerRadius,
+    collapsibleSectionChevronDuration:
+        collapsibleSectionChevronDuration ??
+        this.collapsibleSectionChevronDuration,
+    collapsibleSectionLeadingIconSize:
+        collapsibleSectionLeadingIconSize ??
+        this.collapsibleSectionLeadingIconSize,
+    collapsibleSectionLeadingBackgroundAlpha:
+        collapsibleSectionLeadingBackgroundAlpha ??
+        this.collapsibleSectionLeadingBackgroundAlpha,
+    collapsibleSectionCountCornerRadius:
+        collapsibleSectionCountCornerRadius ??
+        this.collapsibleSectionCountCornerRadius,
     chatBubbleWidthFactor:
         chatBubbleWidthFactor ?? this.chatBubbleWidthFactor,
     chatRequestBubbleRadius:
@@ -4640,6 +4766,59 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       pageHeaderTabUnselectedLabelStyle: TextStyle.lerp(
         pageHeaderTabUnselectedLabelStyle,
         other.pageHeaderTabUnselectedLabelStyle,
+        t,
+      ),
+      // Section repliable : helpers null-PRÉSERVANTS — `null`↔`null` reste
+      // `null`, donc la valeur de RÉFÉRENCE du consommateur n'est jamais
+      // matérialisée par une transition de thème.
+      collapsibleSectionExpandedElevation: _lerpNullableDouble(
+        collapsibleSectionExpandedElevation,
+        other.collapsibleSectionExpandedElevation,
+        t,
+      ),
+      collapsibleSectionCollapsedElevation: _lerpNullableDouble(
+        collapsibleSectionCollapsedElevation,
+        other.collapsibleSectionCollapsedElevation,
+        t,
+      ),
+      collapsibleSectionCornerRadius: _lerpNullableDouble(
+        collapsibleSectionCornerRadius,
+        other.collapsibleSectionCornerRadius,
+        t,
+      ),
+      collapsibleSectionBorderAlpha: _lerpNullableDouble(
+        collapsibleSectionBorderAlpha,
+        other.collapsibleSectionBorderAlpha,
+        t,
+      ),
+      collapsibleSectionBodyBorderAlpha: _lerpNullableDouble(
+        collapsibleSectionBodyBorderAlpha,
+        other.collapsibleSectionBodyBorderAlpha,
+        t,
+      ),
+      collapsibleSectionBodyCornerRadius: _lerpNullableDouble(
+        collapsibleSectionBodyCornerRadius,
+        other.collapsibleSectionBodyCornerRadius,
+        t,
+      ),
+      collapsibleSectionChevronDuration: _lerpNullableDuration(
+        collapsibleSectionChevronDuration,
+        other.collapsibleSectionChevronDuration,
+        t,
+      ),
+      collapsibleSectionLeadingIconSize: _lerpNullableDouble(
+        collapsibleSectionLeadingIconSize,
+        other.collapsibleSectionLeadingIconSize,
+        t,
+      ),
+      collapsibleSectionLeadingBackgroundAlpha: _lerpNullableDouble(
+        collapsibleSectionLeadingBackgroundAlpha,
+        other.collapsibleSectionLeadingBackgroundAlpha,
+        t,
+      ),
+      collapsibleSectionCountCornerRadius: _lerpNullableDouble(
+        collapsibleSectionCountCornerRadius,
+        other.collapsibleSectionCountCornerRadius,
         t,
       ),
       // Jetons du rendu de chat. Chaque helper est

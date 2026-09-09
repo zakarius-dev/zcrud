@@ -3,6 +3,65 @@
 Toutes les modifications notables de `zcrud_session` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.54.0 — 2026-09-09
+
+### Ajouté
+
+- **Examen blanc « toutes les questions à la fois » — `ZWhiteExamListView`.**
+  Une seconde surface d'examen, sur le **même** moteur et le **même** barème
+  que la coquille « une question à la fois » : liste virtualisée où chaque
+  question porte son en-tête (rang, « je ne sais pas », marquage) et sa carte,
+  fournie par l'hôte. Répondre à la question `i` ne reconstruit **que** la
+  question `i`. Deux examens répondus à l'identique par les deux surfaces
+  produisent le même `ZStudySessionResult` — c'est gardé.
+- **État d'examen par index.** `ZWhiteExamSessionEngine` accepte désormais
+  `answerAt(index, quality)`, `dontKnowAt(index)` et `toggleMarkAt(index)`, et
+  publie `answersByIndex` (`Map<int, ZExamAnswer>`), `marked` (`Set<int>`),
+  `answeredCount` et `unansweredCount`. La note est rangée **sous sa
+  question** : répondre dans le désordre ou sauter une question ne peut plus
+  attribuer une note à la mauvaise carte. Une réponse est remplaçable tant que
+  l'examen n'est pas soumis.
+  - **Règle de comptage** : « je ne sais pas » compte **répondue et fausse**
+    (borne basse `ZSrsConfig.minQuality`, jamais un littéral) ; une question
+    sans réponse ne compte pas répondue, et n'entre au barème que si la
+    soumission compte les blanches fausses.
+  - Le marquage est une note de parcours : il n'entre dans aucun calcul de
+    score et ne touche à aucune réponse.
+  - Les deux voies d'écriture — parcours linéaire `answer` et saisie par
+    index — sont **exclusives** sur un même examen : les mêler lève
+    `StateError` plutôt que de compter deux fois la même question.
+- **`submit(countUnansweredAsIncorrect:)`.** Une copie rendue incomplète peut
+  être notée sur **toute** l'épreuve, chaque question blanche comptant fausse.
+  Le défaut (`false`) est le comportement historique, au bit près.
+- **`ZWhiteExamSubmitPolicy`.** Quand demander confirmation (par défaut :
+  seulement si des questions restent blanches), et ce que compte alors la
+  copie. Le dialogue porte le **compte exact** des questions sans réponse, à
+  l'œil comme au lecteur d'écran ; annuler ne soumet rien.
+- **`ZWhiteExamScoreBanner`.** Bandeau de fin : taux atteint, réponses
+  correctes, temps total et temps moyen par réponse. Le verdict est **lu** de
+  la fonction pure du domaine, jamais recalculé ; les teintes passent par des
+  **clés** résolues contre le thème. Le seuil est une donnée de
+  l'application : sans `successRatio` déclaré, aucun verdict n'est prononcé et
+  le bandeau rend ses statistiques sur une teinte neutre.
+- **`ZWhiteExamSessionEngine(startImmediately:)`.** Une épreuve peut naître
+  commencée — pas de phase de réglage, l'épreuve démarre à l'ouverture de la
+  surface.
+
+### Modifié
+
+- **`ZWhiteExamSessionView` : `remaining` et tous les libellés deviennent
+  facultatifs.** Sans `remaining`, aucun minuteur à rebours ; un chronomètre
+  **écoulé** (`elapsed`) prend sa place si les libellés portent son annonce.
+  Sans `startAction`, aucune affordance de démarrage (l'épreuve a commencé
+  seule). Sans libellé injecté, ceux de l'application sont rendus — un hôte
+  peut désormais monter la surface avec `const ZWhiteExamSessionLabels()`.
+  Additif : à paramètres inchangés, la coquille rend un arbre **identique**,
+  phase par phase (arbre gelé et gardé).
+  - ⚠️ **Hôtes qui compensaient** : ceux qui passaient des libellés
+    « bouchons » (un `Text('')` pour `startAction`, un chronomètre figé à
+    `Duration.zero` pour `remaining`) peuvent les **retirer** — la surface les
+    omet désormais d'elle-même. Un hôte **passif** n'a rien à faire.
+
 ## 3.53.0 — 2026-09-09
 
 ### Corrigé

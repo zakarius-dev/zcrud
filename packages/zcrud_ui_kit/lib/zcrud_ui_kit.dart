@@ -41,6 +41,24 @@
 /// invisibles depuis le dialogue. [showZConfirmDialog] résout donc le style au
 /// **point d'appel** et le transporte via `ZConfirmDialog.style`.
 ///
+/// La **section repliable à en-tête** :
+/// * [ZCollapsibleSection] : un titre, un compte facultatif, un chevron, et
+///   un corps **monté seulement quand la section est dépliée** — replié, le
+///   sous-arbre est absent de l'arbre, pas seulement invisible. L'en-tête est
+///   un **bouton annoncé** (`Semantics(button, expanded)`), sa zone de geste
+///   fait au moins 48 dp, et une action posée en `trailing` garde son propre
+///   nœud sémantique. Le chevron ne tourne pas sous
+///   `MediaQuery.disableAnimations`. L'état est détenu par la section, ou
+///   **piloté** par un `ZToggleController` de l'hôte, sans jamais être
+///   dupliqué ;
+/// * [ZCollapsibleSectionSpec] : les dix métriques de la section réglables
+///   **par instance** (élévations, rayons, opacités de filet, disque de tête,
+///   durée du chevron), niveau 1 de la chaîne `paramètre > jeton > référence`
+///   dont le niveau 2 est la famille de jetons
+///   `ZcrudTheme.collapsibleSection*` ;
+/// * [ZCollapsibleSectionReference] : le niveau 3, **métriques auditées et
+///   sans aucune couleur** (une garde de source le vérifie).
+///
 /// La **notification (toast) par port** :
 /// * [ZToastSeverity] : sévérité d'un toast en **enum**
 ///   (`info`/`success`/`warning`/`error`) — remplace un `bool isError` ou un
@@ -163,6 +181,7 @@ library;
 
 export 'src/domain/z_app_bar_action.dart';
 export 'src/domain/z_app_bar_search_config.dart';
+export 'src/domain/z_collapsible_section_spec.dart';
 export 'src/domain/z_confirm_tone.dart';
 export 'src/domain/z_content_state.dart';
 export 'src/domain/z_empty_state_spec.dart';
@@ -173,6 +192,8 @@ export 'src/domain/z_toast_severity.dart';
 export 'src/domain/z_toaster.dart';
 export 'src/presentation/z_alphabet_index_bar.dart';
 export 'src/presentation/z_chip_style.dart';
+export 'src/presentation/z_collapsible_section.dart';
+export 'src/presentation/z_collapsible_section_reference.dart';
 export 'src/presentation/z_confirm_dialog.dart';
 export 'src/presentation/z_count_badge.dart';
 export 'src/presentation/z_discard_changes_guard.dart';

@@ -7,9 +7,12 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:zcrud_core/zcrud_core.dart' show label;
 
+import '../domain/z_exam_answer.dart';
 import '../domain/z_session_item.dart';
 import '../domain/z_white_exam_session_controller.dart';
+import 'z_white_exam_format.dart';
 
 /// Contexte réel remis au slot de question.
 class ZWhiteExamQuestionContext {
@@ -46,29 +49,82 @@ typedef ZWhiteExamResultBuilder =
 class ZWhiteExamSessionLabels {
   /// Construit les libellés injectés.
   const ZWhiteExamSessionLabels({
-    required this.startAction,
-    required this.submitAction,
-    required this.timerSemanticsLabel,
-    required this.questionSemanticsLabel,
-    required this.navigationSemanticsLabel,
+    this.startAction,
+    this.submitAction,
+    this.timerSemanticsLabel,
+    this.questionSemanticsLabel,
+    this.navigationSemanticsLabel,
+    this.elapsedSemanticsLabel,
+    this.questionBadgeLabel,
+    this.dontKnowAction,
+    this.markAction,
+    this.markSemanticsLabel,
+    this.questionItemSemanticsLabel,
+    this.incompleteSubmitLabel,
+    this.confirmAction,
+    this.cancelAction,
   });
 
   /// Enfant visible du bouton de démarrage.
-  final WidgetBuilder startAction;
+  ///
+  /// `null` : l'épreuve n'a **pas** de phase de réglage — elle commence à
+  /// l'ouverture de la surface, l'hôte ayant fait naître son moteur déjà
+  /// commencé. Aucune affordance de démarrage n'est alors rendue.
+  final WidgetBuilder? startAction;
 
-  /// Enfant visible du bouton de soumission.
-  final WidgetBuilder submitAction;
+  /// Enfant visible du bouton de soumission. `null` : le libellé de
+  /// l'application est rendu.
+  final WidgetBuilder? submitAction;
 
   /// Annonce du minuteur ; les chiffres visibles ne contiennent aucun mot.
-  final String Function(Duration remaining) timerSemanticsLabel;
+  /// `null` : l'annonce de l'application est rendue.
+  final String Function(Duration remaining)? timerSemanticsLabel;
 
-  /// Annonce de la question courante.
-  final String Function(ZWhiteExamSessionViewState state)
+  /// Annonce de la question courante. `null` : l'annonce de l'application est
+  /// rendue.
+  final String Function(ZWhiteExamSessionViewState state)?
   questionSemanticsLabel;
 
-  /// Annonce de la région de navigation/actions.
-  final String Function(ZWhiteExamSessionViewState state)
+  /// Annonce de la région de navigation/actions. `null` : l'annonce de
+  /// l'application est rendue.
+  final String Function(ZWhiteExamSessionViewState state)?
   navigationSemanticsLabel;
+
+  /// Annonce du chronomètre écoulé ; les chiffres visibles ne contiennent
+  /// aucun mot. `null` : aucun chronomètre écoulé n'est rendu.
+  final String Function(Duration elapsed)? elapsedSemanticsLabel;
+
+  /// Texte visible du badge d'une question, rang et total en entrée.
+  ///
+  /// Rend la formule **entière** — c'est ce qui permet à une langue de placer
+  /// le rang où elle l'entend. `null` : le badge prend le libellé de
+  /// l'application suivi du rang.
+  final String Function(int index, int total)? questionBadgeLabel;
+
+  /// Enfant visible du contrôle « je ne sais pas ».
+  final WidgetBuilder? dontKnowAction;
+
+  /// Enfant visible du contrôle de marquage, selon qu'il est posé ou non.
+  final Widget Function(BuildContext context, bool marked)? markAction;
+
+  /// Annonce du contrôle de marquage d'une question.
+  final String Function(int index, bool marked)? markSemanticsLabel;
+
+  /// Annonce d'une question de la liste — rang, réponse et marquage en
+  /// entrée, pour que l'annonce dise l'état sans que rien d'autre ne le
+  /// répète.
+  final String Function(int index, ZExamAnswer answer, bool marked)?
+  questionItemSemanticsLabel;
+
+  /// Message de confirmation d'une soumission incomplète, nombre de questions
+  /// sans réponse en entrée.
+  final String Function(int unanswered)? incompleteSubmitLabel;
+
+  /// Enfant visible du bouton qui confirme la soumission.
+  final WidgetBuilder? confirmAction;
+
+  /// Enfant visible du bouton qui annule la soumission.
+  final WidgetBuilder? cancelAction;
 }
 
 /// Surface d'examen blanc, branchée sur le contrôleur du moteur.
@@ -80,10 +136,11 @@ class ZWhiteExamSessionView extends StatelessWidget {
   /// Construit la coquille d'examen.
   const ZWhiteExamSessionView({
     required this.controller,
-    required this.remaining,
     required this.labels,
     required this.questionBuilder,
     required this.resultBuilder,
+    this.remaining,
+    this.elapsed,
     this.correctionBuilder,
     super.key,
   });
@@ -92,7 +149,18 @@ class ZWhiteExamSessionView extends StatelessWidget {
   final ZWhiteExamSessionController controller;
 
   /// Temps restant, mesuré et mis à jour par l'hôte.
-  final ValueListenable<Duration> remaining;
+  ///
+  /// `null` : l'épreuve n'a **pas** de minuteur à rebours. Le chronomètre
+  /// écoulé ([elapsed]) prend alors sa place s'il est fourni, sinon aucune
+  /// région de temps n'est rendue.
+  final ValueListenable<Duration>? remaining;
+
+  /// Temps écoulé depuis le début de l'épreuve, mesuré par l'hôte.
+  ///
+  /// Rendu à la place de [remaining] quand celui-ci est absent, et seulement
+  /// si les libellés portent une annonce de chronomètre écoulé : une épreuve
+  /// ne montre jamais deux temps à la fois.
+  final ValueListenable<Duration>? elapsed;
 
   /// Libellés et annonces injectés.
   final ZWhiteExamSessionLabels labels;
@@ -108,6 +176,11 @@ class ZWhiteExamSessionView extends StatelessWidget {
 
   /// Clé du minuteur (testabilité et intégration hôte).
   static const ValueKey<String> timerKey = ValueKey<String>('zWhiteExamTimer');
+
+  /// Clé du chronomètre écoulé.
+  static const ValueKey<String> elapsedKey = ValueKey<String>(
+    'zWhiteExamElapsed',
+  );
 
   /// Clé de la région de question.
   static const ValueKey<String> questionKey = ValueKey<String>(
@@ -136,7 +209,11 @@ class ZWhiteExamSessionView extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
-      _TimerRegion(remaining: remaining, labels: labels),
+      if (remaining case final countdown?)
+        _TimerRegion(remaining: countdown, labels: labels)
+      else if (elapsed case final chrono?)
+        if (labels.elapsedSemanticsLabel case final announce?)
+          _ElapsedRegion(elapsed: chrono, announce: announce),
       ValueListenableBuilder<ZWhiteExamSessionViewState>(
         valueListenable: controller.state,
         builder: (context, state, _) => _ExamStateRegion(
@@ -163,18 +240,32 @@ class _TimerRegion extends StatelessWidget {
     valueListenable: remaining,
     builder: (context, value, _) => Semantics(
       key: ZWhiteExamSessionView.timerKey,
-      label: labels.timerSemanticsLabel(value),
+      label:
+          labels.timerSemanticsLabel?.call(value) ??
+          label(context, 'zcrud.study.exam.timer', fallback: 'Temps restant'),
       liveRegion: true,
-      child: Text(_digits(value), textAlign: TextAlign.start),
+      child: Text(zWhiteExamDigits(value), textAlign: TextAlign.start),
     ),
   );
+}
 
-  String _digits(Duration value) {
-    final totalSeconds = value.inSeconds < 0 ? 0 : value.inSeconds;
-    final minutes = totalSeconds ~/ Duration.secondsPerMinute;
-    final seconds = totalSeconds.remainder(Duration.secondsPerMinute);
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
+/// Chronomètre écoulé — même rendu que le rebours, sens inverse.
+class _ElapsedRegion extends StatelessWidget {
+  const _ElapsedRegion({required this.elapsed, required this.announce});
+
+  final ValueListenable<Duration> elapsed;
+  final String Function(Duration elapsed) announce;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<Duration>(
+    valueListenable: elapsed,
+    builder: (context, value, _) => Semantics(
+      key: ZWhiteExamSessionView.elapsedKey,
+      label: announce(value),
+      liveRegion: true,
+      child: Text(zWhiteExamDigits(value), textAlign: TextAlign.start),
+    ),
+  );
 }
 
 class _ExamStateRegion extends StatelessWidget {
@@ -196,22 +287,33 @@ class _ExamStateRegion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => switch (state.phase) {
-    ZWhiteExamSessionViewPhase.setup => _Navigation(
-      state: state,
-      labels: labels,
-      child: _ActionButton(
-        key: ZWhiteExamSessionView.startKey,
-        onPressed: controller.start,
-        child: labels.startAction(context),
+    ZWhiteExamSessionViewPhase.setup => switch (labels.startAction) {
+      final startAction? => _Navigation(
+        state: state,
+        labels: labels,
+        child: _ActionButton(
+          key: ZWhiteExamSessionView.startKey,
+          onPressed: controller.start,
+          child: startAction(context),
+        ),
       ),
-    ),
+      // Sans libellé de démarrage, l'épreuve n'a pas de phase de réglage :
+      // aucune affordance n'est rendue, plutôt qu'un bouton muet.
+      _ => const SizedBox.shrink(),
+    },
     ZWhiteExamSessionViewPhase.running => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         if (state.current case final item?)
           Semantics(
             key: ZWhiteExamSessionView.questionKey,
-            label: labels.questionSemanticsLabel(state),
+            label:
+                labels.questionSemanticsLabel?.call(state) ??
+                label(
+                  context,
+                  'zcrud.study.exam.question',
+                  fallback: 'Question',
+                ),
             child: questionBuilder(
               context,
               ZWhiteExamQuestionContext(
@@ -227,7 +329,16 @@ class _ExamStateRegion extends StatelessWidget {
           child: _ActionButton(
             key: ZWhiteExamSessionView.submitKey,
             onPressed: controller.submit,
-            child: labels.submitAction(context),
+            child:
+                labels.submitAction?.call(context) ??
+                Text(
+                  label(
+                    context,
+                    'zcrud.study.exam.submit',
+                    fallback: 'Soumettre',
+                  ),
+                  textAlign: TextAlign.start,
+                ),
           ),
         ),
       ],
@@ -256,7 +367,9 @@ class _Navigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     key: ZWhiteExamSessionView.navigationKey,
-    label: labels.navigationSemanticsLabel(state),
+    label:
+        labels.navigationSemanticsLabel?.call(state) ??
+        label(context, 'zcrud.study.exam.navigation', fallback: 'Actions'),
     child: Align(
       key: ZWhiteExamSessionView.navigationAlignmentKey,
       alignment: AlignmentDirectional.centerEnd,

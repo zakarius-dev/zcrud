@@ -4,6 +4,46 @@ Format « Keep a Changelog » (sections Ajouté / Modifié / Corrigé, versions
 antéchronologiques). Toutes les modifications notables de `zcrud_ui_kit`
 sont documentées ici.
 
+## 3.54.0 — 2026-09-09
+
+### Ajouté
+
+- **`ZCollapsibleSection` — la section repliable à en-tête daté devient une
+  brique.** Deux applications réécrivaient la même anatomie (~150 lignes
+  chacune) : `Material` élevé, contour arrondi sur `dividerColor` atténué,
+  disque de tête teinté portant un glyphe, titre `titleMedium` en demi-gras,
+  pastille de compte sur `secondaryContainer`, chevron tourné d'un demi-tour,
+  corps à filet supérieur et coins bas plus serrés. La brique rend ce chrome
+  par défaut et corrige au passage cinq défauts que la recopie reproduisait :
+  - le corps replié est **démonté**, pas masqué — un groupe replié ne
+    construit plus rien (les deux implémentations le gardaient monté ou le
+    reconstruisaient à chaque `build` du parent, `UniqueKey()` à l'appui) ;
+  - l'état d'expansion vit dans le `State` de la section : basculer ne
+    reconstruit ni la page ni les sections voisines (invariant AD-2) ;
+  - le chevron **ne tourne pas** sous `MediaQuery.disableAnimations` ;
+  - l'en-tête annonce `button` **et** son état déplié/replié ;
+  - une action posée en `trailing` **garde son nœud sémantique** et son geste
+    (les deux implémentations mettaient toute la ligne en `ExcludeSemantics`,
+    ce qui rendait leur bouton « Ajouter » invisible aux lecteurs d'écran).
+
+  Slots : `title` (libellé) **ou** `titleWidget`, `leading`/`leadingIcon`
+  (+ `leadingColorKey` résolu par `zResolveColorKeyOrSlot`), `count` **ou**
+  `countBadge`, `countSemanticsLabel`, `trailing`, `initiallyExpanded`,
+  `expandController` (`ZToggleController` de l'hôte, sans état dupliqué),
+  `onExpansionChanged`, `semanticsLabel`, `margin`, `backgroundColor`,
+  `headerColor`, `child`. **Aucun libellé, aucun glyphe et aucune couleur par
+  défaut** : la section ne préjuge pas de ce qu'elle groupe.
+
+- **`ZCollapsibleSectionSpec`** — les dix métriques de la section réglables
+  **par instance** (élévations, rayons, opacités de filet, disque de tête,
+  durée du chevron), avec `copyWith`, `merge` et égalité structurelle. Niveau 1
+  de la chaîne `paramètre > jeton > référence`, dont le niveau 2 est la famille
+  `ZcrudTheme.collapsibleSection*` (`zcrud_core`).
+
+- **`ZCollapsibleSectionReference`** — le niveau 3 : les vingt-deux scalaires
+  audités de l'anatomie, **sans aucune couleur** (garde de source), insets
+  **directionnels**.
+
 ## 3.50.0 — 2026-09-09
 
 ### Ajouté

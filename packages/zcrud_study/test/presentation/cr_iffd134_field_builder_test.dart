@@ -120,6 +120,13 @@ void main() {
           'TextField',
           'SizedBox',
           'ValueListenableBuilder<ZFlashcardType>',
+          // Ajouts (et RIEN d'autre) : le champ conditionné par le type, à
+          // place STABLE, puis les balises. Le préfixe ci-dessus est
+          // strictement celui d'avant — aucune enveloppe, aucun réordre.
+          'SizedBox',
+          'ValueListenableBuilder<ZFlashcardType>',
+          'SizedBox',
+          'ValueListenableBuilder<List<String>>',
         ]),
       );
 

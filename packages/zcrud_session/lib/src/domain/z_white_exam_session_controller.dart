@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZStudySessionResult;
 
+import 'z_exam_answer.dart';
 import 'z_session_item.dart';
 import 'z_white_exam_session_engine.dart';
 import 'z_white_exam_verdict.dart';
@@ -33,6 +34,11 @@ class ZWhiteExamSessionViewState {
     required this.remaining,
     required this.result,
     this.verdict,
+    this.answers = const <int, ZExamAnswer>{},
+    this.marked = const <int>{},
+    this.total = 0,
+    this.answeredCount = 0,
+    this.unansweredCount = 0,
   });
 
   /// Phase projetée du moteur.
@@ -56,6 +62,33 @@ class ZWhiteExamSessionViewState {
   /// `null` avant la soumission. Comme le reste de cette projection, il est
   /// **lu** du moteur : rien n'est recalculé ici.
   final ZWhiteExamVerdict? verdict;
+
+  /// Réponses rangées sous l'index de leur question.
+  ///
+  /// Projection de l'état par index du moteur : `answers[i]` désigne bien la
+  /// question de rang `i`, quel que soit l'ordre de saisie. Vide tant que
+  /// l'examen n'a reçu aucune réponse.
+  final Map<int, ZExamAnswer> answers;
+
+  /// Index des questions marquées par le candidat, relayés tels quels.
+  final Set<int> marked;
+
+  /// Nombre de questions de l'examen, relayé du moteur.
+  final int total;
+
+  /// Nombre de questions portant une réponse — donnée ou « je ne sais pas ».
+  final int answeredCount;
+
+  /// Nombre de questions sans réponse (`total - answeredCount`).
+  final int unansweredCount;
+
+  /// Réponse de la question [index], ou « sans réponse » s'il n'y en a
+  /// aucune. Fonction totale : elle ne rend jamais `null`.
+  ZExamAnswer answerFor(int index) =>
+      answers[index] ?? const ZExamAnswer.unanswered();
+
+  /// La question [index] est-elle marquée ?
+  bool isMarkedAt(int index) => marked.contains(index);
 }
 
 /// Contrôleur stable consommable par une surface d'examen.
@@ -80,8 +113,23 @@ class ZWhiteExamSessionController {
   /// Enregistre [quality] en déléguant au moteur.
   void answer(int quality) => _engine.answer(quality);
 
+  /// Enregistre [quality] pour la question [index] en déléguant au moteur.
+  void answerAt(int index, int quality) => _engine.answerAt(index, quality);
+
+  /// Enregistre « je ne sais pas » pour la question [index] en déléguant au
+  /// moteur : la question compte répondue et fausse.
+  void dontKnowAt(int index) => _engine.dontKnowAt(index);
+
+  /// Bascule le marquage de la question [index] en déléguant au moteur ; la
+  /// réponse n'est pas touchée.
+  void toggleMarkAt(int index) => _engine.toggleMarkAt(index);
+
   /// Soumet l'examen en déléguant au moteur.
-  void submit() => _engine.submit();
+  ///
+  /// Avec [countUnansweredAsIncorrect], les questions restées sans réponse
+  /// sont comptées fausses (voir `ZWhiteExamSessionEngine.submit`).
+  void submit({bool countUnansweredAsIncorrect = false}) =>
+      _engine.submit(countUnansweredAsIncorrect: countUnansweredAsIncorrect);
 
   void _syncState() =>
       state.value = _project(_engine.state, _engine.verdict);
@@ -101,6 +149,11 @@ class ZWhiteExamSessionController {
         remaining: state.remaining,
         result: state.result,
         verdict: verdict,
+        answers: state.answersByIndex,
+        marked: state.marked,
+        total: state.queue.length,
+        answeredCount: state.answeredCount,
+        unansweredCount: state.unansweredCount,
       );
 
   /// Libère l'écoute locale ; le moteur reste la propriété de l'hôte.

@@ -132,7 +132,9 @@ ZStudyToolsSectionSpec buildEmptySection() {
 | `ZFlashcardListView` | Liste de flashcards : recherche, filtres, tri, ordre manuel, sélection multiple opt-in. |
 | `zReorderFlashcards` / `zReorderIds` | Voie unique de réordonnancement manuel. |
 | `ZFlashcardGenerationController` / `ZFlashcardGenerationSheet` | Flux de génération de flashcards par IA. |
-| `ZMultiFlashcardEditor` / `ZMultiFlashcardEditorController` | Édition en lot en régime de brouillon déclaré. |
+| `ZMultiFlashcardEditor` / `ZMultiFlashcardEditorController` | Édition en lot en régime de brouillon déclaré : le formulaire de carte édite l'énoncé, la réponse, l'explication, l'indice, le type, **les choix d'un QCM, la valeur d'un vrai/faux et les balises**, et une carte invalide bloque le commit du lot. |
+| `ZFlashcardCardFormSlot` / `cardFormBuilder` | Créneau de formulaire de carte **entier** : l'application monte son propre formulaire dans l'ossature de lot (liste, sélection, suppression groupée, aperçu, commit unique) et écrit dans le même brouillon. |
+| `ZFlashcardCardValidator` / `cardValidator` | Règle de validité d'une carte, qui conditionne le commit du lot (défaut : énoncé requis, QCM à au moins deux choix dont un correct). |
 | `zFlashcardCascadeDeleteRoot` | Seam de suppression cascadée (carte puis purge de répétition espacée). |
 | **Hub de contenu** | |
 | `ZContentHubLauncher` / `ZContentHubScope` | Configuration et portée du hub d'ajout de contenu, partagées entre plusieurs `+`. |

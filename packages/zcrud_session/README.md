@@ -96,6 +96,50 @@ Widget buildQualityButtons(ZStudySessionEngine engine, ZSrsConfig config) {
   `ZSrsQualityButtons` sans jamais le confirmer à sa place. Seul le tap de
   l'utilisateur sur un bouton de qualité vaut notation.
 
+## Examen blanc {#examen-blanc}
+
+Deux surfaces, un seul moteur — et donc une seule notation.
+
+- **Une question à la fois** (`ZWhiteExamSessionView`) — coquille à slots :
+  minuteur à rebours ou chronomètre écoulé, question courante, soumission.
+  `startAction` et `remaining` sont facultatifs : sans eux, l'épreuve n'a ni
+  écran de démarrage ni décompte, et commence à l'ouverture (moteur construit
+  avec `startImmediately`).
+- **Toutes les questions à la fois** (`ZWhiteExamListView`) — liste
+  virtualisée où chaque question porte son en-tête (rang, « je ne sais pas »,
+  marquage) et sa carte, fournie par l'hôte. Répondre à une question ne
+  reconstruit **que** cette question.
+
+```dart
+final engine = ZWhiteExamSessionEngine(queue: items, startImmediately: true);
+final controller = ZWhiteExamSessionController(engine: engine);
+
+ZWhiteExamListView(
+  controller: controller,
+  questionBuilder: (context, question) => MaQuestion(
+    index: question.index,
+    onAnswer: question.onAnswer, // range la note SOUS sa question
+  ),
+  resultBuilder: (context, state) => ZWhiteExamScoreBanner(
+    result: state.result!,
+    elapsed: monChrono,
+    successRatio: 0.7, // règle de l'application, jamais du socle
+  ),
+);
+```
+
+### Ce que compte une copie {#examen-blanc-comptage}
+
+| Réponse | Compte répondue | Compte au barème |
+|---|---|---|
+| réponse donnée | oui | sa note |
+| « je ne sais pas » | oui | borne basse (`ZSrsConfig.minQuality`) — **fausse** |
+| sans réponse | non | rien, **sauf** si la soumission compte les blanches fausses (défaut de `ZWhiteExamSubmitPolicy`), auquel cas borne basse — **fausse** |
+
+Le seuil de réussite n'existe **nulle part** dans ce paquet, pas même en
+repli : sans `successRatio` déclaré, aucun verdict n'est prononcé et le
+bandeau rend ses statistiques sur une teinte neutre.
+
 ## API principale {#api-principale}
 
 | Type | Rôle |
@@ -109,6 +153,10 @@ Widget buildQualityButtons(ZStudySessionEngine engine, ZSrsConfig config) {
 | `ZSrsQualityButtons` / `ZQualityScale` | Rangée de boutons de notation SM-2, échelle dérivée de `ZSrsConfig`. |
 | `ZSessionCardSwiper` | Pile de session swipeable — navigation seule, aucun paramètre de notation. |
 | `ZListSessionView` | UI d'examen blanc en liste, pilotée en données par la `phase` et les `cards` de l'hôte. |
+| `ZWhiteExamListView` / `ZWhiteExamListQuestion` | Examen blanc en liste à slots : toutes les questions posées à la fois, réponses rangées sous leur index, marquage, « je ne sais pas ». Consomme le même contrôleur que la coquille. |
+| `ZExamAnswer` | Réponse d'une question d'examen : donnée (avec sa note), « je ne sais pas », ou sans réponse. |
+| `ZWhiteExamSubmitPolicy` | Quand confirmer une soumission, et ce que compte une copie rendue incomplète. |
+| `ZWhiteExamScoreBanner` | Bandeau de fin d'examen : verdict peint par clé de couleur, taux atteint, réponses correctes, temps total et temps moyen par réponse. |
 | `ZSessionModeSelector` | Sélecteur de session (apprendre, réviser, tester, bachotage) — produit une file, ne démarre aucun runtime. |
 | `ZSessionSummaryView` | Écran de fin de session — assemble `ZSessionQualityBreakdown` et `ZStudyProgressRings`, célébration opt-in. |
 | `ZSessionProgressIndicator` / `ZSessionQualityBreakdown` / `ZStudyProgressRings` | Indicateurs de progression et de répartition des qualités, présentation pure. |
@@ -130,9 +178,13 @@ Widget buildQualityButtons(ZStudySessionEngine engine, ZSrsConfig config) {
   avancer la pile, jamais l'une « réussite » et l'autre « lapse ».
   L'examen blanc en liste (`ZListSessionView`) est lui aussi structurellement
   incapable d'écrire du SRS : son constructeur n'accepte aucun `reviewer`.
-- **Une réponse répondue est verrouillée, définitivement** — aucun des
-  trois runtimes ne sait réviser une réponse déjà donnée ; sauter une
-  question la laisse sans réponse, mais rien ne permet de revenir dessus.
+- **Revenir sur une réponse dépend de la voie d'écriture** — le parcours
+  linéaire (`answer`) est append-only : la note part sous le curseur, qui
+  avance, et rien ne permet de revenir dessus. La saisie par index
+  (`answerAt`/`dontKnowAt`) range la note sous sa question et la
+  **remplace** tant que l'examen n'est pas soumis. Les deux voies sont
+  exclusives sur un même examen : les mêler lève, plutôt que de compter deux
+  fois la même question.
 - **Reduce Motion dégrade l'animation, jamais la fonction** — les
   indicateurs de swipe et la célébration de fin de session basculent en
   apparition binaire sans interpolation, mais restent fonctionnellement
