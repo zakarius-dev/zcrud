@@ -24,7 +24,7 @@
 #    ce paquet ne porte que des valeurs.
 name: zcrud_themes
 description: "Named visual themes for zcrud: audited reference palettes and ready-made ZcrudTheme factories that skin the existing widgets of the toolkit. Ships no widgets of its own."
-version: 3.49.0
+version: 3.50.0
 publish_to: none
 resolution: workspace
 
@@ -54,9 +54,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  zcrud_core: ^3.49.0
-  zcrud_flashcard: ^3.49.0
-  zcrud_session: ^3.49.0
+  zcrud_core: ^3.50.0
+  zcrud_flashcard: ^3.50.0
+  zcrud_session: ^3.50.0
 
 dev_dependencies:
   flutter_test:

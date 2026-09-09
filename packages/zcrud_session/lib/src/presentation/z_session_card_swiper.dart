@@ -120,6 +120,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart' show zReduceMotionOf;
 
 import '../domain/z_session_item.dart';
+import 'z_session_dots_geometry.dart';
 import 'z_session_progress_indicator.dart';
 import 'z_swipe_direction.dart';
 
@@ -207,6 +208,9 @@ class ZSessionCardSwiper extends StatefulWidget {
   ///   aucune UI de fin — l'écran de fin est composé par l'hôte ;
   /// - [emptyBuilder] : repli file vide (invariant AD-10) ;
   /// - [progressStyle] : variante d'indicateur (enum) ;
+  /// - [progressDotsGeometry] / [progressLinearThickness] /
+  ///   [progressSegmentedMarkerThickness] : réglages de rendu relayés tels
+  ///   quels à l'indicateur, chacun sans effet hors de son style ;
   /// - [qualityOf] : seam « qualité obtenue à l'index i » (indicateur) ;
   /// - [passThreshold] : frontière réussite/lapse injectée (jamais un
   ///   littéral en dur) ;
@@ -228,6 +232,9 @@ class ZSessionCardSwiper extends StatefulWidget {
     this.onStackEnd,
     this.emptyBuilder,
     this.progressStyle = ZSessionProgressStyle.dots,
+    this.progressDotsGeometry,
+    this.progressLinearThickness,
+    this.progressSegmentedMarkerThickness,
     this.qualityOf,
     this.swipeDuration = const Duration(milliseconds: 200),
     this.indexController,
@@ -292,6 +299,22 @@ class ZSessionCardSwiper extends StatefulWidget {
 
   /// Variante d'indicateur de progression (enum).
   final ZSessionProgressStyle progressStyle;
+
+  /// Géométrie du style « points » — relayée telle quelle à l'indicateur.
+  ///
+  /// `null` (défaut) : rendu par défaut de l'indicateur. La pile ne décide
+  /// d'aucune dimension et n'en substitue aucune — elle passe le message.
+  final ZSessionDotsGeometry? progressDotsGeometry;
+
+  /// Épaisseur du style « barre continue » — relayée telle quelle.
+  ///
+  /// `null` (défaut) : épaisseur dérivée du thème par l'indicateur.
+  final double? progressLinearThickness;
+
+  /// Épaisseur du style « barre segmentée à marqueur » — relayée telle quelle.
+  ///
+  /// `null` (défaut) : épaisseur dérivée du thème par l'indicateur.
+  final double? progressSegmentedMarkerThickness;
 
   /// Seam « qualité obtenue à l'index i » (`null` : aucune carte notée).
   final ZSessionQualityAtIndex? qualityOf;
@@ -854,6 +877,10 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
                 currentIndex: currentIndex,
                 passThreshold: widget.passThreshold,
                 style: widget.progressStyle,
+                dotsGeometry: widget.progressDotsGeometry,
+                linearThickness: widget.progressLinearThickness,
+                segmentedMarkerThickness:
+                    widget.progressSegmentedMarkerThickness,
                 qualityOf: widget.qualityOf,
               ),
             ),

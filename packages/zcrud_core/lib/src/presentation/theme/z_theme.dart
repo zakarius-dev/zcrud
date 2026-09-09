@@ -586,6 +586,14 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.sectionHeaderIconTileRadius,
     this.busyPalette,
     this.busyCycleInterval,
+    this.appBarWashAlphas,
+    this.appBarWashElevation,
+    this.fabShape,
+    this.fabElevation,
+    this.fabIconSize,
+    this.fabLabelStyle,
+    this.choiceChipShape,
+    this.choiceChipShowCheckmark,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -2682,6 +2690,127 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// multiplié par le nombre de teintes.
   final Duration? busyCycleInterval;
 
+  // ── Chrome de page : lavis d'app-bar, bouton d'action flottant, puce ───────
+  //
+  // CRITÈRE appliqué, celui des familles `select*` ci-dessus : un jeton se
+  // justifie s'il porte une décision à l'échelle de l'APPLICATION *et*
+  // qu'aucun canal du SDK ne l'atteint. Ici les huit valeurs sont écrites
+  // EXPLICITEMENT au site de rendu (`elevation:`, `shape:`, `Icon(size:)`,
+  // `style:`, `showCheckmark:`) : elles PRIMENT sur `AppBarTheme`,
+  // `FloatingActionButtonThemeData` et `ChipThemeData`, qui ne peuvent donc
+  // pas servir de canal — le jeton est le seul chemin app-scale restant. Même
+  // raisonnement que [selectTileBorderColor], dont le `shape:` explicite
+  // neutralisait `CardThemeData`.
+  //
+  // ÉCARTÉE : une teinte de sélection de puce. Elle a déjà sa chaîne complète
+  // (`ZcrudScope.gradientResolver` > [signaturePalette] > référence auditée >
+  // `ColorScheme.primary`) ; un jeton de plus serait un SECOND CANAL vers la
+  // même valeur peinte — exactement ce que ce fichier s'interdit.
+
+  /// Rampe d'opacité du **lavis** d'identité posé sur une app-bar, du haut de
+  /// la barre vers son bas.
+  ///
+  /// Le dégradé d'identité d'une page n'est pas peint à saturation pleine dans
+  /// sa barre : il y est décliné en opacités décroissantes, de sorte que la
+  /// teinte reste reconnaissable sans que la barre devienne un bloc de
+  /// couleur. Ce jeton règle l'intensité de ce lavis pour toute l'application.
+  ///
+  /// **Contrat : au moins deux arrêts, chacun dans `[0, 1]`.** Deux parce qu'un
+  /// dégradé linéaire en exige deux ; l'intervalle parce qu'une opacité vit
+  /// dedans. Le PREMIER arrêt sert en outre à mesurer le contraste du premier
+  /// plan de la barre : c'est la bande la plus dense. Une valeur qui ne tient
+  /// pas ce contrat est **ignorée** au profit de la rampe de référence — jamais
+  /// une exception à l'exécution (AD-10).
+  ///
+  /// `null` ⇒ la rampe de référence. Sans lavis — page sans identité résolue —
+  /// ce jeton ne touche rien.
+  ///
+  /// `lerp` : bascule discrète à mi-course, comme les autres jetons de LISTE du
+  /// fichier ; deux rampes de longueurs différentes n'ont pas d'interpolé.
+  final List<double>? appBarWashAlphas;
+
+  /// Élévation d'une app-bar **quand elle porte un lavis d'identité**.
+  ///
+  /// Ne concerne que ce cas : une barre sans lavis garde l'élévation de
+  /// `AppBarTheme`, que ce jeton ne touche pas. Une valeur négative est ignorée
+  /// au profit de la référence (AD-10).
+  ///
+  /// `null` vaut `0` — sous un lavis, l'ombre portée ajoute une seconde
+  /// séparation visuelle qui concurrence la teinte.
+  ///
+  /// `lerp` par [_lerpNullableDouble] et **non** [_lerpNullableFloor] : ici
+  /// `0` est la valeur de repli elle-même, pas une absence à protéger.
+  final double? appBarWashElevation;
+
+  /// Forme du bouton d'action flottant **posé sur son fond dégradé**.
+  ///
+  /// Elle gouverne les DEUX faces à la fois : la forme du bouton et celle du
+  /// fond dégradé qui le porte. Les dissocier laisserait un bouton carré dans
+  /// un halo rond.
+  ///
+  /// `null` ⇒ les formes de référence, distinctes selon la variante : un cercle
+  /// pour le bouton à glyphe seul, un rectangle à coins arrondis pour le bouton
+  /// étendu. Un bouton **sans dégradé résolu** est celui du SDK : ce jeton ne
+  /// le touche pas.
+  ///
+  /// `lerp` par interpolation de bordures, `null` d'un côté rendant l'autre.
+  final OutlinedBorder? fabShape;
+
+  /// Élévation du bouton d'action flottant **posé sur son fond dégradé**, au
+  /// repos comme au tap.
+  ///
+  /// `null` vaut `0` : l'ombre est déjà rendue par le fond, et l'élévation
+  /// Material en ajouterait une seconde, grise et décalée. Une valeur négative
+  /// est ignorée au profit de la référence (AD-10).
+  ///
+  /// `lerp` par [_lerpNullableDouble] : `0` est le repli, pas une absence.
+  final double? fabElevation;
+
+  /// Côté du glyphe du bouton d'action flottant **posé sur son fond dégradé**.
+  ///
+  /// Ne touche **pas** la cible tactile : celle-ci vient de la taille du bouton
+  /// lui-même, que le SDK tient au-dessus du plancher de 48 dp quelle que soit
+  /// la valeur de ce jeton (AD-13). Une valeur nulle ou négative est ignorée au
+  /// profit de la référence (AD-10).
+  ///
+  /// `null` vaut la taille de référence. `lerp` par [_lerpNullableFloor] : une
+  /// taille `0` est un glyphe invisible, pas une absence de réglage.
+  final double? fabIconSize;
+
+  /// Style du libellé du bouton d'action flottant **étendu**, posé sur son fond
+  /// dégradé.
+  ///
+  /// Fusionné sur le style ambiant du bouton, comme tout style de `Text` : il
+  /// n'a donc pas à redéclarer une famille ni une taille pour n'en changer que
+  /// la graisse. `null` ⇒ le style de référence (graisse et interlettrage).
+  ///
+  /// La COULEUR du libellé n'est pas de son ressort : elle est **mesurée**
+  /// contre le dégradé du bouton, jamais décrétée.
+  final TextStyle? fabLabelStyle;
+
+  /// Forme d'une puce de **choix** du socle.
+  ///
+  /// Distincte de `ChipThemeData.shape` : la puce de choix du socle pose sa
+  /// forme explicitement, ce qui prime sur le thème de puces de l'hôte. Ce
+  /// jeton est donc le canal app-scale de cette forme-là, et ne gouverne aucune
+  /// autre puce de l'application.
+  ///
+  /// Chaîne **paramètre `ZChoiceChipStyle.resolve(shape:)` > jeton >
+  /// référence**. `null` ⇒ le rectangle à coins arrondis de référence.
+  final OutlinedBorder? choiceChipShape;
+
+  /// Une puce de **choix** du socle affiche-t-elle la coche Material de
+  /// sélection ?
+  ///
+  /// `null` vaut `false` : la sélection est déjà portée par le fond teinté, et
+  /// la coche ajouterait un troisième signal tout en décalant le libellé au
+  /// moment de la sélection.
+  ///
+  /// Chaîne **paramètre `ZChoiceChipStyle.resolve(showCheckmark:)` > jeton >
+  /// référence**. `lerp` : bascule discrète à mi-course — un booléen n'a pas
+  /// d'interpolé.
+  final bool? choiceChipShowCheckmark;
+
   /// Fabrique centrale d'`InputDecoration` : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -3086,6 +3215,14 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? sectionHeaderIconTileRadius,
     List<Color>? busyPalette,
     Duration? busyCycleInterval,
+    List<double>? appBarWashAlphas,
+    double? appBarWashElevation,
+    OutlinedBorder? fabShape,
+    double? fabElevation,
+    double? fabIconSize,
+    TextStyle? fabLabelStyle,
+    OutlinedBorder? choiceChipShape,
+    bool? choiceChipShowCheckmark,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     fieldFillColor: fieldFillColor ?? this.fieldFillColor,
@@ -3459,6 +3596,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         sectionHeaderIconTileRadius ?? this.sectionHeaderIconTileRadius,
     busyPalette: busyPalette ?? this.busyPalette,
     busyCycleInterval: busyCycleInterval ?? this.busyCycleInterval,
+    appBarWashAlphas: appBarWashAlphas ?? this.appBarWashAlphas,
+    appBarWashElevation: appBarWashElevation ?? this.appBarWashElevation,
+    fabShape: fabShape ?? this.fabShape,
+    fabElevation: fabElevation ?? this.fabElevation,
+    fabIconSize: fabIconSize ?? this.fabIconSize,
+    fabLabelStyle: fabLabelStyle ?? this.fabLabelStyle,
+    choiceChipShape: choiceChipShape ?? this.choiceChipShape,
+    choiceChipShowCheckmark:
+        choiceChipShowCheckmark ?? this.choiceChipShowCheckmark,
   );
 
   @override
@@ -4716,8 +4862,47 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       // jetons non continus du fichier.
       busyPalette: t < 0.5 ? busyPalette : other.busyPalette,
       busyCycleInterval: t < 0.5 ? busyCycleInterval : other.busyCycleInterval,
+      // Une RAMPE d'opacités n'a pas d'interpolé qui garde un sens : deux
+      // rampes de longueurs différentes n'ont pas de correspondance terme à
+      // terme. Bascule discrète, comme les autres jetons de liste.
+      appBarWashAlphas: t < 0.5 ? appBarWashAlphas : other.appBarWashAlphas,
+      appBarWashElevation: _lerpNullableDouble(
+        appBarWashElevation,
+        other.appBarWashElevation,
+        t,
+      ),
+      fabShape: _lerpNullableOutlinedBorder(fabShape, other.fabShape, t),
+      fabElevation: _lerpNullableDouble(fabElevation, other.fabElevation, t),
+      fabIconSize: _lerpNullableFloor(fabIconSize, other.fabIconSize, t),
+      fabLabelStyle: TextStyle.lerp(fabLabelStyle, other.fabLabelStyle, t),
+      choiceChipShape: _lerpNullableOutlinedBorder(
+        choiceChipShape,
+        other.choiceChipShape,
+        t,
+      ),
+      // Un booléen n'a pas d'interpolé : bascule discrète à mi-course.
+      choiceChipShowCheckmark: t < 0.5
+          ? choiceChipShowCheckmark
+          : other.choiceChipShowCheckmark,
     );
   }
+}
+
+/// `lerp` de deux bordures NULLABLES en préservant le type [OutlinedBorder].
+///
+/// Différence VOLONTAIRE avec [_lerpNullableShape], dont le retour
+/// `ShapeBorder?` ne convient pas aux créneaux du SDK typés `OutlinedBorder?`
+/// (`ChipThemeData.shape`). Un côté `null` signifie « le consommateur applique
+/// SA forme de référence » : le thème l'ignore, on rend donc l'autre côté,
+/// seule forme réellement connue.
+OutlinedBorder? _lerpNullableOutlinedBorder(
+  OutlinedBorder? a,
+  OutlinedBorder? b,
+  double t,
+) {
+  if (a == null) return b;
+  if (b == null) return a;
+  return OutlinedBorder.lerp(a, b, t);
 }
 
 ShapeBorder? _lerpNullableShape(ShapeBorder? a, ShapeBorder? b, double t) {

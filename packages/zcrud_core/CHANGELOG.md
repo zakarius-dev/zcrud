@@ -3,6 +3,55 @@
 Toutes les modifications notables de `zcrud_core` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.50.0 — 2026-09-09
+
+### Ajouté
+
+- **Huit jetons de CHROME DE PAGE dans `ZcrudTheme`** — lavis d'app-bar,
+  bouton d'action flottant d'identité, puce de choix. Ces huit métriques
+  étaient écrites explicitement au site de rendu (`elevation:`, `shape:`,
+  `Icon(size:)`, `style:`, `showCheckmark:`), ce qui **prime sur**
+  `AppBarTheme`, `FloatingActionButtonThemeData` et `ChipThemeData` : aucun
+  canal du SDK ne pouvait les atteindre, et un hôte ne pouvait les changer
+  qu'en réimplémentant le widget.
+  - `appBarWashAlphas` (`List<double>?`) — rampe d'opacité du lavis
+    d'identité d'une app-bar. Au moins deux arrêts, chacun dans `[0, 1]` ;
+    hors contrat, la référence est appliquée (AD-10). Le premier arrêt sert
+    aussi à mesurer le contraste du premier plan de la barre.
+  - `appBarWashElevation` (`double?`) — élévation de la barre **sous lavis**
+    seulement. Valeur négative ignorée. `null` ⇒ `0`.
+  - `fabShape` (`OutlinedBorder?`) — forme du bouton d'action flottant sur
+    fond dégradé. Gouverne les DEUX faces (bouton **et** fond) : les
+    dissocier laisserait un bouton carré dans un halo rond.
+  - `fabElevation` (`double?`) — élévation au repos et au tap. `null` ⇒ `0`.
+  - `fabIconSize` (`double?`) — côté du glyphe. Ne touche pas la cible
+    tactile, tenue par le bouton lui-même au-dessus de 48 dp (AD-13). Valeur
+    nulle ou négative ignorée.
+  - `fabLabelStyle` (`TextStyle?`) — style du libellé du bouton étendu,
+    fusionné sur le style ambiant. La couleur reste **mesurée** contre le
+    dégradé.
+  - `choiceChipShape` (`OutlinedBorder?`) et `choiceChipShowCheckmark`
+    (`bool?`) — forme et coche d'une puce de **choix** du socle, par ordre
+    **paramètre > jeton > référence**. Ne gouvernent aucune autre puce de
+    l'application.
+
+  Chacun est **nullable**, câblé aux quatre sites (déclaration, constructeur,
+  `copyWith`, `lerp`) et consommé par `zcrud_ui_kit`. `null` partout ⇒ le
+  rendu d'aujourd'hui, à l'identique.
+
+  **Écartée** : une teinte de sélection de puce. Elle a déjà sa chaîne
+  complète (`ZcrudScope.gradientResolver` > `signaturePalette` > référence >
+  `ColorScheme.primary`) ; un jeton de plus serait un second canal vers la
+  même valeur peinte.
+
+### Note aux hôtes
+
+- Livraison **strictement additive** pour un hôte **passif** : sans jeton
+  posé, l'arbre et les valeurs peintes sont inchangés. Un hôte qui
+  **compensait** l'absence de ces réglages — en réimplémentant `ZGradientFab`,
+  en dupliquant `ZChoiceChipStyle`, ou en repeignant l'app-bar par-dessus le
+  lavis — peut désormais retirer sa compensation et poser les jetons.
+
 ## 3.49.0 — 2026-09-08
 
 ### Ajouté

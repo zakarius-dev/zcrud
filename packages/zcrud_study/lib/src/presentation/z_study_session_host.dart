@@ -61,23 +61,26 @@ import 'package:zcrud_core/zcrud_core.dart'
         ZDisplayStateOwnerMixin,
         ZIndexController,
         ZToggleController,
-        label;
+        label,
+        zResolveColorKeyOrSlot;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart'
     show
         ZFlashcard,
         ZFlashcardAnswerEvaluationPort,
         ZFlashcardContentBuilder,
         ZFlashcardHintPort,
+        ZFlashcardQuestionTypeBadgeBuilder,
         ZFlashcardReviewCard,
         ZSrsConfig;
 import 'package:zcrud_session/zcrud_session.dart'
     show
         ZFlashcardAnswerInput,
+        ZFlashcardSubmission,
+        ZLinearSessionState,
         ZQualityColorKeyResolver,
         ZQualityLabelKeyResolver,
         ZSessionCardSlot,
-        ZFlashcardSubmission,
-        ZLinearSessionState,
+        ZSessionDotsGeometry,
         ZSessionItem,
         ZSessionProgressStyle,
         ZSessionReviewer,
@@ -91,12 +94,15 @@ import 'package:zcrud_session/zcrud_session.dart'
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZReviewMode, ZStudySessionResult;
 
+import 'preset/z_card_chrome_spec.dart';
+import 'preset/z_study_session_preset.dart';
 import 'z_faded_overflow.dart';
 import 'z_study_session_card_slot.dart';
 import 'z_study_session_post_submit.dart';
 import 'z_study_session_recall.dart';
 import 'z_study_session_reference.dart';
 import 'z_study_session_reveal.dart';
+import 'z_study_session_seam_audit.dart';
 import 'z_study_session_slices.dart';
 import 'z_study_session_view.dart';
 
@@ -130,6 +136,151 @@ typedef ZStudySessionGradingSlotBuilder = Widget Function(
   ValueChanged<ZFlashcardSubmission> submit,
 );
 
+/// Montage COMPLET d'une session : **tous** les seams, **tous** à nommer.
+///
+/// Chaque champ est `required` alors que son type est nullable. Dart oblige
+/// donc à *écrire* `hintPort: null` là où l'omission était possible : la
+/// renonciation devient une ligne du code appelant, et un oubli devient une
+/// **erreur de compilation** au lieu d'un défaut qui ne se voit qu'à l'écran.
+///
+/// `null` garde exactement le sens qu'il a partout ailleurs dans ce paquet :
+/// **absent** — le socle prend son défaut, aucune branche n'est prise, rien
+/// n'est fabriqué pour combler le vide. Seule la *nomination* devient
+/// obligatoire.
+///
+/// 🔴 **Ajouter un seam à ce type est CASSANT** pour tout code qui construit un
+/// `ZStudySessionWiring` : le champ neuf est `required`, donc chaque site
+/// d'appel doit se prononcer. C'est l'intérêt du mécanisme autant que son
+/// prix — c'est exactement ce qui interdit qu'une capacité neuve rejoigne
+/// l'écran sans qu'un montage existant ait à la nommer. Un champ ajouté avec
+/// une valeur par défaut rouvrirait le trou que ce type ferme, et n'est donc
+/// pas une évolution acceptable ici.
+///
+/// [ZStudySessionWiring.none] renonce à tout d'un coup : banc d'essai, capture
+/// d'arbre, démonstration. Jamais un écran destiné à un utilisateur — il y
+/// perdrait ses libellés, son issue de sortie et sa voie d'écriture SRS.
+@immutable
+class ZStudySessionWiring {
+  /// Énumère le montage. Chaque seam est à nommer, `null` compris.
+  const ZStudySessionWiring({
+    required this.reviewer,
+    required this.cardBuilder,
+    required this.cardSlotBuilder,
+    required this.contentBuilder,
+    required this.questionTypeBadgeBuilder,
+    required this.instructionBanner,
+    required this.evaluationPort,
+    required this.hintPort,
+    required this.onQualitySelected,
+    required this.qualityColorKeyFor,
+    required this.qualityPreviewLabelFor,
+    required this.headerBuilder,
+    required this.counterBuilder,
+    required this.gradingBuilder,
+    required this.summaryBuilder,
+    required this.emptyBuilder,
+    required this.celebrationBuilder,
+    required this.labels,
+    required this.onSessionEnd,
+    required this.onExit,
+    required this.indexController,
+    required this.preset,
+  });
+
+  /// Renonce à **tous** les seams — pour un banc d'essai, jamais pour un écran.
+  const ZStudySessionWiring.none()
+      : reviewer = null,
+        cardBuilder = null,
+        cardSlotBuilder = null,
+        contentBuilder = null,
+        questionTypeBadgeBuilder = null,
+        instructionBanner = null,
+        evaluationPort = null,
+        hintPort = null,
+        onQualitySelected = null,
+        qualityColorKeyFor = null,
+        qualityPreviewLabelFor = null,
+        headerBuilder = null,
+        counterBuilder = null,
+        gradingBuilder = null,
+        summaryBuilder = null,
+        emptyBuilder = null,
+        celebrationBuilder = null,
+        labels = null,
+        onSessionEnd = null,
+        onExit = null,
+        indexController = null,
+        preset = null;
+
+  /// Voie d'écriture SRS — cf. [ZStudySessionHost.reviewer].
+  final ZSessionReviewer? reviewer;
+
+  /// Carte d'affichage — cf. [ZStudySessionHost.cardBuilder].
+  final Widget Function(BuildContext context, ZFlashcard card)? cardBuilder;
+
+  /// Créneau de carte complet — cf. [ZStudySessionHost.cardSlotBuilder].
+  final ZStudySessionCardSlotBuilder? cardSlotBuilder;
+
+  /// Rendu de contenu — cf. [ZStudySessionHost.contentBuilder].
+  final ZFlashcardContentBuilder? contentBuilder;
+
+  /// Pastille de type de question — cf.
+  /// [ZStudySessionHost.questionTypeBadgeBuilder].
+  final ZFlashcardQuestionTypeBadgeBuilder? questionTypeBadgeBuilder;
+
+  /// Bandeau de consigne — cf. [ZStudySessionHost.instructionBanner].
+  final Widget? instructionBanner;
+
+  /// Port d'évaluation — cf. [ZStudySessionHost.evaluationPort].
+  final ZFlashcardAnswerEvaluationPort? evaluationPort;
+
+  /// Port d'indices — cf. [ZStudySessionHost.hintPort].
+  final ZFlashcardHintPort? hintPort;
+
+  /// Notation manuelle — cf. [ZStudySessionHost.onQualitySelected].
+  final ValueChanged<int>? onQualitySelected;
+
+  /// Clé de couleur d'un cran — cf. [ZStudySessionHost.qualityColorKeyFor].
+  final ZQualityColorKeyResolver? qualityColorKeyFor;
+
+  /// Aperçu d'intervalle — cf. [ZStudySessionHost.qualityPreviewLabelFor].
+  final String Function(int quality)? qualityPreviewLabelFor;
+
+  /// En-tête — cf. [ZStudySessionHost.headerBuilder].
+  final ZStudySessionHeaderBuilder? headerBuilder;
+
+  /// Compteurs — cf. [ZStudySessionHost.counterBuilder].
+  final ZStudySessionCounterBuilder? counterBuilder;
+
+  /// Surface de saisie/notation — cf. [ZStudySessionHost.gradingBuilder].
+  final ZStudySessionGradingSlotBuilder? gradingBuilder;
+
+  /// Résumé de fin — cf. [ZStudySessionHost.summaryBuilder].
+  final ZStudySessionResultBuilder? summaryBuilder;
+
+  /// Repli « session vide » — cf. [ZStudySessionHost.emptyBuilder].
+  final WidgetBuilder? emptyBuilder;
+
+  /// Célébration — cf. [ZStudySessionHost.celebrationBuilder].
+  final ZStudySessionCelebrationBuilder? celebrationBuilder;
+
+  /// Libellés injectés — cf. [ZStudySessionHost.labels].
+  final ZStudySessionLabels? labels;
+
+  /// Fin de session — cf. [ZStudySessionHost.onSessionEnd].
+  final void Function(ZStudySessionResult result, Duration duration)?
+      onSessionEnd;
+
+  /// Issue de sortie — cf. [ZStudySessionHost.onExit].
+  final VoidCallback? onExit;
+
+  /// Pilote d'index de la pile — cf. [ZStudySessionHost.indexController].
+  final ZIndexController? indexController;
+
+  /// Formes de référence — cf. [ZStudySessionHost.preset].
+  final ZStudySessionPreset? preset;
+}
+
 /// Écran de session **assemblé** : détient le runtime, nourrit la vue.
 ///
 /// Voir la dartdoc de bibliothèque pour la table de runtime, la discipline
@@ -149,6 +300,11 @@ class ZStudySessionHost extends StatefulWidget {
     this.cardBuilder,
     this.cardSlotBuilder,
     this.contentBuilder,
+    this.questionTypeBadgeBuilder,
+    this.instructionBanner,
+    this.cardTypeGradientKey,
+    this.cardAccentHeight,
+    this.cardBackgroundColor,
     this.evaluationPort,
     this.hintPort,
     this.onQualitySelected,
@@ -166,7 +322,67 @@ class ZStudySessionHost extends StatefulWidget {
     this.onSessionEnd,
     this.onExit,
     this.indexController,
-    this.progressStyle = ZSessionProgressStyle.dots,
+    this.preset,
+    this.progressStyle,
+    this.progressDotsGeometry,
+    this.progressLinearThickness,
+    this.progressSegmentedMarkerThickness,
+    this.revealPolicy = ZStudySessionRevealPolicy.auto,
+    this.postSubmitPolicy = ZStudySessionPostSubmitPolicy.auto,
+    this.questionRecall = ZStudySessionQuestionRecall.auto,
+    this.bottomInset,
+    this.fallbackFolderId = '',
+    this.stackFlex,
+    this.inputFlex,
+    this.contentPadding,
+    this.dividerThickness,
+    this.sectionGap,
+    this.minTarget,
+    this.counterStyle,
+    this.seamAudit,
+    super.key,
+  })  :
+        // Un champ PRIVÉ ne peut pas être un paramètre initialisant : un
+        // paramètre nommé ne commence jamais par `_`. Le montage à plat n'en
+        // porte aucun — c'est ce qui le distingue du montage énuméré, et ce
+        // que l'audit lit pour savoir si un `null` est une décision.
+        _wiring = null;
+
+  /// Assemble une session dont le montage est **ÉNUMÉRÉ** par [wiring].
+  ///
+  /// Chaque seam de l'écran est un champ `required` de [ZStudySessionWiring] :
+  /// un montage doit tous les nommer, `null` compris. Un seam qu'on croyait
+  /// posé et qui ne l'est pas devient une **erreur de compilation**, là où le
+  /// constructeur par défaut le laisserait retomber en silence sur le défaut du
+  /// socle — c'est-à-dire sur un écran qui s'affiche, mais pas celui qu'on a
+  /// voulu.
+  ///
+  /// Aucun seam ne se pose **à plat** ici : il n'y a donc ni règle de fusion,
+  /// ni conflit possible entre deux façons de dire la même chose. Les
+  /// paramètres restés sur ce constructeur sont ceux que la partition classe
+  /// **cosmétiques** (scalaires de mise en page, couleur, style) et ceux qui
+  /// portent un défaut non nul — aucun ne peut disparaître en silence.
+  ///
+  /// Le montage est un simple **transfert** vers les mêmes champs que le
+  /// constructeur par défaut : à valeurs égales, l'écran rendu est le même,
+  /// nœud pour nœud.
+  ///
+  /// Non `const` : la lecture d'un champ de [wiring] n'est pas une expression
+  /// constante.
+  ZStudySessionHost.wired({
+    required ZStudySessionWiring wiring,
+    required this.mode,
+    required this.queue,
+    this.config = const ZSrsConfig(),
+    this.cardTypeGradientKey,
+    this.cardAccentHeight,
+    this.cardBackgroundColor,
+    this.qualityLabelKeyFor = zDefaultQualityLabelKey,
+    this.qualityEmphasis = ZSrsQualityEmphasis.none,
+    this.progressStyle,
+    this.progressDotsGeometry,
+    this.progressLinearThickness,
+    this.progressSegmentedMarkerThickness,
     this.revealPolicy = ZStudySessionRevealPolicy.auto,
     this.postSubmitPolicy = ZStudySessionPostSubmitPolicy.auto,
     this.questionRecall = ZStudySessionQuestionRecall.auto,
@@ -180,7 +396,35 @@ class ZStudySessionHost extends StatefulWidget {
     this.minTarget,
     this.counterStyle,
     super.key,
-  });
+  })  : reviewer = wiring.reviewer,
+        cardBuilder = wiring.cardBuilder,
+        cardSlotBuilder = wiring.cardSlotBuilder,
+        contentBuilder = wiring.contentBuilder,
+        questionTypeBadgeBuilder = wiring.questionTypeBadgeBuilder,
+        instructionBanner = wiring.instructionBanner,
+        evaluationPort = wiring.evaluationPort,
+        hintPort = wiring.hintPort,
+        onQualitySelected = wiring.onQualitySelected,
+        qualityColorKeyFor = wiring.qualityColorKeyFor,
+        qualityPreviewLabelFor = wiring.qualityPreviewLabelFor,
+        headerBuilder = wiring.headerBuilder,
+        counterBuilder = wiring.counterBuilder,
+        gradingBuilder = wiring.gradingBuilder,
+        summaryBuilder = wiring.summaryBuilder,
+        emptyBuilder = wiring.emptyBuilder,
+        celebrationBuilder = wiring.celebrationBuilder,
+        labels = wiring.labels,
+        onSessionEnd = wiring.onSessionEnd,
+        onExit = wiring.onExit,
+        indexController = wiring.indexController,
+        preset = wiring.preset,
+        // Le montage énuméré ne peut RIEN oublier : le compilateur a exigé que
+        // chaque seam soit nommé. Il n'y a donc pas de politique d'audit à
+        // poser ici — et l'audit hors rendu lit ce champ pour traiter chaque
+        // `null` comme la décision écrite qu'il est.
+        seamAudit = null,
+        // ignore: prefer_initializing_formals
+        _wiring = wiring;
 
   /// Clé de l'action de révélation (testabilité).
   static const ValueKey<String> revealActionKey =
@@ -239,6 +483,66 @@ class ZStudySessionHost extends StatefulWidget {
   /// Slot AD-40 de rendu du contenu (markdown, LaTeX…) — passé tel quel à la
   /// carte **et** à la surface de saisie.
   final ZFlashcardContentBuilder? contentBuilder;
+
+  /// Badge de type de question de la carte par défaut — `null` ⇒ **absent**
+  /// de l'arbre.
+  ///
+  /// Le paquet ne traduit ni ne nomme les valeurs de type : le builder reçoit
+  /// le type canonique et rend le libellé — et l'éventuelle icône — que
+  /// l'application a choisis.
+  ///
+  /// Sans relais, ce slot n'était atteignable qu'en remplaçant la carte
+  /// entière par [cardBuilder] ; l'affordance de révélation était alors perdue
+  /// avec elle. Il est donc passé à la carte que l'assemblage monte **déjà**.
+  ///
+  /// N'a d'effet que sur la carte par défaut : [cardBuilder] et
+  /// [cardSlotBuilder] rendent une carte dont l'hôte est seul propriétaire.
+  final ZFlashcardQuestionTypeBadgeBuilder? questionTypeBadgeBuilder;
+
+  /// Bandeau de consigne de la carte par défaut, déjà traduit et composé par
+  /// l'application — `null` ⇒ **absent** de l'arbre.
+  ///
+  /// Contrairement au badge, la consigne ne dépend pas du type : un `Widget`
+  /// évite un builder sans donnée utile.
+  ///
+  /// N'a d'effet que sur la carte par défaut (cf. [questionTypeBadgeBuilder]).
+  final Widget? instructionBanner;
+
+  /// Clé de dégradé soumise **telle quelle** au seam
+  /// `ZcrudScope.gradientResolver` par la carte par défaut, à la place de la
+  /// chaîne dérivée du type.
+  ///
+  /// Posée, elle court-circuite tout : ni les clés dérivées du type, ni le
+  /// jeton `ZcrudTheme.flashcardTypeGradients` ne sont consultés. `null` ⇒
+  /// chaîne par type inchangée.
+  ///
+  /// Le nom porte le préfixe `card` parce que la page qui enveloppe cette
+  /// session ([ZStudySessionScaffold]) porte déjà un `gradientKey` : celui-là
+  /// teinte l'app-bar, celui-ci la carte.
+  ///
+  /// N'a d'effet que sur la carte par défaut (cf. [questionTypeBadgeBuilder]).
+  final String? cardTypeGradientKey;
+
+  /// Hauteur, en dp, du liseré de tête de la carte par défaut.
+  ///
+  /// C'est le **seul interrupteur** du liseré : `null` ⇒ le jeton
+  /// `ZcrudTheme.accentBarHeight` gouverne, et les deux nuls ⇒ aucun liseré
+  /// n'est peint, quel que soit le dégradé résolu. Le paramètre existe parce
+  /// que le jeton est global : une session qui veut son liseré sans repeindre
+  /// les autres surfaces le déclare ici.
+  ///
+  /// N'a d'effet que sur la carte par défaut (cf. [questionTypeBadgeBuilder]).
+  final double? cardAccentHeight;
+
+  /// Fond de la carte par défaut — priorité **paramètre > jeton > rôle**.
+  ///
+  /// `null` ⇒ le jeton `ZcrudTheme.surfaceColor`, puis le rôle
+  /// `ColorScheme.surface` du thème ambiant. Le nom porte le préfixe `card`
+  /// pour ne pas se confondre avec le `backgroundColor` de la page
+  /// ([ZStudySessionScaffold]), qui peint le `Scaffold`.
+  ///
+  /// N'a d'effet que sur la carte par défaut (cf. [questionTypeBadgeBuilder]).
+  final Color? cardBackgroundColor;
 
   /// Port d'évaluation ADVISORY (`null` ⇒ repli qualité neutre côté saisie).
   final ZFlashcardAnswerEvaluationPort? evaluationPort;
@@ -327,8 +631,36 @@ class ZStudySessionHost extends StatefulWidget {
   /// Pilote optionnel de l'index de la pile, passé tel quel.
   final ZIndexController? indexController;
 
+  /// Formes de référence à poser — en-tête, chrome de carte, progression.
+  ///
+  /// `null` ⇒ **aucune branche prise** : l'arbre rendu est celui d'avant que ce
+  /// paramètre n'existe. Chaque forme décrite ici est battue par le paramètre
+  /// explicite qui lui correspond.
+  final ZStudySessionPreset? preset;
+
   /// Style de l'indicateur de progression de la pile.
-  final ZSessionProgressStyle progressStyle;
+  ///
+  /// `null` ⇒ le style du [preset] s'il en décrit un, sinon
+  /// [ZSessionProgressStyle.dots].
+  final ZSessionProgressStyle? progressStyle;
+
+  /// Forme des points de l'indicateur de progression.
+  ///
+  /// `null` ⇒ la forme du [preset] s'il en décrit une, sinon le rendu par
+  /// défaut de l'indicateur. Sans effet hors du style « points ».
+  final ZSessionDotsGeometry? progressDotsGeometry;
+
+  /// Épaisseur de l'indicateur de progression continu.
+  ///
+  /// `null` ⇒ l'épaisseur du [preset] s'il en décrit une, sinon celle que
+  /// l'indicateur dérive du thème. Sans effet hors du style « barre continue ».
+  final double? progressLinearThickness;
+
+  /// Épaisseur de l'indicateur de progression segmenté à marqueur.
+  ///
+  /// `null` ⇒ l'épaisseur du [preset] s'il en décrit une, sinon celle que
+  /// l'indicateur dérive du thème. Sans effet hors de ce style.
+  final double? progressSegmentedMarkerThickness;
 
   /// Politique de l'affordance de **révélation de la réponse**.
   ///
@@ -409,6 +741,21 @@ class ZStudySessionHost extends StatefulWidget {
 
   /// Surcharge du style du compteur.
   final TextStyle? counterStyle;
+
+  /// Filet d'audit du montage — `null` (défaut) ⇒ **aucun audit**.
+  ///
+  /// Réglage de DIAGNOSTIC : il ne câble aucune capacité, ne prend aucune
+  /// branche et ne change pas d'un nœud l'arbre rendu. Posé, il fait relever
+  /// **une seule fois**, en debug, les seams que le montage n'a ni posés ni
+  /// déclarés — cf. [ZStudySeamAuditPolicy] pour les trois régimes.
+  final ZStudySeamAuditPolicy? seamAudit;
+
+  /// Le montage ÉNUMÉRÉ d'origine — `null` quand l'écran est monté à plat.
+  ///
+  /// Seul marqueur de régime : sous un montage énuméré, un seam nul est une
+  /// décision écrite, jamais un oubli. Les valeurs, elles, sont lues sur les
+  /// champs du porteur — ce champ n'en est pas une seconde source.
+  final ZStudySessionWiring? _wiring;
 
   @override
   State<ZStudySessionHost> createState() => _ZStudySessionHostState();
@@ -499,6 +846,18 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
   @override
   void initState() {
     super.initState();
+    // Debug SEUL : le compilateur retire l'`assert` en release, avec tout ce
+    // qu'il contient. Le filet ne coûte donc rien à une application publiée,
+    // et rien du tout à celle qui n'a posé aucune politique.
+    assert(() {
+      final ZStudySeamAuditPolicy? policy = widget.seamAudit;
+      if (policy != null) {
+        final ZStudySeamReport report =
+            widget.auditSeams(waived: policy.waived);
+        if (!report.isComplete) zStudyReportSeamGap(report: report);
+      }
+      return true;
+    }());
     _seed();
   }
 
@@ -916,11 +1275,50 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     if (card == null) return _missingCard(context);
     final custom = widget.cardBuilder;
     if (custom != null) return custom(context, card);
+    return _defaultCard(context, card, item.flashcardId);
+  }
+
+  /// La carte du socle, habillée.
+  ///
+  /// Site UNIQUE de composition du chrome : les deux constructeurs de carte de
+  /// l'assemblage passent par ici, sinon la moitié des habillages manquerait
+  /// sur l'un des deux sans qu'aucune assertion ne bouge.
+  ///
+  /// Priorité **paramètre explicite > preset** sur chacun des cinq maillons,
+  /// jamais en bloc : un hôte qui ne pose qu'une hauteur de liseré garde le
+  /// reste du chrome décrit par son preset.
+  Widget _defaultCard(
+    BuildContext context,
+    ZFlashcard card,
+    String flashcardId, {
+    ZToggleController? revealController,
+  }) {
+    final ZCardChromeSpec? chrome = widget.preset?.cardChrome?.call(card);
     return ZFlashcardReviewCard(
-      key: ValueKey<String>('zStudySessionCard_${item.flashcardId}'),
+      key: ValueKey<String>('zStudySessionCard_$flashcardId'),
       card: card,
       contentBuilder: widget.contentBuilder,
+      questionTypeBadgeBuilder: widget.questionTypeBadgeBuilder ??
+          chrome?.questionTypeBadgeBuilder,
+      instructionBanner: widget.instructionBanner ?? chrome?.instructionBanner,
+      typeGradientKey: widget.cardTypeGradientKey ?? chrome?.typeGradientKey,
+      accentHeight: widget.cardAccentHeight ?? chrome?.accentHeight,
+      backgroundColor:
+          widget.cardBackgroundColor ?? _presetCardBackground(context),
+      revealController: revealController,
     );
+  }
+
+  /// Le fond de carte décrit par le preset, résolu **par clé** (FR-26).
+  ///
+  /// `null` sans clé décrite : la carte garde alors sa chaîne de résolution
+  /// habituelle (jeton de thème, puis surface du `ColorScheme`).
+  Color? _presetCardBackground(BuildContext context) {
+    final String? key = widget.preset?.cardBackgroundColorKey;
+    if (key == null) return null;
+    // Chaîne totale : une clé inconnue retombe sur un slot contrasté plutôt
+    // que de laisser la carte sans fond (AD-10).
+    return zResolveColorKeyOrSlot(context, key, slotIndex: 0).color;
   }
 
   /// Créneau de carte — même résolution par identité que [_buildCard], plus la
@@ -935,10 +1333,10 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     if (card == null) return _missingCard(context);
     final ZStudySessionCardSlotBuilder? host = widget.cardSlotBuilder;
     if (host != null) return _buildHostCardSlot(context, slot, card, host);
-    return ZFlashcardReviewCard(
-      key: ValueKey<String>('zStudySessionCard_${slot.item.flashcardId}'),
-      card: card,
-      contentBuilder: widget.contentBuilder,
+    return _defaultCard(
+      context,
+      card,
+      slot.item.flashcardId,
       revealController: slot.isFront ? _revealController : null,
     );
   }
@@ -1130,7 +1528,12 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
         onStackEnd: _onStackEnd,
         onExit: widget.onExit,
         indexController: widget.indexController,
+        preset: widget.preset,
         progressStyle: widget.progressStyle,
+        progressDotsGeometry: widget.progressDotsGeometry,
+        progressLinearThickness: widget.progressLinearThickness,
+        progressSegmentedMarkerThickness:
+            widget.progressSegmentedMarkerThickness,
         stackFlex: widget.stackFlex,
         inputFlex: widget.inputFlex,
         contentPadding: widget.contentPadding,
@@ -1302,4 +1705,93 @@ class _HostRevealSlotState extends State<_HostRevealSlot> {
         builder: (BuildContext context, bool revealed, Widget? _) =>
             widget.builder(context, revealed, widget.controller.toggle),
       );
+}
+
+/// Audit du **montage** d'un écran de session : quels seams sont posés, quels
+/// sont déclarés absents, et lesquels manquent sans que personne l'ait dit.
+///
+/// Le montage énuméré ([ZStudySessionHost.wired]) ferme cette question au
+/// compilateur. Le montage à plat, lui, ne peut pas : un seam oublié y produit
+/// un écran qui s'affiche — simplement pas celui qu'on voulait. Cet audit
+/// donne à ce montage-là le signal qui lui manque.
+extension ZStudySessionSeamAudit on ZStudySessionHost {
+  /// La valeur POSÉE pour [seam], ou `null`.
+  ///
+  /// Le `switch` est exhaustif : une valeur ajoutée à [ZStudySeam] sans champ
+  /// correspondant ici est une **erreur de compilation**, jamais un seam qui
+  /// s'auditerait tout seul comme absent.
+  Object? _seamValue(ZStudySeam seam) => switch (seam) {
+        ZStudySeam.reviewer => reviewer,
+        ZStudySeam.cardBuilder => cardBuilder,
+        ZStudySeam.cardSlotBuilder => cardSlotBuilder,
+        ZStudySeam.contentBuilder => contentBuilder,
+        ZStudySeam.questionTypeBadgeBuilder => questionTypeBadgeBuilder,
+        ZStudySeam.instructionBanner => instructionBanner,
+        ZStudySeam.evaluationPort => evaluationPort,
+        ZStudySeam.hintPort => hintPort,
+        ZStudySeam.onQualitySelected => onQualitySelected,
+        ZStudySeam.qualityColorKeyFor => qualityColorKeyFor,
+        ZStudySeam.qualityPreviewLabelFor => qualityPreviewLabelFor,
+        ZStudySeam.headerBuilder => headerBuilder,
+        ZStudySeam.counterBuilder => counterBuilder,
+        ZStudySeam.gradingBuilder => gradingBuilder,
+        ZStudySeam.summaryBuilder => summaryBuilder,
+        ZStudySeam.emptyBuilder => emptyBuilder,
+        ZStudySeam.celebrationBuilder => celebrationBuilder,
+        ZStudySeam.labels => labels,
+        ZStudySeam.onSessionEnd => onSessionEnd,
+        ZStudySeam.onExit => onExit,
+        ZStudySeam.indexController => indexController,
+        ZStudySeam.preset => preset,
+      };
+
+  /// Audite **ce** montage, sans le monter.
+  ///
+  /// Fonction pure : ni `BuildContext`, ni rendu, ni effet. Elle s'appelle donc
+  /// dans un test unitaire, sur le widget que l'application construit :
+  ///
+  /// ```dart
+  /// test('mon écran de session pose tout ce qu\'il annonce', () {
+  ///   final ZStudySeamReport report = maSessionWidget().auditSeams(
+  ///     waived: const <ZStudySeam>{ZStudySeam.hintPort},
+  ///   );
+  ///   expect(report.isComplete, isTrue, reason: report.toString());
+  /// });
+  /// ```
+  ///
+  /// [waived] déclare les seams dont l'absence est **voulue** : ils quittent
+  /// les manquants. Citer un seam pourtant posé est signalé en retour
+  /// ([ZStudySeamReport.invalidWaivers]) — une déclaration doit décrire le
+  /// montage dans les deux sens.
+  ///
+  /// Sous un montage énuméré, [waived] n'a rien à retirer : chaque seam y a
+  /// déjà été nommé, `null` compris, et un `null` écrit est une décision. Le
+  /// rapport n'y porte donc **jamais** de manquant.
+  ZStudySeamReport auditSeams({
+    Set<ZStudySeam> waived = const <ZStudySeam>{},
+  }) {
+    final bool enumerated = _wiring != null;
+    final Set<ZStudySeam> provided = <ZStudySeam>{};
+    final Set<ZStudySeam> declared = <ZStudySeam>{};
+    final Set<ZStudySeam> missing = <ZStudySeam>{};
+    final Set<ZStudySeam> invalid = <ZStudySeam>{};
+    for (final ZStudySeam seam in ZStudySeam.values) {
+      if (_seamValue(seam) != null) {
+        provided.add(seam);
+        if (waived.contains(seam)) invalid.add(seam);
+        continue;
+      }
+      if (enumerated || waived.contains(seam)) {
+        declared.add(seam);
+      } else {
+        missing.add(seam);
+      }
+    }
+    return ZStudySeamReport(
+      provided: provided,
+      waived: declared,
+      missing: missing,
+      invalidWaivers: invalid,
+    );
+  }
 }

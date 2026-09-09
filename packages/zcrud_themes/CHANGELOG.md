@@ -1,5 +1,59 @@
 # Changelog — zcrud_themes
 
+## 3.50.0 — 2026-09-09
+
+### Corrigé — la documentation disait le contraire de la chaîne réelle
+
+Le socle a fait passer le **seam** `ZcrudScope.gradientResolver` **devant** le
+jeton `ZcrudTheme.flashcardTypeGradients` sur les deux cartes de flashcard
+(`z_flashcard_review_card.dart:912-928`,
+`z_default_flashcard_card.dart:439-457`). La documentation de ce paquet
+présentait encore le jeton comme le maillon que « seul un paramètre de widget
+dépasse » : un hôte qui adoptait Classic **et** branchait son propre résolveur
+pouvait en conclure que le thème gagnait, alors que c'est son résolveur qui
+peint.
+
+Corrigé dans la dartdoc de `ZClassicTheme`, dans celle de
+`ZClassicCardGradientsReference` et dans le `README.md` : la chaîne des dégradés
+par type est **`paramètre > seam > jeton > référence`**, et le jeton posé par le
+thème est un **repli**, consulté quand le résolveur se tait. Aucune valeur ne
+change ; c'est la description qui était fausse.
+
+Une garde nouvelle monte la carte réelle et mesure le dégradé **peint** dans les
+trois cas : thème seul (le jeton peint), thème + résolveur d'hôte étranger (le
+résolveur peint, le jeton est écarté), thème + résolveur Classic (les deux
+concordent). Aucune garde du paquet n'assertait l'ancien ordre — il n'y en avait
+donc pas à retourner.
+
+### Ajouté
+
+- **`ZClassicSurfaceReference.cardAccentHeight`** (4 dp) — l'épaisseur mesurée du
+  liseré de tête d'une carte de révision, à passer en **paramètre**
+  (`cardAccentHeight` de l'écran de session, ou `accentHeight` de la carte).
+
+### Délibérément non posé
+
+| Jeton | Raison |
+|---|---|
+| `accentBarHeight` | Jeton **global** : il gouverne aussi le liseré des cartes de dossier (`z_folder_card_chrome.dart:32`) et celui des champs de formulaire (`z_field_widget.dart:613`), qui le lisent **nu** — aucun paramètre pour s'y soustraire. Mesuré au montage : posé, il fait apparaître le liseré de la carte (60 → 67 nœuds d'arbre) **et** celui de chaque champ dès que l'hôte branche un résolveur de dégradés large (61 → 64 nœuds). Le rendu dépendrait de ce que l'hôte a branché par ailleurs. La valeur est publiée à part, pour la voie paramètre. |
+| Les **huit** jetons de chrome de page (`appBarWashAlphas`, `appBarWashElevation`, `fabShape`, `fabElevation`, `fabIconSize`, `fabLabelStyle`, `choiceChipShape`, `choiceChipShowCheckmark`) | Leur valeur mesurée est **déjà celle qui peint** : `ZPageShellReference` (`zcrud_ui_kit`) porte la rampe de lavis `[0.15, 0.10, 0.05, 0.02]`, l'élévation nulle sous lavis et les métriques de bouton et de puce, et chaque consommateur résout `jeton ?? référence` **sans condition**. Les poser écrirait la valeur déjà peinte — un second canal vers le même pixel. |
+
+### Gardes
+
+- **Précédence seam > jeton (`z_classic_gradient_seam_precedence_test.dart`)** —
+  la carte de révision est montée pour de bon et le dégradé **peint** est lu sur
+  la décoration du liseré, jamais sur le passage d'un jeton. Trois cas mesurés,
+  et la non-vacuité asserte que le liseré existe (sans hauteur, la carte n'en
+  monte aucun et la garde serait verte pour rien).
+- **Jetons non posés (`z_classic_unposed_tokens_test.dart`)** — les neuf jetons
+  restent `null` dans les deux luminosités, sous non-vacuité. La garde ne
+  s'arrête pas là : elle lit sur disque les **trois** consommateurs de
+  `accentBarHeight` et vérifie que deux d'entre eux le lisent **nu** (c'est ce
+  qui rend le jeton global), et elle lit les **huit** chaînes
+  `jeton ?? ZPageShellReference.<x>` de `zcrud_ui_kit` en comparant la rampe de
+  référence à la valeur mesurée. Si la référence cesse d'être la valeur
+  d'origine, la garde rougit — et c'est alors qu'il faudra poser le jeton.
+
 ## 3.49.0 — 2026-09-08
 
 ### Ajouté

@@ -217,7 +217,7 @@ void main() {
 
   // ==========================================================================
   group('CR-IFFD-57 — préséance MESURÉE, les deux axes posés ensemble', () {
-    testWidgets('paramètre typeColors > jeton de thème > seam > référence',
+    testWidgets('paramètre typeColors > seam > jeton de thème > référence',
         (tester) async {
       const ZGradientSpec themed = ZGradientSpec(
         gradient: LinearGradient(
@@ -237,10 +237,31 @@ void main() {
           reason: '🔴 la couture EXISTANTE (ZcrudScope.gradientResolver) est '
               'RÉUTILISÉE — clé `flashcard.type.<name>`.');
 
-      // ② Jeton de thème ⇒ prime le seam.
+      // ② Jeton de thème POSÉ EN PLUS ⇒ le SEAM garde la main.
+      //
+      // 🔴 Cette assertion disait l'inverse : elle affirmait que le jeton
+      // primait le seam, et défendait donc le défaut. Un thème du socle qui
+      // pose `flashcardTypeGradients` rendait alors le résolveur de
+      // l'application inopérant sans aucun signal — le seam était interrogé,
+      // sa réponse reçue, et jetée. L'ordre du socle (`zResolveGradient`) est
+      // `seam > jeton` partout ailleurs ; il l'est désormais ici aussi.
       await tester.pumpWidget(_host(
         ZDefaultFlashcardCard(card: _card('a')),
         gradientResolver: seam,
+        tokens: const ZcrudTheme(flashcardTypeGradients: <String, ZGradientSpec>{
+          'openQuestion': themed,
+        }),
+      ));
+      await tester.pumpAndSettle();
+      expect(_accentDecoration(tester).gradient, _injected.gradient,
+          reason: 'un résolveur d\'hôte qui RÉPOND l\'emporte sur le jeton du '
+              'thème (son silence, lui, laisse le jeton peindre)');
+
+      // ②bis Jeton SEUL (seam muet) ⇒ le jeton peint : le seam ne prime que
+      // quand il répond.
+      await tester.pumpWidget(_host(
+        ZDefaultFlashcardCard(card: _card('a')),
+        gradientResolver: (ColorScheme scheme, String key) => null,
         tokens: const ZcrudTheme(flashcardTypeGradients: <String, ZGradientSpec>{
           'openQuestion': themed,
         }),

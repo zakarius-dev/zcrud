@@ -75,6 +75,21 @@ const double ZFlashcardReviewCardHalfTurn = 0.5;
 /// Cible tap minimale, en dp (invariant AD-13).
 const double ZFlashcardReviewCardMinTarget = 48;
 
+/// Préfixe de la clé de dégradé par type soumise au seam
+/// `ZcrudScope.gradientResolver` par [ZFlashcardReviewCard] : la clé complète
+/// est `'$kZFlashcardReviewTypeGradientKeyPrefix<type.name>'`.
+///
+/// C'est le format à implémenter dans un résolveur d'hôte. La carte interroge
+/// ensuite le seam avec le nom de type **nu** : un résolveur qui ne connaît
+/// que ce format-là reste servi, mais un résolveur qui répond aux **deux**
+/// voit le format préfixé l'emporter. Les deux clés sont soumises **avant**
+/// que le jeton `ZcrudTheme.flashcardTypeGradients` ne soit lu.
+///
+/// La valeur est identique à celle qu'emploie la carte de flashcard de liste,
+/// et une garde de source en tient l'égalité : les deux surfaces se pilotent
+/// avec un seul résolveur.
+const String kZFlashcardReviewTypeGradientKeyPrefix = 'flashcard.type.';
+
 /// Construit le contenu déjà localisé du badge de type de question.
 ///
 /// Le paquet ne traduit ni ne nomme les valeurs de [ZFlashcardType] : l'hôte
@@ -99,7 +114,13 @@ class ZFlashcardReviewCard extends StatefulWidget {
   ///   carte ne cède jamais la propriété de son état — invariant AD-2) ;
   /// - [onEdit]/[onDelete]/[onSource] : actions injectées — `null` ⇒ action
   ///   **absente**, exactement comme [ZFlashcard.isReadOnly] : une seule
-  ///   règle.
+  ///   règle ;
+  /// - [accentHeight] : hauteur du liseré de tête. Priorité paramètre, puis
+  ///   [ZcrudTheme.accentBarHeight] ; les deux nuls ⇒ **aucun liseré** ;
+  /// - [typeGradientKey] : clé de dégradé explicite, soumise **telle quelle**
+  ///   au seam — elle court-circuite toute la chaîne par type ;
+  /// - [backgroundColor] : fond de la carte. Priorité paramètre, puis
+  ///   [ZcrudTheme.surfaceColor], puis le rôle `ColorScheme.surface`.
   const ZFlashcardReviewCard({
     required this.card,
     this.revealTransition = ZRevealTransition.flip3d,
@@ -112,6 +133,9 @@ class ZFlashcardReviewCard extends StatefulWidget {
     this.onEdit,
     this.onDelete,
     this.onSource,
+    this.accentHeight,
+    this.typeGradientKey,
+    this.backgroundColor,
     super.key,
   });
 
@@ -196,6 +220,42 @@ class ZFlashcardReviewCard extends StatefulWidget {
   /// et la carte ne sait donc ni ce que la source désigne ni comment y
   /// naviguer. D'où un callback, jamais une résolution interne.
   final VoidCallback? onSource;
+
+  /// Hauteur du liseré de tête, en dp — priorité **paramètre > jeton**.
+  ///
+  /// `null` ⇒ [ZcrudTheme.accentBarHeight] gouverne ; les deux nuls ⇒ le
+  /// liseré est **absent de l'arbre**, jamais rendu à hauteur zéro. C'est le
+  /// seul interrupteur du liseré : un dégradé résolu sans hauteur ne peint
+  /// rien.
+  ///
+  /// Le paramètre existe parce que le jeton est **global** : il gouverne
+  /// aussi les liserés d'autres surfaces. Une session qui veut son liseré
+  /// sans repeindre le reste le déclare ici.
+  final double? accentHeight;
+
+  /// Clé de dégradé soumise **telle quelle** au seam
+  /// `ZcrudScope.gradientResolver`, à la place de la chaîne par type.
+  ///
+  /// Échappatoire pour un hôte dont les clés ne suivent ni le format
+  /// `'$kZFlashcardReviewTypeGradientKeyPrefix<type.name>'` ni le nom de type
+  /// nu. Quand elle est posée, elle **court-circuite tout** : ni les deux clés
+  /// dérivées du type, ni le jeton [ZcrudTheme.flashcardTypeGradients] ne sont
+  /// consultés, et cette clé est la seule soumise au seam.
+  ///
+  /// C'est aussi la voie par laquelle un hôte reprend la main sur la priorité
+  /// `seam > jeton` : la valeur que rend le résolveur pour cette clé est
+  /// **la** valeur retenue, sans repli.
+  ///
+  /// `null` (défaut) ⇒ chaîne par type inchangée.
+  final String? typeGradientKey;
+
+  /// Fond de la carte — priorité **paramètre > jeton > rôle**.
+  ///
+  /// `null` ⇒ [ZcrudTheme.surfaceColor], puis le rôle `ColorScheme.surface`
+  /// du thème Material ambiant. Le paramètre permet à une session de détacher
+  /// visuellement ses cartes de la surface de fond sans redéfinir le jeton
+  /// pour toutes les surfaces de l'application.
+  final Color? backgroundColor;
 
   /// Clé de la rangée d'actions (testabilité).
   static const ValueKey<String> actionsKey = ValueKey<String>(
@@ -826,17 +886,61 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     );
   }
 
-  /// Barre décorative opt-in, résolue uniquement par le seam de thème de
-  /// l'hôte.
+  /// La spécification de dégradé qui identifie le type de cette carte.
   ///
-  /// L'identité est le nom stable du type, jamais une position de liste. Les
-  /// entrées requises (spécification + jetons de thème) restent nullables :
-  /// l'absence de l'une d'elles garde l'arbre historique strictement
-  /// inchangé.
+  /// Chaîne de résolution — **seam > jeton**, l'ordre de priorité du socle :
+  /// 1. [ZFlashcardReviewCard.typeGradientKey], s'il est posé : cette clé est
+  ///    soumise **telle quelle** au seam, et rien d'autre n'est consulté ;
+  /// 2. le seam `ZcrudScope.gradientResolver`, interrogé avec
+  ///    `'$kZFlashcardReviewTypeGradientKeyPrefix<type.name>'` ;
+  /// 3. le **même seam**, interrogé avec le nom de type **nu** — le format
+  ///    historique, pour les résolveurs qui ne connaissent que lui ;
+  /// 4. le jeton [ZcrudTheme.flashcardTypeGradients], indexé par le nom de
+  ///    type : le repli quand le seam se tait sur les **deux** clés.
+  ///
+  /// Autrement dit : **un résolveur d'hôte qui répond l'emporte toujours sur
+  /// le jeton du thème**, quel que soit celui des deux formats de clé auquel
+  /// il répond. Un hôte qui veut au contraire que son jeton gagne ne pose pas
+  /// de résolveur pour ces clés — ou pose [typeGradientKey], qui court-circuite
+  /// tout.
+  ///
+  /// Entre les deux clés du seam, la clé préfixée l'emporte : un résolveur qui
+  /// répond aux deux voit le maillon 2 gagner.
+  ///
+  /// L'identité est le nom stable du type, jamais une position de liste.
+  /// Chaque maillon est nullable : leur silence commun garde l'arbre
+  /// strictement inchangé.
+  ZGradientSpec? _typeGradientSpec(BuildContext context, ZcrudTheme theme) {
+    final explicitKey = widget.typeGradientKey;
+    if (explicitKey != null) return zResolveGradient(context, explicitKey);
+    final typeName = widget.card.type.name;
+    // Le seam est interrogé sur ses DEUX formats de clé avant que le jeton ne
+    // soit lu, et non « préfixe, jeton, nu » : couper le seam en deux ferait
+    // dépendre la règle de priorité du FORMAT de clé auquel l'hôte répond.
+    // Un hôte au format nu verrait alors son résolveur battu par une table que
+    // le thème du socle pose à sa place — exactement le défaut corrigé ici.
+    return zResolveGradient(
+          context,
+          '$kZFlashcardReviewTypeGradientKeyPrefix$typeName',
+        ) ??
+        zResolveGradient(context, typeName) ??
+        theme.flashcardTypeGradients?[typeName];
+  }
+
+  /// Le dégradé peint, une fois la géométrie du thème appliquée.
+  ///
+  /// Les jetons [ZcrudTheme.gradientBegin]/[ZcrudTheme.gradientEnd]
+  /// **remplacent** le sens du dégradé linéaire quand ils sont posés tous les
+  /// deux — c'est ainsi qu'un thème miroite ses dégradés en RTL. Une paire
+  /// incomplète (ou absente) n'est pas une géométrie : le dégradé est alors
+  /// rendu tel que la spécification le déclare, jamais supprimé.
   Gradient? _resolvedGradient(ZGradientSpec spec, ZcrudTheme theme) {
     final begin = theme.gradientBegin;
     final end = theme.gradientEnd;
-    if (begin == null || end == null) return null;
+    // Sans géométrie déclarée par le thème, la spécification fait foi : la
+    // supprimer priverait de dégradé tout hôte qui branche un résolveur sans
+    // poser ces deux jetons — c'est-à-dire le cas par défaut.
+    if (begin == null || end == null) return spec.gradient;
     return switch (spec.gradient) {
       final LinearGradient linear => LinearGradient(
         begin: begin,
@@ -912,7 +1016,9 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
 
   Widget? _gradientAccent(BuildContext context, ZGradientSpec? spec) {
     final theme = ZcrudTheme.of(context);
-    final height = theme.accentBarHeight;
+    // Priorité paramètre > jeton. Le jeton reste `null` par défaut, et il
+    // gouverne d'autres surfaces : le relever ici les repeindrait toutes.
+    final height = widget.accentHeight ?? theme.accentBarHeight;
     if (spec == null || height == null) return null;
     final gradient = _resolvedGradient(spec, theme);
     if (gradient == null) return null;
@@ -926,7 +1032,10 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    final surface = theme.surfaceColor ?? Theme.of(context).colorScheme.surface;
+    final surface =
+        widget.backgroundColor ??
+        theme.surfaceColor ??
+        Theme.of(context).colorScheme.surface;
 
     // Construit UNE FOIS par build de la carte, et rendu en sibling du
     // `ValueListenableBuilder` — une révélation ne re-rentre pas dans
@@ -935,8 +1044,8 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     // ce que la réactivité granulaire interdit.
     final actions = _actions(context);
     // Résolution UNIQUE : la barre et le badge lisent exactement le même
-    // gradient hôte, indexé par l'identité stable du type.
-    final gradientSpec = zResolveGradient(context, widget.card.type.name);
+    // gradient, indexé par l'identité stable du type.
+    final gradientSpec = _typeGradientSpec(context, theme);
     final gradientAccent = _gradientAccent(context, gradientSpec);
     final questionTypeBadge = _questionTypeBadge(context, gradientSpec);
     final instructionBanner = _instructionBanner();

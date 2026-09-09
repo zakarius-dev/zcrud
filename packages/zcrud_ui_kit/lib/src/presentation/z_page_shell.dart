@@ -617,6 +617,35 @@ Color? _zWashForeground(BuildContext context, Color base, double topAlpha) {
   return zSignatureForegroundFor(<Color>[band, band]);
 }
 
+/// Rampe d'opacité du lavis, par ordre **jeton `ZcrudTheme.appBarWashAlphas` >
+/// référence**.
+///
+/// Une rampe posée n'est retenue que si elle tient le contrat du jeton : au
+/// moins DEUX arrêts, chacun dans `[0, 1]`. Hors contrat, la référence — un
+/// `LinearGradient` lève sur un arrêt unique, et le premier arrêt sert en
+/// outre à mesurer le contraste du premier plan de la barre.
+List<double> _zWashAlphas(BuildContext context) {
+  final List<double>? token = ZcrudTheme.of(context).appBarWashAlphas;
+  if (token == null || token.length < 2) {
+    return ZPageShellReference.appBarWashAlphas;
+  }
+  for (final double a in token) {
+    if (a.isNaN || a < 0 || a > 1) return ZPageShellReference.appBarWashAlphas;
+  }
+  return token;
+}
+
+/// Élévation de la barre SOUS LAVIS, par ordre **jeton
+/// `ZcrudTheme.appBarWashElevation` > référence**. Une valeur négative n'est
+/// pas une élévation : elle est ignorée.
+double _zWashElevation(BuildContext context) {
+  final double? token = ZcrudTheme.of(context).appBarWashElevation;
+  if (token == null || token.isNaN || token < 0) {
+    return ZPageShellReference.appBarWashElevation;
+  }
+  return token;
+}
+
 /// Chrome d'app-bar, par ordre de priorité **paramètre > clé dérivée > rien**.
 ///
 /// 1. `gradientKey` **déclaré** (même vide) ⇒ chemin historique inchangé : la
@@ -625,8 +654,9 @@ Color? _zWashForeground(BuildContext context, Color base, double topAlpha) {
 ///    chrome — c'est l'échappatoire par site.
 /// 2. Sinon, une identité est dérivée (voir [_zDerivedIdentity]) et résolue
 ///    par la clé `zcrud.signature.<identité>`. La teinte obtenue est posée en
-///    **lavis** (voir [ZPageShellReference.appBarWashAlphas]), pas à
-///    saturation pleine.
+///    **lavis**, pas à saturation pleine : rampe d'opacités par ordre
+///    **jeton `ZcrudTheme.appBarWashAlphas` > référence**, élévation de la
+///    barre par ordre **jeton `ZcrudTheme.appBarWashElevation` > référence**.
 /// 3. Aucune identité, ou profil `ZReferenceProfile.neutral`, ou palette vide
 ///    ⇒ [_ZAppBarChrome.none], donc arbre strictement inchangé.
 _ZAppBarChrome _zAppBarChrome(
@@ -652,7 +682,7 @@ _ZAppBarChrome _zAppBarChrome(
   if (spec == null) return _ZAppBarChrome.none;
   final Color? base = _zBaseStop(spec.gradient);
   if (base == null) return _ZAppBarChrome.none;
-  const List<double> alphas = ZPageShellReference.appBarWashAlphas;
+  final List<double> alphas = _zWashAlphas(context);
   return _ZAppBarChrome(
     flexibleSpace: Container(
       decoration: BoxDecoration(
@@ -666,7 +696,7 @@ _ZAppBarChrome _zAppBarChrome(
       ),
     ),
     foregroundColor: _zWashForeground(context, base, alphas.first),
-    elevation: ZPageShellReference.appBarWashElevation,
+    elevation: _zWashElevation(context),
   );
 }
 

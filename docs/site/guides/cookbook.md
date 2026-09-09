@@ -596,7 +596,11 @@ ZcrudScope(
 
 Les widgets qui consomment un dégradé n'assemblent leur accent que si le token de hauteur
 **et** le dégradé résolu sont tous deux non nuls — un préréglage partiel reste
-inobservable par construction.
+inobservable par construction. Un résolveur qui répond parfaitement, sans
+`accentBarHeight`, ne peint donc rien : c'est le premier motif de « mon résolveur est
+appelé, et rien ne change ». Seules les cartes qui portent **leur propre** hauteur de
+bande y échappent — la carte de flashcard par défaut, voir la recette
+[Teinter les cartes de flashcard par type](#degrade-flashcard-type).
 
 **`accentBarHeight` ne dimensionne pas que des cartes.** Le même token dimensionne aussi
 la **barre d'accent supérieure d'un champ de formulaire**, dès qu'une couleur d'accent se
@@ -608,11 +612,128 @@ deux déclarations qui existaient déjà séparément. Si vous posiez
 `accentBarHeight` pour vos seules cartes, sachez-le avant d'ajouter la première clé de
 champ ; l'inverse est vrai aussi — sans le token, aucune barre de champ.
 
+**Quelles clés votre résolveur reçoit-il ?** Un résolveur est un `switch` : il sert les
+clés qu'il connaît et rend `null` pour toutes les autres. Encore faut-il savoir lesquelles
+lui sont soumises — une clé inventée n'est jamais demandée, et le silence est le même que
+celui d'un résolveur absent :
+
+| Famille de clé | Construite par | Qui la soumet |
+|---|---|---|
+| `zcrud.fieldType.<type>` | `zFieldTypeTintKey(EditionFieldType)` | la décoration de chaque champ : bordure de focus, libellé flottant, ornements, pastille |
+| `zcrud.fieldAccent.<nom du champ>` | `zFieldAccentKey(String)` | la barre d'accent supérieure d'un champ **nommé** |
+| `zcrud.signature.<identité>` | `zSignatureKey(String)` | tout ce qui se colore par **identité libre** : en-tête de section, carte de dossier, barre de progression, app-bar et bouton flottant d'une page, puce d'identité, résumé de session |
+| `flashcard.type.<type de carte>` | `kZFlashcardTypeGradientKeyPrefix` (`zcrud_study`) et `kZFlashcardReviewTypeGradientKeyPrefix` (`zcrud_flashcard`), même valeur | la bande d'accent de la carte de flashcard par défaut **et** le liseré de la carte de révision |
+| le **nom nu** d'un type de carte (`openQuestion`…) | — | dernier recours de la carte de révision, pour les résolveurs antérieurs à la clé préfixée |
+| la clé que **vous** passez | — | `gradientKey` de l'app-bar, du bouton flottant, de la carte de dossier, du chrome Markdown — ce dernier vaut le **nom du champ** quand vous ne le déclarez pas |
+
+Une seule de ces familles porte une **valeur de référence** : `zcrud.signature.*` retombe
+sur la palette signature quand le profil de référence `legacy` est explicitement posé
+(`ZcrudTheme.referenceProfile`). Toutes les autres sont **seam-only** : sans résolveur
+injecté, elles rendent `null` et rien n'est peint — c'est ce qui garantit qu'un
+consommateur non configuré rend exactement comme avant.
+
 La chaîne complète (teinte par type, normalisation de contraste, pastille d'ornement) est
 décrite sur la fiche [zcrud_core](../paquets/zcrud_core.md).
 
 Voir l'écran de démo : `example/lib/demos/iffd_visual_preset.dart` (dix dégradés clair/sombre
 et le résolveur complet utilisé par toute l'application de démonstration).
+
+## Teinter les cartes de flashcard par type {#degrade-flashcard-type}
+
+Chaque type de carte doit porter sa couleur — la bande de tête d'une carte de grille, le
+liseré d'une carte de révision — sans qu'aucun hex ne vive dans un paquet zcrud.
+
+Deux cartes consomment cet axe, sous la **même** clé `flashcard.type.<type>` — mais elles
+ne montent pas leur bande aux mêmes conditions :
+
+| Widget | Paquet | Constante de préfixe | Hauteur de la bande |
+|---|---|---|---|
+| `ZDefaultFlashcardCard` | `zcrud_study` | `kZFlashcardTypeGradientKeyPrefix` | portée par la carte (4 dp), **toujours** montée |
+| `ZFlashcardReviewCard` | `zcrud_flashcard` | `kZFlashcardReviewTypeGradientKeyPrefix` (même valeur) | paramètre `accentHeight`, puis `ZcrudTheme.accentBarHeight` — les deux nuls, et le jeton l'est par défaut, ⇒ **aucun liseré** |
+
+Le `<type>` est le nom Dart de la valeur de `ZFlashcardType`, celui-là même qui est
+persisté. Les six valeurs, en entier : `multipleChoice`, `trueOrFalse`, `openQuestion`,
+`exercise`, `fillBlank`, `shortAnswer`.
+
+Une seule table, un seul `switch` sur le préfixe, et les deux cartes sont servies :
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_study/zcrud_study.dart' show kZFlashcardTypeGradientKeyPrefix;
+
+// Une entrée par valeur de `ZFlashcardType.name`.
+const Map<String, ZGradientSpec> typeGradients = <String, ZGradientSpec>{
+  'multipleChoice': ZGradientSpec(
+    gradient: LinearGradient(colors: <Color>[Color(0xFF4FACFE), Color(0xFF00F2FE)]),
+    onGradient: Color(0xFF102027),
+  ),
+  'trueOrFalse': ZGradientSpec(
+    gradient: LinearGradient(colors: <Color>[Color(0xFF43E97B), Color(0xFF38F9D7)]),
+    onGradient: Color(0xFF102027),
+  ),
+  'openQuestion': ZGradientSpec(
+    gradient: LinearGradient(colors: <Color>[Color(0xFFFA709A), Color(0xFFFEE140)]),
+    onGradient: Color(0xFF102027),
+  ),
+  'exercise': ZGradientSpec(
+    gradient: LinearGradient(colors: <Color>[Color(0xFF667EEA), Color(0xFF764BA2)]),
+    onGradient: Color(0xFFFFFFFF),
+  ),
+  'fillBlank': ZGradientSpec(
+    gradient: LinearGradient(colors: <Color>[Color(0xFFF6D365), Color(0xFFFDA085)]),
+    onGradient: Color(0xFF102027),
+  ),
+  'shortAnswer': ZGradientSpec(
+    gradient: LinearGradient(colors: <Color>[Color(0xFFA18CD1), Color(0xFFFBC2EB)]),
+    onGradient: Color(0xFF102027),
+  ),
+};
+
+// Fonction de premier niveau, jamais une closure recréée dans `build` :
+// `ZcrudScope.updateShouldNotify` compare le résolveur par identité.
+ZGradientSpec? flashcardGradientResolver(ColorScheme scheme, String key) {
+  if (!key.startsWith(kZFlashcardTypeGradientKeyPrefix)) return null;
+  return typeGradients[key.substring(kZFlashcardTypeGradientKeyPrefix.length)];
+}
+
+// À la racine de l'app. `accentBarHeight` est ce qui MONTE le liseré de la
+// carte de révision : sans elle, le résolveur répond et rien ne se peint.
+// (Une session peut aussi le déclarer carte par carte via `accentHeight`,
+// sans relever ce jeton global qui gouverne d'autres surfaces.)
+ZcrudScope(
+  theme: const ZcrudTheme(
+    accentBarHeight: 4,
+    gradientBegin: AlignmentDirectional.centerStart,
+    gradientEnd: AlignmentDirectional.centerEnd,
+  ),
+  gradientResolver: flashcardGradientResolver,
+  child: child,
+);
+```
+
+`onGradient` n'est jamais deviné depuis le dégradé : c'est **vous** qui choisissez le
+premier plan lisible sur les deux extrémités, et c'est lui que la carte peint sur la bande.
+
+**Trois façons de court-circuiter ce résolveur sans le savoir.** Sur
+`ZDefaultFlashcardCard`, l'axe type se résout dans cet ordre — paramètre `typeColors` >
+jeton `ZcrudTheme.flashcardTypeGradients` > votre résolveur > valeurs de référence de la
+carte. Donc :
+
+- passer `typeColors` couvre le type concerné **avant** tout le reste ;
+- poser le jeton `flashcardTypeGradients` (ce que fait un thème prêt à l'emploi) rend le
+  seam inutile pour cet axe — le résolveur n'est plus consulté ;
+- passer un `colorKey` explicite à la carte **désactive** entièrement l'axe type : la carte
+  suit alors votre identité, la bande devient un aplat, et votre résolveur n'est même pas
+  appelé. Choisissez : un `colorKey` pour une identité imposée, **ou** le résolveur pour
+  une couleur par type — jamais les deux sur la même carte.
+
+La carte de révision `ZFlashcardReviewCard` a ses propres court-circuits, dans le même
+esprit : le paramètre `typeGradientKey` soumet **une** clé de votre choix telle quelle et
+n'en consulte aucune autre, et le jeton `flashcardTypeGradients` passe avant le résolveur.
+Elle interroge enfin le résolveur avec le nom de type **nu**, en dernier recours, pour les
+résolveurs écrits avant que la clé préfixée n'existe — un résolveur qui répond aux deux
+formes voit la préfixée l'emporter.
 
 ## Basculer d'un mécanisme d'injection à l'autre {#binding-getx-riverpod}
 

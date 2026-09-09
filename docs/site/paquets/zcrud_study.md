@@ -101,6 +101,39 @@ ne peut pas se rendre. La surface hissée est la bande étroite, et sa hauteur
 mesurée est exposée en `kZSubfolderNavBandHeight` pour que l'hôte compose sa
 déclaration à partir d'elle plutôt que de la recopier.
 
+## La bande d'accent d'une carte de flashcard {#bande-accent-flashcard}
+
+`ZDefaultFlashcardCard` porte une bande dégradée en tête, colorée par le **type** de la
+carte. Contrairement à l'accent d'un champ, elle n'attend aucun jeton de hauteur : la
+bande est **toujours montée**, à sa hauteur de référence, et se peint en aplat d'identité
+quand aucun dégradé ne se résout.
+
+La couleur suit une chaîne à quatre maillons, du plus spécifique au plus général :
+
+1. le paramètre `typeColors` de la carte, pour le type concerné ;
+2. le jeton `ZcrudTheme.flashcardTypeGradients` — ce qu'un thème prêt à l'emploi pose ;
+3. le résolveur du scope (`ZcrudScope.gradientResolver`), interrogé sous la clé
+   `flashcard.type.<type>` — le préfixe est la constante publique
+   `kZFlashcardTypeGradientKeyPrefix`, et `<type>` le nom de la valeur de
+   `ZFlashcardType` (`multipleChoice`, `trueOrFalse`, `openQuestion`, `exercise`,
+   `fillBlank`, `shortAnswer`) ;
+4. les dégradés de référence de la carte — qui ne couvrent que les quatre premiers types ;
+   `fillBlank` et `shortAnswer` retombent donc sur l'aplat d'identité tant que vous ne les
+   servez pas vous-même.
+
+⚠️ **Deux façons de neutraliser le résolveur sans le vouloir.** Poser le jeton
+`flashcardTypeGradients` court-circuite le maillon 3 : le résolveur n'est plus consulté
+pour cet axe. Et passer un `colorKey` explicite à la carte **désactive entièrement l'axe
+type** — la carte suit alors l'identité que vous imposez, la bande devient un aplat, et
+votre résolveur n'est pas appelé du tout. `colorKey` **ou** couleur par type : jamais les
+deux sur la même carte. (Le paramètre `typeColors`, lui, reste prioritaire même face à un
+`colorKey`, parce qu'il vise ce type-là précisément.)
+
+La carte de révision `ZFlashcardReviewCard` (`zcrud_flashcard`) rend le même axe, mais
+soumet le nom du type **sans préfixe** et exige `ZcrudTheme.accentBarHeight`. La recette
+[Teinter les cartes de flashcard par type](../guides/cookbook.md#degrade-flashcard-type)
+sert les deux cartes depuis une seule table.
+
 ## Types clés
 
 | Type | Rôle |

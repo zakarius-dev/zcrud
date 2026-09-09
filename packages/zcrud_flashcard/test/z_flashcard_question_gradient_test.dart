@@ -90,10 +90,18 @@ void main() {
 
     expect(
       received,
-      orderedEquals(reordered.map((type) => type.name)),
+      orderedEquals(<String>[
+        // Par carte, et DANS CET ORDRE : la clé au format documenté, puis la
+        // clé nue (échappatoire). Le résolveur de ce harnais ne répond qu'à
+        // la seconde, donc les deux maillons sont exercés à chaque fois.
+        for (final type in reordered) ...<String>[
+          '$kZFlashcardReviewTypeGradientKeyPrefix${type.name}',
+          type.name,
+        ],
+      ]),
       reason:
-          'le resolver doit recevoir card.type.name, jamais un index de '
-          'tri, filtre, pagination ou permutation',
+          'le resolver doit recevoir des clés dérivées de card.type.name, '
+          'jamais un index de tri, filtre, pagination ou permutation',
     );
   });
 
@@ -108,7 +116,10 @@ void main() {
       ),
     );
 
-    expect(received, <String>['openQuestion']);
+    expect(received, <String>[
+      '${kZFlashcardReviewTypeGradientKeyPrefix}openQuestion',
+      'openQuestion',
+    ]);
     final accent = tester.widget<Container>(
       find.byKey(ZFlashcardReviewCard.gradientAccentKey),
     );

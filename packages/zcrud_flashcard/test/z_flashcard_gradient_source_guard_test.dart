@@ -32,7 +32,34 @@ void main() {
       expect(RegExp(r'Colors\.').hasMatch(source), isFalse);
       expect(
         RegExp(r'zResolveGradient\s*\(').allMatches(source),
-        hasLength(1),
+        hasLength(3),
+        reason:
+            'la chaîne de résolution compte exactement trois soumissions au '
+            'seam — clé explicite, clé préfixée, clé nue ; une quatrième est '
+            'une seconde voie, à justifier ici',
+      );
+    },
+  );
+
+  test(
+    'G2b — toutes les soumissions au seam vivent dans UN SEUL fichier',
+    () {
+      // Le comptage seul ne dit rien de la CONCENTRATION : trois appels
+      // éparpillés dans trois fichiers satisferaient `hasLength(3)` tout en
+      // rouvrant les voies parallèles que cette garde combat.
+      final porteurs = zsrc
+          .libDartFiles()
+          .where(
+            (f) => RegExp(
+              r'zResolveGradient\s*\(',
+            ).hasMatch(zsrc.strippedSource(f)),
+          )
+          .map((f) => f.path.replaceAll(r'\', '/').split('/lib/').last)
+          .toList();
+
+      expect(
+        porteurs,
+        <String>['src/presentation/z_flashcard_review_card.dart'],
         reason: 'une seule voie package doit atteindre le resolver hôte',
       );
     },

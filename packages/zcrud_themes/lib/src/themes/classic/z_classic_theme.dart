@@ -29,6 +29,13 @@
 /// **paramètre > jeton > référence**. C'est ce qui permet à un écran de
 /// diverger localement sans quitter le thème.
 ///
+/// **Là où un seam existe, il passe devant le jeton.** Les dégradés par type
+/// de carte se résolvent `paramètre > seam > jeton > référence` : un hôte qui
+/// branche son propre `ZcrudScope.gradientResolver` voit **son** résolveur
+/// peindre, et le jeton posé ici n'est plus qu'un **repli**, consulté quand le
+/// résolveur se tait. Un thème ne prend jamais la main sur une décision que
+/// l'application a exprimée.
+///
 /// ## Les libellés restent à l'hôte
 ///
 /// Ce paquet ne rend jamais un texte affiché : il rend des **clés** l10n, que
@@ -113,12 +120,38 @@ abstract final class ZClassicTheme {
       badgeRadius: ZClassicSurfaceReference.tileRadius,
       studyCardRadius: ZClassicSurfaceReference.cardRadius,
       folderCardRadius: ZClassicSurfaceReference.cardRadius,
-      // Dégradés par type de carte : le maillon JETON de la chaîne, celui qui
-      // laisse un paramètre de widget passer devant. La table posée est
+      // Dégradés par type de carte : le maillon JETON, qui est un REPLI et non
+      // une décision. Les deux cartes consultent d'abord le seam
+      // (`z_flashcard_review_card.dart:912-928`,
+      // `z_default_flashcard_card.dart:439-457` : le seam AVANT le jeton) ;
+      // un hôte qui branche son résolveur voit donc le sien peindre, et ce
+      // jeton ne sert qu'au silence du résolveur. La table posée est
       // STRICTEMENT ÉGALE à celle du socle (`ZFlashcardCardReference`) — le
       // thème rend explicite au maillon jeton ce que le socle applique déjà au
       // dernier maillon, et une garde de source prouve l'égalité.
       flashcardTypeGradients: ZClassicCardGradientsReference.typeGradients,
+      // ⚠️ `accentBarHeight` est DÉLIBÉRÉMENT NON POSÉ.
+      // Le liseré de tête d'une carte de révision vaut 4 dp
+      // (`ZClassicSurfaceReference.cardAccentHeight`), mais ce jeton-là est
+      // GLOBAL : il gouverne aussi le liseré des cartes de dossier
+      // (`z_folder_card_chrome.dart:32`) et celui des champs de formulaire
+      // (`z_field_widget.dart:613`), deux surfaces qui le lisent NU — aucun
+      // paramètre ne permet de s'y soustraire. Mesuré : posé ici, il fait
+      // apparaître le liseré de la carte (60 → 67 nœuds) et, chez un hôte qui
+      // branche un résolveur large, celui de chaque champ (61 → 64 nœuds).
+      // Le rendu dépendrait donc de ce que l'hôte branche par ailleurs. La
+      // voie précise existe : `cardAccentHeight` sur l'écran de session, ou
+      // `accentHeight` sur la carte.
+      //
+      // ⚠️ Les HUIT jetons de chrome de page (`appBarWashAlphas`,
+      // `appBarWashElevation`, `fabShape`, `fabElevation`, `fabIconSize`,
+      // `fabLabelStyle`, `choiceChipShape`, `choiceChipShowCheckmark`) sont
+      // DÉLIBÉRÉMENT NON POSÉS. Leur valeur mesurée est déjà celle que le
+      // dernier maillon peint : `ZPageShellReference` (`zcrud_ui_kit`) porte
+      // la rampe de lavis `[0.15, 0.10, 0.05, 0.02]` et les métriques de
+      // bouton et de puce, et chaque consommateur résout `jeton ?? référence`
+      // sans condition. Les poser ici écrirait la valeur déjà peinte : un
+      // SECOND CANAL vers le même pixel, jamais une valeur de plus.
       // Palette signature : le bandeau de tête, indexé de façon STABLE (le
       // `hashCode` d'une chaîne varie d'une plateforme à l'autre — une même
       // matière ne doit pas changer de couleur entre le web et le mobile).
@@ -167,6 +200,12 @@ abstract final class ZClassicTheme {
   /// Répond aux clés de type de carte (`flashcard.type.<type>`) et à la clé de
   /// la médaille de célébration ; rend `null` ailleurs, de sorte qu'un écran
   /// sans dégradé déclaré garde exactement son rendu.
+  ///
+  /// Branché sur le seam, ce résolveur passe **devant** le jeton
+  /// `ZcrudTheme.flashcardTypeGradients` que [forTheme] pose — sans effet
+  /// visible, les deux portant la même table. Un hôte qui branche son propre
+  /// résolveur à la place voit le sien peindre : c'est la règle générale, pas
+  /// une exception faite à ce thème.
   static ZGradientSpec? gradients(ColorScheme scheme, String gradientKey) {
     if (gradientKey == ZClassicCelebrationReference.badgeGradientKey) {
       return ZClassicCelebrationReference.badgeGradient;

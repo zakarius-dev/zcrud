@@ -34,9 +34,11 @@
 /// fois (`z_srs_quality_buttons.dart`).
 library;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
+import 'z_session_dots_geometry.dart';
 import 'z_srs_quality_buttons.dart';
 
 /// Style de rendu de la progression — un enum, jamais un booléen.
@@ -52,6 +54,40 @@ enum ZSessionProgressStyle {
   /// points deviendraient illisibles.
   segmentedBar,
 
+  /// Barre segmentée **à marqueur** — segments détachés, tous pleinement
+  /// arrondis, surmontés d'un repère triangulaire sur le segment courant.
+  ///
+  /// Ce que ce style dit de plus que [segmentedBar] : *où* on en est. La barre
+  /// segmentée signale la carte courante en l'épaississant, ce qui se perd dès
+  /// que la file est longue (un segment 1,5 fois plus haut au milieu de
+  /// quarante segments ne saute pas aux yeux). Le marqueur, lui, est un repère
+  /// **hors bande** : il vit au-dessus de la barre, il ne dispute sa place à
+  /// aucun segment, et il reste repérable quelle que soit la longueur de la
+  /// file.
+  ///
+  /// Les segments sont **détachés** : chacun garde ses quatre coins arrondis,
+  /// séparé du suivant par un intervalle. Une barre dont seules les extrémités
+  /// sont arrondies laisse croire à une jauge continue — ici chaque segment est
+  /// une carte, et sa forme le dit.
+  ///
+  /// Rien n'est codé en dur : l'épaisseur vient de
+  /// [ZSessionProgressIndicator.segmentedMarkerThickness] (défaut :
+  /// `ZcrudTheme.gapS`), toute la géométrie (intervalle, rayon, taille du
+  /// marqueur) en dérive, et les couleurs viennent du seam
+  /// `zResolveColorKeyOrSlot` — le marqueur reprend la couleur du segment
+  /// qu'il désigne, il n'introduit aucun rôle supplémentaire.
+  ///
+  /// **RTL** (invariant AD-13) : le sens de lecture est celui du
+  /// `Directionality` ambiant. Le premier segment est à gauche en LTR, à droite
+  /// en RTL — aucune direction n'est présumée.
+  ///
+  /// Contrat a11y **identique aux autres styles** : le nœud
+  /// [ZSessionProgressIndicator.progressKey] porte label et `value`. Le
+  /// marqueur ne fait que redire visuellement la position déjà annoncée : il
+  /// suit la **même** source bornée que le `Semantics(value:)`, les deux ne
+  /// peuvent donc pas désigner deux cartes différentes.
+  segmentedMarker,
+
   /// Barre continue — une seule barre remplie à `position/total`, sans
   /// découpage par carte, pour les files longues où même une barre
   /// segmentée deviendrait illisible (un segment par carte sur une file de
@@ -66,6 +102,28 @@ enum ZSessionProgressStyle {
   /// reste porté par [ZSessionProgressIndicator.progressKey] — la couleur
   /// n'est donc jamais le seul canal (invariant AD-13).
   linear,
+
+  /// Pilule compacte — la position écrite **en toutes lettres** (« 3/12 »)
+  /// dans une forme de stade, sans aucun élément par carte.
+  ///
+  /// Le seul style dont l'information passe par du **texte** plutôt que par
+  /// une géométrie : il tient dans une barre d'outils ou un en-tête où même
+  /// une barre continue prendrait toute la largeur, et il reste lisible quel
+  /// que soit `total` (une file de 500 cartes s'y écrit aussi bien qu'une
+  /// file de 3).
+  ///
+  /// Rien n'est codé en dur : le fond et le premier plan viennent du seam
+  /// `zResolveColorKeyOrSlot` ([ZSessionProgressIndicator.pillColorKey] et sa
+  /// couleur `on*` associée, donc un contraste garanti — invariant AD-13), la
+  /// forme d'un `StadiumBorder` (le rayon suit la hauteur du texte, il n'y a
+  /// donc pas de valeur à poser), les marges internes des tokens
+  /// d'espacement du thème.
+  ///
+  /// Contrat a11y **identique aux trois autres styles** : le nœud
+  /// [ZSessionProgressIndicator.progressKey] porte label et `value`, et le
+  /// texte de la pilule est retiré de l'arbre sémantique — sans quoi la même
+  /// position serait annoncée deux fois.
+  pill,
 }
 
 /// Résout la **qualité déjà obtenue** pour la carte d'index donné, ou `null` si
@@ -94,6 +152,8 @@ class ZSessionProgressIndicator extends StatelessWidget {
     this.labelKeyFor = zDefaultQualityLabelKey,
     this.colorKeyFor,
     this.linearThickness,
+    this.dotsGeometry,
+    this.segmentedMarkerThickness,
     super.key,
   });
 
@@ -129,6 +189,28 @@ class ZSessionProgressIndicator extends StatelessWidget {
   /// sur les styles [dots]/[segmentedBar].
   final double? linearThickness;
 
+  /// Géométrie du style [ZSessionProgressStyle.dots] — injectée.
+  /// `null` : rendu par défaut (cf. [ZSessionDotsGeometry]).
+  ///
+  /// Ce paramètre existe pour qu'une application atteigne la forme exacte de
+  /// son design — points en pilule plutôt qu'en cercle, file centrée, file qui
+  /// défile au lieu de passer à la ligne — sans que ce widget code la moindre
+  /// dimension en dur ni qu'elle doive tordre les tokens `gapS`/`gapM`,
+  /// partagés par tout le chrome. Sans effet sur les autres styles.
+  final ZSessionDotsGeometry? dotsGeometry;
+
+  /// Épaisseur de la barre [ZSessionProgressStyle.segmentedMarker] — injectée.
+  /// `null` : dérivée du thème (`ZcrudTheme.of(context).gapS`).
+  ///
+  /// Toute la géométrie de ce style en dérive : l'intervalle entre deux
+  /// segments, le rayon de leurs coins et la taille du marqueur. Régler
+  /// l'épaisseur suffit donc à mettre le style à l'échelle, sans qu'aucune
+  /// autre valeur ait à être posée ni tenue cohérente à la main. Une valeur
+  /// `<= 0` ou non finie est ignorée (repli thème) — jamais une exception,
+  /// jamais une barre invisible (invariant AD-10). Sans effet sur les autres
+  /// styles.
+  final double? segmentedMarkerThickness;
+
   /// Clé du nœud portant la progression, pour la testabilité : l'association
   /// du `Semantics(value:)` se prouve sur ce nœud, jamais sur une chaîne
   /// trouvée au hasard de l'arbre.
@@ -151,6 +233,29 @@ class ZSessionProgressIndicator extends StatelessWidget {
   /// Clé de couleur du remplissage de la barre continue — rôle Material 3
   /// résolu par le cœur, jamais une teinte en dur.
   static const String linearFillColorKey = 'primary';
+
+  /// Clé du nœud de la pilule (style [ZSessionProgressStyle.pill]).
+  ///
+  /// Le fond peint et le texte rendu se lisent sur ce nœud — jamais sur un
+  /// `Container` trouvé au hasard de l'arbre.
+  static const ValueKey<String> pillKey = ValueKey<String>('zProgressPill');
+
+  /// Clé de couleur du fond de la pilule — rôle Material 3 résolu par le
+  /// cœur, jamais une teinte en dur.
+  ///
+  /// Délibérément **pas** le rôle d'erreur : la pilule dit « où en suis-je »,
+  /// jamais « vous avez échoué ». Un hôte qui veut sa propre teinte l'injecte
+  /// par `ZcrudScope.colorKeyResolver`, sans que ce widget connaisse la
+  /// moindre couleur.
+  static const String pillColorKey = 'primary';
+
+  /// Clé du nœud peignant la barre à marqueur (style
+  /// [ZSessionProgressStyle.segmentedMarker]).
+  ///
+  /// La géométrie réellement peinte se lit sur ce nœud — jamais sur un
+  /// `CustomPaint` trouvé au hasard de l'arbre.
+  static const ValueKey<String> segmentedMarkerKey =
+      ValueKey<String>('zProgressSegmentedMarker');
 
   /// Position 1-based dans la file, bornée (`0` si la file est vide).
   ///
@@ -176,6 +281,18 @@ class ZSessionProgressIndicator extends StatelessWidget {
   /// token de thème `gapS` — jamais un littéral.
   double resolvedLinearThickness(ZcrudTheme theme) {
     final thickness = linearThickness;
+    if (thickness == null || !thickness.isFinite || thickness <= 0) {
+      return theme.gapS;
+    }
+    return thickness;
+  }
+
+  /// Épaisseur résolue de la barre à marqueur.
+  ///
+  /// [segmentedMarkerThickness] si elle est utilisable (finie et `> 0`), sinon
+  /// le token de thème `gapS` — jamais un littéral.
+  double resolvedSegmentedMarkerThickness(ZcrudTheme theme) {
+    final thickness = segmentedMarkerThickness;
     if (thickness == null || !thickness.isFinite || thickness <= 0) {
       return theme.gapS;
     }
@@ -218,8 +335,62 @@ class ZSessionProgressIndicator extends StatelessWidget {
       child: switch (style) {
         ZSessionProgressStyle.dots => _dots(context, theme),
         ZSessionProgressStyle.segmentedBar => _bar(context, theme),
+        ZSessionProgressStyle.segmentedMarker =>
+          _segmentedMarker(context, theme),
         ZSessionProgressStyle.linear => _linear(context, theme),
+        // `value` est PASSÉ, jamais recalculé : le texte peint et le `value`
+        // annoncé ci-dessus sont alors littéralement la même expression, donc
+        // structurellement incapables de diverger.
+        ZSessionProgressStyle.pill => _pill(context, theme, value),
       },
+    );
+  }
+
+  /// Pilule compacte portant la position en toutes lettres.
+  ///
+  /// Aucune couleur ni dimension en dur : fond/premier plan par le seam du
+  /// cœur, forme de stade (rayon dérivé de la hauteur du contenu), marges
+  /// internes issues des tokens d'espacement. Le `Semantics(value:)` reste
+  /// porté par le nœud parent ([progressKey]) — contrat a11y identique aux
+  /// trois autres styles.
+  Widget _pill(BuildContext context, ZcrudTheme theme, String value) {
+    final pair = zResolveColorKeyOrSlot(context, pillColorKey, slotIndex: 0);
+    // Le texte EST la progression : laissé dans l'arbre sémantique, il
+    // ajouterait un second nœud annonçant la même position dans la même
+    // unité que le nœud parent. `ExcludeSemantics` retire ce doublon ; la
+    // pilule n'est ni focusable ni actionnable, il n'y a rien à re-déclarer.
+    return ExcludeSemantics(
+      child: Align(
+        // Directionnel (invariant AD-13) — jamais `Alignment.centerLeft`.
+        // Sans cet `Align`, la pilule s'étirerait sur toute la largeur sous
+        // les contraintes serrées d'un `Expanded` : elle ne serait plus
+        // compacte, ce qui est sa seule raison d'être.
+        alignment: AlignmentDirectional.centerStart,
+        child: Container(
+          key: pillKey,
+          padding: EdgeInsetsDirectional.symmetric(
+            horizontal: theme.gapM,
+            vertical: theme.gapS,
+          ),
+          decoration: ShapeDecoration(
+            color: pair.color,
+            // Un stade, pas un rayon posé : le rayon suit la hauteur du
+            // contenu, donc la pilule reste une pilule quelle que soit la
+            // taille de police de l'utilisateur.
+            shape: const StadiumBorder(),
+          ),
+          // Le repli `TextStyle()` garantit que la couleur du seam est
+          // appliquée même si le thème hôte n'expose pas ce style (AD-10) —
+          // un `?.copyWith` rendrait un style nul, donc un texte peint à la
+          // couleur héritée, illisible sur le fond résolu.
+          child: Text(
+            value,
+            style: (Theme.of(context).textTheme.labelMedium ??
+                    const TextStyle())
+                .copyWith(color: pair.onColor),
+          ),
+        ),
+      ),
     );
   }
 
@@ -257,20 +428,134 @@ class ZSessionProgressIndicator extends StatelessWidget {
   }
 
   /// Points colorés par qualité — un par carte (mode « lot N »).
-  Widget _dots(BuildContext context, ZcrudTheme theme) => Wrap(
-        spacing: theme.gapS,
-        runSpacing: theme.gapS,
-        alignment: WrapAlignment.start,
-        children: <Widget>[
-          for (var i = 0; i < total; i++)
-            _Dot(
-              key: ValueKey<String>('$_dotKeyPrefix$i'),
-              color: _pairFor(context, i).color,
-              current: i == currentIndex,
-              size: theme.gapM,
-            ),
-        ],
+  ///
+  /// Toute la géométrie vient de [dotsGeometry] et de ses défauts : ce corps
+  /// ne pose aucune dimension.
+  Widget _dots(BuildContext context, ZcrudTheme theme) {
+    final geometry = dotsGeometry ?? const ZSessionDotsGeometry();
+    final inactiveSize = geometry.resolvedInactiveSize(theme);
+    final activeWidth = geometry.resolvedActiveWidth(theme);
+    final gap = geometry.resolvedGap(theme);
+    final dots = <Widget>[
+      for (var i = 0; i < total; i++)
+        _Dot(
+          key: ValueKey<String>('$_dotKeyPrefix$i'),
+          color: _pairFor(context, i).color,
+          current: i == currentIndex,
+          size: inactiveSize,
+          activeWidth: activeWidth,
+        ),
+    ];
+
+    if (!geometry.resolvedScrollable) {
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        alignment: geometry.resolvedAlignment,
+        children: dots,
       );
+    }
+
+    // File défilante : une seule rangée, quelle que soit la longueur de la
+    // file. Le `ConstrainedBox` sur la largeur du viewport est ce qui garde
+    // l'alignement demandé opérant tant que la file TIENT — sans lui, le
+    // `Row` s'ajusterait à son contenu et `center` n'aurait plus de place à
+    // distribuer, donc plus aucun effet visible. Dès que la file déborde, il
+    // n'y a plus d'espace libre : l'alignement s'efface de lui-même et la
+    // rangée démarre au bord de lecture.
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) =>
+          SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: constraints.hasBoundedWidth ? constraints.maxWidth : 0,
+          ),
+          child: Row(
+            mainAxisAlignment: _mainAxisOf(geometry.resolvedAlignment),
+            children: <Widget>[
+              for (var i = 0; i < dots.length; i++) ...<Widget>[
+                if (i > 0) SizedBox(width: gap),
+                dots[i],
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Traduction 1:1 de l'alignement de file vers l'axe principal d'une rangée.
+  ///
+  /// `switch` exhaustif sans `default` : une valeur nouvelle de
+  /// [WrapAlignment] casserait la compilation plutôt que de retomber
+  /// silencieusement sur un alignement qui n'est pas celui demandé.
+  static MainAxisAlignment _mainAxisOf(WrapAlignment alignment) =>
+      switch (alignment) {
+        WrapAlignment.start => MainAxisAlignment.start,
+        WrapAlignment.end => MainAxisAlignment.end,
+        WrapAlignment.center => MainAxisAlignment.center,
+        WrapAlignment.spaceBetween => MainAxisAlignment.spaceBetween,
+        WrapAlignment.spaceAround => MainAxisAlignment.spaceAround,
+        WrapAlignment.spaceEvenly => MainAxisAlignment.spaceEvenly,
+      };
+
+  /// Barre segmentée à marqueur — segments détachés et repère triangulaire.
+  ///
+  /// Aucune dimension ni couleur en dur : toute la géométrie dérive de
+  /// [resolvedSegmentedMarkerThickness], les couleurs des seams du cœur, le
+  /// sens de lecture du `Directionality` ambiant (invariant AD-13). Le
+  /// `Semantics(value:)` reste porté par le nœud parent ([progressKey]) — le
+  /// `CustomPaint` n'ajoute aucun nœud sémantique, le contrat a11y est donc
+  /// identique aux autres styles.
+  Widget _segmentedMarker(BuildContext context, ZcrudTheme theme) {
+    final thickness = resolvedSegmentedMarkerThickness(theme);
+    return SizedBox(
+      // Le marqueur vit AU-DESSUS de la barre : la hauteur réservée est celle
+      // de la barre plus celle du marqueur, sinon le repère serait rogné par
+      // le parent.
+      height: thickness + _markerHeightFor(thickness),
+      child: CustomPaint(
+        key: segmentedMarkerKey,
+        // `Size.infinite` sous des contraintes bornées vaut « prends toute la
+        // largeur offerte » — la barre occupe la place qu'on lui donne, comme
+        // celle du style segmenté classique.
+        size: Size.infinite,
+        painter: _SegmentedMarkerPainter(
+          colors: <Color>[
+            for (var i = 0; i < total; i++) _pairFor(context, i).color,
+          ],
+          // `position - 1`, jamais `currentIndex` brut : le marqueur et le
+          // `Semantics(value:)` annoncé dérivent alors du MÊME entier borné,
+          // ils ne peuvent donc pas désigner deux cartes différentes
+          // (invariant AD-10 — un index hors file ne fait ni lever, ni
+          // disparaître le repère).
+          currentIndex: position - 1,
+          thickness: thickness,
+          separation: _separationFor(thickness),
+          markerHeight: _markerHeightFor(thickness),
+          markerBase: _markerBaseFor(thickness),
+          radius: thickness / 2,
+          textDirection: Directionality.of(context),
+        ),
+      ),
+    );
+  }
+
+  /// Intervalle entre deux segments détachés, dérivé de l'épaisseur.
+  ///
+  /// La moitié de l'épaisseur : assez pour que la coupure se voie, assez peu
+  /// pour que la file reste lue comme une seule barre.
+  static double _separationFor(double thickness) => thickness / 2;
+
+  /// Hauteur du marqueur triangulaire, dérivée de l'épaisseur.
+  static double _markerHeightFor(double thickness) => thickness;
+
+  /// Largeur de base du marqueur triangulaire, dérivée de l'épaisseur.
+  ///
+  /// Le double de sa hauteur : un triangle à sommet droit, assez large pour
+  /// rester lisible au-dessus d'un segment étroit.
+  static double _markerBaseFor(double thickness) => thickness * 2;
 
   /// Barre segmentée — un segment `Expanded` par carte (mode « complet »).
   Widget _bar(BuildContext context, ZcrudTheme theme) => Row(
@@ -304,22 +589,131 @@ class _Dot extends StatelessWidget {
     required this.color,
     required this.current,
     required this.size,
+    required this.activeWidth,
     super.key,
   });
 
   final Color color;
   final bool current;
-  final double size;
+
+  /// Taille d'un point NON courant — la hauteur vaut pour les deux états.
+  final Size size;
+
+  /// Largeur du point courant (déjà résolue par la géométrie).
+  final double activeWidth;
 
   @override
   Widget build(BuildContext context) => Container(
-        width: current ? size * 1.5 : size,
-        height: size,
+        width: current ? activeWidth : size.width,
+        height: size.height,
+        // Rayon = hauteur : la forme est pleinement arrondie dans les deux
+        // états — un cercle quand le point est carré, une pilule quand il est
+        // plus large que haut. Aucun rayon n'a donc à être posé.
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.all(Radius.circular(size)),
+          borderRadius: BorderRadius.all(Radius.circular(size.height)),
         ),
       );
+}
+
+/// Peintre de la barre segmentée à marqueur (privé).
+///
+/// Un seul passage : pour chaque carte, un segment arrondi détaché de son
+/// voisin ; sur la carte courante, un triangle posé au-dessus de son segment.
+class _SegmentedMarkerPainter extends CustomPainter {
+  const _SegmentedMarkerPainter({
+    required this.colors,
+    required this.currentIndex,
+    required this.thickness,
+    required this.separation,
+    required this.markerHeight,
+    required this.markerBase,
+    required this.radius,
+    required this.textDirection,
+  });
+
+  /// Une couleur par carte, dans l'ordre de la file (déjà résolues par le seam).
+  final List<Color> colors;
+
+  /// Index de la carte courante, déjà borné par l'appelant.
+  final int currentIndex;
+
+  /// Épaisseur de la barre.
+  final double thickness;
+
+  /// Intervalle entre deux segments voisins.
+  final double separation;
+
+  /// Hauteur du marqueur triangulaire.
+  final double markerHeight;
+
+  /// Largeur de base du marqueur triangulaire.
+  final double markerBase;
+
+  /// Rayon des coins d'un segment.
+  final double radius;
+
+  /// Sens de lecture — la file démarre du côté du début (invariant AD-13).
+  final TextDirection textDirection;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final count = colors.length;
+    // Bornes (invariant AD-10) : une file vide, une largeur nulle ou une file
+    // si dense que les intervalles mangent toute la place ne font rien peindre
+    // — jamais un segment de largeur négative, jamais une exception.
+    if (count <= 0 || !size.width.isFinite || size.width <= 0) return;
+    final available = size.width - separation * (count - 1);
+    if (available <= 0) return;
+
+    final segmentWidth = available / count;
+    final top = size.height - thickness;
+
+    for (var i = 0; i < count; i++) {
+      final start = i * (segmentWidth + separation);
+      // Miroir strict pour le sens droite-à-gauche : le segment d'index 0
+      // occupe le bord de DÉBUT, quel qu'il soit. Aucune direction n'est
+      // codée en dur.
+      final left = textDirection == TextDirection.rtl
+          ? size.width - start - segmentWidth
+          : start;
+      final rect = Rect.fromLTWH(left, top, segmentWidth, thickness);
+      final paint = Paint()..color = colors[i];
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, Radius.circular(radius)),
+        paint,
+      );
+
+      if (i != currentIndex) continue;
+      // Trois sommets, pas un de plus : un sommet en haut, une base posée sur
+      // le bord supérieur du segment.
+      final centerX = rect.center.dx;
+      canvas.drawPath(
+        Path()
+          ..moveTo(centerX, top - markerHeight)
+          ..lineTo(centerX - markerBase / 2, top)
+          ..lineTo(centerX + markerBase / 2, top)
+          ..close(),
+        paint,
+      );
+    }
+  }
+
+  /// Repeint si — et seulement si — un champ a changé.
+  ///
+  /// Chaque champ est comparé, la liste de couleurs élément par élément : un
+  /// `=> true` inconditionnel repeindrait à chaque frame de l'arbre parent, et
+  /// un `=> false` laisserait la barre figée sur la carte précédente.
+  @override
+  bool shouldRepaint(covariant _SegmentedMarkerPainter oldDelegate) =>
+      oldDelegate.currentIndex != currentIndex ||
+      oldDelegate.thickness != thickness ||
+      oldDelegate.separation != separation ||
+      oldDelegate.markerHeight != markerHeight ||
+      oldDelegate.markerBase != markerBase ||
+      oldDelegate.radius != radius ||
+      oldDelegate.textDirection != textDirection ||
+      !listEquals(oldDelegate.colors, colors);
 }
 
 /// Un segment de barre (privé).

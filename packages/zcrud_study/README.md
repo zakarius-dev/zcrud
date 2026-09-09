@@ -139,6 +139,9 @@ ZStudyToolsSectionSpec buildEmptySection() {
 | `ZContentHubSheet` | Rendu de la feuille du hub. |
 | **Session de révision** | |
 | `ZStudySessionView` / `ZStudySessionHost` / `ZStudySessionScaffold` | Corps composable, détenteur du runtime, enveloppe de page de la session de révision. |
+| `ZStudySessionWiring` | Montage énuméré de la session : les 22 seams en champs `required` de type nullable, consommé par `ZStudySessionHost.wired`. |
+| `ZStudySessionPreset` | Formes de référence de la session — en-tête, chrome de carte, style de progression — interprétées par l'écran lui-même. |
+| `ZSessionHeaderSpec` / `ZCardChromeSpec` | Descripteurs de l'en-tête et de l'habillage de carte que le preset pose. |
 | **Examens et tâches du jour** | |
 | `ZExamEditor` / `ZExamRemindersSection` | Édition d'examen et rappels approchants dérivés, exposés à l'application pour la planification. |
 | `ZDailyTasksView` | Vue agrégée des tâches du jour (cartes dues, examens). |
@@ -149,6 +152,258 @@ ZStudyToolsSectionSpec buildEmptySection() {
 | **Seams IA neutres** | |
 | `ZAiExplanationPort` / `ZNoteSummaryPort` / `ZMindmapGenerationPort` / `ZPodcastGenerationPort` | Ports d'explication, de résumé, de génération de carte mentale et de podcast. |
 | `ZFlashcardGenerationPort` | Port de génération de flashcards ; `z_flashcard_generation_defaults` porte le bornage et la répartition par type. |
+
+### Preset de session {#preset}
+
+Une session complète — en-tête à trois places, carte à liseré, progression
+compacte — se déclare d'un seul objet, que l'écran interprète lui-même :
+
+```dart
+ZStudySessionScaffold(
+  title: l10n.sessionTitle,
+  mode: ZReviewMode.spaced,
+  queue: cards,
+  reviewer: reviewer,
+  preset: ZStudySessionPreset.classic(
+    title: l10n.sessionTitle,
+    counter: (ZStudySessionProgress p) => l10n.reviewedOf(p.reviewed, p.total),
+    streak: streak,                       // ZStudyStreak, jamais un pourcentage
+    accentHeight: 4,
+    cardTypeGradientKey: 'session.card',  // une CLÉ, résolue par votre seam
+    cardBackgroundColorKey: 'session.surface',
+  ),
+)
+```
+
+Trois règles tiennent tout le contrat :
+
+- **Un paramètre explicite gagne toujours sur le preset**, maillon par maillon.
+  Poser `cardAccentHeight:` à côté d'un preset qui décrit une autre hauteur
+  garde la vôtre, sans rien perdre du reste du chrome.
+- **`preset: null` ne prend aucune branche** : l'arbre rendu et les couleurs
+  peintes sont ceux d'avant que ce paramètre n'existe.
+- **Les couleurs entrent par clé, les textes déjà localisés.** Le compteur est
+  composé par vous : en régime SRS `remaining + reviewed != total` (une carte
+  ratée est réinsérée dans la file), et aucune formule ne convient à tous.
+
+La **forme** de la progression se décrit au même endroit : `classic` pose la
+géométrie de sa direction de design — pastilles `14 × 10`, point courant allongé
+`2,4 ×`, écart `12`, file centrée sur une seule rangée — et l'épaisseur `8` de la
+barre segmentée à marqueur. Chaque réglage n'a d'effet que **sous son style** :
+
+```dart
+preset: ZStudySessionPreset.classic(
+  progressStyle: ZSessionProgressStyle.dots,   // la géométrie devient visible
+),
+// …ou votre propre forme, qui bat celle du preset :
+progressDotsGeometry: const ZSessionDotsGeometry(
+  inactiveSize: Size(14, 10),
+  activeScale: 2.4,
+  gap: 12,
+  alignment: WrapAlignment.center,
+  scrollable: true,        // une seule rangée qui défile, hauteur stable
+),
+progressSegmentedMarkerThickness: 8,
+progressLinearThickness: 6,
+```
+
+Aucune de ces valeurs n'est imposée : laissées nulles, l'indicateur garde le
+rendu qu'il avait — point carré de `gapM`, point courant à `1,5 ×`, écart
+`gapS`, file alignée au bord de lecture qui passe à la ligne.
+
+Pour un besoin plus fin, `ZStudySessionPreset` se construit champ par champ
+(`header`, `cardChrome`, `progressStyle`, `progressDotsGeometry`,
+`progressLinearThickness`, `progressSegmentedMarkerThickness`,
+`cardBackgroundColorKey`) — et `ZSessionHeaderSpec.buildRow` rend la rangée
+d'en-tête seule, réutilisable dans un en-tête à vous.
+
+### Trois façons de monter une session {#trois-facons}
+
+Le même écran se monte de trois manières. Elles ne diffèrent pas par ce
+qu'elles rendent — l'arbre est le même, nœud pour nœud — mais par **ce qui
+arrive à un seam oublié**.
+
+**1. `.wired` — pour un écran d'application.** Chaque seam est un champ
+`required` : en oublier un ne compile pas. Le prix est symétrique — ajouter un
+seam au socle vous oblige à vous prononcer.
+
+```dart
+ZStudySessionHost.wired(
+  mode: ZReviewMode.spaced,
+  queue: cards,
+  wiring: ZStudySessionWiring(
+    reviewer: reviewer,
+    hintPort: null,   // …et les vingt autres, `null` compris
+    // …
+  ),
+)
+```
+
+**2. À plat + `seamAudit` — pour un montage existant qu'on ne réécrit pas.**
+Rien ne change au code appelant : les renonciations se déclarent nominativement,
+et tout seam ni posé ni cité est signalé une fois, en debug, dans la console et
+les rapports de plantage.
+
+```dart
+ZStudySessionHost(
+  mode: ZReviewMode.spaced,
+  queue: cards,
+  reviewer: reviewer,
+  seamAudit: const ZStudySeamAuditPolicy(waived: <ZStudySeam>{ZStudySeam.hintPort}),
+)
+```
+
+**3. À plat, sans rien — pour un banc d'essai ou un prototype.** Aucun audit,
+aucun message, aucun coût. Le silence est complet, et c'est ce qu'on veut d'un
+montage jetable — jamais d'un écran destiné à un utilisateur.
+
+```dart
+ZStudySessionHost(mode: ZReviewMode.list, queue: cards)
+```
+
+En cas de doute : **(1) pour ce que vous livrez, (2) pour ce que vous reprenez,
+(3) pour ce que vous jetez.** Passer de (3) à (2) ne coûte qu'une ligne, et de
+(2) à (1) ne change aucun comportement.
+
+Le preset n'entre dans aucun de ces choix : les **formes** viennent de
+`ZStudySessionPreset`, les **seams** du wiring — deux objets, deux
+responsabilités, aucun recouvrement, et un preset se pose de la même façon dans
+les trois régimes.
+
+### Montage complet {#montage-complet}
+
+`ZStudySessionHost` porte des dizaines de paramètres nommés, presque tous
+optionnels et à défaut silencieux. Un seam oublié ne produit **ni erreur de
+compilation, ni test rouge** : l'écran s'affiche, ce n'est simplement plus
+celui que vous vouliez — libellés du socle, bouton d'indice disparu, sortie
+sans issue.
+
+`ZStudySessionWiring` ferme ce trou. Ses champs sont `required` **et**
+nullables : Dart vous oblige à *nommer* chaque seam, `null` compris.
+
+```dart
+ZStudySessionHost.wired(
+  mode: ZReviewMode.spaced,
+  queue: cards,
+  wiring: ZStudySessionWiring(
+    reviewer: reviewer,                       // voie d'écriture SRS
+    cardBuilder: null,                        // on garde la carte du socle…
+    cardSlotBuilder: null,
+    contentBuilder: markdownContentBuilder,    // …avec VOTRE rendu de contenu
+    questionTypeBadgeBuilder: null,
+    instructionBanner: null,
+    evaluationPort: aiEvaluationPort,
+    hintPort: aiHintPort,
+    onQualitySelected: null,
+    qualityColorKeyFor: null,
+    qualityPreviewLabelFor: null,
+    headerBuilder: null,
+    counterBuilder: null,
+    gradingBuilder: null,
+    summaryBuilder: null,
+    emptyBuilder: null,
+    celebrationBuilder: null,
+    labels: ZStudySessionLabels(exitAction: l10n.close),
+    onSessionEnd: (result, duration) => _persist(result),
+    onExit: Navigator.of(context).pop,
+    indexController: null,
+    preset: ZStudySessionPreset.classic(title: l10n.sessionTitle),
+  ),
+  // Les cosmétiques restent à plat, sur le constructeur.
+  cardAccentHeight: 4,
+  progressStyle: ZSessionProgressStyle.pill,
+)
+```
+
+- **`null` veut toujours dire « absent »** — le socle prend son défaut, aucune
+  branche n'est prise. Seule la *nomination* devient obligatoire.
+- **Aucun seam ne se pose à plat sur `.wired`** : pas de règle de fusion, pas
+  de conflit possible entre deux façons de dire la même chose.
+- **`ZStudySessionWiring.none()`** renonce à tout d'un coup : banc d'essai,
+  capture d'arbre, démonstration — jamais un écran destiné à un utilisateur.
+- **Rien n'est requis sur `ZStudySessionHost`** : un montage à plat existant
+  compile et rend exactement le même arbre. L'opt-in est le constructeur nommé.
+- ⚠️ **Ajouter un seam à `ZStudySessionWiring` est cassant** pour ses
+  utilisateurs — le champ neuf est `required`. C'est ce qui interdit qu'une
+  capacité neuve rejoigne l'écran sans qu'un montage existant ait à se
+  prononcer.
+
+La **page** offre la même garantie, sans descendre d'un cran : le même wiring,
+les mêmes cosmétiques à plat, et tous les slots de page en pass-through.
+
+```dart
+ZStudySessionScaffold.wired(
+  title: l10n.sessionTitle,
+  mode: ZReviewMode.spaced,
+  queue: cards,
+  wiring: wiring,                 // le MÊME objet que ci-dessus
+  // Cosmétiques et slots de page restent à plat.
+  cardAccentHeight: 4,
+  progressStyle: ZSessionProgressStyle.dots,
+  actions: <ZAppBarAction>[ZAppBarAction(icon: Icons.close, onPressed: _close)],
+)
+```
+
+L'enveloppe **ne lit aucun champ** du wiring : elle le remet entier au porteur.
+Un seam qui rejoindra le montage demain traverse donc la page sans qu'une ligne
+n'y soit écrite — et sans pouvoir y être oublié.
+
+#### Le filet d'audit, pour rester au montage à plat {#audit-de-seams}
+
+Le montage énuméré n'est pas toujours souhaitable : il est cassant par
+construction, et un écran qui pose trois seams sur vingt-deux n'a pas envie
+d'en nommer dix-neuf. Pour ce cas — le plus courant — `auditSeams` donne le
+même signal **sans changer le montage**.
+
+C'est une fonction **pure** : aucun `BuildContext`, aucun `pump`. Elle
+s'appelle donc dans un test unitaire, sur le widget que vous construisez :
+
+```dart
+test('mon écran de session pose tout ce qu\'il annonce', () {
+  final ZStudySeamReport report = maSessionWidget().auditSeams(
+    // Renonciations NOMMÉES : l'écran n'a ni indices, ni célébration.
+    waived: const <ZStudySeam>{ZStudySeam.hintPort, ZStudySeam.celebrationBuilder},
+  );
+  expect(report.isComplete, isTrue, reason: report.toString());
+});
+```
+
+Le rapport nomme chaque seam non posé **et ce que le socle fait à sa place** —
+`onExit → aucune issue de sortie dans les replis`, `labels → libellés du socle,
+résolus par clé de traduction`. Citer dans `waived` un seam pourtant **posé**
+est signalé en retour (`invalidWaivers`) : une déclaration doit décrire le
+montage dans les deux sens, sinon elle absorbera en silence la perte du jour où
+ce seam disparaîtra.
+
+Le même filet peut vivre **à la construction de l'écran**, en debug seulement :
+
+```dart
+ZStudySessionHost(
+  mode: ZReviewMode.spaced,
+  queue: cards,
+  reviewer: reviewer,
+  onExit: Navigator.of(context).pop,
+  seamAudit: const ZStudySeamAuditPolicy(
+    waived: <ZStudySeam>{ZStudySeam.hintPort},
+  ),
+)
+```
+
+Posée, la politique fait relever **une seule fois**, dans la console et dans
+vos rapports de plantage, les seams que le montage n'a ni posés ni cités.
+L'écran s'affiche exactement pareil, nœud pour nœud : rien n'est levé, rien
+n'est ajouté à l'arbre, et le compilateur retire tout en release.
+
+Trois régimes, tous **déclarés** — rien n'est deviné :
+
+| Montage | Ce qui vaut décision | Ce qui vaut oubli |
+|---|---|---|
+| `.wired` | le `null` écrit dans le wiring | rien : le compilateur l'exige déjà |
+| à plat **avec** `seamAudit` | les seams cités dans `waived` | tous les autres seams non posés |
+| à plat **sans** `seamAudit` | — | — : aucun audit, aucun message, aucun coût |
+
+Un écran qui ne veut pas d'indices n'en reçoit donc jamais : ne rien poser
+**est** la déclaration par défaut.
 
 ## Cas limites et invariants {#cas-limites}
 

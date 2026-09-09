@@ -42,9 +42,9 @@
 ///
 /// ## Deux axes de couleur, préséance arbitrée
 ///
-/// - **Axe type** ([typeColors] → jeton `ZcrudTheme.flashcardTypeGradients` →
-///   seam `ZcrudScope.gradientResolver` (clé `flashcard.type.<type.name>`) →
-///   référence [ZFlashcardCardReference.typeGradients]) : gouverne la bande,
+/// - **Axe type** ([typeColors] → seam `ZcrudScope.gradientResolver` (clé
+///   `flashcard.type.<type.name>`) → jeton `ZcrudTheme.flashcardTypeGradients`
+///   → référence [ZFlashcardCardReference.typeGradients]) : gouverne la bande,
 ///   la teinte de la tuile d'icône et la pastille de type.
 /// - **Axe IDENTITÉ** ([colorKey]/[palette]) : gouverne la palette des balises
 ///   ([ZTagChips]) — ce qu'il gouvernait déjà — et sert de **repli TOTAL** de
@@ -56,10 +56,10 @@
 ///   1. [typeColors] porte une entrée pour le type ⇒ elle gouverne les
 ///      surfaces de type, même face à un [colorKey] explicite (le paramètre
 ///      SPÉCIFIQUE à la surface gagne) ;
-///   2. [colorKey] explicite sans entrée [typeColors] ⇒ il prime les DÉFAUTS
-///      de l'axe type (bande unie `pair.color`, tuile et pastille teintées
-///      `pair`) — le rendu v0.42-v0.45 des hôtes à `colorKey` est préservé,
-///      par la règle « paramètre > jeton > référence ».
+///   2. [colorKey] explicite sans entrée [typeColors] ⇒ il coupe l'axe type
+///      ENTIER (bande unie `pair.color`, tuile et pastille teintées `pair`) :
+///      un choix d'identité posé par l'hôte n'est écrasé par aucun DÉFAUT de
+///      l'axe type — ni le seam, ni le jeton, ni la référence.
 ///
 /// ## Invariants
 ///
@@ -270,11 +270,14 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   ///
   /// Clé = `ZFlashcardType.name` opaque. Priorité de résolution (chaîne
   /// TOTALE, invariant AD-10) :
-  /// **ce paramètre** > jeton `ZcrudTheme.flashcardTypeGradients` > seam
-  /// `ZcrudScope.gradientResolver` (clé `flashcard.type.<type.name>` — la
-  /// couture EXISTANTE, jamais un second mécanisme) >
+  /// **ce paramètre** > seam `ZcrudScope.gradientResolver` (clé
+  /// `flashcard.type.<type.name>` — la couture EXISTANTE, jamais un second
+  /// mécanisme) > jeton `ZcrudTheme.flashcardTypeGradients` >
   /// [ZFlashcardCardReference.typeGradients] > accent uni dérivé de l'axe
   /// identité (clé de type inconnue de TOUTE la chaîne).
+  ///
+  /// `seam > jeton` est l'ordre du socle : un résolveur qui répond l'emporte
+  /// sur la table du thème ; son silence, lui, laisse le jeton peindre.
   final Map<String, ZGradientSpec>? typeColors;
 
   /// Glyphe de la tuile d'icône. `null` ⇒ [ZFlashcardCardReference.glyph].
@@ -414,25 +417,43 @@ class ZDefaultFlashcardCard extends StatelessWidget {
 
   /// Dégradé de l'axe TYPE — chaîne de résolution (cf. [typeColors]).
   ///
+  /// L'ordre, du plus fort au plus faible :
+  /// 1. [typeColors] porte une entrée pour ce type — le paramètre SPÉCIFIQUE
+  ///    à la surface gagne toujours, même face à un [colorKey] explicite ;
+  /// 2. [colorKey] est posé (sans entrée [typeColors]) — l'axe type est coupé
+  ///    ENTIER : `null` est rendu, et les surfaces replient sur l'accent uni
+  ///    de l'axe identité ;
+  /// 3. le seam `ZcrudScope.gradientResolver`, interrogé avec
+  ///    `'$kZFlashcardTypeGradientKeyPrefix<type.name>'` ;
+  /// 4. le jeton [ZcrudTheme.flashcardTypeGradients], indexé par le nom de
+  ///    type — le repli quand le seam se tait ;
+  /// 5. [ZFlashcardCardReference.typeGradients], la valeur de référence.
+  ///
+  /// Autrement dit : **un résolveur d'hôte qui répond l'emporte sur le jeton
+  /// du thème** — c'est l'ordre `seam > jeton` que `zResolveGradient` applique
+  /// dans tout le socle. Un hôte qui veut au contraire que son jeton gagne ne
+  /// pose pas de résolveur pour ces clés, ou passe l'entrée par [typeColors].
+  ///
   /// `null` ⇒ clé de type inconnue de TOUTE la chaîne, OU [colorKey] explicite
   /// (l'identité prime) : les surfaces replient sur l'accent uni.
   ZGradientSpec? _typeSpec(BuildContext context) {
     final String typeName = card.type.name;
-    // Préséance arbitrée (les DEUX axes posés ensemble) :
-    // 1. [typeColors] EXPLICITE pour ce type : le paramètre SPÉCIFIQUE à la
-    //    surface gagne toujours — même face à un [colorKey] explicite.
     final ZGradientSpec? explicit = typeColors?[typeName];
     if (explicit != null) return explicit;
-    // 2. [colorKey] EXPLICITE (sans entrée [typeColors]) : choix d'identité de
-    //    l'hôte — il prime les DÉFAUTS de l'axe type (jeton, seam, référence).
-    //    Sans colorKey, les deux axes coïncident par construction (l'accent
-    //    d'identité dérive de `card.type.name`) : aucun conflit mesurable.
+    // Sans colorKey, les deux axes coïncident par construction (l'accent
+    // d'identité dérive lui aussi de `card.type.name`) : aucun conflit
+    // mesurable. Posé, colorKey coupe l'axe type AVANT le seam — un choix
+    // d'identité explicite n'est écrasé par aucun DÉFAUT, seam compris.
     if (colorKey != null) return null;
-    return ZcrudTheme.of(context).flashcardTypeGradients?[typeName] ??
-        zResolveGradient(
+    // Le seam AVANT le jeton. L'ordre inverse rendait le résolveur de l'hôte
+    // inopérant sans aucun signal dès qu'un thème du socle posait la table
+    // `flashcardTypeGradients` : le seam était interrogé, sa réponse reçue,
+    // et jetée. Le silence du seam (`null`) laisse, lui, le jeton peindre.
+    return zResolveGradient(
           context,
           '$kZFlashcardTypeGradientKeyPrefix$typeName',
         ) ??
+        ZcrudTheme.of(context).flashcardTypeGradients?[typeName] ??
         ZFlashcardCardReference.typeGradients[typeName];
   }
 

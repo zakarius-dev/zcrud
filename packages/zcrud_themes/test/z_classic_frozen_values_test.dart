@@ -163,6 +163,14 @@ void main() {
       expect(ZClassicSurfaceReference.minTapTarget, greaterThanOrEqualTo(48.0));
     });
 
+    test('liseré de carte figé — interactive_..._card.dart:430-433', () {
+      // `Container(height: 4, …)` coiffant le corps de la carte, peint du
+      // dégradé du type. Valeur PUBLIÉE pour la voie paramètre, jamais posée
+      // sur le jeton global `ZcrudTheme.accentBarHeight` (cf.
+      // `z_classic_unposed_tokens_test.dart`, qui mesure pourquoi).
+      expect(ZClassicSurfaceReference.cardAccentHeight, 4);
+    });
+
     test('sélection par luminosité', () {
       expect(ZClassicSurfaceReference.backgroundFor(Brightness.dark),
           ZClassicSurfaceReference.darkBackground);

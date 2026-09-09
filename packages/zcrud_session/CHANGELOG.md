@@ -3,6 +3,86 @@
 Toutes les modifications notables de `zcrud_session` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.50.0 — 2026-09-09
+
+### Ajouté
+
+- **`ZSessionDotsGeometry` — la géométrie des points devient paramétrable.**
+  Value-object immuable passé à `ZSessionProgressIndicator.dotsGeometry` (et
+  relayé par `ZSessionCardSwiper.progressDotsGeometry`) : `inactiveSize`
+  (taille d'un point non courant), `activeScale` (rapport largeur/hauteur du
+  point courant), `gap` (écart entre deux points), `alignment` (placement de la
+  file, directionnel), `scrollable` (débordement : défiler sur une rangée, ou
+  passer à la ligne).
+
+  **Tous les champs sont nullables et le rendu par défaut est INCHANGÉ à
+  l'octet** : point carré de `gapM` (8×8), point courant à 1,5 fois sa hauteur
+  (12×8), écart `gapS` (4), aligné au début, retour à la ligne. Une application
+  qui ne pose rien voit exactement l'arbre, les rectangles, les couleurs et les
+  rayons d'avant — un dump figé le garde ligne à ligne. La forme d'un design se
+  **pose**, elle n'est jamais imposée par le socle.
+
+  Bornes (invariant AD-10) : une dimension non finie, nulle ou négative est
+  ignorée au profit du défaut — jamais une exception, jamais un point
+  invisible. `gap: 0` reste accepté (des points jointifs sont un design, pas
+  une donnée corrompue).
+
+- **`ZSessionProgressStyle.segmentedMarker` — une barre segmentée à repère
+  triangulaire.** Cinquième style de `ZSessionProgressIndicator` : des segments
+  **détachés**, chacun pleinement arrondi, surmontés d'un triangle sur le seul
+  segment courant. Là où `segmentedBar` signale la carte courante en
+  l'épaississant — signal qui se perd sur une file longue —, le marqueur est un
+  repère hors bande, repérable quelle que soit la longueur de la file.
+
+  Peint par un `CustomPainter` interne, sans aucune dépendance tierce. Toute la
+  géométrie dérive de `segmentedMarkerThickness` (défaut `ZcrudTheme.gapS`) :
+  intervalle entre segments, rayon des coins, taille du marqueur — régler
+  l'épaisseur suffit à mettre le style à l'échelle. Les couleurs viennent de
+  `zResolveColorKeyOrSlot`, le marqueur reprenant la teinte du segment qu'il
+  désigne (aucun rôle supplémentaire introduit).
+
+  **RTL** (invariant AD-13) : le sens de lecture vient du `Directionality`
+  ambiant — le premier segment est à gauche en LTR, à droite en RTL, en miroir
+  strict. **A11y** : contrat identique aux quatre autres styles, le nœud
+  `ZSessionProgressIndicator.progressKey` porte seul label et `value`, la
+  position n'est annoncée qu'une fois. Le marqueur suit la **même** source
+  bornée que l'annonce : un `currentIndex` hors file laisse le repère sur la
+  dernière carte, là où le nœud annonce « N/N ».
+
+  Le défaut de l'enum reste `dots`.
+
+- **`ZSessionCardSwiper` relaie les réglages de l'indicateur** :
+  `progressDotsGeometry`, `progressLinearThickness` et
+  `progressSegmentedMarkerThickness`. Les deux derniers ferment un manque
+  préexistant : la pile choisissait le style sans pouvoir en régler
+  l'épaisseur. Tous `null` par défaut, aucun défaut substitué par la pile — un
+  hôte qui ne pose rien obtient le rendu d'avant.
+
+- **`ZSessionProgressStyle.pill` — une pilule compacte « X/Y ».** Un quatrième
+  style de `ZSessionProgressIndicator`, à côté de `dots`, `segmentedBar` et
+  `linear` : la position écrite en toutes lettres dans une forme de stade, sans
+  aucun élément par carte. C'est le seul style dont l'information passe par du
+  texte plutôt que par une géométrie — il tient dans un en-tête ou une barre
+  d'outils, et reste lisible quel que soit le nombre de cartes.
+
+  Rien n'y est codé en dur : le fond et le premier plan viennent de
+  `zResolveColorKeyOrSlot` (clé `ZSessionProgressIndicator.pillColorKey`, donc
+  remplaçables par `ZcrudScope.colorKeyResolver`), la forme d'un
+  `StadiumBorder` dont le rayon suit la hauteur du contenu, les marges internes
+  des tokens `gapM`/`gapS`. Le rôle d'**erreur** est délibérément écarté : une
+  progression n'est pas une alerte.
+
+  **Contrat d'accessibilité identique aux trois autres styles** : le nœud
+  `ZSessionProgressIndicator.progressKey` porte le même couple (label, `value:
+  'position/total'`), et le texte de la pilule est retiré de l'arbre sémantique
+  — sans quoi la même position serait annoncée deux fois. Le texte peint et la
+  valeur annoncée sont la **même expression**, donc structurellement incapables
+  de diverger : un `currentIndex` hors bornes est borné dans les deux.
+
+  **Rendu par défaut strictement inchangé** : le défaut de l'enum reste `dots`,
+  et une garde compare l'arbre rendu sans `style:` à un dump figé pris avant
+  l'ajout du style, en égalité stricte de suite.
+
 ## 3.49.0 — 2026-09-08
 
 ### Corrigé

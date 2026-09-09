@@ -3,6 +3,78 @@
 Toutes les modifications notables de `zcrud_flashcard` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.50.0 — 2026-09-09
+
+### Corrigé
+
+- **`ZFlashcardReviewCard` ne rendait jamais son liseré de type**, même avec un
+  résolveur de dégradé branché et répondant. Quatre causes cumulées, toutes
+  dans ce paquet, toutes levées :
+  1. la carte soumettait au seam `ZcrudScope.gradientResolver` le nom de type
+     **nu**, alors que la carte de flashcard de liste soumet
+     `'flashcard.type.<type.name>'` — un résolveur écrit au format documenté
+     n'était jamais appelé en session ;
+  2. le jeton `ZcrudTheme.flashcardTypeGradients` n'était pas lu — un thème qui
+     pose cette table ne pouvait pas teinter une carte de session ;
+  3. le liseré exigeait `ZcrudTheme.accentBarHeight`, dont le défaut est `null`
+     et qui gouverne aussi d'autres surfaces ;
+  4. le dégradé était **supprimé** (et non rendu tel quel) quand le thème ne
+     posait pas les deux jetons `gradientBegin`/`gradientEnd`, dont les défauts
+     sont nuls — ce qui neutralisait aussi le badge de type.
+
+  La chaîne de résolution suit l'ordre de priorité du socle — **seam > jeton**,
+  le même qu'applique `zResolveGradient` partout ailleurs :
+
+  1. `typeGradientKey`, s'il est posé : soumis **tel quel** au seam, et rien
+     d'autre n'est consulté ;
+  2. le seam `ZcrudScope.gradientResolver`, avec
+     `'$kZFlashcardReviewTypeGradientKeyPrefix<type.name>'` ;
+  3. le **même seam**, avec le nom de type **nu** (format historique) ;
+  4. le jeton `ZcrudTheme.flashcardTypeGradients[type.name]`, en repli quand le
+     seam s'est tu sur les **deux** clés.
+
+  Autrement dit : **un résolveur d'hôte qui répond l'emporte toujours sur le
+  jeton du thème**, quel que soit celui des deux formats de clé auquel il
+  répond. Le seam n'est délibérément **pas coupé en deux** par le jeton : sinon
+  la règle de priorité dépendrait du format de clé de l'hôte, et un hôte au
+  format nu verrait son résolveur battu par une table qu'un thème du socle
+  (`ZClassicTheme`) pose à sa place, sans aucun signal.
+
+  ⚠️ **Bascule de valeur possible** pour un hôte dont le résolveur répond aux
+  **deux** formats avec des dégradés **différents** : le format préfixé
+  l'emporte désormais. Un résolveur qui ne répond qu'au format nu est servi
+  comme avant, à l'identique.
+
+  ⚠️ **Hôte qui pose un jeton ET un résolveur** : c'est le résolveur qui peint.
+  Depuis la dernière version publiée (`3.47.0`), la carte de session ne lisait
+  **pas du tout** le jeton — le changement est donc **additif** pour un hôte
+  qui vient de `3.47.0` : il gagne un repli par jeton, sans perdre son
+  résolveur. L'échappatoire pour reprendre la main dans l'autre sens reste
+  `ZFlashcardReviewCard.typeGradientKey`, qui court-circuite toute la chaîne :
+  la valeur rendue par le résolveur pour cette clé est **la** valeur retenue,
+  sans repli.
+
+  ⚠️ **Le badge de type peut apparaître teinté** là où il ne l'était pas, chez
+  un hôte qui fournit `questionTypeBadgeBuilder` et un résolveur **sans** poser
+  `gradientBegin`/`gradientEnd` : c'est la levée de la cause 4. Les hôtes qui
+  posent ces deux jetons ne voient aucun changement.
+
+### Ajouté
+
+- `ZFlashcardReviewCard.accentHeight` — hauteur du liseré par instance,
+  priorité **paramètre > jeton `accentBarHeight`**. Les deux nuls ⇒ aucun
+  liseré, exactement comme avant. Le jeton, lui, garde son défaut `null` : le
+  relever repeindrait les liserés d'autres surfaces.
+- `ZFlashcardReviewCard.typeGradientKey` — clé de dégradé explicite, soumise
+  telle quelle au seam ; elle court-circuite les deux clés dérivées du type
+  **et** le jeton. Échappatoire pour un hôte dont les clés ne suivent aucun
+  des deux formats, et seule voie pour sortir de la priorité `seam > jeton`.
+- `ZFlashcardReviewCard.backgroundColor` — fond de carte par instance, priorité
+  **paramètre > jeton `surfaceColor` > rôle `ColorScheme.surface`**.
+- `kZFlashcardReviewTypeGradientKeyPrefix` — le préfixe de clé que la carte de
+  session soumet au seam. Sa valeur est tenue égale à celle de la carte de
+  liste par une garde de source.
+
 ## 3.47.0 — 2026-09-08
 
 ### Documenté

@@ -25,10 +25,15 @@ ZcrudScope(
 )
 ```
 
-`zResolveGradient` consulte uniquement le `gradientResolver` fourni par l'hôte
-et peut rendre `null`. `zDerivedGradientResolver` est donc un choix explicite,
-pas un repli automatique : sans injection, le rendu historique à accent uni
-reste intact.
+`zResolveGradient` consulte le `gradientResolver` fourni par l'hôte et peut
+rendre `null` — seules les clés `zcrud.signature.*` portent un dernier maillon
+de référence, et sous le seul profil `legacy`. `zDerivedGradientResolver` est
+donc un choix explicite, pas un repli automatique : sans injection, le rendu
+historique à accent uni reste intact.
+
+Les clés que le socle soumet réellement au résolveur — familles de champ, de
+signature, et les deux formes de clé par type de flashcard — sont inventoriées
+sur la fiche [`zcrud_core`](site/paquets/zcrud_core.md#familles-de-cles).
 
 Les constantes de la recette sont définies hors de `build`. Cette stabilité
 d'identité est nécessaire : `ZcrudScope.updateShouldNotify` compare notamment

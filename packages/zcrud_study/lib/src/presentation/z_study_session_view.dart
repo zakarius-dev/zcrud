@@ -70,10 +70,13 @@ import 'package:zcrud_session/zcrud_session.dart'
         ZSessionCardBuilder,
         ZSessionCardSlotBuilder,
         ZSessionCardSwiper,
+        ZSessionDotsGeometry,
         ZSessionItem,
         ZSessionProgressStyle,
         ZSessionQualityAtIndex;
 
+import 'preset/z_session_header_spec.dart';
+import 'preset/z_study_session_preset.dart';
 import 'z_study_session_reference.dart';
 import 'z_study_session_slices.dart';
 
@@ -180,7 +183,11 @@ class ZStudySessionView extends StatelessWidget {
     this.onStackEnd,
     this.onExit,
     this.indexController,
-    this.progressStyle = ZSessionProgressStyle.dots,
+    this.preset,
+    this.progressStyle,
+    this.progressDotsGeometry,
+    this.progressLinearThickness,
+    this.progressSegmentedMarkerThickness,
     this.qualityOf,
     this.stackFlex,
     this.inputFlex,
@@ -292,7 +299,39 @@ class ZStudySessionView extends StatelessWidget {
   final ZIndexController? indexController;
 
   /// Style de l'indicateur de progression de la pile.
-  final ZSessionProgressStyle progressStyle;
+  ///
+  /// `null` ⇒ le style du [preset] s'il en décrit un, sinon
+  /// [ZSessionProgressStyle.dots].
+  final ZSessionProgressStyle? progressStyle;
+
+  /// Forme des points de l'indicateur de progression.
+  ///
+  /// `null` ⇒ la forme du [preset] s'il en décrit une, sinon le rendu par
+  /// défaut de l'indicateur. Sans effet hors du style « points ».
+  final ZSessionDotsGeometry? progressDotsGeometry;
+
+  /// Épaisseur de l'indicateur de progression continu.
+  ///
+  /// `null` ⇒ l'épaisseur du [preset] s'il en décrit une, sinon celle que
+  /// l'indicateur dérive du thème.
+  final double? progressLinearThickness;
+
+  /// Épaisseur de l'indicateur de progression segmenté à marqueur.
+  ///
+  /// `null` ⇒ l'épaisseur du [preset] s'il en décrit une, sinon celle que
+  /// l'indicateur dérive du thème.
+  final double? progressSegmentedMarkerThickness;
+
+  /// Formes de référence à poser.
+  ///
+  /// Cette vue n'interprète du preset que ce qu'elle rend elle-même : l'en-tête
+  /// et le style de progression. Le chrome de carte et le fond de carte sont
+  /// interprétés par l'écran qui **monte la carte** — ici la carte vient de
+  /// [cardBuilder], donc de l'appelant.
+  ///
+  /// `null` ⇒ aucune branche prise : l'arbre rendu est celui d'avant que ce
+  /// paramètre n'existe.
+  final ZStudySessionPreset? preset;
 
   /// Qualité déjà attribuée à l'index donné (colore la progression).
   final ZSessionQualityAtIndex? qualityOf;
@@ -364,8 +403,21 @@ class ZStudySessionView extends StatelessWidget {
 
   // ── Phase « étude » ───────────────────────────────────────────────────────
 
+  /// L'en-tête décrit par le preset, ou `null` s'il n'en décrit aucun.
+  ///
+  /// Rappelé à chaque valeur de la tranche de progression — et seulement elle :
+  /// la pile n'est pas dans ce chemin de reconstruction (AD-2).
+  ZStudySessionHeaderBuilder? get _presetHeaderBuilder {
+    final ZSessionHeaderSpecBuilder? spec = preset?.header;
+    if (spec == null) return null;
+    return (BuildContext context, ZStudySessionProgress progress) =>
+        spec(progress).buildRow(context);
+  }
+
   Widget _buildStudying(BuildContext context, ZStudySessionChrome chrome) {
-    final ZStudySessionHeaderBuilder? header = headerBuilder;
+    // Priorité au slot explicite : poser un preset n'enlève jamais rien.
+    final ZStudySessionHeaderBuilder? header =
+        headerBuilder ?? _presetHeaderBuilder;
     final ZStudySessionCounterBuilder? counter = counterBuilder;
     final ZStudySessionGradingBuilder? grading = gradingBuilder;
     final WidgetBuilder? reveal = revealBuilder;
@@ -390,7 +442,19 @@ class ZStudySessionView extends StatelessWidget {
             cardBuilder: cardBuilder,
             cardSlotBuilder: cardSlotBuilder,
             passThreshold: passThreshold,
-            progressStyle: progressStyle,
+            progressStyle: progressStyle ??
+                preset?.progressStyle ??
+                ZSessionProgressStyle.dots,
+            // Même règle que le style, et jusqu'au bout : `null` reste `null`
+            // — la pile ne substitue aucune dimension, c'est l'indicateur qui
+            // tient ses propres défauts (une valeur posée ici les figerait).
+            progressDotsGeometry:
+                progressDotsGeometry ?? preset?.progressDotsGeometry,
+            progressLinearThickness:
+                progressLinearThickness ?? preset?.progressLinearThickness,
+            progressSegmentedMarkerThickness:
+                progressSegmentedMarkerThickness ??
+                    preset?.progressSegmentedMarkerThickness,
             qualityOf: qualityOf,
             indexController: indexController,
             onIndexChanged: onIndexChanged,
@@ -515,6 +579,9 @@ class _StackSlice extends StatelessWidget {
     required this.cardSlotBuilder,
     required this.passThreshold,
     required this.progressStyle,
+    required this.progressDotsGeometry,
+    required this.progressLinearThickness,
+    required this.progressSegmentedMarkerThickness,
     required this.qualityOf,
     required this.indexController,
     required this.onIndexChanged,
@@ -526,6 +593,9 @@ class _StackSlice extends StatelessWidget {
   final ZSessionCardSlotBuilder? cardSlotBuilder;
   final int passThreshold;
   final ZSessionProgressStyle progressStyle;
+  final ZSessionDotsGeometry? progressDotsGeometry;
+  final double? progressLinearThickness;
+  final double? progressSegmentedMarkerThickness;
   final ZSessionQualityAtIndex? qualityOf;
   final ZIndexController? indexController;
   final ValueChanged<int>? onIndexChanged;
@@ -550,6 +620,9 @@ class _StackSlice extends StatelessWidget {
           cardSlotBuilder: cardSlotBuilder,
           passThreshold: passThreshold,
           progressStyle: progressStyle,
+          progressDotsGeometry: progressDotsGeometry,
+          progressLinearThickness: progressLinearThickness,
+          progressSegmentedMarkerThickness: progressSegmentedMarkerThickness,
           qualityOf: qualityOf,
           indexController: indexController,
           onIndexChanged: onIndexChanged,

@@ -56,6 +56,32 @@ abstract final class ZClassicSurfaceReference {
   /// descend jamais en dessous.
   static const double minTapTarget = 48;
 
+  // Relevé : `…/widgets/interactive_flashcard_repetition_card.dart:430-433` —
+  // `Container(height: 4, …)` coiffant le corps de la carte, peint du dégradé
+  // du type.
+
+  /// Épaisseur, en dp, du liseré de tête d'une carte de révision.
+  ///
+  /// À passer en **paramètre** de la surface qui en veut un — le paramètre
+  /// `cardAccentHeight` de l'écran de session, ou `accentHeight` de la carte
+  /// elle-même :
+  ///
+  /// ```dart
+  /// ZStudySessionScaffold(
+  ///   cardAccentHeight: ZClassicSurfaceReference.cardAccentHeight,
+  ///   // …
+  /// )
+  /// ```
+  ///
+  /// Cette valeur n'est **pas** posée sur le jeton `ZcrudTheme.accentBarHeight`
+  /// par `ZClassicTheme` : ce jeton-là gouverne aussi le liseré des cartes de
+  /// dossier et celui des champs de formulaire, deux surfaces qui n'offrent
+  /// aucun paramètre pour s'y soustraire. Le poser pour atteindre la carte de
+  /// révision repeindrait les deux autres — et de façon variable selon ce que
+  /// l'hôte branche par ailleurs. Un thème pose ce qu'il a mesuré, là où il
+  /// l'a mesuré.
+  static const double cardAccentHeight = 4;
+
   // Relevé : `folder_flashcards_repetitions_page.dart:274-275` (sombre) et
   // `:278-279` (clair) — le dégradé du bandeau de tête, choisi selon la
   // luminosité. Premiers plans RETENUS PAR MESURE sur la bande médiane

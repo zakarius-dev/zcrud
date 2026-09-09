@@ -4,6 +4,43 @@ Format « Keep a Changelog » (sections Ajouté / Modifié / Corrigé, versions
 antéchronologiques). Toutes les modifications notables de `zcrud_ui_kit`
 sont documentées ici.
 
+## 3.50.0 — 2026-09-09
+
+### Ajouté
+
+- **Le chrome de page devient remplaçable par thème.** Les trois surfaces
+  d'identité du paquet lisent désormais les jetons de `ZcrudTheme` avant leur
+  référence auditée, par ordre **paramètre > jeton > référence** :
+  - app-bar (`ZSearchableAppBar` / `ZPageScaffold`) — rampe du lavis
+    (`appBarWashAlphas`) et élévation sous lavis (`appBarWashElevation`) ;
+  - `ZGradientFab` — `fabShape`, `fabElevation`, `fabIconSize`,
+    `fabLabelStyle`. `fabShape` habille le bouton **et** son fond dégradé,
+    pour qu'un bouton carré ne garde pas un halo rond ;
+  - `ZChoiceChipStyle` / `zChipThemeFor` — `choiceChipShape` et
+    `choiceChipShowCheckmark`, tous deux déjà surchargeables par paramètre,
+    qui garde la priorité.
+
+  Une valeur hors contrat (rampe de moins de deux arrêts ou hors `[0, 1]`,
+  élévation négative, taille de glyphe non positive) est **ignorée** au profit
+  de la référence, jamais levée (AD-10). Aucun de ces jetons ne touche le
+  bouton **sans dégradé** ni l'app-bar **sans lavis** : ces deux-là restent
+  ceux du SDK et du thème de l'hôte.
+
+- Garde de source `z_page_chrome_tokens_source_guard_test` : chaque jeton de
+  chrome doit être lu **sur le thème** (motif `ZcrudTheme.of(context).<jeton>`)
+  à son site de rendu. Quatre de ces jetons portent le même nom que le membre
+  de référence qu'ils remplacent ; la garde d'inertie de `zcrud_core`, qui
+  cherche le motif textuel `.<nom>`, est donc satisfaite par la seule lecture
+  de la référence — mesuré. Cette garde-ci ferme ce trou avec un motif que
+  seule une lecture du thème satisfait.
+
+### Note aux hôtes
+
+- Sans jeton posé, **aucun changement** : l'arbre et les valeurs peintes sont
+  ceux d'avant. Un hôte qui **compensait** l'impossibilité de régler ces
+  métriques (widget réimplémenté, `ChipThemeData` dupliqué, fond repeint
+  par-dessus l'app-bar) peut retirer sa compensation.
+
 ## 3.49.0 — 2026-09-08
 
 ### Corrigé

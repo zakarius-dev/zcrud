@@ -3,6 +3,287 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.50.0 — 2026-09-09
+
+### Ajouté
+
+- **Le socle monte ses propres démonstrations comme il recommande de les
+  monter.** Recommander le montage énuméré tout en le montrant nulle part
+  laissait la recommandation à l'état de prose : un lecteur copie ce qu'il
+  voit. `test/support/z_session_mount_demos.dart` porte désormais la
+  démonstration de référence — l'écran (`ZStudySessionHost.wired`) et la page
+  (`ZStudySessionScaffold.wired`) montés seam par seam, les vingt-deux nommés,
+  `null` compris, avec les cosmétiques restés à plat.
+
+  Constat de départ, mesuré avant d'écrire : **aucune démonstration du paquet
+  ne montait à plat** — il n'y avait rien à migrer. Les 99 sites du
+  constructeur par défaut sont tous des harnais qui l'exercent délibérément
+  (comparaison d'inertie entre les deux montages, audit d'un montage à plat,
+  sondes de seam), et les migrer casserait ce qu'ils mesurent. Ce qui manquait
+  n'était pas une migration mais la démonstration elle-même. À noter : la démo
+  d'assemblage de bout en bout du paquet assemble encore sa session à la main
+  depuis les briques de plus bas niveau, sans passer par l'écran de session —
+  elle n'a pas été touchée (la réécrire changerait ce qu'elle démontre).
+
+  Garde G8 (`lotw4_demo_mounts_test.dart`, 8 tests) : **nominative, jamais
+  globale** — elle porte une liste nommée de fichiers de démonstration, et rien
+  d'autre ; un balayage de tout `test/support/` condamnerait les harnais
+  légitimes. Trois contre-preuves : une entrée qui n'existe pas rougit, une
+  entrée qui ne monte aucune session rougit, et un harnais à plat **hors
+  liste** reste vert. Inertie : la démonstration énumérée rend, nœud pour nœud,
+  l'écran du montage à plat de mêmes valeurs — c'est ce qui atteste qu'un
+  montage de vingt-deux seams écrit à la main n'en a perdu aucun.
+
+- **README — « Trois façons de monter une session ».** Une page de doctrine qui
+  dit **quand** choisir chacun des trois régimes, avec son code minimal :
+  `.wired` pour ce qu'on livre, à plat avec `seamAudit` pour ce qu'on reprend,
+  à plat sans rien pour ce qu'on jette. Et la ligne de partage entre les deux
+  objets : les **formes** viennent du preset, les **seams** du wiring — aucun
+  recouvrement.
+
+- **Filet d'audit des seams de session — le montage à plat reçoit enfin un
+  signal.** `ZStudySessionWiring`/`.wired` ferme la classe « un seam oublié en
+  silence » pour les hôtes qui adoptent le montage énuméré. Ceux qui restent au
+  montage à plat — la majorité, et le régime le moins cassant — n'avaient
+  toujours rien : l'écran s'affiche, simplement ce n'est plus celui qu'on
+  voulait.
+
+  Quatre types publics : `ZStudySeam` (une valeur par champ du wiring, portant
+  le **défaut** que le socle applique en son absence), `ZStudySeamReport`
+  (`provided`/`waived`/`missing`/`invalidWaivers`, `isComplete`, rendu textuel
+  qui nomme chaque trou et son défaut), `ZStudySeamAuditPolicy` (opt-in posé à
+  la construction) et l'extension `auditSeams` sur `ZStudySessionHost`.
+
+  `auditSeams` est **pure** — aucun `BuildContext`, aucun `pump` : elle
+  s'appelle dans un test unitaire, sur le widget que l'hôte construit.
+  `seamAudit`, lui, fait relever **une seule fois**, en debug et par
+  `FlutterError.reportError`, les seams ni posés ni déclarés. Rien n'est levé
+  (AD-10), rien n'est ajouté à l'arbre (garde de dump, nœud pour nœud), et le
+  compilateur retire tout en release : le site d'appel vit sous `assert`.
+
+  **Trois régimes, tous déclarés par l'hôte, jamais devinés** : sous `.wired`,
+  un `null` est la décision écrite — le rapport n'y porte jamais de manquant ;
+  à plat avec une politique, la décision est l'entrée nominative de `waived`, et
+  l'oubli est tout le reste ; à plat sans politique, silence total. Une
+  renonciation qui cite un seam **posé** est signalée à son tour
+  (`invalidWaivers`) : la déclaration doit décrire le montage dans les deux
+  sens.
+
+  Le montage énuméré n'expose **aucune** politique : il n'a rien à auditer.
+
+  Gardes : `lotw3_seam_audit_test.dart` (49 tests) — les 22 seams posés un par
+  un et non par échantillon, `.none()` sans manquant, cohérence enum ↔ wiring
+  lue sur la source, exactement un rapport et un arbre inchangé. Le `switch` de
+  lecture des seams est **exhaustif** : une valeur d'enum ajoutée sans champ
+  correspondant est une erreur de compilation, jamais un seam qui s'auditerait
+  tout seul comme absent.
+
+  Deux scanners existants amendés : `kCosmeticTypes` admet **nominativement**
+  `ZStudySeamAuditPolicy` — un réglage de diagnostic ne câble rien, et sa
+  contre-preuve (un `…Policy` voisin, un port inédit) reste conservée ; la
+  borne du scanner de pass-through de la page passe de `\n  });` à `\n  })`,
+  la même que celle du montage énuméré, sans quoi la capture non gourmande
+  débordait sur le constructeur d'un widget privé.
+
+- **`ZStudySessionScaffold.wired` — la page offre la garantie du montage
+  énuméré.** Miroir exact de `ZStudySessionHost.wired`, d'un cran plus haut :
+  `required ZStudySessionWiring wiring`, les cosmétiques et les défauts non nuls
+  à plat, et **tous** les slots de page en pass-through. Un hôte qui monte la
+  page — le cas courant — n'a plus à choisir entre la garantie et l'enveloppe.
+
+  L'enveloppe **ne lit aucun champ du wiring** : elle le remet entier au
+  porteur. Ce n'est pas une discipline, c'est structurel — le constructeur étant
+  `const`, une liste d'initialisation ne *peut pas* lire `wiring.x`. Un seam
+  ajouté demain au montage traverse donc la page sans qu'une ligne y soit
+  écrite, et sans pouvoir y être oublié. Une garde de source l'assère par les
+  trois écritures possibles du démontage (`wiring.x`, `_wiring?.x`,
+  `wiring!.x`), une autre compare le relais des cosmétiques aux deux sources.
+
+  **Coût d'un hôte passif : nul.** Le constructeur par défaut est inchangé, et
+  rend le même arbre nœud pour nœud (dumps figés avant le lot).
+
+- **La forme de la progression se règle et se décrit** :
+  `progressDotsGeometry`, `progressLinearThickness` et
+  `progressSegmentedMarkerThickness` sur `ZStudySessionHost`,
+  `ZStudySessionScaffold`, `ZStudySessionView` **et** `ZStudySessionPreset`.
+  L'écran choisissait le style de sa progression sans pouvoir en régler la
+  forme : ni la taille d'un point, ni l'élongation du point courant, ni l'écart
+  entre deux points, ni l'épaisseur d'une barre. Un hôte qui voulait la forme de
+  sa référence visuelle n'avait qu'une issue — remplacer la pile entière, et
+  perdre tout ce que le socle y monte.
+
+  Résolution identique à celle du style : **paramètre explicite ⇒ preset ⇒
+  défaut de l'indicateur**. Aucune dimension n'est substituée en chemin : `null`
+  reste `null` jusqu'à l'indicateur, qui tient ses propres défauts.
+
+  `ZStudySessionPreset.classic` pose la géométrie de sa direction de design —
+  `inactiveSize: Size(14, 10)`, `activeScale: 2.4`, `gap: 12`, file **centrée**
+  et **défilante sur une seule rangée** — et l'épaisseur `8` de la barre
+  segmentée à marqueur. Elle ne décrit **aucune** épaisseur de barre continue :
+  rien n'est fabriqué pour rien. Constantes publiques
+  `ZStudySessionPreset.classicDotsGeometry` et
+  `.classicSegmentedMarkerThickness`. Chaque réglage est sans effet hors de son
+  style — décrire une forme ne la montre pas, elle attend le style qui la peint.
+
+  Les trois champs entrent dans `==`, `hashCode` et `toString` du preset.
+  `ZSessionDotsGeometry` est ré-exporté par le barrel : aucun hôte n'a à
+  dépendre de `zcrud_session` pour décrire sa forme.
+
+  **`preset: null` et aucun paramètre ⇒ rendu strictement inchangé** — arbre
+  identique au dump figé avant le lot, et géométrie peinte identique (point
+  carré de `gapM`, point courant à `1,5 ×`, écart `gapS`, file alignée au bord
+  de lecture qui passe à la ligne).
+
+- **Montage énuméré de la session — `ZStudySessionWiring` et
+  `ZStudySessionHost.wired`.** Le porteur de session déclare 43 paramètres
+  nommés, dont 34 nullables : 22 sont des **seams** (builders, ports,
+  callbacks, libellés, contrôleur, preset) et 12 des cosmétiques de mise en
+  page. Tous étaient optionnels, tous à défaut silencieux — en retirer un lors
+  d'un remaniement ne produisait ni erreur de compilation, ni test rouge.
+  Mesuré chez une application hôte : le retrait d'une composition de carte
+  devenue inutile a emporté **six seams** (`contentBuilder`, `hintPort`,
+  `evaluationPort`, `labels`, `onExit`, `onSessionEnd`) ; `analyze` est resté
+  vert, la suite aussi, et seul l'écran l'a montré (libellés du socle
+  affichés).
+
+  `ZStudySessionWiring` énumère les 22 seams en champs **`required` de type
+  nullable** : Dart oblige à *écrire* `hintPort: null` au lieu de l'omettre.
+  L'oubli devient une erreur de compilation, la renonciation une ligne
+  greppable. `ZStudySessionWiring.none()` renonce à tout d'un coup — banc
+  d'essai, jamais un écran.
+
+  `ZStudySessionHost.wired({required wiring, …})` est un constructeur de
+  **transfert** : il alimente les mêmes champs `final` que le constructeur par
+  défaut, n'accepte aucun seam à plat (donc aucune règle de fusion), et laisse
+  les cosmétiques et les défauts non nuls là où ils étaient. À valeurs égales,
+  l'arbre rendu est celui du constructeur par défaut, nœud pour nœud
+  (dumps figés). **Coût d'un hôte passif : nul** — rien n'est requis sur
+  `ZStudySessionHost` lui-même, l'opt-in passe par le constructeur nommé.
+
+  ⚠️ Ajouter un seam à `ZStudySessionWiring` est **cassant** pour ses
+  utilisateurs (le champ neuf est `required`) : c'est l'intérêt du mécanisme
+  autant que son prix. La garde de complétude lit la source du porteur, partage
+  ses paramètres nullables par une **règle de type** écrite dans la garde
+  (`Function`/`Port`/`Builder`/`Controller`/`Labels`/`Preset`/`Widget` ⇒ seam ;
+  liste fermée de scalaires, `Color`, `EdgeInsets*` et suffixe `Style` ⇒
+  cosmétique, tout type inédit tombant du côté seam), et exige l'égalité
+  stricte avec les champs du wiring : un seam ajouté demain sans être câblé
+  rougit.
+
+- **Assemblages de référence de l'écran de session — `ZStudySessionPreset`.**
+  Tout ce dont une session complète avait besoin traversait déjà l'écran, mais
+  **en valeurs** : une clé de dégradé ici, un seam de pastille là, une hauteur
+  de liseré ailleurs. Les **formes** qui les assemblent — rangée d'en-tête,
+  chrome de carte, style de progression — restaient à recomposer par chaque
+  hôte, et chaque recomposition se paie (un créneau de carte posé sans l'état
+  de révélation branché, un retrait qui emporte des seams sans qu'aucune
+  assertion ne bouge).
+
+  Trois types, sous `lib/src/presentation/preset/` :
+  - `ZStudySessionPreset` — `header`, `cardChrome`, `progressStyle`,
+    `cardBackgroundColorKey`, plus la fabrique `ZStudySessionPreset.classic`
+    qui décrit les quatre formes depuis des valeurs simples ;
+  - `ZSessionHeaderSpec` — titre, compteur (composé par l'hôte : en régime SRS
+    `remaining + reviewed != total`), série d'assiduité, contenu de fin ; sa
+    méthode `buildRow` rend la rangée de référence (cible ≥ 48 dp, `Semantics`
+    d'en-tête, variantes directionnelles) ;
+  - `ZCardChromeSpec` — `typeGradientKey`, `instructionBanner`,
+    `questionTypeBadgeBuilder`, `accentHeight`.
+
+  Le preset est **interprété par l'écran lui-même** (`ZStudySessionHost`,
+  `ZStudySessionView`, `ZStudySessionScaffold`) : il n'y a aucun câblage
+  intermédiaire à oublier. **Un paramètre explicite gagne toujours** sur la
+  forme correspondante, maillon par maillon ; `preset: null` ⇒ aucune branche
+  prise, arbre rendu **et couleurs peintes** strictement identiques.
+  `cardBackgroundColorKey` est une **clé**, résolue par `zResolveColorKeyOrSlot`
+  — jamais une couleur (FR-26). Aucune dépendance tierce nouvelle.
+
+  `ZSessionProgressStyle` est désormais ré-exporté par le barrel : poser un
+  style ne demande plus un second import.
+
+  Gardes : `test/presentation/lotp3_session_preset_test.dart` (inertie en
+  égalité stricte contre trois dumps figés avant le lot, priorité sur chacun
+  des six maillons, effet **rendu** de chaque forme, granularité AD-2 mesurée
+  sur la surface de notation — la pile mémoïse ses cartes par index et
+  resterait muette sous n'importe quelle injection) et
+  `test/presentation/lotp3_preset_source_guard_test.dart` (zéro couleur
+  littérale, zéro libellé affichable, zéro nom d'application hôte).
+
+- **`ZStudySessionHost` relaie les cinq créneaux de la carte de révision**
+  jusqu'à la carte qu'il monte **déjà** — `questionTypeBadgeBuilder`,
+  `instructionBanner`, `cardTypeGradientKey`, `cardAccentHeight`,
+  `cardBackgroundColor`. Ces créneaux existaient sur `ZFlashcardReviewCard` mais
+  n'étaient atteignables qu'en remplaçant la carte entière par `cardBuilder` —
+  ce qui faisait perdre au passage le câblage `revealController`, donc la
+  révélation elle-même. Le relais alimente la carte du socle aux **deux** sites
+  symétriques (avec et sans affordance de révélation) ; tous nuls ⇒ arbre rendu
+  **strictement identique** (AD-4). Les trois derniers portent le préfixe `card`
+  pour ne pas se confondre avec `gradientKey` / `backgroundColor` de la page,
+  qui teintent l'app-bar et le `Scaffold`.
+
+  Gardes : `test/presentation/lotd4_session_card_slots_test.dart` — elles lisent
+  le nœud réellement monté, la hauteur réellement mise en page et la couleur
+  réellement peinte (`RenderDecoratedBox`, `RenderPhysicalShape`), jamais une
+  valeur passée à un constructeur ; l'inertie est mesurée en **égalité stricte**
+  contre deux dumps d'arbre capturés avant le relais.
+
+### Modifié
+
+- ⚠️ **`progressStyle` devient nullable** sur `ZStudySessionHost`,
+  `ZStudySessionView` et `ZStudySessionScaffold` (`ZSessionProgressStyle?`,
+  défaut `null` au lieu de `ZSessionProgressStyle.dots`). Un champ non nullable
+  porteur d'un défaut ne peut pas distinguer « posé explicitement à `dots` » de
+  « non posé » : la règle « le paramètre explicite gagne sur le preset » y était
+  **inexprimable**. La résolution est désormais `paramètre ?? preset ?? dots`,
+  au site de rendu.
+
+  Un appelant qui passe une valeur n'est pas concerné ; un appelant qui n'en
+  passait pas obtient le même rendu qu'avant. Seul un code qui **lit** le champ
+  d'un de ces widgets en attendant un non-nul doit s'adapter.
+
+
+### Corrigé
+
+- **`ZStudySessionScaffold` ne relayait que 27 des 37 paramètres de
+  `ZStudySessionHost`** (`MAJEUR`). Un hôte qui montait la page plutôt que le
+  porteur perdait **en silence** : `cardSlotBuilder`, `onQualitySelected`,
+  `qualityLabelKeyFor`, `qualityColorKeyFor`, `qualityPreviewLabelFor`,
+  `qualityEmphasis`, `revealPolicy`, `postSubmitPolicy`, `questionRecall`,
+  `bottomInset`. Les dix sont désormais transmis, plus les cinq créneaux de
+  carte ci-dessus. Aucun défaut ne change : chaque paramètre garde exactement
+  la valeur par défaut du porteur.
+
+  Gardes : `test/presentation/lotd5_session_scaffold_seams_test.dart` — une
+  valeur distinctive posée sur la page est **observable dans le rendu ou le
+  comportement** pour chacun des quinze, plus une garde d'exhaustivité qui
+  compare les deux sources sur disque : un paramètre ajouté demain au porteur et
+  oublié dans l'enveloppe fait rougir.
+
+- ⚠️ **CHANGEMENT DE COMPORTEMENT — `ZDefaultFlashcardCard` résout désormais son
+  dégradé de type dans l'ordre `seam > jeton`** (`MAJEUR`). La carte consultait
+  le jeton `ZcrudTheme.flashcardTypeGradients` **avant** le seam
+  `ZcrudScope.gradientResolver`, à rebours de l'ordre que `zResolveGradient`
+  applique dans tout le socle. Conséquence mesurée : une application qui adopte
+  un thème du socle posant ce jeton — c'est le cas de `ZClassicTheme` — voyait
+  son résolveur **ignoré sans aucun signal** (le seam était interrogé, sa
+  réponse reçue, et jetée).
+
+  Chaîne finale, du plus fort au plus faible : `typeColors[type]` → `colorKey`
+  posé (coupe l'axe type entier) → **seam** `flashcard.type.<type.name>` →
+  **jeton** `flashcardTypeGradients[type]` → `ZFlashcardCardReference`. Les deux
+  maillons amont ne bougent pas.
+
+  🔴 **Ce qui change pour un hôte** : une application qui posait un résolveur de
+  dégradé **et** un thème du socle voit désormais son résolveur peindre. Si elle
+  s'appuyait sur le jeton pour cette carte, elle doit soit retirer son résolveur
+  pour ces clés, soit passer l'entrée par le paramètre `typeColors` (qui prime
+  toujours). Une application qui ne posait qu'un des deux ne voit **aucun
+  changement**.
+
+  Gardes : `test/presentation/lotd5b_list_card_gradient_order_test.dart`. La
+  garde `cr_iffd57_58_flashcard_reference_test.dart` qui affirmait l'ordre
+  inverse — elle **défendait le défaut** — a été retournée.
+
 ## 3.49.0 — 2026-09-08
 
 ### Ajouté

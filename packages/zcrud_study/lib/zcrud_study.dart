@@ -295,6 +295,13 @@ export 'src/presentation/z_study_scope_bar.dart';
 // présentation reste des widgets purs sans runtime détenu. Les valeurs de
 // rendu sont centralisées dans `ZStudySessionReference`, sans aucune
 // couleur littérale.
+// Assemblages de référence de l'écran de session : les FORMES paramétrées
+// (rangée d'en-tête, chrome de carte, style de progression), interprétées par
+// l'écran lui-même. Un paramètre explicite gagne toujours sur le preset, et un
+// preset absent laisse l'arbre strictement inchangé.
+export 'src/presentation/preset/z_card_chrome_spec.dart';
+export 'src/presentation/preset/z_session_header_spec.dart';
+export 'src/presentation/preset/z_study_session_preset.dart';
 export 'src/presentation/z_study_session_card_slot.dart';
 export 'src/presentation/z_study_session_host.dart';
 // Types des seams de présentation de la rangée de notation, ré-exportés pour
@@ -303,6 +310,8 @@ export 'package:zcrud_session/zcrud_session.dart'
     show
         ZQualityColorKeyResolver,
         ZQualityLabelKeyResolver,
+        ZSessionDotsGeometry,
+        ZSessionProgressStyle,
         ZSrsQualityEmphasis,
         zDefaultQualityLabelKey;
 export 'src/presentation/z_study_session_mode.dart';
@@ -311,6 +320,7 @@ export 'src/presentation/z_study_session_recall.dart';
 export 'src/presentation/z_study_session_reference.dart';
 export 'src/presentation/z_study_session_reveal.dart';
 export 'src/presentation/z_study_session_scaffold.dart';
+export 'src/presentation/z_study_session_seam_audit.dart';
 export 'src/presentation/z_study_session_slices.dart';
 export 'src/presentation/z_study_session_view.dart';
 export 'src/presentation/z_study_tools_item_card.dart';

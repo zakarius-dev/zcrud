@@ -91,6 +91,43 @@ Dans les deux cas, le rôle de l'hôte (`shadowColor`, `outlineVariant`) reste l
 repli, et une garde vérifie que ces jetons ne se remplissent pas en silence. Un
 jeton vide est une valeur non mesurée ; ce n'est pas un oubli.
 
+### Le liseré de carte : une valeur mesurée, passée en paramètre
+
+Le liseré de tête d'une carte de révision vaut **4 dp** dans le rendu de
+référence, et cette valeur est publiée —
+`ZClassicSurfaceReference.cardAccentHeight`. Elle n'est **pas** posée sur le
+jeton `ZcrudTheme.accentBarHeight`, qui est global : il gouverne aussi le liseré
+des cartes de dossier et celui des champs de formulaire, deux surfaces qui le
+lisent **nu**, sans paramètre pour s'y soustraire. Mesuré au montage : posé, il
+fait apparaître le liseré de la carte, **et** celui de chaque champ dès que
+l'hôte branche un résolveur de dégradés large. Le rendu dépendrait donc de ce
+que l'hôte a branché par ailleurs.
+
+La valeur se passe donc là où elle a été mesurée :
+
+```dart
+ZStudySessionScaffold(
+  cardAccentHeight: ZClassicSurfaceReference.cardAccentHeight,
+  // …
+)
+```
+
+Un hôte qui veut bel et bien les trois liserés pose lui-même
+`accentBarHeight` — c'est son arbitrage, et il reste possible.
+
+### Le chrome de page : rien à poser
+
+Les huit jetons de chrome de page (`appBarWashAlphas`, `appBarWashElevation`,
+`fabShape`, `fabElevation`, `fabIconSize`, `fabLabelStyle`, `choiceChipShape`,
+`choiceChipShowCheckmark`) restent `null`, et c'est **mesuré** : leur valeur
+d'origine est déjà celle que le dernier maillon peint. `ZPageShellReference`
+(`zcrud_ui_kit`) porte la rampe de lavis `[0.15, 0.10, 0.05, 0.02]`, l'élévation
+nulle sous lavis et les métriques de bouton et de puce, et chaque consommateur
+résout `jeton ?? référence` **sans condition**. Les poser ici écrirait la valeur
+déjà peinte : un second canal vers le même pixel. Une garde compare la rampe de
+référence à la valeur mesurée et rougit si l'une des deux bouge — c'est alors
+qu'il faudra poser le jeton, pas avant.
+
 ### Les dégradés par type sont ceux du socle
 
 Le thème pose explicitement le jeton `ZcrudTheme.flashcardTypeGradients` avec
@@ -99,6 +136,14 @@ clés, mêmes arrêts, même sens, mêmes premiers plans. Adopter Classic ne cha
 donc aucun dégradé de carte par rapport au rendu par défaut — le thème rend
 seulement explicite, au maillon jeton, ce que le socle applique déjà au dernier
 maillon.
+
+**Ce jeton est un repli, pas une décision.** Les deux cartes qui le lisent
+consultent d'abord le seam `ZcrudScope.gradientResolver` : la chaîne réelle est
+`paramètre > seam > jeton > référence`. Un hôte qui branche son propre résolveur
+de dégradés par type voit **son** résolveur peindre, thème posé ou non ; le
+jeton ne sert que là où le résolveur se tait. Un hôte qui veut au contraire que
+sa table l'emporte ne pose pas de résolveur pour ces clés. Une garde monte la
+carte réelle et vérifie les deux sens.
 
 Ce n'est pas une promesse : une garde lit la **source réelle** du socle sur
 disque et compare entrée par entrée, sans ouvrir la moindre arête de dépendance

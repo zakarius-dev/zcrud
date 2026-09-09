@@ -34,6 +34,36 @@ ZGradientSpec? _zFabGradient(
   return palette.first;
 }
 
+/// Élévation du bouton posé sur son fond, par ordre **jeton
+/// `ZcrudTheme.fabElevation` > référence**. Une valeur négative n'est pas une
+/// élévation : elle est ignorée.
+double _zFabElevation(BuildContext context) {
+  final double? token = ZcrudTheme.of(context).fabElevation;
+  if (token == null || token.isNaN || token < 0) {
+    return ZPageShellReference.fabElevation;
+  }
+  return token;
+}
+
+/// Côté du glyphe, par ordre **jeton `ZcrudTheme.fabIconSize` > référence**.
+/// Une taille nulle ou négative est ignorée : elle rendrait le glyphe absent.
+double _zFabIconSize(BuildContext context) {
+  final double? token = ZcrudTheme.of(context).fabIconSize;
+  if (token == null || token.isNaN || token <= 0) {
+    return ZPageShellReference.fabIconSize;
+  }
+  return token;
+}
+
+/// Style du libellé étendu, par ordre **jeton `ZcrudTheme.fabLabelStyle` >
+/// référence** (graisse et interlettrage figés).
+TextStyle _zFabLabelStyle(BuildContext context) =>
+    ZcrudTheme.of(context).fabLabelStyle ??
+    const TextStyle(
+      fontWeight: ZPageShellReference.fabLabelWeight,
+      letterSpacing: ZPageShellReference.fabLabelLetterSpacing,
+    );
+
 /// Bouton d'action flottant dont le fond est le **dégradé d'identité** de la
 /// page, avec une ombre reprenant sa teinte.
 ///
@@ -62,6 +92,15 @@ ZGradientSpec? _zFabGradient(
 /// Le premier plan est `ZGradientSpec.onGradient` — une valeur **mesurée**
 /// contre la bande médiane du dégradé, jamais un blanc décrété. L'ombre reprend
 /// la teinte de base du dégradé : c'est une ombre colorée, pas une ombre grise.
+///
+/// ## Ce que le thème peut régler
+///
+/// Quatre métriques du bouton **sur fond dégradé** sont remplaçables par
+/// `ZcrudTheme`, chacune par ordre **jeton > référence** : `fabShape`,
+/// `fabElevation`, `fabIconSize`, `fabLabelStyle`. `fabShape` gouverne les
+/// DEUX faces à la fois — la forme du bouton et celle de son fond —, parce que
+/// les dissocier laisserait un bouton carré dans un halo rond. Aucune des
+/// quatre ne touche le bouton **sans dégradé**, qui reste celui du SDK.
 ///
 /// ## Accessibilité
 ///
@@ -132,6 +171,11 @@ class ZGradientFab extends StatelessWidget {
               label: Text(text),
             );
     }
+    // Résolus APRÈS l'échappatoire ci-dessus : le bouton nu est celui du SDK,
+    // et ces jetons n'ont pas à le toucher.
+    final OutlinedBorder? shape = ZcrudTheme.of(context).fabShape;
+    final double elevation = _zFabElevation(context);
+    final double iconSize = _zFabIconSize(context);
     final Color base = spec.gradient.colors.isEmpty
         ? Theme.of(context).colorScheme.primary
         : spec.gradient.colors.first;
@@ -144,48 +188,58 @@ class ZGradientFab extends StatelessWidget {
     ];
     if (text == null) {
       return DecoratedBox(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: spec.gradient,
-          boxShadow: shadow,
-        ),
+        // `shape` nul ⇒ la décoration de référence, à l'identique ; posé, le
+        // fond épouse la MÊME forme que le bouton.
+        decoration: shape == null
+            ? BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: spec.gradient,
+                boxShadow: shadow,
+              )
+            : ShapeDecoration(
+                shape: shape,
+                gradient: spec.gradient,
+                shadows: shadow,
+              ),
         child: FloatingActionButton(
           onPressed: onPressed,
           tooltip: tooltip,
           heroTag: heroTag,
           backgroundColor: Colors.transparent,
           foregroundColor: spec.onGradient,
-          elevation: ZPageShellReference.fabElevation,
-          highlightElevation: ZPageShellReference.fabElevation,
-          shape: const CircleBorder(),
-          child: Icon(icon, size: ZPageShellReference.fabIconSize),
+          elevation: elevation,
+          highlightElevation: elevation,
+          shape: shape ?? const CircleBorder(),
+          child: Icon(icon, size: iconSize),
         ),
       );
     }
     return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(
-          ZPageShellReference.fabCornerRadius,
-        ),
-        gradient: spec.gradient,
-        boxShadow: shadow,
-      ),
+      decoration: shape == null
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(
+                ZPageShellReference.fabCornerRadius,
+              ),
+              gradient: spec.gradient,
+              boxShadow: shadow,
+            )
+          : ShapeDecoration(
+              shape: shape,
+              gradient: spec.gradient,
+              shadows: shadow,
+            ),
       child: FloatingActionButton.extended(
         onPressed: onPressed,
         tooltip: tooltip,
         heroTag: heroTag,
         backgroundColor: Colors.transparent,
         foregroundColor: spec.onGradient,
-        elevation: ZPageShellReference.fabElevation,
-        highlightElevation: ZPageShellReference.fabElevation,
-        icon: Icon(icon, size: ZPageShellReference.fabIconSize),
-        label: Text(
-          text,
-          style: const TextStyle(
-            fontWeight: ZPageShellReference.fabLabelWeight,
-            letterSpacing: ZPageShellReference.fabLabelLetterSpacing,
-          ),
-        ),
+        elevation: elevation,
+        highlightElevation: elevation,
+        // Nul ⇒ la forme du SDK, exactement comme avant ce créneau.
+        shape: shape,
+        icon: Icon(icon, size: iconSize),
+        label: Text(text, style: _zFabLabelStyle(context)),
       ),
     );
   }

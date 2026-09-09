@@ -102,6 +102,10 @@ export 'src/presentation/z_session_feedback_bank.dart';
 // réviser, test), badge flamme, lot configurable (défaut 30). Produit une
 // file de session, ne démarre aucun runtime.
 export 'src/presentation/z_session_mode_selector.dart';
+// Géométrie du style « points » de la progression : value-object immuable,
+// tous champs nullables. `null` partout ⇒ rendu par défaut inchangé — la
+// fidélité d'un design se POSE, elle n'est jamais imposée par le socle.
+export 'src/presentation/z_session_dots_geometry.dart';
 export 'src/presentation/z_session_progress_indicator.dart';
 export 'src/presentation/z_session_quality_breakdown.dart';
 // Écran de fin de session. Il assemble `ZSessionQualityBreakdown` et

@@ -179,6 +179,35 @@ teinte de type est en place fera donc apparaître la barre **sur vos champs** �
 conjoint de deux déclarations, chacune correcte prise seule. Si ce n'est pas l'effet
 voulu, retirez l'une des deux.
 
+La réciproque est le piège le plus coûteux : **sans hauteur déclarée, un résolveur
+parfaitement correct ne peint rien**. Le liseré de la carte de révision de
+`zcrud_flashcard` est monté sous la même condition — à ceci près qu'il accepte aussi une
+hauteur par carte (`accentHeight`), qui prime ce jeton global.
+
+### Toutes les familles de clés de dégradé {#familles-de-cles}
+
+Les deux familles ci-dessus ne sont pas les seules à parvenir à
+`ZcrudScope.gradientResolver`. Un résolveur ne sert que les clés qu'il reconnaît : voici
+l'inventaire de ce que le socle lui soumet, cœur et satellites confondus.
+
+| Famille de clé | Construite par | Qui la soumet |
+|---|---|---|
+| `zcrud.fieldType.<type>` | `zFieldTypeTintKey(EditionFieldType)` | la décoration d'un champ (ci-dessus) |
+| `zcrud.fieldAccent.<nom du champ>` | `zFieldAccentKey(String)` | l'accent supérieur d'un champ nommé (ci-dessus) |
+| `zcrud.signature.<identité>` | `zSignatureKey(String)` | tout ce qui se colore par **identité libre** : en-tête de section d'un formulaire groupé, carte et barre de progression de dossier, app-bar et bouton flottant d'une page, puce d'identité, résumé de session |
+| `flashcard.type.<type de carte>` | `kZFlashcardTypeGradientKeyPrefix` (`zcrud_study`) et `kZFlashcardReviewTypeGradientKeyPrefix` (`zcrud_flashcard`), même valeur | la bande d'accent de la carte de flashcard par défaut **et** le liseré de la carte de révision |
+| le **nom nu** d'un type de carte (`openQuestion`…) | — | dernier recours de la carte de révision, pour les résolveurs antérieurs à la clé préfixée |
+| la clé que **vous** passez | — | les paramètres `gradientKey` de l'app-bar, du bouton flottant, de la carte de dossier et du chrome Markdown — ce dernier valant le **nom du champ** quand vous ne le déclarez pas |
+
+`zcrud.signature.*` est la seule famille à porter une **valeur de référence** : quand
+aucun résolveur ne répond, elle retombe sur `ZcrudTheme.signaturePalette`, puis sur la
+palette auditée du socle — cette dernière uniquement sous le profil de référence `legacy`
+(`ZcrudTheme.referenceProfile`, neutre par défaut). Les autres familles restent
+**seam-only** : sans résolveur, `null`, et rien n'est peint.
+
+La recette [Teinter les cartes de flashcard par type](../guides/cookbook.md#degrade-flashcard-type)
+montre un résolveur complet, du `ZcrudScope` jusqu'à la bande peinte.
+
 ### `ZColorCycle` — le signal « tâche en cours »
 
 `ZColorCycle` fait parcourir une palette en boucle et confie la teinte courante

@@ -23,6 +23,14 @@
 /// référence du socle sur disque et rougit à la première divergence, d'un côté
 /// comme de l'autre.
 ///
+/// ## Le maillon jeton est un REPLI
+///
+/// Les deux cartes qui lisent cette table consultent le seam
+/// `ZcrudScope.gradientResolver` **avant** elle : un hôte qui branche son
+/// propre résolveur de dégradés par type voit **son** résolveur peindre, et
+/// cette table ne sert plus que là où il se tait. Un hôte qui veut au
+/// contraire que sa table gagne ne pose pas de résolveur pour ces clés.
+///
 /// ## Les clés, pas les couleurs
 ///
 /// La table [typeGradients] est indexée par le **nom** du type de carte
@@ -89,7 +97,8 @@ abstract final class ZClassicCardGradientsReference {
       _spec(const Color(0xFFF093FB), const Color(0xFFF5576C), _kBlack);
 
   /// Table `nom de type → dégradé`, dans la forme attendue par le jeton
-  /// `ZcrudTheme.flashcardTypeGradients`.
+  /// `ZcrudTheme.flashcardTypeGradients` — un **repli**, que le seam
+  /// `ZcrudScope.gradientResolver` de l'hôte précède.
   ///
   /// Strictement égale à `ZFlashcardCardReference.typeGradients` — l'égalité
   /// est vérifiée par machine, pas affirmée.

@@ -16,6 +16,14 @@ import 'z_page_shell_reference.dart';
 /// sélectionné, bordure, densité, états de survol et de focus) reste au thème
 /// de l'hôte : ce style **complète** un `ChipThemeData`, il ne le remplace pas.
 ///
+/// Deux de ces quatre propriétés — la **forme** et la présence de la **coche**
+/// — sont réglables à l'échelle de l'application, par ordre **paramètre >
+/// jeton (`ZcrudTheme.choiceChipShape`, `ZcrudTheme.choiceChipShowCheckmark`)
+/// > référence**. Elles ne passent pas par `ChipThemeData` : ce style pose sa
+/// forme et sa coche explicitement, ce qui prime sur le thème de puces de
+/// l'hôte — les jetons sont donc le seul canal app-scale de ces deux-là, et ne
+/// gouvernent aucune autre puce de l'application.
+///
 /// ## D'où vient la teinte de sélection
 ///
 /// Par ordre de priorité **paramètre > résolveur `ZcrudScope.gradientResolver`
@@ -63,7 +71,9 @@ class ZChoiceChipStyle {
   /// Résout le style pour [context].
   ///
   /// Chaque paramètre non nul **prime** sur la chaîne de résolution ; nul, il
-  /// laisse jouer jeton puis référence.
+  /// laisse jouer jeton puis référence — [shape] et [showCheckmark] compris,
+  /// dont les jetons sont `ZcrudTheme.choiceChipShape` et
+  /// `ZcrudTheme.choiceChipShowCheckmark`.
   ///
   /// [signatureKey] désigne l'entité qui donne sa couleur à la puce ; nul ou
   /// vide, la puce prend la teinte de **tête** de la palette.
@@ -85,6 +95,7 @@ class ZChoiceChipStyle {
     return ZChoiceChipStyle(
       shape:
           shape ??
+          ZcrudTheme.of(context).choiceChipShape ??
           RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(
               ZPageShellReference.chipCornerRadius,
@@ -93,7 +104,10 @@ class ZChoiceChipStyle {
       selectedColor: selected,
       selectedLabelColor:
           selectedLabelColor ?? _zForegroundOn(selected, scheme),
-      showCheckmark: showCheckmark ?? ZPageShellReference.chipShowCheckmark,
+      showCheckmark:
+          showCheckmark ??
+          ZcrudTheme.of(context).choiceChipShowCheckmark ??
+          ZPageShellReference.chipShowCheckmark,
     );
   }
 
