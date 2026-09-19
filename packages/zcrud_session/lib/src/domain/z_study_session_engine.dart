@@ -135,11 +135,25 @@ class ZLapseRequeuePolicy {
       'offsetLight: $offsetLight, severeMaxQuality: $severeMaxQuality)';
 }
 
+/// Politique de consommation indépendante du seuil de réussite SRS.
+@immutable
+class ZQueuePolicy {
+  /// Une carte sous [removeAtOrAbove] revient à l'offset demandé.
+  const ZQueuePolicy({required this.reinsertOffsetFor, this.removeAtOrAbove = 5});
+
+  /// Offset parmi les cartes à venir, borné défensivement par le moteur.
+  final int Function(int quality) reinsertOffsetFor;
+
+  /// Première qualité qui retire la carte de la file.
+  final int removeAtOrAbove;
+}
+
 /// Reducer pur de la file de session : applique un grade de [quality] à
 /// [state] et retourne un nouvel état (aucun effet de bord, aucune horloge,
 /// aucune I/O). Le [passThreshold] est injecté (lu de `ZSrsConfig`, jamais
 /// codé en dur) : la carte re-boucle si et seulement si
-/// `quality < passThreshold`.
+/// `quality < passThreshold`, sauf si [queuePolicy] indique un autre seuil
+/// de retrait. Le compteur de lapses garde toujours le seuil SRS.
 ///
 /// - Lapse (`quality < passThreshold`) : la carte courante est retirée de sa
 ///   position puis réinsérée parmi les cartes à venir à l'index
@@ -162,6 +176,7 @@ ZSessionState reduceGrade(
   int quality, {
   required int passThreshold,
   ZLapseRequeuePolicy policy = const ZLapseRequeuePolicy(),
+  ZQueuePolicy? queuePolicy,
 }) {
   if (state.isComplete || state.current == null) {
     return state; // no-op défensif : aucune carte courante.
@@ -175,20 +190,21 @@ ZSessionState reduceGrade(
   var reviewed = state.reviewed;
   var lapses = state.lapses;
 
-  if (isLapse) {
+  final reinsert = quality < (queuePolicy?.removeAtOrAbove ?? passThreshold);
+  if (reinsert) {
     // Voie unique de choix d'offset : la politique décide, ce reducer ne
     // recopie plus la comparaison. Le défaut de la politique reprend les
     // constantes historiques, donc l'appelant qui n'injecte rien obtient les
     // mêmes positions qu'avant.
-    final offset = policy.offsetFor(quality);
+    final offset = queuePolicy?.reinsertOffsetFor(quality) ?? policy.offsetFor(quality);
     // Index de réinsertion parmi les cartes à venir (post-retrait), clampé à la
     // fin de file si moins de `offset` cartes restent à venir.
-    final insertIndex = math.min(cursor + offset - 1, queue.length);
+    final insertIndex = (cursor + offset - 1).clamp(cursor, queue.length);
     queue.insert(insertIndex, current);
-    lapses += 1;
   } else {
     reviewed += 1; // carte consommée (non réinsérée).
   }
+  if (isLapse) lapses += 1;
 
   final complete = queue.isEmpty;
   // Le curseur reste sur la carte à venir (front de la file) ; clampé au dernier
@@ -237,6 +253,7 @@ class ZStudySessionEngine extends ChangeNotifier {
     ZSrsConfig config = const ZSrsConfig(),
     ZReviewMode mode = ZReviewMode.spaced,
     ZLapseRequeuePolicy lapsePolicy = const ZLapseRequeuePolicy(),
+    ZQueuePolicy? queuePolicy,
   })  : assert(
           mode == ZReviewMode.spaced || mode == ZReviewMode.learn,
           'ZStudySessionEngine ne supporte que les modes SRS (spaced/learn) : '
@@ -256,12 +273,21 @@ class ZStudySessionEngine extends ChangeNotifier {
         // paramètre public.
         // ignore: prefer_initializing_formals
         _lapsePolicy = lapsePolicy,
+        // Paramètre public, champ privé : pas d'initializing formal possible.
+        // ignore: prefer_initializing_formals
+        _queuePolicy = queuePolicy,
         _state = ZSessionState.initial(queue, mode: mode);
 
   final ZSessionReviewer _review;
   final ZSrsConfig _config;
   final ZLapseRequeuePolicy _lapsePolicy;
+  ZQueuePolicy? _queuePolicy;
   ZSessionState _state;
+  bool _disposed = false;
+
+  /// Change la politique des prochaines notations, sans réamorcer la file.
+  /// Une notation déjà en cours conserve sa politique initiale.
+  void updateQueuePolicy(ZQueuePolicy? policy) => _queuePolicy = policy;
 
   /// État immuable courant (lecture seule).
   ZSessionState get state => _state;
@@ -272,7 +298,7 @@ class ZStudySessionEngine extends ChangeNotifier {
   /// `true` quand la file est vide (toutes cartes consommées).
   bool get isComplete => _state.isComplete;
 
-  /// Nombre de cartes réussies.
+  /// Nombre de cartes consommées selon la politique de file.
   int get reviewed => _state.reviewed;
 
   /// Nombre d'événements de lapse.
@@ -315,15 +341,24 @@ class ZStudySessionEngine extends ChangeNotifier {
 
     // Clamp par le propriétaire de l'échelle, avant toute écriture.
     final clamped = _config.clampQuality(quality);
+    final queuePolicy = _queuePolicy;
 
     // Seam d'abord — voie d'écriture SRS unique, exactement une fois par
     // appel à `grade`.
-    final result = await _review(
-      flashcardId: card.flashcardId,
-      folderId: card.folderId,
-      quality: clamped,
-      now: now,
-    );
+    ZResult<ZRepetitionInfo> result;
+    try {
+      result = await _review(
+        flashcardId: card.flashcardId,
+        folderId: card.folderId,
+        quality: clamped,
+        now: now,
+      );
+    } on Object {
+      result = const Left<ZFailure, ZRepetitionInfo>(
+        ZDomainFailure('ZStudySessionEngine.grade: échec inattendu du reviewer'),
+      );
+    }
+    if (_disposed) return result;
 
     return result.fold(
       (failure) {
@@ -342,6 +377,7 @@ class ZStudySessionEngine extends ChangeNotifier {
             clamped,
             passThreshold: _passThreshold,
             policy: _lapsePolicy,
+            queuePolicy: queuePolicy,
           ),
         );
         return Right<ZFailure, ZRepetitionInfo>(info);
@@ -360,5 +396,11 @@ class ZStudySessionEngine extends ChangeNotifier {
     if (next == _state) return;
     _state = next;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }

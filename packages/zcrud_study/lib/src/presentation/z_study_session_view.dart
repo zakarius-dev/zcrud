@@ -81,25 +81,19 @@ import 'z_study_session_reference.dart';
 import 'z_study_session_slices.dart';
 
 /// Construit l'en-tête de session (titre, contexte de dossier…).
-typedef ZStudySessionHeaderBuilder = Widget Function(
-  BuildContext context,
-  ZStudySessionProgress progress,
-);
+typedef ZStudySessionHeaderBuilder =
+    Widget Function(BuildContext context, ZStudySessionProgress progress);
 
 /// Construit le bloc de compteurs (« 3 / 12 », lapses, restant…).
-typedef ZStudySessionCounterBuilder = Widget Function(
-  BuildContext context,
-  ZStudySessionProgress progress,
-);
+typedef ZStudySessionCounterBuilder =
+    Widget Function(BuildContext context, ZStudySessionProgress progress);
 
 /// Construit la surface de saisie **et** de notation de la carte de devant.
 ///
 /// Reçoit le [ZSessionItem] — **jamais un index**. C'est le piège su-7 fermé
 /// par la signature elle-même : la vue ne dispose d'aucun index à passer.
-typedef ZStudySessionGradingBuilder = Widget Function(
-  BuildContext context,
-  ZSessionItem item,
-);
+typedef ZStudySessionGradingBuilder =
+    Widget Function(BuildContext context, ZSessionItem item);
 
 /// Construit le résumé de fin de session.
 typedef ZStudySessionSummaryBuilder = Widget Function(BuildContext context);
@@ -124,6 +118,11 @@ class ZStudySessionLabels {
     this.revealAction,
     this.hideAction,
     this.continueAction,
+    this.confirmAction,
+    this.feedbackTitleFor,
+    this.explanationTitle,
+    this.progressBadgeLabelFor,
+    this.learningCounterLabelFor,
   });
 
   /// Message du repli « aucune carte à étudier ».
@@ -152,6 +151,22 @@ class ZStudySessionLabels {
   /// Libellé **et** étiquette sémantique de l'action qui passe à la carte
   /// suivante, une fois la réponse notée et lue.
   final String? continueAction;
+
+  /// Libellé de confirmation de la qualité choisie en apprentissage.
+  final String? confirmAction;
+
+  /// Titre de correction selon la qualité évaluée.
+  final String Function(int quality)? feedbackTitleFor;
+
+  /// Titre de la section d'explication de la correction.
+  final String? explanationTitle;
+
+  /// Badge du pourcentage de cartes consommées, entre 0 et 100.
+  final String Function(int percent)? progressBadgeLabelFor;
+
+  /// Compteur des cartes terminées, initiales et restantes.
+  final String Function(int completed, int total, int remaining)?
+  learningCounterLabelFor;
 }
 
 /// Corps composable de l'écran de session de révision.
@@ -201,21 +216,25 @@ class ZStudySessionView extends StatelessWidget {
   });
 
   /// Clé de l'issue de sortie du repli « session vide » (testabilité).
-  static const ValueKey<String> exitButtonKey =
-      ValueKey<String>('zStudySessionExit');
+  static const ValueKey<String> exitButtonKey = ValueKey<String>(
+    'zStudySessionExit',
+  );
 
   /// Clé du repli « session vide » (le test doit pouvoir **observer** le repli,
   /// pas seulement constater l'absence d'exception).
-  static const ValueKey<String> emptyKey =
-      ValueKey<String>('zStudySessionEmpty');
+  static const ValueKey<String> emptyKey = ValueKey<String>(
+    'zStudySessionEmpty',
+  );
 
   /// Clé du repli « carte introuvable » (AD-10).
-  static const ValueKey<String> missingCardKey =
-      ValueKey<String>('zStudySessionMissingCard');
+  static const ValueKey<String> missingCardKey = ValueKey<String>(
+    'zStudySessionMissingCard',
+  );
 
   /// Clé du repli « session indisponible pour ce mode » (AD-10/AD-34).
-  static const ValueKey<String> unavailableKey =
-      ValueKey<String>('zStudySessionUnavailable');
+  static const ValueKey<String> unavailableKey = ValueKey<String>(
+    'zStudySessionUnavailable',
+  );
 
   /// Clé l10n du repli « session indisponible ».
   static const String unavailableLabelKey = 'zcrud.study.session.unavailable';
@@ -379,25 +398,31 @@ class ZStudySessionView extends StatelessWidget {
       valueListenable: slices.phase,
       builder: (BuildContext context, ZStudySessionPhase phase, Widget? _) =>
           switch (phase) {
-        ZStudySessionPhase.empty => _buildEmpty(
-            context,
-            chrome,
-            labels?.emptyMessage ??
-                label(context, emptyLabelKey,
-                    fallback: 'Aucune carte à étudier.'),
-            emptyKey,
-          ),
-        ZStudySessionPhase.unavailable => _buildEmpty(
-            context,
-            chrome,
-            labels?.unavailableMessage ??
-                label(context, unavailableLabelKey,
-                    fallback: 'Session indisponible pour ce mode.'),
-            unavailableKey,
-          ),
-        ZStudySessionPhase.celebrating => _buildSummary(context, chrome),
-        ZStudySessionPhase.studying => _buildStudying(context, chrome),
-      },
+            ZStudySessionPhase.empty => _buildEmpty(
+              context,
+              chrome,
+              labels?.emptyMessage ??
+                  label(
+                    context,
+                    emptyLabelKey,
+                    fallback: 'Aucune carte à étudier.',
+                  ),
+              emptyKey,
+            ),
+            ZStudySessionPhase.unavailable => _buildEmpty(
+              context,
+              chrome,
+              labels?.unavailableMessage ??
+                  label(
+                    context,
+                    unavailableLabelKey,
+                    fallback: 'Session indisponible pour ce mode.',
+                  ),
+              unavailableKey,
+            ),
+            ZStudySessionPhase.celebrating => _buildSummary(context, chrome),
+            ZStudySessionPhase.studying => _buildStudying(context, chrome),
+          },
     );
   }
 
@@ -426,15 +451,9 @@ class ZStudySessionView extends StatelessWidget {
         // AD-4 — un slot nul n'est pas un nœud vide : il n'est PAS dans la
         // liste d'enfants. Le `Column` n'en calcule donc aucun flex.
         if (header != null)
-          _ProgressSlice(
-            progress: slices.progress,
-            builder: header,
-          ),
+          _ProgressSlice(progress: slices.progress, builder: header),
         if (counter != null)
-          _ProgressSlice(
-            progress: slices.progress,
-            builder: counter,
-          ),
+          _ProgressSlice(progress: slices.progress, builder: counter),
         Expanded(
           flex: chrome.stackFlex,
           child: _StackSlice(
@@ -442,7 +461,8 @@ class ZStudySessionView extends StatelessWidget {
             cardBuilder: cardBuilder,
             cardSlotBuilder: cardSlotBuilder,
             passThreshold: passThreshold,
-            progressStyle: progressStyle ??
+            progressStyle:
+                progressStyle ??
                 preset?.progressStyle ??
                 ZSessionProgressStyle.dots,
             // Même règle que le style, et jusqu'au bout : `null` reste `null`
@@ -454,7 +474,7 @@ class ZStudySessionView extends StatelessWidget {
                 progressLinearThickness ?? preset?.progressLinearThickness,
             progressSegmentedMarkerThickness:
                 progressSegmentedMarkerThickness ??
-                    preset?.progressSegmentedMarkerThickness,
+                preset?.progressSegmentedMarkerThickness,
             qualityOf: qualityOf,
             indexController: indexController,
             onIndexChanged: onIndexChanged,
@@ -540,7 +560,8 @@ class ZStudySessionView extends StatelessWidget {
               _ExitButton(
                 onPressed: exit,
                 minTarget: chrome.minTarget,
-                text: labels?.exitAction ??
+                text:
+                    labels?.exitAction ??
                     label(context, exitLabelKey, fallback: 'Retour'),
               ),
             ],
@@ -562,9 +583,9 @@ class _ProgressSlice extends StatelessWidget {
   Widget build(BuildContext context) =>
       ValueListenableBuilder<ZStudySessionProgress>(
         valueListenable: progress,
-        builder: (BuildContext context, ZStudySessionProgress value,
-                Widget? _) =>
-            builder(context, value),
+        builder:
+            (BuildContext context, ZStudySessionProgress value, Widget? _) =>
+                builder(context, value),
       );
 }
 
@@ -602,12 +623,12 @@ class _StackSlice extends StatelessWidget {
   final VoidCallback? onStackEnd;
 
   @override
-  Widget build(BuildContext context) =>
-      ValueListenableBuilder<List<ZSessionItem>>(
-        valueListenable: queue,
-        builder:
-            (BuildContext context, List<ZSessionItem> items, Widget? _) =>
-                ZSessionCardSwiper(
+  Widget build(
+    BuildContext context,
+  ) => ValueListenableBuilder<List<ZSessionItem>>(
+    valueListenable: queue,
+    builder: (BuildContext context, List<ZSessionItem> items, Widget? _) =>
+        ZSessionCardSwiper(
           // su-4 D1 — identité de FILE, jamais une clé constante ni la seule
           // longueur : un changement réel de file remonte l'`Element`, donc
           // aucun index ne survit à la file qu'il n'indexe plus.
@@ -628,7 +649,7 @@ class _StackSlice extends StatelessWidget {
           onIndexChanged: onIndexChanged,
           onStackEnd: onStackEnd,
         ),
-      );
+  );
 }
 
 /// Tranche « saisie / notation » — n'écoute que [ZStudySessionSlices.current].
@@ -647,32 +668,32 @@ class _GradingSlice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<ZSessionItem?>(
-        valueListenable: current,
-        builder: (BuildContext context, ZSessionItem? item, Widget? _) {
-          if (item == null) {
-            // Repli AD-10 **observable** — jamais une boîte vide : si la carte
-            // de devant manque (file épuisée d'une frame, désynchronisation),
-            // l'écran le DIT. Un `SizedBox.shrink()` rendrait le défaut
-            // indétectable au test comme à l'œil.
-            return Center(
-              key: ZStudySessionView.missingCardKey,
-              child: Text(
-                missingLabel ??
-                    label(
-                      context,
-                      ZStudySessionView.missingCardLabelKey,
-                      fallback: 'Carte introuvable',
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            );
-          }
-          return SingleChildScrollView(
-            padding: padding,
-            child: builder(context, item),
-          );
-        },
+    valueListenable: current,
+    builder: (BuildContext context, ZSessionItem? item, Widget? _) {
+      if (item == null) {
+        // Repli AD-10 **observable** — jamais une boîte vide : si la carte
+        // de devant manque (file épuisée d'une frame, désynchronisation),
+        // l'écran le DIT. Un `SizedBox.shrink()` rendrait le défaut
+        // indétectable au test comme à l'œil.
+        return Center(
+          key: ZStudySessionView.missingCardKey,
+          child: Text(
+            missingLabel ??
+                label(
+                  context,
+                  ZStudySessionView.missingCardLabelKey,
+                  fallback: 'Carte introuvable',
+                ),
+            textAlign: TextAlign.center,
+          ),
+        );
+      }
+      return SingleChildScrollView(
+        padding: padding,
+        child: builder(context, item),
       );
+    },
+  );
 }
 
 /// Issue de sortie accessible — cible ≥ 48 dp **en géométrie rendue**,
@@ -690,26 +711,21 @@ class _ExitButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-        button: true,
-        label: text,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minWidth: minTarget,
-            minHeight: minTarget,
-          ),
-          child: FilledButton(
-            key: ZStudySessionView.exitButtonKey,
-            onPressed: onPressed,
-            // Ceinture ET bretelles : le `ButtonStyle` de Material 3 pose une
-            // taille minimale de 40 dp — sous la cible AD-13. La contrainte
-            // parente la relèverait déjà, mais un hôte qui envelopperait ce
-            // bouton autrement perdrait la garantie. On la porte donc AUSSI
-            // dans le style, là où elle voyage avec le bouton.
-            style: FilledButton.styleFrom(
-              minimumSize: Size(minTarget, minTarget),
-            ),
-            child: ExcludeSemantics(child: Text(text)),
-          ),
-        ),
-      );
+    button: true,
+    label: text,
+    child: ConstrainedBox(
+      constraints: BoxConstraints(minWidth: minTarget, minHeight: minTarget),
+      child: FilledButton(
+        key: ZStudySessionView.exitButtonKey,
+        onPressed: onPressed,
+        // Ceinture ET bretelles : le `ButtonStyle` de Material 3 pose une
+        // taille minimale de 40 dp — sous la cible AD-13. La contrainte
+        // parente la relèverait déjà, mais un hôte qui envelopperait ce
+        // bouton autrement perdrait la garantie. On la porte donc AUSSI
+        // dans le style, là où elle voyage avec le bouton.
+        style: FilledButton.styleFrom(minimumSize: Size(minTarget, minTarget)),
+        child: ExcludeSemantics(child: Text(text)),
+      ),
+    ),
+  );
 }

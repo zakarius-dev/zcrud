@@ -308,6 +308,7 @@ export 'src/presentation/preset/z_session_header_spec.dart';
 export 'src/presentation/preset/z_study_session_preset.dart';
 export 'src/presentation/z_study_session_card_slot.dart';
 export 'src/presentation/z_study_session_host.dart';
+export 'src/presentation/z_learning_session_options.dart';
 // Types des FORMES de la surface de saisie (disposition des choix et des
 // contrôles d'aide, largeur de soumission, moment d'apparition de la rangée de
 // paliers), ré-exportés pour qu'un appelant de `ZStudySessionHost` puisse les

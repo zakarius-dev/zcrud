@@ -89,12 +89,13 @@ void main() {
   });
 
   group('ZCardAdvanceBehavior / ZTimerDisplay — enums, jamais des booléens', () {
-    test('ZCardAdvanceBehavior porte exactement {auto, manual}', () {
+    test('ZCardAdvanceBehavior porte exactement {auto, manual, confirm}', () {
       expect(
         ZCardAdvanceBehavior.values,
         <ZCardAdvanceBehavior>[
           ZCardAdvanceBehavior.auto,
           ZCardAdvanceBehavior.manual,
+          ZCardAdvanceBehavior.confirm,
         ],
       );
     });

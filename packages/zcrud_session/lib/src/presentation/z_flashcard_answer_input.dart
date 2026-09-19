@@ -68,6 +68,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 
 import '../domain/z_flashcard_submission.dart';
+import '../domain/z_learning_feedback.dart';
 import 'z_answer_input_reference.dart';
 import 'z_card_advance_behavior.dart';
 import 'z_correction_visibility.dart';
@@ -204,6 +205,13 @@ class ZFlashcardAnswerInput extends StatefulWidget {
     this.qualityPreviewLabelForCard,
     this.qualityEmphasis = ZSrsQualityEmphasis.none,
     this.onAdvance,
+    this.onAdvanceWithQuality,
+    this.onConfirm,
+    this.confirmLabel,
+    this.feedbackBuilder,
+    this.feedbackTitleFor,
+    this.explanationTitle,
+    this.squareQualityButtons = false,
     this.markSkippedSubmissions = false,
     this.bottomInset,
     this.choiceLayout,
@@ -435,6 +443,27 @@ class ZFlashcardAnswerInput extends StatefulWidget {
   /// Demande d'avance à la carte suivante (cette surface ne navigue pas
   /// elle-même).
   final VoidCallback? onAdvance;
+
+  /// Avance typée ; prioritaire sur le rappel historique sans argument.
+  final ValueChanged<int>? onAdvanceWithQuality;
+
+  /// Confirmation asynchrone. `false` laisse la réponse disponible pour réessai.
+  final Future<bool> Function(int quality)? onConfirm;
+
+  /// Libellé du bouton de confirmation.
+  final String? confirmLabel;
+
+  /// Rendu optionnel du retour pédagogique typé.
+  final Widget Function(BuildContext context, ZLearningFeedback feedback)? feedbackBuilder;
+
+  /// Titre pédagogique par palier.
+  final String Function(int quality)? feedbackTitleFor;
+
+  /// Titre de la section d'explication du retour pédagogique.
+  final String? explanationTitle;
+
+  /// Boutons de paliers carrés et aperçu en puce.
+  final bool squareQualityButtons;
 
   /// Réserve d'espace sous la surface, en dp.
   ///
@@ -947,7 +976,10 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
       _advanceTimer?.cancel();
       _advanceTimer = Timer(widget.autoAdvanceDelay, () {
         // `mounted` : ne jamais tirer sur un arbre démonté.
-        if (mounted) widget.onAdvance?.call();
+        if (mounted) {
+          final typed = widget.onAdvanceWithQuality;
+          if (typed != null) { typed(correction.quality); } else { widget.onAdvance?.call(); }
+        }
       });
     }
   }
@@ -1199,6 +1231,12 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
   void _handleManualGrade(int quality) {
     if (_submitLocked) return;
     _submitLocked = true;
+    if (_advanceBehavior == ZCardAdvanceBehavior.confirm) {
+      final selected = _finalQuality(quality);
+      setState(() => _manualQuality = selected);
+      _emit(_Correction(quality: selected));
+      return;
+    }
     // Un `setState` ici, et nulle part ailleurs : la notation manuelle est un
     // évènement TERMINAL (elle retire la saisie, les contrôles d'aide et la
     // soumission d'un coup), pas une frappe. La granularité SM-1 vise la
@@ -1328,6 +1366,17 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
             gradingVisibility: gradingVisibility,
             manualQuality: _manualQuality,
             onManualGrade: _handleManualGrade,
+            confirm: _advanceBehavior == ZCardAdvanceBehavior.confirm,
+            onConfirm: widget.onConfirm,
+            onAdvanceWithQuality: widget.onAdvanceWithQuality,
+            onAdvance: widget.onAdvance,
+            confirmLabel: widget.confirmLabel,
+            feedbackBuilder: widget.feedbackBuilder,
+            feedbackTitleFor: widget.feedbackTitleFor,
+            explanationTitle: widget.explanationTitle,
+            squareQualityButtons: widget.squareQualityButtons,
+            explanation: widget.card.explanation,
+            finalQuality: _finalQuality,
           ),
         ],
       ),
@@ -2454,7 +2503,7 @@ class _DontKnowButton extends StatelessWidget {
 }
 
 /// Section correction et rangée SRS pré-sélectionnée.
-class _CorrectionSection extends StatelessWidget {
+class _CorrectionSection extends StatefulWidget {
   const _CorrectionSection({
     required this.correction,
     required this.visibility,
@@ -2467,7 +2516,30 @@ class _CorrectionSection extends StatelessWidget {
     required this.gradingVisibility,
     required this.manualQuality,
     required this.onManualGrade,
+    required this.confirm,
+    required this.onConfirm,
+    required this.onAdvanceWithQuality,
+    required this.onAdvance,
+    required this.confirmLabel,
+    required this.feedbackBuilder,
+    required this.feedbackTitleFor,
+    required this.explanationTitle,
+    required this.squareQualityButtons,
+    required this.explanation,
+    required this.finalQuality,
   });
+
+  final bool confirm;
+  final Future<bool> Function(int quality)? onConfirm;
+  final ValueChanged<int>? onAdvanceWithQuality;
+  final VoidCallback? onAdvance;
+  final String? confirmLabel;
+  final Widget Function(BuildContext context, ZLearningFeedback feedback)? feedbackBuilder;
+  final String Function(int quality)? feedbackTitleFor;
+  final String? explanationTitle;
+  final bool squareQualityButtons;
+  final String? explanation;
+  final int Function(int) finalQuality;
 
   final ValueListenable<_Correction?> correction;
 
@@ -2494,6 +2566,59 @@ class _CorrectionSection extends StatelessWidget {
   /// soumission.
   final ValueChanged<int> onManualGrade;
 
+  @override
+  State<_CorrectionSection> createState() => _CorrectionSectionState();
+}
+
+class _CorrectionSectionState extends State<_CorrectionSection> {
+  int? _selectedQuality;
+  bool _busy = false;
+  bool _advanced = false;
+  _Correction? _last;
+
+  Future<void> _confirm(int quality) async {
+    if (_busy || _advanced) return;
+    setState(() => _busy = true);
+    final original = _last;
+    var succeeded = false;
+    try {
+      final handler = widget.onConfirm;
+      if (handler != null) {
+        succeeded = await handler(quality);
+      } else {
+        final typed = widget.onAdvanceWithQuality;
+        if (typed != null) { typed(quality); } else { widget.onAdvance?.call(); }
+        succeeded = true;
+      }
+    } finally {
+      if (mounted && identical(original, widget.correction.value)) {
+        setState(() { _busy = false; _advanced = succeeded; });
+      }
+    }
+  }
+
+  ValueListenable<_Correction?> get correction => widget.correction;
+  ZCorrectionVisibility get visibility => widget.visibility;
+  ValueChanged<int>? get onQualitySelected => widget.onQualitySelected;
+  ZSrsConfig get srsConfig => widget.srsConfig;
+  ZQualityLabelKeyResolver get qualityLabelKeyFor => widget.qualityLabelKeyFor;
+  ZQualityColorKeyResolver? get qualityColorKeyFor => widget.qualityColorKeyFor;
+  String Function(int)? get qualityPreviewLabelFor => widget.qualityPreviewLabelFor;
+  ZSrsQualityEmphasis get qualityEmphasis => widget.qualityEmphasis;
+  ZAnswerGradingVisibility get gradingVisibility => widget.gradingVisibility;
+  int? get manualQuality => widget.manualQuality;
+  ValueChanged<int> get onManualGrade => widget.onManualGrade;
+
+  Widget _confirmation(BuildContext context, int quality) => FilledButton(
+    key: const ValueKey<String>('zConfirmLearning'),
+    style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+    onPressed: _busy || _advanced || (widget.onConfirm == null &&
+        widget.onAdvanceWithQuality == null && widget.onAdvance == null)
+        ? null : () => _confirm(quality),
+    child: Text(widget.confirmLabel ?? label(context,
+      'zcrud.study.session.confirm', fallback: 'Question suivante')),
+  );
+
   /// Clé du bloc de feedback.
   static const ValueKey<String> feedbackKey = ValueKey<String>('zFeedback');
 
@@ -2503,6 +2628,12 @@ class _CorrectionSection extends StatelessWidget {
     return ValueListenableBuilder<_Correction?>(
       valueListenable: correction,
       builder: (context, corrected, _) {
+        if (!identical(_last, corrected)) {
+          _last = corrected;
+          _selectedQuality = null;
+          _busy = false;
+          _advanced = false;
+        }
         if (corrected == null) return _beforeSubmission(context);
         // En `deferred` (examen blanc), la correction est posée (verrous
         // intacts) mais rien n'est peint : ni feedback, ni rangée SRS.
@@ -2512,9 +2643,15 @@ class _CorrectionSection extends StatelessWidget {
         // toute comparaison `== deferred` recopiée ici divergerait de la
         // polarité `== immediate` des autres sites.
         if (!visibility.paintsCorrection) {
-          return const SizedBox.shrink();
+          return widget.confirm
+              ? _confirmation(context, corrected.quality)
+              : const SizedBox.shrink();
         }
-        final selectedQuality = onQualitySelected;
+        final selectedQuality = widget.confirm
+            ? (int q) { if (!_busy && !_advanced) setState(() => _selectedQuality = widget.finalQuality(q)); }
+            : onQualitySelected;
+        final quality = _selectedQuality ?? corrected.quality;
+        final feedback = ZLearningFeedback(quality: quality, message: corrected.feedback ?? '', explanation: widget.explanation);
         // Aucune affordance de cette surface n'est animée, donc aucun
         // appel à `zReduceMotionOf` ici : sans animation, l'invariant AD-13
         // sur les animations est satisfait par vacuité.
@@ -2522,7 +2659,22 @@ class _CorrectionSection extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            if (corrected.feedback != null)
+            if (widget.confirm || widget.feedbackBuilder != null)
+              Semantics(liveRegion: true, child: widget.feedbackBuilder?.call(context, feedback) ??
+                Card(child: Padding(padding: theme.fieldPadding, child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.feedbackTitleFor?.call(quality) ?? label(context, qualityLabelKeyFor(quality)),
+                      style: TextStyle(color: zResolveColorKeyOrSlot(context,
+                        qualityColorKeyFor?.call(quality) ?? (quality >= srsConfig.passThreshold ? 'primary' : 'error'), slotIndex: quality).color)),
+                    if (feedback.message.isNotEmpty) Text(feedback.message, key: feedbackKey),
+                    if (feedback.explanation?.isNotEmpty ?? false) ...[
+                      Text(widget.explanationTitle ?? label(context, 'zcrud.study.session.explanation', fallback: 'Explication'), style: Theme.of(context).textTheme.titleSmall),
+                      Text(feedback.explanation!),
+                    ],
+                  ],
+                )))),
+            if (!widget.confirm && widget.feedbackBuilder == null && corrected.feedback != null)
               // `liveRegion` (invariant AD-13) : le feedback du barème est
               // le contenu pédagogique central de la carte et il apparaît
               // de façon asynchrone, hors du focus. Sans lui, il serait
@@ -2544,7 +2696,8 @@ class _CorrectionSection extends StatelessWidget {
                 passThreshold: srsConfig.passThreshold,
                 // Advisory : le cran suggéré est pré-sélectionné, et c'est
                 // le tap de l'utilisateur qui vaut notation.
-                selectedQuality: corrected.quality,
+                selectedQuality: quality,
+                square: widget.squareQualityButtons,
                 onQualitySelected: selectedQuality,
                 // Seams relayés tels quels. Leurs défauts (résolveur de
                 // libellé historique, `null`, `null`, `none`) reproduisent
@@ -2556,6 +2709,8 @@ class _CorrectionSection extends StatelessWidget {
                 emphasis: qualityEmphasis,
               ),
             ],
+            if (widget.confirm)
+              _confirmation(context, quality),
           ],
         );
       },
@@ -2576,7 +2731,7 @@ class _CorrectionSection extends StatelessWidget {
   /// `onQualitySelected` — la voie habituelle, aucune autre — et verrouille
   /// la surface. Une seule écriture, jamais deux.
   Widget _beforeSubmission(BuildContext context) {
-    final ValueChanged<int>? emit = onQualitySelected;
+    final ValueChanged<int>? emit = widget.confirm ? onManualGrade : onQualitySelected;
     if (gradingVisibility != ZAnswerGradingVisibility.always ||
         emit == null ||
         !visibility.paintsCorrection) {

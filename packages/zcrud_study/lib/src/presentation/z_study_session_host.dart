@@ -87,6 +87,7 @@ import 'package:zcrud_session/zcrud_session.dart'
         ZQualityLabelKeyResolver,
         ZSessionCardSlot,
         ZSessionDotsGeometry,
+        ZCardAdvanceBehavior,
         ZSessionItem,
         ZSessionProgressStyle,
         ZSessionReviewer,
@@ -103,6 +104,7 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 import 'preset/z_card_chrome_spec.dart';
 import 'preset/z_study_session_preset.dart';
 import 'z_faded_overflow.dart';
+import 'z_learning_session_options.dart';
 import 'z_study_session_card_slot.dart';
 import 'z_study_session_post_submit.dart';
 import 'z_study_session_recall.dart';
@@ -113,11 +115,12 @@ import 'z_study_session_slices.dart';
 import 'z_study_session_view.dart';
 
 /// Construit le résumé de fin — reçoit le résultat **agrégé** et la durée.
-typedef ZStudySessionResultBuilder = Widget Function(
-  BuildContext context,
-  ZStudySessionResult result,
-  Duration duration,
-);
+typedef ZStudySessionResultBuilder =
+    Widget Function(
+      BuildContext context,
+      ZStudySessionResult result,
+      Duration duration,
+    );
 
 /// Construit la surface de saisie/notation **branchée sur le runtime**.
 ///
@@ -136,11 +139,12 @@ typedef ZStudySessionResultBuilder = Widget Function(
 ///
 /// [submit] route la soumission vers le runtime **désigné**, exactement comme
 /// la surface par défaut : association par `flashcardId`, jamais par index.
-typedef ZStudySessionGradingSlotBuilder = Widget Function(
-  BuildContext context,
-  ZSessionItem item,
-  ValueChanged<ZFlashcardSubmission> submit,
-);
+typedef ZStudySessionGradingSlotBuilder =
+    Widget Function(
+      BuildContext context,
+      ZSessionItem item,
+      ValueChanged<ZFlashcardSubmission> submit,
+    );
 
 /// Montage COMPLET d'une session : **tous** les seams, **tous** à nommer.
 ///
@@ -169,6 +173,7 @@ typedef ZStudySessionGradingSlotBuilder = Widget Function(
 class ZStudySessionWiring {
   /// Énumère le montage. Chaque seam est à nommer, `null` compris.
   const ZStudySessionWiring({
+    required this.learning,
     required this.reviewer,
     required this.cardBuilder,
     required this.cardSlotBuilder,
@@ -197,30 +202,34 @@ class ZStudySessionWiring {
 
   /// Renonce à **tous** les seams — pour un banc d'essai, jamais pour un écran.
   const ZStudySessionWiring.none()
-      : reviewer = null,
-        cardBuilder = null,
-        cardSlotBuilder = null,
-        contentBuilder = null,
-        questionTypeBadgeBuilder = null,
-        instructionBanner = null,
-        evaluationPort = null,
-        hintPort = null,
-        onQualitySelected = null,
-        qualityColorKeyFor = null,
-        qualityPreviewLabelFor = null,
-        qualityPreviewLabelForCard = null,
-        onSource = null,
-        headerBuilder = null,
-        counterBuilder = null,
-        gradingBuilder = null,
-        summaryBuilder = null,
-        emptyBuilder = null,
-        celebrationBuilder = null,
-        labels = null,
-        onSessionEnd = null,
-        onExit = null,
-        indexController = null,
-        preset = null;
+    : learning = null,
+      reviewer = null,
+      cardBuilder = null,
+      cardSlotBuilder = null,
+      contentBuilder = null,
+      questionTypeBadgeBuilder = null,
+      instructionBanner = null,
+      evaluationPort = null,
+      hintPort = null,
+      onQualitySelected = null,
+      qualityColorKeyFor = null,
+      qualityPreviewLabelFor = null,
+      qualityPreviewLabelForCard = null,
+      onSource = null,
+      headerBuilder = null,
+      counterBuilder = null,
+      gradingBuilder = null,
+      summaryBuilder = null,
+      emptyBuilder = null,
+      celebrationBuilder = null,
+      labels = null,
+      onSessionEnd = null,
+      onExit = null,
+      indexController = null,
+      preset = null;
+
+  /// Cycle d'apprentissage optionnel, explicitement choisi par le montage.
+  final ZLearningSessionOptions? learning;
 
   /// Voie d'écriture SRS — cf. [ZStudySessionHost.reviewer].
   final ZSessionReviewer? reviewer;
@@ -259,7 +268,7 @@ class ZStudySessionWiring {
   /// Aperçu d'intervalle recevant la carte — cf.
   /// [ZStudySessionHost.qualityPreviewLabelForCard].
   final String Function(ZFlashcard card, int quality)?
-      qualityPreviewLabelForCard;
+  qualityPreviewLabelForCard;
 
   /// Action « voir la source » — cf. [ZStudySessionHost.onSource].
   final void Function(ZFlashcard card)? onSource;
@@ -287,7 +296,7 @@ class ZStudySessionWiring {
 
   /// Fin de session — cf. [ZStudySessionHost.onSessionEnd].
   final void Function(ZStudySessionResult result, Duration duration)?
-      onSessionEnd;
+  onSessionEnd;
 
   /// Issue de sortie — cf. [ZStudySessionHost.onExit].
   final VoidCallback? onExit;
@@ -311,6 +320,7 @@ class ZStudySessionHost extends StatefulWidget {
   /// `srsEngine` ; les modes non-SRS n'en reçoivent aucune, et **aucun no-op
   /// n'est inventé** pour combler son absence (AD-34).
   const ZStudySessionHost({
+    this.learning,
     required this.mode,
     required this.queue,
     this.reviewer,
@@ -369,12 +379,11 @@ class ZStudySessionHost extends StatefulWidget {
     this.counterStyle,
     this.seamAudit,
     super.key,
-  })  :
-        // Un champ PRIVÉ ne peut pas être un paramètre initialisant : un
-        // paramètre nommé ne commence jamais par `_`. Le montage à plat n'en
-        // porte aucun — c'est ce qui le distingue du montage énuméré, et ce
-        // que l'audit lit pour savoir si un `null` est une décision.
-        _wiring = null;
+  }) : // Un champ PRIVÉ ne peut pas être un paramètre initialisant : un
+       // paramètre nommé ne commence jamais par `_`. Le montage à plat n'en
+       // porte aucun — c'est ce qui le distingue du montage énuméré, et ce
+       // que l'audit lit pour savoir si un `null` est une décision.
+       _wiring = null;
 
   /// Assemble une session dont le montage est **ÉNUMÉRÉ** par [wiring].
   ///
@@ -432,41 +441,46 @@ class ZStudySessionHost extends StatefulWidget {
     this.minTarget,
     this.counterStyle,
     super.key,
-  })  : reviewer = wiring.reviewer,
-        cardBuilder = wiring.cardBuilder,
-        cardSlotBuilder = wiring.cardSlotBuilder,
-        contentBuilder = wiring.contentBuilder,
-        questionTypeBadgeBuilder = wiring.questionTypeBadgeBuilder,
-        instructionBanner = wiring.instructionBanner,
-        evaluationPort = wiring.evaluationPort,
-        hintPort = wiring.hintPort,
-        onQualitySelected = wiring.onQualitySelected,
-        qualityColorKeyFor = wiring.qualityColorKeyFor,
-        qualityPreviewLabelFor = wiring.qualityPreviewLabelFor,
-        qualityPreviewLabelForCard = wiring.qualityPreviewLabelForCard,
-        onSource = wiring.onSource,
-        headerBuilder = wiring.headerBuilder,
-        counterBuilder = wiring.counterBuilder,
-        gradingBuilder = wiring.gradingBuilder,
-        summaryBuilder = wiring.summaryBuilder,
-        emptyBuilder = wiring.emptyBuilder,
-        celebrationBuilder = wiring.celebrationBuilder,
-        labels = wiring.labels,
-        onSessionEnd = wiring.onSessionEnd,
-        onExit = wiring.onExit,
-        indexController = wiring.indexController,
-        preset = wiring.preset,
-        // Le montage énuméré ne peut RIEN oublier : le compilateur a exigé que
-        // chaque seam soit nommé. Il n'y a donc pas de politique d'audit à
-        // poser ici — et l'audit hors rendu lit ce champ pour traiter chaque
-        // `null` comme la décision écrite qu'il est.
-        seamAudit = null,
-        // ignore: prefer_initializing_formals
-        _wiring = wiring;
+  }) : learning = wiring.learning,
+       reviewer = wiring.reviewer,
+       cardBuilder = wiring.cardBuilder,
+       cardSlotBuilder = wiring.cardSlotBuilder,
+       contentBuilder = wiring.contentBuilder,
+       questionTypeBadgeBuilder = wiring.questionTypeBadgeBuilder,
+       instructionBanner = wiring.instructionBanner,
+       evaluationPort = wiring.evaluationPort,
+       hintPort = wiring.hintPort,
+       onQualitySelected = wiring.onQualitySelected,
+       qualityColorKeyFor = wiring.qualityColorKeyFor,
+       qualityPreviewLabelFor = wiring.qualityPreviewLabelFor,
+       qualityPreviewLabelForCard = wiring.qualityPreviewLabelForCard,
+       onSource = wiring.onSource,
+       headerBuilder = wiring.headerBuilder,
+       counterBuilder = wiring.counterBuilder,
+       gradingBuilder = wiring.gradingBuilder,
+       summaryBuilder = wiring.summaryBuilder,
+       emptyBuilder = wiring.emptyBuilder,
+       celebrationBuilder = wiring.celebrationBuilder,
+       labels = wiring.labels,
+       onSessionEnd = wiring.onSessionEnd,
+       onExit = wiring.onExit,
+       indexController = wiring.indexController,
+       preset = wiring.preset,
+       // Le montage énuméré ne peut RIEN oublier : le compilateur a exigé que
+       // chaque seam soit nommé. Il n'y a donc pas de politique d'audit à
+       // poser ici — et l'audit hors rendu lit ce champ pour traiter chaque
+       // `null` comme la décision écrite qu'il est.
+       seamAudit = null,
+       // ignore: prefer_initializing_formals
+       _wiring = wiring;
 
   /// Clé de l'action de révélation (testabilité).
-  static const ValueKey<String> revealActionKey =
-      ValueKey<String>('zStudySessionReveal');
+  static const ValueKey<String> revealActionKey = ValueKey<String>(
+    'zStudySessionReveal',
+  );
+
+  /// Cycle d'apprentissage avec confirmation explicite avant écriture.
+  final ZLearningSessionOptions? learning;
 
   /// Clé l10n du libellé « afficher la réponse ».
   ///
@@ -478,8 +492,9 @@ class ZStudySessionHost extends StatefulWidget {
   static const String hideLabelKey = 'zcrud.flashcard.hide';
 
   /// Clé de l'action de continuation après notation (testabilité).
-  static const ValueKey<String> continueActionKey =
-      ValueKey<String>('zStudySessionContinue');
+  static const ValueKey<String> continueActionKey = ValueKey<String>(
+    'zStudySessionContinue',
+  );
 
   /// Clé l10n du libellé « continuer » (passer à la carte suivante).
   static const String continueLabelKey = 'zcrud.session.continue';
@@ -682,7 +697,7 @@ class ZStudySessionHost extends StatefulWidget {
   ///
   /// Prioritaire sur [qualityPreviewLabelFor] quand les deux sont posés.
   final String Function(ZFlashcard card, int quality)?
-      qualityPreviewLabelForCard;
+  qualityPreviewLabelForCard;
 
   /// Action « voir la source » de la carte de **devant**.
   ///
@@ -786,7 +801,7 @@ class ZStudySessionHost extends StatefulWidget {
 
   /// Notifié **une seule fois** par session, à l'épuisement de la file (latch).
   final void Function(ZStudySessionResult result, Duration duration)?
-      onSessionEnd;
+  onSessionEnd;
 
   /// Issue de sortie des replis. `null` ⇒ bouton absent : jamais d'action
   /// fabriquée que le widget ne saurait pas exécuter.
@@ -1036,8 +1051,9 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     assert(() {
       final ZStudySeamAuditPolicy? policy = widget.seamAudit;
       if (policy != null) {
-        final ZStudySeamReport report =
-            widget.auditSeams(waived: policy.waived);
+        final ZStudySeamReport report = widget.auditSeams(
+          waived: policy.waived,
+        );
         if (!report.isComplete) zStudyReportSeamGap(report: report);
       }
       return true;
@@ -1075,6 +1091,7 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
 
   /// Vrai si la carte notée est retenue avant de partir (table unique).
   bool get _holdsAfterSubmit =>
+      _learning == null &&
       zStudySessionHoldsAfterSubmit(widget.mode, widget.postSubmitPolicy);
 
   /// Contrôleur de révélation — créé une fois, STABLE, disposé par le patron.
@@ -1098,6 +1115,10 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     if (oldWidget.mode != widget.mode ||
         _identityOf(oldWidget.queue) != _identityOf(widget.queue)) {
       _seed();
+    }
+    final runtime = _runtime;
+    if (runtime is ZStudySessionEngine) {
+      runtime.updateQueuePolicy(_learning?.queuePolicy);
     }
   }
 
@@ -1195,6 +1216,7 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
         final ZSessionReviewer? reviewer = widget.reviewer;
         if (reviewer == null) return null; // cf. `_seed` — phase `unavailable`.
         return ZStudySessionEngine(
+          queuePolicy: _learning?.queuePolicy,
           queue: queue,
           reviewer: reviewer,
           config: widget.config,
@@ -1361,13 +1383,14 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
     final ChangeNotifier? rt = _runtime;
     switch (zSessionRuntimeForMode(widget.mode)) {
       case ZSessionRuntimeKind.srsEngine:
-        final ZStudySessionEngine? engine =
-            rt is ZStudySessionEngine ? rt : null;
+        final ZStudySessionEngine? engine = rt is ZStudySessionEngine
+            ? rt
+            : null;
         // La garde d'identité tient PAR CONSTRUCTION (la carte affichée EST le
         // front du moteur) ; elle protège encore contre une note sur la
         // mauvaise carte, sans jamais diverger du swiper.
         if (engine != null && engine.current?.flashcardId == cardId) {
-          unawaited(_gradeAndAdvance(engine, quality));
+          unawaited(_gradeAndAdvance(engine, quality).then<void>((_) {}));
         }
       case ZSessionRuntimeKind.linear:
         // `answer` sert `list` ET `cramming` : en `list` la qualité est
@@ -1376,8 +1399,9 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
         // pas de seam).
         (rt is ZLinearSessionState ? rt : null)?.answer(quality);
       case ZSessionRuntimeKind.whiteExam:
-        final ZWhiteExamSessionEngine? engine =
-            rt is ZWhiteExamSessionEngine ? rt : null;
+        final ZWhiteExamSessionEngine? engine = rt is ZWhiteExamSessionEngine
+            ? rt
+            : null;
         if (engine != null && engine.state.phase == ZWhiteExamPhase.running) {
           engine.answer(quality);
         }
@@ -1391,17 +1415,14 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
   /// pile — un lapse y réapparaît en aval, une réussite consomme la carte — et
   /// le front reste `engine.current`. Une seule séquence, jamais deux curseurs
   /// qui divergeraient au 1ᵉʳ lapse (et donc jamais une note qui tombe à côté).
-  Future<void> _gradeAndAdvance(
-    ZStudySessionEngine engine,
-    int quality,
-  ) async {
+  Future<bool> _gradeAndAdvance(ZStudySessionEngine engine, int quality) async {
     // Le gel précède la notation : le moteur notifie AVANT que ce `Future` ne
     // retombe, et sans lui la carte serait déjà remplacée quand la retenue
     // s'appliquerait.
     _frozen = _holdsAfterSubmit;
     final result = await engine.grade(quality);
-    if (!mounted) return;
-    result.fold(
+    if (!mounted || !identical(_runtime, engine)) return false;
+    return result.fold(
       (_) {
         // AD-10 — échec TYPÉ : la file du moteur est inchangée, la saisie est
         // conservée, la carte reste affichée. L'échec vit dans l'état du
@@ -1412,6 +1433,8 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
         // one-shot se relève, sans quoi la carte resterait ineffaçablement
         // « déjà notée » alors qu'elle ne l'est pas.
         _gradingId = null;
+        _gradedQualityById.remove(engine.current?.flashcardId);
+        return false;
       },
       (_) {
         // 🔒 La note est DÉJÀ partie ci-dessus, au même moment et avec la même
@@ -1422,7 +1445,7 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
           // socle via son contrôleur, celle de l'hôte via le créneau.
           if (_revealAvailable) _revealController.value = true;
           _held.value = true;
-          return;
+          return true;
         }
         _frozen = false;
         // La carte notée part : sa présentation est consommée ICI et non dans
@@ -1431,12 +1454,78 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
         _consumePresentation();
         if (engine.isComplete) {
           _onStackEnd();
-          return;
+          return true;
         }
         _index = 0;
         _queue.value = engine.state.queue;
         _sync();
+        return true;
       },
+    );
+  }
+
+  Future<bool> _confirmLearning(String cardId, int quality) async {
+    if (_gradingId != null || _current.value?.flashcardId != cardId) {
+      return false;
+    }
+    final ChangeNotifier? runtime = _runtime;
+    if (runtime is ZStudySessionEngine) {
+      if (runtime.current?.flashcardId != cardId) return false;
+      final previousQuality = _gradedQualityById[cardId];
+      _gradingId = cardId;
+      _gradedQualityById[cardId] = quality;
+      widget.onQualitySelected?.call(quality);
+      final success = await _gradeAndAdvance(runtime, quality);
+      if (!success && mounted && identical(_runtime, runtime)) {
+        if (previousQuality == null) {
+          _gradedQualityById.remove(cardId);
+        } else {
+          _gradedQualityById[cardId] = previousQuality;
+        }
+      }
+      return success;
+    }
+    widget.onQualitySelected?.call(quality);
+    _grade(cardId, quality);
+    return true;
+  }
+
+  /// L'apprentissage cyclique ne modifie que les deux régimes SRS.
+  ZLearningSessionOptions? get _learning =>
+      widget.mode == ZReviewMode.learn || widget.mode == ZReviewMode.spaced
+          ? widget.learning
+          : null;
+
+  Widget _learningCounter(
+    BuildContext context,
+    ZStudySessionProgress progress,
+  ) {
+    final completed = (progress.total - progress.remaining).clamp(
+      0,
+      progress.total,
+    );
+    final percent = progress.total == 0
+        ? 0
+        : (100 * completed / progress.total).round();
+    final labels = widget.labels;
+    final localizations = MaterialLocalizations.of(context);
+    final badge =
+        labels?.progressBadgeLabelFor?.call(percent) ??
+        '${localizations.formatDecimal(percent)}%';
+    final counter =
+        labels?.learningCounterLabelFor?.call(
+          completed,
+          progress.total,
+          progress.remaining,
+        ) ??
+        '${localizations.formatDecimal(completed)} / '
+            '${localizations.formatDecimal(progress.total)}';
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Chip(label: Text(badge)),
+        Text(counter),
+      ],
     );
   }
 
@@ -1512,17 +1601,17 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
   /// exception non plus : la désynchronisation d'une carte ne fait pas tomber
   /// la session.
   Widget _missingCard(BuildContext context) => Center(
-        key: ZStudySessionView.missingCardKey,
-        child: Text(
-          widget.labels?.missingCard ??
-              label(
-                context,
-                ZStudySessionView.missingCardLabelKey,
-                fallback: 'Carte introuvable',
-              ),
-          textAlign: TextAlign.center,
-        ),
-      );
+    key: ZStudySessionView.missingCardKey,
+    child: Text(
+      widget.labels?.missingCard ??
+          label(
+            context,
+            ZStudySessionView.missingCardLabelKey,
+            fallback: 'Carte introuvable',
+          ),
+      textAlign: TextAlign.center,
+    ),
+  );
 
   /// ② Carte d'AFFICHAGE — résolue par **identité** dans `_cardsById`, jamais
   /// par index.
@@ -1589,8 +1678,8 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
       key: ValueKey<String>('zStudySessionCard_$flashcardId'),
       card: card,
       contentBuilder: widget.contentBuilder,
-      questionTypeBadgeBuilder: widget.questionTypeBadgeBuilder ??
-          chrome?.questionTypeBadgeBuilder,
+      questionTypeBadgeBuilder:
+          widget.questionTypeBadgeBuilder ?? chrome?.questionTypeBadgeBuilder,
       instructionBanner: widget.instructionBanner ?? chrome?.instructionBanner,
       typeGradientKey: widget.cardTypeGradientKey ?? chrome?.typeGradientKey,
       accentHeight: widget.cardAccentHeight ?? chrome?.accentHeight,
@@ -1605,8 +1694,7 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
       // L'action de source ne va qu'à la carte CONSULTÉE : la porter sur les
       // cartes empilées offrirait de naviguer vers la source d'une question
       // qu'on n'a pas encore lue — et ces cartes sont muettes par défaut.
-      onSource:
-          (isFront && source != null) ? () => source(card) : null,
+      onSource: (isFront && source != null) ? () => source(card) : null,
       // Les deux décisions que SEUL l'assemblage peut prendre : ce que rend la
       // surface posée à côté de la carte, et le rang de la carte dans la pile.
       // Une carte consultée seule ne peut savoir ni l'un ni l'autre.
@@ -1690,14 +1778,14 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
       controller: _revealController,
       builder: (BuildContext context, bool revealed, VoidCallback toggle) =>
           host(
-        context,
-        ZStudySessionCardSlot(
-          slot: slot,
-          card: card,
-          revealed: revealed,
-          toggleReveal: toggle,
-        ),
-      ),
+            context,
+            ZStudySessionCardSlot(
+              slot: slot,
+              card: card,
+              revealed: revealed,
+              toggleReveal: toggle,
+            ),
+          ),
     );
   }
 
@@ -1707,35 +1795,35 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
   /// Les deux ne coexistent jamais : pendant la retenue, la réponse est déjà à
   /// l'écran et le seul geste attendu est de passer à la suite.
   Widget _buildRevealSlot(BuildContext context) => ValueListenableBuilder<bool>(
-        valueListenable: _held,
-        builder: (BuildContext context, bool held, Widget? _) {
-          if (held) {
-            return Padding(
-              padding: ZStudySessionReference.revealActionPadding,
-              child: _ContinueAction(
-                onPressed: _continueAfterHold,
-                minTarget: widget.minTarget ?? ZStudySessionReference.minTarget,
-                continueLabel: widget.labels?.continueAction,
-              ),
-            );
-          }
-          if (!_nativeRevealAction) return const SizedBox.shrink();
-          return _buildReveal(context);
-        },
-      );
+    valueListenable: _held,
+    builder: (BuildContext context, bool held, Widget? _) {
+      if (held) {
+        return Padding(
+          padding: ZStudySessionReference.revealActionPadding,
+          child: _ContinueAction(
+            onPressed: _continueAfterHold,
+            minTarget: widget.minTarget ?? ZStudySessionReference.minTarget,
+            continueLabel: widget.labels?.continueAction,
+          ),
+        );
+      }
+      if (!_nativeRevealAction) return const SizedBox.shrink();
+      return _buildReveal(context);
+    },
+  );
 
   /// Action de révélation — bascule la SEULE source de vérité, et rien d'autre.
   ///
   /// N'écrit aucun SRS, ne note pas, ne fait pas avancer la pile.
   Widget _buildReveal(BuildContext context) => Padding(
-        padding: ZStudySessionReference.revealActionPadding,
-        child: _RevealToggle(
-          controller: _revealController,
-          minTarget: widget.minTarget ?? ZStudySessionReference.minTarget,
-          revealLabel: widget.labels?.revealAction,
-          hideLabel: widget.labels?.hideAction,
-        ),
-      );
+    padding: ZStudySessionReference.revealActionPadding,
+    child: _RevealToggle(
+      controller: _revealController,
+      minTarget: widget.minTarget ?? ZStudySessionReference.minTarget,
+      revealLabel: widget.labels?.revealAction,
+      hideLabel: widget.labels?.hideAction,
+    ),
+  );
 
   /// Builder de rappel de question RÉELLEMENT passé à la surface de saisie.
   ///
@@ -1811,14 +1899,28 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
       bottomInset: widget.bottomInset,
       evaluationPort: widget.evaluationPort,
       hintPort: widget.hintPort,
-      onSubmitted: submit,
+      onSubmitted: _learning == null ? submit : null,
+      advanceBehavior: _learning == null
+          ? null
+          : ZCardAdvanceBehavior.confirm,
+      onConfirm: _learning == null
+          ? null
+          : (quality) => _confirmLearning(item.flashcardId, quality),
+      confirmLabel: widget.labels?.confirmAction,
+      feedbackTitleFor: widget.labels?.feedbackTitleFor,
+      explanationTitle: widget.labels?.explanationTitle,
+      feedbackBuilder: _learning?.feedbackBuilder,
+      squareQualityButtons: _learning?.squareQualityButtons ?? false,
       allowSkipEvaluation: widget.answerAllowSkipEvaluation ?? false,
       revealStoredHint: widget.answerRevealStoredHint ?? false,
       // La rangée reste gouvernée par le seam de l'hôte : sans lui, aucune
       // rangée n'est montée, ni avant ni après la réponse. Posé, c'est
       // l'assemblage qui reçoit le cran — il note, PUIS relaie.
-      onQualitySelected:
-          widget.onQualitySelected == null ? null : gradeManually,
+      onQualitySelected: _learning != null
+          ? widget.onQualitySelected
+          : widget.onQualitySelected == null
+          ? null
+          : gradeManually,
       // Seams de présentation de la rangée de notation, relayés TELS QUELS.
       // Leurs défauts (`zDefaultQualityLabelKey`, `null`, `null`, `none`)
       // reproduisent exactement le rendu d'avant leur existence ; et sans
@@ -1840,9 +1942,9 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
           widget.answerChoiceLayout ?? widget.preset?.answerChoiceLayout,
       actionsLayout:
           widget.answerActionsLayout ?? widget.preset?.answerActionsLayout,
-      submitWidth:
-          widget.answerSubmitWidth ?? widget.preset?.answerSubmitWidth,
-      gradingVisibility: widget.answerGradingVisibility ??
+      submitWidth: widget.answerSubmitWidth ?? widget.preset?.answerSubmitWidth,
+      gradingVisibility:
+          widget.answerGradingVisibility ??
           widget.preset?.answerGradingVisibility,
     );
   }
@@ -1856,53 +1958,54 @@ class _ZStudySessionHostState extends State<ZStudySessionHost>
 
   @override
   Widget build(BuildContext context) => ZStudySessionView(
-        slices: ZStudySessionSlices(
-          phase: _phase,
-          queue: _queue,
-          current: _current,
-          progress: _progress,
-        ),
-        // Exigé par la vue, qui reste montable sans créneau par un appelant
-        // direct. La pile de CET écran, elle, passe toujours par le créneau
-        // ci-dessous — qui relaie `cardBuilder` à l'identique.
-        cardBuilder: _buildCard,
-        // Le créneau est posé SANS condition : le rang d'une carte dans la
-        // pile n'est pas une affordance que l'hôte offre ou non, c'est une
-        // information que seule la pile détient — et sans elle, les cartes
-        // empilées derrière laisseraient lire la question suivante. La voie
-        // `cardBuilder` reste servie par le créneau lui-même, à l'identique.
-        cardSlotBuilder: _buildCardSlot,
-        // AD-4 — `null` tant qu'aucune des deux actions n'est possible : la
-        // zone n'est alors PAS dans l'arbre, exactement comme avant.
-        revealBuilder: (_nativeRevealAction || _holdsAfterSubmit)
-            ? _buildRevealSlot
-            : null,
-        gradingBuilder: _buildGrading,
-        passThreshold: widget.config.passThreshold,
-        headerBuilder: widget.headerBuilder,
-        counterBuilder: widget.counterBuilder,
-        summaryBuilder: _summarySlot,
-        emptyBuilder: widget.emptyBuilder,
-        celebrationBuilder: widget.celebrationBuilder,
-        labels: widget.labels,
-        onIndexChanged: _onIndexChanged,
-        onStackEnd: _onStackEnd,
-        onExit: widget.onExit,
-        indexController: widget.indexController,
-        preset: widget.preset,
-        progressStyle: widget.progressStyle,
-        progressDotsGeometry: widget.progressDotsGeometry,
-        progressLinearThickness: widget.progressLinearThickness,
-        progressSegmentedMarkerThickness:
-            widget.progressSegmentedMarkerThickness,
-        stackFlex: widget.stackFlex,
-        inputFlex: widget.inputFlex,
-        contentPadding: widget.contentPadding,
-        dividerThickness: widget.dividerThickness,
-        sectionGap: widget.sectionGap,
-        minTarget: widget.minTarget,
-        counterStyle: widget.counterStyle,
-      );
+    slices: ZStudySessionSlices(
+      phase: _phase,
+      queue: _queue,
+      current: _current,
+      progress: _progress,
+    ),
+    // Exigé par la vue, qui reste montable sans créneau par un appelant
+    // direct. La pile de CET écran, elle, passe toujours par le créneau
+    // ci-dessous — qui relaie `cardBuilder` à l'identique.
+    cardBuilder: _buildCard,
+    // Le créneau est posé SANS condition : le rang d'une carte dans la
+    // pile n'est pas une affordance que l'hôte offre ou non, c'est une
+    // information que seule la pile détient — et sans elle, les cartes
+    // empilées derrière laisseraient lire la question suivante. La voie
+    // `cardBuilder` reste servie par le créneau lui-même, à l'identique.
+    cardSlotBuilder: _buildCardSlot,
+    // AD-4 — `null` tant qu'aucune des deux actions n'est possible : la
+    // zone n'est alors PAS dans l'arbre, exactement comme avant.
+    revealBuilder: (_nativeRevealAction || _holdsAfterSubmit)
+        ? _buildRevealSlot
+        : null,
+    gradingBuilder: _buildGrading,
+    passThreshold: widget.config.passThreshold,
+    headerBuilder: widget.headerBuilder,
+    counterBuilder:
+        widget.counterBuilder ??
+        (_learning?.showProgressBadge == true ? _learningCounter : null),
+    summaryBuilder: _summarySlot,
+    emptyBuilder: widget.emptyBuilder,
+    celebrationBuilder: widget.celebrationBuilder,
+    labels: widget.labels,
+    onIndexChanged: _onIndexChanged,
+    onStackEnd: _onStackEnd,
+    onExit: widget.onExit,
+    indexController: widget.indexController,
+    preset: widget.preset,
+    progressStyle: widget.progressStyle,
+    progressDotsGeometry: widget.progressDotsGeometry,
+    progressLinearThickness: widget.progressLinearThickness,
+    progressSegmentedMarkerThickness: widget.progressSegmentedMarkerThickness,
+    stackFlex: widget.stackFlex,
+    inputFlex: widget.inputFlex,
+    contentPadding: widget.contentPadding,
+    dividerThickness: widget.dividerThickness,
+    sectionGap: widget.sectionGap,
+    minTarget: widget.minTarget,
+    counterStyle: widget.counterStyle,
+  );
 }
 
 /// Bascule « afficher / masquer la réponse » de la carte de devant.
@@ -1926,48 +2029,48 @@ class _RevealToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<bool>(
-        valueListenable: controller,
-        builder: (BuildContext context, bool revealed, Widget? _) {
-          // Le libellé d'une bascule décrit ce que le geste fait MAINTENANT :
-          // face réponse, il masque. Un libellé constant serait faux dans la
-          // moitié des états.
-          final String text = revealed
-              ? hideLabel ??
-                  label(
-                    context,
-                    ZStudySessionHost.hideLabelKey,
-                    fallback: 'Masquer la réponse',
-                  )
-              : revealLabel ??
-                  label(
-                    context,
-                    ZStudySessionHost.revealLabelKey,
-                    fallback: 'Afficher la réponse',
-                  );
-          return Semantics(
-            button: true,
-            label: text,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minWidth: minTarget,
-                minHeight: minTarget,
-              ),
-              child: TextButton(
-                key: ZStudySessionHost.revealActionKey,
-                onPressed: controller.toggle,
-                // Ceinture ET bretelles : le `ButtonStyle` de Material 3 pose
-                // une taille minimale sous la cible AD-13. La contrainte
-                // parente la relèverait déjà, mais elle ne voyagerait pas avec
-                // le bouton chez un hôte qui l'enveloppe autrement.
-                style: TextButton.styleFrom(
-                  minimumSize: Size(minTarget, minTarget),
-                ),
-                child: ExcludeSemantics(child: Text(text)),
-              ),
+    valueListenable: controller,
+    builder: (BuildContext context, bool revealed, Widget? _) {
+      // Le libellé d'une bascule décrit ce que le geste fait MAINTENANT :
+      // face réponse, il masque. Un libellé constant serait faux dans la
+      // moitié des états.
+      final String text = revealed
+          ? hideLabel ??
+                label(
+                  context,
+                  ZStudySessionHost.hideLabelKey,
+                  fallback: 'Masquer la réponse',
+                )
+          : revealLabel ??
+                label(
+                  context,
+                  ZStudySessionHost.revealLabelKey,
+                  fallback: 'Afficher la réponse',
+                );
+      return Semantics(
+        button: true,
+        label: text,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: minTarget,
+            minHeight: minTarget,
+          ),
+          child: TextButton(
+            key: ZStudySessionHost.revealActionKey,
+            onPressed: controller.toggle,
+            // Ceinture ET bretelles : le `ButtonStyle` de Material 3 pose
+            // une taille minimale sous la cible AD-13. La contrainte
+            // parente la relèverait déjà, mais elle ne voyagerait pas avec
+            // le bouton chez un hôte qui l'enveloppe autrement.
+            style: TextButton.styleFrom(
+              minimumSize: Size(minTarget, minTarget),
             ),
-          );
-        },
+            child: ExcludeSemantics(child: Text(text)),
+          ),
+        ),
       );
+    },
+  );
 }
 
 /// Action « continuer » — lève la retenue et rien d'autre.
@@ -1988,7 +2091,8 @@ class _ContinueAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String text = continueLabel ??
+    final String text =
+        continueLabel ??
         label(
           context,
           ZStudySessionHost.continueLabelKey,
@@ -2005,9 +2109,7 @@ class _ContinueAction extends StatelessWidget {
           // Ceinture ET bretelles : le `ButtonStyle` de Material 3 pose une
           // taille minimale sous la cible AD-13, et la contrainte parente ne
           // voyagerait pas avec le bouton chez un hôte qui l'enveloppe.
-          style: TextButton.styleFrom(
-            minimumSize: Size(minTarget, minTarget),
-          ),
+          style: TextButton.styleFrom(minimumSize: Size(minTarget, minTarget)),
           child: ExcludeSemantics(child: Text(text)),
         ),
       ),
@@ -2031,8 +2133,12 @@ class _HostRevealSlot extends StatefulWidget {
 
   final ZToggleController controller;
 
-  final Widget Function(BuildContext context, bool revealed, VoidCallback
-      toggle) builder;
+  final Widget Function(
+    BuildContext context,
+    bool revealed,
+    VoidCallback toggle,
+  )
+  builder;
 
   @override
   State<_HostRevealSlot> createState() => _HostRevealSlotState();
@@ -2062,10 +2168,10 @@ class _HostRevealSlotState extends State<_HostRevealSlot> {
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<bool>(
-        valueListenable: _binding.listenable,
-        builder: (BuildContext context, bool revealed, Widget? _) =>
-            widget.builder(context, revealed, widget.controller.toggle),
-      );
+    valueListenable: _binding.listenable,
+    builder: (BuildContext context, bool revealed, Widget? _) =>
+        widget.builder(context, revealed, widget.controller.toggle),
+  );
 }
 
 /// Audit du **montage** d'un écran de session : quels seams sont posés, quels
@@ -2082,31 +2188,32 @@ extension ZStudySessionSeamAudit on ZStudySessionHost {
   /// correspondant ici est une **erreur de compilation**, jamais un seam qui
   /// s'auditerait tout seul comme absent.
   Object? _seamValue(ZStudySeam seam) => switch (seam) {
-        ZStudySeam.reviewer => reviewer,
-        ZStudySeam.cardBuilder => cardBuilder,
-        ZStudySeam.cardSlotBuilder => cardSlotBuilder,
-        ZStudySeam.contentBuilder => contentBuilder,
-        ZStudySeam.questionTypeBadgeBuilder => questionTypeBadgeBuilder,
-        ZStudySeam.instructionBanner => instructionBanner,
-        ZStudySeam.evaluationPort => evaluationPort,
-        ZStudySeam.hintPort => hintPort,
-        ZStudySeam.onQualitySelected => onQualitySelected,
-        ZStudySeam.qualityColorKeyFor => qualityColorKeyFor,
-        ZStudySeam.qualityPreviewLabelFor => qualityPreviewLabelFor,
-        ZStudySeam.qualityPreviewLabelForCard => qualityPreviewLabelForCard,
-        ZStudySeam.onSource => onSource,
-        ZStudySeam.headerBuilder => headerBuilder,
-        ZStudySeam.counterBuilder => counterBuilder,
-        ZStudySeam.gradingBuilder => gradingBuilder,
-        ZStudySeam.summaryBuilder => summaryBuilder,
-        ZStudySeam.emptyBuilder => emptyBuilder,
-        ZStudySeam.celebrationBuilder => celebrationBuilder,
-        ZStudySeam.labels => labels,
-        ZStudySeam.onSessionEnd => onSessionEnd,
-        ZStudySeam.onExit => onExit,
-        ZStudySeam.indexController => indexController,
-        ZStudySeam.preset => preset,
-      };
+    ZStudySeam.learning => learning,
+    ZStudySeam.reviewer => reviewer,
+    ZStudySeam.cardBuilder => cardBuilder,
+    ZStudySeam.cardSlotBuilder => cardSlotBuilder,
+    ZStudySeam.contentBuilder => contentBuilder,
+    ZStudySeam.questionTypeBadgeBuilder => questionTypeBadgeBuilder,
+    ZStudySeam.instructionBanner => instructionBanner,
+    ZStudySeam.evaluationPort => evaluationPort,
+    ZStudySeam.hintPort => hintPort,
+    ZStudySeam.onQualitySelected => onQualitySelected,
+    ZStudySeam.qualityColorKeyFor => qualityColorKeyFor,
+    ZStudySeam.qualityPreviewLabelFor => qualityPreviewLabelFor,
+    ZStudySeam.qualityPreviewLabelForCard => qualityPreviewLabelForCard,
+    ZStudySeam.onSource => onSource,
+    ZStudySeam.headerBuilder => headerBuilder,
+    ZStudySeam.counterBuilder => counterBuilder,
+    ZStudySeam.gradingBuilder => gradingBuilder,
+    ZStudySeam.summaryBuilder => summaryBuilder,
+    ZStudySeam.emptyBuilder => emptyBuilder,
+    ZStudySeam.celebrationBuilder => celebrationBuilder,
+    ZStudySeam.labels => labels,
+    ZStudySeam.onSessionEnd => onSessionEnd,
+    ZStudySeam.onExit => onExit,
+    ZStudySeam.indexController => indexController,
+    ZStudySeam.preset => preset,
+  };
 
   /// Audite **ce** montage, sans le monter.
   ///
@@ -2130,9 +2237,7 @@ extension ZStudySessionSeamAudit on ZStudySessionHost {
   /// Sous un montage énuméré, [waived] n'a rien à retirer : chaque seam y a
   /// déjà été nommé, `null` compris, et un `null` écrit est une décision. Le
   /// rapport n'y porte donc **jamais** de manquant.
-  ZStudySeamReport auditSeams({
-    Set<ZStudySeam> waived = const <ZStudySeam>{},
-  }) {
+  ZStudySeamReport auditSeams({Set<ZStudySeam> waived = const <ZStudySeam>{}}) {
     final bool enumerated = _wiring != null;
     final Set<ZStudySeam> provided = <ZStudySeam>{};
     final Set<ZStudySeam> declared = <ZStudySeam>{};

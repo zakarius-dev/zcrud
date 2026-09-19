@@ -283,6 +283,7 @@ String hostSource() =>
 
 /// Construit le wiring à partir du jeu de sentinelles.
 ZStudySessionWiring lotW1Wiring(LotW1Seams s) => ZStudySessionWiring(
+      learning: s.learning,
       reviewer: s.reviewer,
       cardBuilder: s.cardBuilder,
       cardSlotBuilder: s.cardSlotBuilder,
@@ -425,6 +426,15 @@ Observe _key(Key key, {required bool expected}) =>
 /// Une sonde par seam. La clé est le NOM DU CHAMP du wiring : la garde de
 /// complétude compare cet ensemble à la source.
 final Map<String, SeamProbe> kProbes = <String, SeamProbe>{
+  'learning': (
+    scene: W1Scene.socle,
+    mode: ZReviewMode.learn,
+    baseOmit: const <String>{'counterBuilder'},
+    cards: 2,
+    drive: _idle,
+    present: _text('0%', expected: true),
+    absent: _text('0%', expected: false),
+  ),
   'reviewer': (
     scene: W1Scene.socle,
     mode: ZReviewMode.learn,

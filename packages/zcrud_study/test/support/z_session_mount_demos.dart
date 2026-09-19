@@ -144,6 +144,7 @@ class ZDemoMountSeams {
 /// réel des seams de l'écran.
 ZStudySessionWiring zDemoMountWiring(ZDemoMountSeams seams) =>
     ZStudySessionWiring(
+      learning: null,
       // ── Ce que l'écran pose ────────────────────────────────────────────
       reviewer: seams.reviewer,
       contentBuilder: seams.content,

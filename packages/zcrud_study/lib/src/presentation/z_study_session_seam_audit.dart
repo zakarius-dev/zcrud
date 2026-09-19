@@ -20,6 +20,9 @@ import 'package:flutter/foundation.dart';
 /// un seam non posé ne fait jamais échouer l'écran, il le rend autrement — et
 /// c'est précisément ce qui rend son oubli invisible sans audit.
 enum ZStudySeam {
+  /// Confirmation pédagogique et politique de file SRS.
+  learning('cycle et présentation historiques, sans confirmation pédagogique'),
+
   /// Voie d'écriture SRS.
   reviewer('aucun runtime SRS : la session bascule en repli explicite'),
 

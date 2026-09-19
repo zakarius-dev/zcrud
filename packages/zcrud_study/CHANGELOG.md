@@ -3,6 +3,28 @@
 Toutes les modifications notables de `zcrud_study` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.55.0 — 2026-09-19
+
+### Ajouté
+
+- CR Lex-102 : `ZLearningSessionOptions` sur host/scaffold standard et `.wired`.
+  Correction, choix du palier puis écriture unique à confirmation ; politique
+  de file injectable, boutons carrés, badge de progression et compteur
+  localisables. Sans options, comportement historique conservé.
+- CR Lex-103 : `ZFlashcardListView.onVisibleChanged` publie un
+  `ZFlashcardVisibleSnapshot` non modifiable (requête effective, tri, cartes et
+  identifiants ordonnés). Publication après frame, résultats dédupliqués et
+  debounce conservé : compteur et session utilisent le résultat du socle.
+
+Voir `docs/handoff-v3.55.0.md` pour le montage et l’adoption.
+
+### Adaptation du montage strict
+
+`ZStudySessionWiring(...)` exige le nouveau champ `learning:` conformément
+à son contrat d’énumération exhaustive : ajouter `learning: null` pour garder
+le comportement historique. Les constructeurs host/scaffold usuels et
+`ZStudySessionWiring.none()` restent compatibles.
+
 ## 3.54.0 — 2026-09-09
 
 ### Modifié

@@ -18,6 +18,8 @@
 /// `Semantics` explicites, cibles tap ≥ 48 dp.
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
@@ -50,8 +52,8 @@ class ZQualityScale {
   /// donc sur la constance : le value-object reste `@immutable`, trivial à
   /// construire, et l'échelle demeure unique.
   ZQualityScale.fromConfig(ZSrsConfig config)
-      : min = config.minQuality,
-        max = config.maxQuality;
+    : min = config.minQuality,
+      max = config.maxQuality;
 
   /// Borne basse de l'échelle — dérivée de `ZSrsConfig.minQuality`.
   final int min;
@@ -60,8 +62,7 @@ class ZQualityScale {
   final int max;
 
   /// Liste ordonnée croissante des qualités de l'échelle (`[min..max]`).
-  List<int> get qualities =>
-      <int>[for (var q = min; q <= max; q++) q];
+  List<int> get qualities => <int>[for (var q = min; q <= max; q++) q];
 
   /// Vrai si [quality] appartient à l'échelle (`min <= quality <= max`).
   bool contains(int quality) => quality >= min && quality <= max;
@@ -170,11 +171,11 @@ class ZSrsQualityEmphasis {
 
   @override
   int get hashCode => Object.hash(
-        fillOpacity,
-        selectedFillOpacity,
-        borderWidth,
-        selectedBorderWidth,
-      );
+    fillOpacity,
+    selectedFillOpacity,
+    borderWidth,
+    selectedBorderWidth,
+  );
 }
 
 /// Clé l10n par défaut d'un cran de qualité (`zcrud.srs.quality.<q>`).
@@ -206,6 +207,7 @@ class ZSrsQualityButtons extends StatelessWidget {
     this.colorKeyFor,
     this.selectedQuality,
     this.emphasis = ZSrsQualityEmphasis.none,
+    this.square = false,
     this.bottomInset,
     super.key,
   });
@@ -250,6 +252,10 @@ class ZSrsQualityButtons extends StatelessWidget {
   /// rendu historique strictement inchangé.
   final ZSrsQualityEmphasis emphasis;
 
+  /// Présente les crans en carrés et leur intervalle dans une puce.
+  /// Le défaut conserve la présentation historique.
+  final bool square;
+
   /// Réserve d'espace sous la rangée, en dp.
   ///
   /// - `null` (défaut) : l'inset système du bas
@@ -278,8 +284,9 @@ class ZSrsQualityButtons extends StatelessWidget {
   }
 
   /// Clé de la réserve d'inset — présente seulement quand elle est non nulle.
-  static const ValueKey<String> bottomInsetKey =
-      ValueKey<String>('zSrsQualityBottomInset');
+  static const ValueKey<String> bottomInsetKey = ValueKey<String>(
+    'zSrsQualityBottomInset',
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -305,6 +312,7 @@ class ZSrsQualityButtons extends StatelessWidget {
             // (comportement historique strictement inchangé).
             selected: selectedQuality == quality,
             emphasis: emphasis,
+            square: square,
             previewLabel: previewLabelFor?.call(quality),
             onTap: () => onQualitySelected(quality),
           ),
@@ -329,6 +337,7 @@ class _QualityButton extends StatelessWidget {
     required this.passed,
     required this.selected,
     required this.emphasis,
+    required this.square,
     required this.previewLabel,
     required this.onTap,
     super.key,
@@ -344,6 +353,7 @@ class _QualityButton extends StatelessWidget {
 
   /// Affordance d'emphase injectée — dimensions seules, aucune couleur.
   final ZSrsQualityEmphasis emphasis;
+  final bool square;
   final String? previewLabel;
   final VoidCallback onTap;
 
@@ -375,6 +385,45 @@ class _QualityButton extends StatelessWidget {
     // toujours présent, et l'état réussite/lapse est aussi porté par le
     // `Semantics.value`.
     final preview = previewLabel;
+    final previewStyle =
+        Theme.of(context).textTheme.labelSmall?.copyWith(color: pair.onColor) ??
+        TextStyle(color: pair.onColor);
+    // Mesure avec la même typographie et le même facteur d'accessibilité
+    // que les textes rendus : le carré grandit avec son contenu.
+    Size measure(String value, TextStyle style) {
+      final painter = TextPainter(
+        text: TextSpan(text: value, style: style),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+      )..layout();
+      final size = painter.size;
+      painter.dispose();
+      return size;
+    }
+
+    double? squareSide;
+    if (square) {
+      final titleSize = measure(
+        text,
+        DefaultTextStyle.of(context).style.copyWith(color: pair.onColor),
+      );
+      final hasPreview = preview != null && preview.isNotEmpty;
+      final previewSize = hasPreview
+          ? measure(preview, previewStyle)
+          : Size.zero;
+      final padding = theme.fieldPadding.resolve(Directionality.of(context));
+      squareSide = math.max(
+        minTarget,
+        math.max(
+          math.max(titleSize.width, previewSize.width + theme.gapS * 2) +
+              padding.horizontal,
+          titleSize.height +
+              (hasPreview ? previewSize.height + theme.gapS * 3 : 0) +
+              (selected ? theme.gapL + theme.gapS : 0) +
+              padding.vertical,
+        ),
+      );
+    }
     // État réussite/lapse localisé ; le `fallback` préserve un texte lisible
     // même sans table de traduction fournie par l'hôte.
     final passedText = passed
@@ -387,6 +436,9 @@ class _QualityButton extends StatelessWidget {
       if (selected) label(context, selectedLabelKey, fallback: 'sélectionné'),
       if (preview != null && preview.isNotEmpty) preview,
     ].join(' · ');
+
+    Widget sizeContent(Widget child) =>
+        square ? SizedBox.square(dimension: squareSide, child: child) : child;
 
     return Semantics(
       button: true,
@@ -418,42 +470,69 @@ class _QualityButton extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.all(theme.radiusM),
-            child: Padding(
-              padding: theme.fieldPadding,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  // Second canal non-coloré : une forme (coche), lisible sans
-                  // percevoir la couleur (invariant AD-13). Le cran
-                  // pré-sélectionné reste identifiable en niveaux de gris
-                  // comme en daltonisme.
-                  if (selected) ...<Widget>[
-                    Icon(Icons.check, size: theme.gapL, color: pair.onColor),
-                    SizedBox(height: theme.gapS),
-                  ],
-                  Text(
-                    text,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: pair.onColor),
-                  ),
-                  if (preview != null && preview.isNotEmpty) ...<Widget>[
-                    SizedBox(height: theme.gapS),
+            child: sizeContent(
+              Padding(
+                padding: theme.fieldPadding,
+                child: Column(
+                  mainAxisAlignment: square
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    // Second canal non-coloré : une forme (coche), lisible sans
+                    // percevoir la couleur (invariant AD-13). Le cran
+                    // pré-sélectionné reste identifiable en niveaux de gris
+                    // comme en daltonisme.
+                    if (selected) ...<Widget>[
+                      Icon(Icons.check, size: theme.gapL, color: pair.onColor),
+                      SizedBox(height: theme.gapS),
+                    ],
                     Text(
-                      preview,
+                      text,
                       textAlign: TextAlign.center,
-                      // La taille vient du thème plutôt que d'un littéral en
-                      // dur, pour respecter le `textScaler` et l'échelle
-                      // typographique de l'application (repli : couleur
-                      // seule, jamais une taille inventée).
-                      style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
-                              ?.copyWith(color: pair.onColor) ??
-                          TextStyle(color: pair.onColor),
+                      style: TextStyle(color: pair.onColor),
                     ),
+                    if (preview != null && preview.isNotEmpty) ...<Widget>[
+                      SizedBox(height: theme.gapS),
+                      if (square)
+                        DecoratedBox(
+                          decoration: ShapeDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                            shape: const StadiumBorder(),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(theme.gapS),
+                            child: Text(
+                              preview,
+                              textAlign: TextAlign.center,
+                              style: previewStyle.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        Text(
+                          preview,
+                          textAlign: TextAlign.center,
+                          // La taille vient du thème plutôt que d'un littéral en
+                          // dur, pour respecter le `textScaler` et l'échelle
+                          // typographique de l'application (repli : couleur
+                          // seule, jamais une taille inventée).
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: pair.onColor,
+                              ) ??
+                              TextStyle(color: pair.onColor),
+                        ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

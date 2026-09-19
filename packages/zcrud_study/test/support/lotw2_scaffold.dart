@@ -20,6 +20,7 @@ const String kW2Title = 'lotw2:page';
 /// demain casse **ici** la compilation : cette fabrique ne peut pas dériver en
 /// silence de l'ensemble réel des seams.
 ZStudySessionWiring lotW2Wiring(LotW1Seams s) => ZStudySessionWiring(
+      learning: s.learning,
       reviewer: s.reviewer,
       cardBuilder: s.cardBuilder,
       cardSlotBuilder: s.cardSlotBuilder,
@@ -53,6 +54,7 @@ ZStudySessionScaffold lotW2FlatPage(
   int cards = 2,
 }) =>
     ZStudySessionScaffold(
+      learning: s.learning,
       title: kW2Title,
       mode: mode,
       queue: writtenCards(cards),

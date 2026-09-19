@@ -3,6 +3,19 @@
 Toutes les modifications notables de `zcrud_session` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.55.0 — 2026-09-19
+
+### Ajouté
+
+- CR Lex-102 : `ZQueuePolicy` sépare le seuil de retrait de la file du seuil
+  de réussite SRS. Réinsertion bornée, sans compter q3/q4 comme des lapses.
+- `ZLearningFeedback` et retour personnalisable ; `ZCardAdvanceBehavior.confirm`
+  laisse choisir le palier avant confirmation. `onConfirm` permet une écriture
+  asynchrone et une nouvelle tentative après échec ; `onAdvanceWithQuality`
+  conserve le palier sans casser le callback historique `onAdvance`.
+- `ZSrsQualityButtons.square` : boutons carrés avec puces d’intervalle,
+  accessibles en RTL et avec texte agrandi. Options désactivées par défaut.
+
 ## 3.54.0 — 2026-09-09
 
 ### Ajouté

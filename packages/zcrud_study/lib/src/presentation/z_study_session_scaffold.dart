@@ -81,6 +81,7 @@ import 'package:zcrud_ui_kit/zcrud_ui_kit.dart'
         ZPageTab;
 
 import 'preset/z_study_session_preset.dart';
+import 'z_learning_session_options.dart';
 import 'z_study_session_card_slot.dart';
 import 'z_study_session_host.dart';
 import 'z_study_session_post_submit.dart';
@@ -96,6 +97,7 @@ class ZStudySessionScaffold extends StatelessWidget {
   /// Assemble la page. [title] est un `Widget` ou un `String` (contrat
   /// `ZPageScaffold`). Tous les autres paramètres sont des pass-through.
   const ZStudySessionScaffold({
+    this.learning,
     required this.title,
     required this.mode,
     required this.queue,
@@ -256,42 +258,42 @@ class ZStudySessionScaffold extends StatelessWidget {
     this.extendBody = false,
     this.extendBodyBehindAppBar = false,
     super.key,
-  })  :
-        // Un champ PRIVÉ ne peut pas être un paramètre initialisant : un
-        // paramètre nommé ne commence jamais par `_`.
-        // ignore: prefer_initializing_formals
-        _wiring = wiring,
-        // Les canaux à plat appartiennent à l'AUTRE constructeur : ici le
-        // montage passe entier par `wiring`, et ces champs restent vides. Un
-        // seam ajouté demain devra être nommé ici aussi — le compilateur
-        // l'exige, aucun ne peut donc rejoindre la page en silence.
-        reviewer = null,
-        cardBuilder = null,
-        cardSlotBuilder = null,
-        contentBuilder = null,
-        questionTypeBadgeBuilder = null,
-        instructionBanner = null,
-        evaluationPort = null,
-        hintPort = null,
-        onQualitySelected = null,
-        qualityColorKeyFor = null,
-        qualityPreviewLabelFor = null,
-        qualityPreviewLabelForCard = null,
-        onSource = null,
-        headerBuilder = null,
-        counterBuilder = null,
-        gradingBuilder = null,
-        summaryBuilder = null,
-        emptyBuilder = null,
-        celebrationBuilder = null,
-        labels = null,
-        onSessionEnd = null,
-        onExit = null,
-        indexController = null,
-        preset = null,
-        // Le montage énuméré ne peut RIEN oublier : il n'y a pas de filet à
-        // poser sur un constructeur que le compilateur garde déjà.
-        seamAudit = null;
+  }) : // Un champ PRIVÉ ne peut pas être un paramètre initialisant : un
+       // paramètre nommé ne commence jamais par `_`.
+       // ignore: prefer_initializing_formals
+       _wiring = wiring,
+       // Les canaux à plat appartiennent à l'AUTRE constructeur : ici le
+       // montage passe entier par `wiring`, et ces champs restent vides. Un
+       // seam ajouté demain devra être nommé ici aussi — le compilateur
+       // l'exige, aucun ne peut donc rejoindre la page en silence.
+       learning = null,
+       reviewer = null,
+       cardBuilder = null,
+       cardSlotBuilder = null,
+       contentBuilder = null,
+       questionTypeBadgeBuilder = null,
+       instructionBanner = null,
+       evaluationPort = null,
+       hintPort = null,
+       onQualitySelected = null,
+       qualityColorKeyFor = null,
+       qualityPreviewLabelFor = null,
+       qualityPreviewLabelForCard = null,
+       onSource = null,
+       headerBuilder = null,
+       counterBuilder = null,
+       gradingBuilder = null,
+       summaryBuilder = null,
+       emptyBuilder = null,
+       celebrationBuilder = null,
+       labels = null,
+       onSessionEnd = null,
+       onExit = null,
+       indexController = null,
+       preset = null,
+       // Le montage énuméré ne peut RIEN oublier : il n'y a pas de filet à
+       // poser sur un constructeur que le compilateur garde déjà.
+       seamAudit = null;
 
   /// Montage énuméré, ou `null` quand la page est montée à plat.
   final ZStudySessionWiring? _wiring;
@@ -380,7 +382,7 @@ class ZStudySessionScaffold extends StatelessWidget {
   /// Seam d'aperçu d'intervalle recevant la carte — cf.
   /// [ZStudySessionHost.qualityPreviewLabelForCard].
   final String Function(ZFlashcard card, int quality)?
-      qualityPreviewLabelForCard;
+  qualityPreviewLabelForCard;
 
   /// Action « voir la source » de la carte de devant — cf.
   /// [ZStudySessionHost.onSource].
@@ -420,6 +422,9 @@ class ZStudySessionScaffold extends StatelessWidget {
   /// Slot de compteurs.
   final ZStudySessionCounterBuilder? counterBuilder;
 
+  /// Cycle d'apprentissage relayé au porteur de session.
+  final ZLearningSessionOptions? learning;
+
   /// Slot de saisie/notation.
   final ZStudySessionGradingSlotBuilder? gradingBuilder;
 
@@ -437,7 +442,7 @@ class ZStudySessionScaffold extends StatelessWidget {
 
   /// Notifié une seule fois en fin de session.
   final void Function(ZStudySessionResult result, Duration duration)?
-      onSessionEnd;
+  onSessionEnd;
 
   /// Issue de sortie des replis.
   final VoidCallback? onExit;
@@ -574,29 +579,29 @@ class ZStudySessionScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ZPageScaffold(
-        title: title,
-        subtitle: subtitle,
-        gradientKey: gradientKey,
-        leading: leading,
-        actions: actions,
-        search: search,
-        tabs: tabs,
-        mode: pageMode,
-        // Pass-through pur : `null` ⇒ aucun alignement déclaré côté shell.
-        tabAlignment: tabAlignment,
-        floatingActionButton: floatingActionButton,
-        floatingActionButtonLocation: floatingActionButtonLocation,
-        persistentFooterButtons: persistentFooterButtons,
-        drawer: drawer,
-        endDrawer: endDrawer,
-        bottomNavigationBar: bottomNavigationBar,
-        bottomSheet: bottomSheet,
-        backgroundColor: backgroundColor,
-        resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-        extendBody: extendBody,
-        extendBodyBehindAppBar: extendBodyBehindAppBar,
-        body: _sessionHost(),
-      );
+    title: title,
+    subtitle: subtitle,
+    gradientKey: gradientKey,
+    leading: leading,
+    actions: actions,
+    search: search,
+    tabs: tabs,
+    mode: pageMode,
+    // Pass-through pur : `null` ⇒ aucun alignement déclaré côté shell.
+    tabAlignment: tabAlignment,
+    floatingActionButton: floatingActionButton,
+    floatingActionButtonLocation: floatingActionButtonLocation,
+    persistentFooterButtons: persistentFooterButtons,
+    drawer: drawer,
+    endDrawer: endDrawer,
+    bottomNavigationBar: bottomNavigationBar,
+    bottomSheet: bottomSheet,
+    backgroundColor: backgroundColor,
+    resizeToAvoidBottomInset: resizeToAvoidBottomInset,
+    extendBody: extendBody,
+    extendBodyBehindAppBar: extendBodyBehindAppBar,
+    body: _sessionHost(),
+  );
 
   /// Le porteur de session, monté par la voie qu'a choisie le constructeur.
   ///
@@ -642,6 +647,7 @@ class ZStudySessionScaffold extends StatelessWidget {
       );
     }
     return ZStudySessionHost(
+      learning: learning,
       mode: mode,
       queue: queue,
       reviewer: reviewer,

@@ -52,6 +52,7 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
     show
@@ -344,7 +345,37 @@ class ZFlashcardListSelection {
   final void Function(ZBatchDeletionReport report)? onBatchResult;
 }
 
-/// Liste de flashcards : recherche, filtres, tris, ordre manuel, duplication.
+/// Résultat de recherche visible, indépendant de la fenêtre virtualisée.
+@immutable
+class ZFlashcardVisibleSnapshot {
+  /// Copie non modifiable du résultat filtré et ordonné de la vue.
+  ZFlashcardVisibleSnapshot({
+    required this.query,
+    required this.sortMode,
+    required Iterable<ZFlashcard> cards,
+  }) : cards = List<ZFlashcard>.unmodifiable(cards);
+
+  /// Requête effective, après debounce (sans normalisation supplémentaire).
+  final String query;
+
+  /// Tri appliqué, y compris l'ordre personnel en mode manuel.
+  final ZFlashcardSortMode sortMode;
+
+  /// Toutes les cartes retenues, dans l'ordre du rendu, hors virtualisation.
+  final List<ZFlashcard> cards;
+
+  /// Identifiants ordonnés ; les cartes éphémères sans identifiant sont omises.
+  List<String> get ids => List<String>.unmodifiable(
+    cards.map((card) => card.id).whereType<String>(),
+  );
+
+  bool _sameResult(ZFlashcardVisibleSnapshot other) =>
+      query == other.query &&
+      sortMode == other.sortMode &&
+      listEquals(cards, other.cards);
+}
+
+/// Liste de flashcards : recherche, filtres, tris et ordre manuel.
 class ZFlashcardListView extends StatefulWidget {
   /// Construit la liste.
   ///
@@ -377,6 +408,7 @@ class ZFlashcardListView extends StatefulWidget {
     this.subfolderId,
     this.onOrderChanged,
     this.onOpen,
+    this.onVisibleChanged,
     this.onEdit,
     this.onDelete,
     this.onDuplicate,
@@ -409,6 +441,17 @@ class ZFlashcardListView extends StatefulWidget {
 
   /// Cartes du dossier — **non filtrées** (la vue applique filtres et tri).
   final List<ZFlashcard> cards;
+
+  /// Résultat initial puis changements de requête, tri ou cartes visibles.
+  ///
+  /// Émis après la frame : l'hôte peut reconstruire son compteur sans modifier
+  /// l'arbre pendant build. Une seule notification par résultat distinct ;
+  /// recréer la closure au rebuild ne republie pas un résultat identique.
+  /// Le callback courant reçoit le dernier résultat, jamais un état périmé.
+  /// Passer de `null` à un callback republie l'état courant ; pour changer de
+  /// destinataire non nul, transmettre soi-même le dernier snapshot conservé.
+  /// Aucun calcul ni callback supplémentaire lorsque ce paramètre est nul.
+  final ValueChanged<ZFlashcardVisibleSnapshot>? onVisibleChanged;
 
   /// Portée d'étude appliquée **après** les filtres de recherche, avant le
   /// tri. `null` ou vide ⇒ la liste est celle d'avant, à l'instance près.
@@ -618,6 +661,34 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
   /// arbre démonté (fuite réelle, pas théorique).
   Timer? _debounce;
 
+  ZFlashcardVisibleSnapshot? _lastVisible;
+  ZFlashcardVisibleSnapshot? _pendingVisible;
+  bool _visibleNotificationScheduled = false;
+
+  void _publishVisible(String query, List<ZFlashcard> cards) {
+    if (widget.onVisibleChanged == null) return;
+    final snapshot = ZFlashcardVisibleSnapshot(
+      query: query,
+      sortMode: widget.sortMode,
+      cards: cards,
+    );
+    _pendingVisible = snapshot;
+    if (_visibleNotificationScheduled) return;
+    if (_lastVisible?._sameResult(snapshot) ?? false) return;
+    _visibleNotificationScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _visibleNotificationScheduled = false;
+      if (!mounted) return;
+      final notify = widget.onVisibleChanged;
+      final latest = _pendingVisible;
+      _pendingVisible = null;
+      if (notify == null || latest == null) return;
+      if (_lastVisible?._sameResult(latest) ?? false) return;
+      _lastVisible = latest;
+      notify(latest);
+    });
+  }
+
   /// Contrôleur de sélection (me-3) — `null` hors mode sélection (su-8 pur).
   /// **Propriétaire UNIQUE** (AD-44) : injecté (jamais disposé) OU créé et
   /// disposé ([_ownsSelection]). Discipline STABLE (patron du controller de
@@ -656,6 +727,10 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
   @override
   void didUpdateWidget(covariant ZFlashcardListView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.onVisibleChanged == null || oldWidget.onVisibleChanged == null) {
+      _lastVisible = null;
+      _pendingVisible = null;
+    }
     // D5 — `filters.query` est une prop VIVANTE, au même titre que
     // `searchFields`/`sources` (déjà relus à chaque build via _effectiveFilters).
     // Un parent qui pousse une nouvelle requête (deep-link, filtre restauré,
@@ -845,6 +920,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
 
   Widget _buildList(BuildContext context, String query) {
     final visible = _visibleCards(query);
+    _publishVisible(query, visible);
     final content = _buildContent(context, query, visible);
 
     // me-3 — mode sélection ADDITIF : `selection == null` ⇒ contenu su-8 NU

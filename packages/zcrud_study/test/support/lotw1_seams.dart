@@ -102,7 +102,7 @@ class LotW1Seams {
   /// action de plus les ferait diverger — non parce que l'écran aurait
   /// régressé, mais parce que le harnais aurait décidé de poser une capacité
   /// que le montage de référence n'avait pas.
-  static const Set<String> optional = <String>{'onSource'};
+  static const Set<String> optional = <String>{'onSource', 'learning'};
 
   /// Scène de montage.
   final W1Scene scene;
@@ -273,6 +273,11 @@ class LotW1Seams {
   ZIndexController? get indexController =>
       _on('indexController') ? indexSpy : null;
 
+  /// Apprentissage avec badge sentinelle observable.
+  ZLearningSessionOptions? get learning => _on('learning')
+      ? const ZLearningSessionOptions(showProgressBadge: true)
+      : null;
+
   /// Formes de référence.
   ZStudySessionPreset? get preset => _on('preset')
       ? ZStudySessionPreset.classic(title: '$kW1:preset')
@@ -289,6 +294,7 @@ ZStudySessionHost lotW1FlatHost(
   int cards = 2,
 }) =>
     ZStudySessionHost(
+      learning: s.learning,
       mode: mode,
       queue: writtenCards(cards),
       reviewer: s.reviewer,

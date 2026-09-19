@@ -25,6 +25,7 @@ library;
 // `ZSessionReviewer` (voie unique). Pur-Dart, aucun import Flutter.
 export 'src/domain/z_exam_answer.dart';
 export 'src/domain/z_flashcard_submission.dart';
+export 'src/domain/z_learning_feedback.dart';
 export 'src/domain/z_linear_session_state.dart';
 // Sélection pure du feedback pédagogique : `(quality, timeTaken, hintsUsed)`
 // → une clé l10n. Pur-Dart, testable hors widget. La qualité passe par

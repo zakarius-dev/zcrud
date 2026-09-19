@@ -13,7 +13,7 @@ library;
 
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
-/// Comportement d'avance à la carte suivante après soumission (2 valeurs).
+/// Comportement d'avance à la carte suivante après soumission.
 enum ZCardAdvanceBehavior {
   /// Auto-passage après un délai court, via le callback injecté `onAdvance`.
   ///
@@ -28,6 +28,9 @@ enum ZCardAdvanceBehavior {
   /// précisément ce qu'on vient lire — la faire disparaître automatiquement
   /// retirerait l'essentiel de la valeur pédagogique.
   manual,
+
+  /// Confirmation explicite du palier après lecture du retour.
+  confirm,
 }
 
 /// Table unique des défauts d'avance par mode.
