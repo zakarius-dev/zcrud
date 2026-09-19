@@ -89,4 +89,4 @@ Les **42 suites de packages ont donc été validées**, avec rejeu complet du se
 
 La revue indépendante et les corrections sont consignées dans `_bmad-output/implementation-artifacts/code-review-cr-102-103.md`. Aucun finding retenu ne reste ouvert. Les 42 versions de packages et leurs dépendances internes sont alignées sur `3.55.0` ; la recette de consommation épingle ce même tag.
 
-Les lockfiles racine et `example/` préexistants sont exclus de la release et conservés identiques à leurs empreintes de début de travail. Publication Git sur `origin/main` et tag annoté `v3.55.0` ; aucune publication pub.dev ni modification des dépôts hôtes.
+Les lockfiles racine et `example/` préexistants sont exclus de la release et conservés identiques à leurs empreintes de début de travail. Publication par le tag annoté `v3.55.0` ; aucune publication pub.dev ni modification des dépôts hôtes. Le contrôle automatique a refusé de modifier `origin/main` sans autorisation explicite visant cette branche partagée : le tag contient la release, mais la branche distante reste inchangée.
