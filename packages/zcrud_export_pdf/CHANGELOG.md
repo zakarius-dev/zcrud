@@ -3,6 +3,13 @@
 Toutes les modifications notables de `zcrud_export_pdf` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.56.0 — 2026-09-30
+
+### Ajouté
+
+- `buildMarkdownPdfBytes` produit un PDF à partir d'un markdown. `latexEnabled` et un `ZLatexRasterizer` rasterisent les formules entre `$` ; un rendu absent ou illisible laisse la formule en texte. `latexEnabled: false` n'appelle pas le rasteriseur.
+- Un lien ou une image markdown est réduit à son libellé. Aucune adresse n'est ouverte, ni distante ni locale.
+
 ## 3.6.0 — 2026-08-23
 
 ### Corrigé

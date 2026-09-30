@@ -742,6 +742,7 @@ void main() {
         'runArtifactVerb',
         'cancelArtifact',
         'refreshArtifact',
+        'generateForScope',
         'dispose',
       });
     });

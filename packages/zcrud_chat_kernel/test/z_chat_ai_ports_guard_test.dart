@@ -684,7 +684,7 @@ void main() {
                 .allMatches(strippedLines(f).join('\n')))
           m.group(1)!,
       ];
-      expect(variants.length, 9, reason: 'variants détectés : $variants');
+      expect(variants.length, 11, reason: 'variants détectés : $variants');
       final int relais = RegExp('super.sequenceId')
           .allMatches(strippedLines(f).join('\n'))
           .length;
@@ -702,7 +702,7 @@ void main() {
       final int emis = lines
           .where((String l) => l.contains("'sequence_id': sequenceId"))
           .length;
-      expect(emis, 9,
+      expect(emis, 11,
           reason: 'un variant n\'émet pas sa position : elle serait perdue au '
               'premier aller-retour de sérialisation');
     });

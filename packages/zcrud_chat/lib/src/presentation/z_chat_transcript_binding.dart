@@ -59,13 +59,13 @@ class ZChatTranscriptBinding {
     // sont interdits en Dart, et rendre ces champs publics élargirait la
     // surface de la pièce. Même arbitrage que `ZChatController`.
     // ignore: prefer_initializing_formals
-  })  : _transcript = transcript,
-        // ignore: prefer_initializing_formals
-        _chat = chat,
-        // ignore: prefer_initializing_formals
-        _conversationId = conversationId,
-        // ignore: prefer_initializing_formals
-        _onChanged = onChanged {
+  }) : _transcript = transcript,
+       // ignore: prefer_initializing_formals
+       _chat = chat,
+       // ignore: prefer_initializing_formals
+       _conversationId = conversationId,
+       // ignore: prefer_initializing_formals
+       _onChanged = onChanged {
     _chat.messages.addListener(_onThreadChanged);
     Stream<List<ZChatMessage>> source;
     try {
@@ -122,8 +122,10 @@ class ZChatTranscriptBinding {
       _chat.attach(conversationId: _conversationId, messages: snapshot);
       return;
     }
-    // Instantanés suivants : relayés avec les identités qui ont changé. Le
-    // fil du contrôleur n'est PAS rebranché.
+    // Instantanés suivants : relayés avec les identités qui ont changé.
+    // Le fil du contrôleur est remplacé seulement au repos : `attach`
+    // annulerait une génération en vol. La base d'écriture est mise à jour
+    // avant le remplacement, pour que l'écho du dépôt n'y soit pas réécrit.
     final Map<String, ZChatMessage> before = <String, ZChatMessage>{
       for (final ZChatMessage m in _latest)
         if (m.id != null) m.id!: m,
@@ -133,6 +135,13 @@ class ZChatTranscriptBinding {
       for (final ZChatMessage m in snapshot)
         if (m.id != null && before[m.id!] != m) m.id!,
     };
+    if (_chat.activeRequests.value.isEmpty) {
+      for (final ZChatMessage m in snapshot) {
+        final String? id = m.id;
+        if (id != null) _written[id] = m;
+      }
+      _chat.adoptMessages(snapshot);
+    }
     _onChanged?.call(snapshot, changed);
   }
 
@@ -146,9 +155,11 @@ class ZChatTranscriptBinding {
       final ZChatMessage? known = _written[id];
       if (known == m) continue;
       _written[id] = m;
-      unawaited(_write(
-        () => known == null ? _transcript.append(m) : _transcript.update(m),
-      ));
+      unawaited(
+        _write(
+          () => known == null ? _transcript.append(m) : _transcript.update(m),
+        ),
+      );
     }
   }
 
@@ -164,10 +175,7 @@ class ZChatTranscriptBinding {
       );
     }
     if (_disposed) return;
-    result.fold(
-      (ZFailure f) => _lastFailure.value = f,
-      (ZChatMessage _) {},
-    );
+    result.fold((ZFailure f) => _lastFailure.value = f, (ZChatMessage _) {});
   }
 
   /// Annule l'abonnement au dépôt, cesse d'écouter le contrôleur et ferme la

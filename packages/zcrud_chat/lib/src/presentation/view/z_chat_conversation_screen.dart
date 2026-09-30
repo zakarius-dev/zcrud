@@ -3,9 +3,10 @@
 /// ## Une couche mince au-dessus des briques publiques
 ///
 /// Le pendant de `ZChatNotebookScreen` pour le chat :
-/// `ZChatConversationController` (créé dans `initState`, libéré dans
-/// `dispose`, **jamais** dans `build` — il compose le `ZChatController` et,
-/// si un dépôt est fourni, la persistance du fil),
+/// `ZChatConversationController` (créé dans `initState` et libéré dans
+/// `dispose` lorsqu'aucun contrôleur externe n'est fourni, **jamais** dans
+/// `build` — il compose le `ZChatController` et, si un dépôt est fourni, la
+/// persistance du fil),
 /// `ZChatConversationView` (la surface, avec sa région live), le composer
 /// assemblé (`ZDefaultChatComposer`), la feuille de réglages
 /// (`ZChatSettingsSheet`), le contrôleur d'outils (`ZChatToolController`) et
@@ -106,7 +107,8 @@ class ZChatConversationScreen extends StatefulWidget {
   /// différente à l'écran. [readOnly] et [toolCatalog], eux, sont suivis à
   /// chaque mise à jour.
   const ZChatConversationScreen({
-    required this.streamPort,
+    this.streamPort,
+    this.controller,
     required this.cursorColor,
     this.conversationId = '',
     this.transcript,
@@ -123,6 +125,8 @@ class ZChatConversationScreen extends StatefulWidget {
     this.padding,
     this.reverse = false,
     this.identityBuilder,
+    this.thinkingBuilder,
+    this.onCitationTap,
     this.actionsBuilder,
     this.shell,
     this.settings,
@@ -157,7 +161,11 @@ class ZChatConversationScreen extends StatefulWidget {
     this.failureBuilder,
     this.headerBuilder,
     super.key,
-  })  : assert(
+  })        : assert(
+           controller != null || streamPort != null,
+           kZChatOwnedControllerAssertMessage,
+         ),
+       assert(
          composerBuilder == null || composerSlots == null,
          kZChatComposerSlotsExclusiveAssertMessage,
        );
@@ -165,7 +173,14 @@ class ZChatConversationScreen extends StatefulWidget {
   // ── Le contrôleur de conversation ─────────────────────────────────────────
 
   /// Génération des réponses.
-  final ZChatStreamPort streamPort;
+  ///
+  /// Ignoré lorsque [controller] est fourni : le contrôleur externe porte
+  /// déjà son port. L'écran ne le crée pas et ne le libère pas.
+  final ZChatStreamPort? streamPort;
+
+  /// Contrôleur déjà possédé par l'hôte. `null` : l'écran le crée et le
+  /// libère.
+  final ZChatConversationController? controller;
 
   /// Identité de la conversation.
   final String conversationId;
@@ -219,6 +234,12 @@ class ZChatConversationScreen extends StatefulWidget {
 
   /// Créneau d'identité par message.
   final ZChatMessageSlotBuilder? identityBuilder;
+
+  /// Créneau de réflexion, entre l'identité et le premier bloc.
+  final ZChatMessageSlotBuilder? thinkingBuilder;
+
+  /// Renvoi `[n]` activé dans le texte de l'assistant.
+  final void Function(int index)? onCitationTap;
 
   /// Créneau d'actions par message.
   final ZChatMessageSlotBuilder? actionsBuilder;
@@ -360,6 +381,7 @@ class ZChatConversationScreen extends StatefulWidget {
 
 class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
   late final ZChatConversationController _conversation;
+  late final bool _ownsConversation;
   ZChatSettingsController? _ownedSettings;
   ZChatToolController? _tools;
 
@@ -372,22 +394,29 @@ class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
     // UNE création, ici et nulle part ailleurs : un contrôleur créé dans
     // `build` serait recréé à chaque frame, perdant requêtes en vol,
     // abonnement au fil et saisie.
-    _conversation = ZChatConversationController(
-      streamPort: widget.streamPort,
-      transcript: widget.transcript,
-      conversationId: widget.conversationId,
-      initialMessages: widget.initialMessages,
-      actionExecutor: widget.actionExecutor,
-      confirm: widget.confirm,
-      newRequestId: widget.newRequestId,
-      buildRequest: widget.buildRequest,
-      lifecycle: widget.lifecycle,
-      // La session résout, le contrôleur décide : le résolveur est la
-      // fonction PURE de la session, jamais un port.
-      routeResolver: widget.routeSession?.resolve,
-      liveLabels: widget.liveLabels,
-      maxResumeAttempts: widget.maxResumeAttempts,
-    );
+    final ZChatConversationController? external = widget.controller;
+    if (external != null) {
+      _conversation = external;
+      _ownsConversation = false;
+    } else {
+      _conversation = ZChatConversationController(
+        streamPort: widget.streamPort!,
+        transcript: widget.transcript,
+        conversationId: widget.conversationId,
+        initialMessages: widget.initialMessages,
+        actionExecutor: widget.actionExecutor,
+        confirm: widget.confirm,
+        newRequestId: widget.newRequestId,
+        buildRequest: widget.buildRequest,
+        lifecycle: widget.lifecycle,
+        // La session résout, le contrôleur décide : le résolveur est la
+        // fonction PURE de la session, jamais un port.
+        routeResolver: widget.routeSession?.resolve,
+        liveLabels: widget.liveLabels,
+        maxResumeAttempts: widget.maxResumeAttempts,
+      );
+      _ownsConversation = true;
+    }
     if (widget.settings == null) _ownedSettings = ZChatSettingsController();
     final ZChatToolCatalog? catalog = widget.toolCatalog;
     if (catalog != null) _tools = ZChatToolController(catalog: catalog);
@@ -412,7 +441,7 @@ class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
   void dispose() {
     _tools?.dispose();
     _ownedSettings?.dispose();
-    _conversation.dispose();
+    if (_ownsConversation) _conversation.dispose();
     super.dispose();
   }
 
@@ -426,6 +455,8 @@ class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
       padding: widget.padding,
       reverse: widget.reverse,
       identityBuilder: widget.identityBuilder,
+      thinkingBuilder: widget.thinkingBuilder,
+      onCitationTap: widget.onCitationTap,
       actionsBuilder: widget.actionsBuilder,
       shell: widget.shell,
       composer: widget.readOnly ? null : _composer(context),
@@ -499,7 +530,8 @@ class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
       // l'écran (réglages, badge d'outils, routeur, chrome) reste en place.
       // `slots.model` prime sur le sélecteur de routeur : règle des trois
       // cas, un créneau d'hôte remplace le défaut de l'écran quel qu'il soit.
-      modelBuilder: slots?.model ??
+      modelBuilder:
+          slots?.model ??
           (session == null
               ? null
               : zChatRouteModelSlot(

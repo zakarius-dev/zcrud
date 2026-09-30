@@ -3,6 +3,30 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.56.0 — 2026-09-30
+
+### Ajouté
+
+- Créneau `thinkingBuilder` sur la tuile, entre l'identité et le premier bloc, y compris sur la bulle en cours. `ZChatStreamProgress` porte les avis `statuses` et le raisonnement cumulé. Les événements `status` et `reasoning` n'exigent aucun agent.
+- `onCitationTap` sur le rendu d'un bloc de texte. Les renvois `[n]` sont activables ; l'index part de 1. `ZChatController.citationSource` résout la source sur le message, sinon sur la progression de la requête.
+- Les écrans de conversation et de notebook acceptent un contrôleur externe. Fourni, l'écran ne le crée pas et ne le libère pas.
+- Au repos, un instantané suivant du dépôt remplace le fil sans `attach`. Une génération en vol n'est ni annulée ni écrasée.
+- `generateForScope` et la barre de portée (`artifactScopeId`, `transformPalette`) sur l'écran notebook, à côté du créneau d'en-tête.
+- Panneau de sources, barre de palette et vue de référence d'un artefact (titre et corps). L'export PDF du fil n'apparaît que si un `ZChatExportPort` est fourni.
+- `retainFailed` sur le contrôleur de pièces jointes (défaut `true`). `false` retire un envoi refusé de la file, qui ne consomme plus `maxFiles`.
+- `ZChatAttachmentPicker.pick` reçoit `maxBytes`. `fileTooLarge` est une cause de refus relayée, avant lecture du fichier.
+- Sous 360 dp, les actions d'une tuile de conversation se replient dans un menu. La date se tronque.
+
+### Corrigé
+
+- À la clôture d'un tour, chaque bloc structuré ferme le segment de texte ouvert. L'ordre de lecture est celui du flux. Le texte en cours de streaming reste la concaténation du canal.
+- Le menu du sélecteur de modèle s'ancre au-dessus du déclencheur. Un déclencheur en bas d'écran ne place plus le menu hors cadre.
+
+### Adaptation
+
+- Toute redéfinition de `ZChatAttachmentPicker.pick` doit accepter le paramètre nommé `maxBytes`. Les appels qui ne le passent pas compilent encore.
+- Les hôtes qui réordonnaient les segments, remplaçaient le menu de modèle, compensaient la date ou le débordement des actions, affichaient la réflexion dans le créneau d'identité, réécrivaient `[n]`, ou exportaient eux-mêmes le notebook, retirent cette compensation. Voir `docs/handoff-v3.56.0.md`.
+
 ## 3.34.0 — 2026-08-29
 
 ### Modifié (aucun changement du rendu par défaut)

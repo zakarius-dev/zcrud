@@ -41,6 +41,7 @@ import '../z_chat_suggestion.dart';
 import '../z_chat_thinking_step.dart';
 import '../z_content_block.dart';
 import 'z_chat_response_metadata.dart';
+import 'z_chat_status_notice.dart';
 
 /// Clé persistée du discriminant d'événement.
 const String kZChatStreamEventTypeKey = 'type';
@@ -153,6 +154,17 @@ sealed class ZChatStreamEvent {
         return snapshot == null
             ? null
             : ZChatQuotaEvent(snapshot: snapshot, sequenceId: seq);
+      case 'status':
+        return ZChatStatusEvent(
+          phase: zJsonString(map['phase']),
+          detail: zJsonString(map['detail']),
+          sequenceId: seq,
+        );
+      case 'reasoning':
+        return ZChatReasoningEvent(
+          content: zJsonString(map['content']),
+          sequenceId: seq,
+        );
       case 'done':
         return ZChatDoneEvent(
           messageId: zJsonString(map['message_id']),
@@ -545,6 +557,92 @@ class ZChatDoneEvent extends ZChatStreamEvent {
 
   @override
   String toString() => 'ZChatDoneEvent(messageId: $messageId)';
+}
+
+/// Avis d'avancement, sans agent.
+///
+/// `phase` et `detail` sont du texte. L'un peut être vide : l'événement
+/// reste un avis, pas une étape de réflexion attribuée.
+class ZChatStatusEvent extends ZChatStreamEvent {
+  /// Construit l'avis.
+  const ZChatStatusEvent({this.phase = '', this.detail = '', super.sequenceId});
+
+  /// Phase courte, ou `''`.
+  final String phase;
+
+  /// Précision, ou `''`.
+  final String detail;
+
+  /// L'avis porté, pour la tranche de progression.
+  ZChatStatusNotice get notice =>
+      ZChatStatusNotice(phase: phase, detail: detail);
+
+  @override
+  String get kind => 'status';
+
+  @override
+  Map<String, dynamic> toJson({
+    ZTypeRegistry? typeRegistry,
+    ZSourceRegistry? sourceRegistry,
+  }) => <String, dynamic>{
+    kZChatStreamEventTypeKey: kind,
+    if (sequenceId != null) 'sequence_id': sequenceId,
+    if (phase.isNotEmpty) 'phase': phase,
+    if (detail.isNotEmpty) 'detail': detail,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZChatStatusEvent &&
+          sequenceId == other.sequenceId &&
+          phase == other.phase &&
+          detail == other.detail;
+
+  @override
+  int get hashCode => Object.hash(kind, sequenceId, phase, detail);
+
+  @override
+  String toString() => 'ZChatStatusEvent($phase)';
+}
+
+/// Fragment de raisonnement cumulé, sans agent.
+///
+/// Chaque événement **ajoute** son [content] au raisonnement déjà reçu,
+/// comme un jeton ajoute au texte de la réponse. Le texte de la réponse
+/// et ce canal restent distincts.
+class ZChatReasoningEvent extends ZChatStreamEvent {
+  /// Construit le fragment.
+  const ZChatReasoningEvent({this.content = '', super.sequenceId});
+
+  /// Fragment ajouté au raisonnement cumulé.
+  final String content;
+
+  @override
+  String get kind => 'reasoning';
+
+  @override
+  Map<String, dynamic> toJson({
+    ZTypeRegistry? typeRegistry,
+    ZSourceRegistry? sourceRegistry,
+  }) => <String, dynamic>{
+    kZChatStreamEventTypeKey: kind,
+    if (sequenceId != null) 'sequence_id': sequenceId,
+    'content': content,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZChatReasoningEvent &&
+          sequenceId == other.sequenceId &&
+          content == other.content;
+
+  @override
+  int get hashCode => Object.hash(kind, sequenceId, content);
+
+  @override
+  String toString() => 'ZChatReasoningEvent(${content.length} chars)';
 }
 
 /// Variant **OUVERT** (invariant AD-4) : tout événement propre à un hôte,

@@ -40,7 +40,8 @@ const String kZChatLabelDiagram = '${kZChatLabelPrefix}diagram';
 
 /// Étiquette sémantique d'un contenu que le socle ne sait pas typer
 /// ([ZCustomContentBlock]) — le payload est préservé, pas rendu.
-const String kZChatLabelUnsupportedBlock = '${kZChatLabelPrefix}unsupportedBlock';
+const String kZChatLabelUnsupportedBlock =
+    '${kZChatLabelPrefix}unsupportedBlock';
 
 /// Étiquette sémantique de la région live d'annonce (a11y, AD-13).
 const String kZChatLabelLiveRegion = '${kZChatLabelPrefix}liveRegion';
@@ -70,6 +71,30 @@ const String kZChatLabelStopSpeaking = '${kZChatLabelPrefix}stopSpeaking';
 
 /// Action « partager la conversation ».
 const String kZChatLabelShare = '${kZChatLabelPrefix}share';
+
+/// Bouton qui regroupe les actions de ligne quand la largeur ne les porte pas.
+const String kZChatLabelConversationActions =
+    '${kZChatLabelPrefix}conversationActions';
+
+/// Geste d'export PDF d'un fil.
+const String kZChatLabelExportPdf = '${kZChatLabelPrefix}exportPdf';
+
+/// Retrait d'une source de notebook.
+const String kZChatLabelRemoveSource = '${kZChatLabelPrefix}removeSource';
+
+/// Ingestion en attente.
+const String kZChatLabelIngestionPending =
+    '${kZChatLabelPrefix}ingestionPending';
+
+/// Ingestion en cours.
+const String kZChatLabelIngestionRunning =
+    '${kZChatLabelPrefix}ingestionRunning';
+
+/// Source prête.
+const String kZChatLabelIngestionReady = '${kZChatLabelPrefix}ingestionReady';
+
+/// Ingestion échouée.
+const String kZChatLabelIngestionFailed = '${kZChatLabelPrefix}ingestionFailed';
 
 /// Étiquette sémantique de la barre de diffusion.
 const String kZChatLabelDiffusion = '${kZChatLabelPrefix}diffusion';
@@ -127,8 +152,7 @@ const String kZChatLabelComposerHint = '${kZChatLabelPrefix}composerHint';
 ///
 /// Elle nomme la **quantité**, jamais son unité : l'unité vient du port de
 /// mesure, et c'est l'hôte qui décide comment la dire.
-const String kZChatLabelComposerCounter =
-    '${kZChatLabelPrefix}composerCounter';
+const String kZChatLabelComposerCounter = '${kZChatLabelPrefix}composerCounter';
 
 /// Étiquette sémantique du **mode vocal continu**, au repos.
 const String kZChatLabelVoiceSession = '${kZChatLabelPrefix}voiceSession';
@@ -203,8 +227,7 @@ const String kZChatLabelComputeBudgetLevel =
 
 /// Réglage « exposer les étapes de raisonnement »
 /// (`ZChatGenerationSettings.revealThinkingSteps`).
-const String kZChatLabelRevealThinking =
-    '${kZChatLabelPrefix}revealThinking';
+const String kZChatLabelRevealThinking = '${kZChatLabelPrefix}revealThinking';
 
 /// Groupe « portée documentaire » — `ZChatCorpusScope`, exprimée en **clés
 /// stables** d'hôte.
@@ -382,8 +405,7 @@ const String kZChatLabelEditingCancel = '${kZChatLabelPrefix}editingCancel';
 
 /// Action « arrêter la génération en cours » — câblée sur le verbe existant
 /// `runAction(ZChatCancelAction(requestId:))`.
-const String kZChatLabelStopGeneration =
-    '${kZChatLabelPrefix}stopGeneration';
+const String kZChatLabelStopGeneration = '${kZChatLabelPrefix}stopGeneration';
 
 /// Déclencheur `+` des pickers de pièces jointes — le socle rend le
 /// créneau ; galerie/photo/fichier restent des actions d'hôte (libellés,
@@ -417,8 +439,7 @@ const String kZChatLabelConversationsError =
 const String kZChatLabelRetry = '${kZChatLabelPrefix}retry';
 
 /// État vide — variante « **aucun élément** ».
-const String kZChatLabelNoConversations =
-    '${kZChatLabelPrefix}noConversations';
+const String kZChatLabelNoConversations = '${kZChatLabelPrefix}noConversations';
 
 /// État vide — variante « **aucun résultat** » (recherche en cours).
 ///
@@ -428,8 +449,7 @@ const String kZChatLabelNoConversations =
 const String kZChatLabelNoResults = '${kZChatLabelPrefix}noResults';
 
 /// Action « nouvelle conversation » — **masquée en recherche**.
-const String kZChatLabelNewConversation =
-    '${kZChatLabelPrefix}newConversation';
+const String kZChatLabelNewConversation = '${kZChatLabelPrefix}newConversation';
 
 /// Action « charger la suite » — pagination par **curseur**.
 const String kZChatLabelLoadMore = '${kZChatLabelPrefix}loadMore';
@@ -463,8 +483,7 @@ const String kZChatLabelRestore = '${kZChatLabelPrefix}restore';
 const String kZChatLabelTrim = '${kZChatLabelPrefix}trim';
 
 /// Action de **lot** « retirer la sélection » — `retireAll`.
-const String kZChatLabelRetireSelected =
-    '${kZChatLabelPrefix}retireSelected';
+const String kZChatLabelRetireSelected = '${kZChatLabelPrefix}retireSelected';
 
 /// Horodatage relatif — moins d'une minute.
 const String kZChatLabelTimeNow = '${kZChatLabelPrefix}timeNow';
@@ -504,6 +523,13 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelSpeak,
   kZChatLabelStopSpeaking,
   kZChatLabelShare,
+  kZChatLabelConversationActions,
+  kZChatLabelExportPdf,
+  kZChatLabelRemoveSource,
+  kZChatLabelIngestionPending,
+  kZChatLabelIngestionRunning,
+  kZChatLabelIngestionReady,
+  kZChatLabelIngestionFailed,
   kZChatLabelDiffusion,
   kZChatLabelAssistedInput,
   kZChatLabelDictate,
@@ -628,6 +654,13 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelSpeak: 'Lire à voix haute',
   kZChatLabelStopSpeaking: 'Arrêter la lecture',
   kZChatLabelShare: 'Partager',
+  kZChatLabelConversationActions: 'Actions',
+  kZChatLabelExportPdf: 'Exporter en PDF',
+  kZChatLabelRemoveSource: 'Retirer',
+  kZChatLabelIngestionPending: 'En attente',
+  kZChatLabelIngestionRunning: 'Ingestion',
+  kZChatLabelIngestionReady: 'Prête',
+  kZChatLabelIngestionFailed: 'Échec',
   kZChatLabelDiffusion: 'Diffusion',
   kZChatLabelAssistedInput: 'Saisie assistée',
   kZChatLabelDictate: 'Dicter',
@@ -703,7 +736,8 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelTools: 'Outils',
   kZChatLabelConversations: 'Conversations',
   kZChatLabelLoadingConversations: 'Chargement des conversations',
-  kZChatLabelConversationsError: 'Les conversations n\'ont pas pu être chargées',
+  kZChatLabelConversationsError:
+      'Les conversations n\'ont pas pu être chargées',
   kZChatLabelRetry: 'Réessayer',
   kZChatLabelNoConversations: 'Aucune conversation',
   kZChatLabelNoResults: 'Aucun résultat',

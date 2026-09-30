@@ -106,8 +106,7 @@ typedef ZChatArtifactRouteResolver =
 /// jamais exécuté sans question.
 Future<bool> zChatConfirmArtifactWithoutDialog(
   ZChatArtifactVerbAction verb,
-) async =>
-    false;
+) async => false;
 
 /// Préfixe des verbes d'artefact dans le vocabulaire des actions.
 const String kZChatArtifactVerbPrefix = 'artifact:';
@@ -155,32 +154,33 @@ class ZChatArtifactVerbAction {
 
   /// L'action de conversation qui transporte ce verbe. [destructive] vient
   /// du registre ([ZChatArtifactRegistry.requiresConfirmation]).
-  ZChatCustomAction toAction({required bool destructive}) =>
-      ZChatCustomAction(
-        verb: verb,
-        isDestructive: destructive,
-        cascades: false,
-        preservesDraft: true,
-        payload: <String, dynamic>{
-          kZChatArtifactPayloadMessageId: messageId,
-          kZChatArtifactPayloadArtifactKey: artifactKey,
-          kZChatArtifactPayloadVerbKey: verbKey,
-          if (confirmToken != null)
-            kZChatArtifactPayloadConfirmToken: confirmToken,
-        },
-      );
+  ZChatCustomAction toAction({required bool destructive}) => ZChatCustomAction(
+    verb: verb,
+    isDestructive: destructive,
+    cascades: false,
+    preservesDraft: true,
+    payload: <String, dynamic>{
+      kZChatArtifactPayloadMessageId: messageId,
+      kZChatArtifactPayloadArtifactKey: artifactKey,
+      kZChatArtifactPayloadVerbKey: verbKey,
+      if (confirmToken != null) kZChatArtifactPayloadConfirmToken: confirmToken,
+    },
+  );
 
   /// Décode [action] si c'est un verbe d'artefact, `null` sinon. Ne lève
   /// jamais.
   static ZChatArtifactVerbAction? of(ZChatAction action) {
     if (action is! ZChatCustomAction) return null;
     if (!action.verb.startsWith(kZChatArtifactVerbPrefix)) return null;
-    final String? messageId =
-        zJsonStringOrNull(action.payload[kZChatArtifactPayloadMessageId]);
-    final String? artifactKey =
-        zJsonStringOrNull(action.payload[kZChatArtifactPayloadArtifactKey]);
-    final String? verbKey =
-        zJsonStringOrNull(action.payload[kZChatArtifactPayloadVerbKey]);
+    final String? messageId = zJsonStringOrNull(
+      action.payload[kZChatArtifactPayloadMessageId],
+    );
+    final String? artifactKey = zJsonStringOrNull(
+      action.payload[kZChatArtifactPayloadArtifactKey],
+    );
+    final String? verbKey = zJsonStringOrNull(
+      action.payload[kZChatArtifactPayloadVerbKey],
+    );
     if (messageId == null || artifactKey == null || verbKey == null) {
       return null;
     }
@@ -188,8 +188,9 @@ class ZChatArtifactVerbAction {
       messageId: messageId,
       artifactKey: artifactKey,
       verbKey: verbKey,
-      confirmToken:
-          zJsonStringOrNull(action.payload[kZChatArtifactPayloadConfirmToken]),
+      confirmToken: zJsonStringOrNull(
+        action.payload[kZChatArtifactPayloadConfirmToken],
+      ),
     );
   }
 
@@ -203,7 +204,8 @@ class ZChatArtifactVerbAction {
           confirmToken == other.confirmToken;
 
   @override
-  int get hashCode => Object.hash(messageId, artifactKey, verbKey, confirmToken);
+  int get hashCode =>
+      Object.hash(messageId, artifactKey, verbKey, confirmToken);
 }
 
 /// Le contrôleur de fil de travail : une conversation composée, des artefacts
@@ -261,20 +263,20 @@ class ZChatNotebookController extends ChangeNotifier {
     // sont interdits en Dart, et rendre ces champs publics élargirait la
     // surface du contrôleur. Même arbitrage que `ZChatController`.
     // ignore: prefer_initializing_formals
-  })  : _artifactRouteResolver = artifactRouteResolver,
-        _conversationId = conversationId,
-        _registry = registry ?? ZChatArtifactRegistry.empty,
-        // ignore: prefer_initializing_formals
-        _generationPort = generationPort,
-        _store = store ?? ZChatInMemoryArtifactStore(),
-        // ignore: prefer_initializing_formals
-        _statePort = statePort,
-        // ignore: prefer_initializing_formals
-        _confirmArtifactVerb = confirmArtifactVerb,
-        // ignore: prefer_initializing_formals
-        _decorateRequest = decorateRequest,
-        _labels = liveLabels,
-        _readOnly = ValueNotifier<bool>(readOnly) {
+  }) : _artifactRouteResolver = artifactRouteResolver,
+       _conversationId = conversationId,
+       _registry = registry ?? ZChatArtifactRegistry.empty,
+       // ignore: prefer_initializing_formals
+       _generationPort = generationPort,
+       _store = store ?? ZChatInMemoryArtifactStore(),
+       // ignore: prefer_initializing_formals
+       _statePort = statePort,
+       // ignore: prefer_initializing_formals
+       _confirmArtifactVerb = confirmArtifactVerb,
+       // ignore: prefer_initializing_formals
+       _decorateRequest = decorateRequest,
+       _labels = liveLabels,
+       _readOnly = ValueNotifier<bool>(readOnly) {
     final ZChatRequestIdFactory ids =
         newRequestId ?? ZChatSequentialRequestIds(conversationId).call;
     _newRequestId = ids;
@@ -283,7 +285,8 @@ class ZChatNotebookController extends ChangeNotifier {
       actionExecutor: actionExecutor,
       confirm: confirm,
       newRequestId: ids,
-      buildRequest: buildRequest ??
+      buildRequest:
+          buildRequest ??
           ZChatDraftRequestBuilder(
             style: ZChatGenerationStyle.converse,
             conversationId: conversationId,
@@ -450,8 +453,10 @@ class ZChatNotebookController extends ChangeNotifier {
       _failureOf(pair).value = failure;
       return Left<ZFailure, ZChatActionOutcome>(failure);
     }
-    final bool destructive =
-        _registry.requiresConfirmation(artifactKey, verbKey);
+    final bool destructive = _registry.requiresConfirmation(
+      artifactKey,
+      verbKey,
+    );
     final ZChatArtifactVerbAction described = ZChatArtifactVerbAction(
       messageId: messageId,
       artifactKey: artifactKey,
@@ -461,8 +466,11 @@ class ZChatNotebookController extends ChangeNotifier {
     final ZResult<ZChatActionOutcome> outcome = switch (verbKey) {
       kZChatArtifactVerbCreate ||
       kZChatArtifactVerbRegenerate ||
-      kZChatArtifactVerbDelete =>
-        await _runNatively(pair, described, destructive: destructive),
+      kZChatArtifactVerbDelete => await _runNatively(
+        pair,
+        described,
+        destructive: destructive,
+      ),
       _ => await chat.runAction(described.toAction(destructive: destructive)),
     };
     outcome.fold(
@@ -506,7 +514,10 @@ class ZChatNotebookController extends ChangeNotifier {
 
   /// Annule la génération d'artefact en vol sur [artifactKey]/[messageId],
   /// s'il y en a une. Sans effet sinon.
-  void cancelArtifact({required String messageId, required String artifactKey}) {
+  void cancelArtifact({
+    required String messageId,
+    required String artifactKey,
+  }) {
     _artifactTokens[(messageId, artifactKey)]?.cancel();
   }
 
@@ -516,8 +527,53 @@ class ZChatNotebookController extends ChangeNotifier {
   Future<void> refreshArtifact({
     required String messageId,
     required String artifactKey,
-  }) =>
-      _refresh((messageId, artifactKey));
+  }) => _refresh((messageId, artifactKey));
+
+  /// Génère [artifactKey] pour le conteneur [scopeId], sans message porteur.
+  ///
+  /// Le contenu est stocké sous [scopeId]. Une matière vide est refusée par
+  /// la séquence, sans appel du port.
+  Future<ZResult<Unit>> generateForScope({
+    required String scopeId,
+    required String artifactKey,
+    required String notes,
+    String subject = '',
+  }) async {
+    final ZChatArtifactGenerationPort? port = _generationPort;
+    if (port == null) {
+      return const Left<ZFailure, Unit>(
+        ZUnsupportedOperationFailure(
+          'no artifact generation port is wired',
+          operation: 'generateArtifact',
+        ),
+      );
+    }
+    if (_disposed) return const Right<ZFailure, Unit>(unit);
+    final ZChatArtifactGenerationRequest request =
+        ZChatArtifactGenerationRequest(
+          scopeId: scopeId,
+          artifactKey: artifactKey,
+          notes: notes,
+          subject: subject,
+          conversationId: _conversationId,
+        );
+    final (String, String) pair = (request.anchorId, artifactKey);
+    final ZChatRequestToken token = ZChatRequestToken(_newRequestId());
+    _artifactTokens[pair] = token;
+    final ZResult<ZChatArtifactContent> produced =
+        await ZChatArtifactGenerationRunner(
+          port: port,
+          store: _store,
+        ).run(request, token: token, mark: _mark);
+    _artifactTokens.remove(pair);
+    if (_disposed) return const Right<ZFailure, Unit>(unit);
+    return produced.fold((ZFailure failure) => Left<ZFailure, Unit>(failure), (
+      ZChatArtifactContent _,
+    ) {
+      unawaited(_refresh(pair));
+      return const Right<ZFailure, Unit>(unit);
+    });
+  }
 
   // ── Génération et suppression ─────────────────────────────────────────────
 
@@ -544,12 +600,14 @@ class ZChatNotebookController extends ChangeNotifier {
     try {
       built = _requestFor(message, verb);
     } catch (error) {
-      return Left<ZFailure, Unit>(ZChatArtifactGenerationFailure(
-        'artifact request decorator threw: $error',
-        messageId: verb.messageId,
-        artifactKey: verb.artifactKey,
-        cause: error,
-      ));
+      return Left<ZFailure, Unit>(
+        ZChatArtifactGenerationFailure(
+          'artifact request decorator threw: $error',
+          messageId: verb.messageId,
+          artifactKey: verb.artifactKey,
+          cause: error,
+        ),
+      );
     }
     // Le ROUTAGE vient ici : après l'ajusteur, AVANT le jeton, l'annonce et
     // la séquence (donc avant `mark(busy)` et tout appel de port). Sans
@@ -583,8 +641,10 @@ class ZChatNotebookController extends ChangeNotifier {
     _artifactTokens[pair] = token;
     _say(_labels.artifactGenerationStarted?.call(verb.artifactKey));
     final ZResult<ZChatArtifactContent> produced =
-        await ZChatArtifactGenerationRunner(port: port, store: _store)
-            .run(request, token: token, mark: _mark);
+        await ZChatArtifactGenerationRunner(
+          port: port,
+          store: _store,
+        ).run(request, token: token, mark: _mark);
     _artifactTokens.remove(pair);
     if (_disposed) return const Right<ZFailure, Unit>(unit);
     return produced.fold(
@@ -628,14 +688,11 @@ class ZChatNotebookController extends ChangeNotifier {
         ZDomainFailure('artifact store threw ${error.runtimeType} on delete'),
       );
     }
-    return deleted.fold(
-      (ZFailure f) => Left<ZFailure, Unit>(f),
-      (Unit _) {
-        _say(_labels.artifactDeleted?.call(pair.$2));
-        unawaited(_refresh(pair));
-        return const Right<ZFailure, Unit>(unit);
-      },
-    );
+    return deleted.fold((ZFailure f) => Left<ZFailure, Unit>(f), (Unit _) {
+      _say(_labels.artifactDeleted?.call(pair.$2));
+      unawaited(_refresh(pair));
+      return const Right<ZFailure, Unit>(unit);
+    });
   }
 
   // ── Occupation & tranches ─────────────────────────────────────────────────
@@ -676,13 +733,12 @@ class ZChatNotebookController extends ChangeNotifier {
     final ZChatArtifactStatePort? port = _statePort;
     try {
       if (port != null) {
-        return await port.existenceOf(
-          messageId: pair.$1,
-          artifactKey: pair.$2,
-        );
+        return await port.existenceOf(messageId: pair.$1, artifactKey: pair.$2);
       }
-      final ZResult<String?> stored =
-          await _store.read(messageId: pair.$1, artifactKey: pair.$2);
+      final ZResult<String?> stored = await _store.read(
+        messageId: pair.$1,
+        artifactKey: pair.$2,
+      );
       return stored.map(
         (String? content) => content == null
             ? ZChatArtifactExistence.absent

@@ -70,12 +70,21 @@ abstract class ZChatAttachmentPicker {
   /// Une implémentation qui sait laquelle s'est produite rend un
   /// `Left(ZChatAttachmentFailure(..., reason: …))` portant
   /// [ZChatAttachmentRejection.permissionDenied],
-  /// [ZChatAttachmentRejection.sourceUnavailable] ou
-  /// [ZChatAttachmentRejection.fileUnreadable] : le contrôleur relaie ce
+  /// [ZChatAttachmentRejection.sourceUnavailable],
+  /// [ZChatAttachmentRejection.fileUnreadable] ou
+  /// [ZChatAttachmentRejection.fileTooLarge] : le contrôleur relaie ce
   /// motif tel quel. Tout autre `ZFailure` — et toute implémentation qui ne
   /// sait pas discriminer — retombe sur
   /// [ZChatAttachmentRejection.pickFailed], sans exception (invariant AD-10).
-  Future<ZResult<ZPendingAttachment?>> pick(ZChatAttachmentSource source);
+  ///
+  /// [maxBytes], quand il est fourni, est la borne locale de taille. Le
+  /// sélecteur peut refuser avant de lire le fichier et nommer
+  /// [ZChatAttachmentRejection.fileTooLarge]. `null` signifie qu'aucune
+  /// borne ne lui a été transmise.
+  Future<ZResult<ZPendingAttachment?>> pick(
+    ZChatAttachmentSource source, {
+    int? maxBytes,
+  });
 }
 
 /// Couture de téléversement — le pont entre l'octet local et l'entité

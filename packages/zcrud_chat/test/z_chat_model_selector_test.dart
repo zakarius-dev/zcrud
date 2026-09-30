@@ -200,6 +200,27 @@ void main() {
       expect(find.text('Routeur Bravo'), findsNothing,
           reason: '🔴 le menu doit se refermer après la sélection');
     });
+
+    testWidgets('MS-R4 — déclencheur en bas : chaque entrée reste dans l\'écran',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(mount(activeId: 'routeur-b'));
+      await tester.tap(find.text('Routeur Bravo'));
+      await tester.pump();
+      final Size surface = tester.getSize(find.byType(Directionality).first);
+      for (final String label in <String>[
+        'Routeur Alpha',
+        'Routeur Charlie',
+      ]) {
+        final Rect rect = tester.getRect(find.text(label));
+        expect(rect.top, greaterThanOrEqualTo(0),
+            reason: '🔴 « $label » est au-dessus de l\'écran ($rect) — '
+                'intouchable quand le composer est en bas');
+        expect(rect.bottom, lessThanOrEqualTo(surface.height + 0.1),
+            reason: '🔴 « $label » dépasse le bas de l\'écran ($rect)');
+        expect(rect.left, greaterThanOrEqualTo(0));
+        expect(rect.right, lessThanOrEqualTo(surface.width + 0.1));
+      }
+    });
   });
 
   group('🔴 MS-SM1 — le sélecteur et la liste s\'IGNORENT (AD-2)', () {

@@ -31,6 +31,7 @@ export 'src/data/z_flashcard_pdf_input.dart'
         kFlashcardPdfTypeShortAnswer,
         kFlashcardPdfTypeTrueOrFalse;
 export 'src/data/z_flashcard_pdf_template.dart' show ZFlashcardPdfTemplate;
+export 'src/data/z_markdown_pdf_exporter.dart' show buildMarkdownPdfBytes;
 export 'src/data/z_pdf_creation_service.dart' show ZPdfCreationService;
 export 'src/data/z_pdf_export_options.dart'
     show ZPdfExportOptions, ZPdfHeaderSpec, ZPdfOrientation;

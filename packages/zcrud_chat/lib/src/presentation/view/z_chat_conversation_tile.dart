@@ -40,10 +40,15 @@ import 'z_chat_highlight.dart';
 import 'z_chat_labels.dart';
 import 'z_chat_message_tile.dart' show kZChatMinTapTarget;
 
+/// Largeur sous laquelle les actions de ligne se replient derrière un bouton.
+///
+/// En dessous, une rangée de cibles de 48 dp à côté du titre déborde : un
+/// tiroir standard mesure 304 dp. Au-dessus, les actions restent des boutons.
+const double kZChatConversationActionsInlineMinWidth = 360;
+
 /// Choisit la date affichée par la tuile — couture d'hôte.
-typedef ZChatConversationTimestamp = DateTime? Function(
-  ZChatConversation conversation,
-);
+typedef ZChatConversationTimestamp =
+    DateTime? Function(ZChatConversation conversation);
 
 /// Sélecteur **par défaut** : la récence métier, avec repli sur la création.
 ///
@@ -60,10 +65,8 @@ DateTime? zChatCreatedTimestamp(ZChatConversation c) => c.createdAt;
 /// Ce créneau existe parce qu'un hôte peut vouloir superposer une icône et
 /// un badge dans un `Stack` : ce n'est pas exprimable en simple champ, et
 /// sans ce créneau il devrait réécrire la tuile entière.
-typedef ZChatConversationLeadingBuilder = Widget? Function(
-  BuildContext context,
-  ZChatConversation conversation,
-);
+typedef ZChatConversationLeadingBuilder =
+    Widget? Function(BuildContext context, ZChatConversation conversation);
 
 /// Construit le sous-titre — typiquement l'extrait du dernier message, ou le
 /// `snippet` d'un `ZChatConversationHit`.
@@ -72,10 +75,8 @@ typedef ZChatConversationLeadingBuilder = Widget? Function(
 /// fréquente sur une liste de conversations, et c'est la raison pour
 /// laquelle ce créneau existe sans que le socle n'invente le champ
 /// correspondant.
-typedef ZChatConversationSubtitleBuilder = Widget? Function(
-  BuildContext context,
-  ZChatConversation conversation,
-);
+typedef ZChatConversationSubtitleBuilder =
+    Widget? Function(BuildContext context, ZChatConversation conversation);
 
 /// Un badge de statut piloté par prédicat.
 ///
@@ -219,11 +220,10 @@ class ZChatConversationTile extends StatelessWidget {
   ];
 
   /// Les actions **visibles** pour cette conversation.
-  List<ZChatConversationAction> get visibleActions =>
-      <ZChatConversationAction>[
-        for (final ZChatConversationAction a in actions)
-          if (a.visibleFor(conversation)) a,
-      ];
+  List<ZChatConversationAction> get visibleActions => <ZChatConversationAction>[
+    for (final ZChatConversationAction a in actions)
+      if (a.visibleFor(conversation)) a,
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -252,7 +252,14 @@ class ZChatConversationTile extends StatelessWidget {
             ),
             if (time.isNotEmpty) ...<Widget>[
               SizedBox(width: theme.gapM),
-              Text(time, textAlign: TextAlign.start),
+              Flexible(
+                child: Text(
+                  time,
+                  textAlign: TextAlign.start,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ],
         ),
@@ -286,41 +293,55 @@ class ZChatConversationTile extends StatelessWidget {
       label: _semanticLabel(context, time, shown),
       excludeSemantics: true,
       onTap: onTap == null ? null : () => onTap!(conversation),
-      onLongPress: onLongPress == null ? null : () => onLongPress!(conversation),
+      onLongPress: onLongPress == null
+          ? null
+          : () => onLongPress!(conversation),
       child: body,
     );
 
-    final Widget row = Row(
-      children: <Widget>[
-        ExcludeSemantics(child: _leading(context, theme)),
-        SizedBox(width: theme.gapM),
-        Expanded(child: announced),
-        if (trailing != null) ...<Widget>[
-          SizedBox(width: theme.gapM),
-          trailing!,
-        ],
-        for (final ZChatConversationAction a in visibleActions)
-          _ZActionButton(
-            key: ValueKey<String>('zchat.action#${a.labelKey}'),
-            action: a,
-            conversation: conversation,
-          ),
-      ],
-    );
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final bool collapseActions =
+            constraints.maxWidth < kZChatConversationActionsInlineMinWidth &&
+            visibleActions.isNotEmpty;
+        final Widget row = Row(
+          children: <Widget>[
+            ExcludeSemantics(child: _leading(context, theme)),
+            SizedBox(width: theme.gapM),
+            Expanded(child: announced),
+            if (trailing != null) ...<Widget>[
+              SizedBox(width: theme.gapM),
+              trailing!,
+            ],
+            if (collapseActions)
+              _ZActionMenu(actions: visibleActions, conversation: conversation)
+            else
+              for (final ZChatConversationAction a in visibleActions)
+                _ZActionButton(
+                  key: ValueKey<String>('zchat.action#${a.labelKey}'),
+                  action: a,
+                  conversation: conversation,
+                ),
+          ],
+        );
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap == null ? null : () => onTap!(conversation),
-      onLongPress: onLongPress == null ? null : () => onLongPress!(conversation),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: effectiveMinHeight),
-        child: Padding(
-          padding:
-              padding ??
-              EdgeInsetsDirectional.symmetric(horizontal: theme.gapM),
-          child: row,
-        ),
-      ),
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap == null ? null : () => onTap!(conversation),
+          onLongPress: onLongPress == null
+              ? null
+              : () => onLongPress!(conversation),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: effectiveMinHeight),
+            child: Padding(
+              padding:
+                  padding ??
+                  EdgeInsetsDirectional.symmetric(horizontal: theme.gapM),
+              child: row,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -450,6 +471,74 @@ class _ZActionButton extends StatelessWidget {
       confirm(context).then((bool ok) {
         if (ok) action.onInvoke(conversation);
       }),
+    );
+  }
+}
+
+/// Actions repliées : un bouton, puis la liste au tap.
+///
+/// Pas de menu Material : ce paquet n'importe pas `material`. Le dépli est
+/// inline, sous le bouton, avec les mêmes cibles que la rangée large.
+class _ZActionMenu extends StatefulWidget {
+  const _ZActionMenu({required this.actions, required this.conversation});
+
+  final List<ZChatConversationAction> actions;
+  final ZChatConversation conversation;
+
+  @override
+  State<_ZActionMenu> createState() => _ZActionMenuState();
+}
+
+class _ZActionMenuState extends State<_ZActionMenu> {
+  /// Ouverture locale du menu. Un `ValueNotifier` plutôt qu'un `setState` :
+  /// seule cette colonne se reconstruit, pas la tuile.
+  final ValueNotifier<bool> _open = ValueNotifier<bool>(false);
+
+  @override
+  void dispose() {
+    _open.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String label = zChatLabel(context, kZChatLabelConversationActions);
+    return ValueListenableBuilder<bool>(
+      valueListenable: _open,
+      builder: (BuildContext context, bool open, Widget? _) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          Semantics(
+            button: true,
+            expanded: open,
+            label: label,
+            excludeSemantics: true,
+            onTap: () => _open.value = !open,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _open.value = !open,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: kZChatMinTapTarget,
+                  minWidth: kZChatMinTapTarget,
+                ),
+                child: Align(
+                  alignment: AlignmentDirectional.center,
+                  child: Text(label, textAlign: TextAlign.start),
+                ),
+              ),
+            ),
+          ),
+          if (open)
+            for (final ZChatConversationAction a in widget.actions)
+              _ZActionButton(
+                key: ValueKey<String>('zchat.action#${a.labelKey}'),
+                action: a,
+                conversation: widget.conversation,
+              ),
+        ],
+      ),
     );
   }
 }

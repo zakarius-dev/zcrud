@@ -895,6 +895,8 @@ void main() {
         'padding',
         'reverse',
         'composer',
+        'thinkingBuilder',
+        'onCitationTap',
       });
     });
 

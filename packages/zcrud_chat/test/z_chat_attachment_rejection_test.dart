@@ -43,7 +43,10 @@ class _NamingPicker extends ZChatAttachmentPicker {
   final bool throws;
 
   @override
-  Future<ZResult<ZPendingAttachment?>> pick(ZChatAttachmentSource source) async {
+  Future<ZResult<ZPendingAttachment?>> pick(
+    ZChatAttachmentSource source, {
+    int? maxBytes,
+  }) async {
     if (throws) throw StateError('boom');
     return Left<ZFailure, ZPendingAttachment?>(failure!);
   }
@@ -111,6 +114,23 @@ void main() {
           ),
         ),
         ZChatAttachmentRejection.sourceUnavailable,
+      );
+    });
+
+    test('REJ-2d un fichier trop gros nommé par le sélecteur est relayé',
+        () async {
+      expect(
+        await _reasonOf(
+          const _NamingPicker(
+            ZChatAttachmentFailure(
+              'too big',
+              reason: ZChatAttachmentRejection.fileTooLarge,
+            ),
+          ),
+        ),
+        ZChatAttachmentRejection.fileTooLarge,
+        reason: '🔴 fileTooLarge retombait sur pickFailed : le sélecteur qui '
+            'refuse avant lecture ne peut pas nommer la cause',
       );
     });
 

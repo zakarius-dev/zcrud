@@ -47,6 +47,7 @@
 /// ni l'écran ni le composer.
 library;
 
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show ValueListenable;
@@ -62,6 +63,7 @@ import '../tools/z_chat_tool_controller.dart';
 import '../tools/z_chat_tool_settings_adapter.dart';
 import '../z_chat_assembly_contract.dart';
 import '../z_chat_controller.dart';
+import '../z_chat_export_port.dart';
 import '../z_chat_live_labels.dart';
 import 'z_chat_artifact_bar.dart';
 import 'z_chat_artifact_binding.dart';
@@ -77,6 +79,8 @@ import 'z_chat_notebook_view.dart';
 import 'z_chat_route_assembly.dart';
 import 'z_chat_settings_sheet.dart';
 import 'z_default_chat_composer.dart';
+import 'z_notebook_sources_panel.dart';
+import 'z_transform_palette_bar.dart';
 
 /// Borne haute absolue de la hauteur repliée d'une réponse, en dp.
 const double kZChatNotebookCollapsedMaxHeight = 250;
@@ -162,8 +166,9 @@ class ZChatNotebookScreen extends StatefulWidget {
   /// différente à l'écran. [readOnly] et [toolCatalog], eux, sont suivis à
   /// chaque mise à jour.
   const ZChatNotebookScreen({
-    required this.streamPort,
-    required this.transcript,
+    this.streamPort,
+    this.controller,
+    this.transcript,
     required this.conversationId,
     required this.cursorColor,
     this.registry,
@@ -222,19 +227,35 @@ class ZChatNotebookScreen extends StatefulWidget {
     this.failureBuilder,
     this.artifactFailureBuilder,
     this.headerBuilder,
+    this.thinkingBuilder,
+    this.onCitationTap,
+    this.sourcesPort,
+    this.onAttachSource,
+    this.artifactScopeId,
+    this.transformPalette,
+    this.accessLevel,
+    this.exportPort,
     super.key,
   }) : assert(
+         controller != null || (streamPort != null && transcript != null),
+         kZChatOwnedControllerAssertMessage,
+       ),
+       assert(
          composerBuilder == null || composerSlots == null,
          kZChatComposerSlotsExclusiveAssertMessage,
        );
 
   // ── Le contrôleur de fil de travail ───────────────────────────────────────
 
-  /// Génération des réponses.
-  final ZChatStreamPort streamPort;
+  /// Génération des réponses. Ignorée lorsque [controller] est fourni.
+  final ZChatStreamPort? streamPort;
 
-  /// Lecture et écriture du fil.
-  final ZChatTranscriptPort transcript;
+  /// Contrôleur déjà possédé par l'hôte. `null` : l'écran le crée et le
+  /// libère.
+  final ZChatNotebookController? controller;
+
+  /// Lecture et écriture du fil. Ignorée lorsque [controller] est fourni.
+  final ZChatTranscriptPort? transcript;
 
   /// Identité de la conversation.
   final String conversationId;
@@ -463,12 +484,38 @@ class ZChatNotebookScreen extends StatefulWidget {
   /// actions : il offre la place et le contrôleur. `null` signifie absent.
   final ZChatNotebookSlotBuilder? headerBuilder;
 
+  /// Créneau de réflexion relayé à la vue.
+  final ZChatMessageSlotBuilder? thinkingBuilder;
+
+  /// Renvoi `[n]` activé.
+  final void Function(int index)? onCitationTap;
+
+  /// Sources du notebook. `null` : pas de panneau.
+  final ZNotebookSourcesPort? sourcesPort;
+
+  /// Sélecteur de rattachement. `null` : le panneau ne propose pas l'ajout.
+  final Future<void> Function()? onAttachSource;
+
+  /// Conteneur des artefacts qui ne sont pas rattachés à un message.
+  /// `null` : pas de barre de portée.
+  final String? artifactScopeId;
+
+  /// Transformations offertes pour [artifactScopeId].
+  final ZTransformPalette? transformPalette;
+
+  /// Niveau d'accès courant, transmis à la palette.
+  final String? accessLevel;
+
+  /// Export PDF du fil. `null` : pas de geste d'export.
+  final ZChatExportPort? exportPort;
+
   @override
   State<ZChatNotebookScreen> createState() => _ZChatNotebookScreenState();
 }
 
 class _ZChatNotebookScreenState extends State<ZChatNotebookScreen> {
   late final ZChatNotebookController _nb;
+  late final bool _ownsNotebook;
   ZChatSettingsController? _ownedSettings;
   ZChatToolController? _tools;
 
@@ -478,29 +525,36 @@ class _ZChatNotebookScreenState extends State<ZChatNotebookScreen> {
     // UNE création, ici et nulle part ailleurs : un contrôleur créé dans
     // `build` serait recréé à chaque frame, perdant requêtes en vol,
     // abonnement au fil et tranches d'artefact.
-    _nb = ZChatNotebookController(
-      streamPort: widget.streamPort,
-      transcript: widget.transcript,
-      conversationId: widget.conversationId,
-      registry: widget.registry,
-      generationPort: widget.generationPort,
-      store: widget.store,
-      statePort: widget.statePort,
-      actionExecutor: widget.actionExecutor,
-      confirm: widget.confirm,
-      confirmArtifactVerb: widget.confirmArtifactVerb,
-      newRequestId: widget.newRequestId,
-      buildRequest: widget.buildRequest,
-      decorateRequest: widget.decorateRequest,
-      lifecycle: widget.lifecycle,
-      // La session résout, le contrôleur décide : les deux résolveurs sont
-      // les fonctions PURES de la session, jamais un port.
-      routeResolver: widget.routeSession?.resolve,
-      artifactRouteResolver: widget.routeSession?.resolveArtifact,
-      liveLabels: widget.liveLabels,
-      maxResumeAttempts: widget.maxResumeAttempts,
-      readOnly: widget.readOnly,
-    );
+    final ZChatNotebookController? external = widget.controller;
+    if (external != null) {
+      _nb = external;
+      _ownsNotebook = false;
+    } else {
+      _nb = ZChatNotebookController(
+        streamPort: widget.streamPort!,
+        transcript: widget.transcript!,
+        conversationId: widget.conversationId,
+        registry: widget.registry,
+        generationPort: widget.generationPort,
+        store: widget.store,
+        statePort: widget.statePort,
+        actionExecutor: widget.actionExecutor,
+        confirm: widget.confirm,
+        confirmArtifactVerb: widget.confirmArtifactVerb,
+        newRequestId: widget.newRequestId,
+        buildRequest: widget.buildRequest,
+        decorateRequest: widget.decorateRequest,
+        lifecycle: widget.lifecycle,
+        // La session résout, le contrôleur décide : les deux résolveurs sont
+        // les fonctions PURES de la session, jamais un port.
+        routeResolver: widget.routeSession?.resolve,
+        artifactRouteResolver: widget.routeSession?.resolveArtifact,
+        liveLabels: widget.liveLabels,
+        maxResumeAttempts: widget.maxResumeAttempts,
+        readOnly: widget.readOnly,
+      );
+      _ownsNotebook = true;
+    }
     if (widget.settings == null) _ownedSettings = ZChatSettingsController();
     final ZChatToolCatalog? catalog = widget.toolCatalog;
     if (catalog != null) _tools = ZChatToolController(catalog: catalog);
@@ -531,7 +585,7 @@ class _ZChatNotebookScreenState extends State<ZChatNotebookScreen> {
   void dispose() {
     _tools?.dispose();
     _ownedSettings?.dispose();
-    _nb.dispose();
+    if (_ownsNotebook) _nb.dispose();
     super.dispose();
   }
 
@@ -562,6 +616,8 @@ class _ZChatNotebookScreenState extends State<ZChatNotebookScreen> {
         padding: widget.padding,
         reverse: widget.reverse,
         composer: widget.readOnly ? null : _composer(context),
+        thinkingBuilder: widget.thinkingBuilder,
+        onCitationTap: widget.onCitationTap,
       ),
     );
     final List<Widget> above = <Widget>[
@@ -569,6 +625,34 @@ class _ZChatNotebookScreenState extends State<ZChatNotebookScreen> {
         _ZChatOptionalSlot(
           builder: (BuildContext context) =>
               widget.headerBuilder!(context, _nb),
+        ),
+      if (widget.sourcesPort != null)
+        ZNotebookSourcesPanel(
+          port: widget.sourcesPort!,
+          onAttach: widget.onAttachSource,
+        ),
+      if (widget.artifactScopeId != null && widget.transformPalette != null)
+        ZTransformPaletteBar(
+          palette: widget.transformPalette!,
+          level: widget.accessLevel,
+          onSelect: (ZTransformPaletteEntry entry) {
+            final String notes = _nb.chat.messages.value
+                .map((ZChatMessage message) => message.content)
+                .where((String text) => text.isNotEmpty)
+                .join('\n\n');
+            unawaited(
+              _nb.generateForScope(
+                scopeId: widget.artifactScopeId!,
+                artifactKey: entry.artifactKey,
+                notes: notes,
+              ),
+            );
+          },
+        ),
+      if (widget.exportPort != null)
+        _ZNotebookExportButton(
+          messages: _nb.chat.messages,
+          port: widget.exportPort!,
         ),
       if (widget.failureBuilder != null) ...<Widget>[
         _ZChatFailureSlice(
@@ -821,6 +905,42 @@ class _ZChatArtifactFailureSlice extends StatelessWidget {
         }
         return const SizedBox.shrink();
       },
+    );
+  }
+}
+
+class _ZNotebookExportButton extends StatelessWidget {
+  const _ZNotebookExportButton({required this.messages, required this.port});
+
+  final ValueListenable<List<ZChatMessage>> messages;
+  final ZChatExportPort port;
+
+  @override
+  Widget build(BuildContext context) {
+    final String label = zChatLabel(context, kZChatLabelExportPdf);
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          final String markdown = messages.value
+              .map((ZChatMessage message) => message.content)
+              .where((String text) => text.isNotEmpty)
+              .join('\n\n');
+          unawaited(port.exportPdf(markdown: markdown));
+        },
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minWidth: kZChatMinTapTarget,
+            minHeight: kZChatMinTapTarget,
+          ),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(label, textAlign: TextAlign.start),
+          ),
+        ),
+      ),
     );
   }
 }

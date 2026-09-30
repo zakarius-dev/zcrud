@@ -67,13 +67,17 @@ class _ZNeutralBlock extends StatelessWidget {
       return ValueListenableBuilder<String>(
         valueListenable: live,
         builder: (BuildContext context, String value, Widget? child) =>
-            _text(context, value),
+            _text(context, value, onCitation: request.onCitationTap),
       );
     }
     // `switch` EXHAUSTIF sur une union scellée : ajouter une variante au kernel
     // casse la COMPILATION ici plutôt que de rendre du vide silencieux.
     return switch (block) {
-      ZTextBlock() => _text(context, block.text),
+      ZTextBlock() => _text(
+        context,
+        block.text,
+        onCitation: request.onCitationTap,
+      ),
       ZTableBlock() => _ZNeutralTable(
         title: block.title,
         headers: block.headers,
@@ -182,8 +186,16 @@ class _ZNeutralBlock extends StatelessWidget {
   static String _sourceLine(ZChatSource source) =>
       source.displayText.isEmpty ? source.sourceType : source.displayText;
 
-  static Widget _text(BuildContext context, String value) =>
-      Text(value, textAlign: TextAlign.start);
+  static Widget _text(
+    BuildContext context,
+    String value, {
+    void Function(int index)? onCitation,
+  }) {
+    if (onCitation == null || !value.contains('[')) {
+      return Text(value, textAlign: TextAlign.start);
+    }
+    return _ZCitedText(value: value, onCitation: onCitation);
+  }
 
   /// Emphase **sans style codé en dur** : la graisse est dérivée du style
   /// courant (`DefaultTextStyle`), jamais d'un `TextStyle(...)` littéral.
@@ -324,5 +336,55 @@ class _ZNeutralTable extends StatelessWidget {
       if (r.length > w) w = r.length;
     }
     return w;
+  }
+}
+
+final RegExp _kCitation = RegExp(r'\[(\d+)\]');
+
+/// Texte dont les renvois `[n]` sont des liens de ligne.
+///
+/// Le renvoi est un widget dans la ligne, pas une cible de 48 dp : une
+/// cible de cette taille changerait la hauteur de la ligne.
+class _ZCitedText extends StatelessWidget {
+  const _ZCitedText({required this.value, required this.onCitation});
+
+  final String value;
+  final void Function(int index) onCitation;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<InlineSpan> spans = <InlineSpan>[];
+    int cursor = 0;
+    for (final RegExpMatch match in _kCitation.allMatches(value)) {
+      if (match.start > cursor) {
+        spans.add(TextSpan(text: value.substring(cursor, match.start)));
+      }
+      final int? index = int.tryParse(match.group(1)!);
+      final String label = match.group(0)!;
+      if (index == null) {
+        spans.add(TextSpan(text: label));
+      } else {
+        final int cited = index;
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: Semantics(
+              button: true,
+              label: label,
+              child: GestureDetector(
+                onTap: () => onCitation(cited),
+                child: Text(label, textAlign: TextAlign.start),
+              ),
+            ),
+          ),
+        );
+      }
+      cursor = match.end;
+    }
+    if (cursor < value.length) {
+      spans.add(TextSpan(text: value.substring(cursor)));
+    }
+    return Text.rich(TextSpan(children: spans), textAlign: TextAlign.start);
   }
 }

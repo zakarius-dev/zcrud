@@ -20,6 +20,9 @@ const String kZChatSeamShell = 'ZChatShellRenderer.buildShell';
 /// Nom du seam d'**identité par message** — idem.
 const String kZChatSeamIdentitySlot = 'ZChatMessageTile.identityBuilder';
 
+/// Nom du seam de **réflexion par message** — idem.
+const String kZChatSeamThinkingSlot = 'ZChatMessageTile.thinkingBuilder';
+
 /// Nom du seam d'**actions par message** — idem.
 const String kZChatSeamActionsSlot = 'ZChatMessageTile.actionsBuilder';
 

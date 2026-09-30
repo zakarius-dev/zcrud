@@ -3,6 +3,12 @@
 Toutes les modifications notables de `zcrud_export` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.56.0 — 2026-09-30
+
+### Ajouté
+
+- Le réexport de `zcrud_export_pdf` inclut `buildMarkdownPdfBytes`. Un hôte qui ne dépend que de `zcrud_export` l'obtient ; un hôte PDF-seul continue de dépendre de `zcrud_export_pdf`.
+
 ## 0.93.0 — 2026-08-13
 
 ### Ajouté

@@ -62,6 +62,8 @@ class ZChatConversationView extends StatelessWidget {
     this.padding,
     this.reverse = false,
     this.identityBuilder,
+    this.thinkingBuilder,
+    this.onCitationTap,
     this.actionsBuilder,
     this.shell,
     this.composer,
@@ -86,6 +88,13 @@ class ZChatConversationView extends StatelessWidget {
   /// unique ([_ZChatList._item]). `null` (défaut) donne un rendu strictement
   /// inchangé. Cf. [ZChatMessageTile.identityBuilder].
   final ZChatMessageSlotBuilder? identityBuilder;
+
+  /// Créneau de réflexion, entre l'identité et le premier bloc. `null` :
+  /// absent. Relayé à la tuile établie et à la bulle en cours.
+  final ZChatMessageSlotBuilder? thinkingBuilder;
+
+  /// Renvoi `[n]` activé. `null` : les crochets restent du texte.
+  final void Function(int index)? onCitationTap;
 
   /// Créneau d'actions par message — relayé tel quel à la fabrique de tuile
   /// unique. `null` (défaut) donne un rendu strictement inchangé. Cf.
@@ -133,6 +142,8 @@ class ZChatConversationView extends StatelessWidget {
                         padding: padding ?? theme.formPadding,
                         reverse: reverse,
                         identityBuilder: identityBuilder,
+                        thinkingBuilder: thinkingBuilder,
+                        onCitationTap: onCitationTap,
                         actionsBuilder: actionsBuilder,
                         shell: shell,
                       ),
@@ -161,7 +172,10 @@ class ZChatConversationView extends StatelessWidget {
 /// seul enfant, pas un `SizedBox.shrink()` en second : rien (invariant
 /// AD-4). L'arbre d'un hôte qui ne fournit pas de composer reste donc
 /// identique à celui d'une vue sans ce paramètre.
-Widget _zChatComposeSurface({required Widget thread, required Widget? composer}) {
+Widget _zChatComposeSurface({
+  required Widget thread,
+  required Widget? composer,
+}) {
   if (composer == null) return thread;
   return Column(
     children: <Widget>[
@@ -188,6 +202,8 @@ class _ZChatList extends StatelessWidget {
     required this.padding,
     required this.reverse,
     required this.identityBuilder,
+    required this.thinkingBuilder,
+    required this.onCitationTap,
     required this.actionsBuilder,
     required this.shell,
   });
@@ -199,6 +215,8 @@ class _ZChatList extends StatelessWidget {
   final EdgeInsetsDirectional padding;
   final bool reverse;
   final ZChatMessageSlotBuilder? identityBuilder;
+  final ZChatMessageSlotBuilder? thinkingBuilder;
+  final void Function(int index)? onCitationTap;
   final ZChatMessageSlotBuilder? actionsBuilder;
   final ZChatTileShell? shell;
 
@@ -215,6 +233,8 @@ class _ZChatList extends StatelessWidget {
         // savoir d'eux. C'est ce qui rend la non-divergence structurelle :
         // il n'existe aucun second endroit où les brancher.
         identityBuilder: identityBuilder,
+        thinkingBuilder: thinkingBuilder,
+        onCitationTap: onCitationTap,
         actionsBuilder: actionsBuilder,
         shell: shell,
         // Le SUJET du tour, résolu ici : c'est le seul endroit qui voit le
@@ -234,6 +254,8 @@ class _ZChatList extends StatelessWidget {
       key: ValueKey<String>('stream#$requestId'),
       controller: controller,
       requestId: requestId,
+      thinkingBuilder: thinkingBuilder,
+      onCitationTap: onCitationTap,
     );
   }
 
@@ -259,11 +281,7 @@ class _ZChatList extends StatelessWidget {
     try {
       return resolver(message, request);
     } catch (error, stack) {
-      zChatReportSeamFailure(
-        error: error,
-        stack: stack,
-        seam: kZChatSeamTopic,
-      );
+      zChatReportSeamFailure(error: error, stack: stack, seam: kZChatSeamTopic);
       return null;
     }
   }
@@ -314,7 +332,9 @@ class _ZLiveRegion extends StatelessWidget {
           liveRegion: true,
           // Aucune annonce en cours ⇒ le nœud porte le libellé NEUTRE de la
           // région (clé résolue), jamais une phrase écrite en dur.
-          label: text.isEmpty ? zChatLabel(context, kZChatLabelLiveRegion) : text,
+          label: text.isEmpty
+              ? zChatLabel(context, kZChatLabelLiveRegion)
+              : text,
           child: child,
         );
       },
@@ -336,14 +356,48 @@ class _ZStreamingTile extends StatelessWidget {
   const _ZStreamingTile({
     required this.controller,
     required this.requestId,
+    required this.thinkingBuilder,
+    required this.onCitationTap,
     super.key,
   });
 
   final ZChatController controller;
   final String requestId;
+  final ZChatMessageSlotBuilder? thinkingBuilder;
+  final void Function(int index)? onCitationTap;
 
   @override
   Widget build(BuildContext context) {
+    final ZChatMessage ghost = ZChatMessage(
+      id: requestId,
+      conversationId: controller.conversationId,
+      role: ZChatRole.assistant,
+    );
+    Widget? thinking;
+    final ZChatMessageSlotBuilder? builder = thinkingBuilder;
+    if (builder != null) {
+      try {
+        thinking = builder(context, ghost);
+      } catch (error, stack) {
+        zChatReportSeamFailure(
+          error: error,
+          stack: stack,
+          seam: kZChatSeamThinkingSlot,
+        );
+      }
+    }
+    // Un bloc de texte vide porteur du canal : c'est la tranche qui porte
+    // le contenu, pas la valeur figée du bloc. L'abonnement est pris sous
+    // le seam, jamais ici.
+    final Widget body = ZChatBlockView(
+      request: ZChatBlockRenderRequest(
+        block: const ZTextBlock(),
+        message: ghost,
+        isStreaming: true,
+        streamingText: controller.streamText(requestId),
+        onCitationTap: onCitationTap,
+      ),
+    );
     return Semantics(
       label: zChatLabel(context, kZChatLabelStreaming),
       child: ConstrainedBox(
@@ -353,24 +407,13 @@ class _ZStreamingTile extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: kZChatMinTapTarget),
         child: Align(
           alignment: AlignmentDirectional.centerStart,
-          child: ZChatBlockView(
-            request: ZChatBlockRenderRequest(
-              // Un bloc de texte **vide** porteur du canal : c'est la tranche
-              // qui porte le contenu, pas la valeur figée du bloc.
-              block: const ZTextBlock(),
-              message: ZChatMessage(
-                id: requestId,
-                conversationId: controller.conversationId,
-                role: ZChatRole.assistant,
-              ),
-              isStreaming: true,
-              // La tranche par requête, pas un canal global : un jeton d'une
-              // requête ne reconstruit rien de ce qui appartient à une
-              // autre. Elle est passée en `ValueListenable` — l'abonnement
-              // est pris sous le seam, jamais ici.
-              streamingText: controller.streamText(requestId),
-            ),
-          ),
+          child: thinking == null
+              ? body
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[thinking, body],
+                ),
         ),
       ),
     );

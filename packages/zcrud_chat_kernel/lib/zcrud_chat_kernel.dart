@@ -73,6 +73,7 @@ export 'src/domain/ai/z_chat_request_token.dart';
 // traversent le socle sans être perdus ni inventés. `ZChatResponseConfidence`
 // et `ZChatSourceFreshness` y sont câblés, jamais redéclarés.
 export 'src/domain/ai/z_chat_response_metadata.dart';
+export 'src/domain/ai/z_chat_status_notice.dart';
 export 'src/domain/ai/z_chat_stream_event.dart';
 // Saisie assistée (dictée, OCR) : des ports, et la relecture obligatoire
 // rendue structurelle — `ZUnreviewedText` n'expose aucune `String`, son
@@ -91,7 +92,7 @@ export 'src/domain/composer/z_chat_text_measure_port.dart';
 // (un seul verbe), partage en lecture seule, et cycle de vie **soft** — la
 // suppression définitive en lot est refusée, seul le retrait réversible est
 // porté.
-export 'src/domain/conversation/z_chat_conversation_ports.dart';// Diffusion vocale : la chaîne de repli devient une donnée
+export 'src/domain/conversation/z_chat_conversation_ports.dart'; // Diffusion vocale : la chaîne de repli devient une donnée
 // (`ZChatSpeechChain`), site unique du repli, échecs conservés.
 export 'src/domain/diffusion/z_chat_speech_port.dart';
 // Vocabulaire et ports du fil de travail (« notebook ») : artefacts
@@ -107,6 +108,9 @@ export 'src/domain/notebook/z_chat_artifact_store_port.dart';
 export 'src/domain/notebook/z_chat_notebook_defaults.dart';
 export 'src/domain/notebook/z_chat_transcript_port.dart';
 export 'src/domain/notebook/z_chat_unsupported_action_executor.dart';
+export 'src/domain/notebook/z_notebook_artifact_kind.dart';
+export 'src/domain/notebook/z_notebook_sources_port.dart';
+export 'src/domain/notebook/z_transform_palette.dart';
 // Catalogue de routes : le routeur (`ZChatRouter`, entité extensible au
 // schéma d'édition complet), ses routes par clé de tâche, la référence de
 // modèle opaque avec fournisseur, la résolution pure (repli tâche → racine,

@@ -138,6 +138,10 @@ void main() {
           'contentOf',
           'previewEditImpact',
           'isInterrupted',
+          // Lecture d'un renvoi [n] et remplacement du fil au repos.
+          // Ni l'un ni l'autre n'exécute un verbe de conversation.
+          'citationSource',
+          'adoptMessages',
           // 🔴 EXTENSION ARBITRÉE (lot L6) : l'AGRÉGAT de propositions et le
           // BROUILLON PERSISTANT. `suggestions` est une tranche de lecture —
           // la même donnée que `progress(requestId).suggestions`, agrégée par

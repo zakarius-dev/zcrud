@@ -21,6 +21,10 @@ const String kZChatBandSheetAssertMessage =
     'de reglages ne s\'y monte jamais inline (deborde de 149 px mesure chez '
     'IFFD). Fournir onOpenTools pour OUVRIR la feuille.';
 
+/// Un écran assemblé possède son contrôleur, ou en reçoit un.
+const String kZChatOwnedControllerAssertMessage =
+    'owned-controller-or-external';
+
 /// Message de l'assertion qui refuse les deux intentions contradictoires de
 /// remplacement du composer sur un écran assemblé : `composerBuilder`
 /// remplace le composer **entier**, `composerSlots` en habille les pièces

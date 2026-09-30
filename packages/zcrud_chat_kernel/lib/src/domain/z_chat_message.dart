@@ -80,6 +80,9 @@ class ZChatMessage extends ZEntity with ZExtensible {
     this.confidence,
     this.sourceFreshness,
     this.versionKey,
+    this.grounded,
+    this.unverified,
+    this.level,
     this.extension,
     Map<String, dynamic> extra = const <String, dynamic>{},
     // ignore: prefer_initializing_formals
@@ -107,7 +110,8 @@ class ZChatMessage extends ZEntity with ZExtensible {
       id: zJsonStringOrNull(map['id']),
       conversationId: zJsonString(map['conversation_id']),
       role: ZChatRole.fromJson(map['role']),
-      contentBlocks: zJsonDecodeList<ZContentBlock>(
+      contentBlocks:
+          zJsonDecodeList<ZContentBlock>(
             map['content_blocks'],
             (Object? e) => ZContentBlock.fromJson(
               e,
@@ -134,8 +138,9 @@ class ZChatMessage extends ZEntity with ZExtensible {
         ZChatSuggestion.fromJson,
       ),
       feedbackRating: ZChatFeedbackRating.fromJson(map['feedback_rating']),
-      feedbackCategory:
-          ZChatFeedbackCategory.fromJson(map['feedback_category']),
+      feedbackCategory: ZChatFeedbackCategory.fromJson(
+        map['feedback_category'],
+      ),
       feedbackComment: zJsonStringOrNull(map['feedback_comment']),
       agentsCalled: zJsonStringList(map['agents_called']),
       confidence: ZChatResponseConfidence.fromJson(map['confidence']),
@@ -144,6 +149,9 @@ class ZChatMessage extends ZEntity with ZExtensible {
         ZChatSourceFreshness.fromJson,
       ),
       versionKey: zJsonStringOrNull(map['version_key']),
+      grounded: zJsonBoolOrNull(map['grounded']),
+      unverified: zJsonBoolOrNull(map['unverified']),
+      level: zJsonStringOrNull(map['level']),
       extension: zDecodeExtension(map['extension'], extensionParser),
       // Normalisation EAGER à la frontière d'entrée : le slot stocké est
       // déjà propre ⇒ la lecture d'`extra` est sans copie.
@@ -205,6 +213,17 @@ class ZChatMessage extends ZEntity with ZExtensible {
   /// Tag de version composable de la réponse, ou `null`.
   final String? versionKey;
 
+  /// La réponse est ancrée sur des sources, ou `null` si le tour ne le dit pas.
+  final bool? grounded;
+
+  /// La réponse n'a pas été vérifiée, ou `null` si le tour ne le dit pas.
+  final bool? unverified;
+
+  /// Niveau d'accès ou de confiance porté par le tour, ou `null`.
+  ///
+  /// Chaîne ouverte : le socle ne la traduit pas et n'en déduit aucun droit.
+  final String? level;
+
   /// Slot type additif **versionné** (invariant AD-4, mécanisme 1).
   ///
   /// Vaut un `ZOpaqueExtension` quand aucun [ZChatExtensionParser] n'a su typer
@@ -256,6 +275,9 @@ class ZChatMessage extends ZEntity with ZExtensible {
     'confidence',
     'source_freshness',
     'version_key',
+    'grounded',
+    'unverified',
+    'level',
     'extension',
     ...ZSyncMeta.reservedKeys,
   };
@@ -271,50 +293,49 @@ class ZChatMessage extends ZEntity with ZExtensible {
   Map<String, dynamic> toMap({
     ZTypeRegistry? typeRegistry,
     ZSourceRegistry? sourceRegistry,
-  }) =>
-      <String, dynamic>{
-        ...extra,
-        if (id != null) 'id': id,
-        'conversation_id': conversationId,
-        'role': role.jsonValue,
-        'content_blocks': <Map<String, dynamic>>[
-          for (final ZContentBlock b in contentBlocks)
-            b.toJson(
-              typeRegistry: typeRegistry,
-              sourceRegistry: sourceRegistry,
-            ),
-        ],
-        if (sources != null)
-          'sources': <Map<String, dynamic>>[
-            for (final ZChatSource s in sources!)
-              s.toJson(registry: sourceRegistry),
-          ],
-        if (attachments != null)
-          'attachments': <Map<String, dynamic>>[
-            for (final ZChatAttachment a in attachments!) a.toJson(),
-          ],
-        if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
-        if (thinking != null)
-          'thinking': <Map<String, dynamic>>[
-            for (final ZChatThinkingStep t in thinking!) t.toJson(),
-          ],
-        if (suggestions != null)
-          'suggestions': <Map<String, dynamic>>[
-            for (final ZChatSuggestion s in suggestions!) s.toJson(),
-          ],
-        if (feedbackRating != null) 'feedback_rating': feedbackRating!.jsonValue,
-        if (feedbackCategory != null)
-          'feedback_category': feedbackCategory!.jsonValue,
-        if (feedbackComment != null) 'feedback_comment': feedbackComment,
-        if (agentsCalled != null) 'agents_called': agentsCalled,
-        if (confidence != null) 'confidence': confidence!.toJson(),
-        if (sourceFreshness != null)
-          'source_freshness': <Map<String, dynamic>>[
-            for (final ZChatSourceFreshness f in sourceFreshness!) f.toJson(),
-          ],
-        if (versionKey != null) 'version_key': versionKey,
-        if (extension != null) 'extension': extension!.toJson(),
-      };
+  }) => <String, dynamic>{
+    ...extra,
+    if (id != null) 'id': id,
+    'conversation_id': conversationId,
+    'role': role.jsonValue,
+    'content_blocks': <Map<String, dynamic>>[
+      for (final ZContentBlock b in contentBlocks)
+        b.toJson(typeRegistry: typeRegistry, sourceRegistry: sourceRegistry),
+    ],
+    if (sources != null)
+      'sources': <Map<String, dynamic>>[
+        for (final ZChatSource s in sources!)
+          s.toJson(registry: sourceRegistry),
+      ],
+    if (attachments != null)
+      'attachments': <Map<String, dynamic>>[
+        for (final ZChatAttachment a in attachments!) a.toJson(),
+      ],
+    if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
+    if (thinking != null)
+      'thinking': <Map<String, dynamic>>[
+        for (final ZChatThinkingStep t in thinking!) t.toJson(),
+      ],
+    if (suggestions != null)
+      'suggestions': <Map<String, dynamic>>[
+        for (final ZChatSuggestion s in suggestions!) s.toJson(),
+      ],
+    if (feedbackRating != null) 'feedback_rating': feedbackRating!.jsonValue,
+    if (feedbackCategory != null)
+      'feedback_category': feedbackCategory!.jsonValue,
+    if (feedbackComment != null) 'feedback_comment': feedbackComment,
+    if (agentsCalled != null) 'agents_called': agentsCalled,
+    if (confidence != null) 'confidence': confidence!.toJson(),
+    if (sourceFreshness != null)
+      'source_freshness': <Map<String, dynamic>>[
+        for (final ZChatSourceFreshness f in sourceFreshness!) f.toJson(),
+      ],
+    if (versionKey != null) 'version_key': versionKey,
+    if (grounded != null) 'grounded': grounded,
+    if (unverified != null) 'unverified': unverified,
+    if (level != null) 'level': level,
+    if (extension != null) 'extension': extension!.toJson(),
+  };
 
   /// Copie **à sentinelle** : un argument omis conserve la valeur courante, un
   /// `null` **explicite** la remet à `null`, étendu à **tous** les champs
@@ -340,61 +361,68 @@ class ZChatMessage extends ZEntity with ZExtensible {
     Object? confidence = _unset,
     Object? sourceFreshness = _unset,
     Object? versionKey = _unset,
+    Object? grounded = _unset,
+    Object? unverified = _unset,
+    Object? level = _unset,
     Object? extension = _unset,
     Object? extra = _unset,
-  }) =>
-      ZChatMessage(
-        id: identical(id, _unset) ? this.id : id as String?,
-        conversationId: identical(conversationId, _unset)
-            ? this.conversationId
-            : conversationId as String,
-        role: identical(role, _unset) ? this.role : role as ZChatRole,
-        contentBlocks: identical(contentBlocks, _unset)
-            ? this.contentBlocks
-            : contentBlocks as List<ZContentBlock>,
-        sources: identical(sources, _unset)
-            ? this.sources
-            : sources as List<ZChatSource>?,
-        attachments: identical(attachments, _unset)
-            ? this.attachments
-            : attachments as List<ZChatAttachment>?,
-        createdAt: identical(createdAt, _unset)
-            ? this.createdAt
-            : createdAt as DateTime?,
-        thinking: identical(thinking, _unset)
-            ? this.thinking
-            : thinking as List<ZChatThinkingStep>?,
-        suggestions: identical(suggestions, _unset)
-            ? this.suggestions
-            : suggestions as List<ZChatSuggestion>?,
-        feedbackRating: identical(feedbackRating, _unset)
-            ? this.feedbackRating
-            : feedbackRating as ZChatFeedbackRating?,
-        feedbackCategory: identical(feedbackCategory, _unset)
-            ? this.feedbackCategory
-            : feedbackCategory as ZChatFeedbackCategory?,
-        feedbackComment: identical(feedbackComment, _unset)
-            ? this.feedbackComment
-            : feedbackComment as String?,
-        agentsCalled: identical(agentsCalled, _unset)
-            ? this.agentsCalled
-            : agentsCalled as List<String>?,
-        confidence: identical(confidence, _unset)
-            ? this.confidence
-            : confidence as ZChatResponseConfidence?,
-        sourceFreshness: identical(sourceFreshness, _unset)
-            ? this.sourceFreshness
-            : sourceFreshness as List<ZChatSourceFreshness>?,
-        versionKey: identical(versionKey, _unset)
-            ? this.versionKey
-            : versionKey as String?,
-        extension: identical(extension, _unset)
-            ? this.extension
-            : extension as ZExtension?,
-        extra: identical(extra, _unset)
-            ? this.extra
-            : zSanitizeExtra(extra as Map<String, dynamic>, _reservedKeys),
-      );
+  }) => ZChatMessage(
+    id: identical(id, _unset) ? this.id : id as String?,
+    conversationId: identical(conversationId, _unset)
+        ? this.conversationId
+        : conversationId as String,
+    role: identical(role, _unset) ? this.role : role as ZChatRole,
+    contentBlocks: identical(contentBlocks, _unset)
+        ? this.contentBlocks
+        : contentBlocks as List<ZContentBlock>,
+    sources: identical(sources, _unset)
+        ? this.sources
+        : sources as List<ZChatSource>?,
+    attachments: identical(attachments, _unset)
+        ? this.attachments
+        : attachments as List<ZChatAttachment>?,
+    createdAt: identical(createdAt, _unset)
+        ? this.createdAt
+        : createdAt as DateTime?,
+    thinking: identical(thinking, _unset)
+        ? this.thinking
+        : thinking as List<ZChatThinkingStep>?,
+    suggestions: identical(suggestions, _unset)
+        ? this.suggestions
+        : suggestions as List<ZChatSuggestion>?,
+    feedbackRating: identical(feedbackRating, _unset)
+        ? this.feedbackRating
+        : feedbackRating as ZChatFeedbackRating?,
+    feedbackCategory: identical(feedbackCategory, _unset)
+        ? this.feedbackCategory
+        : feedbackCategory as ZChatFeedbackCategory?,
+    feedbackComment: identical(feedbackComment, _unset)
+        ? this.feedbackComment
+        : feedbackComment as String?,
+    agentsCalled: identical(agentsCalled, _unset)
+        ? this.agentsCalled
+        : agentsCalled as List<String>?,
+    confidence: identical(confidence, _unset)
+        ? this.confidence
+        : confidence as ZChatResponseConfidence?,
+    sourceFreshness: identical(sourceFreshness, _unset)
+        ? this.sourceFreshness
+        : sourceFreshness as List<ZChatSourceFreshness>?,
+    versionKey: identical(versionKey, _unset)
+        ? this.versionKey
+        : versionKey as String?,
+    grounded: identical(grounded, _unset) ? this.grounded : grounded as bool?,
+    unverified: identical(unverified, _unset)
+        ? this.unverified
+        : unverified as bool?,
+    level: identical(level, _unset) ? this.level : level as String?,
+    extension: identical(extension, _unset)
+        ? this.extension
+        : extension as ZExtension?,
+    extra: identical(extra, _unset)
+        ? this.extra
+        : zSanitizeExtra(extra as Map<String, dynamic>, _reservedKeys),
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -416,6 +444,9 @@ class ZChatMessage extends ZEntity with ZExtensible {
           confidence == other.confidence &&
           zListEquals(sourceFreshness, other.sourceFreshness) &&
           versionKey == other.versionKey &&
+          grounded == other.grounded &&
+          unverified == other.unverified &&
+          level == other.level &&
           extension == other.extension &&
           // Égalité profonde du slot `extra` : `extra` porte du JSON imbriqué
           // par construction, et l'`==` d'une `Map` est une égalité d'identité
@@ -423,26 +454,29 @@ class ZChatMessage extends ZEntity with ZExtensible {
           zJsonEquals(extra, other.extra);
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        conversationId,
-        role,
-        zListHash(contentBlocks),
-        zListHash(sources),
-        zListHash(attachments),
-        createdAt,
-        zListHash(thinking),
-        zListHash(suggestions),
-        feedbackRating,
-        feedbackCategory,
-        feedbackComment,
-        zListHash(agentsCalled),
-        confidence,
-        zListHash(sourceFreshness),
-        versionKey,
-        extension,
-        zJsonHash(extra),
-      );
+  int get hashCode => Object.hashAll(<Object?>[
+    id,
+    conversationId,
+    role,
+    zListHash(contentBlocks),
+    zListHash(sources),
+    zListHash(attachments),
+    createdAt,
+    zListHash(thinking),
+    zListHash(suggestions),
+    feedbackRating,
+    feedbackCategory,
+    feedbackComment,
+    zListHash(agentsCalled),
+    confidence,
+    zListHash(sourceFreshness),
+    versionKey,
+    grounded,
+    unverified,
+    level,
+    extension,
+    zJsonHash(extra),
+  ]);
 
   @override
   String toString() =>

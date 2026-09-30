@@ -142,7 +142,8 @@ class ZChatArtifactGenerationFailure extends ZFailure {
 class ZChatArtifactGenerationRequest {
   /// Construit une requête.
   ZChatArtifactGenerationRequest({
-    required this.messageId,
+    this.messageId = '',
+    this.scopeId,
     required this.artifactKey,
     required this.notes,
     this.subject = '',
@@ -157,7 +158,22 @@ class ZChatArtifactGenerationRequest {
   }) : _extra = zSanitizeExtra(extra, _reservedKeys);
 
   /// Message porteur de l'artefact.
+  ///
+  /// Vide lorsque l'artefact appartient au conteneur désigné par [scopeId]
+  /// plutôt qu'à un message du fil.
   final String messageId;
+
+  /// Conteneur (dossier, notebook) porteur de l'artefact, ou `null`.
+  ///
+  /// Avec un [messageId] non vide, le message reste l'ancre de stockage.
+  /// Sans message, [scopeId] est cette ancre.
+  final String? scopeId;
+
+  /// Clé d'ancrage : le message s'il est nommé, sinon le conteneur.
+  String get anchorId {
+    if (messageId.isNotEmpty) return messageId;
+    return scopeId ?? '';
+  }
 
   /// Clé de l'artefact à produire.
   final String artifactKey;
@@ -221,6 +237,7 @@ class ZChatArtifactGenerationRequest {
   /// [style] sans reconstruire toute la requête.
   ZChatArtifactGenerationRequest copyWith({
     Object? messageId = _unset,
+    Object? scopeId = _unset,
     Object? artifactKey = _unset,
     Object? notes = _unset,
     Object? subject = _unset,
@@ -236,6 +253,7 @@ class ZChatArtifactGenerationRequest {
     messageId: identical(messageId, _unset)
         ? this.messageId
         : messageId! as String,
+    scopeId: identical(scopeId, _unset) ? this.scopeId : scopeId as String?,
     artifactKey: identical(artifactKey, _unset)
         ? this.artifactKey
         : artifactKey! as String,
@@ -272,6 +290,7 @@ class ZChatArtifactGenerationRequest {
       identical(this, other) ||
       other is ZChatArtifactGenerationRequest &&
           messageId == other.messageId &&
+          scopeId == other.scopeId &&
           artifactKey == other.artifactKey &&
           notes == other.notes &&
           subject == other.subject &&
@@ -287,6 +306,7 @@ class ZChatArtifactGenerationRequest {
   @override
   int get hashCode => Object.hash(
     messageId,
+    scopeId,
     artifactKey,
     notes,
     subject,
@@ -302,7 +322,7 @@ class ZChatArtifactGenerationRequest {
 
   @override
   String toString() =>
-      'ZChatArtifactGenerationRequest($artifactKey on $messageId, '
+      'ZChatArtifactGenerationRequest($artifactKey on $anchorId, '
       'providerId: $providerId, modelId: $modelId)';
 }
 
@@ -467,19 +487,32 @@ class ZChatArtifactGenerationRunner {
     ZChatArtifactGenerationRequest request, {
     required ZChatRequestToken token,
     required ZChatArtifactOccupancyMarker mark,
-  }) => zChatRunArtifactGeneration<ZChatArtifactContent>(
-    messageId: request.messageId,
-    artifactKey: request.artifactKey,
-    notes: request.notes,
-    subject: request.subject,
-    subjectRequired: request.subjectRequired,
-    mark: mark,
-    generate: () => port.generate(request, token: token),
-    isEmpty: (ZChatArtifactContent c) => c.isEmpty,
-    write: (ZChatArtifactContent c) => store.write(
-      messageId: request.messageId,
+  }) {
+    final String anchor = request.anchorId;
+    if (anchor.isEmpty) {
+      return Future<ZResult<ZChatArtifactContent>>.value(
+        Left<ZFailure, ZChatArtifactContent>(
+          ZChatArtifactEmptyInputFailure(
+            messageId: request.messageId,
+            artifactKey: request.artifactKey,
+          ),
+        ),
+      );
+    }
+    return zChatRunArtifactGeneration<ZChatArtifactContent>(
+      messageId: anchor,
       artifactKey: request.artifactKey,
-      content: c.data,
-    ),
-  );
+      notes: request.notes,
+      subject: request.subject,
+      subjectRequired: request.subjectRequired,
+      mark: mark,
+      generate: () => port.generate(request, token: token),
+      isEmpty: (ZChatArtifactContent c) => c.isEmpty,
+      write: (ZChatArtifactContent c) => store.write(
+        messageId: anchor,
+        artifactKey: request.artifactKey,
+        content: c.data,
+      ),
+    );
+  }
 }

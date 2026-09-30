@@ -34,10 +34,12 @@
 ///
 /// Aucune méthode de ce fichier ne lève, ne relance, ni ne laisse échapper
 /// une exception : tout chemin d'échec produit un
-/// `Left(ZChatAttachmentFailure)` et laisse la liste des pièces inchangée.
-/// Y compris quand c'est l'implémentation de l'hôte qui lève — un sélecteur
-/// qui échoue est un défaut de l'hôte, pas une raison de perdre la
-/// conversation en cours.
+/// `Left(ZChatAttachmentFailure)`. La liste des pièces reste inchangée,
+/// sauf [ZChatAttachmentController.retainFailed] à `false` : un
+/// téléversement refusé quitte alors la file d'attente, pour ne pas
+/// consommer le plafond. Y compris quand c'est l'implémentation de l'hôte
+/// qui lève — un sélecteur qui échoue est un défaut de l'hôte, pas une
+/// raison de perdre la conversation en cours.
 ///
 /// C'est un écart assumé avec `zResolveChatBlock`, qui laisse au contraire
 /// remonter l'exception d'un renderer d'hôte : là-bas on est dans un
@@ -74,6 +76,7 @@ class ZChatAttachmentController extends ChangeNotifier {
     this.uploader,
     this.maxFiles = kZChatDefaultMaxAttachments,
     this.maxFileSizeBytes = kZChatDefaultMaxAttachmentBytes,
+    this.retainFailed = true,
     Set<String>? allowedMimeTypes,
   }) : allowedMimeTypes =
            allowedMimeTypes ?? kZChatDefaultAllowedAttachmentMimeTypes;
@@ -92,6 +95,14 @@ class ZChatAttachmentController extends ChangeNotifier {
 
   /// Types MIME admis localement (borne d'ERGONOMIE, pas de sécurité).
   final Set<String> allowedMimeTypes;
+
+  /// `true` (défaut) : un téléversement refusé laisse la pièce dans [pending],
+  /// pour qu'un hôte puisse réessayer sans rouvrir le sélecteur.
+  ///
+  /// `false` : la pièce quitte [pending]. Un transit (sélection, envoi,
+  /// oubli) s'en sert : sinon chaque refus occupe une place de [maxFiles]
+  /// jusqu'à un vidage manuel, et le bouton d'import finit désactivé.
+  final bool retainFailed;
 
   final ValueNotifier<List<ZPendingAttachment>> _pending =
       ValueNotifier<List<ZPendingAttachment>>(
@@ -180,7 +191,7 @@ class ZChatAttachmentController extends ChangeNotifier {
 
     final ZResult<ZPendingAttachment?> picked;
     try {
-      picked = await p.pick(source);
+      picked = await p.pick(source, maxBytes: maxFileSizeBytes);
     } catch (error) {
       // Invariant AD-10 : un picker d'hôte qui lève ne fait pas tomber la
       // conversation.
@@ -205,9 +216,9 @@ class ZChatAttachmentController extends ChangeNotifier {
           // Annulation : issue NOMINALE, aucun échec enregistré.
           return const Right<ZFailure, ZPendingAttachment?>(null);
         }
-        return add(candidate).map<ZPendingAttachment?>(
-          (ZPendingAttachment a) => a,
-        );
+        return add(
+          candidate,
+        ).map<ZPendingAttachment?>((ZPendingAttachment a) => a);
       },
     );
   }
@@ -248,9 +259,10 @@ class ZChatAttachmentController extends ChangeNotifier {
       );
     }
 
-    _pending.value = List<ZPendingAttachment>.unmodifiable(
-      <ZPendingAttachment>[..._pending.value, candidate],
-    );
+    _pending.value = List<ZPendingAttachment>.unmodifiable(<ZPendingAttachment>[
+      ..._pending.value,
+      candidate,
+    ]);
     _lastFailure.value = null;
     return Right<ZFailure, ZPendingAttachment>(candidate);
   }
@@ -283,6 +295,7 @@ class ZChatAttachmentController extends ChangeNotifier {
     try {
       result = await u.upload(attachment);
     } catch (error) {
+      _releaseFailed(attachment);
       return Left<ZFailure, ZChatAttachment>(
         _fail(
           ZChatAttachmentRejection.uploadFailed,
@@ -299,30 +312,45 @@ class ZChatAttachmentController extends ChangeNotifier {
     }
 
     return result.fold(
-      (ZFailure failure) => Left<ZFailure, ZChatAttachment>(
-        _fail(
-          // Un refus du serveur reste un refus du SERVEUR : il ne devient pas un
-          // « échec de téléversement » du client sous prétexte qu'il transite ici.
-          ZChatAttachmentRejection.rejectedByServer,
-          failure.message,
-          fileName: attachment.fileName,
-          cause: failure,
-        ),
-      ),
-      (ZChatAttachment stored) {
-        _uploaded.value = List<ZChatAttachment>.unmodifiable(
-          <ZChatAttachment>[..._uploaded.value, stored],
+      (ZFailure failure) {
+        _releaseFailed(attachment);
+        return Left<ZFailure, ZChatAttachment>(
+          _fail(
+            // Un refus du serveur reste un refus du SERVEUR : il ne devient pas un
+            // « échec de téléversement » du client sous prétexte qu'il transite ici.
+            ZChatAttachmentRejection.rejectedByServer,
+            failure.message,
+            fileName: attachment.fileName,
+            cause: failure,
+          ),
         );
-        _pending.value = List<ZPendingAttachment>.unmodifiable(<
-          ZPendingAttachment
-        >[
-          for (final ZPendingAttachment a in _pending.value)
-            if (!identical(a, attachment)) a,
+      },
+      (ZChatAttachment stored) {
+        _uploaded.value = List<ZChatAttachment>.unmodifiable(<ZChatAttachment>[
+          ..._uploaded.value,
+          stored,
         ]);
+        _pending.value =
+            List<ZPendingAttachment>.unmodifiable(<ZPendingAttachment>[
+              for (final ZPendingAttachment a in _pending.value)
+                if (!identical(a, attachment)) a,
+            ]);
         _lastFailure.value = null;
         return Right<ZFailure, ZChatAttachment>(stored);
       },
     );
+  }
+
+  /// Retire [attachment] de [pending] quand [retainFailed] est `false`.
+  ///
+  /// Un succès ne passe pas ici : il retire déjà la pièce en la déplaçant
+  /// vers [uploaded].
+  void _releaseFailed(ZPendingAttachment attachment) {
+    if (retainFailed || _disposed) return;
+    _pending.value = List<ZPendingAttachment>.unmodifiable(<ZPendingAttachment>[
+      for (final ZPendingAttachment a in _pending.value)
+        if (!identical(a, attachment)) a,
+    ]);
   }
 
   /// Retire la pièce en attente à [index]. Un index hors bornes est ignoré :

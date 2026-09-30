@@ -33,6 +33,7 @@ class ZChatBlockRenderRequest {
     this.blockIndex = 0,
     this.isStreaming = false,
     this.streamingText,
+    this.onCitationTap,
   });
 
   /// Le bloc à rendre (variante fermée du kernel, ou [ZCustomContentBlock]).
@@ -71,6 +72,14 @@ class ZChatBlockRenderRequest {
   /// Un renderer qui l'ignore reste correct : le rendu neutre s'en charge.
   final ValueListenable<String>? streamingText;
 
+  /// Renvoi `[index]` activé, indexé à partir de 1. `null` : le texte reste
+  /// un `Text` ordinaire, y compris les crochets.
+  ///
+  /// Le geste est un lien dans la ligne. Une cible de 48 dp à l'intérieur
+  /// d'une ligne de texte en changerait la hauteur ; l'annonce sémantique
+  /// du lien porte l'accessibilité de ce renvoi.
+  final void Function(int index)? onCitationTap;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -83,7 +92,8 @@ class ZChatBlockRenderRequest {
           // Identité, jamais valeur : comparer le TEXTE ici ferait de la requête
           // un objet qui change à chaque jeton — exactement ce que le type
           // `ValueListenable` existe pour empêcher.
-          identical(streamingText, other.streamingText);
+          identical(streamingText, other.streamingText) &&
+          identical(onCitationTap, other.onCitationTap);
 
   @override
   int get hashCode => Object.hash(
@@ -93,6 +103,7 @@ class ZChatBlockRenderRequest {
     blockIndex,
     isStreaming,
     streamingText,
+    onCitationTap,
   );
 
   @override

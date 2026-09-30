@@ -120,8 +120,7 @@ typedef ZChatRequestIdFactory = String Function();
 /// Les prompts, le modèle, le style et les instructions système restent
 /// côté application (invariants AD-11/AD-12) : le contrôleur ne compose
 /// aucun prompt.
-typedef ZChatRequestBuilder =
-    ZChatGenerationRequest Function(ZChatDraft draft);
+typedef ZChatRequestBuilder = ZChatGenerationRequest Function(ZChatDraft draft);
 
 /// **Route** la requête d'un tour avant son envoi — seam d'hôte, pur.
 ///
@@ -184,8 +183,18 @@ class _ZRequestState {
   /// Nombre d'événements reçus, toutes tentatives confondues.
   int eventsReceived = 0;
 
-  /// Blocs de contenu structurés reçus hors jetons de texte.
+  /// Segments déjà clos, dans l'ordre de lecture.
+  ///
+  /// Un bloc structuré y dépose d'abord le texte accumulé depuis le segment
+  /// précédent, puis lui-même. Le texte encore ouvert reste dans la tranche
+  /// de flux ; [textClosed] en marque la frontière dans cette chaîne.
   final List<ZContentBlock> blocks = <ZContentBlock>[];
+
+  /// Index, dans le texte accumulé, du premier caractère encore ouvert.
+  ///
+  /// Sans cette frontière, la finalisation placerait tout le texte avant
+  /// tous les blocs, et un flux « texte, bloc, texte » perdrait son ordre.
+  int textClosed = 0;
 
   /// Identité du message d'assistant annoncée par l'événement terminal.
   String? messageId;
@@ -511,6 +520,25 @@ class ZChatController extends ChangeNotifier {
   ValueListenable<ZChatStreamProgress> progress(String requestId) =>
       _progressOf(requestId);
 
+  /// Source citée par un renvoi `[index]`, numéroté à partir de **1**.
+  ///
+  /// [message] prime quand il porte déjà ses sources. Sinon la liste est
+  /// celle de [progress] pour [requestId]. Un index hors bornes, zéro ou
+  /// négatif rend `null` : un renvoi illisible n'est pas une source inventée.
+  ZChatSource? citationSource(
+    int index, {
+    String? requestId,
+    ZChatMessage? message,
+  }) {
+    final List<ZChatSource> list =
+        message?.sources ??
+        (requestId == null
+            ? const <ZChatSource>[]
+            : progress(requestId).value.sources);
+    if (index < 1 || index > list.length) return null;
+    return list[index - 1];
+  }
+
   // ── Requêtes PURES sur le fil (jamais d'exception, `null` si absent) ──────
 
   /// Le message d'identité [messageId], ou `null` s'il n'est pas dans
@@ -631,9 +659,7 @@ class ZChatController extends ChangeNotifier {
   /// compte que les semis appliqués.
   void seedDraft(String text) {
     if (_editing.value != null) return;
-    _setComposer(
-      ZChatDraft(text: text, attachmentIds: _attachmentIds.value),
-    );
+    _setComposer(ZChatDraft(text: text, attachmentIds: _attachmentIds.value));
     _draftSeeds.value = _draftSeeds.value + 1;
   }
 
@@ -771,11 +797,26 @@ class ZChatController extends ChangeNotifier {
 
   // ── Changement STRUCTUREL ─────────────────────────────────────────────────
 
+  /// Remplace le fil par [messages] lorsqu'aucune requête n'est en vol.
+  ///
+  /// Un instantané de dépôt arrivé pendant une génération ne doit ni
+  /// annuler le tour ni écraser le message optimiste : dans ce cas l'appel
+  /// ne change rien. [attach] reste le seul branchement qui annule les
+  /// requêtes et notifie les auditeurs structurels.
+  void adoptMessages(List<ZChatMessage> messages) {
+    if (_disposed) return;
+    if (_activeRequests.value.isNotEmpty) return;
+    _messages.value = List<ZChatMessage>.unmodifiable(messages);
+  }
+
   /// Change de conversation — **le seul** déclencheur de `notifyListeners()`.
   ///
   /// Toutes les requêtes en vol sont annulées (chacune par **son** jeton), les
   /// tranches par requête sont libérées, la saisie est remise à zéro.
-  void attach({required String conversationId, List<ZChatMessage> messages = const <ZChatMessage>[]}) {
+  void attach({
+    required String conversationId,
+    List<ZChatMessage> messages = const <ZChatMessage>[],
+  }) {
     // La saisie de la conversation QUITTÉE est confiée au port AVANT toute
     // remise à zéro : lue après `_setComposer(const ZChatDraft())`, elle
     // serait déjà vide, et le changement de conversation effacerait le
@@ -984,7 +1025,10 @@ class ZChatController extends ChangeNotifier {
       ..._activeRequests.value,
       requestId,
     ]);
-    _publish(requestId, (ZChatStreamProgress p) => p.copyWith(phase: ZChatPhase.streaming));
+    _publish(
+      requestId,
+      (ZChatStreamProgress p) => p.copyWith(phase: ZChatPhase.streaming),
+    );
     _say(_labels.generationStarted);
 
     return _consume(requestId: requestId, first: token, draft: draft);
@@ -1079,8 +1123,9 @@ class ZChatController extends ChangeNotifier {
                 },
               );
             },
-            onError: (Object error, StackTrace _) =>
-                finish(ZDomainFailure('chat stream threw ${error.runtimeType}')),
+            onError: (Object error, StackTrace _) => finish(
+              ZDomainFailure('chat stream threw ${error.runtimeType}'),
+            ),
             onDone: () => finish(interrupted(byUser: false)),
             cancelOnError: true,
           );
@@ -1092,7 +1137,9 @@ class ZChatController extends ChangeNotifier {
     if (finished) unawaited(sub.cancel());
 
     // L'arrêt vise CE jeton : un autre flux en vol n'est pas concerné.
-    unawaited(token.whenCancelled.then((_) => finish(interrupted(byUser: true))));
+    unawaited(
+      token.whenCancelled.then((_) => finish(interrupted(byUser: true))),
+    );
 
     return settled.future;
   }
@@ -1111,12 +1158,14 @@ class ZChatController extends ChangeNotifier {
       case final ZChatThinkingEvent e:
         _publish(
           key,
-          (ZChatStreamProgress p) => p.copyWith(
-            thinking: <ZChatThinkingStep>[...p.thinking, e.step],
-          ),
+          (ZChatStreamProgress p) =>
+              p.copyWith(thinking: <ZChatThinkingStep>[...p.thinking, e.step]),
         );
       case final ZChatSourcesPreviewEvent e:
-        _publish(key, (ZChatStreamProgress p) => p.copyWith(sources: e.sources));
+        _publish(
+          key,
+          (ZChatStreamProgress p) => p.copyWith(sources: e.sources),
+        );
       case final ZChatSuggestionsEvent e:
         _publish(
           key,
@@ -1142,29 +1191,66 @@ class ZChatController extends ChangeNotifier {
       case final ZChatRetrievalProgressEvent e:
         _publish(
           key,
-          (ZChatStreamProgress p) => p.copyWith(
-            retrievalAgent: e.agent,
-            sourcesFound: e.sourcesFound,
-          ),
+          (ZChatStreamProgress p) =>
+              p.copyWith(retrievalAgent: e.agent, sourcesFound: e.sourcesFound),
         );
       case final ZChatContentBlockEvent e:
+        final String soFar = _textOf(key).value;
+        final int cut = state.textClosed.clamp(0, soFar.length);
+        final String slice = soFar.substring(cut);
+        if (slice.isNotEmpty) {
+          state.blocks.add(ZTextBlock(text: slice));
+        }
+        state.textClosed = soFar.length;
         state.blocks.add(e.block);
       case final ZChatDoneEvent e:
         state.messageId = e.messageId;
         state.conversationId = e.conversationId;
-      case ZChatCustomStreamEvent():
-        break;
+      case final ZChatStatusEvent e:
+        _noteStatus(key, e.phase, e.detail);
+      case final ZChatReasoningEvent e:
+        _noteReasoning(key, e.content);
+      case final ZChatCustomStreamEvent e:
+        // Un hôte qui construit l'événement ouvert lui-même, sans passer
+        // par `fromJson`, porte les mêmes deux canaux.
+        if (e.kind == 'status') {
+          _noteStatus(
+            key,
+            zJsonString(e.payload['phase']),
+            zJsonString(e.payload['detail']),
+          );
+        } else if (e.kind == 'reasoning') {
+          _noteReasoning(key, zJsonString(e.payload['content']));
+        }
     }
+  }
+
+  void _noteStatus(String key, String phase, String detail) {
+    final ZChatStatusNotice notice = ZChatStatusNotice(
+      phase: phase,
+      detail: detail,
+    );
+    if (notice.isEmpty) return;
+    _publish(
+      key,
+      (ZChatStreamProgress p) =>
+          p.copyWith(statuses: <ZChatStatusNotice>[...p.statuses, notice]),
+    );
+  }
+
+  void _noteReasoning(String key, String content) {
+    if (content.isEmpty) return;
+    _publish(
+      key,
+      (ZChatStreamProgress p) =>
+          p.copyWith(reasoning: '${p.reasoning}$content'),
+    );
   }
 
   /// Termine un tour réussi : le texte accumulé devient un message établi.
   void _settle(String requestId) {
     final _ZRequestState? state = _states[requestId];
-    final String text = _textOf(requestId).value;
-    final List<ZContentBlock> blocks = <ZContentBlock>[
-      if (text.isNotEmpty) ZTextBlock(text: text),
-      ...?state?.blocks,
-    ];
+    final List<ZContentBlock> blocks = _assembledBlocks(requestId, state);
     if (state != null && blocks.isNotEmpty) {
       final String id = state.messageId ?? _replyIdFor(requestId);
       _insertReply(
@@ -1180,8 +1266,31 @@ class ZChatController extends ChangeNotifier {
     }
     final String content = _announce(blocks);
     _say(_labels.generationCompleted?.call(content) ?? content);
-    _publish(requestId, (ZChatStreamProgress p) => p.copyWith(phase: ZChatPhase.done));
+    _publish(
+      requestId,
+      (ZChatStreamProgress p) => p.copyWith(phase: ZChatPhase.done),
+    );
     _release(requestId);
+  }
+
+  /// Segments dans l'ordre de lecture : blocs déjà clos, puis le texte
+  /// encore ouvert.
+  ///
+  /// La tranche de flux conserve toute la chaîne : la bulle en cours la lit
+  /// telle quelle. Le curseur `textClosed` sépare ce qui est déjà un segment
+  /// de ce qui suit le dernier bloc.
+  List<ZContentBlock> _assembledBlocks(
+    String requestId,
+    _ZRequestState? state,
+  ) {
+    final String text = _textOf(requestId).value;
+    final int closed = state?.textClosed ?? 0;
+    final int cut = closed.clamp(0, text.length);
+    final String rest = text.substring(cut);
+    return <ZContentBlock>[
+      ...?state?.blocks,
+      if (rest.isNotEmpty) ZTextBlock(text: rest),
+    ];
   }
 
   /// Identité locale d'une réponse que l'événement terminal n'a pas nommée
@@ -1231,14 +1340,10 @@ class ZChatController extends ChangeNotifier {
   /// que l'utilisateur a tapée.
   void _fail(String requestId, ZFailure failure, ZChatDraft draft) {
     final _ZRequestState? state = _states[requestId];
-    final String text = _textOf(requestId).value;
     final bool byUser =
         failure is ZChatStreamInterruptedFailure && failure.cancelledByUser;
 
-    final List<ZContentBlock> blocks = <ZContentBlock>[
-      if (text.isNotEmpty) ZTextBlock(text: text),
-      ...?state?.blocks,
-    ];
+    final List<ZContentBlock> blocks = _assembledBlocks(requestId, state);
     final String partial = blocks.isEmpty ? '' : _announce(blocks);
     if (blocks.isNotEmpty) {
       // Contenu partiel déjà rendu : il est CONSERVÉ (AD-10) et MARQUÉ
@@ -1311,7 +1416,10 @@ class ZChatController extends ChangeNotifier {
   /// Refuse un tour **avant** son ouverture : l'échec typé est publié, le
   /// jeton retiré, et rien d'autre n'a bougé — ni message optimiste, ni
   /// saisie, ni annonce.
-  Future<ZResult<ZChatRequestToken>> _refuse(String requestId, ZFailure failure) {
+  Future<ZResult<ZChatRequestToken>> _refuse(
+    String requestId,
+    ZFailure failure,
+  ) {
     _lastFailure.value = failure;
     _tokens.remove(requestId);
     _states.remove(requestId);
@@ -1575,14 +1683,16 @@ class ZChatController extends ChangeNotifier {
     }
 
     final List<ZChatMessage> thread = _messages.value;
-    final int at = thread.indexWhere((ZChatMessage m) => m.id == questionId) + 1;
+    final int at =
+        thread.indexWhere((ZChatMessage m) => m.id == questionId) + 1;
     final List<ZChatMessage> removed = thread.sublist(at);
     _messages.value = List<ZChatMessage>.unmodifiable(thread.take(at));
 
     final ZChatDraft draft = ZChatDraft(
       text: contentOf(questionId) ?? '',
       attachmentIds: <String>[
-        for (final ZChatAttachment a in question.attachments ?? const <ZChatAttachment>[])
+        for (final ZChatAttachment a
+            in question.attachments ?? const <ZChatAttachment>[])
           if (a.id.isNotEmpty) a.id,
       ],
     );
@@ -1610,8 +1720,9 @@ class ZChatController extends ChangeNotifier {
       _streamTexts[requestId] ??= ValueNotifier<String>('');
 
   ValueNotifier<ZChatStreamProgress> _progressOf(String requestId) =>
-      _progress[requestId] ??=
-          ValueNotifier<ZChatStreamProgress>(const ZChatStreamProgress());
+      _progress[requestId] ??= ValueNotifier<ZChatStreamProgress>(
+        const ZChatStreamProgress(),
+      );
 
   void _publish(
     String requestId,

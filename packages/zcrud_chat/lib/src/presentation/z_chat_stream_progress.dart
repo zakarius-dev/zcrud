@@ -54,6 +54,8 @@ class ZChatStreamProgress {
   const ZChatStreamProgress({
     this.phase = ZChatPhase.idle,
     this.thinking = const <ZChatThinkingStep>[],
+    this.statuses = const <ZChatStatusNotice>[],
+    this.reasoning = '',
     this.sources = const <ZChatSource>[],
     this.suggestions = const <ZChatSuggestion>[],
     this.quota,
@@ -67,6 +69,15 @@ class ZChatStreamProgress {
 
   /// Étapes de « réflexion » annoncées par le flux, dans l'ordre d'arrivée.
   final List<ZChatThinkingStep> thinking;
+
+  /// Avis d'avancement, dans l'ordre d'arrivée. Aucun agent n'est exigé.
+  final List<ZChatStatusNotice> statuses;
+
+  /// Raisonnement cumulé du tour. Chaque fragment reçu est ajouté ici.
+  ///
+  /// Ce n'est pas le texte de la réponse : celui-ci reste sur
+  /// `ZChatController.streamText`.
+  final String reasoning;
 
   /// Aperçu des sources annoncé par le flux (avant l'événement terminal).
   final List<ZChatSource> sources;
@@ -90,6 +101,8 @@ class ZChatStreamProgress {
   ZChatStreamProgress copyWith({
     ZChatPhase? phase,
     List<ZChatThinkingStep>? thinking,
+    List<ZChatStatusNotice>? statuses,
+    String? reasoning,
     List<ZChatSource>? sources,
     List<ZChatSuggestion>? suggestions,
     ZChatQuotaSnapshot? quota,
@@ -99,6 +112,8 @@ class ZChatStreamProgress {
   }) => ZChatStreamProgress(
     phase: phase ?? this.phase,
     thinking: thinking ?? this.thinking,
+    statuses: statuses ?? this.statuses,
+    reasoning: reasoning ?? this.reasoning,
     sources: sources ?? this.sources,
     suggestions: suggestions ?? this.suggestions,
     quota: quota ?? this.quota,
@@ -116,6 +131,8 @@ class ZChatStreamProgress {
       other is ZChatStreamProgress &&
           phase == other.phase &&
           zListEquals(thinking, other.thinking) &&
+          zListEquals(statuses, other.statuses) &&
+          reasoning == other.reasoning &&
           zListEquals(sources, other.sources) &&
           zListEquals(suggestions, other.suggestions) &&
           quota == other.quota &&
@@ -127,6 +144,8 @@ class ZChatStreamProgress {
   int get hashCode => Object.hash(
     phase,
     Object.hashAll(thinking),
+    Object.hashAll(statuses),
+    reasoning,
     Object.hashAll(sources),
     Object.hashAll(suggestions),
     quota,
@@ -138,6 +157,7 @@ class ZChatStreamProgress {
   @override
   String toString() =>
       'ZChatStreamProgress($phase, thinking: ${thinking.length}, '
+      'statuses: ${statuses.length}, reasoning: ${reasoning.length}, '
       'sources: ${sources.length}, suggestions: ${suggestions.length}, '
       'resumeAttempts: $resumeAttempts)';
 }

@@ -34,12 +34,15 @@ class _ScriptedPicker extends ZChatAttachmentPicker {
   final ZResult<ZPendingAttachment?>? result;
   final bool throws;
   final List<ZChatAttachmentSource> calls = <ZChatAttachmentSource>[];
+  int? lastMaxBytes;
 
   @override
   Future<ZResult<ZPendingAttachment?>> pick(
-    ZChatAttachmentSource source,
-  ) async {
+    ZChatAttachmentSource source, {
+    int? maxBytes,
+  }) async {
     calls.add(source);
+    lastMaxBytes = maxBytes;
     if (throws) throw StateError('picker exploded');
     return result ?? const Right<ZFailure, ZPendingAttachment?>(null);
   }
@@ -518,6 +521,63 @@ void main() {
       expect(find.byType(Image), findsNothing,
           reason: '🔴 décoder un bitmap de 10 Mio dans le composer, à chaque '
               'rebuild, pour une vignette de 48 dp — l\'exact opposé de SM-1');
+    });
+  });
+
+  group('🔴 transit — un refus ne consomme pas le plafond', () {
+    test('retainFailed false retire la pièce refusée', () async {
+      final _ScriptedUploader uploader = _ScriptedUploader(
+        result: const Left<ZFailure, ZChatAttachment>(
+          ZDomainFailure('refused'),
+        ),
+      );
+      final ZChatAttachmentController c = ZChatAttachmentController(
+        uploader: uploader,
+        maxFiles: 1,
+        retainFailed: false,
+      );
+      addTearDown(c.dispose);
+      expect(c.add(_png()).isRight(), isTrue);
+      expect((await c.upload(c.pending.value.single)).isLeft(), isTrue);
+      expect(c.pending.value, isEmpty,
+          reason: '🔴 le refus reste dans pending et le prochain import '
+              'bute sur maxFiles');
+      expect(c.canAddMore, isTrue);
+      expect(c.lastFailure.value?.reason,
+          ZChatAttachmentRejection.rejectedByServer);
+    });
+
+    test('le défaut conserve la pièce refusée', () async {
+      final _ScriptedUploader uploader = _ScriptedUploader(
+        result: const Left<ZFailure, ZChatAttachment>(
+          ZDomainFailure('refused'),
+        ),
+      );
+      final ZChatAttachmentController c = ZChatAttachmentController(
+        uploader: uploader,
+        maxFiles: 1,
+      );
+      addTearDown(c.dispose);
+      final ZPendingAttachment file = _png();
+      expect(c.add(file).isRight(), isTrue);
+      expect((await c.upload(file)).isLeft(), isTrue);
+      expect(c.pending.value, hasLength(1));
+      expect(c.canAddMore, isFalse);
+    });
+
+    test('pick transmet la borne de taille au sélecteur', () async {
+      final _ScriptedPicker picker = _ScriptedPicker(
+        result: const Right<ZFailure, ZPendingAttachment?>(null),
+      );
+      final ZChatAttachmentController c = ZChatAttachmentController(
+        picker: picker,
+        maxFileSizeBytes: 42,
+      );
+      addTearDown(c.dispose);
+      await c.pick(ZChatAttachmentSource.files);
+      expect(picker.lastMaxBytes, 42,
+          reason: '🔴 sans la borne, le sélecteur doit lire le fichier '
+              'entier avant de pouvoir le refuser');
     });
   });
 }

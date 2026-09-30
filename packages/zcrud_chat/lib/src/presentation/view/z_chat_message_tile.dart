@@ -67,7 +67,9 @@ class ZChatMessageTile extends StatefulWidget {
     this.isStreaming = false,
     this.expandController,
     this.identityBuilder,
+    this.thinkingBuilder,
     this.actionsBuilder,
+    this.onCitationTap,
     this.shell,
     this.topic,
     super.key,
@@ -121,6 +123,17 @@ class ZChatMessageTile extends StatefulWidget {
   /// qui rend `null` pour un message signifie aucun en-tête pour ce message
   /// (invariant AD-4).
   final ZChatMessageSlotBuilder? identityBuilder;
+
+  /// Créneau entre l'identité et le premier bloc. `null` : absent de l'arbre.
+  ///
+  /// Pendant un tour, le message reçu peut être éphémère et porter
+  /// l'identité de la requête : l'hôte lit alors `progress` sur cette
+  /// identité. Le créneau ne reconstruit pas le dépli.
+  final ZChatMessageSlotBuilder? thinkingBuilder;
+
+  /// Renvoi de citation activé dans les blocs de texte. `null` : les
+  /// crochets restent du texte.
+  final void Function(int index)? onCitationTap;
 
   /// Créneau d'actions par message — rendu sous les blocs, hors de la zone
   /// repliable (une action ne doit jamais être tronquée par le repli, ni
@@ -221,6 +234,7 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
         message: widget.message,
         isStreaming: widget.isStreaming,
         theme: theme,
+        onCitationTap: widget.onCitationTap,
       ),
     );
 
@@ -258,6 +272,11 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
       widget.identityBuilder,
       kZChatSeamIdentitySlot,
     );
+    final Widget? thinking = _slot(
+      context,
+      widget.thinkingBuilder,
+      kZChatSeamThinkingSlot,
+    );
     final Widget? actions = _slot(
       context,
       widget.actionsBuilder,
@@ -265,6 +284,7 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
     );
     final Widget? topic = _topic(context, shell, style, subject);
     if (identity == null &&
+        thinking == null &&
         actions == null &&
         topic == null &&
         shellStyle == null) {
@@ -272,11 +292,12 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
     }
     if (shellStyle == null) {
       // Sans coquille, l'empilement est celui qu'il a toujours été : une
-      // seule colonne, les quatre créneaux à la suite.
+      // seule colonne. La réflexion suit l'identité et précède le premier
+      // bloc.
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
-        children: <Widget>[?identity, ?topic, core, ?actions],
+        children: <Widget>[?identity, ?thinking, ?topic, core, ?actions],
       );
     }
     // Le filet borne le CONTENU. L'identité, la coiffe et les blocs sont ce
@@ -294,6 +315,7 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
           // AD-13). Aucun interligne imposé : l'espacement appartient au
           // widget de l'hôte.
           ?identity,
+          ?thinking,
           // La coiffe est construite ICI, dans `build`, donc hors du
           // `ValueListenableBuilder` du dépli : basculer « Afficher plus » ne
           // la reconstruit pas, et elle ne reconstruit pas les blocs
@@ -590,11 +612,13 @@ class _ZBlocks extends StatelessWidget {
     required this.message,
     required this.isStreaming,
     required this.theme,
+    required this.onCitationTap,
   });
 
   final ZChatMessage message;
   final bool isStreaming;
   final ZcrudTheme theme;
+  final void Function(int index)? onCitationTap;
 
   @override
   Widget build(BuildContext context) {
@@ -614,6 +638,7 @@ class _ZBlocks extends StatelessWidget {
               message: message,
               blockIndex: i,
               isStreaming: isStreaming,
+              onCitationTap: onCitationTap,
             ),
           ),
         ],

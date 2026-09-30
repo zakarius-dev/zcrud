@@ -18,7 +18,8 @@
 ///   aller-retour réseau certain d'échouer). Elles ne sont pas des contrôles
 ///   de sécurité et ne prétendent pas l'être.
 /// * [ZChatAttachmentRejection.permissionDenied], [sourceUnavailable],
-///   [fileUnreadable] — trois causes de sélection que la PLATEFORME nomme.
+///   [fileUnreadable], [fileTooLarge] — causes de sélection que la
+///   PLATEFORME, ou le sélecteur qui a vu la taille avant lecture, nomme.
 ///   Elles ne sont jamais devinées : elles arrivent au contrôleur parce
 ///   qu'un `ZChatAttachmentPicker` les a nommées, et le socle les relaie.
 ///   Ce qu'il ne sait pas lire retombe sur [ZChatAttachmentRejection.pickFailed].
@@ -92,6 +93,7 @@ const Set<ZChatAttachmentRejection> kZChatPickRejections =
       ZChatAttachmentRejection.permissionDenied,
       ZChatAttachmentRejection.sourceUnavailable,
       ZChatAttachmentRejection.fileUnreadable,
+      ZChatAttachmentRejection.fileTooLarge,
     };
 
 /// Le motif de sélection porté par [failure], ou le repli.
@@ -140,7 +142,8 @@ class ZChatAttachmentFailure extends ZFailure {
           cause == other.cause;
 
   @override
-  int get hashCode => Object.hash(runtimeType, message, reason, fileName, cause);
+  int get hashCode =>
+      Object.hash(runtimeType, message, reason, fileName, cause);
 
   @override
   String toString() =>

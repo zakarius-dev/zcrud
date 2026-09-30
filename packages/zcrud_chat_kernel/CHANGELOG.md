@@ -3,6 +3,15 @@
 Toutes les modifications notables de `zcrud_chat_kernel` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.56.0 — 2026-09-30
+
+### Ajouté
+
+- Événements `ZChatStatusEvent` et `ZChatReasoningEvent`, et l'avis `ZChatStatusNotice`. Aucun agent n'est exigé. Une valeur inconnue reste un événement ouvert.
+- `ZChatMessage.grounded`, `unverified` et `level`. Absents, ils restent `null` et ne sont pas émis. Ils sont des clés réservées : ils ne réapparaissent pas dans `extra`.
+- `ZChatArtifactGenerationRequest.scopeId`. `messageId` est optionnel (`''` par défaut). L'ancre de stockage est le message s'il est nommé, sinon le conteneur. Une requête sans aucune ancre est refusée avant l'appel du port.
+- `ZNotebookSourcesPort`, `ZNotebookArtifactKind` et `ZTransformPalette`. Le socle ne génère pas ces artefacts et n'ingère pas les documents : l'hôte fournit le port et les libellés.
+
 ## 3.26.0 — 2026-08-28
 
 ### Ajouté

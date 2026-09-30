@@ -71,6 +71,8 @@ class ZChatNotebookView extends StatelessWidget {
     this.padding,
     this.reverse = false,
     this.composer,
+    this.thinkingBuilder,
+    this.onCitationTap,
     super.key,
   });
 
@@ -156,6 +158,12 @@ class ZChatNotebookView extends StatelessWidget {
   /// Liste inversée — relayée telle quelle.
   final bool reverse;
 
+  /// Créneau de réflexion relayé à la tuile. `null` : absent.
+  final ZChatMessageSlotBuilder? thinkingBuilder;
+
+  /// Renvoi `[n]` activé. `null` : les crochets restent du texte.
+  final void Function(int index)? onCitationTap;
+
   /// La zone de saisie — relayée telle quelle à la racine commune.
   ///
   /// Le notebook n'en monte pas une à lui : il relaie. C'est la même
@@ -178,6 +186,8 @@ class ZChatNotebookView extends StatelessWidget {
       // Identité : pas de paramètre sur cette surface — le masquage n'est pas
       // un défaut réglable, c'est la définition de l'usage notebook.
       actionsBuilder: _actionsSlot(),
+      thinkingBuilder: thinkingBuilder,
+      onCitationTap: onCitationTap,
       // La coquille DÉCLARÉE traverse la racine commune jusqu'à la fabrique
       // de tuile unique : elle ne peut donc pas diverger entre les deux
       // surfaces, et le notebook n'en construit aucune lui-même. Non

@@ -1,0 +1,112 @@
+/// Sources d'un notebook : liste, rattachement, retrait, état d'ingestion.
+///
+/// Le socle ne choisit pas le stockage ni le pipeline d'ingestion. Il
+/// expose le contrat et un panneau qui l'affiche. Chaque méthode rend un
+/// [ZResult] : un port qui échoue ne fait pas tomber le panneau.
+library;
+
+import 'package:zcrud_core/domain.dart';
+
+/// Où en est l'ingestion d'une source.
+///
+/// Valeur inconnue à la lecture ⇒ [ready] : une source listée sans état
+/// reste visible, elle n'est pas affichée comme un échec.
+enum ZNotebookIngestionState {
+  /// En attente.
+  pending,
+
+  /// Ingestion en cours.
+  running,
+
+  /// Prête à être citée.
+  ready,
+
+  /// Ingestion échouée. La source reste dans la liste : le retrait est un
+  /// geste séparé.
+  failed;
+
+  /// Lecture défensive. Toute valeur autre que les quatre noms ci-dessus
+  /// vaut [ready].
+  static ZNotebookIngestionState fromJson(Object? raw) {
+    switch (zJsonString(raw)) {
+      case 'pending':
+        return ZNotebookIngestionState.pending;
+      case 'running':
+        return ZNotebookIngestionState.running;
+      case 'failed':
+        return ZNotebookIngestionState.failed;
+      case 'ready':
+      default:
+        return ZNotebookIngestionState.ready;
+    }
+  }
+
+  /// Valeur camelCase persistée.
+  String get jsonValue => name;
+}
+
+/// Une source rattachée à un notebook.
+class ZNotebookSource {
+  /// Construit une source.
+  const ZNotebookSource({
+    required this.id,
+    required this.title,
+    this.state = ZNotebookIngestionState.ready,
+  });
+
+  /// Identité opaque.
+  final String id;
+
+  /// Titre affiché. Vide, le panneau montre l'identité.
+  final String title;
+
+  /// État d'ingestion.
+  final ZNotebookIngestionState state;
+
+  /// Lecture défensive. Une donnée qui n'est pas une map devient une source
+  /// vide, jamais une exception (invariant AD-10).
+  factory ZNotebookSource.fromJson(Object? raw) {
+    final Map<String, dynamic>? map = zJsonMap(raw);
+    if (map == null) {
+      return const ZNotebookSource(id: '', title: '');
+    }
+    return ZNotebookSource(
+      id: zJsonString(map['id']),
+      title: zJsonString(map['title']),
+      state: ZNotebookIngestionState.fromJson(map['state']),
+    );
+  }
+
+  /// Forme neutre.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'title': title,
+    'state': state.jsonValue,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZNotebookSource &&
+          id == other.id &&
+          title == other.title &&
+          state == other.state;
+
+  @override
+  int get hashCode => Object.hash(id, title, state);
+}
+
+/// Port des sources d'un notebook.
+///
+/// [attach] reçoit un titre déjà choisi par l'hôte : le sélecteur de
+/// document appartient à l'application, pas à ce port.
+abstract interface class ZNotebookSourcesPort {
+  /// Sources courantes, dans l'ordre d'affichage.
+  Future<ZResult<List<ZNotebookSource>>> list();
+
+  /// Rattache une source de titre [title].
+  Future<ZResult<ZNotebookSource>> attach({required String title});
+
+  /// Retire la source [id]. Retirer une source absente est un succès.
+  Future<ZResult<Unit>> remove(String id);
+}

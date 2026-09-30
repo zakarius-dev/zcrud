@@ -69,10 +69,10 @@ class ZChatModelOption {
     this.description,
     this.descriptionKey,
     this.badge,
-  })  : labelKey = null,
-        // Une description vient du texte OU de la clé, jamais des deux —
-        // même règle d'exclusivité que le libellé.
-        assert(description == null || descriptionKey == null);
+  }) : labelKey = null,
+       // Une description vient du texte OU de la clé, jamais des deux —
+       // même règle d'exclusivité que le libellé.
+       assert(description == null || descriptionKey == null);
 
   /// Option à libellé par **clé** (registre + repli de l'hôte).
   const ZChatModelOption.byKey({
@@ -82,10 +82,10 @@ class ZChatModelOption {
     this.description,
     this.descriptionKey,
     this.badge,
-  })  : label = null,
-        // Une description vient du texte OU de la clé, jamais des deux —
-        // même règle d'exclusivité que le libellé.
-        assert(description == null || descriptionKey == null);
+  }) : label = null,
+       // Une description vient du texte OU de la clé, jamais des deux —
+       // même règle d'exclusivité que le libellé.
+       assert(description == null || descriptionKey == null);
 
   /// Identifiant **opaque et stable** — c'est lui qui remonte par `onSelect`.
   final String id;
@@ -165,8 +165,8 @@ class ZChatComposerModelSelector extends StatefulWidget {
     this.menuBuilder,
     this.spacing,
     super.key,
-       // Sans option, pas de sélecteur : passer par [slot], qui rend `null`
-       // (invariant AD-4) — l'assert tient la promesse côté montage direct.
+    // Sans option, pas de sélecteur : passer par [slot], qui rend `null`
+    // (invariant AD-4) — l'assert tient la promesse côté montage direct.
   }) : assert(options.length > 0);
 
   /// Le point de montage recommandé : un builder de créneau qui rend `null`
@@ -180,7 +180,8 @@ class ZChatComposerModelSelector extends StatefulWidget {
     ZChatModelTriggerBuilder? triggerBuilder,
     ZChatModelMenuBuilder? menuBuilder,
     double? spacing,
-  }) => (BuildContext context, ZChatComposerSlot slot) => options.isEmpty
+  }) =>
+      (BuildContext context, ZChatComposerSlot slot) => options.isEmpty
       ? null
       : ZChatComposerModelSelector(
           options: options,
@@ -386,16 +387,17 @@ class _ZChatComposerModelSelectorState
             child: const ExcludeSemantics(child: SizedBox.expand()),
           ),
         ),
-        Positioned.fill(
-          child: CompositedTransformFollower(
-            link: _link,
-            targetAnchor: AlignmentDirectional.topEnd.resolve(direction),
-            followerAnchor: AlignmentDirectional.bottomEnd.resolve(direction),
-            child: Align(
-              alignment: AlignmentDirectional.topStart.resolve(direction),
-              child: menu,
-            ),
-          ),
+        // Le suiveur EST le menu : son bord bas touche le bord haut du
+        // déclencheur. Un suiveur plein écran ancré de la même façon
+        // placerait le menu au sommet d'une boîte haute comme l'écran,
+        // donc hors cadre dès que le déclencheur est en bas — la position
+        // normale d'un composer.
+        CompositedTransformFollower(
+          link: _link,
+          showWhenUnlinked: false,
+          targetAnchor: AlignmentDirectional.topEnd.resolve(direction),
+          followerAnchor: AlignmentDirectional.bottomEnd.resolve(direction),
+          child: menu,
         ),
       ],
     );

@@ -429,4 +429,61 @@ void main() {
       handle.dispose();
     });
   });
+
+  group('🔴 tiroir étroit — date et actions', () {
+    ZChatConversationAction share() => ZChatConversationAction(
+          labelKey: kZChatLabelShare,
+          onInvoke: (ZChatConversation _) {},
+        );
+
+    testWidgets('une date longue dans 304 dp ne déborde pas',
+        (WidgetTester t) async {
+      await t.pumpWidget(
+        harness(
+          SizedBox(
+            width: 304,
+            child: ZChatConversationTile(
+              conversation: conv(),
+              now: kNow,
+              timeFormatter: (BuildContext _, DateTime _, DateTime _) =>
+                  'horodatage beaucoup trop long pour un tiroir etroit',
+            ),
+          ),
+        ),
+      );
+      expect(t.takeException(), isNull,
+          reason: '🔴 RenderFlex overflow : la date n\'est pas flexible');
+      final Text date = t.widget<Text>(
+        find.textContaining('horodatage beaucoup trop long'),
+      );
+      expect(date.maxLines, 1);
+      expect(date.overflow, TextOverflow.ellipsis);
+    });
+
+    testWidgets('304 dp replie les actions ; 800 dp les laisse inline',
+        (WidgetTester t) async {
+      Widget at(double width) => harness(
+            SizedBox(
+              width: width,
+              child: ZChatConversationTile(
+                conversation: conv(),
+                now: kNow,
+                actions: <ZChatConversationAction>[share()],
+              ),
+            ),
+          );
+
+      await t.pumpWidget(at(304));
+      expect(find.text('Actions'), findsOneWidget);
+      expect(find.text('Partager'), findsNothing,
+          reason: '🔴 les boutons inline débordent dans un tiroir de 304 dp');
+      await t.tap(find.text('Actions'));
+      await t.pump();
+      expect(find.text('Partager'), findsOneWidget);
+
+      await t.pumpWidget(at(800));
+      expect(find.text('Partager'), findsOneWidget);
+      expect(find.text('Actions'), findsNothing);
+    });
+  });
 }
