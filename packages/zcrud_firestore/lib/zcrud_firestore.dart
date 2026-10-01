@@ -42,6 +42,7 @@ export 'src/data/z_firestore_path_resolver.dart';
 // `ZStudyRepository<T>` ; seul `FirebaseFirestore` (paramètre) est une
 // couture backend. `buildFolderScopedResolver` (`@visibleForTesting`) n'est
 // PAS réexporté.
+export 'src/data/z_folder_scoped_local_store.dart';
 export 'src/data/z_folder_scoped_study_repository.dart'
     show buildFolderScopedStudyRepository, buildUserScopedStudyRepository;
 // Base offline-first `ZOfflineFirstBoxRepository<T>` — implémente le point

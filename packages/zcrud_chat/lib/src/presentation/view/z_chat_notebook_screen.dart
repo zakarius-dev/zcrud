@@ -233,6 +233,7 @@ class ZChatNotebookScreen extends StatefulWidget {
     this.onAttachSource,
     this.artifactScopeId,
     this.transformPalette,
+    this.onLockedTransform,
     this.accessLevel,
     this.exportPort,
     super.key,
@@ -488,7 +489,7 @@ class ZChatNotebookScreen extends StatefulWidget {
   final ZChatMessageSlotBuilder? thinkingBuilder;
 
   /// Renvoi `[n]` activé.
-  final void Function(int index)? onCitationTap;
+  final ZChatCitationTap? onCitationTap;
 
   /// Sources du notebook. `null` : pas de panneau.
   final ZNotebookSourcesPort? sourcesPort;
@@ -502,6 +503,9 @@ class ZChatNotebookScreen extends StatefulWidget {
 
   /// Transformations offertes pour [artifactScopeId].
   final ZTransformPalette? transformPalette;
+
+  /// Geste d'une entrée de palette verrouillée. `null` : aucun effet.
+  final void Function(ZTransformPaletteEntry entry)? onLockedTransform;
 
   /// Niveau d'accès courant, transmis à la palette.
   final String? accessLevel;
@@ -635,17 +639,16 @@ class _ZChatNotebookScreenState extends State<ZChatNotebookScreen> {
         ZTransformPaletteBar(
           palette: widget.transformPalette!,
           level: widget.accessLevel,
+          onLocked: widget.onLockedTransform,
           onSelect: (ZTransformPaletteEntry entry) {
             final String notes = _nb.chat.messages.value
                 .map((ZChatMessage message) => message.content)
                 .where((String text) => text.isNotEmpty)
                 .join('\n\n');
-            unawaited(
-              _nb.generateForScope(
-                scopeId: widget.artifactScopeId!,
-                artifactKey: entry.artifactKey,
-                notes: notes,
-              ),
+            return _nb.generateForScope(
+              scopeId: widget.artifactScopeId!,
+              artifactKey: entry.artifactKey,
+              notes: notes,
             );
           },
         ),

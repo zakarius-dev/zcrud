@@ -18,7 +18,12 @@ import 'z_chat_message_tile.dart';
 /// Panneau des sources branché sur [port].
 class ZNotebookSourcesPanel extends StatefulWidget {
   /// Construit le panneau.
-  const ZNotebookSourcesPanel({required this.port, this.onAttach, super.key});
+  const ZNotebookSourcesPanel({
+    required this.port,
+    this.onAttach,
+    this.confirmRemove,
+    super.key,
+  });
 
   /// Lecture, retrait, et rattachement côté hôte.
   final ZNotebookSourcesPort port;
@@ -28,6 +33,10 @@ class ZNotebookSourcesPanel extends StatefulWidget {
   /// L'hôte ouvre son sélecteur puis appelle [ZNotebookSourcesPort.attach].
   /// Le panneau recharge la liste au retour du futur.
   final Future<void> Function()? onAttach;
+
+  /// Confirmation avant retrait. `null` : le retrait est immédiat.
+  /// `false` annule. Une erreur du rappel annule aussi.
+  final Future<bool> Function(ZNotebookSource source)? confirmRemove;
 
   @override
   State<ZNotebookSourcesPanel> createState() => _ZNotebookSourcesPanelState();
@@ -76,6 +85,17 @@ class _ZNotebookSourcesPanelState extends State<ZNotebookSourcesPanel> {
   }
 
   Future<void> _remove(ZNotebookSource source) async {
+    final Future<bool> Function(ZNotebookSource source)? confirm =
+        widget.confirmRemove;
+    if (confirm != null) {
+      bool ok = false;
+      try {
+        ok = await confirm(source);
+      } catch (error) {
+        ok = false;
+      }
+      if (!ok || !mounted) return;
+    }
     try {
       await widget.port.remove(source.id);
     } catch (error) {
@@ -84,6 +104,17 @@ class _ZNotebookSourcesPanelState extends State<ZNotebookSourcesPanel> {
       return;
     }
     await _reload();
+  }
+
+  String _sourceLine(ZNotebookSource source) {
+    final String title = source.title.isEmpty ? source.id : source.title;
+    final String? pages = source.pageCount?.toString();
+    final String? error = source.errorKey;
+    return <String>[
+      title,
+      if (pages != null) pages,
+      if (error != null && error.isNotEmpty) error,
+    ].join(' ');
   }
 
   @override
@@ -107,14 +138,18 @@ class _ZNotebookSourcesPanelState extends State<ZNotebookSourcesPanel> {
                   await _reload();
                 },
               ),
+            _ZSourceButton(
+              label: zChatLabel(context, kZChatLabelRefreshSources),
+              onTap: _reload,
+            ),
             for (final ZNotebookSource source in items)
               Row(
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      source.title.isEmpty ? source.id : source.title,
+                      _sourceLine(source),
                       textAlign: TextAlign.start,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

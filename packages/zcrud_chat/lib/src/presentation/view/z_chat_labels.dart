@@ -82,6 +82,10 @@ const String kZChatLabelExportPdf = '${kZChatLabelPrefix}exportPdf';
 /// Retrait d'une source de notebook.
 const String kZChatLabelRemoveSource = '${kZChatLabelPrefix}removeSource';
 
+/// Relecture de la liste des sources.
+const String kZChatLabelRefreshSources =
+    '${kZChatLabelPrefix}refreshSources';
+
 /// Ingestion en attente.
 const String kZChatLabelIngestionPending =
     '${kZChatLabelPrefix}ingestionPending';
@@ -526,6 +530,7 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelConversationActions,
   kZChatLabelExportPdf,
   kZChatLabelRemoveSource,
+  kZChatLabelRefreshSources,
   kZChatLabelIngestionPending,
   kZChatLabelIngestionRunning,
   kZChatLabelIngestionReady,
@@ -657,6 +662,7 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelConversationActions: 'Actions',
   kZChatLabelExportPdf: 'Exporter en PDF',
   kZChatLabelRemoveSource: 'Retirer',
+  kZChatLabelRefreshSources: 'Actualiser',
   kZChatLabelIngestionPending: 'En attente',
   kZChatLabelIngestionRunning: 'Ingestion',
   kZChatLabelIngestionReady: 'Prête',

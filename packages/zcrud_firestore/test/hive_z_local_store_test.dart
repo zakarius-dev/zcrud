@@ -168,6 +168,11 @@ void main() {
 
     test('boxNameFor dérive le nom du kind', () {
       expect(HiveZLocalStore.boxNameFor('flashcard'), 'zcrud_flashcard');
+      expect(HiveZLocalStore.boxNameFor('flashcard', scope: ''), 'zcrud_flashcard');
+      expect(
+        HiveZLocalStore.boxNameFor('flashcard', scope: 'uid-a'),
+        'zcrud_flashcard__uid-a',
+      );
     });
   });
 

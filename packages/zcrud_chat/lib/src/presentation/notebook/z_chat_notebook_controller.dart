@@ -531,8 +531,9 @@ class ZChatNotebookController extends ChangeNotifier {
 
   /// Génère [artifactKey] pour le conteneur [scopeId], sans message porteur.
   ///
-  /// Le contenu est stocké sous [scopeId]. Une matière vide est refusée par
-  /// la séquence, sans appel du port.
+  /// Le contenu est stocké sous [scopeId]. Une matière de fil vide n'empêche
+  /// pas l'appel : le port peut lire le dossier. Un sujet exigé et vide
+  /// reste refusé.
   Future<ZResult<Unit>> generateForScope({
     required String scopeId,
     required String artifactKey,
@@ -555,6 +556,7 @@ class ZChatNotebookController extends ChangeNotifier {
           artifactKey: artifactKey,
           notes: notes,
           subject: subject,
+          allowEmptyNotes: true,
           conversationId: _conversationId,
         );
     final (String, String) pair = (request.anchorId, artifactKey);

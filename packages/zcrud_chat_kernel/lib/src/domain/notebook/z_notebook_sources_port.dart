@@ -52,6 +52,8 @@ class ZNotebookSource {
     required this.id,
     required this.title,
     this.state = ZNotebookIngestionState.ready,
+    this.errorKey,
+    this.pageCount,
   });
 
   /// Identité opaque.
@@ -62,6 +64,15 @@ class ZNotebookSource {
 
   /// État d'ingestion.
   final ZNotebookIngestionState state;
+
+  /// Clé de la cause d'échec, déjà choisie par l'hôte. `null` : aucune.
+  ///
+  /// Le panneau la résout comme un libellé s'il la connaît, sinon il
+  /// l'affiche telle quelle. Elle n'est pas une phrase du socle.
+  final String? errorKey;
+
+  /// Nombre de pages extraites, ou `null` si l'hôte ne le connaît pas.
+  final int? pageCount;
 
   /// Lecture défensive. Une donnée qui n'est pas une map devient une source
   /// vide, jamais une exception (invariant AD-10).
@@ -74,14 +85,18 @@ class ZNotebookSource {
       id: zJsonString(map['id']),
       title: zJsonString(map['title']),
       state: ZNotebookIngestionState.fromJson(map['state']),
+      errorKey: zJsonStringOrNull(map['error_key']),
+      pageCount: zJsonIntOrNull(map['page_count']),
     );
   }
 
-  /// Forme neutre.
+  /// Forme neutre. Les champs absents ne sont pas émis.
   Map<String, dynamic> toJson() => <String, dynamic>{
     'id': id,
     'title': title,
     'state': state.jsonValue,
+    if (errorKey != null) 'error_key': errorKey,
+    if (pageCount != null) 'page_count': pageCount,
   };
 
   @override
@@ -90,10 +105,12 @@ class ZNotebookSource {
       other is ZNotebookSource &&
           id == other.id &&
           title == other.title &&
-          state == other.state;
+          state == other.state &&
+          errorKey == other.errorKey &&
+          pageCount == other.pageCount;
 
   @override
-  int get hashCode => Object.hash(id, title, state);
+  int get hashCode => Object.hash(id, title, state, errorKey, pageCount);
 }
 
 /// Port des sources d'un notebook.
@@ -104,8 +121,15 @@ abstract interface class ZNotebookSourcesPort {
   /// Sources courantes, dans l'ordre d'affichage.
   Future<ZResult<List<ZNotebookSource>>> list();
 
-  /// Rattache une source de titre [title].
-  Future<ZResult<ZNotebookSource>> attach({required String title});
+  /// Rattache une source.
+  ///
+  /// [title] est le libellé choisi par l'hôte. [fileId] identifie un
+  /// fichier déjà téléversé ; `null` lorsque le rattachement ne porte
+  /// qu'un titre. Le sélecteur de document reste dans l'application.
+  Future<ZResult<ZNotebookSource>> attach({
+    required String title,
+    String? fileId,
+  });
 
   /// Retire la source [id]. Retirer une source absente est un succès.
   Future<ZResult<Unit>> remove(String id);

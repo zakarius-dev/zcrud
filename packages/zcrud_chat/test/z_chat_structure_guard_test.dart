@@ -97,6 +97,7 @@ void main() {
           'lastFailure',
           'liveAnnouncement',
           'streamText',
+          'streamBlocks',
           'progress',
           'currentDraft',
           'conversationId',

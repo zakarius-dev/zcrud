@@ -62,6 +62,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
 import 'z_firestore_path_resolver.dart';
+import 'z_folder_scoped_local_store.dart';
 import 'z_offline_first_box_repository.dart';
 
 /// Construit le [ZFirestorePathResolver] **mono-`kind`** de la topologie
@@ -79,14 +80,13 @@ ZFirestorePathResolver buildFolderScopedResolver({
   required String collection,
   required String parentCollection,
   bool userScoped = true,
-}) =>
-    ZFirestorePathResolver(<String, ZFirestorePathRule>{
-      kind: ZFirestorePathRule.nestedUnderParent(
-        collection: collection,
-        parentCollection: parentCollection,
-        userScoped: userScoped,
-      ),
-    });
+}) => ZFirestorePathResolver(<String, ZFirestorePathRule>{
+  kind: ZFirestorePathRule.nestedUnderParent(
+    collection: collection,
+    parentCollection: parentCollection,
+    userScoped: userScoped,
+  ),
+});
 
 /// Assemble un dépôt d'étude **folder-scopé concret** (offline-first) pour la
 /// topologie imbriquée `users/{userId}/{parentCollection}/{folderId}/{collection}`.
@@ -120,32 +120,38 @@ ZStudyRepository<T> buildFolderScopedStudyRepository<T extends ZEntity>({
   required T Function(Map<String, dynamic> map) decode,
   required Map<String, dynamic> Function(T value) encode,
   required String folderId,
+  String? Function(T value)? folderIdOf,
   String? userId,
   bool userScoped = true,
   Future<bool> Function()? isConnected,
   ZOfflineFirstBoxLog? logger,
   bool autoListen = true,
-}) =>
-    ZOfflineFirstBoxRepository<T>(
-      local: local,
-      firestore: firestore,
-      resolver: buildFolderScopedResolver(
-        kind: kind,
-        collection: collection,
-        parentCollection: parentCollection,
-        userScoped: userScoped,
-      ),
-      kind: kind,
-      decode: decode,
-      encode: encode,
-      userId: userId,
-      // AD-10 : `folderId` passé TEL QUEL comme parentId — jamais avalé ni replié
-      // en chemin plat. Vide ⇒ `Left(ZDomainFailure)` du resolver à toute opération.
-      parentId: folderId,
-      isConnected: isConnected,
-      logger: logger,
-      autoListen: autoListen,
-    );
+}) => ZOfflineFirstBoxRepository<T>(
+  local: folderIdOf == null
+      ? local
+      : ZFolderScopedLocalStore<T>(
+          inner: local,
+          folderId: folderId,
+          folderIdOf: folderIdOf,
+        ),
+  firestore: firestore,
+  resolver: buildFolderScopedResolver(
+    kind: kind,
+    collection: collection,
+    parentCollection: parentCollection,
+    userScoped: userScoped,
+  ),
+  kind: kind,
+  decode: decode,
+  encode: encode,
+  userId: userId,
+  // AD-10 : `folderId` passé TEL QUEL comme parentId — jamais avalé ni replié
+  // en chemin plat. Vide ⇒ `Left(ZDomainFailure)` du resolver à toute opération.
+  parentId: folderId,
+  isConnected: isConnected,
+  logger: logger,
+  autoListen: autoListen,
+);
 
 /// Résolveur **flat top-level** (topologie `flatTopLevel`) — jumeau exact de
 /// [buildFolderScopedResolver] pour une collection RACINE.
@@ -154,13 +160,12 @@ ZFirestorePathResolver buildUserScopedResolver({
   required String kind,
   required String collection,
   required bool userScoped,
-}) =>
-    ZFirestorePathResolver(<String, ZFirestorePathRule>{
-      kind: ZFirestorePathRule.flatTopLevel(
-        collection: collection,
-        userScoped: userScoped,
-      ),
-    });
+}) => ZFirestorePathResolver(<String, ZFirestorePathRule>{
+  kind: ZFirestorePathRule.flatTopLevel(
+    collection: collection,
+    userScoped: userScoped,
+  ),
+});
 
 /// Fabrique d'adapter **user-scopé concret** pour une collection **RACINE**
 /// (topologie `flatTopLevel`) — jumelle exacte de
@@ -197,22 +202,21 @@ ZStudyRepository<T> buildUserScopedStudyRepository<T extends ZEntity>({
   ZOfflineFirstBoxLog? logger,
   ZClock? clock,
   bool autoListen = true,
-}) =>
-    ZOfflineFirstBoxRepository<T>(
-      local: local,
-      firestore: firestore,
-      resolver: buildUserScopedResolver(
-        kind: kind,
-        collection: collection,
-        userScoped: userScoped,
-      ),
-      kind: kind,
-      decode: decode,
-      encode: encode,
-      userId: userId,
-      // Topologie RACINE : aucun parent. Le passer serait une erreur silencieuse.
-      isConnected: isConnected,
-      logger: logger,
-      clock: clock,
-      autoListen: autoListen,
-    );
+}) => ZOfflineFirstBoxRepository<T>(
+  local: local,
+  firestore: firestore,
+  resolver: buildUserScopedResolver(
+    kind: kind,
+    collection: collection,
+    userScoped: userScoped,
+  ),
+  kind: kind,
+  decode: decode,
+  encode: encode,
+  userId: userId,
+  // Topologie RACINE : aucun parent. Le passer serait une erreur silencieuse.
+  isConnected: isConnected,
+  logger: logger,
+  clock: clock,
+  autoListen: autoListen,
+);

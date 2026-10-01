@@ -479,6 +479,7 @@ void main() {
           reason: '🔴 les boutons inline débordent dans un tiroir de 304 dp');
       await t.tap(find.text('Actions'));
       await t.pump();
+      expect(t.takeException(), isNull);
       expect(find.text('Partager'), findsOneWidget);
 
       await t.pumpWidget(at(800));

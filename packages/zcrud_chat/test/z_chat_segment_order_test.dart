@@ -61,9 +61,13 @@ void main() {
     expect(reply.contentBlocks, hasLength(3));
     expect((reply.contentBlocks[0] as ZTextBlock).text, 'avant');
     expect(reply.contentBlocks[1], isA<ZTableBlock>());
-    expect((reply.contentBlocks[2] as ZTextBlock).text, 'après',
-        reason: '🔴 le texte entier est placé AVANT les blocs : la suite '
-            '« après » a rejoint « avant »');
+    expect(
+      (reply.contentBlocks[2] as ZTextBlock).text,
+      'après',
+      reason:
+          '🔴 le texte entier est placé AVANT les blocs : la suite '
+          '« après » a rejoint « avant »',
+    );
   });
 
   test('un tour sans bloc reste un seul segment de texte', () async {
@@ -89,11 +93,7 @@ void main() {
     final ZChatMessage reply = await _reply(
       harness.controller,
       harness.port,
-      <ZResult<ZChatStreamEvent>>[
-        _table(),
-        tok('suite'),
-        done(id: 'a1'),
-      ],
+      <ZResult<ZChatStreamEvent>>[_table(), tok('suite'), done(id: 'a1')],
     );
 
     expect(reply.contentBlocks.first, isA<ZTableBlock>());
@@ -120,5 +120,40 @@ void main() {
     expect((reply.contentBlocks[0] as ZTextBlock).text, 'avant');
     expect(reply.contentBlocks[1], isA<ZTableBlock>());
     expect((reply.contentBlocks[2] as ZTextBlock).text, 'après');
+  });
+
+  test('les segments sont lisibles avant la fin du tour', () async {
+    final harness = buildController();
+    addTearDown(harness.controller.dispose);
+    addTearDown(harness.port.closeAll);
+
+    harness.controller.composer.text = 'question';
+    final Future<ZResult<ZChatRequestToken>> sending = harness.controller
+        .send();
+    await pumpEventQueue();
+    final String requestId = harness.port.calls.single.token.requestId;
+    harness.port.last.add(tok('avant'));
+    await pumpEventQueue();
+    harness.port.last.add(_table());
+    await pumpEventQueue();
+
+    final List<ZContentBlock> live = harness.controller
+        .streamBlocks(requestId)
+        .value;
+    expect(live, hasLength(2));
+    expect((live[0] as ZTextBlock).text, 'avant');
+    expect(live[1], isA<ZTableBlock>());
+
+    harness.port.last.add(tok('après'));
+    await pumpEventQueue();
+    final List<ZContentBlock> grown = harness.controller
+        .streamBlocks(requestId)
+        .value;
+    expect(grown, hasLength(3));
+    expect((grown[2] as ZTextBlock).text, 'après');
+
+    harness.port.last.add(done(id: 'a1'));
+    await pumpEventQueue();
+    await sending;
   });
 }

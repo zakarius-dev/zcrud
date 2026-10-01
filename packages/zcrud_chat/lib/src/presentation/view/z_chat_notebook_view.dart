@@ -162,7 +162,7 @@ class ZChatNotebookView extends StatelessWidget {
   final ZChatMessageSlotBuilder? thinkingBuilder;
 
   /// Renvoi `[n]` activé. `null` : les crochets restent du texte.
-  final void Function(int index)? onCitationTap;
+  final ZChatCitationTap? onCitationTap;
 
   /// La zone de saisie — relayée telle quelle à la racine commune.
   ///

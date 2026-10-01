@@ -396,6 +396,10 @@ class ZChatController extends ChangeNotifier {
 
   final Map<String, ValueNotifier<String>> _streamTexts =
       <String, ValueNotifier<String>>{};
+
+  /// Segments ordonnés de la réponse en cours, texte ouvert en dernier.
+  final Map<String, ValueNotifier<List<ZContentBlock>>> _streamBlocks =
+      <String, ValueNotifier<List<ZContentBlock>>>{};
   final Map<String, ValueNotifier<ZChatStreamProgress>> _progress =
       <String, ValueNotifier<ZChatStreamProgress>>{};
   final Map<String, _ZRequestState> _states = <String, _ZRequestState>{};
@@ -513,6 +517,15 @@ class ZChatController extends ChangeNotifier {
   /// `ValueListenableBuilder` ne se ré-abonne jamais (patron
   /// `ZFormController.fieldListenable`).
   ValueListenable<String> streamText(String requestId) => _textOf(requestId);
+
+  /// Segments de la requête [requestId], dans l'ordre de lecture.
+  ///
+  /// Le texte encore ouvert est le dernier segment. Un bloc reçu pendant
+  /// le flux y apparaît tout de suite : la tuile en cours le rend, elle
+  /// n'attend pas la clôture du tour. La tranche de texte
+  /// ([streamText]) reste la concaténation du canal.
+  ValueListenable<List<ZContentBlock>> streamBlocks(String requestId) =>
+      _blocksOf(requestId);
 
   /// Progression **grossière** de la requête [requestId] — jamais son texte.
   ///
@@ -832,6 +845,10 @@ class ZChatController extends ChangeNotifier {
       n.dispose();
     }
     _streamTexts.clear();
+    for (final ValueNotifier<List<ZContentBlock>> n in _streamBlocks.values) {
+      n.dispose();
+    }
+    _streamBlocks.clear();
     for (final ValueNotifier<ZChatStreamProgress> n in _progress.values) {
       n.dispose();
     }
@@ -1155,6 +1172,7 @@ class ZChatController extends ChangeNotifier {
       case final ZChatTokenEvent e:
         final ValueNotifier<String> text = _textOf(key);
         text.value = '${text.value}${e.content}';
+        _syncBlocks(key);
       case final ZChatThinkingEvent e:
         _publish(
           key,
@@ -1203,6 +1221,7 @@ class ZChatController extends ChangeNotifier {
         }
         state.textClosed = soFar.length;
         state.blocks.add(e.block);
+        _syncBlocks(key);
       case final ZChatDoneEvent e:
         state.messageId = e.messageId;
         state.conversationId = e.conversationId;
@@ -1457,6 +1476,7 @@ class ZChatController extends ChangeNotifier {
   /// Libère les tranches d'une requête **sortie de la fenêtre de rétention**.
   void _disposeSlices(String requestId) {
     _streamTexts.remove(requestId)?.dispose();
+    _streamBlocks.remove(requestId)?.dispose();
     _progress.remove(requestId)?.dispose();
   }
 
@@ -1719,6 +1739,32 @@ class ZChatController extends ChangeNotifier {
   ValueNotifier<String> _textOf(String requestId) =>
       _streamTexts[requestId] ??= ValueNotifier<String>('');
 
+  ValueNotifier<List<ZContentBlock>> _blocksOf(String requestId) =>
+      _streamBlocks[requestId] ??= ValueNotifier<List<ZContentBlock>>(
+        const <ZContentBlock>[],
+      );
+
+  /// Publie les segments assemblés. La liste est neuve à chaque publication :
+  /// un `ValueNotifier` ignore une valeur égale par `==`, et deux listes
+  /// distinctes notifient même si leur contenu se ressemble.
+  void _syncBlocks(String requestId) {
+    if (_disposed) return;
+    final List<ZContentBlock> next = List<ZContentBlock>.unmodifiable(
+      _assembledBlocks(requestId, _states[requestId]),
+    );
+    final ValueNotifier<List<ZContentBlock>> slot = _blocksOf(requestId);
+    // Un tour encore tout en texte reste sur le canal `streamText` : publier
+    // un bloc à chaque jeton referait passer la couture de rendu.
+    final bool structured = next.any(
+      (ZContentBlock block) => block is! ZTextBlock,
+    );
+    if (!structured) {
+      if (slot.value.isNotEmpty) slot.value = const <ZContentBlock>[];
+      return;
+    }
+    slot.value = next;
+  }
+
   ValueNotifier<ZChatStreamProgress> _progressOf(String requestId) =>
       _progress[requestId] ??= ValueNotifier<ZChatStreamProgress>(
         const ZChatStreamProgress(),
@@ -1758,6 +1804,10 @@ class ZChatController extends ChangeNotifier {
       n.dispose();
     }
     _streamTexts.clear();
+    for (final ValueNotifier<List<ZContentBlock>> n in _streamBlocks.values) {
+      n.dispose();
+    }
+    _streamBlocks.clear();
     for (final ValueNotifier<ZChatStreamProgress> n in _progress.values) {
       n.dispose();
     }

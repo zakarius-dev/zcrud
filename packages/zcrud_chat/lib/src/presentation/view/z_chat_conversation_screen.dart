@@ -239,7 +239,7 @@ class ZChatConversationScreen extends StatefulWidget {
   final ZChatMessageSlotBuilder? thinkingBuilder;
 
   /// Renvoi `[n]` activé dans le texte de l'assistant.
-  final void Function(int index)? onCitationTap;
+  final ZChatCitationTap? onCitationTap;
 
   /// Créneau d'actions par message.
   final ZChatMessageSlotBuilder? actionsBuilder;

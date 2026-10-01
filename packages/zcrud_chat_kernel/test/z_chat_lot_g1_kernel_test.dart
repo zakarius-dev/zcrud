@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:test/test.dart';
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
+import 'package:zcrud_core/domain.dart';
 
 Future<void> _settle() async {
   for (int i = 0; i < 5; i++) {
@@ -13,11 +14,11 @@ Future<void> _settle() async {
 }
 
 ZChatMessage _msg(String id) => ZChatMessage(
-      id: id,
-      conversationId: 'c',
-      role: ZChatRole.user,
-      contentBlocks: <ZContentBlock>[ZTextBlock(text: id)],
-    );
+  id: id,
+  conversationId: 'c',
+  role: ZChatRole.user,
+  contentBlocks: <ZContentBlock>[ZTextBlock(text: id)],
+);
 
 void main() {
   group('G1-b — `zChatTranscriptOrEmpty` : désabonnement IMMÉDIAT', () {
@@ -27,8 +28,9 @@ void main() {
       final StreamController<List<ZChatMessage>> source =
           StreamController<List<ZChatMessage>>(onCancel: () => cancelled++);
       final List<List<ZChatMessage>> got = <List<ZChatMessage>>[];
-      final StreamSubscription<List<ZChatMessage>> sub =
-          zChatTranscriptOrEmpty(source.stream).listen(got.add);
+      final StreamSubscription<List<ZChatMessage>> sub = zChatTranscriptOrEmpty(
+        source.stream,
+      ).listen(got.add);
       source.add(<ZChatMessage>[_msg('a')]);
       await _settle();
       expect(got.length, 1);
@@ -37,9 +39,13 @@ void main() {
       unawaited(sub.cancel());
       await _settle(); // AUCUN instantané poussé entre le cancel et la mesure.
 
-      expect(cancelled, 1,
-          reason: '🔴 l\'écouteur distant survivrait au dispose jusqu\'à la '
-              'prochaine écriture');
+      expect(
+        cancelled,
+        1,
+        reason:
+            '🔴 l\'écouteur distant survivrait au dispose jusqu\'à la '
+            'prochaine écriture',
+      );
       // Ce qui arrive ensuite n\'est plus lu.
       source.add(<ZChatMessage>[_msg('b')]);
       await _settle();
@@ -51,7 +57,9 @@ void main() {
       bool listened = false;
       final StreamController<List<ZChatMessage>> source =
           StreamController<List<ZChatMessage>>(onListen: () => listened = true);
-      final Stream<List<ZChatMessage>> s = zChatTranscriptOrEmpty(source.stream);
+      final Stream<List<ZChatMessage>> s = zChatTranscriptOrEmpty(
+        source.stream,
+      );
       await _settle();
       expect(listened, isFalse);
       final StreamSubscription<List<ZChatMessage>> sub = s.listen((_) {});
@@ -71,8 +79,9 @@ void main() {
       );
       final StreamController<List<ZChatMessage>> c =
           StreamController<List<ZChatMessage>>();
-      final Future<List<List<ZChatMessage>>> collected =
-          zChatTranscriptOrEmpty(c.stream).toList();
+      final Future<List<List<ZChatMessage>>> collected = zChatTranscriptOrEmpty(
+        c.stream,
+      ).toList();
       c.add(<ZChatMessage>[_msg('a')]);
       c.addError(StateError('coupure'));
       c.add(<ZChatMessage>[_msg('fantome')]);
@@ -96,8 +105,9 @@ void main() {
 
     test('sans argument ⇒ égal ; un champ posé ⇒ lui seul change', () {
       expect(base.copyWith(), base);
-      final ZChatArtifactGenerationRequest r =
-          base.copyWith(subjectRequired: true);
+      final ZChatArtifactGenerationRequest r = base.copyWith(
+        subjectRequired: true,
+      );
       expect(r.subjectRequired, isTrue);
       expect(r.copyWith(subjectRequired: false), base);
       expect(r.notes, 'notes');
@@ -116,47 +126,48 @@ void main() {
       );
     });
 
-    test('`subjectRequired` posé par copyWith change le refus sur sujet vide',
-        () {
-      final ZChatArtifactGenerationRequest sansSujet =
-          base.copyWith(subject: '');
-      expect(sansSujet.isEmptyInput, isFalse);
-      expect(sansSujet.copyWith(subjectRequired: true).isEmptyInput, isTrue);
-    });
+    test(
+      '`subjectRequired` posé par copyWith change le refus sur sujet vide',
+      () {
+        final ZChatArtifactGenerationRequest sansSujet = base.copyWith(
+          subject: '',
+        );
+        expect(sansSujet.isEmptyInput, isFalse);
+        expect(sansSujet.copyWith(subjectRequired: true).isEmptyInput, isTrue);
+      },
+    );
   });
 
   group('G1-c — `ZChatArtifactDeclaration.subjectRequired` / `style`', () {
-    test('défauts : faux / null, omis du JSON ; posés : sérialisés et relus',
-        () {
-      final ZChatArtifactDeclaration d = ZChatArtifactDeclaration(key: 'a');
-      expect(d.subjectRequired, isFalse);
-      expect(d.style, isNull);
-      expect(d.toJson().containsKey('subject_required'), isFalse);
-      expect(d.toJson().containsKey('style'), isFalse);
+    test(
+      'défauts : faux / null, omis du JSON ; posés : sérialisés et relus',
+      () {
+        final ZChatArtifactDeclaration d = ZChatArtifactDeclaration(key: 'a');
+        expect(d.subjectRequired, isFalse);
+        expect(d.style, isNull);
+        expect(d.toJson().containsKey('subject_required'), isFalse);
+        expect(d.toJson().containsKey('style'), isFalse);
 
-      final ZChatArtifactDeclaration posee = ZChatArtifactDeclaration(
-        key: 'flashcards',
-        subjectRequired: true,
-        style: ZChatGenerationStyle('flashcards', <String, dynamic>{'n': 10}),
-      );
-      final Map<String, dynamic> json = posee.toJson();
-      expect(json['subject_required'], isTrue);
-      expect(json['style'], 'flashcards');
-      expect(json['style_params'], <String, dynamic>{'n': 10});
-      final ZChatArtifactDeclaration relue =
-          ZChatArtifactDeclaration.fromJson(json)!;
-      expect(relue.subjectRequired, isTrue);
-      expect(relue.style, posee.style);
-    });
+        final ZChatArtifactDeclaration posee = ZChatArtifactDeclaration(
+          key: 'flashcards',
+          subjectRequired: true,
+          style: ZChatGenerationStyle('flashcards', <String, dynamic>{'n': 10}),
+        );
+        final Map<String, dynamic> json = posee.toJson();
+        expect(json['subject_required'], isTrue);
+        expect(json['style'], 'flashcards');
+        expect(json['style_params'], <String, dynamic>{'n': 10});
+        final ZChatArtifactDeclaration relue =
+            ZChatArtifactDeclaration.fromJson(json)!;
+        expect(relue.subjectRequired, isTrue);
+        expect(relue.style, posee.style);
+      },
+    );
 
     test('lecture défensive : `subject_required` mal typé ⇒ faux ; `style` '
         'illisible ⇒ null', () {
       final ZChatArtifactDeclaration d = ZChatArtifactDeclaration.fromJson(
-        <String, dynamic>{
-          'key': 'a',
-          'subject_required': 'oui',
-          'style': 42,
-        },
+        <String, dynamic>{'key': 'a', 'subject_required': 'oui', 'style': 42},
       )!;
       expect(d.subjectRequired, isFalse);
       expect(d.style, isNull);
@@ -175,5 +186,55 @@ void main() {
       expect(reg.declarationOf('m')!.subjectRequired, isTrue);
       expect(reg.declarationOf('m')!.style!.kind, 'mindmap');
     });
+  });
+
+  test('des notes vides passent quand allowEmptyNotes est posé', () async {
+    int calls = 0;
+    final ZResult<String> ran = await zChatRunArtifactGeneration<String>(
+      messageId: 'm',
+      artifactKey: 'k',
+      notes: '   ',
+      allowEmptyNotes: true,
+      mark: (String _, String _, {required bool busy}) {},
+      generate: () async {
+        calls++;
+        return const Right<ZFailure, String>('ok');
+      },
+      isEmpty: (String value) => value.isEmpty,
+      write: (String _) async => const Right<ZFailure, Unit>(unit),
+    );
+    expect(ran.getOrElse(() => ''), 'ok');
+    expect(calls, 1);
+
+    final ZResult<String> refused = await zChatRunArtifactGeneration<String>(
+      messageId: 'm',
+      artifactKey: 'k',
+      notes: '',
+      mark: (String _, String _, {required bool busy}) {},
+      generate: () async => const Right<ZFailure, String>('no'),
+      isEmpty: (String value) => value.isEmpty,
+      write: (String _) async => const Right<ZFailure, Unit>(unit),
+    );
+    expect(refused.isLeft(), isTrue);
+  });
+
+  test('une source relit sa cause et son nombre de pages', () {
+    final ZNotebookSource source = ZNotebookSource.fromJson(<String, dynamic>{
+      'id': 's',
+      'title': 'doc',
+      'error_key': 'unreadable',
+      'page_count': 4,
+    });
+    expect(source.errorKey, 'unreadable');
+    expect(source.pageCount, 4);
+    expect(source.toJson()['error_key'], 'unreadable');
+    expect(source.toJson()['page_count'], 4);
+    expect(
+      const ZNotebookSource(
+        id: 's',
+        title: 'doc',
+      ).toJson().containsKey('error_key'),
+      isFalse,
+    );
   });
 }

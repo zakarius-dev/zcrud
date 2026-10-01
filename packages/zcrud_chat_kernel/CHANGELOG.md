@@ -3,6 +3,18 @@
 Toutes les modifications notables de `zcrud_chat_kernel` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.57.0 — 2026-10-01
+
+### Ajouté
+
+- `ZTransformPaletteEntry.lockedWhen` et `lockedFor`. `ZTransformPalette.offeredFor` rend les entrées actionnables et celles qui restent visibles mais verrouillées. `visibleFor` ne rend toujours que les entrées actionnables.
+- `ZChatArtifactGenerationRequest.allowEmptyNotes` (défaut `false`). Posé, des notes vides ne refusent plus l'appel. Un sujet exigé et vide le refuse encore.
+- `ZNotebookSource.errorKey` et `pageCount`, omis du JSON quand ils sont absents. `ZNotebookSourcesPort.attach` accepte `fileId`.
+
+### Adaptation
+
+- Une redéfinition de `attach` doit accepter le paramètre nommé `fileId`. Les appels qui ne passent que `title` compilent encore.
+
 ## 3.56.0 — 2026-09-30
 
 ### Ajouté

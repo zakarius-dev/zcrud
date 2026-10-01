@@ -397,7 +397,7 @@ class _ZChatComposerModelSelectorState
           showWhenUnlinked: false,
           targetAnchor: AlignmentDirectional.topEnd.resolve(direction),
           followerAnchor: AlignmentDirectional.bottomEnd.resolve(direction),
-          child: menu,
+          child: _ZClampToScreen(child: menu),
         ),
       ],
     );
@@ -409,17 +409,22 @@ class _ZChatComposerModelSelectorState
   Widget _defaultMenu(BuildContext context) {
     final double gap = _gap(context);
     final ({TextStyle plain, TextStyle chosen}) styles = _styles(context);
+    final double screen = MediaQuery.sizeOf(context).width;
+    final double cap = screen > 16 ? screen - 16 : screen;
     return Semantics(
       container: true,
       explicitChildNodes: true,
       label: zChatLabel(context, kZChatLabelModelSelector),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          for (final ZChatModelOption option in widget.options)
-            _menuItem(context, option, gap, styles),
-        ],
+      child: SizedBox(
+        width: cap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            for (final ZChatModelOption option in widget.options)
+              _menuItem(context, option, gap, styles),
+          ],
+        ),
       ),
     );
   }
@@ -457,46 +462,44 @@ class _ZChatComposerModelSelectorState
             minHeight: kZChatMinTapTarget,
           ),
           child: Align(
-            // Invariant AD-13 : alignement directionnel.
             alignment: AlignmentDirectional.centerStart,
-            widthFactor: 1,
             heightFactor: 1,
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 if (icon != null) ...<Widget>[
                   ExcludeSemantics(child: icon),
                   SizedBox(width: gap),
                 ],
-                if (described == null)
-                  Text(
-                    resolved,
-                    // L'état passe par le style, mesurable sur le
-                    // RenderParagraph — jamais par la seule couleur
-                    // (invariant AD-13).
-                    style: selected ? styles.chosen : styles.plain,
-                    textAlign: TextAlign.start,
-                  )
-                else
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    // Invariant AD-13 : alignement directionnel.
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        resolved,
-                        style: selected ? styles.chosen : styles.plain,
-                        textAlign: TextAlign.start,
-                      ),
-                      // La description ne porte JAMAIS l'emphase : c'est le
-                      // libellé qui dit la sélection, pas le commentaire.
-                      Text(
-                        described,
-                        style: styles.plain,
-                        textAlign: TextAlign.start,
-                      ),
-                    ],
-                  ),
+                Expanded(
+                  child: described == null
+                      ? Text(
+                          resolved,
+                          style: selected ? styles.chosen : styles.plain,
+                          textAlign: TextAlign.start,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        )
+                      : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              resolved,
+                              style: selected ? styles.chosen : styles.plain,
+                              textAlign: TextAlign.start,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              described,
+                              style: styles.plain,
+                              textAlign: TextAlign.start,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                ),
                 if (badge != null) ...<Widget>[
                   SizedBox(width: gap),
                   // Décoratif : la description est déjà annoncée par la
@@ -513,6 +516,64 @@ class _ZChatComposerModelSelectorState
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Décale un menu pour qu'il reste dans l'écran, dans les deux axes.
+class _ZClampToScreen extends StatefulWidget {
+  const _ZClampToScreen({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_ZClampToScreen> createState() => _ZClampToScreenState();
+}
+
+class _ZClampToScreenState extends State<_ZClampToScreen> {
+  final ValueNotifier<Offset> _shift = ValueNotifier<Offset>(Offset.zero);
+  final GlobalKey _boxKey = GlobalKey();
+
+  @override
+  void dispose() {
+    _shift.dispose();
+    super.dispose();
+  }
+
+  void _measure() {
+    final BuildContext? target = _boxKey.currentContext;
+    final RenderObject? object = target?.findRenderObject();
+    if (object is! RenderBox || !object.hasSize || !object.attached) return;
+    final Offset painted = object.localToGlobal(Offset.zero);
+    final Offset natural = painted - _shift.value;
+    final Size size = object.size;
+    final Size screen = MediaQuery.sizeOf(target!);
+    double dx = 0;
+    double dy = 0;
+    if (natural.dx < 0) dx = -natural.dx;
+    final double right = natural.dx + size.width;
+    if (right > screen.width) dx += screen.width - right;
+    if (natural.dx + dx < 0) dx = -natural.dx;
+    if (natural.dy < 0) dy = -natural.dy;
+    final double bottom = natural.dy + size.height;
+    if (bottom > screen.height) dy += screen.height - bottom;
+    if (natural.dy + dy < 0) dy = -natural.dy;
+    final Offset next = Offset(dx, dy);
+    if (next != _shift.value) _shift.value = next;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _measure();
+    });
+    return ValueListenableBuilder<Offset>(
+      valueListenable: _shift,
+      builder: (BuildContext context, Offset shift, Widget? _) =>
+          Transform.translate(
+            offset: shift,
+            child: KeyedSubtree(key: _boxKey, child: widget.child),
+          ),
     );
   }
 }

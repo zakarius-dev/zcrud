@@ -3,6 +3,14 @@
 Toutes les modifications notables de `zcrud_export_pdf` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.57.0 — 2026-10-01
+
+### Ajouté
+
+- `ZPdfExportOptions.fontBytes` embarque une police TrueType fournie par l'hôte. `null` conserve Helvetica. Des octets illisibles font retomber le document sur Helvetica, sans exception.
+- `ZPdfExportOptions.rightToLeft` aligne le texte sur la fin et demande un sens droite-à-gauche. Défaut `false`.
+- Le markdown minimal reconnaît les titres, l'emphase, les puces et les tableaux à barres. Les liens et les images restent réduits à leur libellé. Aucune adresse n'est résolue.
+
 ## 3.56.0 — 2026-09-30
 
 ### Ajouté

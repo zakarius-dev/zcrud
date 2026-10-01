@@ -328,6 +328,7 @@ class ZChatComposerPickerTrigger extends StatefulWidget {
     required this.actions,
     this.glyph,
     this.spacing,
+    this.enabled = true,
     super.key,
   }) : assert(actions.length > 0);
 
@@ -336,12 +337,15 @@ class ZChatComposerPickerTrigger extends StatefulWidget {
     required List<ZChatComposerPickerAction> actions,
     Widget? glyph,
     double? spacing,
-  }) => (BuildContext context) => actions.isEmpty
+    bool enabled = true,
+  }) =>
+      (BuildContext context) => actions.isEmpty
       ? null
       : ZChatComposerPickerTrigger(
           actions: actions,
           glyph: glyph,
           spacing: spacing,
+          enabled: enabled,
         );
 
   /// Le catalogue d'HÔTE — jamais une donnée du socle.
@@ -353,6 +357,9 @@ class ZChatComposerPickerTrigger extends StatefulWidget {
 
   /// Interligne du menu. `null` ⇒ jeton `gapS`, puis référence.
   final double? spacing;
+
+  /// `false` : le déclencheur ne s'ouvre pas et annonce l'état désactivé.
+  final bool enabled;
 
   @override
   State<ZChatComposerPickerTrigger> createState() =>
@@ -406,13 +413,14 @@ class _ZChatComposerPickerTriggerState
           valueListenable: _open,
           builder: (BuildContext context, bool open, Widget? _) => Semantics(
             button: true,
-            expanded: open,
+            enabled: widget.enabled,
+            expanded: open && widget.enabled,
             label: resolved,
             excludeSemantics: true,
-            onTap: _toggle,
+            onTap: widget.enabled ? _toggle : null,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: _toggle,
+              onTap: widget.enabled ? _toggle : null,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(
                   minWidth: kZChatMinTapTarget,
@@ -453,9 +461,7 @@ class _ZChatComposerPickerTriggerState
             // Le menu s'ouvre AU-DESSUS du déclencheur, ancré côté DÉBUT
             // (le `+` vit en tête de bande).
             targetAnchor: AlignmentDirectional.topStart.resolve(direction),
-            followerAnchor: AlignmentDirectional.bottomStart.resolve(
-              direction,
-            ),
+            followerAnchor: AlignmentDirectional.bottomStart.resolve(direction),
             // Le menu est posé au COIN ANCRÉ de la boîte suiveuse (elle
             // s'étend en amont de l'ancre) : il apparaît DIRECTEMENT
             // au-dessus du déclencheur — un `topStart` le poserait à l'autre
@@ -684,11 +690,7 @@ class ZChatComposerThinkingToggle extends StatelessWidget {
       // un état, deux surfaces.
       valueListenable: controller.settings,
       builder:
-          (
-            BuildContext context,
-            ZChatGenerationSettings settings,
-            Widget? _,
-          ) {
+          (BuildContext context, ZChatGenerationSettings settings, Widget? _) {
             final bool active = settings.revealThinkingSteps ?? false;
             final String resolved = zChatLabel(
               context,
@@ -726,9 +728,7 @@ class ZChatComposerThinkingToggle extends StatelessWidget {
                     // jamais la seule couleur, jamais la seule sémantique. La
                     // teinte s'y AJOUTE ; le style porte sa propre couleur, il
                     // n'hériterait pas de l'enveloppe de premier plan.
-                    style: active
-                        ? _tinted(styles.chosen, tint)
-                        : styles.plain,
+                    style: active ? _tinted(styles.chosen, tint) : styles.plain,
                     textAlign: TextAlign.start,
                   ),
                 if (badge != null) ...<Widget>[
@@ -782,11 +782,7 @@ class ZChatComposerWebSearchToggle extends StatelessWidget {
       // La même tranche que la feuille — un état, deux surfaces.
       valueListenable: controller.settings,
       builder:
-          (
-            BuildContext context,
-            ZChatGenerationSettings settings,
-            Widget? _,
-          ) {
+          (BuildContext context, ZChatGenerationSettings settings, Widget? _) {
             final bool active =
                 settings.capability(kZChatCapabilityWebSearch) ?? false;
             final String resolved = zChatLabel(
@@ -818,9 +814,7 @@ class ZChatComposerWebSearchToggle extends StatelessWidget {
                 if (labelVisible)
                   Text(
                     resolved,
-                    style: active
-                        ? _tinted(styles.chosen, tint)
-                        : styles.plain,
+                    style: active ? _tinted(styles.chosen, tint) : styles.plain,
                     textAlign: TextAlign.start,
                   ),
               ],
@@ -900,7 +894,11 @@ class ZChatComposerToolsTrigger extends StatelessWidget {
   /// [hasBadge] compte comme un canal VISIBLE : c'est lui qui autorise le
   /// mode compact à masquer le libellé même sans glyphe — et qui le garde
   /// quand le compte est nul, où le badge ne rend rien.
-  Widget _body(BuildContext context, Widget? counter, {required bool hasBadge}) {
+  Widget _body(
+    BuildContext context,
+    Widget? counter, {
+    required bool hasBadge,
+  }) {
     final String resolved = zChatLabel(context, kZChatLabelTools);
     final Widget? face = glyph;
     final bool labelVisible = _labelVisible(
@@ -1102,8 +1100,7 @@ class _ZChatComposerEffortSelectorState
                 if (face != null) ExcludeSemantics(child: face),
                 if (face != null && labelVisible)
                   const SizedBox(width: kZChatSettingsReferenceMarkGap),
-                if (labelVisible)
-                  Text(resolved, textAlign: TextAlign.start),
+                if (labelVisible) Text(resolved, textAlign: TextAlign.start),
               ],
             ),
           ),
@@ -1115,8 +1112,7 @@ class _ZChatComposerEffortSelectorState
   Widget _overlay(BuildContext context) {
     final double gap = widget.spacing ?? _gapOf(context);
     final TextDirection direction = Directionality.of(context);
-    final ZChatGenerationSettings settings =
-        widget.controller.settings.value;
+    final ZChatGenerationSettings settings = widget.controller.settings.value;
     final ({TextStyle plain, TextStyle chosen}) styles = _emphasisStyles(
       context,
     );
@@ -1264,10 +1260,7 @@ class ZChatComposerStopTarget extends StatelessWidget {
       valueListenable: controller.activeRequests,
       builder: (BuildContext context, List<String> ids, Widget? _) {
         if (ids.isEmpty) return const SizedBox.shrink();
-        final String resolved = zChatLabel(
-          context,
-          kZChatLabelStopGeneration,
-        );
+        final String resolved = zChatLabel(context, kZChatLabelStopGeneration);
         final Widget? face = glyph;
         final bool labelVisible = _labelVisible(
           showLabel: showLabel,
@@ -1403,65 +1396,62 @@ class ZChatComposerStatusBand extends StatelessWidget {
       // LA tranche d'annonce, et elle seule — jamais les messages, jamais la
       // frappe (invariant AD-2).
       valueListenable: status,
-      builder:
-          (BuildContext context, ZChatComposerStatus? value, Widget? _) {
-            if (value == null) return const SizedBox.shrink();
-            final String message =
-                value.message ?? zChatLabel(context, value.messageKey!);
-            final Widget? face = glyphs?[value.severity];
-            final Color? accent = accents?[value.severity];
-            final ZChatComposerPickerAction? action = value.action;
-            final Widget row = Row(
-              children: <Widget>[
-                if (face != null) ...<Widget>[
-                  ExcludeSemantics(child: face),
-                  const SizedBox(width: kZChatSettingsReferenceMarkGap),
-                ],
-                Expanded(
-                  child: Semantics(
-                    // L'annonce est ANNONCÉE, pas seulement affichée : une
-                    // bande d'état qui n'existe qu'à l'écran est muette pour
-                    // un lecteur d'écran (invariant AD-13).
-                    liveRegion: true,
-                    label: message,
-                    excludeSemantics: true,
-                    child: Text(
-                      message,
-                      textAlign: TextAlign.start,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
+      builder: (BuildContext context, ZChatComposerStatus? value, Widget? _) {
+        if (value == null) return const SizedBox.shrink();
+        final String message =
+            value.message ?? zChatLabel(context, value.messageKey!);
+        final Widget? face = glyphs?[value.severity];
+        final Color? accent = accents?[value.severity];
+        final ZChatComposerPickerAction? action = value.action;
+        final Widget row = Row(
+          children: <Widget>[
+            if (face != null) ...<Widget>[
+              ExcludeSemantics(child: face),
+              const SizedBox(width: kZChatSettingsReferenceMarkGap),
+            ],
+            Expanded(
+              child: Semantics(
+                // L'annonce est ANNONCÉE, pas seulement affichée : une
+                // bande d'état qui n'existe qu'à l'écran est muette pour
+                // un lecteur d'écran (invariant AD-13).
+                liveRegion: true,
+                label: message,
+                excludeSemantics: true,
+                child: Text(
+                  message,
+                  textAlign: TextAlign.start,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                if (action != null)
-                  _ZChatComposerBandTarget(
-                    semanticsLabel:
-                        action.label ??
-                        zChatLabel(context, action.labelKey!),
-                    onTap: action.onTap,
-                    foreground: accent,
-                    children: <Widget>[
-                      if (action.icon == null)
-                        Text(
-                          action.label ??
-                              zChatLabel(context, action.labelKey!),
-                          textAlign: TextAlign.start,
-                        )
-                      else
-                        ExcludeSemantics(child: action.icon!),
-                    ],
-                  ),
-              ],
-            );
-            return Padding(
-              padding: ZChatComposerReference.statusBandPadding,
-              // Un glyphe d'hôte est opaque : seule une enveloppe de premier
-              // plan peut le teinter, et c'est la primitive du socle qui le
-              // fait — jamais un `IconTheme` coloré posé ici.
-              child: accent == null
-                  ? row
-                  : ZForegroundOverride(color: accent, child: row),
-            );
-          },
+              ),
+            ),
+            if (action != null)
+              _ZChatComposerBandTarget(
+                semanticsLabel:
+                    action.label ?? zChatLabel(context, action.labelKey!),
+                onTap: action.onTap,
+                foreground: accent,
+                children: <Widget>[
+                  if (action.icon == null)
+                    Text(
+                      action.label ?? zChatLabel(context, action.labelKey!),
+                      textAlign: TextAlign.start,
+                    )
+                  else
+                    ExcludeSemantics(child: action.icon!),
+                ],
+              ),
+          ],
+        );
+        return Padding(
+          padding: ZChatComposerReference.statusBandPadding,
+          // Un glyphe d'hôte est opaque : seule une enveloppe de premier
+          // plan peut le teinter, et c'est la primitive du socle qui le
+          // fait — jamais un `IconTheme` coloré posé ici.
+          child: accent == null
+              ? row
+              : ZForegroundOverride(color: accent, child: row),
+        );
+      },
     );
   }
 }
@@ -1548,21 +1538,20 @@ class ZChatComposerSendControl extends StatelessWidget {
                 return ValueListenableBuilder<bool>(
                   // Tranche 3 — la préparation d'hôte.
                   valueListenable: busy ?? _kZChatNeverBusy,
-                  builder:
-                      (BuildContext context, bool isBusy, Widget? _) {
-                        final ZChatComposerSendState state =
-                            ZChatComposerSendState.resolve(
-                              streaming: false,
-                              busy: isBusy,
-                              editing: session != null,
-                            );
-                        return ZChatComposerSendTarget(
-                          slot: slot,
-                          chrome: chrome,
-                          state: state,
-                          child: glyphs.resolve(state),
+                  builder: (BuildContext context, bool isBusy, Widget? _) {
+                    final ZChatComposerSendState state =
+                        ZChatComposerSendState.resolve(
+                          streaming: false,
+                          busy: isBusy,
+                          editing: session != null,
                         );
-                      },
+                    return ZChatComposerSendTarget(
+                      slot: slot,
+                      chrome: chrome,
+                      state: state,
+                      child: glyphs.resolve(state),
+                    );
+                  },
                 );
               },
         );
@@ -1601,56 +1590,49 @@ class ZChatComposerEditingBanner extends StatelessWidget {
     return ValueListenableBuilder<ZChatEditingSession?>(
       // LA tranche du mode édition, et elle seule.
       valueListenable: controller.editing,
-      builder:
-          (BuildContext context, ZChatEditingSession? session, Widget? _) {
-            if (session == null) return const SizedBox.shrink();
-            final String title = zChatLabel(context, kZChatLabelEditing);
-            final String cancel = zChatLabel(
-              context,
-              kZChatLabelEditingCancel,
-            );
-            final Widget? face = glyph;
-            return Padding(
-              padding: ZChatComposerReference.editingBannerPadding,
-              child: Row(
+      builder: (BuildContext context, ZChatEditingSession? session, Widget? _) {
+        if (session == null) return const SizedBox.shrink();
+        final String title = zChatLabel(context, kZChatLabelEditing);
+        final String cancel = zChatLabel(context, kZChatLabelEditingCancel);
+        final Widget? face = glyph;
+        return Padding(
+          padding: ZChatComposerReference.editingBannerPadding,
+          child: Row(
+            children: <Widget>[
+              if (face != null) ...<Widget>[
+                ExcludeSemantics(child: face),
+                const SizedBox(width: kZChatSettingsReferenceMarkGap),
+              ],
+              Expanded(
+                child: Semantics(
+                  label: title,
+                  excludeSemantics: true,
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.start,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              _ZChatComposerBandTarget(
+                // La cible de sortie est déclarée par la référence, et la
+                // primitive l'écrête au plancher : compacte visuellement,
+                // jamais compacte au toucher.
+                minTarget: ZChatComposerReference.editingCancelTargetSize,
+                semanticsLabel: cancel,
+                // Le verbe EXISTANT du contrôleur — la saisie d'avant
+                // l'édition est restituée par lui.
+                onTap: controller.cancelEditing,
                 children: <Widget>[
-                  if (face != null) ...<Widget>[
-                    ExcludeSemantics(child: face),
-                    const SizedBox(
-                      width: kZChatSettingsReferenceMarkGap,
-                    ),
-                  ],
-                  Expanded(
-                    child: Semantics(
-                      label: title,
-                      excludeSemantics: true,
-                      child: Text(
-                        title,
-                        textAlign: TextAlign.start,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                  _ZChatComposerBandTarget(
-                    // La cible de sortie est déclarée par la référence, et la
-                    // primitive l'écrête au plancher : compacte visuellement,
-                    // jamais compacte au toucher.
-                    minTarget:
-                        ZChatComposerReference.editingCancelTargetSize,
-                    semanticsLabel: cancel,
-                    // Le verbe EXISTANT du contrôleur — la saisie d'avant
-                    // l'édition est restituée par lui.
-                    onTap: controller.cancelEditing,
-                    children: <Widget>[
-                      cancelGlyph == null
-                          ? Text(cancel, textAlign: TextAlign.start)
-                          : ExcludeSemantics(child: cancelGlyph!),
-                    ],
-                  ),
+                  cancelGlyph == null
+                      ? Text(cancel, textAlign: TextAlign.start)
+                      : ExcludeSemantics(child: cancelGlyph!),
                 ],
               ),
-            );
-          },
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -1822,7 +1804,7 @@ class ZChatComposerSuggestionsBand extends StatelessWidget {
   /// Glyphe d'HÔTE par proposition. `null` — ou un rendu `null` — signifie
   /// aucun glyphe (AD-4).
   final Widget? Function(BuildContext context, ZChatSuggestion suggestion)?
-      glyphBuilder;
+  glyphBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -1831,63 +1813,59 @@ class ZChatComposerSuggestionsBand extends StatelessWidget {
       // jamais la frappe : une proposition qui arrive ne doit pas
       // reconstruire le champ de saisie (invariant AD-2).
       valueListenable: suggestions,
-      builder:
-          (BuildContext context, List<ZChatSuggestion> value, Widget? _) {
-            if (value.isEmpty) return const SizedBox.shrink();
-            return Padding(
-              padding: ZChatComposerReference.suggestionsBandPadding,
-              child: SizedBox(
-                height: ZChatComposerReference.suggestionsBandHeight,
-                child: Semantics(
-                  // `container: true` : la bande forme SON nœud et laisse
-                  // chaque proposition former le sien. Sans lui, l'étiquette
-                  // fusionnerait dans le parent et les boutons
-                  // disparaîtraient de l'arbre sémantique.
-                  container: true,
-                  label: zChatLabel(context, kZChatLabelSuggestions),
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: value.length,
-                    itemBuilder: (BuildContext context, int i) {
-                      final ZChatSuggestion s = value[i];
-                      final Widget? face = glyphBuilder?.call(context, s);
-                      return Padding(
-                        padding: EdgeInsetsDirectional.only(
-                          end: i == value.length - 1
-                              ? 0
-                              : ZChatComposerReference.suggestionsEndGap,
+      builder: (BuildContext context, List<ZChatSuggestion> value, Widget? _) {
+        if (value.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: ZChatComposerReference.suggestionsBandPadding,
+          child: SizedBox(
+            height: ZChatComposerReference.suggestionsBandHeight,
+            child: Semantics(
+              // `container: true` : la bande forme SON nœud et laisse
+              // chaque proposition former le sien. Sans lui, l'étiquette
+              // fusionnerait dans le parent et les boutons
+              // disparaîtraient de l'arbre sémantique.
+              container: true,
+              label: zChatLabel(context, kZChatLabelSuggestions),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: value.length,
+                itemBuilder: (BuildContext context, int i) {
+                  final ZChatSuggestion s = value[i];
+                  final Widget? face = glyphBuilder?.call(context, s);
+                  return Padding(
+                    padding: EdgeInsetsDirectional.only(
+                      end: i == value.length - 1
+                          ? 0
+                          : ZChatComposerReference.suggestionsEndGap,
+                    ),
+                    child: _ZChatComposerBandTarget(
+                      semanticsLabel: s.content,
+                      onTap: () => onSelect(s),
+                      children: <Widget>[
+                        if (face != null) ...<Widget>[
+                          ExcludeSemantics(child: face),
+                          const SizedBox(width: kZChatSettingsReferenceMarkGap),
+                        ],
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: ZChatComposerReference.suggestionMaxWidth,
+                          ),
+                          child: Text(
+                            s.content,
+                            textAlign: TextAlign.start,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        child: _ZChatComposerBandTarget(
-                          semanticsLabel: s.content,
-                          onTap: () => onSelect(s),
-                          children: <Widget>[
-                            if (face != null) ...<Widget>[
-                              ExcludeSemantics(child: face),
-                              const SizedBox(
-                                width: kZChatSettingsReferenceMarkGap,
-                              ),
-                            ],
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                maxWidth:
-                                    ZChatComposerReference.suggestionMaxWidth,
-                              ),
-                              child: Text(
-                                s.content,
-                                textAlign: TextAlign.start,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                      ],
+                    ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -2071,7 +2049,9 @@ Widget _toolChipBody(
   // « pourquoi » passe avant le « où l'on en est » — même arbitrage que le
   // sous-titre des tuiles de réglages.
   final String? reasonToken = resolved.disabledReasonToken;
-  final String? reason = reasonToken == null ? null : reasonOf?.call(reasonToken);
+  final String? reason = reasonToken == null
+      ? null
+      : reasonOf?.call(reasonToken);
   final String? semanticsValue = reason ?? entry.describeState();
   return _ZChatComposerBandTarget(
     semanticsLabel: resolvedLabel,
@@ -2190,11 +2170,7 @@ class ZChatComposerToolChip extends StatelessWidget {
       // LA tranche de cette entrée, et elle seule (invariant AD-2).
       valueListenable: controller.entryOf(toolKey),
       builder:
-          (
-            BuildContext context,
-            ZChatToolResolvedEntry? resolved,
-            Widget? _,
-          ) {
+          (BuildContext context, ZChatToolResolvedEntry? resolved, Widget? _) {
             final ZChatToolEntry? entry = resolved?.entry;
             final int? count = entry == null
                 ? null
@@ -2286,11 +2262,7 @@ class ZChatComposerCycleChip extends StatelessWidget {
       // LA tranche de cette entrée, et elle seule (invariant AD-2).
       valueListenable: controller.entryOf(toolKey),
       builder:
-          (
-            BuildContext context,
-            ZChatToolResolvedEntry? resolved,
-            Widget? _,
-          ) {
+          (BuildContext context, ZChatToolResolvedEntry? resolved, Widget? _) {
             final ZChatToolEntry? entry = resolved?.entry;
             final ZChatToolState? state = entry?.state;
             // Une nature étrangère n'est pas la sienne : elle s'efface au

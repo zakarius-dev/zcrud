@@ -94,7 +94,7 @@ class ZChatConversationView extends StatelessWidget {
   final ZChatMessageSlotBuilder? thinkingBuilder;
 
   /// Renvoi `[n]` activé. `null` : les crochets restent du texte.
-  final void Function(int index)? onCitationTap;
+  final ZChatCitationTap? onCitationTap;
 
   /// Créneau d'actions par message — relayé tel quel à la fabrique de tuile
   /// unique. `null` (défaut) donne un rendu strictement inchangé. Cf.
@@ -216,7 +216,7 @@ class _ZChatList extends StatelessWidget {
   final bool reverse;
   final ZChatMessageSlotBuilder? identityBuilder;
   final ZChatMessageSlotBuilder? thinkingBuilder;
-  final void Function(int index)? onCitationTap;
+  final ZChatCitationTap? onCitationTap;
   final ZChatMessageSlotBuilder? actionsBuilder;
   final ZChatTileShell? shell;
 
@@ -234,7 +234,9 @@ class _ZChatList extends StatelessWidget {
         // il n'existe aucun second endroit où les brancher.
         identityBuilder: identityBuilder,
         thinkingBuilder: thinkingBuilder,
-        onCitationTap: onCitationTap,
+        onCitationTap: onCitationTap == null
+            ? null
+            : (int index) => onCitationTap!(message, index),
         actionsBuilder: actionsBuilder,
         shell: shell,
         // Le SUJET du tour, résolu ici : c'est le seul endroit qui voit le
@@ -364,7 +366,7 @@ class _ZStreamingTile extends StatelessWidget {
   final ZChatController controller;
   final String requestId;
   final ZChatMessageSlotBuilder? thinkingBuilder;
-  final void Function(int index)? onCitationTap;
+  final ZChatCitationTap? onCitationTap;
 
   @override
   Widget build(BuildContext context) {
@@ -386,17 +388,40 @@ class _ZStreamingTile extends StatelessWidget {
         );
       }
     }
-    // Un bloc de texte vide porteur du canal : c'est la tranche qui porte
-    // le contenu, pas la valeur figée du bloc. L'abonnement est pris sous
-    // le seam, jamais ici.
-    final Widget body = ZChatBlockView(
-      request: ZChatBlockRenderRequest(
-        block: const ZTextBlock(),
-        message: ghost,
-        isStreaming: true,
-        streamingText: controller.streamText(requestId),
-        onCitationTap: onCitationTap,
-      ),
+    final ZChatCitationTap? cite = onCitationTap;
+    final Widget body = ValueListenableBuilder<List<ZContentBlock>>(
+      valueListenable: controller.streamBlocks(requestId),
+      builder: (BuildContext context, List<ZContentBlock> blocks, Widget? _) {
+        if (blocks.isEmpty) {
+          return ZChatBlockView(
+            request: ZChatBlockRenderRequest(
+              block: const ZTextBlock(),
+              message: ghost,
+              isStreaming: true,
+              streamingText: controller.streamText(requestId),
+              onCitationTap: cite == null
+                  ? null
+                  : (int index) => cite(ghost, index),
+            ),
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (final ZContentBlock block in blocks)
+              ZChatBlockView(
+                request: ZChatBlockRenderRequest(
+                  block: block,
+                  message: ghost,
+                  onCitationTap: cite == null
+                      ? null
+                      : (int index) => cite(ghost, index),
+                ),
+              ),
+          ],
+        );
+      },
     );
     return Semantics(
       label: zChatLabel(context, kZChatLabelStreaming),

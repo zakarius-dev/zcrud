@@ -78,9 +78,13 @@ void main() {
         ),
       );
       await tester.pumpWidget(mount(const <ZChatModelOption>[]));
-      expect(find.byType(ZChatComposerModelSelector), findsNothing,
-          reason: '🔴 un hôte sans option ne doit voir AUCUNE affordance — '
-              'pas même un SizedBox inerte');
+      expect(
+        find.byType(ZChatComposerModelSelector),
+        findsNothing,
+        reason:
+            '🔴 un hôte sans option ne doit voir AUCUNE affordance — '
+            'pas même un SizedBox inerte',
+      );
       // Non-vacuité : le même montage AVEC options monte bien le sélecteur.
       await tester.pumpWidget(mount(_options));
       expect(find.byType(ZChatComposerModelSelector), findsOneWidget);
@@ -148,10 +152,11 @@ void main() {
       // 2. Emphase PEINTE (CR-74) sur l'actif — style ambiant sur les autres.
       // Le déclencheur montre aussi « Routeur Bravo » : on mesure l'item du
       // MENU (le dernier rendu).
-      final TextStyle active =
-          _painted(tester, find.text('Routeur Bravo').last);
-      final TextStyle idle =
-          _painted(tester, find.text('Routeur Alpha').first);
+      final TextStyle active = _painted(
+        tester,
+        find.text('Routeur Bravo').last,
+      );
+      final TextStyle idle = _painted(tester, find.text('Routeur Alpha').first);
       expect(active.fontWeight, kZChatSettingsReferenceSelectedWeight);
       expect(idle.fontWeight, isNot(kZChatSettingsReferenceSelectedWeight));
       // 3. Le glyphe d'hôte est là, UNE fois.
@@ -160,14 +165,17 @@ void main() {
       await tester.pumpWidget(withActive('routeur-c'));
       await tester.pump();
       expect(selected().single.label, contains('Charlie'));
-      final TextStyle nowActive =
-          _painted(tester, find.text('Routeur Charlie').last);
+      final TextStyle nowActive = _painted(
+        tester,
+        find.text('Routeur Charlie').last,
+      );
       expect(nowActive.fontWeight, kZChatSettingsReferenceSelectedWeight);
     });
 
     testWidgets('MS-R3 — id actif INCONNU du catalogue : libellé générique, '
-        'aucune coche (AD-10, aucune présomption)',
-        (WidgetTester tester) async {
+        'aucune coche (AD-10, aucune présomption)', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(mount(activeId: 'routeur-disparu'));
       expect(tester.takeException(), isNull);
       expect(find.text(_fb(kZChatLabelModelSelector)), findsOneWidget);
@@ -194,33 +202,49 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Routeur Charlie'));
       await tester.pump();
-      expect(received, <String>['routeur-c'],
-          reason: '🔴 c\'est l\'ID qui remonte — l\'hôte le range chez lui '
-              '(`aiRouterId`), le socle ne stocke rien');
-      expect(find.text('Routeur Bravo'), findsNothing,
-          reason: '🔴 le menu doit se refermer après la sélection');
+      expect(
+        received,
+        <String>['routeur-c'],
+        reason:
+            '🔴 c\'est l\'ID qui remonte — l\'hôte le range chez lui '
+            '(`aiRouterId`), le socle ne stocke rien',
+      );
+      expect(
+        find.text('Routeur Bravo'),
+        findsNothing,
+        reason: '🔴 le menu doit se refermer après la sélection',
+      );
     });
 
-    testWidgets('MS-R4 — déclencheur en bas : chaque entrée reste dans l\'écran',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(mount(activeId: 'routeur-b'));
-      await tester.tap(find.text('Routeur Bravo'));
-      await tester.pump();
-      final Size surface = tester.getSize(find.byType(Directionality).first);
-      for (final String label in <String>[
-        'Routeur Alpha',
-        'Routeur Charlie',
-      ]) {
-        final Rect rect = tester.getRect(find.text(label));
-        expect(rect.top, greaterThanOrEqualTo(0),
-            reason: '🔴 « $label » est au-dessus de l\'écran ($rect) — '
-                'intouchable quand le composer est en bas');
-        expect(rect.bottom, lessThanOrEqualTo(surface.height + 0.1),
-            reason: '🔴 « $label » dépasse le bas de l\'écran ($rect)');
-        expect(rect.left, greaterThanOrEqualTo(0));
-        expect(rect.right, lessThanOrEqualTo(surface.width + 0.1));
-      }
-    });
+    testWidgets(
+      'MS-R4 — déclencheur en bas : chaque entrée reste dans l\'écran',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(mount(activeId: 'routeur-b'));
+        await tester.tap(find.text('Routeur Bravo'));
+        await tester.pump();
+        final Size surface = tester.getSize(find.byType(Directionality).first);
+        for (final String label in <String>[
+          'Routeur Alpha',
+          'Routeur Charlie',
+        ]) {
+          final Rect rect = tester.getRect(find.text(label));
+          expect(
+            rect.top,
+            greaterThanOrEqualTo(0),
+            reason:
+                '🔴 « $label » est au-dessus de l\'écran ($rect) — '
+                'intouchable quand le composer est en bas',
+          );
+          expect(
+            rect.bottom,
+            lessThanOrEqualTo(surface.height + 0.1),
+            reason: '🔴 « $label » dépasse le bas de l\'écran ($rect)',
+          );
+          expect(rect.left, greaterThanOrEqualTo(0));
+          expect(rect.right, lessThanOrEqualTo(surface.width + 0.1));
+        }
+      },
+    );
   });
 
   group('🔴 MS-SM1 — le sélecteur et la liste s\'IGNORENT (AD-2)', () {
@@ -237,8 +261,9 @@ void main() {
     // 2. ouvrir/fermer le menu ne REMONTE pas les tuiles de la liste
     //    (identité d'`Element` — c'est le remontage qui perd l'état).
     testWidgets('un jeton de flux qui arrive ne reconstruit PAS le '
-        'sélecteur ; ouvrir le menu ne REMONTE pas la liste',
-        (WidgetTester tester) async {
+        'sélecteur ; ouvrir le menu ne REMONTE pas la liste', (
+      WidgetTester tester,
+    ) async {
       final rig = buildController(initialMessages: thread(2));
       addTearDown(rig.controller.dispose);
       int triggerBuilds = 0;
@@ -256,26 +281,34 @@ void main() {
                   options: _options,
                   activeId: 'routeur-a',
                   onSelect: (String _) {},
-                  triggerBuilder: (BuildContext context,
-                      ZChatModelOption? active, bool open, VoidCallback t) {
-                    triggerBuilds++;
-                    return GestureDetector(
-                      onTap: t,
-                      child: const Text('déclencheur-sonde'),
-                    );
-                  },
+                  triggerBuilder:
+                      (
+                        BuildContext context,
+                        ZChatModelOption? active,
+                        bool open,
+                        VoidCallback t,
+                      ) {
+                        triggerBuilds++;
+                        return GestureDetector(
+                          onTap: t,
+                          child: const Text('déclencheur-sonde'),
+                        );
+                      },
                 ),
               ),
             ],
           ),
         ),
       );
-      expect(tester.widgetList(find.byType(ZChatMessageTile)).length,
-          greaterThan(0),
-          reason: '🔴 SUJET NON MONTÉ : sans tuile, la mesure serait vide');
+      expect(
+        tester.widgetList(find.byType(ZChatMessageTile)).length,
+        greaterThan(0),
+        reason: '🔴 SUJET NON MONTÉ : sans tuile, la mesure serait vide',
+      );
       expect(triggerBuilds, 1);
-      final Set<Element> tileElements =
-          tester.elementList(find.byType(ZChatMessageTile)).toSet();
+      final Set<Element> tileElements = tester
+          .elementList(find.byType(ZChatMessageTile))
+          .toSet();
       // 1. Un tour de conversation COMPLET arrive — le sélecteur ne bouge pas.
       rig.controller.composer.text = 'question';
       await tester.pump();
@@ -288,18 +321,28 @@ void main() {
       await turn;
       await tester.pump();
       await tester.pump();
-      expect(tester.widgetList(find.byType(ZChatMessageTile)).length,
-          greaterThan(2),
-          reason: '🔴 le tour n\'a pas produit de nouvelle tuile : la mesure '
-              'ne prouverait rien');
-      expect(triggerBuilds, 1,
-          reason: '🔴 le sélecteur s\'est reconstruit à l\'arrivée d\'un '
-              'message : il est ABONNÉ à une tranche du contrôleur (AD-2)');
+      expect(
+        tester.widgetList(find.byType(ZChatMessageTile)).length,
+        greaterThan(2),
+        reason:
+            '🔴 le tour n\'a pas produit de nouvelle tuile : la mesure '
+            'ne prouverait rien',
+      );
+      expect(
+        triggerBuilds,
+        1,
+        reason:
+            '🔴 le sélecteur s\'est reconstruit à l\'arrivée d\'un '
+            'message : il est ABONNÉ à une tranche du contrôleur (AD-2)',
+      );
       // 2. Ouvrir puis fermer le menu ne REMONTE pas les tuiles initiales.
       await tester.tap(find.text('déclencheur-sonde'));
       await tester.pump();
-      expect(find.text('Routeur Charlie'), findsOneWidget,
-          reason: '🔴 le menu ne s\'est pas ouvert : mesure vide');
+      expect(
+        find.text('Routeur Charlie'),
+        findsOneWidget,
+        reason: '🔴 le menu ne s\'est pas ouvert : mesure vide',
+      );
       await tester.tap(find.text('Routeur Charlie').last);
       await tester.pump();
       expect(
@@ -308,7 +351,8 @@ void main() {
             .toSet()
             .containsAll(tileElements),
         isTrue,
-        reason: '🔴 ouvrir le menu a REMONTÉ des tuiles de la liste — perte '
+        reason:
+            '🔴 ouvrir le menu a REMONTÉ des tuiles de la liste — perte '
             'd\'état de dépli/sélection (SM-1)',
       );
     });
@@ -330,8 +374,9 @@ void main() {
             direction: dir,
           ),
         );
-        final Size trigger =
-            tester.getSize(find.byType(ZChatComposerModelSelector));
+        final Size trigger = tester.getSize(
+          find.byType(ZChatComposerModelSelector),
+        );
         expect(trigger.height, greaterThanOrEqualTo(48), reason: '$dir');
         expect(trigger.width, greaterThanOrEqualTo(48), reason: '$dir');
         await tester.tap(find.text('Routeur Alpha'));
@@ -404,15 +449,66 @@ void main() {
           }
         }
       }
-      expect(scanned, greaterThan(1000),
-          reason: '🔴 GARDE VACUELLE : balayage trop court');
-      expect(offenders, isEmpty,
-          reason: '🔴 un nom de modèle d\'IA est entré au socle — le contrat '
-              '`ZChatModelOption` est OPAQUE (arbitrage 2).\n'
-              '${offenders.join('\n')}');
+      expect(
+        scanned,
+        greaterThan(1000),
+        reason: '🔴 GARDE VACUELLE : balayage trop court',
+      );
+      expect(
+        offenders,
+        isEmpty,
+        reason:
+            '🔴 un nom de modèle d\'IA est entré au socle — le contrat '
+            '`ZChatModelOption` est OPAQUE (arbitrage 2).\n'
+            '${offenders.join('\n')}',
+      );
       // Contre-preuve : le motif VOIT un nom s'il entrait.
       expect(names.hasMatch("const x = 'Polaris';"), isTrue);
       expect(names.hasMatch("label: 'Mini',"), isTrue);
     });
   });
+
+  testWidgets('360 dp, menu en bas, LTR et RTL : rien ne sort de l\'écran', (
+    WidgetTester tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 640);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const String long =
+        'Option dont le libelle depasse largement la largeur utile';
+
+    Future<void> open(TextDirection direction) async {
+      await tester.pumpWidget(
+        harness(
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: ZChatComposerModelSelector(
+              activeId: 'a',
+              onSelect: _ignore,
+              options: <ZChatModelOption>[
+                ZChatModelOption(id: 'a', label: 'Court'),
+                ZChatModelOption(id: 'b', label: long),
+              ],
+            ),
+          ),
+          direction: direction,
+        ),
+      );
+      await tester.tap(find.text('Court').first);
+      await tester.pump();
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      final Rect rect = tester.getRect(find.text(long));
+      expect(rect.left, greaterThanOrEqualTo(0));
+      expect(rect.right, lessThanOrEqualTo(360));
+      expect(rect.bottom, lessThanOrEqualTo(640));
+    }
+
+    await open(TextDirection.ltr);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await open(TextDirection.rtl);
+  });
 }
+
+void _ignore(String _) {}

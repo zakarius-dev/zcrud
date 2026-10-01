@@ -49,11 +49,8 @@ import 'package:zcrud_core/zcrud_core.dart';
 /// écartée (invariant AD-10) — jamais avalée silencieusement. Miroir de
 /// `ZFirestoreLog` (aucun port `ZLogger` n'existe dans `zcrud_core` — hors
 /// périmètre).
-typedef ZLocalStoreLog = void Function(
-  String message, {
-  Object? error,
-  StackTrace? stackTrace,
-});
+typedef ZLocalStoreLog =
+    void Function(String message, {Object? error, StackTrace? stackTrace});
 
 void _noopLog(String message, {Object? error, StackTrace? stackTrace}) {}
 
@@ -78,17 +75,17 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
     ZLocalStoreLog? logger,
     ZClock? clock,
     bool ownsBox = false,
-  })  : _box = box,
-        _kind = kind,
-        _fromMap = fromMap,
-        _toMap = toMap,
-        _fromMapSafe = fromMapSafe,
-        _idFactory = idFactory ?? _defaultIdFactory,
-        _log = logger ?? _noopLog,
-        // Source de temps de la clé LWW. Défaut = horloge système.
-        // Un hôte peut injecter une horloge corrigée.
-        _clock = clock ?? ZSystemClock.utc,
-        _ownsBox = ownsBox;
+  }) : _box = box,
+       _kind = kind,
+       _fromMap = fromMap,
+       _toMap = toMap,
+       _fromMapSafe = fromMapSafe,
+       _idFactory = idFactory ?? _defaultIdFactory,
+       _log = logger ?? _noopLog,
+       // Source de temps de la clé LWW. Défaut = horloge système.
+       // Un hôte peut injecter une horloge corrigée.
+       _clock = clock ?? ZSystemClock.utc,
+       _ownsBox = ownsBox;
 
   /// Ouvre (ou réutilise) la box du [kind] via Hive puis construit l'adaptateur
   /// **sans** exposer de type Hive. Prod : `Hive.initFlutter()` (app) doit avoir
@@ -102,8 +99,9 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
     String Function()? idFactory,
     ZLocalStoreLog? logger,
     ZClock? clock,
+    String? scope,
   }) async {
-    final box = await Hive.openBox<dynamic>(boxNameFor(kind));
+    final box = await Hive.openBox<dynamic>(boxNameFor(kind, scope: scope));
     return HiveZLocalStore<T>(
       box: box,
       kind: kind,
@@ -117,8 +115,16 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
     );
   }
 
-  /// Nom de box **dérivé du [kind]** (une box par entité/kind).
-  static String boxNameFor(String kind) => 'zcrud_$kind';
+  /// Nom de box dérivé du [kind].
+  ///
+  /// [scope] nul ou vide conserve `zcrud_$kind`. Un scope non vide — en
+  /// pratique l'identité de l'utilisateur — ouvre une box distincte
+  /// `zcrud_${kind}__$scope`, pour qu'un changement de compte ne relise pas
+  /// le cache d'un autre.
+  static String boxNameFor(String kind, {String? scope}) {
+    if (scope == null || scope.isEmpty) return 'zcrud_$kind';
+    return 'zcrud_${kind}__$scope';
+  }
 
   final Box<dynamic> _box;
   final String _kind;
@@ -127,6 +133,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   final T? Function(Map<String, dynamic> map)? _fromMapSafe;
   final String Function() _idFactory;
   final ZLocalStoreLog _log;
+
   /// Source de temps de la clé LWW `updated_at`.
   final ZClock _clock;
   final bool _ownsBox;
@@ -203,8 +210,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   Map<String, dynamic> _encode(T value, String id) {
     final map = Map<String, dynamic>.of(_toMap(value));
     map[_kId] = id;
-    final meta =
-        ZSyncMeta(updatedAt: _clock(), isDeleted: false).toJson();
+    final meta = ZSyncMeta(updatedAt: _clock(), isDeleted: false).toJson();
     map[_kUpdatedAt] = meta[_kUpdatedAt];
     map[_kIsDeleted] = false;
     return map;
@@ -223,8 +229,11 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
     try {
       decoded = jsonDecode(stored);
     } on FormatException catch (e, s) {
-      _log('entrée Hive JSON illisible (kind=$_kind, id=$id) — écartée',
-          error: e, stackTrace: s);
+      _log(
+        'entrée Hive JSON illisible (kind=$_kind, id=$id) — écartée',
+        error: e,
+        stackTrace: s,
+      );
       return null;
     }
     if (decoded is! Map<String, dynamic>) {
@@ -250,8 +259,11 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
     try {
       return _fromMap(map);
     } on Object catch (e, s) {
-      _log('entrée non décodable (kind=$_kind, id=$id) — écartée',
-          error: e, stackTrace: s);
+      _log(
+        'entrée non décodable (kind=$_kind, id=$id) — écartée',
+        error: e,
+        stackTrace: s,
+      );
       return null;
     }
   }
@@ -331,20 +343,30 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
               try {
                 controller.add(_snapshot());
               } on Object catch (e, s) {
-                _log('événement hive en erreur (kind=$_kind)',
-                    error: e, stackTrace: s);
+                _log(
+                  'événement hive en erreur (kind=$_kind)',
+                  error: e,
+                  stackTrace: s,
+                );
                 controller.addError(_toFailure(e));
               }
             },
             onError: (Object e, StackTrace s) {
-              _log('flux hive en erreur (kind=$_kind)', error: e, stackTrace: s);
+              _log(
+                'flux hive en erreur (kind=$_kind)',
+                error: e,
+                stackTrace: s,
+              );
               controller.addError(_toFailure(e));
             },
           );
           _subs.add(sub!);
         } on Object catch (e, s) {
-          _log('construction du flux hive en erreur (kind=$_kind)',
-              error: e, stackTrace: s);
+          _log(
+            'construction du flux hive en erreur (kind=$_kind)',
+            error: e,
+            stackTrace: s,
+          );
           controller.addError(_toFailure(e));
         }
       },
@@ -372,37 +394,37 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
 
   @override
   Future<ZResult<T>> getById(String id) => _guard(() async {
-        if (!_box.containsKey(id)) {
-          return Left<ZFailure, T>(
-            ZNotFoundFailure('Entité introuvable', id: id, entity: _kind),
-          );
-        }
-        final map = _rawMap(id, _box.get(id));
-        if (map == null) {
-          return Left<ZFailure, T>(
-            ZNotFoundFailure('Entrée corrompue', id: id, entity: _kind),
-          );
-        }
-        if (!_isVisible(map)) {
-          return Left<ZFailure, T>(
-            ZNotFoundFailure(
-              map[_kIsDeleted] == true
-                  ? 'Entité soft-deleted'
-                  : 'Entité non visible (is_deleted absent — hors invariant '
-                      'zcrud-native)',
-              id: id,
-              entity: _kind,
-            ),
-          );
-        }
-        final entity = _decodeEntity(id, map);
-        if (entity == null) {
-          return Left<ZFailure, T>(
-            ZNotFoundFailure('Entrée corrompue', id: id, entity: _kind),
-          );
-        }
-        return Right<ZFailure, T>(entity);
-      });
+    if (!_box.containsKey(id)) {
+      return Left<ZFailure, T>(
+        ZNotFoundFailure('Entité introuvable', id: id, entity: _kind),
+      );
+    }
+    final map = _rawMap(id, _box.get(id));
+    if (map == null) {
+      return Left<ZFailure, T>(
+        ZNotFoundFailure('Entrée corrompue', id: id, entity: _kind),
+      );
+    }
+    if (!_isVisible(map)) {
+      return Left<ZFailure, T>(
+        ZNotFoundFailure(
+          map[_kIsDeleted] == true
+              ? 'Entité soft-deleted'
+              : 'Entité non visible (is_deleted absent — hors invariant '
+                    'zcrud-native)',
+          id: id,
+          entity: _kind,
+        ),
+      );
+    }
+    final entity = _decodeEntity(id, map);
+    if (entity == null) {
+      return Left<ZFailure, T>(
+        ZNotFoundFailure('Entrée corrompue', id: id, entity: _kind),
+      );
+    }
+    return Right<ZFailure, T>(entity);
+  });
 
   // ───────────────────────── Sync offline-first ───────────────────────
 
@@ -415,20 +437,18 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   /// stable par `id` (ordre total). Erreur d'accès → `Left(ZCacheFailure)`.
   @override
   Future<ZResult<List<ZSyncEntry<T>>>> syncEntries() => _guard(() async {
-        final out = <ZSyncEntry<T>>[];
-        for (final key in _box.keys) {
-          final id = key.toString();
-          final map = _rawMap(id, _box.get(key));
-          if (map == null) continue; // corrompu → écarté + loggé par _rawMap
-          final entity = _decodeEntity(id, map);
-          if (entity == null) continue; // non décodable → écarté (AD-10)
-          out.add(
-            ZSyncEntry<T>(entity: entity, meta: ZSyncMeta.fromJson(map)),
-          );
-        }
-        out.sort((a, b) => (a.id ?? '').compareTo(b.id ?? ''));
-        return Right<ZFailure, List<ZSyncEntry<T>>>(out);
-      });
+    final out = <ZSyncEntry<T>>[];
+    for (final key in _box.keys) {
+      final id = key.toString();
+      final map = _rawMap(id, _box.get(key));
+      if (map == null) continue; // corrompu → écarté + loggé par _rawMap
+      final entity = _decodeEntity(id, map);
+      if (entity == null) continue; // non décodable → écarté (AD-10)
+      out.add(ZSyncEntry<T>(entity: entity, meta: ZSyncMeta.fromJson(map)));
+    }
+    out.sort((a, b) => (a.id ?? '').compareTo(b.id ?? ''));
+    return Right<ZFailure, List<ZSyncEntry<T>>>(out);
+  });
 
   /// **Écriture PRÉSERVANT la méta** : écrit l'entité **et** son
   /// [ZSyncMeta] **verbatim** — `updated_at`/`is_deleted` **conservés tels quels**
@@ -438,23 +458,23 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   /// `isDeleted:true` **propage un tombstone**. `box.watch()` réémet le flux.
   @override
   Future<ZResult<Unit>> applyMerged(ZSyncEntry<T> entry) => _guard(() async {
-        final id = entry.entity.id;
-        if (id == null) {
-          return Left<ZFailure, Unit>(
-            ZDomainFailure(
-              'applyMerged requiert une entité matérialisée (id non-null) '
-              '(kind=$_kind)',
-            ),
-          );
-        }
-        final map = Map<String, dynamic>.of(_toMap(entry.entity));
-        map[_kId] = id; // invariant clé↔corps
-        final meta = entry.meta.toJson();
-        map[_kUpdatedAt] = meta[_kUpdatedAt]; // verbatim (peut être null)
-        map[_kIsDeleted] = entry.meta.isDeleted; // verbatim (tombstone possible)
-        await _box.put(id, jsonEncode(map));
-        return Right<ZFailure, Unit>(unit);
-      });
+    final id = entry.entity.id;
+    if (id == null) {
+      return Left<ZFailure, Unit>(
+        ZDomainFailure(
+          'applyMerged requiert une entité matérialisée (id non-null) '
+          '(kind=$_kind)',
+        ),
+      );
+    }
+    final map = Map<String, dynamic>.of(_toMap(entry.entity));
+    map[_kId] = id; // invariant clé↔corps
+    final meta = entry.meta.toJson();
+    map[_kUpdatedAt] = meta[_kUpdatedAt]; // verbatim (peut être null)
+    map[_kIsDeleted] = entry.meta.isDeleted; // verbatim (tombstone possible)
+    await _box.put(id, jsonEncode(map));
+    return Right<ZFailure, Unit>(unit);
+  });
 
   // ───────────────────────── Écritures ─────────────────────────────
 
@@ -464,25 +484,25 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   /// — cohérent avec [putMerged], qui préserve le merge LWW).
   @override
   Future<ZResult<T>> put(T item) => _guard(() async {
-        // Matérialisation de l'éphémère (AD-14, invariant porté par le store).
-        // Consulter `isEphemeral`, pas `id == null` : une entité
-        // dont l'`id` est NON-NULLABLE (ex. `ZMindmap`, `isEphemeral =>
-        // id.isEmpty`) n'est jamais `null` — le test direct la déclarerait à
-        // tort matérialisée et écrirait un document de clé VIDE.
-        final id = item.isEphemeral ? _idFactory() : item.id!;
-        final map = _encode(item, id);
-        await _box.put(id, jsonEncode(map));
+    // Matérialisation de l'éphémère (AD-14, invariant porté par le store).
+    // Consulter `isEphemeral`, pas `id == null` : une entité
+    // dont l'`id` est NON-NULLABLE (ex. `ZMindmap`, `isEphemeral =>
+    // id.isEmpty`) n'est jamais `null` — le test direct la déclarerait à
+    // tort matérialisée et écrirait un document de clé VIDE.
+    final id = item.isEphemeral ? _idFactory() : item.id!;
+    final map = _encode(item, id);
+    await _box.put(id, jsonEncode(map));
 
-        // Round-trip fidèle : relecture + re-décodage de l'entrée persistée.
-        final reread = _rawMap(id, _box.get(id));
-        final decoded = reread == null ? null : _decodeEntity(id, reread);
-        if (decoded == null) {
-          return Left<ZFailure, T>(
-            ZDomainFailure('Entité écrite mais non re-décodable (kind=$_kind)'),
-          );
-        }
-        return Right<ZFailure, T>(decoded);
-      });
+    // Round-trip fidèle : relecture + re-décodage de l'entrée persistée.
+    final reread = _rawMap(id, _box.get(id));
+    final decoded = reread == null ? null : _decodeEntity(id, reread);
+    if (decoded == null) {
+      return Left<ZFailure, T>(
+        ZDomainFailure('Entité écrite mais non re-décodable (kind=$_kind)'),
+      );
+    }
+    return Right<ZFailure, T>(decoded);
+  });
 
   /// Écriture PRÉSERVANTE : fusionne la map de [item] PAR-DESSUS le
   /// document brut existant. Une clé présente en base mais absente de [item]
@@ -495,27 +515,27 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   /// par clé, l'existant-seul survit. Absent en base ⇒ création (= [put]).
   @override
   Future<ZResult<T>> putMerged(T item) => _guard(() async {
-        // Consulter `isEphemeral`, pas `id == null` : une entité
-        // dont l'`id` est NON-NULLABLE (ex. `ZMindmap`, `isEphemeral =>
-        // id.isEmpty`) n'est jamais `null` — le test direct la déclarerait à
-        // tort matérialisée et écrirait un document de clé VIDE.
-        final id = item.isEphemeral ? _idFactory() : item.id!;
-        final encoded = _encode(item, id);
-        final existing = _rawMap(id, _box.get(id));
-        final merged = existing == null
-            ? encoded
-            : <String, dynamic>{...existing, ...encoded};
-        await _box.put(id, jsonEncode(merged));
+    // Consulter `isEphemeral`, pas `id == null` : une entité
+    // dont l'`id` est NON-NULLABLE (ex. `ZMindmap`, `isEphemeral =>
+    // id.isEmpty`) n'est jamais `null` — le test direct la déclarerait à
+    // tort matérialisée et écrirait un document de clé VIDE.
+    final id = item.isEphemeral ? _idFactory() : item.id!;
+    final encoded = _encode(item, id);
+    final existing = _rawMap(id, _box.get(id));
+    final merged = existing == null
+        ? encoded
+        : <String, dynamic>{...existing, ...encoded};
+    await _box.put(id, jsonEncode(merged));
 
-        final reread = _rawMap(id, _box.get(id));
-        final decoded = reread == null ? null : _decodeEntity(id, reread);
-        if (decoded == null) {
-          return Left<ZFailure, T>(
-            ZDomainFailure('Entité fusionnée mais non re-décodable (kind=$_kind)'),
-          );
-        }
-        return Right<ZFailure, T>(decoded);
-      });
+    final reread = _rawMap(id, _box.get(id));
+    final decoded = reread == null ? null : _decodeEntity(id, reread);
+    if (decoded == null) {
+      return Left<ZFailure, T>(
+        ZDomainFailure('Entité fusionnée mais non re-décodable (kind=$_kind)'),
+      );
+    }
+    return Right<ZFailure, T>(decoded);
+  });
 
   @override
   Future<ZResult<Unit>> softDelete(String id) =>
@@ -529,9 +549,9 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   /// tombstone. Idempotent — purger un `id` absent est un succès.
   @override
   Future<ZResult<Unit>> purge(String id) => _guard(() async {
-        await _box.delete(id);
-        return Right<ZFailure, Unit>(unit);
-      });
+    await _box.delete(id);
+    return Right<ZFailure, Unit>(unit);
+  });
 
   /// Bascule `is_deleted` **hors-entité** (aucun champ métier touché), réécrit
   /// `updated_at` (ISO-8601). `id` absent → `Left(ZNotFoundFailure)`. **Jamais**
@@ -558,9 +578,9 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
 
   @override
   Future<ZResult<Unit>> clear() => _guard(() async {
-        await _box.clear();
-        return Right<ZFailure, Unit>(unit);
-      });
+    await _box.clear();
+    return Right<ZFailure, Unit>(unit);
+  });
 
   /// Libère TOUTES les ressources restantes : annule les abonnements `box.watch()`
   /// et ferme les `StreamController` encore vivants (ceux dont le flux a déjà été

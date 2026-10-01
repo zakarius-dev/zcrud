@@ -45,6 +45,24 @@ void main() {
       expect(raster.calls, <String>['x^2']);
     },
   );
+
+  test(
+    'titres, emphase et tableau produisent un pdf, police illisible aussi',
+    () async {
+      final Uint8List bytes = await buildMarkdownPdfBytes(
+        '# Titre\n\n**gras**\n\n- puce\n\n| a | b |\n| --- | --- |\n| 1 | 2 |',
+      );
+      expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+      final Uint8List rtl = await buildMarkdownPdfBytes(
+        'bonjour',
+        options: ZPdfExportOptions(
+          fontBytes: Uint8List.fromList(<int>[1, 2, 3, 4]),
+          rightToLeft: true,
+        ),
+      );
+      expect(String.fromCharCodes(rtl.take(5)), '%PDF-');
+    },
+  );
 }
 
 class _Raster implements ZLatexRasterizer {

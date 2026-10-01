@@ -3,6 +3,29 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.57.0 — 2026-10-01
+
+### Ajouté
+
+- `ZChatController.streamBlocks` expose, pendant le tour, les segments déjà fermés et le texte encore ouvert. La tuile en cours les rend dans cet ordre dès qu'un bloc structuré est arrivé. Un tour encore tout en texte continue de passer par `streamText`.
+- `ZChatCitationTap` sur la vue et les deux écrans : le rappel reçoit le message et l'index (à partir de 1). La tuile et le rendu de bloc gardent `void Function(int)`.
+- Le menu d'actions replié d'une conversation s'ouvre en overlay. `actionsGlyph` remplace le libellé du déclencheur ; le nom accessible de l'action reste annoncé quand une icône tient lieu de texte.
+- `ZTransformPaletteEntry.lockedWhen` laisse une entrée visible mais inactive. La barre appelle `onLocked` et ignore un second geste tant que le futur de `onSelect` n'est pas terminé.
+- `generateForScope` accepte un fil vide : la requête part avec `allowEmptyNotes`. Un sujet exigé et vide est toujours refusé.
+- `ZNotebookSource.errorKey` et `pageCount`. `attach` accepte `fileId`. Le panneau peut confirmer un retrait et propose Actualiser.
+- `ZChatComposerPickerTrigger.enabled` et `ZDefaultChatComposer.pickersEnabled`. Au repos, le menu `+` se désactive tant qu'une requête du contrôleur est en vol.
+
+### Corrigé
+
+- Le menu du sélecteur de modèle reste dans l'écran, dans les deux axes et les deux sens de lecture. Un libellé trop long est tronqué.
+
+### Adaptation
+
+- Un rappel `onCitationTap` passé à l'écran ou à la vue doit accepter `(ZChatMessage message, int index)`. Celui de la tuile ne change pas.
+- Une redéfinition de `ZNotebookSourcesPort.attach` doit accepter `fileId`.
+- `ZTransformPaletteBar.onSelect` renvoie un `Future<void>`.
+- Les hôtes qui redessinaient le tour en cours, le menu de modèle, le menu d'historique, la barre de transformations, le panneau de sources ou le `+` désactivé retirent cette compensation. Voir `docs/handoff-v3.57.0.md`.
+
 ## 3.56.0 — 2026-09-30
 
 ### Ajouté

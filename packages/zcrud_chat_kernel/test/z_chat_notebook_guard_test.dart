@@ -242,7 +242,7 @@ void main() {
       );
       expect(ctor, contains('providerId'), reason: 'le fournisseur est TYPÉ');
       expect(ctor, contains('modelId'));
-      expect(ctor.length, 13, reason: 'garde VACUELLE : $ctor');
+      expect(ctor.length, 14, reason: 'garde VACUELLE : $ctor');
       expect(copy, ctor, reason: 'copyWith ≠ constructeur');
       // Ancrage sur l'égalité de CETTE classe : le fichier porte d'autres
       // `hashCode` (familles d'échec, contenu) qui ne la concernent pas.

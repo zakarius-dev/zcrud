@@ -107,12 +107,12 @@ class ZPdfHeaderSpec {
 
   @override
   int get hashCode => Object.hash(
-        logoBytes == null ? 0 : Object.hashAll(logoBytes!),
-        logoWidth,
-        logoHeight,
-        Object.hashAll(organizationLines),
-        subtitle,
-      );
+    logoBytes == null ? 0 : Object.hashAll(logoBytes!),
+    logoWidth,
+    logoHeight,
+    Object.hashAll(organizationLines),
+    subtitle,
+  );
 }
 
 /// Options de mise en page immuables pour l'export PDF (tabulaire + images).
@@ -125,6 +125,8 @@ class ZPdfExportOptions {
     this.repeatHeader = true,
     this.latexEnabled = true,
     this.header,
+    this.fontBytes,
+    this.rightToLeft = false,
   });
 
   /// Orientation de la/des page(s). Défaut : [ZPdfOrientation.portrait].
@@ -154,6 +156,18 @@ class ZPdfExportOptions {
   /// n'est pas une formule, pas à éviter une perte.
   final bool latexEnabled;
 
+  /// Octets d'une police TrueType fournie par l'hôte.
+  ///
+  /// `null` : Helvetica, qui ne couvre pas les écritures non latines. Une
+  /// police embarquée est le seul moyen de dessiner l'arabe ou une autre
+  /// écriture absente de WinAnsi. Des octets illisibles font retomber le
+  /// rendu sur Helvetica, sans exception.
+  final Uint8List? fontBytes;
+
+  /// Sens du document. `true` aligne le texte sur la fin et demande un
+  /// sens droite-à-gauche au moteur.
+  final bool rightToLeft;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -163,9 +177,29 @@ class ZPdfExportOptions {
           title == other.title &&
           repeatHeader == other.repeatHeader &&
           latexEnabled == other.latexEnabled &&
-          header == other.header;
+          header == other.header &&
+          rightToLeft == other.rightToLeft &&
+          _sameFont(other.fontBytes);
+
+  bool _sameFont(Uint8List? other) {
+    final Uint8List? mine = fontBytes;
+    if (identical(mine, other)) return true;
+    if (mine == null || other == null) return false;
+    if (mine.length != other.length) return false;
+    for (var i = 0; i < mine.length; i++) {
+      if (mine[i] != other[i]) return false;
+    }
+    return true;
+  }
 
   @override
-  int get hashCode =>
-      Object.hash(orientation, title, repeatHeader, latexEnabled, header);
+  int get hashCode => Object.hash(
+    orientation,
+    title,
+    repeatHeader,
+    latexEnabled,
+    header,
+    rightToLeft,
+    fontBytes == null ? 0 : Object.hashAll(fontBytes!),
+  );
 }

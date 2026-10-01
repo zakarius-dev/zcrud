@@ -71,11 +71,8 @@ import 'z_firestore_path_resolver.dart';
 /// best-effort, un document corrompu ou une erreur de listener est **loggé** ici
 /// avant d'être avalé/écarté — jamais silencieux (AD-10/AD-11). Même convention
 /// de journalisation que les autres dépôts offline-first du package.
-typedef ZOfflineFirstBoxLog = void Function(
-  String message, {
-  Object? error,
-  StackTrace? stackTrace,
-});
+typedef ZOfflineFirstBoxLog =
+    void Function(String message, {Object? error, StackTrace? stackTrace});
 
 void _noopLog(String message, {Object? error, StackTrace? stackTrace}) {}
 
@@ -117,23 +114,24 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
     ZOfflineFirstBoxLog? logger,
     ZClock? clock,
     bool autoListen = true,
-  })  : _local = local,
-        // Même source de temps que le store local, pour que le push
-        // distant et l'écriture locale portent une estampille cohérente.
-        _clock = clock ?? ZSystemClock.utc,
-        _firestore = firestore,
-        _resolver = resolver,
-        _kind = kind,
-        _decode = decode,
-        _encode = encode,
-        _userId = userId,
-        _parentId = parentId,
-        _isConnected = isConnected,
-        _log = logger ?? _noopLog {
+  }) : _local = local,
+       // Même source de temps que le store local, pour que le push
+       // distant et l'écriture locale portent une estampille cohérente.
+       _clock = clock ?? ZSystemClock.utc,
+       _firestore = firestore,
+       _resolver = resolver,
+       _kind = kind,
+       _decode = decode,
+       _encode = encode,
+       _userId = userId,
+       _parentId = parentId,
+       _isConnected = isConnected,
+       _log = logger ?? _noopLog {
     if (autoListen) _startListener();
   }
 
   final ZLocalStore<T> _local;
+
   /// Source de temps de la clé LWW `updated_at` du push distant.
   final ZClock _clock;
   final FirebaseFirestore _firestore;
@@ -196,24 +194,29 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
   /// silencieuse, précisément le mode que cette API existe pour éliminer.
   @override
   Future<ZResult<List<String>>> listParentIds() async {
-    final resolved =
-        _resolver.resolveParentCollection(kind: _kind, userId: _userId);
+    final resolved = _resolver.resolveParentCollection(
+      kind: _kind,
+      userId: _userId,
+    );
     final path = resolved.fold<String?>((_) => null, (p) => p);
     if (path == null) {
       return Left<ZFailure, List<String>>(
         resolved.swap().getOrElse(
-              () => const ZDomainFailure('chemin parent non résolu'),
-            ),
+          () => const ZDomainFailure('chemin parent non résolu'),
+        ),
       );
     }
     try {
       final snap = await _collection(path).get();
-      return Right<ZFailure, List<String>>(
-        <String>[for (final d in snap.docs) d.id],
-      );
+      return Right<ZFailure, List<String>>(<String>[
+        for (final d in snap.docs) d.id,
+      ]);
     } on Object catch (e, s) {
-      _log('listParentIds a échoué (kind=$_kind, path=$path)',
-          error: e, stackTrace: s);
+      _log(
+        'listParentIds a échoué (kind=$_kind, path=$path)',
+        error: e,
+        stackTrace: s,
+      );
       return Left<ZFailure, List<String>>(
         ZServerFailure('Énumération des parents impossible : $e'),
       );
@@ -233,8 +236,11 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
     try {
       return _decode(map);
     } on Object catch (e, s) {
-      _log('document cloud non décodable (kind=$_kind, id=$id) — écarté',
-          error: e, stackTrace: s);
+      _log(
+        'document cloud non décodable (kind=$_kind, id=$id) — écarté',
+        error: e,
+        stackTrace: s,
+      );
       return null;
     }
   }
@@ -306,7 +312,8 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
       final seconds = value['_seconds'];
       final nanos = value['_nanoseconds'];
       if (seconds is int) {
-        final micros = seconds * Duration.microsecondsPerSecond +
+        final micros =
+            seconds * Duration.microsecondsPerSecond +
             (nanos is int ? nanos ~/ 1000 : 0);
         return DateTime.fromMicrosecondsSinceEpoch(micros, isUtc: true);
       }
@@ -325,15 +332,14 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
     required String id,
     required String? isoUpdatedAt,
     required bool isDeleted,
-  }) =>
-      <String, dynamic>{
-        _kId: id,
-        ZSyncMeta.kUpdatedAt: isoUpdatedAt,
-        ZSyncMeta.kIsDeleted: isDeleted,
-        // Corps métier épandu EN DERNIER, débarrassé des clés réservées : il ne
-        // peut donc PAS clobberer la méta ci-dessus.
-        ...ZSyncMeta.stripReserved(_encode(entity)),
-      };
+  }) => <String, dynamic>{
+    _kId: id,
+    ZSyncMeta.kUpdatedAt: isoUpdatedAt,
+    ZSyncMeta.kIsDeleted: isDeleted,
+    // Corps métier épandu EN DERNIER, débarrassé des clés réservées : il ne
+    // peut donc PAS clobberer la méta ci-dessus.
+    ...ZSyncMeta.stripReserved(_encode(entity)),
+  };
 
   // ───────────────────────── persist offline-first ──────────────────────
 
@@ -375,13 +381,10 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
   @override
   Future<ZResult<T>> persistMerging(T item, {String? collectionId}) async {
     final localRes = await _local.putMerged(item);
-    return localRes.fold(
-      (failure) => Left<ZFailure, T>(failure),
-      (saved) {
-        unawaited(_bestEffortPushFresh(saved, collectionId: collectionId));
-        return Right<ZFailure, T>(saved);
-      },
-    );
+    return localRes.fold((failure) => Left<ZFailure, T>(failure), (saved) {
+      unawaited(_bestEffortPushFresh(saved, collectionId: collectionId));
+      return Right<ZFailure, T>(saved);
+    });
   }
 
   /// Pousse [saved] (matérialisé) au Firestore résolu avec une méta **fraîche**
@@ -393,7 +396,11 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
     await _bestEffortSet(
       docId: id,
       map: _cloudMap(
-          entity: saved, id: id, isoUpdatedAt: iso, isDeleted: false),
+        entity: saved,
+        id: id,
+        isoUpdatedAt: iso,
+        isDeleted: false,
+      ),
       collectionIdOverride: collectionId,
       label: 'persist→push (id=$id)',
     );
@@ -426,28 +433,25 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
   /// de la purge.
   Future<bool> _propagateTombstoneAwaited(String id) async {
     final entries = await _local.syncEntries();
-    return entries.fold(
-      (_) async => false,
-      (list) async {
-        for (final e in list) {
-          if (e.id != id) continue;
-          final entity = e.entity;
-          final entityId = entity.id;
-          if (entityId == null) return false;
-          return _setReportingSuccess(
-            docId: entityId,
-            map: _cloudMap(
-              entity: entity,
-              id: entityId,
-              isoUpdatedAt: e.meta.updatedAt?.toIso8601String(),
-              isDeleted: e.meta.isDeleted,
-            ),
-            label: 'purge→tombstone (id=$id)',
-          );
-        }
-        return false; // entrée introuvable : rien à propager, donc rien à purger
-      },
-    );
+    return entries.fold((_) async => false, (list) async {
+      for (final e in list) {
+        if (e.id != id) continue;
+        final entity = e.entity;
+        final entityId = entity.id;
+        if (entityId == null) return false;
+        return _setReportingSuccess(
+          docId: entityId,
+          map: _cloudMap(
+            entity: entity,
+            id: entityId,
+            isoUpdatedAt: e.meta.updatedAt?.toIso8601String(),
+            isDeleted: e.meta.isDeleted,
+          ),
+          label: 'purge→tombstone (id=$id)',
+        );
+      }
+      return false; // entrée introuvable : rien à propager, donc rien à purger
+    });
   }
 
   /// `set` distant **awaité** qui rend `true` ssi l'écriture a réellement abouti.
@@ -459,8 +463,10 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
     final pathRes = _collectionPath(collectionIdOverride: null);
     return pathRes.fold(
       (failure) async {
-        _log('propagation abandonnée ($label) : chemin non résolu — '
-            '${failure.message}');
+        _log(
+          'propagation abandonnée ($label) : chemin non résolu — '
+          '${failure.message}',
+        );
         return false;
       },
       (path) async {
@@ -487,14 +493,18 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
     final pathRes = _collectionPath(collectionIdOverride: collectionIdOverride);
     await pathRes.fold(
       (failure) async => _log(
-          'propagation distante best-effort abandonnée ($label) : chemin non '
-          'résolu — ${failure.message}'),
+        'propagation distante best-effort abandonnée ($label) : chemin non '
+        'résolu — ${failure.message}',
+      ),
       (path) async {
         try {
           await _collection(path).doc(docId).set(map);
         } on Object catch (e, s) {
-          _log('propagation distante best-effort échouée ($label)',
-              error: e, stackTrace: s);
+          _log(
+            'propagation distante best-effort échouée ($label)',
+            error: e,
+            stackTrace: s,
+          );
         }
       },
     );
@@ -511,16 +521,20 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
   /// `Either` (AD-11).
   @override
   Stream<List<T>> watch(ZDataRequest request) {
-    _log('ZOfflineFirstBoxRepository: request non traduit vers le cache '
-        '(snapshot local complet) [watch] — dette E9');
+    _log(
+      'ZOfflineFirstBoxRepository: request non traduit vers le cache '
+      '(snapshot local complet) [watch] — dette E9',
+    );
     return _local.watchAll();
   }
 
   @override
   Future<ZResult<List<T>>> getAll({ZDataRequest? request}) {
     if (request != null) {
-      _log('ZOfflineFirstBoxRepository: request non traduit vers le cache '
-          '(snapshot local complet) [getAll] — dette E9');
+      _log(
+        'ZOfflineFirstBoxRepository: request non traduit vers le cache '
+        '(snapshot local complet) [getAll] — dette E9',
+      );
     }
     return _local.getAll();
   }
@@ -531,8 +545,10 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
   @override
   Future<ZResult<int>> count({ZDataRequest? request}) async {
     if (request != null) {
-      _log('ZOfflineFirstBoxRepository: request non traduit vers le cache '
-          '(snapshot local complet) [count] — dette E9');
+      _log(
+        'ZOfflineFirstBoxRepository: request non traduit vers le cache '
+        '(snapshot local complet) [count] — dette E9',
+      );
     }
     final res = await _local.getAll();
     return res.map((list) => list.length);
@@ -577,8 +593,10 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
     if (soft.isLeft()) return soft;
     final propagated = await _propagateTombstoneAwaited(id);
     if (!propagated) {
-      _log('purgeLocalPropagatingTombstone : propagation non aboutie (id=$id) — '
-          'tombstone local CONSERVÉ (purge abandonnée, anti-résurrection)');
+      _log(
+        'purgeLocalPropagatingTombstone : propagation non aboutie (id=$id) — '
+        'tombstone local CONSERVÉ (purge abandonnée, anti-résurrection)',
+      );
       return const Right<ZFailure, Unit>(unit);
     }
     return _local.purge(id);
@@ -599,17 +617,14 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
   /// dériver la méta vers `now()`.
   Future<void> _bestEffortPropagateFromLocal(String id, String label) async {
     final entries = await _local.syncEntries();
-    await entries.fold(
-      (_) async {},
-      (list) async {
-        for (final e in list) {
-          if (e.id == id) {
-            await _bestEffortPushEntry(e);
-            return;
-          }
+    await entries.fold((_) async {}, (list) async {
+      for (final e in list) {
+        if (e.id == id) {
+          await _bestEffortPushEntry(e);
+          return;
         }
-      },
-    );
+      }
+    });
   }
 
   // ───────────────────────── Merge LWW + listener ──────────────────
@@ -668,12 +683,14 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
       // Adopter SSI local absent OU cloud STRICTEMENT plus récent. La clé
       // est TOUJOURS hors-entité (méta) — jamais un `T.updatedAt`. Attention :
       // inverser `isAfter` ferait adopter un cloud plus ANCIEN (régression LWW).
-      final adopt = localEntry == null ||
+      final adopt =
+          localEntry == null ||
           (cloudTime != null &&
               (localTime == null || cloudTime.isAfter(localTime)));
       if (adopt) {
-        final applied = await _local
-            .applyMerged(ZSyncEntry<T>(entity: entity, meta: cloudMeta));
+        final applied = await _local.applyMerged(
+          ZSyncEntry<T>(entity: entity, meta: cloudMeta),
+        );
         final failed = applied.fold<ZFailure?>((f) => f, (_) => null);
         if (failed != null) return Left<ZFailure, Unit>(failed);
       }
@@ -683,11 +700,40 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
     // Best-effort (fire-and-forget).
     for (final e in localEntries) {
       final id = e.id;
-      if (id != null && !e.isDeleted && !cloudIds.contains(id)) {
+      if (id != null &&
+          !e.isDeleted &&
+          !cloudIds.contains(id) &&
+          !_ownedBySomeoneElse(e.entity)) {
         unawaited(_bestEffortPushEntry(e));
       }
     }
     return Right<ZFailure, Unit>(unit);
+  }
+
+  /// Vrai quand l'encodage porte un propriétaire non vide différent de
+  /// [_userId]. Une clé absente, un encodage en échec ou un dépôt sans
+  /// utilisateur laissent l'entrée partir : le rattrapage historique des
+  /// entités sans propriétaire ne change pas.
+  bool _ownedBySomeoneElse(T entity) {
+    final String? mine = _userId;
+    if (mine == null || mine.isEmpty) return false;
+    final Map<String, dynamic> map;
+    try {
+      map = _encode(entity);
+    } catch (_) {
+      return false;
+    }
+    const List<String> keys = <String>[
+      'user_id',
+      'userId',
+      'owner_id',
+      'ownerId',
+    ];
+    for (final String key in keys) {
+      final Object? value = map[key];
+      if (value is String && value.isNotEmpty && value != mine) return true;
+    }
+    return false;
   }
 
   /// Traite un lot de documents cloud issus du **listener temps réel** : **skip**
@@ -722,29 +768,37 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
     if (_listenerSub != null) return;
     final pathRes = _collectionPath();
     pathRes.fold(
-      (failure) => _log('listener temps réel non démarré (kind=$_kind) : chemin '
-          'non résolu — ${failure.message}'),
+      (failure) => _log(
+        'listener temps réel non démarré (kind=$_kind) : chemin '
+        'non résolu — ${failure.message}',
+      ),
       (path) {
         try {
           _listenerSub = _collection(path)
               .snapshots(includeMetadataChanges: true)
               .listen(
-            (snap) {
-              unawaited(handleCloudSnapshot(
-                <MapEntry<String, Map<String, dynamic>>>[
-                  for (final d in snap.docs) MapEntry(d.id, d.data()),
-                ],
-                hasPendingWrites: snap.metadata.hasPendingWrites,
-              ));
-            },
-            onError: (Object e, StackTrace s) => _log(
-                'listener temps réel en erreur (kind=$_kind)',
-                error: e,
-                stackTrace: s),
-          );
+                (snap) {
+                  unawaited(
+                    handleCloudSnapshot(
+                      <MapEntry<String, Map<String, dynamic>>>[
+                        for (final d in snap.docs) MapEntry(d.id, d.data()),
+                      ],
+                      hasPendingWrites: snap.metadata.hasPendingWrites,
+                    ),
+                  );
+                },
+                onError: (Object e, StackTrace s) => _log(
+                  'listener temps réel en erreur (kind=$_kind)',
+                  error: e,
+                  stackTrace: s,
+                ),
+              );
         } on Object catch (e, s) {
-          _log('démarrage du listener temps réel en erreur (kind=$_kind)',
-              error: e, stackTrace: s);
+          _log(
+            'démarrage du listener temps réel en erreur (kind=$_kind)',
+            error: e,
+            stackTrace: s,
+          );
         }
       },
     );
@@ -771,8 +825,10 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
     final pathRes = _collectionPath();
     return pathRes.fold(
       (failure) async {
-        _log('sync: chemin non résolu — Right(unit) best-effort : '
-            '${failure.message}');
+        _log(
+          'sync: chemin non résolu — Right(unit) best-effort : '
+          '${failure.message}',
+        );
         return Right<ZFailure, Unit>(unit);
       },
       (path) async {
@@ -783,12 +839,20 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
             for (final d in snap.docs) MapEntry(d.id, d.data()),
           ];
         } on FirebaseException catch (e, s) {
-          _log('sync: pull distant en échec, assimilé offline → Right(unit) '
-              '(kind=$_kind, code=${e.code})', error: e, stackTrace: s);
+          _log(
+            'sync: pull distant en échec, assimilé offline → Right(unit) '
+            '(kind=$_kind, code=${e.code})',
+            error: e,
+            stackTrace: s,
+          );
           return Right<ZFailure, Unit>(unit);
         } on Object catch (e, s) {
-          _log('sync: pull distant en exception, assimilé offline → Right(unit) '
-              '(kind=$_kind)', error: e, stackTrace: s);
+          _log(
+            'sync: pull distant en exception, assimilé offline → Right(unit) '
+            '(kind=$_kind)',
+            error: e,
+            stackTrace: s,
+          );
           return Right<ZFailure, Unit>(unit);
         }
         // Panne LOCALE de merge → Left (vraie erreur) ; sinon Right(unit).

@@ -2,6 +2,14 @@
 
 All notable changes to `zcrud_firestore` are documented in this file.
 
+## 3.57.0 — 2026-10-01
+
+### Ajouté
+
+- `HiveZLocalStore.boxNameFor(kind, {scope})` et `openBox(..., scope:)`. Un scope vide ou absent conserve `zcrud_<kind>`. Un scope non vide ouvre `zcrud_<kind>__<scope>`.
+- Le rattrapage d'un dépôt offline-first n'envoie pas une entrée locale dont `user_id`, `userId`, `owner_id` ou `ownerId` est un texte non vide différent de l'utilisateur du dépôt. Une clé absente, un encodage en échec ou un dépôt sans utilisateur laissent l'envoi inchangé.
+- `ZFolderScopedLocalStore` filtre un store partagé sur un dossier. `buildFolderScopedStudyRepository` l'applique quand `folderIdOf` est fourni. `clear` ne retire que ce dossier. `dispose` ne libère pas le store interne.
+
 ## 3.31.0 — 2026-08-29
 
 ### Ajouté

@@ -32,6 +32,12 @@ import 'z_chat_block_view.dart';
 import 'z_chat_labels.dart';
 import 'z_chat_tile_shell.dart';
 
+/// Rappel d'un renvoi `[n]` qui nomme le message tapé.
+///
+/// L'index part de 1, comme le crochet affiché. La forme courte, par tuile,
+/// reste `void Function(int index)` : la tuile connaît déjà son message.
+typedef ZChatCitationTap = void Function(ZChatMessage message, int index);
+
 /// Construit le contenu d'un créneau par message — couture d'hôte, sur le
 /// modèle des builders de seam existants.
 ///

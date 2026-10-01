@@ -34,17 +34,25 @@ Future<Uint8List> buildMarkdownPdfBytes(
     if (opts.orientation == ZPdfOrientation.landscape) {
       document.pageSettings.orientation = PdfPageOrientation.landscape;
     }
-    final PdfFont font = PdfStandardFont(PdfFontFamily.helvetica, 11);
+    final PdfFont font = _font(opts, 11, bold: false);
+    final PdfFont strong = _font(opts, 11, bold: true);
     PdfPage page = document.pages.add();
     double y = 0;
     final String heading = title ?? opts.title ?? '';
     if (heading.isNotEmpty) {
-      y = _drawLine(page, font, heading, y);
+      y = _drawLine(page, strong, heading, y, rtl: opts.rightToLeft);
     }
     final String visible = _visibleText(markdown);
     final List<String> lines = visible.split('\n');
     for (final String line in lines) {
-      final List<_ZPdfRun> runs = _runs(line, latexEnabled: opts.latexEnabled);
+      if (line.trim().startsWith('|') && line.contains('|')) {
+        y = _drawLine(page, font, _tableRow(line), y, rtl: opts.rightToLeft);
+        continue;
+      }
+      final String shown = _projected(line);
+      final bool headingLine = RegExp(r'^#{1,6}\s').hasMatch(line.trimLeft());
+      final PdfFont face = headingLine || _emphasized(line) ? strong : font;
+      final List<_ZPdfRun> runs = _runs(shown, latexEnabled: opts.latexEnabled);
       for (final _ZPdfRun run in runs) {
         if (run.formula && latex != null) {
           Uint8List? png;
@@ -68,9 +76,9 @@ Future<Uint8List> buildMarkdownPdfBytes(
             }
           }
         }
-        final _Placed placed = _ensure(document, page, y, font.height);
+        final _Placed placed = _ensure(document, page, y, face.height);
         page = placed.page;
-        y = _drawLine(page, font, run.text, placed.y);
+        y = _drawLine(page, face, run.text, placed.y, rtl: opts.rightToLeft);
       }
     }
     return Uint8List.fromList(document.saveSync());
@@ -143,12 +151,65 @@ _Placed _ensure(PdfDocument document, PdfPage page, double y, double height) {
   return _Placed(document.pages.add(), 0);
 }
 
-double _drawLine(PdfPage page, PdfFont font, String text, double y) {
+double _drawLine(
+  PdfPage page,
+  PdfFont font,
+  String text,
+  double y, {
+  bool rtl = false,
+}) {
   final Size size = page.getClientSize();
   page.graphics.drawString(
     text,
     font,
     bounds: Rect.fromLTWH(0, y, size.width, font.height + 2),
+    format: PdfStringFormat(
+      alignment: rtl ? PdfTextAlignment.right : PdfTextAlignment.left,
+      textDirection: rtl
+          ? PdfTextDirection.rightToLeft
+          : PdfTextDirection.leftToRight,
+    ),
   );
   return y + font.height + 2;
+}
+
+PdfFont _font(ZPdfExportOptions opts, double size, {required bool bold}) {
+  final Uint8List? bytes = opts.fontBytes;
+  if (bytes != null && bytes.isNotEmpty) {
+    try {
+      return PdfTrueTypeFont(
+        bytes,
+        size,
+        style: bold ? PdfFontStyle.bold : PdfFontStyle.regular,
+      );
+    } catch (_) {
+      // Police illisible : Helvetica, le document reste produit.
+    }
+  }
+  return PdfStandardFont(
+    PdfFontFamily.helvetica,
+    size,
+    style: bold ? PdfFontStyle.bold : PdfFontStyle.regular,
+  );
+}
+
+/// Titres, puces et emphase : le texte visible, sans la marque markdown.
+String _projected(String line) {
+  String text = line.trimLeft();
+  text = text.replaceFirst(RegExp(r'^#{1,6}\s+'), '');
+  text = text.replaceFirst(RegExp(r'^[-*]\s+'), '• ');
+  text = text.replaceAll(RegExp(r'\*\*([^*]+)\*\*'), r'$1');
+  text = text.replaceAll(RegExp(r'\*([^*]+)\*'), r'$1');
+  return text;
+}
+
+bool _emphasized(String line) => line.contains('**') || line.contains('*');
+
+String _tableRow(String line) {
+  final List<String> cells = <String>[
+    for (final String cell in line.split('|'))
+      if (cell.trim().isNotEmpty && !RegExp(r'^[-: ]+$').hasMatch(cell.trim()))
+        cell.trim(),
+  ];
+  return cells.join('  ');
 }

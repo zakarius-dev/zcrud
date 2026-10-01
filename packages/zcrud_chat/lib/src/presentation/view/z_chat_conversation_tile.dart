@@ -124,6 +124,7 @@ class ZChatConversationTile extends StatelessWidget {
     this.trailing,
     this.badges = const <ZChatConversationBadge>[],
     this.actions = const <ZChatConversationAction>[],
+    this.actionsGlyph,
     this.onTap,
     this.onLongPress,
     this.isSelected = false,
@@ -175,6 +176,9 @@ class ZChatConversationTile extends StatelessWidget {
 
   /// Slot de fin de ligne (un compteur, un chevron…). Rien par défaut.
   final Widget? trailing;
+
+  /// Glyphe du menu d'actions replié. `null` : le libellé résolu.
+  final Widget? actionsGlyph;
 
   /// Badges de statut — aucun par défaut.
   final List<ZChatConversationBadge> badges;
@@ -314,7 +318,11 @@ class ZChatConversationTile extends StatelessWidget {
               trailing!,
             ],
             if (collapseActions)
-              _ZActionMenu(actions: visibleActions, conversation: conversation)
+              _ZActionMenu(
+                actions: visibleActions,
+                conversation: conversation,
+                glyph: actionsGlyph,
+              )
             else
               for (final ZChatConversationAction a in visibleActions)
                 _ZActionButton(
@@ -436,8 +444,11 @@ class _ZActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget? icon = action.iconBuilder?.call(context);
+    final String name = zChatLabel(context, action.labelKey);
     return Semantics(
       button: true,
+      label: icon == null ? null : name,
+      excludeSemantics: icon != null,
       onTap: () => _invoke(context),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -449,12 +460,7 @@ class _ZActionButton extends StatelessWidget {
           ),
           child: Align(
             alignment: AlignmentDirectional.center,
-            child:
-                icon ??
-                Text(
-                  zChatLabel(context, action.labelKey),
-                  textAlign: TextAlign.start,
-                ),
+            child: icon ?? Text(name, textAlign: TextAlign.start),
           ),
         ),
       ),
@@ -480,10 +486,15 @@ class _ZActionButton extends StatelessWidget {
 /// Pas de menu Material : ce paquet n'importe pas `material`. Le dépli est
 /// inline, sous le bouton, avec les mêmes cibles que la rangée large.
 class _ZActionMenu extends StatefulWidget {
-  const _ZActionMenu({required this.actions, required this.conversation});
+  const _ZActionMenu({
+    required this.actions,
+    required this.conversation,
+    required this.glyph,
+  });
 
   final List<ZChatConversationAction> actions;
   final ZChatConversation conversation;
+  final Widget? glyph;
 
   @override
   State<_ZActionMenu> createState() => _ZActionMenuState();
@@ -493,6 +504,8 @@ class _ZActionMenuState extends State<_ZActionMenu> {
   /// Ouverture locale du menu. Un `ValueNotifier` plutôt qu'un `setState` :
   /// seule cette colonne se reconstruit, pas la tuile.
   final ValueNotifier<bool> _open = ValueNotifier<bool>(false);
+  final OverlayPortalController _portal = OverlayPortalController();
+  final LayerLink _link = LayerLink();
 
   @override
   void dispose() {
@@ -500,24 +513,55 @@ class _ZActionMenuState extends State<_ZActionMenu> {
     super.dispose();
   }
 
+  void _toggle() {
+    if (_open.value) {
+      _portal.hide();
+      _open.value = false;
+    } else {
+      _portal.show();
+      _open.value = true;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final String label = zChatLabel(context, kZChatLabelConversationActions);
-    return ValueListenableBuilder<bool>(
-      valueListenable: _open,
-      builder: (BuildContext context, bool open, Widget? _) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: <Widget>[
-          Semantics(
+    final TextDirection direction = Directionality.of(context);
+    return OverlayPortal(
+      controller: _portal,
+      overlayChildBuilder: (BuildContext context) {
+        return CompositedTransformFollower(
+          link: _link,
+          targetAnchor: AlignmentDirectional.bottomEnd.resolve(direction),
+          followerAnchor: AlignmentDirectional.topEnd.resolve(direction),
+          showWhenUnlinked: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              for (final ZChatConversationAction a in widget.actions)
+                _ZActionButton(
+                  key: ValueKey<String>('zchat.action#${a.labelKey}'),
+                  action: a,
+                  conversation: widget.conversation,
+                ),
+            ],
+          ),
+        );
+      },
+      child: CompositedTransformTarget(
+        link: _link,
+        child: ValueListenableBuilder<bool>(
+          valueListenable: _open,
+          builder: (BuildContext context, bool open, Widget? _) => Semantics(
             button: true,
             expanded: open,
             label: label,
             excludeSemantics: true,
-            onTap: () => _open.value = !open,
+            onTap: _toggle,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => _open.value = !open,
+              onTap: _toggle,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(
                   minHeight: kZChatMinTapTarget,
@@ -525,19 +569,13 @@ class _ZActionMenuState extends State<_ZActionMenu> {
                 ),
                 child: Align(
                   alignment: AlignmentDirectional.center,
-                  child: Text(label, textAlign: TextAlign.start),
+                  child:
+                      widget.glyph ?? Text(label, textAlign: TextAlign.start),
                 ),
               ),
             ),
           ),
-          if (open)
-            for (final ZChatConversationAction a in widget.actions)
-              _ZActionButton(
-                key: ValueKey<String>('zchat.action#${a.labelKey}'),
-                action: a,
-                conversation: widget.conversation,
-              ),
-        ],
+        ),
       ),
     );
   }

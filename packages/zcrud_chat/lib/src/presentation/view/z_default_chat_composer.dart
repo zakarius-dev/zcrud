@@ -82,6 +82,7 @@ class ZDefaultChatComposer extends StatelessWidget {
     this.hints = const <String>[],
     this.submitPolicy = ZChatComposerSubmitPolicy.standard,
     this.pickers = const <ZChatComposerPickerAction>[],
+    this.pickersEnabled = true,
     this.onOpenTools,
     this.toolsBadge,
     this.showToolsBadge = true,
@@ -187,6 +188,10 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// Le catalogue du menu `+` — contrat opaque : libellés, icônes et gestes
   /// d'hôte. Vide signifie le `+` absent (invariant AD-4).
   final List<ZChatComposerPickerAction> pickers;
+
+  /// `false` force le menu `+` désactivé. Au repos, il l'est aussi tant
+  /// qu'une requête du [controller] est en vol.
+  final bool pickersEnabled;
 
   /// Ouvre la feuille de réglages — modale, page, panneau : l'hôte décide.
   /// `null` signifie le bouton « outils » absent (invariant AD-4). Le
@@ -420,7 +425,7 @@ class ZDefaultChatComposer extends StatelessWidget {
 
   /// Glyphe d'HÔTE par proposition. `null` ⇒ aucun glyphe (AD-4).
   final Widget? Function(BuildContext context, ZChatSuggestion suggestion)?
-      suggestionGlyphBuilder;
+  suggestionGlyphBuilder;
 
   /// Remplace le rang 3 entier.
   final ZChatComposerSlotBuilder? suggestionsBuilder;
@@ -543,10 +548,7 @@ class ZDefaultChatComposer extends StatelessWidget {
         context,
         slot,
         stopBuilder,
-        () => ZChatComposerStopTarget(
-          controller: controller,
-          glyph: stopGlyph,
-        ),
+        () => ZChatComposerStopTarget(controller: controller, glyph: stopGlyph),
       );
       final Widget? send = _piece(
         context,
@@ -564,7 +566,10 @@ class ZDefaultChatComposer extends StatelessWidget {
         ),
       );
       if (stop == null && send == null) return null;
-      return Row(mainAxisSize: MainAxisSize.min, children: <Widget>[?stop, ?send]);
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[?stop, ?send],
+      );
     };
   }
 
@@ -608,9 +613,16 @@ class ZDefaultChatComposer extends StatelessWidget {
           plusBuilder,
           () => pickers.isEmpty
               ? null
-              : ZChatComposerPickerTrigger(
-                  actions: pickers,
-                  glyph: pickerGlyph,
+              : ListenableBuilder(
+                  listenable: controller.activeRequests,
+                  builder: (BuildContext context, Widget? _) =>
+                      ZChatComposerPickerTrigger(
+                        actions: pickers,
+                        glyph: pickerGlyph,
+                        enabled:
+                            pickersEnabled &&
+                            controller.activeRequests.value.isEmpty,
+                      ),
                 ),
         );
         final VoidCallback? dictate = onDictate;

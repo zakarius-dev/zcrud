@@ -3,6 +3,12 @@
 Toutes les modifications notables de `zcrud_export` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.57.0 — 2026-10-01
+
+### Ajouté
+
+- `ZPdfExportOptions`, déjà réexporté, gagne `fontBytes` et `rightToLeft`. Les défauts laissent le rendu précédent inchangé.
+
 ## 3.56.0 — 2026-09-30
 
 ### Ajouté

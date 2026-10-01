@@ -60,7 +60,7 @@ class _Pdf implements ZChatExportPort {
       markdown,
       title: title,
       options: const ZPdfExportOptions(latexEnabled: true),
-      latex: latexRasterizer,
+      latex: const ZFlutterMathLatexRasterizer(),
     );
     return Right(bytes);
   }

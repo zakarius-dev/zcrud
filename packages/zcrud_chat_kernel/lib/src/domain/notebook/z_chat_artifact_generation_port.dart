@@ -148,6 +148,7 @@ class ZChatArtifactGenerationRequest {
     required this.notes,
     this.subject = '',
     this.subjectRequired = false,
+    this.allowEmptyNotes = false,
     this.style,
     this.conversationId,
     this.languageTag,
@@ -224,10 +225,17 @@ class ZChatArtifactGenerationRequest {
   // hors-entité (AD-9) sont réservées.
   static const Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
-  /// `true` si la requête doit être **refusée** sans appel : matière vide,
-  /// ou sujet vide alors qu'il est exigé.
+  /// `true` : une matière de fil vide n'empêche pas l'appel du port.
+  ///
+  /// Une génération de portée lit souvent le dossier côté hôte, pas le fil.
+  /// Le sujet exigé par [subjectRequired] reste refusé s'il est vide.
+  final bool allowEmptyNotes;
+
+  /// `true` si la requête doit être **refusée** sans appel : matière vide
+  /// (sauf [allowEmptyNotes]), ou sujet vide alors qu'il est exigé.
   bool get isEmptyInput =>
-      notes.trim().isEmpty || (subjectRequired && subject.trim().isEmpty);
+      (!allowEmptyNotes && notes.trim().isEmpty) ||
+      (subjectRequired && subject.trim().isEmpty);
 
   /// Rend une requête **identique**, sauf les champs fournis.
   ///
@@ -242,6 +250,7 @@ class ZChatArtifactGenerationRequest {
     Object? notes = _unset,
     Object? subject = _unset,
     Object? subjectRequired = _unset,
+    Object? allowEmptyNotes = _unset,
     Object? style = _unset,
     Object? conversationId = _unset,
     Object? languageTag = _unset,
@@ -262,6 +271,9 @@ class ZChatArtifactGenerationRequest {
     subjectRequired: identical(subjectRequired, _unset)
         ? this.subjectRequired
         : subjectRequired! as bool,
+    allowEmptyNotes: identical(allowEmptyNotes, _unset)
+        ? this.allowEmptyNotes
+        : allowEmptyNotes! as bool,
     style: identical(style, _unset)
         ? this.style
         : style as ZChatGenerationStyle?,
@@ -295,6 +307,7 @@ class ZChatArtifactGenerationRequest {
           notes == other.notes &&
           subject == other.subject &&
           subjectRequired == other.subjectRequired &&
+          allowEmptyNotes == other.allowEmptyNotes &&
           style == other.style &&
           conversationId == other.conversationId &&
           languageTag == other.languageTag &&
@@ -311,6 +324,7 @@ class ZChatArtifactGenerationRequest {
     notes,
     subject,
     subjectRequired,
+    allowEmptyNotes,
     style,
     conversationId,
     languageTag,
@@ -402,12 +416,14 @@ Future<ZResult<T>> zChatRunArtifactGeneration<T>({
   required String notes,
   String subject = '',
   bool subjectRequired = false,
+  bool allowEmptyNotes = false,
   required ZChatArtifactOccupancyMarker mark,
   required Future<ZResult<T>> Function() generate,
   required bool Function(T result) isEmpty,
   required Future<ZResult<Unit>> Function(T result) write,
 }) async {
-  if (notes.trim().isEmpty || (subjectRequired && subject.trim().isEmpty)) {
+  if ((!allowEmptyNotes && notes.trim().isEmpty) ||
+      (subjectRequired && subject.trim().isEmpty)) {
     return Left<ZFailure, T>(
       ZChatArtifactEmptyInputFailure(
         messageId: messageId,
@@ -505,6 +521,7 @@ class ZChatArtifactGenerationRunner {
       notes: request.notes,
       subject: request.subject,
       subjectRequired: request.subjectRequired,
+      allowEmptyNotes: request.allowEmptyNotes,
       mark: mark,
       generate: () => port.generate(request, token: token),
       isEmpty: (ZChatArtifactContent c) => c.isEmpty,
