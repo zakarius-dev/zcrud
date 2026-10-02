@@ -126,6 +126,7 @@ ZStudyRepository<T> buildFolderScopedStudyRepository<T extends ZEntity>({
   Future<bool> Function()? isConnected,
   ZOfflineFirstBoxLog? logger,
   bool autoListen = true,
+  bool Function(T entity)? isForeign,
 }) => ZOfflineFirstBoxRepository<T>(
   local: folderIdOf == null
       ? local
@@ -151,6 +152,7 @@ ZStudyRepository<T> buildFolderScopedStudyRepository<T extends ZEntity>({
   isConnected: isConnected,
   logger: logger,
   autoListen: autoListen,
+  isForeign: isForeign,
 );
 
 /// Résolveur **flat top-level** (topologie `flatTopLevel`) — jumeau exact de
@@ -202,6 +204,7 @@ ZStudyRepository<T> buildUserScopedStudyRepository<T extends ZEntity>({
   ZOfflineFirstBoxLog? logger,
   ZClock? clock,
   bool autoListen = true,
+  bool Function(T entity)? isForeign,
 }) => ZOfflineFirstBoxRepository<T>(
   local: local,
   firestore: firestore,
@@ -219,4 +222,5 @@ ZStudyRepository<T> buildUserScopedStudyRepository<T extends ZEntity>({
   logger: logger,
   clock: clock,
   autoListen: autoListen,
+  isForeign: isForeign,
 );

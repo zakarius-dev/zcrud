@@ -73,6 +73,95 @@ void main() {
         (await store.getAll()).getOrElse(() => <_Note>[]);
     expect(kept, hasLength(1));
     expect(kept.single.title, 'a');
+    await _close(store, 'account');
     scope.dispose();
   });
+
+  test('sans scope, une lecture peut échouer au lieu de rendre vide', () async {
+    final ValueNotifier<String?> scope = ValueNotifier<String?>(null);
+    final ZDeferredScopedLocalStore<_Note> store =
+        ZDeferredScopedLocalStore<_Note>(
+          kind: 'note',
+          scope: scope,
+          unsignedReadsAreEmpty: false,
+          open: (String next) => HiveZLocalStore.openBox<_Note>(
+            kind: 'note',
+            scope: next,
+            fromMap: _Note.fromMap,
+            toMap: (_Note n) => n.toMap(),
+          ),
+        );
+    final ZResult<List<_Note>> read = await store.getAll();
+    expect(read.isLeft(), isTrue);
+    await _close(store, null);
+    scope.dispose();
+  });
+
+  test('une ouverture en échec se réessaie à l\'opération suivante', () async {
+    final ValueNotifier<String?> scope = ValueNotifier<String?>('account');
+    var opens = 0;
+    final ZDeferredScopedLocalStore<_Note> store =
+        ZDeferredScopedLocalStore<_Note>(
+          kind: 'note',
+          scope: scope,
+          open: (String next) async {
+            opens++;
+            if (opens == 1) throw StateError('disk');
+            return HiveZLocalStore.openBox<_Note>(
+              kind: 'note',
+              scope: next,
+              fromMap: _Note.fromMap,
+              toMap: (_Note n) => n.toMap(),
+            );
+          },
+        );
+    expect((await store.getAll()).isLeft(), isTrue);
+    expect((await store.getAll()).isRight(), isTrue);
+    expect(opens, 2);
+    await _close(store, 'account');
+    scope.dispose();
+  });
+
+  test('dispose d\'un store partagé ne ferme pas la box de l\'autre', () async {
+    final ValueNotifier<String?> scope = ValueNotifier<String?>('account');
+    Future<ZLocalStore<_Note>> open(String next) =>
+        HiveZLocalStore.openBox<_Note>(
+          kind: 'note',
+          scope: next,
+          fromMap: _Note.fromMap,
+          toMap: (_Note n) => n.toMap(),
+        );
+    final ZDeferredScopedLocalStore<_Note> first =
+        ZDeferredScopedLocalStore<_Note>(
+          kind: 'note',
+          scope: scope,
+          open: open,
+        );
+    await first.put(const _Note(id: 'a', title: 'a'));
+    final ZDeferredScopedLocalStore<_Note> second =
+        ZDeferredScopedLocalStore<_Note>(
+          kind: 'note',
+          scope: scope,
+          open: open,
+        );
+    await second.getAll();
+    first.dispose();
+    final ZResult<_Note> written = await second.put(
+      const _Note(id: 'b', title: 'b'),
+    );
+    expect(written.isRight(), isTrue);
+    await _close(second, 'account');
+    scope.dispose();
+  });
+}
+
+Future<void> _close(ZDeferredScopedLocalStore<_Note> store, String? scope) async {
+  store.dispose();
+  if (scope == null || scope.isEmpty) return;
+  final String name = HiveZLocalStore.boxNameFor('note', scope: scope);
+  var spins = 0;
+  while (Hive.isBoxOpen(name) && spins < 50) {
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    spins++;
+  }
 }

@@ -7,6 +7,12 @@ fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 du port `ZListRenderer` déclaré dans `zcrud_core` ; pour l'écran CRUD assemblé,
 voir `zcrud_screen`.
 
+## 3.59.0 — 2026-10-02
+
+### Adaptation
+
+- `syncfusion_flutter_datagrid` passe à `^35.1.37`, avec le reste de la pile Syncfusion. Un hôte qui épingle `^34` ne résout plus.
+
 ## 0.93.0 — 2026-08-13
 
 ### Ajouté

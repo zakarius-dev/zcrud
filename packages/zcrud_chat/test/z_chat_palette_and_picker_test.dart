@@ -4,6 +4,7 @@ library;
 import 'dart:async';
 import 'dart:ui' show Tristate;
 
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_chat/zcrud_chat.dart';
@@ -103,5 +104,35 @@ void main() {
     final SemanticsNode node = tester.getSemantics(find.text('Ajouter'));
     expect(node.flagsCollection.isEnabled, Tristate.isFalse);
     handle.dispose();
+  });
+
+  testWidgets('un menu recalé en fin de ligne choisit encore', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    var taps = 0;
+    await tester.pumpWidget(
+      harness(
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: ZChatComposerPickerTrigger(
+            actions: <ZChatComposerPickerAction>[
+              ZChatComposerPickerAction(
+                label: 'Importer un document très long',
+                onTap: () => taps++,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Ajouter'));
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.text('Importer un document très long'));
+    await tester.pump();
+    expect(taps, 1);
   });
 }

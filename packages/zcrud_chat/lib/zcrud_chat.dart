@@ -205,6 +205,7 @@ export 'src/presentation/view/z_chat_conversation_view.dart';
 export 'src/presentation/view/z_chat_diffusion_bar.dart';
 export 'src/presentation/view/z_chat_highlight.dart';
 export 'src/presentation/view/z_chat_labels.dart';
+export 'src/presentation/view/z_chat_menu_chrome.dart';
 export 'src/presentation/view/z_chat_message_tile.dart';
 // Distinction notebook / conversation : créneaux additifs (`identityBuilder`
 // / `actionsBuilder`, builders nullables, défauts inchangés) sur

@@ -3,6 +3,12 @@
 Toutes les modifications notables de `zcrud_export_ui` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.59.0 — 2026-10-02
+
+### Adaptation
+
+- La pile Syncfusion consommée via l'export est `^35.1.37`.
+
 ## [0.86.0] — Chantier documentation
 
 ### Ajouté

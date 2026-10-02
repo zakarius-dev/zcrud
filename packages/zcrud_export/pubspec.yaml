@@ -14,7 +14,7 @@
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_export
 description: "Tabular export for zcrud (DataGrid to Excel and PDF via Syncfusion) behind a neutral, byte-based API."
-version: 3.58.0
+version: 3.59.0
 publish_to: none
 resolution: workspace
 
@@ -35,21 +35,20 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # Stack de l'architecture (^34.1.x) — SEULES arêtes Syncfusion d'export du
+  # Stack de l'architecture (^35.1.x) — SEULES arêtes Syncfusion d'export du
   # graphe (AD-8). Confinées à `lib/src/data/z_{excel,pdf}_exporter.dart`.
-  # Bump coordonné 32→34 (tout le stack Syncfusion partage `syncfusion_flutter_core`)
-  # pour débloquer `printing ^5.15.0` (xlsio 34 accepte `xml ≥7.0.1`) → CVE-2024-4367.
-  syncfusion_flutter_xlsio: ^34.1.31
-  syncfusion_flutter_pdf: ^34.1.31
+  # Tout le stack Syncfusion partage `syncfusion_flutter_core`.
+  syncfusion_flutter_xlsio: ^35.1.37
+  syncfusion_flutter_pdf: ^35.1.37
   # E11b-3 : téléchargement navigateur (ZFileSaver web) via `package:web` +
   # `dart:js_interop` (AD-12 : `dart:html` déprécié BANNI). Usage web-CONDITIONNEL
   # (`z_file_saver_web.dart`, chargé seulement si `dart.library.js_interop`) : ne
   # remonte JAMAIS dans une signature neutre ni dans `zcrud_core`. Léger, sans
   # transitive lourde. N'affecte pas le graphe AD-1 (n'est pas un package zcrud_*).
   web: ^1.1.0
-  zcrud_core: ^3.58.0
+  zcrud_core: ^3.59.0
   # CR-LEX-40 : le PDF vit dans le paquet leger, re-exporte integralement.
-  zcrud_export_pdf: ^3.58.0
+  zcrud_export_pdf: ^3.59.0
 
 dev_dependencies:
   # Lecteur ZIP TEST-ONLY : ré-ouvre le `.xlsx` généré (un ZIP d'XML) pour

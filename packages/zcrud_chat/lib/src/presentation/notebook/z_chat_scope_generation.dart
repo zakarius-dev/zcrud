@@ -9,6 +9,23 @@ import 'package:flutter/foundation.dart';
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 import 'package:zcrud_core/domain.dart';
 
+/// Refus d'une génération déjà en vol pour la même portée.
+class ZChatScopeBusyFailure extends ZDomainFailure {
+  /// [scopeId] est la portée occupée.
+  const ZChatScopeBusyFailure(this.scopeId)
+    : super('a generation is already running for this scope');
+
+  /// Portée dont une génération n'est pas terminée.
+  final String scopeId;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ZChatScopeBusyFailure && scopeId == other.scopeId;
+
+  @override
+  int get hashCode => Object.hash(runtimeType, scopeId);
+}
+
 /// Service de génération borné à une portée.
 class ZChatScopeGeneration {
   /// Construit le service. [store] reçoit le texte lorsque [onGenerated]
@@ -36,13 +53,23 @@ class ZChatScopeGeneration {
   /// Produit [artifactKey] pour [scopeId].
   ///
   /// Une seconde demande sur la même portée, tant que la première n'est pas
-  /// terminée, est refusée sans appeler le port. [onGenerated] enregistre
-  /// le contenu à la place du magasin (qui, lui, remplace).
+  /// terminée, est refusée sans appeler le port : l'échec est un
+  /// [ZChatScopeBusyFailure]. [modelId], [providerId], [languageTag] et
+  /// [extra] sont portés tels quels par la requête.
+  ///
+  /// [onGenerated] enregistre le contenu à la place du magasin (qui, lui,
+  /// remplace). Le rappel est tout-ou-rien : une reprise partielle
+  /// (réécrire seulement les échecs, sans relancer la génération) reste à
+  /// l'hôte, qui détient les identifiants.
   Future<ZResult<ZChatArtifactContent>> generate({
     required String scopeId,
     required String artifactKey,
     required String notes,
     String subject = '',
+    String? modelId,
+    String? providerId,
+    String? languageTag,
+    Map<String, dynamic> extra = const <String, dynamic>{},
     Future<ZResult<Unit>> Function(ZChatArtifactContent content)? onGenerated,
   }) async {
     if (_disposed) {
@@ -52,9 +79,7 @@ class ZChatScopeGeneration {
     }
     if (_inFlight.contains(scopeId)) {
       return Left<ZFailure, ZChatArtifactContent>(
-        ZDomainFailure(
-          'a generation is already running for this scope',
-        ),
+        ZChatScopeBusyFailure(scopeId),
       );
     }
     _inFlight.add(scopeId);
@@ -66,6 +91,10 @@ class ZChatScopeGeneration {
           notes: notes,
           subject: subject,
           allowEmptyNotes: true,
+          modelId: modelId,
+          providerId: providerId,
+          languageTag: languageTag,
+          extra: extra,
         );
     final ZChatRequestToken token = ZChatRequestToken('scope-$scopeId');
     try {

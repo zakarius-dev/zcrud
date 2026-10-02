@@ -26,6 +26,7 @@ class ZTransformPaletteBar extends StatefulWidget {
     this.busyKeys,
     this.oneAtATime = true,
     this.entryBuilder,
+    this.sectionHeaderBuilder,
     this.sections,
     super.key,
   });
@@ -56,6 +57,10 @@ class ZTransformPaletteBar extends StatefulWidget {
     required bool busy,
   })?
   entryBuilder;
+
+  /// Remplace le titre d'une section. `null` : le libellé nu.
+  final Widget Function(BuildContext context, ZTransformPaletteSection section)?
+  sectionHeaderBuilder;
 
   /// Regroupement optionnel. `null` : une seule rangée.
   final List<ZTransformPaletteSection>? sections;
@@ -139,7 +144,8 @@ class _ZTransformPaletteBarState extends State<ZTransformPaletteBar> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(section.label, textAlign: TextAlign.start),
+        widget.sectionHeaderBuilder?.call(context, section) ??
+            Text(section.label, textAlign: TextAlign.start),
         _row(mine, local, host),
       ],
     );
@@ -168,30 +174,46 @@ class _ZTransformPaletteBarState extends State<ZTransformPaletteBar> {
       required bool busy,
     })?
     paint = widget.entryBuilder;
-    return Semantics(
-      button: true,
+    void activate() {
+      if (!tappable) return;
+      if (locked) {
+        widget.onLocked?.call(entry);
+      } else {
+        unawaited(_run(entry));
+      }
+    }
+
+    return FocusableActionDetector(
       enabled: tappable,
-      label: entry.label,
-      hint: locked ? zChatLabel(context, kZChatLabelPaletteLocked) : null,
-      child: GestureDetector(
-        onTap: !tappable
-            ? null
-            : locked
-            ? () => widget.onLocked?.call(entry)
-            : () => unawaited(_run(entry)),
-        behavior: HitTestBehavior.opaque,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minWidth: kZChatMinTapTarget,
-            minHeight: kZChatMinTapTarget,
-          ),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            widthFactor: 1,
-            heightFactor: 1,
-            child: paint == null
-                ? Text(entry.label, textAlign: TextAlign.start)
-                : paint(context, entry, locked: locked, busy: busy),
+      actions: <Type, Action<Intent>>{
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (ActivateIntent intent) {
+            activate();
+            return null;
+          },
+        ),
+      },
+      child: Semantics(
+        button: true,
+        enabled: tappable,
+        label: entry.label,
+        hint: locked ? zChatLabel(context, kZChatLabelPaletteLocked) : null,
+        child: GestureDetector(
+          onTap: tappable ? activate : null,
+          behavior: HitTestBehavior.opaque,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: kZChatMinTapTarget,
+              minHeight: kZChatMinTapTarget,
+            ),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              widthFactor: 1,
+              heightFactor: 1,
+              child: paint == null
+                  ? Text(entry.label, textAlign: TextAlign.start)
+                  : paint(context, entry, locked: locked, busy: busy),
+            ),
           ),
         ),
       ),

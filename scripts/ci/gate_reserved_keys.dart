@@ -718,8 +718,8 @@ ArgumentList? _argsOf(CollectionElement e) {
 /// Valeur littérale d'un argument nommé [name].
 String? _namedStringArg(ArgumentList args, String name) {
   for (final a in args.arguments) {
-    if (a is NamedExpression && a.name.label.name == name) {
-      final v = a.expression;
+    if (a is NamedArgument && a.name.lexeme == name) {
+      final v = a.argumentExpression;
       if (v is SimpleStringLiteral) return v.value;
     }
   }
@@ -828,8 +828,8 @@ void _checkWriterVerbatim(
   fn.body!.accept(visitor);
   final uses = visitor.uses;
   final ok = uses.length == 1 &&
-      uses.single.parent is NamedExpression &&
-      (uses.single.parent! as NamedExpression).name.label.name == 'extra';
+      uses.single.parent is NamedArgument &&
+      (uses.single.parent! as NamedArgument).name.lexeme == 'extra';
   if (!ok) {
     _fail(
       '(k) WRITER MENTEUR (ou suspect) — `$label` ($file) : le paramètre '
@@ -880,8 +880,8 @@ Set<String> _voiesOf(
     }
     voies.add(voie);
     for (final a in args.arguments) {
-      if (a is NamedExpression && a.name.label.name == 'write') {
-        _checkWriterVerbatim(unit, file, '$owner#$voie', a.expression);
+      if (a is NamedArgument && a.name.lexeme == 'write') {
+        _checkWriterVerbatim(unit, file, '$owner#$voie', a.argumentExpression);
       }
     }
   }
@@ -1035,8 +1035,8 @@ _Wiring _readWiring(Directory root, {required bool fixtureMode}) {
           if (fixtureMode) continue;
           Expression? writes;
           for (final a in args.arguments) {
-            if (a is NamedExpression && a.name.label.name == 'writes') {
-              writes = a.expression;
+            if (a is NamedArgument && a.name.lexeme == 'writes') {
+              writes = a.argumentExpression;
             }
           }
           voiesByClass[name] =

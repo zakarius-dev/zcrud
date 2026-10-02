@@ -121,7 +121,7 @@ dev_dependencies:
   # est transitif ; on le déclare ici pour l'importer explicitement dans le test
   # (`depend_on_referenced_packages`). Runtime : Syncfusion reste tiré via
   # `zcrud_list` (SM-5), jamais `zcrud_core`.
-  syncfusion_flutter_datagrid: ^34.1.31
+  syncfusion_flutter_datagrid: ^35.1.37
 
 # Icônes Material requises par l'app (AD-13) ET par le backend Syncfusion
 # (`zcrud_list`/`SfDataGrid` déclarent `uses-material-design: true`).

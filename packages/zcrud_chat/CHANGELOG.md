@@ -3,6 +3,27 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.59.0 — 2026-10-02
+
+### Ajouté
+
+- `adoptTurn` appelle `onStarted` avec le jeton avant le premier événement. `requestId` fixe cette identité. `settle: false` n'insère pas de message à la fin du flux.
+- `adoptMessages` remplace le fil pendant un tour adopté. Un envoi du socle encore en vol bloque toujours le remplacement.
+- `itemFrameBuilder` sur la vue et l'écran enveloppe chaque tuile de la liste par défaut. Le message vaut `null` pour un tour en vol.
+- `pickerMenuBuilder` sur le composer par défaut et l'écran. `ZChatMenuSurface`, `ZChatOverlayDismiss` et `ZChatClampShift` sont exportés.
+- `ZTransformPaletteBar` active ses entrées au clavier. `sectionHeaderBuilder` remplace le titre de section.
+- `ZChatScopeGeneration.generate` transmet `modelId`, `providerId`, `languageTag` et `extra`. Une portée déjà occupée rend `ZChatScopeBusyFailure`.
+- `ZNotebookSourcesPanel` accepte `headerBuilder`, `importingNames` et `shrinkWrap`.
+
+### Corrigé
+
+- Un menu recalé dans l'écran reçoit le tap sur ses entrées. Le décalage s'applique à la boîte suiveuse.
+- La surface de menu par défaut a un rayon, une marge, une largeur maximale et un libellé sur deux lignes. Le focus est demandé à l'ouverture, y compris quand un champ le tient déjà.
+
+### Adaptation
+
+- La surface par défaut n'est plus un aplat sans marge. Un hôte qui compensait le menu, la liste à bulles, la barre de transformations, le panneau de sources ou la génération de portée retire sa compensation. Voir `docs/handoff-v3.59.0.md`.
+
 ## 3.58.0 — 2026-10-02
 
 ### Ajouté

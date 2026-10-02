@@ -9,6 +9,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
+/// Largeur maximale d'une surface de menu, pour qu'un libellé long replie
+/// au lieu de déborder l'écran.
+const double kZChatMenuMaxWidth = 320;
+
 /// Fond de menu : jeton de surface, filet du composer s'il est posé.
 class ZChatMenuSurface extends StatelessWidget {
   /// Construit la surface autour de [child].
@@ -22,12 +26,36 @@ class ZChatMenuSurface extends StatelessWidget {
     final ZcrudTheme theme = ZcrudTheme.of(context);
     final Color? fill = theme.surfaceColor ?? theme.chatComposerFill;
     final Color? border = theme.chatComposerBorderColor;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: fill,
-        border: border == null ? null : Border.all(color: border),
+    final Radius radius = theme.chatComposerRadius ?? theme.radiusM;
+    final Color? ink = theme.labelColor;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: kZChatMenuMaxWidth),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: fill,
+          borderRadius: BorderRadius.all(radius),
+          border: border == null
+              ? null
+              : Border.all(
+                  color: border,
+                  width:
+                      theme.chatComposerBorderWidth ?? theme.inputBorderWidth,
+                ),
+          boxShadow: ink == null
+              ? null
+              : <BoxShadow>[
+                  BoxShadow(
+                    color: ink.withValues(alpha: 0.12),
+                    blurRadius: theme.gapM,
+                    offset: Offset(0, theme.gapS / 2),
+                  ),
+                ],
+        ),
+        child: Padding(
+          padding: EdgeInsetsDirectional.all(theme.gapS),
+          child: child,
+        ),
       ),
-      child: child,
     );
   }
 }
@@ -68,13 +96,35 @@ class ZChatOverlayDismiss extends StatelessWidget {
   }
 }
 
-/// Décale [child] pour qu'il reste dans l'écran.
+/// Décale la boîte suiveuse pour que [child] reste dans l'écran.
 ///
-/// La translation courante est retirée avant le calcul suivant : sans cela
-/// la mesure oscille.
+/// Le décalage est l'`offset` du [CompositedTransformFollower] : une
+/// translation du contenu sortirait le menu de la boîte qui reçoit les
+/// touchers, et le tap fermerait le menu sans choisir. La mesure retire le
+/// décalage courant avant le calcul suivant, sinon elle oscille.
 class ZChatClampShift extends StatefulWidget {
-  /// Construit le recentrage.
-  const ZChatClampShift({required this.child, super.key});
+  /// Construit le recentrage. [targetAnchor] et [followerAnchor] sont ceux
+  /// du menu (déjà résolus dans la direction du contexte).
+  const ZChatClampShift({
+    required this.link,
+    required this.targetAnchor,
+    required this.followerAnchor,
+    required this.child,
+    this.showWhenUnlinked = true,
+    super.key,
+  });
+
+  /// Lien vers le déclencheur.
+  final LayerLink link;
+
+  /// Coin du déclencheur.
+  final Alignment targetAnchor;
+
+  /// Coin du menu collé à [targetAnchor].
+  final Alignment followerAnchor;
+
+  /// `false` : rien n'est peint tant que la cible n'est pas liée.
+  final bool showWhenUnlinked;
 
   /// Menu à maintenir visible.
   final Widget child;
@@ -84,8 +134,8 @@ class ZChatClampShift extends StatefulWidget {
 }
 
 class _ZChatClampShiftState extends State<ZChatClampShift> {
-  final ValueNotifier<Offset> _shift = ValueNotifier<Offset>(Offset.zero);
   final GlobalKey _boxKey = GlobalKey();
+  final ValueNotifier<Offset> _shift = ValueNotifier<Offset>(Offset.zero);
 
   @override
   void dispose() {
@@ -122,11 +172,16 @@ class _ZChatClampShiftState extends State<ZChatClampShift> {
     });
     return ValueListenableBuilder<Offset>(
       valueListenable: _shift,
-      builder: (BuildContext context, Offset shift, Widget? _) =>
-          Transform.translate(
-            offset: shift,
-            child: KeyedSubtree(key: _boxKey, child: widget.child),
-          ),
+      builder: (BuildContext context, Offset shift, Widget? _) {
+        return CompositedTransformFollower(
+          link: widget.link,
+          targetAnchor: widget.targetAnchor,
+          followerAnchor: widget.followerAnchor,
+          showWhenUnlinked: widget.showWhenUnlinked,
+          offset: shift,
+          child: KeyedSubtree(key: _boxKey, child: widget.child),
+        );
+      },
     );
   }
 }

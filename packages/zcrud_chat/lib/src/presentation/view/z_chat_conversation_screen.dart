@@ -130,6 +130,7 @@ class ZChatConversationScreen extends StatefulWidget {
     this.thinkingBuilder,
     this.onCitationTap,
     this.actionsBuilder,
+    this.itemFrameBuilder,
     this.shell,
     this.settings,
     this.composerBuilder,
@@ -144,6 +145,7 @@ class ZChatConversationScreen extends StatefulWidget {
     this.pickers = const <ZChatComposerPickerAction>[],
     this.pickersEnabled = true,
     this.pickerGlyph,
+    this.pickerMenuBuilder,
     this.showThinkingToggle = true,
     this.showWebSearchToggle = true,
     this.showEffortSelector = true,
@@ -169,10 +171,10 @@ class ZChatConversationScreen extends StatefulWidget {
     this.failureBuilder,
     this.headerBuilder,
     super.key,
-  })        : assert(
-           controller != null || streamPort != null,
-           kZChatOwnedControllerAssertMessage,
-         ),
+  }) : assert(
+         controller != null || streamPort != null,
+         kZChatOwnedControllerAssertMessage,
+       ),
        assert(
          composerBuilder == null || composerSlots == null,
          kZChatComposerSlotsExclusiveAssertMessage,
@@ -258,6 +260,10 @@ class ZChatConversationScreen extends StatefulWidget {
   /// Créneau d'actions par message.
   final ZChatMessageSlotBuilder? actionsBuilder;
 
+  /// Enveloppe chaque tuile de la liste par défaut. Relayé à
+  /// [ZChatConversationView.itemFrameBuilder].
+  final ZChatItemFrameBuilder? itemFrameBuilder;
+
   /// Coquille de tuile déclarée. `null` laisse l'arbre inchangé.
   final ZChatTileShell? shell;
 
@@ -311,6 +317,11 @@ class ZChatConversationScreen extends StatefulWidget {
 
   /// Glyphe du déclencheur `+`.
   final Widget? pickerGlyph;
+
+  /// Habillage du menu `+` du composer par défaut. Relayé à
+  /// [ZDefaultChatComposer.pickerMenuBuilder].
+  final Widget Function(BuildContext context, VoidCallback close)?
+  pickerMenuBuilder;
 
   /// Bascule de réflexion du composer par défaut.
   final bool showThinkingToggle;
@@ -492,6 +503,7 @@ class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
       thinkingBuilder: widget.thinkingBuilder,
       onCitationTap: widget.onCitationTap,
       actionsBuilder: widget.actionsBuilder,
+      itemFrameBuilder: widget.itemFrameBuilder,
       shell: widget.shell,
       composer: widget.readOnly ? null : _composer(context),
     );
@@ -547,6 +559,7 @@ class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
       pickers: widget.pickers,
       pickersEnabled: widget.pickersEnabled,
       pickerGlyph: widget.pickerGlyph,
+      pickerMenuBuilder: widget.pickerMenuBuilder,
       showThinkingToggle: widget.showThinkingToggle,
       showWebSearchToggle: widget.showWebSearchToggle,
       showEffortSelector: widget.showEffortSelector,

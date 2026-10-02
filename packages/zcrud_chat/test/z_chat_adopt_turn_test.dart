@@ -1,6 +1,8 @@
 @TestOn('vm')
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_chat/zcrud_chat.dart';
@@ -98,6 +100,39 @@ void main() {
     final double oldTop = tester.getTopLeft(find.text('ancien')).dy;
     final double newTop = tester.getTopLeft(find.text('récent')).dy;
     expect(oldTop, lessThan(newTop));
+  });
+
+  test('adoptTurn donne le jeton tout de suite et laisse remplacer le fil', () async {
+    final ZChatController controller = _controller();
+    addTearDown(controller.dispose);
+    ZChatRequestToken? seen;
+    final Completer<void> gate = Completer<void>();
+    final Future<ZResult<ZChatRequestToken>> done = controller.adoptTurn(
+      Stream<ZResult<ZChatStreamEvent>>.fromFuture(
+        gate.future.then(
+          (_) => const Right<ZFailure, ZChatStreamEvent>(ZChatDoneEvent()),
+        ),
+      ),
+      requestId: 'tour-1',
+      settle: false,
+      onStarted: (ZChatRequestToken token) => seen = token,
+    );
+    expect(seen?.requestId, 'tour-1');
+    expect(controller.activeRequests.value, <String>['tour-1']);
+    controller.adoptMessages(<ZChatMessage>[
+      const ZChatMessage(
+        id: 'hote',
+        conversationId: 'c1',
+        role: ZChatRole.user,
+        contentBlocks: <ZContentBlock>[ZTextBlock(text: 'question')],
+      ),
+    ]);
+    expect(controller.messages.value.single.id, 'hote');
+    gate.complete();
+    final ZResult<ZChatRequestToken> settled = await done;
+    expect(settled.isRight(), isTrue);
+    expect(controller.messages.value.single.id, 'hote');
+    expect(controller.activeRequests.value, isEmpty);
   });
 
   test('le singulier d\'une année ne porte pas de marqueur (s)', () {

@@ -378,16 +378,26 @@ class _ZChatComposerPickerTriggerState
   final OverlayPortalController _portal = OverlayPortalController();
   final ValueNotifier<bool> _open = ValueNotifier<bool>(false);
   final LayerLink _link = LayerLink();
+  final FocusNode _menuFocus = FocusNode();
 
   @override
   void dispose() {
+    _menuFocus.dispose();
     _open.dispose();
     super.dispose();
   }
 
   void _toggle() {
+    final bool opening = !_open.value;
     _portal.toggle();
-    _open.value = !_open.value;
+    _open.value = opening;
+    // `autofocus` ne prend pas le focus à un champ déjà focalisé. Le menu
+    // vit dans la zone de saisie : la demande est explicite.
+    if (opening && widget.menuBuilder == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _open.value) _menuFocus.requestFocus();
+      });
+    }
   }
 
   void _close() {
@@ -412,47 +422,43 @@ class _ZChatComposerPickerTriggerState
     return ValueListenableBuilder<bool>(
       valueListenable: _open,
       builder: (BuildContext context, bool open, Widget? child) =>
-          ZChatOverlayDismiss(
-            open: open,
-            onClose: _close,
-            child: child!,
-          ),
+          ZChatOverlayDismiss(open: open, onClose: _close, child: child!),
       child: OverlayPortal(
-      controller: _portal,
-      overlayChildBuilder: _overlay,
-      child: CompositedTransformTarget(
-        link: _link,
-        child: ValueListenableBuilder<bool>(
-          valueListenable: _open,
-          builder: (BuildContext context, bool open, Widget? _) => Semantics(
-            button: true,
-            enabled: widget.enabled,
-            expanded: open && widget.enabled,
-            label: resolved,
-            excludeSemantics: true,
-            onTap: widget.enabled ? _toggle : null,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
+        controller: _portal,
+        overlayChildBuilder: _overlay,
+        child: CompositedTransformTarget(
+          link: _link,
+          child: ValueListenableBuilder<bool>(
+            valueListenable: _open,
+            builder: (BuildContext context, bool open, Widget? _) => Semantics(
+              button: true,
+              enabled: widget.enabled,
+              expanded: open && widget.enabled,
+              label: resolved,
+              excludeSemantics: true,
               onTap: widget.enabled ? _toggle : null,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minWidth: kZChatMinTapTarget,
-                  minHeight: kZChatMinTapTarget,
-                ),
-                child: Align(
-                  // AD-13 : alignement DIRECTIONNEL.
-                  alignment: AlignmentDirectional.center,
-                  widthFactor: 1,
-                  heightFactor: 1,
-                  child:
-                      widget.glyph ??
-                      Text(resolved, textAlign: TextAlign.start),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.enabled ? _toggle : null,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minWidth: kZChatMinTapTarget,
+                    minHeight: kZChatMinTapTarget,
+                  ),
+                  child: Align(
+                    // AD-13 : alignement DIRECTIONNEL.
+                    alignment: AlignmentDirectional.center,
+                    widthFactor: 1,
+                    heightFactor: 1,
+                    child:
+                        widget.glyph ??
+                        Text(resolved, textAlign: TextAlign.start),
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -470,43 +476,39 @@ class _ZChatComposerPickerTriggerState
           ),
         ),
         Positioned.fill(
-          child: CompositedTransformFollower(
+          child: ZChatClampShift(
             link: _link,
             // Le menu s'ouvre AU-DESSUS du déclencheur, ancré côté DÉBUT
-            // (le `+` vit en tête de bande).
+            // (le `+` vit en tête de bande). Le recentrage déplace la boîte
+            // suiveuse, pas son contenu : un tap reste sur l'entrée.
             targetAnchor: AlignmentDirectional.topStart.resolve(direction),
             followerAnchor: AlignmentDirectional.bottomStart.resolve(direction),
-            // Le menu est posé au COIN ANCRÉ de la boîte suiveuse (elle
-            // s'étend en amont de l'ancre) : il apparaît DIRECTEMENT
-            // au-dessus du déclencheur — un `topStart` le poserait à l'autre
-            // bout de la boîte, hors écran.
             child: Align(
               alignment: AlignmentDirectional.bottomStart.resolve(direction),
-              child: ZChatClampShift(
-                child: widget.menuBuilder?.call(context, _close) ??
-                    ZChatMenuSurface(
-                      child: Focus(
-                        autofocus: true,
-                        child: Semantics(
-                          container: true,
-                          explicitChildNodes: true,
-                          label: zChatLabel(
-                            context,
-                            kZChatLabelAttachmentPickers,
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              for (final ZChatComposerPickerAction a
-                                  in widget.actions)
-                                _item(context, a, gap),
-                            ],
-                          ),
+              child:
+                  widget.menuBuilder?.call(context, _close) ??
+                  ZChatMenuSurface(
+                    child: Focus(
+                      focusNode: _menuFocus,
+                      child: Semantics(
+                        container: true,
+                        explicitChildNodes: true,
+                        label: zChatLabel(
+                          context,
+                          kZChatLabelAttachmentPickers,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            for (final ZChatComposerPickerAction a
+                                in widget.actions)
+                              _item(context, a, gap),
+                          ],
                         ),
                       ),
                     ),
-              ),
+                  ),
             ),
           ),
         ),
@@ -540,13 +542,19 @@ class _ZChatComposerPickerTriggerState
             widthFactor: 1,
             heightFactor: 1,
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 if (icon != null) ...<Widget>[
                   ExcludeSemantics(child: icon),
                   SizedBox(width: gap),
                 ],
-                Text(resolved, textAlign: TextAlign.start),
+                Flexible(
+                  child: Text(
+                    resolved,
+                    textAlign: TextAlign.start,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
           ),

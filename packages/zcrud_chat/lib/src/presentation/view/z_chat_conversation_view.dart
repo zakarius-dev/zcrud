@@ -50,6 +50,11 @@ import 'z_chat_labels.dart';
 import 'z_chat_message_tile.dart';
 import 'z_chat_tile_shell.dart';
 
+/// Enveloppe une tuile de la liste par défaut. [message] est `null` pour
+/// un tour encore en vol.
+typedef ZChatItemFrameBuilder =
+    Widget Function(BuildContext context, ZChatMessage? message, Widget tile);
+
 /// Rend la conversation d'un [ZChatController] — zéro dépendance tierce.
 ///
 /// Sans `ZChatRendererScope` au-dessus, cette vue est utilisable seule :
@@ -67,6 +72,7 @@ class ZChatConversationView extends StatelessWidget {
     this.thinkingBuilder,
     this.onCitationTap,
     this.actionsBuilder,
+    this.itemFrameBuilder,
     this.shell,
     this.composer,
     super.key,
@@ -113,6 +119,11 @@ class ZChatConversationView extends StatelessWidget {
   /// `runAction(ZChatCustomAction(...))`, jamais par un canal parallèle.
   final ZChatMessageSlotBuilder? actionsBuilder;
 
+  /// Enveloppe chaque tuile de la liste par défaut. Le message est `null`
+  /// pour un tour en vol. Une coquille tierce construit sa propre liste :
+  /// ce créneau ne la traverse pas.
+  final ZChatItemFrameBuilder? itemFrameBuilder;
+
   /// La **coquille** relayée à la fabrique de tuile unique.
   ///
   /// `null` (défaut) laisse l'arbre strictement inchangé. Déclarée, elle
@@ -158,6 +169,7 @@ class ZChatConversationView extends StatelessWidget {
                         thinkingBuilder: thinkingBuilder,
                         onCitationTap: onCitationTap,
                         actionsBuilder: actionsBuilder,
+                        itemFrameBuilder: itemFrameBuilder,
                         shell: shell,
                       ),
                     );
@@ -220,6 +232,7 @@ class _ZChatList extends StatelessWidget {
     required this.thinkingBuilder,
     required this.onCitationTap,
     required this.actionsBuilder,
+    required this.itemFrameBuilder,
     required this.shell,
   });
 
@@ -235,13 +248,19 @@ class _ZChatList extends StatelessWidget {
   final ZChatMessageSlotBuilder? thinkingBuilder;
   final ZChatCitationTap? onCitationTap;
   final ZChatMessageSlotBuilder? actionsBuilder;
+
+  /// Enveloppe chaque tuile de la liste par défaut. [message] est `null`
+  /// pour un tour en vol. Une coquille tierce construit sa propre liste :
+  /// ce créneau ne la traverse pas.
+  final ZChatItemFrameBuilder? itemFrameBuilder;
+
   final ZChatTileShell? shell;
 
   /// La tuile de l'index [index] — le seul constructeur de tuile du paquet.
   Widget _item(BuildContext context, int index) {
     if (index < messages.length) {
       final ZChatMessage message = messages[index];
-      return ZChatMessageTile(
+      final Widget tile = ZChatMessageTile(
         key: ValueKey<String>(message.id ?? 'msg#$index'),
         message: message,
         collapsedMaxHeight: collapsedMaxHeight,
@@ -261,6 +280,9 @@ class _ZChatList extends StatelessWidget {
         // question l'a produite.
         topic: _topicOf(message, index),
       );
+      final ZChatItemFrameBuilder? frame = itemFrameBuilder;
+      if (frame == null) return tile;
+      return frame(context, message, tile);
     }
     final int active = index - messages.length;
     // Invariant AD-10 : une coquille tierce indexe comme elle veut ; un
@@ -269,7 +291,7 @@ class _ZChatList extends StatelessWidget {
       return const SizedBox.shrink();
     }
     final String requestId = activeRequestIds[active];
-    return _ZStreamingTile(
+    final Widget tile = _ZStreamingTile(
       key: ValueKey<String>('stream#$requestId'),
       controller: controller,
       requestId: requestId,
@@ -278,6 +300,9 @@ class _ZChatList extends StatelessWidget {
       actionsBuilder: actionsBuilder,
       onCitationTap: onCitationTap,
     );
+    final ZChatItemFrameBuilder? frame = itemFrameBuilder;
+    if (frame == null) return tile;
+    return frame(context, null, tile);
   }
 
   /// Le sujet du tour du message d'index [index], ou `null`.
@@ -309,9 +334,7 @@ class _ZChatList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (messages.isEmpty &&
-        activeRequestIds.isEmpty &&
-        emptyBuilder != null) {
+    if (messages.isEmpty && activeRequestIds.isEmpty && emptyBuilder != null) {
       return emptyBuilder!(context);
     }
     final ZChatShellRenderRequest request = ZChatShellRenderRequest(
@@ -490,12 +513,7 @@ class _ZStreamingTile extends StatelessWidget {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    ?identity,
-                    ?thinking,
-                    body,
-                    ?actions,
-                  ],
+                  children: <Widget>[?identity, ?thinking, body, ?actions],
                 ),
         ),
       ),

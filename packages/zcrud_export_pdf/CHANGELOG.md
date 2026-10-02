@@ -3,6 +3,12 @@
 Toutes les modifications notables de `zcrud_export_pdf` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.59.0 — 2026-10-02
+
+### Adaptation
+
+- `syncfusion_flutter_pdf` passe à `^35.1.37`.
+
 ## 3.57.0 — 2026-10-01
 
 ### Ajouté

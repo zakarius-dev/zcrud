@@ -3,6 +3,12 @@
 Toutes les modifications notables de `zcrud_field_extras` sont documentées
 dans ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.59.0 — 2026-10-02
+
+### Adaptation
+
+- `pinput` reste en 6.x (`>=6.0.2 <7.0.0`). La 7.0.0 exige un ancêtre `package:material_ui` `Material`, distinct du `Material` de Flutter : un `Scaffold` ordinaire lève en debug.
+
 ## [0.86.0] — Chantier documentation
 
 ### Ajouté

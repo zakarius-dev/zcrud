@@ -159,47 +159,99 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
         ZDomainFailure('adoptUnscoped requires a non-empty scope'),
       );
     }
-    final HiveZLocalStore<T> source = await HiveZLocalStore.openBox<T>(
-      kind: kind,
-      fromMap: fromMap,
-      toMap: toMap,
-      fromMapSafe: fromMapSafe,
-      idFactory: idFactory,
-    );
-    final HiveZLocalStore<T> target = await HiveZLocalStore.openBox<T>(
-      kind: kind,
-      scope: scope,
-      fromMap: fromMap,
-      toMap: toMap,
-      fromMapSafe: fromMapSafe,
-      idFactory: idFactory,
-    );
+    final String sourceName = boxNameFor(kind);
+    if (!Hive.isBoxOpen(sourceName) && !await Hive.boxExists(sourceName)) {
+      return const Right<ZFailure, int>(0);
+    }
+    final bool sourceWasOpen = Hive.isBoxOpen(sourceName);
+    final HiveZLocalStore<T> source = sourceWasOpen
+        ? HiveZLocalStore<T>(
+            box: Hive.box<dynamic>(sourceName),
+            kind: kind,
+            fromMap: fromMap,
+            toMap: toMap,
+            fromMapSafe: fromMapSafe,
+            idFactory: idFactory,
+          )
+        : await HiveZLocalStore.openBox<T>(
+            kind: kind,
+            fromMap: fromMap,
+            toMap: toMap,
+            fromMapSafe: fromMapSafe,
+            idFactory: idFactory,
+          );
+    final String targetName = boxNameFor(kind, scope: scope);
+    final bool targetWasOpen = Hive.isBoxOpen(targetName);
+    final HiveZLocalStore<T> target = targetWasOpen
+        ? HiveZLocalStore<T>(
+            box: Hive.box<dynamic>(targetName),
+            kind: kind,
+            fromMap: fromMap,
+            toMap: toMap,
+            fromMapSafe: fromMapSafe,
+            idFactory: idFactory,
+          )
+        : await HiveZLocalStore.openBox<T>(
+            kind: kind,
+            scope: scope,
+            fromMap: fromMap,
+            toMap: toMap,
+            fromMapSafe: fromMapSafe,
+            idFactory: idFactory,
+          );
     try {
       final ZResult<List<ZSyncEntry<T>>> listed = await source.syncEntries();
-      return await listed.fold(
-        (ZFailure failure) async => Left<ZFailure, int>(failure),
-        (List<ZSyncEntry<T>> entries) async {
-          int moved = 0;
-          for (final ZSyncEntry<T> entry in entries) {
-            if (!isMine(entry.entity)) continue;
-            final ZResult<Unit> written = await target.applyMerged(entry);
-            final ZFailure? failure = written.fold(
-              (ZFailure f) => f,
-              (Unit _) => null,
-            );
-            if (failure != null) return Left<ZFailure, int>(failure);
-            final String? id = entry.id;
-            if (id != null) await source.purge(id);
-            moved++;
-          }
-          return Right<ZFailure, int>(moved);
-        },
+      final ZResult<List<ZSyncEntry<T>>> held = await target.syncEntries();
+      final ZFailure? listedFailure = listed.fold(
+        (ZFailure f) => f,
+        (_) => null,
       );
+      if (listedFailure != null) return Left<ZFailure, int>(listedFailure);
+      final ZFailure? heldFailure = held.fold((ZFailure f) => f, (_) => null);
+      if (heldFailure != null) return Left<ZFailure, int>(heldFailure);
+      final Map<String, ZSyncEntry<T>> current = <String, ZSyncEntry<T>>{
+        for (final ZSyncEntry<T> entry in held.getOrElse(
+          () => <ZSyncEntry<T>>[],
+        ))
+          if (entry.id != null) entry.id!: entry,
+      };
+      int moved = 0;
+      for (final ZSyncEntry<T> entry in listed.getOrElse(
+        () => <ZSyncEntry<T>>[],
+      )) {
+        bool mine;
+        try {
+          mine = isMine(entry.entity);
+        } catch (_) {
+          continue;
+        }
+        if (!mine) continue;
+        final String? id = entry.id;
+        final ZSyncEntry<T>? existing = id == null ? null : current[id];
+        final DateTime? incoming = entry.meta.updatedAt;
+        final DateTime? present = existing?.meta.updatedAt;
+        if (present != null && incoming != null && !incoming.isAfter(present)) {
+          continue;
+        }
+        final ZResult<Unit> written = await target.applyMerged(entry);
+        final ZFailure? failure = written.fold(
+          (ZFailure f) => f,
+          (Unit _) => null,
+        );
+        if (failure != null) return Left<ZFailure, int>(failure);
+        if (id != null) await source.purge(id);
+        moved++;
+      }
+      return Right<ZFailure, int>(moved);
     } finally {
-      source.dispose();
-      target.dispose();
-      await source.closedForTest;
-      await target.closedForTest;
+      if (!sourceWasOpen) {
+        source.dispose();
+        await source.closedForTest;
+      }
+      if (!targetWasOpen) {
+        target.dispose();
+        await target.closedForTest;
+      }
     }
   }
 

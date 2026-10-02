@@ -93,6 +93,7 @@ class ZDefaultChatComposer extends StatelessWidget {
     this.showWebSearchToggle = true,
     this.showEffortSelector = true,
     this.pickerGlyph,
+    this.pickerMenuBuilder,
     this.thinkingGlyph,
     this.webSearchGlyph,
     this.toolsGlyph,
@@ -235,6 +236,12 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// Glyphes d'hôte des pièces — `null` signifie libellé résolu (le socle
   /// n'invente aucun glyphe).
   final Widget? pickerGlyph;
+
+  /// Habillage du menu `+` monté par le catalogue [pickers]. `null` : la
+  /// surface du socle. Sans ce relais, l'hôte doit remonter le déclencheur
+  /// lui-même et refaire le suivi des requêtes en vol.
+  final Widget Function(BuildContext context, VoidCallback close)?
+  pickerMenuBuilder;
 
   /// Glyphe de la bascule « réfléchir ».
   final Widget? thinkingGlyph;
@@ -619,6 +626,7 @@ class ZDefaultChatComposer extends StatelessWidget {
                       ZChatComposerPickerTrigger(
                         actions: pickers,
                         glyph: pickerGlyph,
+                        menuBuilder: pickerMenuBuilder,
                         enabled:
                             pickersEnabled &&
                             controller.activeRequests.value.isEmpty,

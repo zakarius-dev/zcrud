@@ -3,6 +3,12 @@
 Toutes les modifications notables de `zcrud_chat_syncfusion` sont
 documentées dans ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.59.0 — 2026-10-02
+
+### Adaptation
+
+- `syncfusion_flutter_chat` passe à `^35.1.37`, avec le reste de la pile Syncfusion.
+
 ## 3.32.0 — 2026-08-29
 
 ### Renforcé — la garde FR-26 voit désormais les couleurs qu'elle laissait passer

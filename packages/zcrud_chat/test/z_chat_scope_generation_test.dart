@@ -42,7 +42,7 @@ void main() {
       artifactKey: 'cards',
       notes: 'autre',
     );
-    expect(second.isLeft(), isTrue);
+    expect(second.fold((ZFailure f) => f, (_) => null), isA<ZChatScopeBusyFailure>());
     expect(port.calls, 1);
 
     port.gate.complete(
@@ -74,6 +74,21 @@ void main() {
     expect(done.isRight(), isTrue);
     expect(recorded?.data, 'texte');
   });
+
+  test('le niveau et extra atteignent la requête du port', () async {
+    final _Capture port = _Capture();
+    final ZChatScopeGeneration generation = ZChatScopeGeneration(port: port);
+    addTearDown(generation.dispose);
+    await generation.generate(
+      scopeId: 'folder-1',
+      artifactKey: 'cards',
+      notes: 'matière',
+      modelId: 'pro',
+      extra: const <String, dynamic>{'tier': 'plus'},
+    );
+    expect(port.request?.modelId, 'pro');
+    expect(port.request?.extra['tier'], 'plus');
+  });
 }
 
 class _Immediate implements ZChatArtifactGenerationPort {
@@ -85,4 +100,19 @@ class _Immediate implements ZChatArtifactGenerationPort {
     ZChatArtifactGenerationRequest request, {
     required ZChatRequestToken token,
   }) async => Right<ZFailure, ZChatArtifactContent>(content);
+}
+
+class _Capture implements ZChatArtifactGenerationPort {
+  ZChatArtifactGenerationRequest? request;
+
+  @override
+  Future<ZResult<ZChatArtifactContent>> generate(
+    ZChatArtifactGenerationRequest request, {
+    required ZChatRequestToken token,
+  }) async {
+    this.request = request;
+    return Right<ZFailure, ZChatArtifactContent>(
+      ZChatArtifactContent('ok', structured: const <String, dynamic>{}),
+    );
+  }
 }

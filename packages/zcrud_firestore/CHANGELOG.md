@@ -2,6 +2,23 @@
 
 All notable changes to `zcrud_firestore` are documented in this file.
 
+## 3.59.0 — 2026-10-02
+
+### Ajouté
+
+- `ZDeferredScopedLocalStore.unsignedReadsAreEmpty` vaut `true` par défaut. À `false`, une lecture sans scope échoue et le flux n'émet rien.
+- Plusieurs stores différés du même nom de box partagent l'ouverture. `dispose` ne ferme la box qu'au dernier usage.
+- Une ouverture en échec est rendue en `Left` et retentée à l'opération suivante.
+- `buildUserScopedStudyRepository` et `buildFolderScopedStudyRepository` relaient `isForeign`.
+
+### Corrigé
+
+- `adoptUnscoped` ne ferme pas une box déjà ouverte, ne crée pas la box non cloisonnée si elle n'existe pas, ne remplace pas une entrée plus récente, et passe à l'entrée suivante lorsque `isMine` lève.
+
+### Adaptation
+
+- Un hôte qui fermait, recréait ou comparait les dates lui-même retire cette compensation. Voir `docs/handoff-v3.59.0.md`.
+
 ## 3.58.0 — 2026-10-02
 
 ### Ajouté

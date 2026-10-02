@@ -2,6 +2,12 @@
 
 All notable changes to `zcrud_generator` are documented in this file.
 
+## 3.59.0 — 2026-10-02
+
+### Adaptation
+
+- Le générateur compile avec analyzer 13 (`NamedArgument`). La contrainte reste `>=12.0.0 <14.0.0` : analyzer 14 tire `source_gen` 4.3, incompatible avec les hôtes qui partagent analyzer 13 (`reflectable_builder`, `riverpod_generator`).
+
 ## 3.40.0 — 2026-08-30
 
 ### Corrigé — le mixin `_$XxxZcrud` compile enfin sur une base à canaux hors schéma

@@ -561,83 +561,79 @@ class _ZActionMenuState extends State<_ZActionMenu> {
     return ValueListenableBuilder<bool>(
       valueListenable: _open,
       builder: (BuildContext context, bool open, Widget? child) =>
-          ZChatOverlayDismiss(
-            open: open,
-            onClose: _close,
-            child: child!,
-          ),
+          ZChatOverlayDismiss(open: open, onClose: _close, child: child!),
       child: OverlayPortal(
-      controller: _portal,
-      overlayChildBuilder: (BuildContext context) {
-        final Widget Function(BuildContext context, VoidCallback close)?
-        custom = widget.menuBuilder;
-        final Widget menu = custom != null
-            ? custom(context, _close)
-            : ZChatMenuSurface(
-                child: Focus(
-                  focusNode: _focus,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: <Widget>[
-                      for (final ZChatConversationAction a in widget.actions)
-                        _ZActionButton(
-                          key: ValueKey<String>('zchat.action#${a.labelKey}'),
-                          action: a,
-                          conversation: widget.conversation,
-                          onInvoked: _close,
-                        ),
-                    ],
+        controller: _portal,
+        overlayChildBuilder: (BuildContext context) {
+          final Widget Function(BuildContext context, VoidCallback close)?
+          custom = widget.menuBuilder;
+          final Widget menu = custom != null
+              ? custom(context, _close)
+              : ZChatMenuSurface(
+                  child: Focus(
+                    focusNode: _focus,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: <Widget>[
+                        for (final ZChatConversationAction a in widget.actions)
+                          _ZActionButton(
+                            key: ValueKey<String>('zchat.action#${a.labelKey}'),
+                            action: a,
+                            conversation: widget.conversation,
+                            onInvoked: _close,
+                          ),
+                      ],
+                    ),
                   ),
+                );
+          return Stack(
+            children: <Widget>[
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: _close,
+                  child: const ExcludeSemantics(child: SizedBox.expand()),
                 ),
-              );
-        return Stack(
-          children: <Widget>[
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: _close,
-                child: const ExcludeSemantics(child: SizedBox.expand()),
               ),
-            ),
-            CompositedTransformFollower(
-              link: _link,
-              targetAnchor: AlignmentDirectional.bottomEnd.resolve(direction),
-              followerAnchor: AlignmentDirectional.topEnd.resolve(direction),
-              showWhenUnlinked: false,
-              child: ZChatClampShift(child: menu),
-            ),
-          ],
-        );
-      },
-      child: CompositedTransformTarget(
-        link: _link,
-        child: ValueListenableBuilder<bool>(
-          valueListenable: _open,
-          builder: (BuildContext context, bool open, Widget? _) => Semantics(
-            button: true,
-            expanded: open,
-            label: label,
-            excludeSemantics: true,
-            onTap: _toggle,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
+              ZChatClampShift(
+                link: _link,
+                targetAnchor: AlignmentDirectional.bottomEnd.resolve(direction),
+                followerAnchor: AlignmentDirectional.topEnd.resolve(direction),
+                showWhenUnlinked: false,
+                child: menu,
+              ),
+            ],
+          );
+        },
+        child: CompositedTransformTarget(
+          link: _link,
+          child: ValueListenableBuilder<bool>(
+            valueListenable: _open,
+            builder: (BuildContext context, bool open, Widget? _) => Semantics(
+              button: true,
+              expanded: open,
+              label: label,
+              excludeSemantics: true,
               onTap: _toggle,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minHeight: kZChatMinTapTarget,
-                  minWidth: kZChatMinTapTarget,
-                ),
-                child: Align(
-                  alignment: AlignmentDirectional.center,
-                  child:
-                      widget.glyph ?? Text(label, textAlign: TextAlign.start),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _toggle,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: kZChatMinTapTarget,
+                    minWidth: kZChatMinTapTarget,
+                  ),
+                  child: Align(
+                    alignment: AlignmentDirectional.center,
+                    child:
+                        widget.glyph ?? Text(label, textAlign: TextAlign.start),
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
       ),
     );
   }

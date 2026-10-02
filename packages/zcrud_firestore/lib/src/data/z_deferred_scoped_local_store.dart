@@ -29,6 +29,7 @@ class ZDeferredScopedLocalStore<T extends ZEntity> implements ZLocalStore<T> {
     required this.kind,
     required this.scope,
     required Future<ZLocalStore<T>> Function(String scope) open,
+    this.unsignedReadsAreEmpty = true,
   }) : _open = open {
     scope.addListener(_onScope);
   }
@@ -39,11 +40,21 @@ class ZDeferredScopedLocalStore<T extends ZEntity> implements ZLocalStore<T> {
   /// Scope courant. `null` ou vide : aucune box.
   final ValueListenable<String?> scope;
 
+  /// `true` : une lecture sans scope rend une liste vide. `false` : le
+  /// contenu est inconnu — les lectures uniques échouent, le flux n'émet
+  /// rien.
+  final bool unsignedReadsAreEmpty;
+
   final Future<ZLocalStore<T>> Function(String scope) _open;
   ZLocalStore<T>? _inner;
   String? _innerScope;
+  Object? _openError;
   Future<void> _tail = Future<void>.value();
   bool _disposed = false;
+
+  static final Map<String, _ZDeferredBoxShare> _shares =
+      <String, _ZDeferredBoxShare>{};
+  static final Map<String, Future<void>> _gates = <String, Future<void>>{};
 
   void _onScope() {
     unawaited(_ready());
@@ -51,44 +62,80 @@ class ZDeferredScopedLocalStore<T extends ZEntity> implements ZLocalStore<T> {
 
   Future<ZLocalStore<T>?> _ready() {
     final Completer<ZLocalStore<T>?> done = Completer<ZLocalStore<T>?>();
-    _tail = _tail.then((_) async {
-      if (_disposed) {
-        done.complete(null);
-        return;
-      }
-      final String? next = scope.value;
-      if (next == null || next.isEmpty) {
+    _tail = _tail.catchError((Object _) {}).then((_) async {
+      try {
+        if (_disposed) {
+          done.complete(null);
+          return;
+        }
+        final String? next = scope.value;
+        if (next == null || next.isEmpty) {
+          await _drop();
+          done.complete(null);
+          return;
+        }
+        if (_inner != null && _innerScope == next) {
+          done.complete(_inner);
+          return;
+        }
         await _drop();
-        done.complete(null);
-        return;
+        final String name = HiveZLocalStore.boxNameFor(kind, scope: next);
+        while (_gates.containsKey(name)) {
+          await _gates[name];
+        }
+        final _ZDeferredBoxShare? shared = _shares[name];
+        if (shared != null) {
+          shared.users++;
+          _inner = shared.store as ZLocalStore<T>;
+          _innerScope = next;
+          _openError = null;
+          done.complete(_inner);
+          return;
+        }
+        var spins = 0;
+        while (Hive.isBoxOpen(name) && spins < 50) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          spins++;
+        }
+        final Completer<void> gate = Completer<void>();
+        _gates[name] = gate.future;
+        try {
+          final ZLocalStore<T> opened = await _open(next);
+          _shares[name] = _ZDeferredBoxShare(opened);
+          _inner = opened;
+          _innerScope = next;
+          _openError = null;
+          done.complete(opened);
+        } catch (error) {
+          _inner = null;
+          _innerScope = null;
+          _openError = error;
+          done.complete(null);
+        } finally {
+          _gates.remove(name);
+          if (!gate.isCompleted) gate.complete();
+        }
+      } catch (error) {
+        _openError = error;
+        if (!done.isCompleted) done.complete(null);
       }
-      if (_inner != null && _innerScope == next) {
-        done.complete(_inner);
-        return;
-      }
-      await _drop();
-      final String name = HiveZLocalStore.boxNameFor(kind, scope: next);
-      var spins = 0;
-      while (Hive.isBoxOpen(name) && spins < 50) {
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-        spins++;
-      }
-      _inner = await _open(next);
-      _innerScope = next;
-      done.complete(_inner);
     });
     return done.future;
   }
 
   Future<void> _drop() async {
-    final ZLocalStore<T>? previous = _inner;
     final String? name = _innerScope == null
         ? null
         : HiveZLocalStore.boxNameFor(kind, scope: _innerScope);
     _inner = null;
     _innerScope = null;
-    previous?.dispose();
     if (name == null) return;
+    final _ZDeferredBoxShare? share = _shares[name];
+    if (share == null) return;
+    share.users--;
+    if (share.users > 0) return;
+    _shares.remove(name);
+    share.store.dispose();
     var spins = 0;
     while (Hive.isBoxOpen(name) && spins < 50) {
       await Future<void>.delayed(const Duration(milliseconds: 10));
@@ -101,7 +148,14 @@ class ZDeferredScopedLocalStore<T extends ZEntity> implements ZLocalStore<T> {
     ZResult<R> Function() ifAbsent,
   ) async {
     final ZLocalStore<T>? store = await _ready();
-    if (store == null) return ifAbsent();
+    if (store == null) {
+      if (_openError != null) {
+        return Left<ZFailure, R>(
+          ZCacheFailure('local box open failed: $_openError'),
+        );
+      }
+      return ifAbsent();
+    }
     return action(store);
   }
 
@@ -117,7 +171,9 @@ class ZDeferredScopedLocalStore<T extends ZEntity> implements ZLocalStore<T> {
           _ready().then((ZLocalStore<T>? store) {
             if (controller.isClosed) return;
             if (store == null) {
-              controller.add(<T>[]);
+              if (unsignedReadsAreEmpty && _openError == null) {
+                controller.add(<T>[]);
+              }
               return;
             }
             innerSub = store.watchAll().listen(
@@ -140,15 +196,18 @@ class ZDeferredScopedLocalStore<T extends ZEntity> implements ZLocalStore<T> {
   @override
   Future<ZResult<List<T>>> getAll() => _withStore(
     (ZLocalStore<T> store) => store.getAll(),
-    () => Right<ZFailure, List<T>>(<T>[]),
+    () => unsignedReadsAreEmpty
+        ? Right<ZFailure, List<T>>(<T>[])
+        : Left<ZFailure, List<T>>(
+            const ZDomainFailure('signed out: the box content is unknown'),
+          ),
   );
 
   @override
   Future<ZResult<T>> getById(String id) => _withStore(
     (ZLocalStore<T> store) => store.getById(id),
-    () => Left<ZFailure, T>(
-      ZNotFoundFailure('signed out', id: id, entity: kind),
-    ),
+    () =>
+        Left<ZFailure, T>(ZNotFoundFailure('signed out', id: id, entity: kind)),
   );
 
   @override
@@ -186,7 +245,11 @@ class ZDeferredScopedLocalStore<T extends ZEntity> implements ZLocalStore<T> {
   @override
   Future<ZResult<List<ZSyncEntry<T>>>> syncEntries() => _withStore(
     (ZLocalStore<T> store) => store.syncEntries(),
-    () => Right<ZFailure, List<ZSyncEntry<T>>>(<ZSyncEntry<T>>[]),
+    () => unsignedReadsAreEmpty
+        ? Right<ZFailure, List<ZSyncEntry<T>>>(<ZSyncEntry<T>>[])
+        : Left<ZFailure, List<ZSyncEntry<T>>>(
+            const ZDomainFailure('signed out: the box content is unknown'),
+          ),
   );
 
   @override
@@ -214,8 +277,24 @@ class ZDeferredScopedLocalStore<T extends ZEntity> implements ZLocalStore<T> {
     if (_disposed) return;
     _disposed = true;
     scope.removeListener(_onScope);
-    final ZLocalStore<T>? previous = _inner;
+    final String? name = _innerScope == null
+        ? null
+        : HiveZLocalStore.boxNameFor(kind, scope: _innerScope);
     _inner = null;
-    previous?.dispose();
+    _innerScope = null;
+    if (name == null) return;
+    final _ZDeferredBoxShare? share = _shares[name];
+    if (share == null) return;
+    share.users--;
+    if (share.users > 0) return;
+    _shares.remove(name);
+    share.store.dispose();
   }
+}
+
+class _ZDeferredBoxShare {
+  _ZDeferredBoxShare(this.store);
+
+  final ZLocalStore<dynamic> store;
+  int users = 1;
 }

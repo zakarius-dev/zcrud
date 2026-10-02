@@ -648,11 +648,12 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       // Le nom peut être préfixé par un import (`z.ZcrudModel`) : on compare le
       // dernier segment, jamais le nom nu.
       if (annotation.name.name.split('.').last != 'ZcrudModel') continue;
-      for (final argument
-          in annotation.arguments?.arguments ?? const <Expression>[]) {
-        if (argument is! NamedExpression) continue;
-        if (argument.name.label.name != 'fieldRename') continue;
-        return argument.expression.toSource();
+      final arguments = annotation.arguments?.arguments;
+      if (arguments == null) continue;
+      for (final argument in arguments) {
+        if (argument is! NamedArgument) continue;
+        if (argument.name.lexeme != 'fieldRename') continue;
+        return argument.argumentExpression.toSource();
       }
     }
     return null;

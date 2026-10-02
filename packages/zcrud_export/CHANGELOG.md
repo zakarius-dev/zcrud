@@ -3,6 +3,12 @@
 Toutes les modifications notables de `zcrud_export` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.59.0 — 2026-10-02
+
+### Adaptation
+
+- `syncfusion_flutter_xlsio` et `syncfusion_flutter_pdf` passent à `^35.1.37`. La pile Syncfusion se déplace ensemble.
+
 ## 3.57.0 — 2026-10-01
 
 ### Ajouté

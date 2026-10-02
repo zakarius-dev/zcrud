@@ -231,6 +231,109 @@ void main() {
       left.dispose();
       await left.closedForTest;
     });
+
+    test('adoptUnscoped ne ferme pas une box déjà ouverte et n\'en crée pas',
+        () async {
+      expect(
+        await Hive.boxExists(HiveZLocalStore.boxNameFor('absent')),
+        isFalse,
+      );
+      final ZResult<int> none = await HiveZLocalStore.adoptUnscoped(
+        kind: 'absent',
+        scope: 'account',
+        isMine: (_Note note) => true,
+        fromMap: _Note.fromMap,
+        toMap: (_Note n) => n.toMap(),
+      );
+      expect(none.getOrElse(() => -1), 0);
+      expect(
+        await Hive.boxExists(HiveZLocalStore.boxNameFor('absent')),
+        isFalse,
+      );
+
+      final HiveZLocalStore<_Note> live = await HiveZLocalStore.openBox(
+        kind: 'live',
+        fromMap: _Note.fromMap,
+        toMap: (_Note n) => n.toMap(),
+      );
+      await live.applyMerged(
+        ZSyncEntry<_Note>(
+          entity: const _Note(id: 'a', title: 'a', count: 1),
+          meta: ZSyncMeta(updatedAt: DateTime.utc(2020), isDeleted: false),
+        ),
+      );
+      final ZResult<int> moved = await HiveZLocalStore.adoptUnscoped(
+        kind: 'live',
+        scope: 'account',
+        isMine: (_Note note) => true,
+        fromMap: _Note.fromMap,
+        toMap: (_Note n) => n.toMap(),
+      );
+      expect(moved.getOrElse(() => -1), 1);
+      expect(Hive.isBoxOpen(HiveZLocalStore.boxNameFor('live')), isTrue);
+      live.dispose();
+      await live.closedForTest;
+    });
+
+    test('adoptUnscoped garde l\'entrée la plus récente et survit à isMine',
+        () async {
+      final HiveZLocalStore<_Note> source = await HiveZLocalStore.openBox(
+        kind: 'race',
+        fromMap: _Note.fromMap,
+        toMap: (_Note n) => n.toMap(),
+      );
+      await source.applyMerged(
+        ZSyncEntry<_Note>(
+          entity: const _Note(id: 'old', title: 'source', count: 1),
+          meta: ZSyncMeta(updatedAt: DateTime.utc(2026, 1, 1), isDeleted: false),
+        ),
+      );
+      await source.applyMerged(
+        ZSyncEntry<_Note>(
+          entity: const _Note(id: 'boom', title: 'x', count: 1),
+          meta: ZSyncMeta(updatedAt: DateTime.utc(2026, 1, 1), isDeleted: false),
+        ),
+      );
+      source.dispose();
+      await source.closedForTest;
+      final HiveZLocalStore<_Note> target = await HiveZLocalStore.openBox(
+        kind: 'race',
+        scope: 'account',
+        fromMap: _Note.fromMap,
+        toMap: (_Note n) => n.toMap(),
+      );
+      await target.applyMerged(
+        ZSyncEntry<_Note>(
+          entity: const _Note(id: 'old', title: 'newer', count: 9),
+          meta: ZSyncMeta(updatedAt: DateTime.utc(2026, 9, 1), isDeleted: false),
+        ),
+      );
+      target.dispose();
+      await target.closedForTest;
+
+      final ZResult<int> moved = await HiveZLocalStore.adoptUnscoped(
+        kind: 'race',
+        scope: 'account',
+        isMine: (_Note note) {
+          if (note.id == 'boom') throw StateError('illisible');
+          return true;
+        },
+        fromMap: _Note.fromMap,
+        toMap: (_Note n) => n.toMap(),
+      );
+      expect(moved.getOrElse(() => -1), 0);
+      final HiveZLocalStore<_Note> kept = await HiveZLocalStore.openBox(
+        kind: 'race',
+        scope: 'account',
+        fromMap: _Note.fromMap,
+        toMap: (_Note n) => n.toMap(),
+      );
+      final List<ZSyncEntry<_Note>> rows =
+          (await kept.syncEntries()).getOrElse(() => <ZSyncEntry<_Note>>[]);
+      expect(rows.single.entity.title, 'newer');
+      kept.dispose();
+      await kept.closedForTest;
+    });
   });
 
   group('AC4 — round-trip local put/getById (JSON, une box par kind)', () {

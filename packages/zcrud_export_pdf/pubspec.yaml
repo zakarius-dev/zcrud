@@ -15,7 +15,7 @@
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_export_pdf
 description: "PDF export for zcrud (flashcard templates and tabular documents) behind a neutral, byte-based API — no spreadsheet dependency."
-version: 3.58.0
+version: 3.59.0
 publish_to: none
 resolution: workspace
 
@@ -36,12 +36,12 @@ dependencies:
   # SEULE arête Syncfusion de ce paquet (AD-8) — confinée aux impls concrètes.
   # `syncfusion_flutter_xlsio` est délibérément ABSENT : c'est tout l'objet de
   # CR-LEX-40.
-  syncfusion_flutter_pdf: ^34.1.31
+  syncfusion_flutter_pdf: ^35.1.37
   # Téléchargement navigateur (ZFileSaver web) via `package:web` +
   # `dart:js_interop` (AD-12 : `dart:html` déprécié BANNI). Usage
   # web-CONDITIONNEL : ne remonte jamais dans une signature neutre.
   web: ^1.1.0
-  zcrud_core: ^3.58.0
+  zcrud_core: ^3.59.0
 
 dev_dependencies:
   flutter_test:
