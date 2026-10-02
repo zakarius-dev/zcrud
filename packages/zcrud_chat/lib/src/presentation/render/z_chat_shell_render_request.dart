@@ -33,7 +33,69 @@ import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 /// complète (`ZChatMessageTile` avec son dépli inline, ou la tuile de la réponse
 /// en cours abonnée à la tranche par requête). Une coquille qui l'ignore perd
 /// tout ce que le socle garantit — d'où la garde de non-perte.
-typedef ZChatShellItemBuilder = Widget Function(BuildContext context, int index);
+typedef ZChatShellItemBuilder =
+    Widget Function(BuildContext context, int index);
+
+/// Un élément du fil dans l'ordre d'affichage : un message établi, ou un
+/// tour encore en vol.
+class ZChatShellSlot {
+  /// Message établi.
+  const ZChatShellSlot.message(this.message) : requestId = null;
+
+  /// Tour en vol, identifié par [requestId].
+  const ZChatShellSlot.streaming(this.requestId) : message = null;
+
+  /// Message établi, ou `null` si l'élément est un tour en vol.
+  final ZChatMessage? message;
+
+  /// Identité de la requête en vol, ou `null` si l'élément est un message.
+  final String? requestId;
+}
+
+/// Fil d'affichage : messages établis, tours ancrés insérés à leur index,
+/// tours sans ancre après le dernier message.
+///
+/// [streamAnchors] donne, pour une requête, l'index d'insertion dans
+/// [messages] (`0` avant le premier, `messages.length` après le dernier).
+/// Une requête absente de la carte va en fin. Plusieurs requêtes au même
+/// index restent dans l'ordre de [activeRequestIds].
+List<ZChatShellSlot> zChatThreadSlots({
+  required List<ZChatMessage> messages,
+  required List<String> activeRequestIds,
+  Map<String, int> streamAnchors = const <String, int>{},
+}) {
+  final Map<int, List<String>> buckets = <int, List<String>>{};
+  final List<String> tail = <String>[];
+  for (final String id in activeRequestIds) {
+    final int? at = streamAnchors[id];
+    if (at == null) {
+      tail.add(id);
+      continue;
+    }
+    final int index = at.clamp(0, messages.length);
+    (buckets[index] ??= <String>[]).add(id);
+  }
+  final List<ZChatShellSlot> slots = <ZChatShellSlot>[];
+  for (int i = 0; i < messages.length; i++) {
+    final List<String>? before = buckets[i];
+    if (before != null) {
+      for (final String id in before) {
+        slots.add(ZChatShellSlot.streaming(id));
+      }
+    }
+    slots.add(ZChatShellSlot.message(messages[i]));
+  }
+  final List<String>? end = buckets[messages.length];
+  if (end != null) {
+    for (final String id in end) {
+      slots.add(ZChatShellSlot.streaming(id));
+    }
+  }
+  for (final String id in tail) {
+    slots.add(ZChatShellSlot.streaming(id));
+  }
+  return slots;
+}
 
 /// Ce qu'une coquille reçoit pour rendre le CADRE d'une conversation.
 ///
@@ -45,6 +107,7 @@ class ZChatShellRenderRequest {
     required this.messages,
     required this.activeRequestIds,
     required this.itemBuilder,
+    this.streamAnchors = const <String, int>{},
     this.padding,
     this.reverse = false,
   });
@@ -59,8 +122,15 @@ class ZChatShellRenderRequest {
 
   /// Identités des requêtes **en vol**, dans l'ordre de lancement.
   ///
-  /// Elles occupent les index `[messages.length, itemCount[`.
+  /// Leur place dans le fil dépend de [streamAnchors]. Sans ancre, elles
+  /// suivent le dernier message.
   final List<String> activeRequestIds;
+
+  /// Index d'insertion de chaque requête ancrée, dans [messages].
+  ///
+  /// Une requête absente est rendue après le dernier message. `0` la place
+  /// avant le premier message.
+  final Map<String, int> streamAnchors;
 
   /// Fabrique de l'élément à l'index donné — cf. [ZChatShellItemBuilder].
   final ZChatShellItemBuilder itemBuilder;
@@ -75,22 +145,36 @@ class ZChatShellRenderRequest {
   /// Nombre total d'éléments : messages établis **plus** réponses en cours.
   int get itemCount => messages.length + activeRequestIds.length;
 
+  /// Éléments dans l'ordre d'affichage. Même ordre que [itemBuilder].
+  List<ZChatShellSlot> get slots => zChatThreadSlots(
+    messages: messages,
+    activeRequestIds: activeRequestIds,
+    streamAnchors: streamAnchors,
+  );
+
   /// `true` si [index] désigne une réponse **encore en cours** de rédaction.
-  bool isStreamingAt(int index) =>
-      index >= messages.length && index < itemCount;
+  bool isStreamingAt(int index) {
+    final List<ZChatShellSlot> laid = slots;
+    return index >= 0 && index < laid.length && laid[index].requestId != null;
+  }
 
   /// Le message établi à [index], ou `null` si l'index désigne une réponse en
   /// cours (ou sort des bornes). Ne lève jamais (invariant AD-10) : une
   /// coquille tierce indexe comme elle veut, et un hors-bornes ne doit pas
   /// faire tomber la conversation.
-  ZChatMessage? messageAt(int index) =>
-      index >= 0 && index < messages.length ? messages[index] : null;
+  ZChatMessage? messageAt(int index) {
+    final List<ZChatShellSlot> laid = slots;
+    if (index < 0 || index >= laid.length) return null;
+    return laid[index].message;
+  }
 
   /// L'identité de requête à [index], ou `null` si l'index n'est pas celui
   /// d'une réponse en cours. Ne lève jamais (invariant AD-10).
-  String? requestIdAt(int index) => isStreamingAt(index)
-      ? activeRequestIds[index - messages.length]
-      : null;
+  String? requestIdAt(int index) {
+    final List<ZChatShellSlot> laid = slots;
+    if (index < 0 || index >= laid.length) return null;
+    return laid[index].requestId;
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -99,6 +183,7 @@ class ZChatShellRenderRequest {
           runtimeType == other.runtimeType &&
           _sameList<ZChatMessage>(messages, other.messages) &&
           _sameList<String>(activeRequestIds, other.activeRequestIds) &&
+          _sameAnchors(streamAnchors, other.streamAnchors) &&
           identical(itemBuilder, other.itemBuilder) &&
           padding == other.padding &&
           reverse == other.reverse;
@@ -108,6 +193,7 @@ class ZChatShellRenderRequest {
     runtimeType,
     Object.hashAll(messages),
     Object.hashAll(activeRequestIds),
+    _anchorsHash(streamAnchors),
     itemBuilder,
     padding,
     reverse,
@@ -126,5 +212,21 @@ class ZChatShellRenderRequest {
       if (a[i] != b[i]) return false;
     }
     return true;
+  }
+
+  static bool _sameAnchors(Map<String, int> a, Map<String, int> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (final MapEntry<String, int> entry in a.entries) {
+      if (b[entry.key] != entry.value) return false;
+    }
+    return true;
+  }
+
+  static int _anchorsHash(Map<String, int> anchors) {
+    final List<String> keys = anchors.keys.toList()..sort();
+    return Object.hashAll(<Object?>[
+      for (final String key in keys) Object.hash(key, anchors[key]),
+    ]);
   }
 }

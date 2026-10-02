@@ -3,6 +3,12 @@
 Toutes les modifications notables de `zcrud_chat_syncfusion` sont
 documentées dans ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.60.0 — 2026-10-02
+
+### Corrigé
+
+- Un tour ancré est inséré dans `SfAIAssistView` à la même position que dans la liste neutre. Les messages qui suivent la question restent visibles.
+
 ## 3.59.0 — 2026-10-02
 
 ### Adaptation

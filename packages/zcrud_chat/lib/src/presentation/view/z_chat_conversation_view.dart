@@ -26,10 +26,10 @@
 ///   └── _ZChatList
 ///         ├── zResolveChatShell(...) <- LE SEAM : le CONTENEUR, et rien d'autre
 ///         └── ListView.builder(...)  <- le defaut, si la chaine rend `null`
-///               └── _item(context, i) <- LA FABRIQUE, partagee par les DEUX
+///               └── _tile(context, i) <- LA FABRIQUE, partagee par les DEUX
 /// ```
 ///
-/// La fabrique [_ZChatList._item] est la même dans les deux branches. C'est
+/// La fabrique [_ZChatList._tile] est la même dans les deux branches. C'est
 /// ce qui rend la non-perte structurelle plutôt que promise : une coquille
 /// tierce ne construit ni la tuile, ni le dépli, ni la tuile de streaming —
 /// elle les rappelle. Et la région live l'enveloppe, donc lui échappe.
@@ -102,7 +102,7 @@ class ZChatConversationView extends StatelessWidget {
   final WidgetBuilder? emptyBuilder;
 
   /// Créneau d'identité par message — relayé tel quel à la fabrique de tuile
-  /// unique ([_ZChatList._item]). `null` (défaut) donne un rendu strictement
+  /// unique ([_ZChatList._tile]). `null` (défaut) donne un rendu strictement
   /// inchangé. Cf. [ZChatMessageTile.identityBuilder].
   final ZChatMessageSlotBuilder? identityBuilder;
 
@@ -160,6 +160,11 @@ class ZChatConversationView extends StatelessWidget {
                         controller: controller,
                         messages: messages,
                         activeRequestIds: active,
+                        streamAnchors: <String, int>{
+                          for (final String id in active)
+                            if (controller.displayIndexOf(id) case final int at)
+                              id: at,
+                        },
                         collapsedMaxHeight: collapsedMaxHeight,
                         padding: padding ?? theme.formPadding,
                         reverse: reverse,
@@ -214,7 +219,7 @@ Widget _zChatComposeSurface({
 
 /// Le conteneur de la conversation : coquille de l'hôte, sinon liste neutre.
 ///
-/// Les deux branches partagent la même fabrique [_item] : c'est l'unique
+/// Les deux branches partagent la même fabrique [_tile] : c'est l'unique
 /// raison pour laquelle brancher une coquille tierce ne peut rien faire
 /// perdre. Dupliquer la construction des tuiles dans la coquille
 /// recréerait exactement la divergence que cette architecture évite.
@@ -223,6 +228,7 @@ class _ZChatList extends StatelessWidget {
     required this.controller,
     required this.messages,
     required this.activeRequestIds,
+    required this.streamAnchors,
     required this.collapsedMaxHeight,
     required this.padding,
     required this.reverse,
@@ -239,6 +245,9 @@ class _ZChatList extends StatelessWidget {
   final ZChatController controller;
   final List<ZChatMessage> messages;
   final List<String> activeRequestIds;
+
+  /// Index d'insertion des tours ancrés, dans [messages].
+  final Map<String, int> streamAnchors;
   final double? collapsedMaxHeight;
   final EdgeInsetsDirectional padding;
   final bool reverse;
@@ -256,12 +265,19 @@ class _ZChatList extends StatelessWidget {
 
   final ZChatTileShell? shell;
 
-  /// La tuile de l'index [index] — le seul constructeur de tuile du paquet.
-  Widget _item(BuildContext context, int index) {
-    if (index < messages.length) {
-      final ZChatMessage message = messages[index];
+  /// La tuile de l'index d'affichage [index] — le seul constructeur de tuile
+  /// du paquet. Un tour ancré est inséré à son index ; les autres suivent
+  /// le dernier message.
+  Widget _tile(BuildContext context, List<ZChatShellSlot> slots, int index) {
+    if (index < 0 || index >= slots.length) return const SizedBox.shrink();
+    final ZChatShellSlot slot = slots[index];
+    final ZChatMessage? message = slot.message;
+    if (message != null) {
+      final int messageIndex = messages.indexWhere(
+        (ZChatMessage candidate) => identical(candidate, message),
+      );
       final Widget tile = ZChatMessageTile(
-        key: ValueKey<String>(message.id ?? 'msg#$index'),
+        key: ValueKey<String>(message.id ?? 'msg#$messageIndex'),
         message: message,
         collapsedMaxHeight: collapsedMaxHeight,
         // Les créneaux traversent la fabrique unique : une coquille tierce
@@ -278,19 +294,14 @@ class _ZChatList extends StatelessWidget {
         // Le SUJET du tour, résolu ici : c'est le seul endroit qui voit le
         // message précédent. Une tuile, seule, ne peut pas savoir quelle
         // question l'a produite.
-        topic: _topicOf(message, index),
+        topic: _topicOf(message, messageIndex),
       );
       final ZChatItemFrameBuilder? frame = itemFrameBuilder;
       if (frame == null) return tile;
       return frame(context, message, tile);
     }
-    final int active = index - messages.length;
-    // Invariant AD-10 : une coquille tierce indexe comme elle veut ; un
-    // hors-bornes ne fait pas tomber la conversation.
-    if (active < 0 || active >= activeRequestIds.length) {
-      return const SizedBox.shrink();
-    }
-    final String requestId = activeRequestIds[active];
+    final String? requestId = slot.requestId;
+    if (requestId == null) return const SizedBox.shrink();
     final Widget tile = _ZStreamingTile(
       key: ValueKey<String>('stream#$requestId'),
       controller: controller,
@@ -337,10 +348,17 @@ class _ZChatList extends StatelessWidget {
     if (messages.isEmpty && activeRequestIds.isEmpty && emptyBuilder != null) {
       return emptyBuilder!(context);
     }
+    final List<ZChatShellSlot> slots = zChatThreadSlots(
+      messages: messages,
+      activeRequestIds: activeRequestIds,
+      streamAnchors: streamAnchors,
+    );
     final ZChatShellRenderRequest request = ZChatShellRenderRequest(
       messages: messages,
       activeRequestIds: activeRequestIds,
-      itemBuilder: _item,
+      streamAnchors: streamAnchors,
+      itemBuilder: (BuildContext context, int index) =>
+          _tile(context, slots, index),
       padding: padding,
       reverse: reverse,
     );
@@ -357,7 +375,7 @@ class _ZChatList extends StatelessWidget {
       itemCount: request.itemCount,
       itemBuilder: (BuildContext context, int visual) {
         final int index = reverse ? request.itemCount - 1 - visual : visual;
-        return _item(context, index);
+        return _tile(context, slots, index);
       },
     );
   }

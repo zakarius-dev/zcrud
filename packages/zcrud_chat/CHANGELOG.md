@@ -3,6 +3,17 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.60.0 — 2026-10-02
+
+### Ajouté
+
+- `adoptTurn` accepte `afterMessageId` et `insertAt`. Le tour en vol est rendu à cette position, et les messages qui suivent restent visibles. `afterMessageId` l'emporte tant que ce message est dans le fil. `displayIndexOf` relit la position sur le fil courant.
+- `ZChatShellRenderRequest.streamAnchors` et `zChatThreadSlots` donnent le même ordre à une coquille tierce.
+
+### Adaptation
+
+- Un hôte qui tronquait le fil pendant une régénération pour coller le tour sous sa question passe `afterMessageId` et garde le fil entier. Voir `docs/handoff-v3.60.0.md`.
+
 ## 3.59.0 — 2026-10-02
 
 ### Ajouté

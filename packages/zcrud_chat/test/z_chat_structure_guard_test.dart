@@ -28,16 +28,23 @@ List<String> _classBody() {
   final int start = lines.indexWhere(
     (String l) => RegExp(r'^class\s+ZChatController\b').hasMatch(l),
   );
-  expect(start, greaterThanOrEqualTo(0),
-      reason: '🔴 `ZChatController` introuvable — la garde serait VACUELLE');
+  expect(
+    start,
+    greaterThanOrEqualTo(0),
+    reason: '🔴 `ZChatController` introuvable — la garde serait VACUELLE',
+  );
   final List<String> body = <String>[];
   for (int i = start + 1; i < lines.length; i++) {
     if (RegExp(r'^\}').hasMatch(lines[i])) break;
     body.add(lines[i]);
   }
-  expect(body.length, greaterThan(50),
-      reason: '🔴 corps de classe quasi vide (${body.length} lignes) : le '
-          'découpeur est cassé, toutes les gardes ci-dessous seraient VACUELLES');
+  expect(
+    body.length,
+    greaterThan(50),
+    reason:
+        '🔴 corps de classe quasi vide (${body.length} lignes) : le '
+        'découpeur est cassé, toutes les gardes ci-dessous seraient VACUELLES',
+  );
   return body;
 }
 
@@ -81,8 +88,7 @@ Set<String> _publicMembers(List<String> body) {
 final RegExp _kDomainSetState = RegExp(r'\b_?catalog\.setState\s*\(');
 
 void main() {
-  group('🔴 G-CH1 — la surface publique du contrôleur, en ÉGALITÉ d\'ENSEMBLE',
-      () {
+  group('🔴 G-CH1 — la surface publique du contrôleur, en ÉGALITÉ d\'ENSEMBLE', () {
     test('EXACTEMENT les membres attendus — aucun raccourci par verbe', () {
       final Set<String> publics = _publicMembers(_classBody());
       expect(
@@ -147,6 +153,9 @@ void main() {
           // Ni l'un ni l'autre n'exécute un verbe de conversation.
           'citationSource',
           'adoptMessages',
+          // Lecture pure : où un tour ancré est rendu dans le fil établi.
+          // N'écrit rien, n'exécute aucun verbe.
+          'displayIndexOf',
           // 🔴 EXTENSION ARBITRÉE (lot L6) : l'AGRÉGAT de propositions et le
           // BROUILLON PERSISTANT. `suggestions` est une tranche de lecture —
           // la même donnée que `progress(requestId).suggestions`, agrégée par
@@ -169,7 +178,8 @@ void main() {
           'runAction',
           'dispose',
         },
-        reason: '🔴 ÉGALITÉ D\'ENSEMBLE, pas « contient » (leçon G-U2 de '
+        reason:
+            '🔴 ÉGALITÉ D\'ENSEMBLE, pas « contient » (leçon G-U2 de '
             'CHAT-0b). Chaque membre public ajouté qui EXÉCUTE un verbe — '
             '`deleteMessage()`, `stop()`, `regenerateAnswer()`, un callback de '
             'confort — est UN SITE D\'APPEL DE PLUS, donc une divergence '
@@ -194,7 +204,8 @@ void main() {
       expect(
         _publicMembers(witness),
         <String>{'attachmentIds', 'runAction', 'deleteMessage'},
-        reason: '🔴 si `ValueNotifier`/`Map` reviennent dans l\'ensemble, le '
+        reason:
+            '🔴 si `ValueNotifier`/`Map` reviennent dans l\'ensemble, le '
             'défaut R3 est de retour ; si `deleteMessage` en disparaît, la '
             'garde ne voit plus la « surface B » qu\'elle existe pour '
             'interdire.',
@@ -223,30 +234,48 @@ void main() {
         }
       }
 
-      expect(prepares.values.fold<int>(0, (int a, int b) => a + b), 1,
-          reason: '🔴 DEUX chemins de planification : sites $prepares');
-      expect(executes.values.fold<int>(0, (int a, int b) => a + b), 1,
-          reason: '🔴 DEUX chemins d\'exécution — la « surface B » d\'IFFD, '
-              'réintroduite dans le socle : sites $executes');
-      expect(constructions.values.fold<int>(0, (int a, int b) => a + b), 1,
-          reason: '🔴 un SECOND répartiteur rendrait G-U1 satisfaite et '
-              'l\'invariant faux : sites $constructions');
+      expect(
+        prepares.values.fold<int>(0, (int a, int b) => a + b),
+        1,
+        reason: '🔴 DEUX chemins de planification : sites $prepares',
+      );
+      expect(
+        executes.values.fold<int>(0, (int a, int b) => a + b),
+        1,
+        reason:
+            '🔴 DEUX chemins d\'exécution — la « surface B » d\'IFFD, '
+            'réintroduite dans le socle : sites $executes',
+      );
+      expect(
+        constructions.values.fold<int>(0, (int a, int b) => a + b),
+        1,
+        reason:
+            '🔴 un SECOND répartiteur rendrait G-U1 satisfaite et '
+            'l\'invariant faux : sites $constructions',
+      );
       for (final String path in <String>[
         ...prepares.keys,
         ...executes.keys,
         ...constructions.keys,
       ]) {
-        expect(path.replaceAll(r'\', '/'), endsWith(_controller),
-            reason: '🔴 le répartiteur est joint depuis un AUTRE fichier');
+        expect(
+          path.replaceAll(r'\', '/'),
+          endsWith(_controller),
+          reason: '🔴 le répartiteur est joint depuis un AUTRE fichier',
+        );
       }
     });
 
     test('🔬 contre-preuve — le motif SAIT rougir sur une source témoin', () {
       final RegExp use = RegExp(r'\.execute\s*\(');
       expect(use.hasMatch('await _dispatcher.execute(ticket);'), isTrue);
-      expect(use.hasMatch('final x = executeLater;'), isFalse,
-          reason: 'sans l\'ancre `.`, la garde crierait au loup — et une garde '
-              'qui crie au loup finit désactivée');
+      expect(
+        use.hasMatch('final x = executeLater;'),
+        isFalse,
+        reason:
+            'sans l\'ancre `.`, la garde crierait au loup — et une garde '
+            'qui crie au loup finit désactivée',
+      );
     });
   });
 
@@ -276,7 +305,8 @@ void main() {
       expect(
         offenders,
         isEmpty,
-        reason: '🔴 JETON D\'INSTANCE — la forme exacte du défaut IFFD '
+        reason:
+            '🔴 JETON D\'INSTANCE — la forme exacte du défaut IFFD '
             '(`iffd_ai_repository_impl.dart:29`, `:375-377` : '
             '`CancelToken cancel = CancelToken();` en champ d\'un dépôt '
             'SINGLETON). Annuler y coupe « la courante », c\'est-à-dire la '
@@ -290,15 +320,20 @@ void main() {
       expect(
         RegExp(r'Map<String,\s*ZChatRequestToken>\s+_tokens').hasMatch(src),
         isTrue,
-        reason: '🔴 GARDE VACUELLE : plus aucune table de jetons — la garde '
+        reason:
+            '🔴 GARDE VACUELLE : plus aucune table de jetons — la garde '
             'ci-dessus passerait sur un contrôleur qui n\'annule plus rien',
       );
     });
 
     test('🔬 contre-preuve — le motif distingue le CHAMP de la TABLE', () {
-      expect(bareTokenField('  ZChatRequestToken? _current;'), isTrue,
-          reason: '🔴 la variante SANS mot-clé est la plus discrète : une garde '
-              'qui ne chercherait que `final|late|static|var` la raterait');
+      expect(
+        bareTokenField('  ZChatRequestToken? _current;'),
+        isTrue,
+        reason:
+            '🔴 la variante SANS mot-clé est la plus discrète : une garde '
+            'qui ne chercherait que `final|late|static|var` la raterait',
+      );
       expect(bareTokenField('  final ZChatRequestToken _token = t;'), isTrue);
       expect(
         bareTokenField(
@@ -306,7 +341,8 @@ void main() {
           '<String, ZChatRequestToken>{};',
         ),
         isFalse,
-        reason: '🔴 la table PAR IDENTITÉ est la forme CORRECTE : la dénoncer '
+        reason:
+            '🔴 la table PAR IDENTITÉ est la forme CORRECTE : la dénoncer '
             'rendrait la garde inutilisable',
       );
     });
@@ -318,30 +354,37 @@ void main() {
       r'composer\.(text\s*=[^=]|value\s*=[^=]|clear\s*\(|selection\s*=[^=])',
     ).hasMatch(line);
 
-    test('`composer.text = …` / `.clear()` n\'apparaît que dans `_setComposer`',
-        () {
-      final List<String> body = _classBody();
-      final List<String> sites = <String>[];
-      String current = '';
-      for (final String l in body) {
-        final RegExpMatch? decl = RegExp(
-          r'^\s{2}[A-Za-z_][\w<>?,\s.]*?\s(\w+)\s*\(',
-        ).firstMatch(l);
-        if (decl != null) current = decl.group(1)!;
-        if (composerWrite(l)) sites.add('$current → ${l.trim()}');
-      }
-      expect(sites, isNotEmpty,
-          reason: '🔴 GARDE VACUELLE : plus AUCUNE écriture de la saisie — le '
-              'contrôleur ne viderait plus le champ à l\'envoi');
-      expect(
-        sites.map((String s) => s.split(' → ').first).toSet(),
-        <String>{'_setComposer'},
-        reason: '🔴 PLUSIEURS chemins écrivent dans le champ de saisie. C\'est '
-            'ainsi qu\'IFFD en est arrivé à `:3618-3672`, où la poubelle de '
-            '« Réflexion en cours » arrête la génération PUIS supprime la '
-            'question tapée. Sites : $sites',
-      );
-    });
+    test(
+      '`composer.text = …` / `.clear()` n\'apparaît que dans `_setComposer`',
+      () {
+        final List<String> body = _classBody();
+        final List<String> sites = <String>[];
+        String current = '';
+        for (final String l in body) {
+          final RegExpMatch? decl = RegExp(
+            r'^\s{2}[A-Za-z_][\w<>?,\s.]*?\s(\w+)\s*\(',
+          ).firstMatch(l);
+          if (decl != null) current = decl.group(1)!;
+          if (composerWrite(l)) sites.add('$current → ${l.trim()}');
+        }
+        expect(
+          sites,
+          isNotEmpty,
+          reason:
+              '🔴 GARDE VACUELLE : plus AUCUNE écriture de la saisie — le '
+              'contrôleur ne viderait plus le champ à l\'envoi',
+        );
+        expect(
+          sites.map((String s) => s.split(' → ').first).toSet(),
+          <String>{'_setComposer'},
+          reason:
+              '🔴 PLUSIEURS chemins écrivent dans le champ de saisie. C\'est '
+              'ainsi qu\'IFFD en est arrivé à `:3618-3672`, où la poubelle de '
+              '« Réflexion en cours » arrête la génération PUIS supprime la '
+              'question tapée. Sites : $sites',
+        );
+      },
+    );
 
     test('le chemin d\'ANNULATION n\'appelle pas l\'écrivain de la saisie', () {
       final List<String> body = _classBody();
@@ -353,32 +396,46 @@ void main() {
       expect(start, greaterThanOrEqualTo(0), reason: '`runAction` introuvable');
       int end = body.length;
       for (int i = start + 1; i < body.length; i++) {
-        if (RegExp(r'^\s{2}[A-Za-z_][\w<>?,\s.]*?\s\w+\s*\(').hasMatch(body[i])) {
+        if (RegExp(
+          r'^\s{2}[A-Za-z_][\w<>?,\s.]*?\s\w+\s*\(',
+        ).hasMatch(body[i])) {
           end = i;
           break;
         }
       }
       final String scope = body.sublist(start, end).join('\n');
-      expect(scope.contains('ZChatCancelAction'), isTrue,
-          reason: '🔴 GARDE VACUELLE : le bloc découpé ne contient pas le '
-              'chemin d\'annulation');
+      expect(
+        scope.contains('ZChatCancelAction'),
+        isTrue,
+        reason:
+            '🔴 GARDE VACUELLE : le bloc découpé ne contient pas le '
+            'chemin d\'annulation',
+      );
       expect(
         scope.contains('_setComposer'),
         isFalse,
-        reason: '🔴 le point d\'entrée des verbes écrit dans la saisie : le '
+        reason:
+            '🔴 le point d\'entrée des verbes écrit dans la saisie : le '
             'défaut IFFD « annuler = supprimer la question tapée » redevient '
             'exprimable',
       );
     });
 
-    test('🔬 contre-preuve — le motif voit les écritures, pas les lectures', () {
-      expect(composerWrite('    composer.text = draft.text;'), isTrue);
-      expect(composerWrite('    composer.clear();'), isTrue);
-      expect(composerWrite('    if (composer.text != draft.text) {'), isFalse,
-          reason: '🔴 une comparaison N\'EST PAS une écriture — sans le '
-              '`[^=]`, la garde se dénoncerait elle-même');
-      expect(composerWrite('    final String t = composer.text;'), isFalse);
-    });
+    test(
+      '🔬 contre-preuve — le motif voit les écritures, pas les lectures',
+      () {
+        expect(composerWrite('    composer.text = draft.text;'), isTrue);
+        expect(composerWrite('    composer.clear();'), isTrue);
+        expect(
+          composerWrite('    if (composer.text != draft.text) {'),
+          isFalse,
+          reason:
+              '🔴 une comparaison N\'EST PAS une écriture — sans le '
+              '`[^=]`, la garde se dénoncerait elle-même',
+        );
+        expect(composerWrite('    final String t = composer.text;'), isFalse);
+      },
+    );
   });
 
   // 🔴 G-CH5 — ÉVOLUTION CHAT-3, et pourquoi ce n'est PAS un relâchement.
@@ -402,8 +459,7 @@ void main() {
   //   désormais l'usage dans TOUT le package, y compris le rendu.
   //
   // Reste inchangé : le fichier du CONTRÔLEUR ne déclare toujours aucun widget.
-  group('🔴 G-CH5 — le CONTRÔLEUR ne rend aucun pixel, et NUL ne `setState`',
-      () {
+  group('🔴 G-CH5 — le CONTRÔLEUR ne rend aucun pixel, et NUL ne `setState`', () {
     const String controllerPath = 'lib/src/presentation/z_chat_controller.dart';
     final RegExp widgetDecl = RegExp(
       r'\b(extends|implements|with)\s+(Stateless|Stateful)Widget\b|'
@@ -416,8 +472,11 @@ void main() {
         for (final String p in lib.keys)
           if (p.replaceAll(r'\', '/').endsWith(controllerPath)) p,
       ];
-      expect(controllerFiles, hasLength(1),
-          reason: '🔴 GARDE VACUELLE : `$controllerPath` introuvable');
+      expect(
+        controllerFiles,
+        hasLength(1),
+        reason: '🔴 GARDE VACUELLE : `$controllerPath` introuvable',
+      );
       final List<String> lines = lib[controllerFiles.single]!;
       final List<String> offenders = <String>[
         for (int i = 0; i < lines.length; i++)
@@ -426,7 +485,8 @@ void main() {
       expect(
         offenders,
         isEmpty,
-        reason: '🔴 le contrôleur porte l\'ÉTAT, pas les pixels. Un widget '
+        reason:
+            '🔴 le contrôleur porte l\'ÉTAT, pas les pixels. Un widget '
             'déclaré dans ce fichier ferait cohabiter la machine à jetons et '
             'un `build()` — le chemin le plus court vers le `setState` global '
             'que ce package existe pour tenir à distance. Le rendu vit sous '
@@ -442,11 +502,16 @@ void main() {
         'class _S extends State<Foo> {',
         '  Widget build(BuildContext context) {',
       ]) {
-        expect(widgetDecl.hasMatch(witness), isTrue,
-            reason: '🔴 le motif est aveugle à `$witness`');
+        expect(
+          widgetDecl.hasMatch(witness),
+          isTrue,
+          reason: '🔴 le motif est aveugle à `$witness`',
+        );
       }
-      expect(widgetDecl.hasMatch('  final ZChatDraft draft = currentDraft;'),
-          isFalse);
+      expect(
+        widgetDecl.hasMatch('  final ZChatDraft draft = currentDraft;'),
+        isFalse,
+      );
     });
 
     test('AUCUN `setState` nulle part — rendu compris (AD-2)', () {
@@ -471,19 +536,30 @@ void main() {
       }
       // L'exemption ne doit pas devenir PENDANTE : si plus personne n'écrit le
       // catalogue d'outils, elle se retire.
-      expect(domainWrites, isNotEmpty,
-          reason: '🔴 exemption PENDANTE : aucune écriture de catalogue vue');
+      expect(
+        domainWrites,
+        isNotEmpty,
+        reason: '🔴 exemption PENDANTE : aucune écriture de catalogue vue',
+      );
       for (final String site in domainWrites) {
-        expect(site, contains('presentation/tools/'),
-            reason: '🔴 l\'exemption d\'homonymie ne vaut que pour '
-                'l\'écriture du catalogue d\'outils : $site');
+        expect(
+          site,
+          contains('presentation/tools/'),
+          reason:
+              '🔴 l\'exemption d\'homonymie ne vaut que pour '
+              'l\'écriture du catalogue d\'outils : $site',
+        );
       }
-      expect(scanned, greaterThan(200),
-          reason: '🔴 GARDE VACUELLE : seulement $scanned lignes scannées');
+      expect(
+        scanned,
+        greaterThan(200),
+        reason: '🔴 GARDE VACUELLE : seulement $scanned lignes scannées',
+      );
       expect(
         offenders,
         isEmpty,
-        reason: '🔴 AD-2, objectif produit n°1 : la réactivité passe par des '
+        reason:
+            '🔴 AD-2, objectif produit n°1 : la réactivité passe par des '
             'tranches `ValueListenable`. Un `setState` reconstruit tout le '
             'sous-arbre du `State` — sur une tuile de conversation, cela '
             'signifie re-rendre TOUS ses blocs à chaque bascule de dépli.\n'
@@ -493,8 +569,10 @@ void main() {
 
     test('🔬 contre-preuve — l\'exemption d\'HOMONYMIE reste étroite', () {
       // Ce que l'exemption laisse passer…
-      expect(_kDomainSetState.hasMatch('    _catalog.setState(key, next);'),
-          isTrue);
+      expect(
+        _kDomainSetState.hasMatch('    _catalog.setState(key, next);'),
+        isTrue,
+      );
       // …et tout ce qu'elle NE laisse PAS passer : un `setState` de widget,
       // sous chacune de ses formes.
       for (final String witness in <String>[
@@ -503,19 +581,27 @@ void main() {
         '    widget.setState(() {});',
         '    _controller.setState(() {});',
       ]) {
-        expect(_kDomainSetState.hasMatch(witness), isFalse,
-            reason: '🔴 l\'exemption attrape `$witness` : ce n\'est plus une '
-                'homonymie, c\'est une porte');
+        expect(
+          _kDomainSetState.hasMatch(witness),
+          isFalse,
+          reason:
+              '🔴 l\'exemption attrape `$witness` : ce n\'est plus une '
+              'homonymie, c\'est une porte',
+        );
         expect(RegExp(r'\bsetState\s*\(').hasMatch(witness), isTrue);
       }
     });
 
     test('🔬 contre-preuve — le motif `setState` voit son témoin', () {
-      expect(RegExp(r'\bsetState\s*\(').hasMatch('    setState(() {});'),
-          isTrue);
-      expect(RegExp(r'\bsetState\s*\(').hasMatch('  // pas de setState ici'),
-          isFalse,
-          reason: '🔴 sans le `\\(`, une simple mention en prose accuserait');
+      expect(
+        RegExp(r'\bsetState\s*\(').hasMatch('    setState(() {});'),
+        isTrue,
+      );
+      expect(
+        RegExp(r'\bsetState\s*\(').hasMatch('  // pas de setState ici'),
+        isFalse,
+        reason: '🔴 sans le `\\(`, une simple mention en prose accuserait',
+      );
     });
   });
 }

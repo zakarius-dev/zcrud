@@ -152,28 +152,34 @@ class ZSfAssistShellRenderer extends ZChatShellRenderer {
     );
 
     final List<AssistMessage> assistMessages = <AssistMessage>[
-      for (final ZChatMessage m in request.messages)
-        if (m.role == ZChatRole.user)
+      for (final ZChatShellSlot slot in request.slots)
+        if (slot.requestId != null)
+          // `data` vide, et c'est correct : le texte en cours n'est pas une
+          // donnée figée. Il arrive par la tranche `ValueListenable` que le
+          // socle fait traverser le port de rendu de bloc — s'il transitait
+          // par `data`, la liste entière se reconstruirait à chaque jeton.
+          AssistMessage.response(
+            data: '',
+            author: AssistMessageAuthor(
+              id: slot.requestId,
+              name: assistantName,
+            ),
+          )
+        else if (slot.message!.role == ZChatRole.user)
           AssistMessage.request(
-            data: _summary(context, m),
-            time: m.createdAt,
-            author: AssistMessageAuthor(id: m.id, name: userName),
+            data: _summary(context, slot.message!),
+            time: slot.message!.createdAt,
+            author: AssistMessageAuthor(id: slot.message!.id, name: userName),
           )
         else
           AssistMessage.response(
-            data: _summary(context, m),
-            time: m.createdAt,
-            author: AssistMessageAuthor(id: m.id, name: assistantName),
+            data: _summary(context, slot.message!),
+            time: slot.message!.createdAt,
+            author: AssistMessageAuthor(
+              id: slot.message!.id,
+              name: assistantName,
+            ),
           ),
-      for (final String requestId in request.activeRequestIds)
-        // `data` vide, et c'est correct : le texte en cours n'est pas une
-        // donnée figée. Il arrive par la tranche `ValueListenable` que le
-        // socle fait traverser le port de rendu de bloc — s'il transitait
-        // par `data`, la liste entière se reconstruirait à chaque jeton.
-        AssistMessage.response(
-          data: '',
-          author: AssistMessageAuthor(id: requestId, name: assistantName),
-        ),
     ];
 
     // `null` ⇒ on passe le même objet que le défaut de `SfAIAssistView`

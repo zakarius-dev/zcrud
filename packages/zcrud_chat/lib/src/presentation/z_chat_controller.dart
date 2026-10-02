@@ -154,6 +154,7 @@ class _ZRequestState {
     this.request, {
     this.emitsUserMessage = true,
     this.insertAt,
+    this.afterMessageId,
     this.rollback = const <ZChatMessage>[],
     this.rollbackAt = 0,
   });
@@ -168,7 +169,14 @@ class _ZRequestState {
 
   /// Position où la réponse doit être **insérée** (régénération : à la place
   /// de l'ancienne), ou `null` pour l'ajouter en fin de fil.
+  ///
+  /// Ignorée tant que [afterMessageId] désigne un message encore présent.
   final int? insertAt;
+
+  /// Message établi juste avant ce tour, ou `null`.
+  ///
+  /// Résolu sur le fil courant : le tour suit ce message si le fil bouge.
+  final String? afterMessageId;
 
   /// Messages retirés localement **avant** le tour (régénération, édition
   /// rejouée) — restitués si le tour n'a rien produit.
@@ -837,6 +845,23 @@ class ZChatController extends ChangeNotifier {
     _messages.value = List<ZChatMessage>.unmodifiable(messages);
   }
 
+  /// Index, dans le fil établi, où le tour [requestId] est affiché.
+  ///
+  /// `null` si la requête est inconnue ou si le tour n'est pas ancré : il
+  /// est alors rendu après le dernier message. Sinon l'index d'insertion
+  /// (`0` avant le premier message, la longueur du fil après le dernier).
+  /// L'ancre par identité est relue sur le fil courant : un [adoptMessages]
+  /// qui déplace la question déplace le tour avec elle.
+  int? displayIndexOf(String requestId) {
+    final _ZRequestState? state = _states[requestId];
+    if (state == null) return null;
+    final bool anchored =
+        (state.afterMessageId != null && state.afterMessageId!.isNotEmpty) ||
+        state.insertAt != null;
+    if (!anchored) return null;
+    return _anchorIndex(state, _messages.value);
+  }
+
   /// Adopte un tour déjà ouvert par l'hôte et le rend comme une réponse en cours.
   ///
   /// [events] est consommé ici : le port de flux du contrôleur n'est pas
@@ -850,12 +875,21 @@ class ZChatController extends ChangeNotifier {
   /// [settle] à `false` n'insère pas de message à la fin : l'hôte qui tient
   /// le fil le remplace lui-même via [adoptMessages], y compris pendant le
   /// tour.
+  ///
+  /// [afterMessageId] place le tour juste après ce message. Les messages
+  /// qui le suivent restent visibles, pendant le flux et, si [settle] est
+  /// vrai, une fois la réponse écrite. [insertAt] place le tour à cet index
+  /// du fil établi. Si les deux sont donnés, [afterMessageId] l'emporte tant
+  /// que ce message est présent ; s'il a disparu, [insertAt] prend le relais.
+  /// Sans ancre, le tour est rendu en fin de fil.
   Future<ZResult<ZChatRequestToken>> adoptTurn(
     Stream<ZResult<ZChatStreamEvent>> events, {
     bool emitsUserMessage = false,
     ZChatDraft draft = const ZChatDraft(),
     String? requestId,
     bool settle = true,
+    String? afterMessageId,
+    int? insertAt,
     void Function(ZChatRequestToken token)? onStarted,
   }) {
     if (_disposed) {
@@ -908,7 +942,14 @@ class ZChatController extends ChangeNotifier {
       notes: draft.text,
       attachmentIds: draft.attachmentIds,
     );
-    _states[id] = _ZRequestState(request, emitsUserMessage: emitsUserMessage);
+    _states[id] = _ZRequestState(
+      request,
+      emitsUserMessage: emitsUserMessage,
+      insertAt: insertAt,
+      afterMessageId: (afterMessageId == null || afterMessageId.isEmpty)
+          ? null
+          : afterMessageId,
+    );
     if (emitsUserMessage) {
       _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
         ..._messages.value,
@@ -1503,17 +1544,32 @@ class ZChatController extends ChangeNotifier {
     return Left<ZFailure, ZChatRequestToken>(failure);
   }
 
-  /// Place une réponse dans le fil : à la position demandée par la requête
-  /// (régénération — **remplacement**, jamais ajout), sinon en fin.
+  /// Place une réponse dans le fil : sous le message d'ancre, à l'index
+  /// demandé, ou en fin.
   void _insertReply(_ZRequestState state, ZChatMessage reply) {
     final List<ZChatMessage> thread = _messages.value;
-    final int? at = state.insertAt;
-    final int index = at == null ? thread.length : at.clamp(0, thread.length);
+    final int index = _anchorIndex(state, thread);
     _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
       ...thread.take(index),
       reply,
       ...thread.skip(index),
     ]);
+  }
+
+  /// Index d'insertion d'un tour dans [thread].
+  ///
+  /// L'identité l'emporte sur l'index tant que le message est présent. Un
+  /// index absent, ou une identité introuvable sans index, vaut la fin du
+  /// fil.
+  int _anchorIndex(_ZRequestState state, List<ZChatMessage> thread) {
+    final String? after = state.afterMessageId;
+    if (after != null && after.isNotEmpty) {
+      final int found = thread.indexWhere((ZChatMessage m) => m.id == after);
+      if (found >= 0) return found + 1;
+    }
+    final int? at = state.insertAt;
+    if (at != null) return at.clamp(0, thread.length);
+    return thread.length;
   }
 
   /// Restitue les messages retirés localement avant un tour qui n'a rien

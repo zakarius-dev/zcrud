@@ -397,7 +397,10 @@ void main() {
     );
     expect(announcedQuestion, findsOneWidget);
     expect(
-      semanticsWhere(tester, (SemanticsNode node) => node.label == 'QUESTION-NEUTRE'),
+      semanticsWhere(
+        tester,
+        (SemanticsNode node) => node.label == 'QUESTION-NEUTRE',
+      ),
       isNotNull,
       reason: 'le contrat déclaré doit aussi survivre dans l\'arbre fusionné',
     );
@@ -611,9 +614,7 @@ void main() {
       host(
         ZChatConversationView(controller: c),
         direction: TextDirection.rtl,
-        shell: const ZSfAssistShellRenderer(
-          notebookSkin: ZChatNotebookSkin(),
-        ),
+        shell: const ZSfAssistShellRenderer(notebookSkin: ZChatNotebookSkin()),
       ),
     );
     await startTurn(tester, rig);
@@ -790,6 +791,46 @@ void main() {
           'Syncfusion — le défaut HIGH-2 exactement.',
     );
     handle.dispose();
+  });
+
+  testWidgets('un tour ancré est inséré sous sa question', (
+    WidgetTester tester,
+  ) async {
+    final SfRig rig = controllerWith(<ZChatMessage>[
+      user(<ZContentBlock>[const ZTextBlock(text: 'question')], id: 'question'),
+      assistant(<ZContentBlock>[
+        const ZTextBlock(text: 'ancienne'),
+      ], id: 'ancienne'),
+      user(<ZContentBlock>[const ZTextBlock(text: 'suite')], id: 'suite'),
+    ]);
+    addTearDown(rig.controller.dispose);
+    final Completer<void> gate = Completer<void>();
+    final Future<ZResult<ZChatRequestToken>> done = rig.controller.adoptTurn(
+      Stream<ZResult<ZChatStreamEvent>>.fromFuture(
+        gate.future.then(
+          (_) => const Right<ZFailure, ZChatStreamEvent>(ZChatDoneEvent()),
+        ),
+      ),
+      afterMessageId: 'question',
+      settle: false,
+      requestId: 'tour-1',
+    );
+    await tester.pumpWidget(
+      host(ZChatConversationView(controller: rig.controller)),
+    );
+    await tester.pump();
+    final SfAIAssistView view = tester.widget<SfAIAssistView>(
+      find.byType(SfAIAssistView),
+    );
+    expect(
+      view.messages.map((AssistMessage m) => m.author?.id).toList(),
+      <String?>['question', 'tour-1', 'ancienne', 'suite'],
+      reason:
+          'un tour ancré collé en fin de fil laisse les échanges '
+          'postérieurs au-dessus de la réponse en cours',
+    );
+    gate.complete();
+    await done;
   });
 }
 
