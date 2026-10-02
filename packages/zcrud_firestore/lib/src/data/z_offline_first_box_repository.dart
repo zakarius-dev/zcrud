@@ -114,6 +114,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
     ZOfflineFirstBoxLog? logger,
     ZClock? clock,
     bool autoListen = true,
+    bool Function(T entity)? isForeign,
   }) : _local = local,
        // Même source de temps que le store local, pour que le push
        // distant et l'écriture locale portent une estampille cohérente.
@@ -126,6 +127,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
        _userId = userId,
        _parentId = parentId,
        _isConnected = isConnected,
+       _isForeign = isForeign,
        _log = logger ?? _noopLog {
     if (autoListen) _startListener();
   }
@@ -142,6 +144,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
   final String? _userId;
   final String? _parentId;
   final Future<bool> Function()? _isConnected;
+  final bool Function(T entity)? _isForeign;
   final ZOfflineFirstBoxLog _log;
 
   /// Clé snake_case de l'identité logique écrite dans le corps (invariant
@@ -715,6 +718,19 @@ class ZOfflineFirstBoxRepository<T extends ZEntity> extends ZStudyRepository<T>
   /// utilisateur laissent l'entrée partir : le rattrapage historique des
   /// entités sans propriétaire ne change pas.
   bool _ownedBySomeoneElse(T entity) {
+    final bool Function(T entity)? custom = _isForeign;
+    final bool foreign = custom != null
+        ? custom(entity)
+        : _defaultForeign(entity);
+    if (foreign) {
+      _log(
+        'catch-up withheld ${entity.id}: owner is not the signed-in user',
+      );
+    }
+    return foreign;
+  }
+
+  bool _defaultForeign(T entity) {
     final String? mine = _userId;
     if (mine == null || mine.isEmpty) return false;
     final Map<String, dynamic> map;

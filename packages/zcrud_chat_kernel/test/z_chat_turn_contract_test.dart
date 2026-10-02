@@ -62,7 +62,9 @@ void main() {
       'title': 'Code',
       'state': 'nope',
     });
-    expect(source.state, ZNotebookIngestionState.ready);
+    expect(source.state, ZNotebookIngestionState.unknown);
+    expect(source.id, 's1');
+    expect(source.title, 'Code');
     final ZTransformPalette palette =
         ZTransformPalette(<ZTransformPaletteEntry>[
           const ZTransformPaletteEntry(artifactKey: 'summary', label: 'Résumé'),

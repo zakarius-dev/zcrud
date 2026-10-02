@@ -2,6 +2,20 @@
 
 All notable changes to `zcrud_firestore` are documented in this file.
 
+## 3.58.0 — 2026-10-02
+
+### Ajouté
+
+- `HiveZLocalStore.boxNameFor` laisse passer un scope déjà sûr (minuscules, chiffres, `_`, `-`, `~`, sans préfixe `zenc`). Tout autre scope est encodé en hexadécimal préfixé `zenc`, pour rester injectif après la mise en minuscules de Hive.
+- `HiveZLocalStore.adoptUnscoped` copie, via `applyMerged`, les entrées pour lesquelles `isMine` est vrai, puis les retire de la box non cloisonnée. `updated_at` n'est pas réestampillé. Un scope vide est refusé.
+- `ZOfflineFirstBoxRepository.isForeign` remplace le filtre de rattrapage. Une entrée retenue est journalisée.
+- `ZDeferredScopedLocalStore` ouvre la box au premier usage du scope. Un scope absent ne retombe pas sur la box non cloisonnée : les lectures sont vides et les écritures sont refusées.
+
+### Adaptation
+
+- Un scope à casse mixte, ou qui contient un séparateur de chemin, n'ouvre plus `zcrud_<kind>__<scope>`. Les boxes déjà ouvertes sous l'ancien nom ne sont pas renommées. Un scope déjà en minuscules (`uid-a`, `uid~0041`) conserve son nom.
+- `isMine` doit rendre faux lorsqu'aucun propriétaire n'est établi. Voir `docs/handoff-v3.58.0.md`.
+
 ## 3.57.0 — 2026-10-01
 
 ### Ajouté

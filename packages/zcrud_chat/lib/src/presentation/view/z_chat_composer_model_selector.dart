@@ -37,6 +37,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 import 'z_chat_composer.dart';
 import 'z_chat_labels.dart';
+import 'z_chat_menu_chrome.dart';
 import 'z_chat_message_tile.dart' show kZChatMinTapTarget;
 import 'z_chat_settings_sheet.dart'
     show
@@ -303,15 +304,24 @@ class _ZChatComposerModelSelectorState
 
   @override
   Widget build(BuildContext context) {
-    return OverlayPortal(
-      controller: _portal,
-      overlayChildBuilder: _overlay,
-      child: CompositedTransformTarget(
-        link: _link,
-        child: ValueListenableBuilder<bool>(
-          valueListenable: _open,
-          builder: (BuildContext context, bool open, Widget? _) =>
-              _trigger(context, open),
+    return ValueListenableBuilder<bool>(
+      valueListenable: _open,
+      builder: (BuildContext context, bool open, Widget? child) =>
+          ZChatOverlayDismiss(
+            open: open,
+            onClose: _close,
+            child: child!,
+          ),
+      child: OverlayPortal(
+        controller: _portal,
+        overlayChildBuilder: _overlay,
+        child: CompositedTransformTarget(
+          link: _link,
+          child: ValueListenableBuilder<bool>(
+            valueListenable: _open,
+            builder: (BuildContext context, bool open, Widget? _) =>
+                _trigger(context, open),
+          ),
         ),
       ),
     );
@@ -411,7 +421,10 @@ class _ZChatComposerModelSelectorState
     final ({TextStyle plain, TextStyle chosen}) styles = _styles(context);
     final double screen = MediaQuery.sizeOf(context).width;
     final double cap = screen > 16 ? screen - 16 : screen;
-    return Semantics(
+    return ZChatMenuSurface(
+      child: Focus(
+        autofocus: true,
+        child: Semantics(
       container: true,
       explicitChildNodes: true,
       label: zChatLabel(context, kZChatLabelModelSelector),
@@ -424,6 +437,8 @@ class _ZChatComposerModelSelectorState
             for (final ZChatModelOption option in widget.options)
               _menuItem(context, option, gap, styles),
           ],
+        ),
+      ),
         ),
       ),
     );

@@ -94,6 +94,7 @@ export 'src/presentation/export/z_chat_export_service.dart';
 // fait passer chaque verbe d'artefact par `runAction` (planification,
 // confirmation, exécution) et persiste le fil par `ZChatTranscriptPort`.
 export 'src/presentation/notebook/z_chat_notebook_controller.dart';
+export 'src/presentation/notebook/z_chat_scope_generation.dart';
 export 'src/presentation/render/z_chat_accessible_text_scope.dart';
 export 'src/presentation/render/z_chat_render_request.dart';
 export 'src/presentation/render/z_chat_renderer.dart';

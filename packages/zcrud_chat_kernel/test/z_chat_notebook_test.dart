@@ -652,4 +652,34 @@ void main() {
           reason: 'le jour où un verbe destructeur apparaît, on ne dit pas oui');
     });
   });
+
+  group('contenu structuré et état d\'ingestion', () {
+    test('une carte structurée non vide n\'est pas un contenu vide', () {
+      expect(ZChatArtifactContent('  \n').isEmpty, isTrue);
+      final ZChatArtifactContent cards = ZChatArtifactContent(
+        '',
+        structured: const <String, dynamic>{'cards': 2},
+      );
+      expect(cards.isEmpty, isFalse);
+      expect(
+        cards,
+        isNot(ZChatArtifactContent('', structured: const <String, dynamic>{})),
+      );
+    });
+
+    test('une chaîne inconnue devient unknown, une absence reste ready', () {
+      expect(
+        ZNotebookIngestionState.fromJson('no_text'),
+        ZNotebookIngestionState.unknown,
+      );
+      expect(
+        ZNotebookIngestionState.fromJson(''),
+        ZNotebookIngestionState.ready,
+      );
+      expect(
+        ZNotebookIngestionState.fromJson(null),
+        ZNotebookIngestionState.ready,
+      );
+    });
+  });
 }

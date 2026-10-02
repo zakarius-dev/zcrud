@@ -32,6 +32,30 @@ const String kZChatLabelShowLess = '${kZChatLabelPrefix}showLess';
 /// En-tête du bloc de provenance (`ZSourcesBlock`).
 const String kZChatLabelSources = '${kZChatLabelPrefix}sources';
 
+/// Bouton d'ajout d'une source — distinct de l'en-tête [kZChatLabelSources].
+const String kZChatLabelAttachSource = '${kZChatLabelPrefix}attachSource';
+
+/// Nombre de pages d'une source. Porte [kZChatCountPlaceholder].
+const String kZChatLabelSourcePageCount =
+    '${kZChatLabelPrefix}sourcePageCount';
+
+/// Liste de sources vide.
+const String kZChatLabelSourcesEmpty = '${kZChatLabelPrefix}sourcesEmpty';
+
+/// Liste de sources en cours de lecture.
+const String kZChatLabelSourcesLoading = '${kZChatLabelPrefix}sourcesLoading';
+
+/// Import d'une source en cours.
+const String kZChatLabelSourcesImporting =
+    '${kZChatLabelPrefix}sourcesImporting';
+
+/// Échec de lecture des sources — jamais le texte brut du serveur.
+const String kZChatLabelSourcesUnavailable =
+    '${kZChatLabelPrefix}sourcesUnavailable';
+
+/// Entrée de palette verrouillée, annoncée comme active.
+const String kZChatLabelPaletteLocked = '${kZChatLabelPrefix}paletteLocked';
+
 /// En-tête du bloc de relances (`ZSuggestionsBlock`).
 const String kZChatLabelSuggestions = '${kZChatLabelPrefix}suggestions';
 
@@ -99,6 +123,10 @@ const String kZChatLabelIngestionReady = '${kZChatLabelPrefix}ingestionReady';
 
 /// Ingestion échouée.
 const String kZChatLabelIngestionFailed = '${kZChatLabelPrefix}ingestionFailed';
+
+/// Ingestion dans un état non reconnu.
+const String kZChatLabelIngestionUnknown =
+    '${kZChatLabelPrefix}ingestionUnknown';
 
 /// Étiquette sémantique de la barre de diffusion.
 const String kZChatLabelDiffusion = '${kZChatLabelPrefix}diffusion';
@@ -510,12 +538,37 @@ const String kZChatLabelTimeMonths = '${kZChatLabelPrefix}timeMonths';
 /// Horodatage relatif — années. Porte [kZChatCountPlaceholder].
 const String kZChatLabelTimeYears = '${kZChatLabelPrefix}timeYears';
 
+/// Forme singulière des buckets relatifs. Porte [kZChatCountPlaceholder].
+const String kZChatLabelTimeMinutesOne = '${kZChatLabelPrefix}timeMinutesOne';
+
+/// Forme singulière — heures.
+const String kZChatLabelTimeHoursOne = '${kZChatLabelPrefix}timeHoursOne';
+
+/// Forme singulière — jours.
+const String kZChatLabelTimeDaysOne = '${kZChatLabelPrefix}timeDaysOne';
+
+/// Forme singulière — semaines.
+const String kZChatLabelTimeWeeksOne = '${kZChatLabelPrefix}timeWeeksOne';
+
+/// Forme singulière — mois.
+const String kZChatLabelTimeMonthsOne = '${kZChatLabelPrefix}timeMonthsOne';
+
+/// Forme singulière — années.
+const String kZChatLabelTimeYearsOne = '${kZChatLabelPrefix}timeYearsOne';
+
 /// Toutes les clés du rendu neutre — surface exhaustive pour un hôte qui
 /// alimente son registre, et cible de la garde « aucune chaîne en dur ».
 const List<String> kZChatLabelKeys = <String>[
   kZChatLabelShowMore,
   kZChatLabelShowLess,
   kZChatLabelSources,
+  kZChatLabelAttachSource,
+  kZChatLabelSourcePageCount,
+  kZChatLabelSourcesEmpty,
+  kZChatLabelSourcesLoading,
+  kZChatLabelSourcesImporting,
+  kZChatLabelSourcesUnavailable,
+  kZChatLabelPaletteLocked,
   kZChatLabelSuggestions,
   kZChatLabelDiagram,
   kZChatLabelUnsupportedBlock,
@@ -535,6 +588,7 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelIngestionRunning,
   kZChatLabelIngestionReady,
   kZChatLabelIngestionFailed,
+  kZChatLabelIngestionUnknown,
   kZChatLabelDiffusion,
   kZChatLabelAssistedInput,
   kZChatLabelDictate,
@@ -632,6 +686,12 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelTimeWeeks,
   kZChatLabelTimeMonths,
   kZChatLabelTimeYears,
+  kZChatLabelTimeMinutesOne,
+  kZChatLabelTimeHoursOne,
+  kZChatLabelTimeDaysOne,
+  kZChatLabelTimeWeeksOne,
+  kZChatLabelTimeMonthsOne,
+  kZChatLabelTimeYearsOne,
 ];
 
 /// Repli lisible de chaque clé — jamais prioritaire sur l'hôte.
@@ -648,6 +708,13 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelShowMore: 'Afficher plus',
   kZChatLabelShowLess: 'Afficher moins',
   kZChatLabelSources: 'Sources',
+  kZChatLabelAttachSource: 'Ajouter une source',
+  kZChatLabelSourcePageCount: '$kZChatCountPlaceholder p.',
+  kZChatLabelSourcesEmpty: 'Aucune source',
+  kZChatLabelSourcesLoading: 'Lecture des sources',
+  kZChatLabelSourcesImporting: 'Import en cours',
+  kZChatLabelSourcesUnavailable: 'Sources indisponibles',
+  kZChatLabelPaletteLocked: 'Verrouillée',
   kZChatLabelSuggestions: 'Suggestions',
   kZChatLabelDiagram: 'Diagramme',
   kZChatLabelUnsupportedBlock: 'Contenu non pris en charge',
@@ -667,6 +734,7 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelIngestionRunning: 'Ingestion',
   kZChatLabelIngestionReady: 'Prête',
   kZChatLabelIngestionFailed: 'Échec',
+  kZChatLabelIngestionUnknown: 'État inconnu',
   kZChatLabelDiffusion: 'Diffusion',
   kZChatLabelAssistedInput: 'Saisie assistée',
   kZChatLabelDictate: 'Dicter',
@@ -764,7 +832,13 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelTimeDays: 'il y a $kZChatCountPlaceholder j',
   kZChatLabelTimeWeeks: 'il y a $kZChatCountPlaceholder sem.',
   kZChatLabelTimeMonths: 'il y a $kZChatCountPlaceholder mois',
-  kZChatLabelTimeYears: 'il y a $kZChatCountPlaceholder an(s)',
+  kZChatLabelTimeYears: 'il y a $kZChatCountPlaceholder ans',
+  kZChatLabelTimeMinutesOne: 'il y a $kZChatCountPlaceholder min',
+  kZChatLabelTimeHoursOne: 'il y a $kZChatCountPlaceholder h',
+  kZChatLabelTimeDaysOne: 'il y a $kZChatCountPlaceholder j',
+  kZChatLabelTimeWeeksOne: 'il y a $kZChatCountPlaceholder sem.',
+  kZChatLabelTimeMonthsOne: 'il y a $kZChatCountPlaceholder mois',
+  kZChatLabelTimeYearsOne: 'il y a $kZChatCountPlaceholder an',
 };
 
 /// Marqueur de substitution du compte, dans un repli comme dans une
@@ -790,11 +864,9 @@ typedef ZChatRelativeTimeFormatter =
 
 /// Formateur par défaut — buckets grossiers, entièrement résolus par clés.
 ///
-/// Aucune locale, aucun mot en dur : un mot écrit en toutes lettres dans une
-/// langue fixe resterait dans cette langue quelle que soit celle de
-/// l'application — et deux points d'un même écran qui appliquent des
-/// conventions différentes feraient changer la langue d'un même contenu
-/// selon l'endroit où on le regarde.
+/// Aucun mot en dur : un mot écrit en toutes lettres dans une langue fixe
+/// resterait dans cette langue quelle que soit celle de l'application.
+/// La locale ne sert qu'à choisir la forme du compte (singulier ou pluriel).
 ///
 /// Ici, chaque bucket est une clé : un hôte qui alimente son registre
 /// obtient sa langue, et un hôte qui veut un paquet de formatage de dates
@@ -812,21 +884,81 @@ String zChatDefaultRelativeTime(
     return zChatLabel(context, kZChatLabelTimeNow);
   }
   if (d.inHours < 1) {
-    return zChatCountLabel(context, kZChatLabelTimeMinutes, d.inMinutes);
+    return _relative(context, d.inMinutes, kZChatLabelTimeMinutesOne,
+        kZChatLabelTimeMinutes);
   }
   if (d.inDays < 1) {
-    return zChatCountLabel(context, kZChatLabelTimeHours, d.inHours);
+    return _relative(
+      context,
+      d.inHours,
+      kZChatLabelTimeHoursOne,
+      kZChatLabelTimeHours,
+    );
   }
   if (d.inDays < 7) {
-    return zChatCountLabel(context, kZChatLabelTimeDays, d.inDays);
+    return _relative(
+      context,
+      d.inDays,
+      kZChatLabelTimeDaysOne,
+      kZChatLabelTimeDays,
+    );
   }
   if (d.inDays < 30) {
-    return zChatCountLabel(context, kZChatLabelTimeWeeks, d.inDays ~/ 7);
+    return _relative(
+      context,
+      d.inDays ~/ 7,
+      kZChatLabelTimeWeeksOne,
+      kZChatLabelTimeWeeks,
+    );
   }
   if (d.inDays < 365) {
-    return zChatCountLabel(context, kZChatLabelTimeMonths, d.inDays ~/ 30);
+    return _relative(
+      context,
+      d.inDays ~/ 30,
+      kZChatLabelTimeMonthsOne,
+      kZChatLabelTimeMonths,
+    );
   }
-  return zChatCountLabel(context, kZChatLabelTimeYears, d.inDays ~/ 365);
+  return _relative(
+    context,
+    d.inDays ~/ 365,
+    kZChatLabelTimeYearsOne,
+    kZChatLabelTimeYears,
+  );
+}
+
+/// Catégorie de pluriel de [count] pour [locale].
+///
+/// `one` lorsque le compte vaut 1. En arabe, `zero`, `two`, `few` et `many`
+/// suivent les restes habituels ; les autres langues distinguent `one` du
+/// reste. Un hôte qui a besoin de toutes les formes passe son propre
+/// [ZChatRelativeTimeFormatter] : le défaut ne porte que le singulier et
+/// le pluriel.
+String zChatPluralCategory(Locale? locale, int count) {
+  if (locale?.languageCode == 'ar') {
+    if (count == 0) return 'zero';
+    if (count == 1) return 'one';
+    if (count == 2) return 'two';
+    final int mod = count % 100;
+    if (mod >= 3 && mod <= 10) return 'few';
+    if (mod >= 11) return 'many';
+    return 'other';
+  }
+  return count == 1 ? 'one' : 'other';
+}
+
+String _relative(
+  BuildContext context,
+  int count,
+  String oneKey,
+  String otherKey,
+) {
+  final String category = zChatPluralCategory(
+    Localizations.maybeLocaleOf(context),
+    count,
+  );
+  final String key = category == 'one' ? oneKey : otherKey;
+  return zChatCountLabel(context, key, count);
 }
 
 /// Résout une clé du chat — l'unique site d'appel de `label()` du paquet.

@@ -53,6 +53,34 @@ void main() {
     },
   );
 
+  testWidgets('une seconde entrée ne part pas tant que la première tourne', (
+    WidgetTester tester,
+  ) async {
+    var selects = 0;
+    final Completer<void> gate = Completer<void>();
+    await tester.pumpWidget(
+      harness(
+        ZTransformPaletteBar(
+          palette: ZTransformPalette(<ZTransformPaletteEntry>[
+            const ZTransformPaletteEntry(artifactKey: 'a', label: 'Alpha'),
+            const ZTransformPaletteEntry(artifactKey: 'b', label: 'Beta'),
+          ]),
+          onSelect: (ZTransformPaletteEntry _) {
+            selects++;
+            return gate.future;
+          },
+        ),
+      ),
+    );
+    await tester.tap(find.text('Alpha'));
+    await tester.pump();
+    await tester.tap(find.text('Beta'));
+    await tester.pump();
+    expect(selects, 1);
+    gate.complete();
+    await tester.pump();
+  });
+
   testWidgets('le déclencheur désactivé n\'ouvre pas le menu', (
     WidgetTester tester,
   ) async {

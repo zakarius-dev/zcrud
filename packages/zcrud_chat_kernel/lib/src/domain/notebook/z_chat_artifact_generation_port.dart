@@ -347,11 +347,19 @@ class ZChatArtifactContent {
   /// Construit un contenu.
   ZChatArtifactContent(
     this.data, {
+    Map<String, dynamic> structured = const <String, dynamic>{},
     Map<String, dynamic> extra = const <String, dynamic>{},
-  }) : _extra = zSanitizeExtra(extra, _reservedKeys);
+  }) : structured = Map<String, dynamic>.unmodifiable(structured),
+       _extra = zSanitizeExtra(extra, _reservedKeys);
 
   /// Contenu produit (JSON, Markdown…).
   final String data;
+
+  /// Contenu structuré, en plus de [data].
+  ///
+  /// Une carte vide ne compte pas : [isEmpty] n'est vrai que lorsque la
+  /// chaîne est blanche ET cette carte est vide. Le socle ne l'interprète pas.
+  final Map<String, dynamic> structured;
 
   /// Métadonnées d'hôte libres (invariant AD-4), immuables.
   ///
@@ -364,18 +372,21 @@ class ZChatArtifactContent {
 
   static const Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
-  /// `true` si [data] est blanc — un tel contenu n'est **jamais** écrit.
-  bool get isEmpty => data.trim().isEmpty;
+  /// `true` si [data] est blanc et [structured] est vide.
+  ///
+  /// Un tel contenu n'est **jamais** écrit.
+  bool get isEmpty => data.trim().isEmpty && structured.isEmpty;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ZChatArtifactContent &&
           data == other.data &&
+          zJsonEquals(structured, other.structured) &&
           zJsonEquals(extra, other.extra);
 
   @override
-  int get hashCode => Object.hash(data, zJsonHash(extra));
+  int get hashCode => Object.hash(data, zJsonHash(structured), zJsonHash(extra));
 
   @override
   String toString() => 'ZChatArtifactContent(${data.length} chars)';
@@ -503,6 +514,7 @@ class ZChatArtifactGenerationRunner {
     ZChatArtifactGenerationRequest request, {
     required ZChatRequestToken token,
     required ZChatArtifactOccupancyMarker mark,
+    Future<ZResult<Unit>> Function(ZChatArtifactContent content)? record,
   }) {
     final String anchor = request.anchorId;
     if (anchor.isEmpty) {
@@ -525,11 +537,12 @@ class ZChatArtifactGenerationRunner {
       mark: mark,
       generate: () => port.generate(request, token: token),
       isEmpty: (ZChatArtifactContent c) => c.isEmpty,
-      write: (ZChatArtifactContent c) => store.write(
-        messageId: anchor,
-        artifactKey: request.artifactKey,
-        content: c.data,
-      ),
+      write: record ??
+          (ZChatArtifactContent c) => store.write(
+            messageId: anchor,
+            artifactKey: request.artifactKey,
+            content: c.data,
+          ),
     );
   }
 }

@@ -22,6 +22,8 @@ class ZNotebookSourcesPanel extends StatefulWidget {
     required this.port,
     this.onAttach,
     this.confirmRemove,
+    this.sourceBuilder,
+    this.failureBuilder,
     super.key,
   });
 
@@ -38,6 +40,13 @@ class ZNotebookSourcesPanel extends StatefulWidget {
   /// `false` annule. Une erreur du rappel annule aussi.
   final Future<bool> Function(ZNotebookSource source)? confirmRemove;
 
+  /// Remplace la ligne d'une source.
+  final Widget Function(BuildContext context, ZNotebookSource source)?
+  sourceBuilder;
+
+  /// Remplace le message d'échec. Le texte brut du serveur n'est pas affiché.
+  final Widget Function(BuildContext context, ZFailure failure)? failureBuilder;
+
   @override
   State<ZNotebookSourcesPanel> createState() => _ZNotebookSourcesPanelState();
 }
@@ -46,6 +55,8 @@ class _ZNotebookSourcesPanelState extends State<ZNotebookSourcesPanel> {
   final ValueNotifier<List<ZNotebookSource>> _items =
       ValueNotifier<List<ZNotebookSource>>(const <ZNotebookSource>[]);
   final ValueNotifier<ZFailure?> _failure = ValueNotifier<ZFailure?>(null);
+  final ValueNotifier<bool> _loading = ValueNotifier<bool>(true);
+  final ValueNotifier<bool> _importing = ValueNotifier<bool>(false);
 
   @override
   void initState() {
@@ -63,19 +74,24 @@ class _ZNotebookSourcesPanelState extends State<ZNotebookSourcesPanel> {
   void dispose() {
     _items.dispose();
     _failure.dispose();
+    _loading.dispose();
+    _importing.dispose();
     super.dispose();
   }
 
   Future<void> _reload() async {
+    _loading.value = true;
     final ZResult<List<ZNotebookSource>> result;
     try {
       result = await widget.port.list();
     } catch (error) {
       if (!mounted) return;
+      _loading.value = false;
       _failure.value = ZDomainFailure('${error.runtimeType}');
       return;
     }
     if (!mounted) return;
+    _loading.value = false;
     result.fold((ZFailure failure) => _failure.value = failure, (
       List<ZNotebookSource> list,
     ) {
@@ -106,72 +122,153 @@ class _ZNotebookSourcesPanelState extends State<ZNotebookSourcesPanel> {
     await _reload();
   }
 
-  String _sourceLine(ZNotebookSource source) {
+  String _sourceLine(BuildContext context, ZNotebookSource source) {
     final String title = source.title.isEmpty ? source.id : source.title;
-    final String? pages = source.pageCount?.toString();
+    final int? pages = source.pageCount;
     final String? error = source.errorKey;
+    final String? errorLabel = error == null || error.isEmpty
+        ? null
+        : zChatLabel(context, error);
     return <String>[
       title,
-      if (pages != null) pages,
-      if (error != null && error.isNotEmpty) error,
+      if (pages != null)
+        zChatCountLabel(context, kZChatLabelSourcePageCount, pages),
+      ?errorLabel,
     ].join(' ');
   }
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<List<ZNotebookSource>>(
-      valueListenable: _items,
-      builder: (BuildContext context, List<ZNotebookSource> items, Widget? _) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+    return ValueListenableBuilder<bool>(
+      valueListenable: _loading,
+      builder: (BuildContext context, bool loading, Widget? _) {
+        return ValueListenableBuilder<bool>(
+          valueListenable: _importing,
+          builder: (BuildContext context, bool importing, Widget? _) {
+            return ValueListenableBuilder<List<ZNotebookSource>>(
+              valueListenable: _items,
+              builder:
+                  (
+                    BuildContext context,
+                    List<ZNotebookSource> items,
+                    Widget? _,
+                  ) {
+                    return LayoutBuilder(
+                      builder: (BuildContext context, BoxConstraints constraints) {
+                        final double height = constraints.maxHeight.isFinite
+                            ? constraints.maxHeight
+                            : MediaQuery.sizeOf(context).height * 0.4;
+                        return SizedBox(
+                          height: height,
+                          child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          zChatLabel(context, kZChatLabelSources),
+                          textAlign: TextAlign.start,
+                        ),
+                        if (widget.onAttach != null)
+                          _ZSourceButton(
+                            label: zChatLabel(context, kZChatLabelAttachSource),
+                            onTap: () async {
+                              _importing.value = true;
+                              try {
+                                await widget.onAttach!();
+                              } finally {
+                                if (mounted) _importing.value = false;
+                              }
+                              await _reload();
+                            },
+                          ),
+                        _ZSourceButton(
+                          label: zChatLabel(context, kZChatLabelRefreshSources),
+                          onTap: _reload,
+                        ),
+                        if (importing)
+                          Text(
+                            zChatLabel(context, kZChatLabelSourcesImporting),
+                            textAlign: TextAlign.start,
+                          ),
+                        Expanded(child: _body(context, items, loading)),
+                        ValueListenableBuilder<ZFailure?>(
+                          valueListenable: _failure,
+                          builder:
+                              (
+                                BuildContext context,
+                                ZFailure? failure,
+                                Widget? _,
+                              ) {
+                                if (failure == null) {
+                                  return const SizedBox.shrink();
+                                }
+                                final Widget Function(
+                                  BuildContext context,
+                                  ZFailure failure,
+                                )?
+                                paint = widget.failureBuilder;
+                                if (paint != null) return paint(context, failure);
+                                return Text(
+                                  zChatLabel(
+                                    context,
+                                    kZChatLabelSourcesUnavailable,
+                                  ),
+                                  textAlign: TextAlign.start,
+                                );
+                              },
+                        ),
+                      ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _body(BuildContext context, List<ZNotebookSource> items, bool loading) {
+    if (loading && items.isEmpty) {
+      return Text(
+        zChatLabel(context, kZChatLabelSourcesLoading),
+        textAlign: TextAlign.start,
+      );
+    }
+    if (items.isEmpty) {
+      return Text(
+        zChatLabel(context, kZChatLabelSourcesEmpty),
+        textAlign: TextAlign.start,
+      );
+    }
+    return ListView.builder(
+      itemCount: items.length,
+      itemBuilder: (BuildContext context, int index) {
+        final ZNotebookSource source = items[index];
+        final Widget Function(BuildContext context, ZNotebookSource source)?
+        custom = widget.sourceBuilder;
+        if (custom != null) return custom(context, source);
+        return Row(
           children: <Widget>[
-            Text(
-              zChatLabel(context, kZChatLabelSources),
-              textAlign: TextAlign.start,
-            ),
-            if (widget.onAttach != null)
-              _ZSourceButton(
-                label: zChatLabel(context, kZChatLabelSources),
-                onTap: () async {
-                  await widget.onAttach!();
-                  await _reload();
-                },
+            Expanded(
+              child: Text(
+                _sourceLine(context, source),
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
+            ),
+            Semantics(
+              label: _stateLabel(context, source.state),
+              child: Text(
+                _stateLabel(context, source.state),
+                textAlign: TextAlign.start,
+              ),
+            ),
             _ZSourceButton(
-              label: zChatLabel(context, kZChatLabelRefreshSources),
-              onTap: _reload,
-            ),
-            for (final ZNotebookSource source in items)
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      _sourceLine(source),
-                      textAlign: TextAlign.start,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Semantics(
-                    label: _stateLabel(context, source.state),
-                    child: Text(
-                      _stateLabel(context, source.state),
-                      textAlign: TextAlign.start,
-                    ),
-                  ),
-                  _ZSourceButton(
-                    label: zChatLabel(context, kZChatLabelRemoveSource),
-                    onTap: () => _remove(source),
-                  ),
-                ],
-              ),
-            ValueListenableBuilder<ZFailure?>(
-              valueListenable: _failure,
-              builder: (BuildContext context, ZFailure? failure, Widget? _) {
-                if (failure == null) return const SizedBox.shrink();
-                return Text(failure.message, textAlign: TextAlign.start);
-              },
+              label: zChatLabel(context, kZChatLabelRemoveSource),
+              onTap: () => _remove(source),
             ),
           ],
         );
@@ -189,6 +286,8 @@ class _ZNotebookSourcesPanelState extends State<ZNotebookSourcesPanel> {
         return zChatLabel(context, kZChatLabelIngestionReady);
       case ZNotebookIngestionState.failed:
         return zChatLabel(context, kZChatLabelIngestionFailed);
+      case ZNotebookIngestionState.unknown:
+        return zChatLabel(context, kZChatLabelIngestionUnknown);
     }
   }
 }

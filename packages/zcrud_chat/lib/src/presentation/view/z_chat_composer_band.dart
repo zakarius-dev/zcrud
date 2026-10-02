@@ -75,6 +75,7 @@ import 'z_chat_composer.dart';
 import 'z_chat_composer_chrome.dart';
 import 'z_chat_composer_reference.dart';
 import 'z_chat_labels.dart';
+import 'z_chat_menu_chrome.dart';
 import 'z_chat_message_tile.dart' show kZChatMinTapTarget;
 import 'z_chat_settings_sheet.dart'
     show
@@ -329,6 +330,7 @@ class ZChatComposerPickerTrigger extends StatefulWidget {
     this.glyph,
     this.spacing,
     this.enabled = true,
+    this.menuBuilder,
     super.key,
   }) : assert(actions.length > 0);
 
@@ -360,6 +362,9 @@ class ZChatComposerPickerTrigger extends StatefulWidget {
 
   /// `false` : le déclencheur ne s'ouvre pas et annonce l'état désactivé.
   final bool enabled;
+
+  /// Remplace le menu. Reçoit la fermeture.
+  final Widget Function(BuildContext context, VoidCallback close)? menuBuilder;
 
   @override
   State<ZChatComposerPickerTrigger> createState() =>
@@ -404,7 +409,15 @@ class _ZChatComposerPickerTriggerState
   @override
   Widget build(BuildContext context) {
     final String resolved = zChatLabel(context, kZChatLabelAttachmentPickers);
-    return OverlayPortal(
+    return ValueListenableBuilder<bool>(
+      valueListenable: _open,
+      builder: (BuildContext context, bool open, Widget? child) =>
+          ZChatOverlayDismiss(
+            open: open,
+            onClose: _close,
+            child: child!,
+          ),
+      child: OverlayPortal(
       controller: _portal,
       overlayChildBuilder: _overlay,
       child: CompositedTransformTarget(
@@ -440,6 +453,7 @@ class _ZChatComposerPickerTriggerState
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -468,18 +482,30 @@ class _ZChatComposerPickerTriggerState
             // bout de la boîte, hors écran.
             child: Align(
               alignment: AlignmentDirectional.bottomStart.resolve(direction),
-              child: Semantics(
-                container: true,
-                explicitChildNodes: true,
-                label: zChatLabel(context, kZChatLabelAttachmentPickers),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    for (final ZChatComposerPickerAction a in widget.actions)
-                      _item(context, a, gap),
-                  ],
-                ),
+              child: ZChatClampShift(
+                child: widget.menuBuilder?.call(context, _close) ??
+                    ZChatMenuSurface(
+                      child: Focus(
+                        autofocus: true,
+                        child: Semantics(
+                          container: true,
+                          explicitChildNodes: true,
+                          label: zChatLabel(
+                            context,
+                            kZChatLabelAttachmentPickers,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              for (final ZChatComposerPickerAction a
+                                  in widget.actions)
+                                _item(context, a, gap),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
               ),
             ),
           ),

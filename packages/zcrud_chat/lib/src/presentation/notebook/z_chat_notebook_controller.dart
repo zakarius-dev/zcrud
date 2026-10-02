@@ -344,6 +344,13 @@ class ZChatNotebookController extends ChangeNotifier {
   final Map<(String, String), ZChatRequestToken> _artifactTokens =
       <(String, String), ZChatRequestToken>{};
 
+  final Set<String> _scopeInFlight = <String>{};
+
+  /// Portées dont une génération est en cours. Une seule à la fois par portée.
+  final ValueNotifier<Set<String>> scopeBusy = ValueNotifier<Set<String>>(
+    const <String>{},
+  );
+
   final ValueNotifier<bool> _readOnly;
   final ValueNotifier<String> _liveAnnouncement = ValueNotifier<String>('');
 
@@ -533,12 +540,15 @@ class ZChatNotebookController extends ChangeNotifier {
   ///
   /// Le contenu est stocké sous [scopeId]. Une matière de fil vide n'empêche
   /// pas l'appel : le port peut lire le dossier. Un sujet exigé et vide
-  /// reste refusé.
+  /// reste refusé. Une génération déjà en vol sur la même portée est
+  /// refusée sans second appel au port. [onGenerated], s'il est fourni,
+  /// enregistre le contenu à la place du magasin.
   Future<ZResult<Unit>> generateForScope({
     required String scopeId,
     required String artifactKey,
     required String notes,
     String subject = '',
+    Future<ZResult<Unit>> Function(ZChatArtifactContent content)? onGenerated,
   }) async {
     final ZChatArtifactGenerationPort? port = _generationPort;
     if (port == null) {
@@ -550,6 +560,13 @@ class ZChatNotebookController extends ChangeNotifier {
       );
     }
     if (_disposed) return const Right<ZFailure, Unit>(unit);
+    if (_scopeInFlight.contains(scopeId)) {
+      return const Left<ZFailure, Unit>(
+        ZDomainFailure('a generation is already running for this scope'),
+      );
+    }
+    _scopeInFlight.add(scopeId);
+    scopeBusy.value = Set<String>.unmodifiable(_scopeInFlight);
     final ZChatArtifactGenerationRequest request =
         ZChatArtifactGenerationRequest(
           scopeId: scopeId,
@@ -562,12 +579,19 @@ class ZChatNotebookController extends ChangeNotifier {
     final (String, String) pair = (request.anchorId, artifactKey);
     final ZChatRequestToken token = ZChatRequestToken(_newRequestId());
     _artifactTokens[pair] = token;
-    final ZResult<ZChatArtifactContent> produced =
-        await ZChatArtifactGenerationRunner(
-          port: port,
-          store: _store,
-        ).run(request, token: token, mark: _mark);
-    _artifactTokens.remove(pair);
+    final ZResult<ZChatArtifactContent> produced;
+    try {
+      produced = await ZChatArtifactGenerationRunner(
+        port: port,
+        store: _store,
+      ).run(request, token: token, mark: _mark, record: onGenerated);
+    } finally {
+      _artifactTokens.remove(pair);
+      _scopeInFlight.remove(scopeId);
+      if (!_disposed) {
+        scopeBusy.value = Set<String>.unmodifiable(_scopeInFlight);
+      }
+    }
     if (_disposed) return const Right<ZFailure, Unit>(unit);
     return produced.fold((ZFailure failure) => Left<ZFailure, Unit>(failure), (
       ZChatArtifactContent _,
@@ -793,6 +817,7 @@ class ZChatNotebookController extends ChangeNotifier {
     _failures.clear();
     _readOnly.dispose();
     _liveAnnouncement.dispose();
+    scopeBusy.dispose();
     chat.dispose();
     super.dispose();
   }

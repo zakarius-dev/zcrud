@@ -743,6 +743,7 @@ void main() {
         'cancelArtifact',
         'refreshArtifact',
         'generateForScope',
+        'scopeBusy',
         'dispose',
       });
     });

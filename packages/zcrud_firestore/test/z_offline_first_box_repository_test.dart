@@ -220,6 +220,7 @@ void main() {
     Future<bool> Function()? isConnected,
     bool autoListen = false,
     String? userId,
+    bool Function(_Note entity)? isForeign,
   }) => ZOfflineFirstBoxRepository<_Note>(
     local: local,
     firestore: fs,
@@ -230,6 +231,7 @@ void main() {
     isConnected: isConnected,
     autoListen: autoListen,
     userId: userId,
+    isForeign: isForeign,
   );
 
   // Écrit un doc cloud VERBATIM (méta précise) — jamais un seed « propre ».
@@ -471,6 +473,38 @@ void main() {
           repo.dispose();
         },
       );
+
+      test('isForeign remplace le filtre par défaut', () async {
+        final local = await noteLocal();
+        final fs = FakeFirebaseFirestore();
+        final repo = noteRepo(
+          local,
+          fs,
+          userId: 'b',
+          isForeign: (_Note n) => n.id == 'plain',
+          encode: (_Note n) {
+            final Map<String, dynamic> map = n.toMap();
+            if (n.id == 'foreign') map['user_id'] = 'a';
+            return map;
+          },
+        );
+        final DateTime at = DateTime.utc(2026, 6, 1);
+        await local.applyMerged(_entry('foreign', 'A', 1, at));
+        await local.applyMerged(_entry('plain', 'C', 1, at));
+
+        expect((await repo.sync()).isRight(), isTrue);
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        expect(
+          (await fs.collection(_kNoteCollection).doc('foreign').get()).exists,
+          isTrue,
+        );
+        expect(
+          (await fs.collection(_kNoteCollection).doc('plain').get()).exists,
+          isFalse,
+        );
+        repo.dispose();
+      });
     },
   );
 

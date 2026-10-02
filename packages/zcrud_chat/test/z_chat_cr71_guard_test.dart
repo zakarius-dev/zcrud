@@ -10,8 +10,9 @@
 ///   C'est ce qui rend l'anti-divergence structurelle (motif CR-LEX-78) : la
 ///   fabrique de tuile unique (G-S5) rend les deux surfaces.
 /// * **G-N2** — les créneaux TRAVERSENT la fabrique unique : chaque builder est
-///   relayé de la vue à `_ZChatList`, puis de `_ZChatList` à la tuile. Un
-///   créneau « déclaré mais non relayé » serait une promesse morte.
+///   relayé de la vue à `_ZChatList`, puis de `_ZChatList` à la tuile posée
+///   et à la tuile live. Un créneau « déclaré mais non relayé » serait une
+///   promesse morte.
 @TestOn('vm')
 library;
 
@@ -110,19 +111,19 @@ void main() {
   });
 
   group('🔴 G-N2 — les créneaux TRAVERSENT la fabrique unique', () {
-    test('chaque builder est relayé vue → _ZChatList → tuile (2 passages)', () {
+    test('chaque builder est relayé vue → _ZChatList → tuiles (3 passages)', () {
       final String src = stripped(libFile(_conversation)).join('\n');
       for (final String slot in <String>['identityBuilder', 'actionsBuilder']) {
         final int relays = RegExp('$slot:\\s*$slot\\b').allMatches(src).length;
         expect(
           relays,
-          2,
+          3,
           reason:
-              '🔴 `$slot` doit être relayé EXACTEMENT deux fois '
+              '🔴 `$slot` doit être relayé EXACTEMENT trois fois '
               '(`ZChatConversationView` → `_ZChatList`, puis `_ZChatList` → '
-              '`ZChatMessageTile`). $relays passage(s) trouvé(s) : le '
-              'créneau est déclaré mais n\'atteint pas la tuile — une '
-              'promesse morte, ou un chemin PARALLÈLE est apparu.',
+              'la tuile posée ET la tuile live). $relays passage(s) '
+              'trouvé(s) : le créneau est déclaré mais n\'atteint pas une '
+              'tuile — une promesse morte, ou un chemin PARALLÈLE est apparu.',
         );
       }
     });

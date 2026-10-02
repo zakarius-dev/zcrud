@@ -117,13 +117,90 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
 
   /// Nom de box dérivé du [kind].
   ///
-  /// [scope] nul ou vide conserve `zcrud_$kind`. Un scope non vide — en
-  /// pratique l'identité de l'utilisateur — ouvre une box distincte
-  /// `zcrud_${kind}__$scope`, pour qu'un changement de compte ne relise pas
-  /// le cache d'un autre.
+  /// [scope] nul ou vide conserve `zcrud_$kind`. Un scope déjà composé de
+  /// minuscules, chiffres, `_`, `-` et `~`, et qui ne commence pas par `zenc`,
+  /// ouvre `zcrud_${kind}__$scope`. Tout autre scope (majuscules, séparateurs
+  /// de chemin) est encodé en hexadécimal préfixé `zenc` : Hive met les noms
+  /// de box en minuscules, et un nom doit rester un nom de fichier. Deux
+  /// scopes qui ne diffèrent que par la casse n'ouvrent donc pas la même box.
   static String boxNameFor(String kind, {String? scope}) {
     if (scope == null || scope.isEmpty) return 'zcrud_$kind';
-    return 'zcrud_${kind}__$scope';
+    if (_scopePassthrough.hasMatch(scope) && !scope.startsWith('zenc')) {
+      return 'zcrud_${kind}__$scope';
+    }
+    final StringBuffer hex = StringBuffer();
+    for (final int byte in utf8.encode(scope)) {
+      hex.write(byte.toRadixString(16).padLeft(2, '0'));
+    }
+    return 'zcrud_${kind}__zenc$hex';
+  }
+
+  static final RegExp _scopePassthrough = RegExp(r'^[a-z0-9_~-]+$');
+
+  /// Copie dans la box [scope] les entrées de la box non cloisonnée pour
+  /// lesquelles [isMine] est vrai, puis les retire de la box d'origine.
+  ///
+  /// [isMine] doit rendre faux lorsqu'aucun propriétaire n'est établi :
+  /// adopter une entrée sans preuve la donnerait au compte courant. La
+  /// preuve qui vit dans une autre box n'est pas touchée. L'écriture passe
+  /// par [applyMerged] : `updated_at` n'est pas réestampillé. Les entrées
+  /// refusées restent dans la box d'origine.
+  static Future<ZResult<int>> adoptUnscoped<T extends ZEntity>({
+    required String kind,
+    required String scope,
+    required bool Function(T entity) isMine,
+    required T Function(Map<String, dynamic> map) fromMap,
+    required Map<String, dynamic> Function(T value) toMap,
+    T? Function(Map<String, dynamic> map)? fromMapSafe,
+    String Function()? idFactory,
+  }) async {
+    if (scope.isEmpty) {
+      return const Left<ZFailure, int>(
+        ZDomainFailure('adoptUnscoped requires a non-empty scope'),
+      );
+    }
+    final HiveZLocalStore<T> source = await HiveZLocalStore.openBox<T>(
+      kind: kind,
+      fromMap: fromMap,
+      toMap: toMap,
+      fromMapSafe: fromMapSafe,
+      idFactory: idFactory,
+    );
+    final HiveZLocalStore<T> target = await HiveZLocalStore.openBox<T>(
+      kind: kind,
+      scope: scope,
+      fromMap: fromMap,
+      toMap: toMap,
+      fromMapSafe: fromMapSafe,
+      idFactory: idFactory,
+    );
+    try {
+      final ZResult<List<ZSyncEntry<T>>> listed = await source.syncEntries();
+      return await listed.fold(
+        (ZFailure failure) async => Left<ZFailure, int>(failure),
+        (List<ZSyncEntry<T>> entries) async {
+          int moved = 0;
+          for (final ZSyncEntry<T> entry in entries) {
+            if (!isMine(entry.entity)) continue;
+            final ZResult<Unit> written = await target.applyMerged(entry);
+            final ZFailure? failure = written.fold(
+              (ZFailure f) => f,
+              (Unit _) => null,
+            );
+            if (failure != null) return Left<ZFailure, int>(failure);
+            final String? id = entry.id;
+            if (id != null) await source.purge(id);
+            moved++;
+          }
+          return Right<ZFailure, int>(moved);
+        },
+      );
+    } finally {
+      source.dispose();
+      target.dispose();
+      await source.closedForTest;
+      await target.closedForTest;
+    }
   }
 
   final Box<dynamic> _box;

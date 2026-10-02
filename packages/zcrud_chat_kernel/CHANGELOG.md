@@ -3,6 +3,14 @@
 Toutes les modifications notables de `zcrud_chat_kernel` sont documentées dans
 ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.58.0 — 2026-10-02
+
+### Ajouté
+
+- `ZChatArtifactContent.structured`. `isEmpty` n'est vrai que si le texte est blanc et cette carte est vide.
+- `ZChatArtifactGenerationRunner.run` accepte `record`. Fourni, il remplace l'écriture du magasin.
+- `ZNotebookIngestionState.unknown`. Une chaîne vide ou `ready` reste `ready`. Toute autre chaîne non reconnue vaut `unknown`.
+
 ## 3.57.0 — 2026-10-01
 
 ### Ajouté

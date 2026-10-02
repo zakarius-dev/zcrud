@@ -22,6 +22,7 @@ library;
 export 'src/data/firebase_z_repository_impl.dart';
 export 'src/data/firestore_z_remote_store.dart';
 export 'src/data/hive_z_local_store.dart';
+export 'src/data/z_deferred_scoped_local_store.dart';
 export 'src/data/z_firestore_api.dart';
 // Exécuteur borné de cascade `ZFirestoreCascadeBatcher` + rapport observable
 // `ZCascadeReport`. `deleteCascade → ZResult<ZCascadeReport>` (soft-delete

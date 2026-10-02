@@ -146,6 +146,93 @@ void main() {
   Future<Box<dynamic>> openBox([String name = 'notes']) =>
       Hive.openBox<dynamic>(name);
 
+  group('noms de box cloisonnés', () {
+    test('un scope sûr est inchangé, deux casses n\'ouvrent pas la même box',
+        () {
+      expect(HiveZLocalStore.boxNameFor('flashcard'), 'zcrud_flashcard');
+      expect(
+        HiveZLocalStore.boxNameFor('flashcard', scope: ''),
+        'zcrud_flashcard',
+      );
+      expect(
+        HiveZLocalStore.boxNameFor('flashcard', scope: 'uid_a'),
+        'zcrud_flashcard__uid_a',
+      );
+      expect(
+        HiveZLocalStore.boxNameFor('exam', scope: 'uid~0041'),
+        'zcrud_exam__uid~0041',
+      );
+      final String upper = HiveZLocalStore.boxNameFor('exam', scope: 'AbC');
+      final String other = HiveZLocalStore.boxNameFor('exam', scope: 'aBc');
+      expect(upper.toLowerCase(), isNot(other.toLowerCase()));
+      expect(upper.contains('/'), isFalse);
+      expect(upper.contains(':'), isFalse);
+    });
+
+    test('adoptUnscoped ne déplace que les entrées reconnues et garde updated_at',
+        () async {
+      final HiveZLocalStore<_Note> source = await HiveZLocalStore.openBox(
+        kind: 'note',
+        fromMap: _Note.fromMap,
+        toMap: (_Note n) => n.toMap(),
+      );
+      await source.applyMerged(
+        ZSyncEntry<_Note>(
+          entity: const _Note(id: 'mine', title: 'a', count: 1),
+          meta: ZSyncMeta(
+            updatedAt: DateTime.utc(2020, 1, 2),
+            isDeleted: false,
+          ),
+        ),
+      );
+      await source.applyMerged(
+        ZSyncEntry<_Note>(
+          entity: const _Note(id: 'other', title: 'b', count: 2),
+          meta: ZSyncMeta(
+            updatedAt: DateTime.utc(2020, 3, 4),
+            isDeleted: false,
+          ),
+        ),
+      );
+      source.dispose();
+      final Future<void>? closing = source.closedForTest;
+      if (closing != null) await closing;
+
+      final ZResult<int> moved = await HiveZLocalStore.adoptUnscoped(
+        kind: 'note',
+        scope: 'account',
+        isMine: (_Note note) => note.id == 'mine',
+        fromMap: _Note.fromMap,
+        toMap: (_Note n) => n.toMap(),
+      );
+      expect(moved.fold((_) => -1, (int n) => n), 1);
+
+      final HiveZLocalStore<_Note> scoped = await HiveZLocalStore.openBox(
+        kind: 'note',
+        scope: 'account',
+        fromMap: _Note.fromMap,
+        toMap: (_Note n) => n.toMap(),
+      );
+      final List<ZSyncEntry<_Note>> kept =
+          (await scoped.syncEntries()).getOrElse(() => <ZSyncEntry<_Note>>[]);
+      expect(kept, hasLength(1));
+      expect(kept.single.updatedAt, DateTime.utc(2020, 1, 2));
+      scoped.dispose();
+      await scoped.closedForTest;
+
+      final HiveZLocalStore<_Note> left = await HiveZLocalStore.openBox(
+        kind: 'note',
+        fromMap: _Note.fromMap,
+        toMap: (_Note n) => n.toMap(),
+      );
+      final List<ZSyncEntry<_Note>> rest =
+          (await left.syncEntries()).getOrElse(() => <ZSyncEntry<_Note>>[]);
+      expect(rest.map((ZSyncEntry<_Note> e) => e.id), <String?>['other']);
+      left.dispose();
+      await left.closedForTest;
+    });
+  });
+
   group('AC4 — round-trip local put/getById (JSON, une box par kind)', () {
     test('put (éphémère) matérialise un id puis getById restitue l\'égal',
         () async {

@@ -125,7 +125,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('il y a 1 an(s)'), findsOneWidget,
+      expect(find.text('il y a 1 an'), findsOneWidget,
           reason: '🔴 le sélecteur de champ est INERTE : les deux hôtes '
               'affichent alors la même date, et l\'un des deux a tort.');
     });

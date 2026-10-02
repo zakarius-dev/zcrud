@@ -124,6 +124,8 @@ class ZChatConversationScreen extends StatefulWidget {
     this.collapsedMaxHeight,
     this.padding,
     this.reverse = false,
+    this.scrollController,
+    this.emptyBuilder,
     this.identityBuilder,
     this.thinkingBuilder,
     this.onCitationTap,
@@ -140,6 +142,12 @@ class ZChatConversationScreen extends StatefulWidget {
     this.hints = const <String>[],
     this.submitPolicy = ZChatComposerSubmitPolicy.standard,
     this.pickers = const <ZChatComposerPickerAction>[],
+    this.pickersEnabled = true,
+    this.pickerGlyph,
+    this.showThinkingToggle = true,
+    this.showWebSearchToggle = true,
+    this.showEffortSelector = true,
+    this.onDictate,
     this.modelOptions = const <ZChatModelOption>[],
     this.modelActiveId,
     this.onSelectModel,
@@ -232,6 +240,12 @@ class ZChatConversationScreen extends StatefulWidget {
   /// Liste inversée.
   final bool reverse;
 
+  /// Contrôleur de défilement du fil, relayé à la vue.
+  final ScrollController? scrollController;
+
+  /// Fil vide, relayé à la vue.
+  final WidgetBuilder? emptyBuilder;
+
   /// Créneau d'identité par message.
   final ZChatMessageSlotBuilder? identityBuilder;
 
@@ -291,6 +305,24 @@ class ZChatConversationScreen extends StatefulWidget {
 
   /// Catalogue du menu `+`. Vide signifie absent.
   final List<ZChatComposerPickerAction> pickers;
+
+  /// `false` : le déclencheur `+` ne s'ouvre pas.
+  final bool pickersEnabled;
+
+  /// Glyphe du déclencheur `+`.
+  final Widget? pickerGlyph;
+
+  /// Bascule de réflexion du composer par défaut.
+  final bool showThinkingToggle;
+
+  /// Bascule de recherche web du composer par défaut.
+  final bool showWebSearchToggle;
+
+  /// Sélecteur d'effort du composer par défaut.
+  final bool showEffortSelector;
+
+  /// Dictée du composer par défaut.
+  final VoidCallback? onDictate;
 
   /// Catalogue du sélecteur de modèle de l'hôte. Vide signifie absent.
   /// Remplacé par le sélecteur de routeur quand [routeSession] est déclarée.
@@ -454,6 +486,8 @@ class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
       collapsedMaxHeight: widget.collapsedMaxHeight,
       padding: widget.padding,
       reverse: widget.reverse,
+      scrollController: widget.scrollController,
+      emptyBuilder: widget.emptyBuilder,
       identityBuilder: widget.identityBuilder,
       thinkingBuilder: widget.thinkingBuilder,
       onCitationTap: widget.onCitationTap,
@@ -511,6 +545,12 @@ class _ZChatConversationScreenState extends State<ZChatConversationScreen> {
       hints: widget.hints,
       submitPolicy: widget.submitPolicy,
       pickers: widget.pickers,
+      pickersEnabled: widget.pickersEnabled,
+      pickerGlyph: widget.pickerGlyph,
+      showThinkingToggle: widget.showThinkingToggle,
+      showWebSearchToggle: widget.showWebSearchToggle,
+      showEffortSelector: widget.showEffortSelector,
+      onDictate: widget.onDictate,
       onOpenTools: present == null ? null : () => present(context, _sheet),
       toolsBadge: tools == null
           ? null

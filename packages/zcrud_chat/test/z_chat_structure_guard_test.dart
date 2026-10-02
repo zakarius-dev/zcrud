@@ -106,6 +106,10 @@ void main() {
           'setAttachments',
           'attach',
           'send',
+          // Tour ouvert par l'hôte (flux déjà en main). Même cycle que
+          // `send` : un jeton, une bulle, une finalisation. Pas un verbe
+          // de conversation.
+          'adoptTurn',
           // 🔴 EXTENSION ARBITRÉE (owner, 2026-08-07 — chantier composer-lex,
           // lot K2). Le mode ÉDITION et le BROUILLON À COMPTEUR de lex
           // (`chat_input_controller.dart:31-48, :357-392`) entrent comme

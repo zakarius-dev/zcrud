@@ -9,8 +9,8 @@ import 'package:zcrud_core/domain.dart';
 
 /// Où en est l'ingestion d'une source.
 ///
-/// Valeur inconnue à la lecture ⇒ [ready] : une source listée sans état
-/// reste visible, elle n'est pas affichée comme un échec.
+/// Une absence (chaîne vide) reste [ready] : une source listée sans état
+/// n'est pas un échec. Une chaîne présente mais non reconnue vaut [unknown].
 enum ZNotebookIngestionState {
   /// En attente.
   pending,
@@ -23,10 +23,14 @@ enum ZNotebookIngestionState {
 
   /// Ingestion échouée. La source reste dans la liste : le retrait est un
   /// geste séparé.
-  failed;
+  failed,
 
-  /// Lecture défensive. Toute valeur autre que les quatre noms ci-dessus
-  /// vaut [ready].
+  /// Valeur présente mais non reconnue. Une absence (chaîne vide) reste
+  /// [ready] : une source listée sans état n'est pas un échec.
+  unknown;
+
+  /// Lecture défensive. Une chaîne vide ou `ready` vaut [ready]. Toute
+  /// autre valeur non reconnue vaut [unknown].
   static ZNotebookIngestionState fromJson(Object? raw) {
     switch (zJsonString(raw)) {
       case 'pending':
@@ -35,9 +39,11 @@ enum ZNotebookIngestionState {
         return ZNotebookIngestionState.running;
       case 'failed':
         return ZNotebookIngestionState.failed;
+      case '':
       case 'ready':
-      default:
         return ZNotebookIngestionState.ready;
+      default:
+        return ZNotebookIngestionState.unknown;
     }
   }
 

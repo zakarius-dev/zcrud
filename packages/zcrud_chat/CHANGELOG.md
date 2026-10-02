@@ -3,6 +3,35 @@
 Toutes les modifications notables de `zcrud_chat` sont documentées dans ce
 fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 3.58.0 — 2026-10-02
+
+### Ajouté
+
+- `ZChatController.adoptTurn` rend un tour déjà ouvert par l'hôte. Le port de flux n'est pas appelé. Sans `emitsUserMessage`, le fil n'a pas de question et la saisie n'est pas touchée.
+- `send` accepte un `draft` explicite et `emitsUserMessage`. Un brouillon passé en argument n'efface pas le compositeur.
+- `zChatStreamingMessageId` distingue le message fantôme de la réponse (`requestId/reply`) du message utilisateur optimiste.
+- Le message posé reprend les sources, les suggestions et le niveau portés par la fin de flux.
+- `menuBuilder` sur le menu `+`, les actions de conversation et le sélecteur de modèle. À défaut, la surface reprend les jetons du thème. Le menu se ferme au choix, au retour, à Échap et sur la barrière, et reste dans l'écran.
+- `scrollController` et `emptyBuilder` sur la vue et l'écran. L'écran transmet `pickersEnabled`, `pickerGlyph`, les interrupteurs de réflexion, de recherche web et d'effort, et `onDictate`.
+- La liste par défaut inversée conserve l'ordre du dialogue. Une coquille qui fournit `itemBuilder` reçoit l'index chronologique.
+- `zChatPluralCategory` choisit le singulier des durées relatives. Les formes « un » sont des clés distinctes.
+- `ZTransformPaletteBar.busyKeys`, `oneAtATime` (défaut `true`), `entryBuilder` et `sections`. Une entrée verrouillée qui a un `onLocked` reste activable et annonce l'état.
+- Le panneau de sources annonce le nombre de pages, l'état vide, le chargement, l'import en cours et l'indisponibilité. Une clé d'erreur inconnue retombe sur elle-même.
+- `ZChatScopeGeneration` génère un artefact de portée sans contrôleur de fil. `scopeBusy` expose les portées occupées. `onGenerated` enregistre le contenu à la place du magasin.
+
+### Corrigé
+
+- Le titre d'une conversation prend la largeur restante. La date ne dépasse pas 40 % de la ligne.
+- La barre de transformations n'écrit plus son occupation après la destruction du widget.
+- Une chaîne d'ingestion non reconnue n'est plus affichée comme prête.
+
+### Adaptation
+
+- Une transformation en cours bloque les autres tant que `oneAtATime` reste à son défaut.
+- L'identité du message en cours est `zChatStreamingMessageId(requestId)`, plus `requestId`.
+- Le temps relatif par défaut dit « il y a 1 an », plus « il y a 1 an(s) ». Un hôte qui passe `timeFormatter` ne change pas.
+- Les hôtes qui redessinaient le tour adopté, les menus, la liste, le titre, la barre de transformations, le panneau de sources ou la génération de portée retirent cette compensation. Voir `docs/handoff-v3.58.0.md`.
+
 ## 3.57.0 — 2026-10-01
 
 ### Ajouté

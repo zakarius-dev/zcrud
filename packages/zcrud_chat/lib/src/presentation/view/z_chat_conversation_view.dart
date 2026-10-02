@@ -61,6 +61,8 @@ class ZChatConversationView extends StatelessWidget {
     this.collapsedMaxHeight,
     this.padding,
     this.reverse = false,
+    this.scrollController,
+    this.emptyBuilder,
     this.identityBuilder,
     this.thinkingBuilder,
     this.onCitationTap,
@@ -82,7 +84,16 @@ class ZChatConversationView extends StatelessWidget {
   final EdgeInsetsDirectional? padding;
 
   /// Liste inversée (dernier message en bas, ancrage naturel d'un chat).
+  ///
+  /// L'index visuel est retourné : le message le plus récent reste en bas,
+  /// l'ordre du dialogue ne change pas.
   final bool reverse;
+
+  /// Contrôleur de défilement du fil. L'hôte le possède.
+  final ScrollController? scrollController;
+
+  /// Rendu lorsque le fil et les tours en cours sont vides. `null` : liste vide.
+  final WidgetBuilder? emptyBuilder;
 
   /// Créneau d'identité par message — relayé tel quel à la fabrique de tuile
   /// unique ([_ZChatList._item]). `null` (défaut) donne un rendu strictement
@@ -141,6 +152,8 @@ class ZChatConversationView extends StatelessWidget {
                         collapsedMaxHeight: collapsedMaxHeight,
                         padding: padding ?? theme.formPadding,
                         reverse: reverse,
+                        scrollController: scrollController,
+                        emptyBuilder: emptyBuilder,
                         identityBuilder: identityBuilder,
                         thinkingBuilder: thinkingBuilder,
                         onCitationTap: onCitationTap,
@@ -201,6 +214,8 @@ class _ZChatList extends StatelessWidget {
     required this.collapsedMaxHeight,
     required this.padding,
     required this.reverse,
+    required this.scrollController,
+    required this.emptyBuilder,
     required this.identityBuilder,
     required this.thinkingBuilder,
     required this.onCitationTap,
@@ -214,6 +229,8 @@ class _ZChatList extends StatelessWidget {
   final double? collapsedMaxHeight;
   final EdgeInsetsDirectional padding;
   final bool reverse;
+  final ScrollController? scrollController;
+  final WidgetBuilder? emptyBuilder;
   final ZChatMessageSlotBuilder? identityBuilder;
   final ZChatMessageSlotBuilder? thinkingBuilder;
   final ZChatCitationTap? onCitationTap;
@@ -256,7 +273,9 @@ class _ZChatList extends StatelessWidget {
       key: ValueKey<String>('stream#$requestId'),
       controller: controller,
       requestId: requestId,
+      identityBuilder: identityBuilder,
       thinkingBuilder: thinkingBuilder,
+      actionsBuilder: actionsBuilder,
       onCitationTap: onCitationTap,
     );
   }
@@ -290,6 +309,11 @@ class _ZChatList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (messages.isEmpty &&
+        activeRequestIds.isEmpty &&
+        emptyBuilder != null) {
+      return emptyBuilder!(context);
+    }
     final ZChatShellRenderRequest request = ZChatShellRenderRequest(
       messages: messages,
       activeRequestIds: activeRequestIds,
@@ -304,10 +328,14 @@ class _ZChatList extends StatelessWidget {
     if (shell != null) return shell;
     return ListView.builder(
       // `.builder` — jamais `ListView(children: [...])`.
+      controller: scrollController,
       padding: padding,
       reverse: reverse,
       itemCount: request.itemCount,
-      itemBuilder: _item,
+      itemBuilder: (BuildContext context, int visual) {
+        final int index = reverse ? request.itemCount - 1 - visual : visual;
+        return _item(context, index);
+      },
     );
   }
 }
@@ -358,36 +386,60 @@ class _ZStreamingTile extends StatelessWidget {
   const _ZStreamingTile({
     required this.controller,
     required this.requestId,
+    required this.identityBuilder,
     required this.thinkingBuilder,
+    required this.actionsBuilder,
     required this.onCitationTap,
     super.key,
   });
 
   final ZChatController controller;
   final String requestId;
+  final ZChatMessageSlotBuilder? identityBuilder;
   final ZChatMessageSlotBuilder? thinkingBuilder;
+  final ZChatMessageSlotBuilder? actionsBuilder;
   final ZChatCitationTap? onCitationTap;
+
+  Widget? _slot(
+    BuildContext context,
+    ZChatMessageSlotBuilder? builder,
+    ZChatMessage ghost,
+    String seam,
+  ) {
+    if (builder == null) return null;
+    try {
+      return builder(context, ghost);
+    } catch (error, stack) {
+      zChatReportSeamFailure(error: error, stack: stack, seam: seam);
+      return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final ZChatMessage ghost = ZChatMessage(
-      id: requestId,
+      id: zChatStreamingMessageId(requestId),
       conversationId: controller.conversationId,
       role: ZChatRole.assistant,
     );
-    Widget? thinking;
-    final ZChatMessageSlotBuilder? builder = thinkingBuilder;
-    if (builder != null) {
-      try {
-        thinking = builder(context, ghost);
-      } catch (error, stack) {
-        zChatReportSeamFailure(
-          error: error,
-          stack: stack,
-          seam: kZChatSeamThinkingSlot,
-        );
-      }
-    }
+    final Widget? identity = _slot(
+      context,
+      identityBuilder,
+      ghost,
+      kZChatSeamIdentitySlot,
+    );
+    final Widget? thinking = _slot(
+      context,
+      thinkingBuilder,
+      ghost,
+      kZChatSeamThinkingSlot,
+    );
+    final Widget? actions = _slot(
+      context,
+      actionsBuilder,
+      ghost,
+      kZChatSeamActionsSlot,
+    );
     final ZChatCitationTap? cite = onCitationTap;
     final Widget body = ValueListenableBuilder<List<ZContentBlock>>(
       valueListenable: controller.streamBlocks(requestId),
@@ -409,10 +461,11 @@ class _ZStreamingTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            for (final ZContentBlock block in blocks)
+            for (int i = 0; i < blocks.length; i++)
               ZChatBlockView(
                 request: ZChatBlockRenderRequest(
-                  block: block,
+                  block: blocks[i],
+                  blockIndex: i,
                   message: ghost,
                   onCitationTap: cite == null
                       ? null
@@ -432,12 +485,17 @@ class _ZStreamingTile extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: kZChatMinTapTarget),
         child: Align(
           alignment: AlignmentDirectional.centerStart,
-          child: thinking == null
+          child: identity == null && thinking == null && actions == null
               ? body
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[thinking, body],
+                  children: <Widget>[
+                    ?identity,
+                    ?thinking,
+                    body,
+                    ?actions,
+                  ],
                 ),
         ),
       ),

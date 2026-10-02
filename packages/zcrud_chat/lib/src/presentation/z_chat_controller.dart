@@ -201,7 +201,14 @@ class _ZRequestState {
 
   /// Identité de conversation annoncée par l'événement terminal.
   String? conversationId;
+
+  /// Métadonnées brutes de l'événement terminal.
+  Map<String, dynamic> doneMetadata = const <String, dynamic>{};
 }
+
+/// Identité de la réponse en cours, distincte de celle du message utilisateur
+/// (qui porte [requestId]).
+String zChatStreamingMessageId(String requestId) => '$requestId/reply';
 
 /// Session d'édition d'un message déjà envoyé.
 ///
@@ -822,6 +829,85 @@ class ZChatController extends ChangeNotifier {
     _messages.value = List<ZChatMessage>.unmodifiable(messages);
   }
 
+  /// Adopte un tour déjà ouvert par l'hôte et le rend comme une réponse en cours.
+  ///
+  /// [events] est consommé ici : le port de flux du contrôleur n'est pas
+  /// appelé. [emitsUserMessage] ajoute le message utilisateur ; sans lui, le
+  /// tour n'a pas de question dans le fil et la saisie n'est pas touchée.
+  Future<ZResult<ZChatRequestToken>> adoptTurn(
+    Stream<ZResult<ZChatStreamEvent>> events, {
+    bool emitsUserMessage = false,
+    ZChatDraft draft = const ZChatDraft(),
+  }) {
+    if (_disposed) {
+      return Future<ZResult<ZChatRequestToken>>.value(
+        const Left<ZFailure, ZChatRequestToken>(
+          ZDomainFailure('chat controller is disposed'),
+        ),
+      );
+    }
+    if (_editing.value != null) {
+      const ZFailure failure = ZDomainFailure(
+        'chat send is unavailable while editing a message: submit the edit '
+        'via runAction(ZChatEditAction) or cancelEditing() first',
+      );
+      _lastFailure.value = failure;
+      return Future<ZResult<ZChatRequestToken>>.value(
+        const Left<ZFailure, ZChatRequestToken>(failure),
+      );
+    }
+    if (emitsUserMessage &&
+        draft.text.trim().isEmpty &&
+        draft.attachmentIds.isEmpty) {
+      const ZFailure failure = ZDomainFailure(
+        'chat send requires a non-empty draft',
+      );
+      _lastFailure.value = failure;
+      return Future<ZResult<ZChatRequestToken>>.value(
+        const Left<ZFailure, ZChatRequestToken>(failure),
+      );
+    }
+    final String requestId = _newRequestId();
+    final ZChatRequestToken token = ZChatRequestToken(requestId);
+    _tokens[requestId] = token;
+    final ZChatGenerationRequest request = ZChatGenerationRequest(
+      style: ZChatGenerationStyle.converse,
+      conversationId: _conversationId,
+      notes: draft.text,
+      attachmentIds: draft.attachmentIds,
+    );
+    _states[requestId] = _ZRequestState(
+      request,
+      emitsUserMessage: emitsUserMessage,
+    );
+    if (emitsUserMessage) {
+      _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
+        ..._messages.value,
+        ZChatMessage(
+          id: requestId,
+          conversationId: _conversationId,
+          role: ZChatRole.user,
+          contentBlocks: <ZContentBlock>[ZTextBlock(text: draft.text)],
+        ),
+      ]);
+    }
+    _activeRequests.value = List<String>.unmodifiable(<String>[
+      ..._activeRequests.value,
+      requestId,
+    ]);
+    _publish(
+      requestId,
+      (ZChatStreamProgress p) => p.copyWith(phase: ZChatPhase.streaming),
+    );
+    _say(_labels.generationStarted);
+    return _finishAdopted(
+      requestId: requestId,
+      token: token,
+      events: events,
+      draft: draft,
+    );
+  }
+
   /// Change de conversation — **le seul** déclencheur de `notifyListeners()`.
   ///
   /// Toutes les requêtes en vol sont annulées (chacune par **son** jeton), les
@@ -917,6 +1003,8 @@ class ZChatController extends ChangeNotifier {
   Future<ZResult<ZChatRequestToken>> send({
     ZChatGenerationSettings? settings,
     ZChatCorpusScope? corpusScope,
+    ZChatDraft? draft,
+    bool emitsUserMessage = true,
   }) async {
     // Pendant une ÉDITION, l'envoi « nouveau message » est REFUSÉ, par un
     // échec typé. La soumission d'une édition passe par
@@ -932,8 +1020,10 @@ class ZChatController extends ChangeNotifier {
       _lastFailure.value = failure;
       return const Left<ZFailure, ZChatRequestToken>(failure);
     }
-    final ZChatDraft draft = currentDraft;
-    if (draft.text.trim().isEmpty && draft.attachmentIds.isEmpty) {
+    final ZChatDraft used = draft ?? currentDraft;
+    if (emitsUserMessage &&
+        used.text.trim().isEmpty &&
+        used.attachmentIds.isEmpty) {
       const ZFailure failure = ZDomainFailure(
         'chat send requires a non-empty draft',
       );
@@ -941,7 +1031,13 @@ class ZChatController extends ChangeNotifier {
       return const Left<ZFailure, ZChatRequestToken>(failure);
     }
 
-    return _launch(draft: draft, settings: settings, corpusScope: corpusScope);
+    return _launch(
+      draft: used,
+      settings: settings,
+      corpusScope: corpusScope,
+      emitsUserMessage: emitsUserMessage,
+      consumesComposer: draft == null && emitsUserMessage,
+    );
   }
 
   /// Ouvre **un** tour — le seul site qui fabrique un jeton, construit la
@@ -960,6 +1056,7 @@ class ZChatController extends ChangeNotifier {
     ZChatGenerationSettings? settings,
     ZChatCorpusScope? corpusScope,
     bool emitsUserMessage = true,
+    bool consumesComposer = true,
     int? insertAt,
     List<ZChatMessage> rollback = const <ZChatMessage>[],
     int rollbackAt = 0,
@@ -1022,12 +1119,14 @@ class ZChatController extends ChangeNotifier {
     );
 
     if (emitsUserMessage) {
-      _setComposer(const ZChatDraft());
-      // Le brouillon conservé a été SOUMIS : le garder le ferait
-      // réapparaître à la prochaine ouverture, sous le message qu'il vient
-      // de produire. Effacer ce qui n'existe pas réussit (contrat du port).
-      _draftRestored.value = false;
-      unawaited(_clearDraftFor(_conversationId));
+      if (consumesComposer) {
+        _setComposer(const ZChatDraft());
+        // Le brouillon conservé a été SOUMIS : le garder le ferait
+        // réapparaître à la prochaine ouverture, sous le message qu'il vient
+        // de produire. Effacer ce qui n'existe pas réussit (contrat du port).
+        _draftRestored.value = false;
+        unawaited(_clearDraftFor(_conversationId));
+      }
       _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
         ..._messages.value,
         ZChatMessage(
@@ -1100,7 +1199,11 @@ class ZChatController extends ChangeNotifier {
 
   /// Consomme **une** tentative. Rend `null` si le tour s'est terminé sur son
   /// événement terminal, sinon l'échec typé. **Ne lève jamais** (AD-10).
-  Future<ZFailure?> _drain(_ZRequestState state, ZChatRequestToken token) {
+  Future<ZFailure?> _drain(
+    _ZRequestState state,
+    ZChatRequestToken token, {
+    Stream<ZResult<ZChatStreamEvent>>? events,
+  }) {
     final Completer<ZFailure?> settled = Completer<ZFailure?>();
     final String requestId = token.requestId;
     StreamSubscription<ZResult<ZChatStreamEvent>>? sub;
@@ -1125,8 +1228,7 @@ class ZChatController extends ChangeNotifier {
         );
 
     try {
-      sub = _streamPort
-          .stream(state.request, token: token)
+      sub = (events ?? _streamPort.stream(state.request, token: token))
           .listen(
             (ZResult<ZChatStreamEvent> event) {
               if (finished) return;
@@ -1223,8 +1325,11 @@ class ZChatController extends ChangeNotifier {
         state.blocks.add(e.block);
         _syncBlocks(key);
       case final ZChatDoneEvent e:
-        state.messageId = e.messageId;
-        state.conversationId = e.conversationId;
+        state.messageId = e.messageId.isEmpty ? null : e.messageId;
+        state.conversationId = e.conversationId.isEmpty
+            ? null
+            : e.conversationId;
+        state.doneMetadata = e.metadata;
       case final ZChatStatusEvent e:
         _noteStatus(key, e.phase, e.detail);
       case final ZChatReasoningEvent e:
@@ -1271,17 +1376,9 @@ class ZChatController extends ChangeNotifier {
     final _ZRequestState? state = _states[requestId];
     final List<ZContentBlock> blocks = _assembledBlocks(requestId, state);
     if (state != null && blocks.isNotEmpty) {
-      final String id = state.messageId ?? _replyIdFor(requestId);
-      _insertReply(
-        state,
-        ZChatMessage(
-          id: id,
-          conversationId: state.conversationId ?? _conversationId,
-          role: ZChatRole.assistant,
-          contentBlocks: blocks,
-        ),
-      );
-      _requestByMessageId[id] = state.request;
+      final ZChatMessage reply = _settledReply(requestId, state, blocks);
+      _insertReply(state, reply);
+      _requestByMessageId[reply.id ?? _replyIdFor(requestId)] = state.request;
     }
     final String content = _announce(blocks);
     _say(_labels.generationCompleted?.call(content) ?? content);
@@ -1316,7 +1413,52 @@ class ZChatController extends ChangeNotifier {
   /// (tour interrompu, ou port muet). Distincte de `requestId`, qui est
   /// l'identité du message utilisateur optimiste : deux messages du fil ne
   /// partagent jamais une identité.
-  static String _replyIdFor(String requestId) => '$requestId/reply';
+  static String _replyIdFor(String requestId) =>
+      zChatStreamingMessageId(requestId);
+
+  ZChatMessage _settledReply(
+    String requestId,
+    _ZRequestState? state,
+    List<ZContentBlock> blocks,
+  ) {
+    final ZChatStreamProgress snap = progress(requestId).value;
+    final Map<String, dynamic> meta =
+        state?.doneMetadata ?? const <String, dynamic>{};
+    final String named = state?.messageId ?? '';
+    final Object? grounded = meta['grounded'];
+    final Object? unverified = meta['unverified'];
+    final Object? level = meta['level'];
+    return ZChatMessage(
+      id: named.isEmpty ? _replyIdFor(requestId) : named,
+      conversationId: state?.conversationId ?? _conversationId,
+      role: ZChatRole.assistant,
+      contentBlocks: blocks,
+      sources: snap.sources.isEmpty ? null : List<ZChatSource>.of(snap.sources),
+      suggestions: snap.suggestions.isEmpty
+          ? null
+          : List<ZChatSuggestion>.of(snap.suggestions),
+      grounded: grounded is bool ? grounded : null,
+      unverified: unverified is bool ? unverified : null,
+      level: level is String && level.isNotEmpty ? level : null,
+    );
+  }
+
+  Future<ZResult<ZChatRequestToken>> _finishAdopted({
+    required String requestId,
+    required ZChatRequestToken token,
+    required Stream<ZResult<ZChatStreamEvent>> events,
+    required ZChatDraft draft,
+  }) async {
+    final _ZRequestState state = _states[requestId]!;
+    final ZFailure? failure = await _drain(state, token, events: events);
+    if (_disposed) return Right<ZFailure, ZChatRequestToken>(token);
+    if (failure == null) {
+      _settle(requestId);
+      return Right<ZFailure, ZChatRequestToken>(token);
+    }
+    _fail(requestId, failure, draft);
+    return Left<ZFailure, ZChatRequestToken>(failure);
+  }
 
   /// Place une réponse dans le fil : à la position demandée par la requête
   /// (régénération — **remplacement**, jamais ajout), sinon en fin.
@@ -1368,13 +1510,8 @@ class ZChatController extends ChangeNotifier {
       // Contenu partiel déjà rendu : il est CONSERVÉ (AD-10) et MARQUÉ
       // interrompu. L'utilisateur a lu ce texte ; le faire disparaître serait
       // une perte silencieuse.
-      final String id = state?.messageId ?? _replyIdFor(requestId);
-      final ZChatMessage reply = ZChatMessage(
-        id: id,
-        conversationId: state?.conversationId ?? _conversationId,
-        role: ZChatRole.assistant,
-        contentBlocks: blocks,
-      );
+      final ZChatMessage reply = _settledReply(requestId, state, blocks);
+      final String id = reply.id ?? _replyIdFor(requestId);
       if (state == null) {
         _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
           ..._messages.value,

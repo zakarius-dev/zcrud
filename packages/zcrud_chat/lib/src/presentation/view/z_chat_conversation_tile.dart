@@ -38,6 +38,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'z_chat_conversation_actions.dart';
 import 'z_chat_highlight.dart';
 import 'z_chat_labels.dart';
+import 'z_chat_menu_chrome.dart';
 import 'z_chat_message_tile.dart' show kZChatMinTapTarget;
 
 /// Largeur sous laquelle les actions de ligne se replient derrière un bouton.
@@ -125,6 +126,7 @@ class ZChatConversationTile extends StatelessWidget {
     this.badges = const <ZChatConversationBadge>[],
     this.actions = const <ZChatConversationAction>[],
     this.actionsGlyph,
+    this.actionsMenuBuilder,
     this.onTap,
     this.onLongPress,
     this.isSelected = false,
@@ -179,6 +181,10 @@ class ZChatConversationTile extends StatelessWidget {
 
   /// Glyphe du menu d'actions replié. `null` : le libellé résolu.
   final Widget? actionsGlyph;
+
+  /// Remplace le menu d'actions replié. Reçoit la fermeture.
+  final Widget Function(BuildContext context, VoidCallback close)?
+  actionsMenuBuilder;
 
   /// Badges de statut — aucun par défaut.
   final List<ZChatConversationBadge> badges;
@@ -244,28 +250,36 @@ class ZChatConversationTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: ZChatHighlightedText(
-                text: conversation.title,
-                term: searchTerm,
-                maxLines: titleMaxLines,
-                strong: isStrongTitle?.call(conversation) ?? false,
-              ),
-            ),
-            if (time.isNotEmpty) ...<Widget>[
-              SizedBox(width: theme.gapM),
-              Flexible(
-                child: Text(
-                  time,
-                  textAlign: TextAlign.start,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+        LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final double cap = constraints.maxWidth.isFinite
+                ? constraints.maxWidth * 0.4
+                : double.infinity;
+            return Row(
+              children: <Widget>[
+                Expanded(
+                  child: ZChatHighlightedText(
+                    text: conversation.title,
+                    term: searchTerm,
+                    maxLines: titleMaxLines,
+                    strong: isStrongTitle?.call(conversation) ?? false,
+                  ),
                 ),
-              ),
-            ],
-          ],
+                if (time.isNotEmpty) ...<Widget>[
+                  SizedBox(width: theme.gapM),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: cap),
+                    child: Text(
+                      time,
+                      textAlign: TextAlign.start,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
         ),
         if (shown.isNotEmpty) ...<Widget>[
           SizedBox(height: theme.gapS),
@@ -322,6 +336,7 @@ class ZChatConversationTile extends StatelessWidget {
                 actions: visibleActions,
                 conversation: conversation,
                 glyph: actionsGlyph,
+                menuBuilder: actionsMenuBuilder,
               )
             else
               for (final ZChatConversationAction a in visibleActions)
@@ -435,11 +450,13 @@ class _ZActionButton extends StatelessWidget {
   const _ZActionButton({
     required this.action,
     required this.conversation,
+    this.onInvoked,
     super.key,
   });
 
   final ZChatConversationAction action;
   final ZChatConversation conversation;
+  final VoidCallback? onInvoked;
 
   @override
   Widget build(BuildContext context) {
@@ -459,7 +476,9 @@ class _ZActionButton extends StatelessWidget {
             minWidth: kZChatMinTapTarget,
           ),
           child: Align(
-            alignment: AlignmentDirectional.center,
+            alignment: AlignmentDirectional.centerStart,
+            widthFactor: 1,
+            heightFactor: 1,
             child: icon ?? Text(name, textAlign: TextAlign.start),
           ),
         ),
@@ -468,6 +487,7 @@ class _ZActionButton extends StatelessWidget {
   }
 
   void _invoke(BuildContext context) {
+    onInvoked?.call();
     final Future<bool> Function(BuildContext context)? confirm = action.confirm;
     if (confirm == null) {
       action.onInvoke(conversation);
@@ -490,11 +510,13 @@ class _ZActionMenu extends StatefulWidget {
     required this.actions,
     required this.conversation,
     required this.glyph,
+    this.menuBuilder,
   });
 
   final List<ZChatConversationAction> actions;
   final ZChatConversation conversation;
   final Widget? glyph;
+  final Widget Function(BuildContext context, VoidCallback close)? menuBuilder;
 
   @override
   State<_ZActionMenu> createState() => _ZActionMenuState();
@@ -506,11 +528,19 @@ class _ZActionMenuState extends State<_ZActionMenu> {
   final ValueNotifier<bool> _open = ValueNotifier<bool>(false);
   final OverlayPortalController _portal = OverlayPortalController();
   final LayerLink _link = LayerLink();
+  final FocusNode _focus = FocusNode();
 
   @override
   void dispose() {
     _open.dispose();
+    _focus.dispose();
     super.dispose();
+  }
+
+  void _close() {
+    if (!_open.value) return;
+    _portal.hide();
+    _open.value = false;
   }
 
   void _toggle() {
@@ -520,6 +550,7 @@ class _ZActionMenuState extends State<_ZActionMenu> {
     } else {
       _portal.show();
       _open.value = true;
+      _focus.requestFocus();
     }
   }
 
@@ -527,26 +558,56 @@ class _ZActionMenuState extends State<_ZActionMenu> {
   Widget build(BuildContext context) {
     final String label = zChatLabel(context, kZChatLabelConversationActions);
     final TextDirection direction = Directionality.of(context);
-    return OverlayPortal(
+    return ValueListenableBuilder<bool>(
+      valueListenable: _open,
+      builder: (BuildContext context, bool open, Widget? child) =>
+          ZChatOverlayDismiss(
+            open: open,
+            onClose: _close,
+            child: child!,
+          ),
+      child: OverlayPortal(
       controller: _portal,
       overlayChildBuilder: (BuildContext context) {
-        return CompositedTransformFollower(
-          link: _link,
-          targetAnchor: AlignmentDirectional.bottomEnd.resolve(direction),
-          followerAnchor: AlignmentDirectional.topEnd.resolve(direction),
-          showWhenUnlinked: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: <Widget>[
-              for (final ZChatConversationAction a in widget.actions)
-                _ZActionButton(
-                  key: ValueKey<String>('zchat.action#${a.labelKey}'),
-                  action: a,
-                  conversation: widget.conversation,
+        final Widget Function(BuildContext context, VoidCallback close)?
+        custom = widget.menuBuilder;
+        final Widget menu = custom != null
+            ? custom(context, _close)
+            : ZChatMenuSurface(
+                child: Focus(
+                  focusNode: _focus,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      for (final ZChatConversationAction a in widget.actions)
+                        _ZActionButton(
+                          key: ValueKey<String>('zchat.action#${a.labelKey}'),
+                          action: a,
+                          conversation: widget.conversation,
+                          onInvoked: _close,
+                        ),
+                    ],
+                  ),
                 ),
-            ],
-          ),
+              );
+        return Stack(
+          children: <Widget>[
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _close,
+                child: const ExcludeSemantics(child: SizedBox.expand()),
+              ),
+            ),
+            CompositedTransformFollower(
+              link: _link,
+              targetAnchor: AlignmentDirectional.bottomEnd.resolve(direction),
+              followerAnchor: AlignmentDirectional.topEnd.resolve(direction),
+              showWhenUnlinked: false,
+              child: ZChatClampShift(child: menu),
+            ),
+          ],
         );
       },
       child: CompositedTransformTarget(
@@ -576,6 +637,7 @@ class _ZActionMenuState extends State<_ZActionMenu> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
